@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.5.2"
+version = "0.5.3"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -73,7 +73,7 @@ exclude = [
     "docs/",
     "tests/",
     "uv.lock",
-    "data/",
+    "/data/",
 ]
 
 [tool.hatch.build.targets.wheel]

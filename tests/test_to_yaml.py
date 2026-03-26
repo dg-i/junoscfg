@@ -339,11 +339,7 @@ class TestLazyXmlImport:
                 else:
                     names = [node.module or ""]
                 for name in names:
-                    assert "lxml" not in name, (
-                        f"lxml imported at module level (line {node.lineno})"
-                    )
-
-
+                    assert "lxml" not in name, f"lxml imported at module level (line {node.lineno})"
 
     """XML → YAML → set produces same output as XML → set."""
 
