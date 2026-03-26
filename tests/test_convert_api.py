@@ -124,6 +124,56 @@ class TestConvertStructuredToJson:
         assert '"configuration"' in result
 
 
+class TestJsonOutputGroupsFormat:
+    """Verify JSON output uses native Junos format for groups.
+
+    Native Junos JSON uses ``"groups": [...]`` directly, not
+    ``"groups": {"group": [...]}``.
+    """
+
+    def test_set_to_json_groups_native_format(self) -> None:
+        source = (
+            "set groups mygroup system host-name r1\n"
+            "set groups other system domain-name example.com\n"
+        )
+        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
+        parsed = json.loads(result)
+        groups = parsed["configuration"]["groups"]
+        assert isinstance(groups, list), f"expected list, got {type(groups).__name__}"
+        names = [g["name"] for g in groups]
+        assert "mygroup" in names
+        assert "other" in names
+
+    def test_structured_to_json_groups_native_format(self) -> None:
+        source = (
+            "groups {\n    mygroup {\n        system {\n"
+            "            host-name r1;\n        }\n    }\n}\n"
+        )
+        result = convert_config(
+            source, from_format=Format.STRUCTURED, to_format=Format.JSON
+        )
+        parsed = json.loads(result)
+        groups = parsed["configuration"]["groups"]
+        assert isinstance(groups, list), f"expected list, got {type(groups).__name__}"
+        assert groups[0]["name"] == "mygroup"
+
+    def test_json_roundtrip_preserves_native_groups(self) -> None:
+        source = json.dumps(
+            {
+                "configuration": {
+                    "groups": [
+                        {"name": "g1", "system": {"host-name": "r1"}},
+                    ]
+                }
+            }
+        )
+        result = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
+        parsed = json.loads(result)
+        groups = parsed["configuration"]["groups"]
+        assert isinstance(groups, list)
+        assert groups[0]["name"] == "g1"
+
+
 class TestConvertStructuredToYaml:
     def test_simple(self) -> None:
         source = "system {\n    host-name r1;\n}"
