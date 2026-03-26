@@ -8,13 +8,12 @@ exactly as they appear in the JSON representation.
 from __future__ import annotations
 
 import json
-from typing import Any, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
 
 import yaml
-from lxml import etree
 
-from junoscfg.display.constants import FLAT_ENTRY_ELEMENTS
-from junoscfg.display.xml_helpers import filtered_children, find_xml_configuration, local_name
+if TYPE_CHECKING:
+    from lxml import etree
 
 
 def json_to_yaml(source: str | TextIO) -> str:
@@ -28,16 +27,49 @@ def json_to_yaml(source: str | TextIO) -> str:
 
 
 def xml_to_yaml(source: str | TextIO) -> str:
-    """Convert Junos XML configuration to standard YAML format."""
+    """Convert Junos XML configuration to standard YAML format.
+
+    Requires the ``lxml`` package (install via ``pip install junoscfg[xml]``).
+    """
+    from junoscfg.display.xml_helpers import find_xml_configuration
+
+    _ensure_xml_imports()
+
     text = source.read() if hasattr(source, "read") else str(source)  # type: ignore[union-attr]
 
-    root = etree.fromstring(text.encode())  # noqa: S320
+    root = _etree_mod.fromstring(text.encode())  # noqa: S320
     config_el = find_xml_configuration(root)
     if config_el is None:
         return ""
 
     result = {"configuration": _xml_element_to_dict(config_el)}
     return yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+
+# ------------------------------------------------------------------
+# Lazy XML imports — loaded once on first xml_to_yaml() call
+# ------------------------------------------------------------------
+
+_etree_mod: Any = None
+_local_name: Any = None
+_filtered_children: Any = None
+_FLAT_ENTRY_ELEMENTS: Any = None
+
+
+def _ensure_xml_imports() -> None:
+    """Lazily import lxml and XML helpers on first use."""
+    global _etree_mod, _local_name, _filtered_children, _FLAT_ENTRY_ELEMENTS  # noqa: PLW0603
+    if _etree_mod is not None:
+        return
+    from lxml import etree as _etree
+
+    from junoscfg.display.constants import FLAT_ENTRY_ELEMENTS
+    from junoscfg.display.xml_helpers import filtered_children, local_name
+
+    _etree_mod = _etree
+    _local_name = local_name
+    _filtered_children = filtered_children
+    _FLAT_ENTRY_ELEMENTS = FLAT_ENTRY_ELEMENTS
 
 
 # ------------------------------------------------------------------
@@ -57,7 +89,7 @@ def _get_inactive_attrs(element: etree._Element) -> dict[str, Any] | None:
 
 def _xml_element_to_dict(element: etree._Element) -> dict[str, Any]:
     """Convert an XML element and its children to a Junos JSON-equivalent dict."""
-    children = filtered_children(element)
+    children = _filtered_children(element)
     if not children:
         return {}
 
@@ -65,10 +97,10 @@ def _xml_element_to_dict(element: etree._Element) -> dict[str, Any]:
     groups: dict[str, list[etree._Element]] = {}
     order: list[str] = []
     for child in children:
-        name = local_name(child)
+        name = _local_name(child)
         if name == "undocumented":
             for undoc_child in child:
-                uname = local_name(undoc_child)
+                uname = _local_name(undoc_child)
                 if uname != "comment":
                     if uname not in groups:
                         groups[uname] = []
@@ -103,14 +135,14 @@ def _should_be_array(element: etree._Element) -> bool:
     - Tag is a known flat entry element (route-filter, prefix-list-filter)
     - Has a ``community-name`` child → community action entry
     """
-    children = filtered_children(element)
-    tag = local_name(element)
+    children = _filtered_children(element)
+    tag = _local_name(element)
 
-    if tag in FLAT_ENTRY_ELEMENTS:
+    if tag in _FLAT_ENTRY_ELEMENTS:
         return True
 
     if children:
-        child_names = {local_name(c) for c in children}
+        child_names = {_local_name(c) for c in children}
         if "name" in child_names:
             return True
         if "community-name" in child_names:
@@ -121,7 +153,7 @@ def _should_be_array(element: etree._Element) -> bool:
 
 def _xml_single_as_array(element: etree._Element) -> list[dict[str, Any]]:
     """Convert a single XML element to a 1-element array of dicts."""
-    children = filtered_children(element)
+    children = _filtered_children(element)
     inactive_attrs = _get_inactive_attrs(element)
     entry = _xml_children_to_dict(children) if children else {}
     if inactive_attrs:
@@ -131,7 +163,7 @@ def _xml_single_as_array(element: etree._Element) -> list[dict[str, Any]]:
 
 def _xml_single_element(element: etree._Element) -> Any:
     """Convert a single XML element to a Junos JSON-equivalent value."""
-    children = filtered_children(element)
+    children = _filtered_children(element)
     inactive_attrs = _get_inactive_attrs(element)
 
     if not children:
@@ -140,7 +172,7 @@ def _xml_single_element(element: etree._Element) -> Any:
         if text:
             value = _coerce_value(text)
             if inactive_attrs:
-                return {local_name(element): [value], "@": inactive_attrs}
+                return {_local_name(element): [value], "@": inactive_attrs}
             return value
         # Empty element → presence flag [null]
         if inactive_attrs:
@@ -161,7 +193,7 @@ def _xml_multi_elements(tag_name: str, elements: list[etree._Element]) -> Any:
     a dict entry in the array.
     """
     # Check if these are leaf elements (no children, just text)
-    all_leaf = all(not filtered_children(el) for el in elements)
+    all_leaf = all(not _filtered_children(el) for el in elements)
 
     if all_leaf:
         # Check if all are empty (presence) or all have text
@@ -185,7 +217,7 @@ def _xml_multi_elements(tag_name: str, elements: list[etree._Element]) -> Any:
     # Container elements → array of dicts
     result: list[dict[str, Any]] = []
     for el in elements:
-        children = filtered_children(el)
+        children = _filtered_children(el)
         inactive_attrs = _get_inactive_attrs(el)
         entry = _xml_children_to_dict(children) if children else {}
         if inactive_attrs:
@@ -199,10 +231,10 @@ def _xml_children_to_dict(children: list[etree._Element]) -> dict[str, Any]:
     groups: dict[str, list[etree._Element]] = {}
     order: list[str] = []
     for child in children:
-        name = local_name(child)
+        name = _local_name(child)
         if name == "undocumented":
             for undoc_child in child:
-                uname = local_name(undoc_child)
+                uname = _local_name(undoc_child)
                 if uname != "comment":
                     if uname not in groups:
                         groups[uname] = []

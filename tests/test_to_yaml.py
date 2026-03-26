@@ -295,7 +295,56 @@ class TestXmlToYamlBasic:
         assert ifaces[1]["description"] == "uplink"
 
 
-class TestXmlToYamlRoundtrip:
+class TestLazyXmlImport:
+    """Verify lxml is lazily imported — not loaded until XML features are used."""
+
+    def test_json_to_yaml_without_lxml(self) -> None:
+        """json_to_yaml works without lxml being imported at module level."""
+        # to_yaml module should be importable; lxml may be in sys.modules
+        # from other tests, but the key check is that json_to_yaml itself
+        # doesn't fail
+        j = json.dumps({"configuration": {"system": {"host-name": "test"}}})
+        result = yaml.safe_load(json_to_yaml(j))
+        assert result["configuration"]["system"]["host-name"] == "test"
+
+    def test_filter_yaml_by_path_without_lxml(self) -> None:
+        """filter_yaml_by_path works without lxml — it only uses PyYAML."""
+        from junoscfg.display.to_yaml import filter_yaml_by_path
+
+        yaml_text = yaml.dump({"configuration": {"system": {"host-name": "r1"}}})
+        result = filter_yaml_by_path(yaml_text, ["system"])
+        parsed = yaml.safe_load(result)
+        assert parsed["configuration"]["system"]["host-name"] == "r1"
+
+    def test_xml_to_yaml_requires_lxml(self) -> None:
+        """xml_to_yaml uses lxml and works when lxml is available."""
+        xml = "<configuration><system><host-name>r1</host-name></system></configuration>"
+        result = yaml.safe_load(xml_to_yaml(xml))
+        assert result["configuration"]["system"]["host-name"] == "r1"
+
+    def test_to_yaml_module_level_has_no_lxml(self) -> None:
+        """The to_yaml module does not import lxml at the top level."""
+        import ast
+        import inspect
+
+        import junoscfg.display.to_yaml as mod
+
+        source = inspect.getsource(mod)
+        tree = ast.parse(source)
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                names = []
+                if isinstance(node, ast.Import):
+                    names = [alias.name for alias in node.names]
+                else:
+                    names = [node.module or ""]
+                for name in names:
+                    assert "lxml" not in name, (
+                        f"lxml imported at module level (line {node.lineno})"
+                    )
+
+
+
     """XML → YAML → set produces same output as XML → set."""
 
     def test_simple_roundtrip(self) -> None:
