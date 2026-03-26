@@ -1,0 +1,14 @@
+{
+  "junos_version": "21.4R0",
+  "generated_at": "2026-02-15T01:46:00.475957+00:00",
+  "generator_version": "0.2.0",
+  "fixes_applied": 38,
+  "fixes_registered": 40,
+  "stats": {
+    "total_nodes": 381828,
+    "leaf_nodes": 156771,
+    "container_nodes": 113377,
+    "list_nodes": 30321,
+    "enum_values": 183634
+  }
+}

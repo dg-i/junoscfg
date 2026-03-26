@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "junoscfg"
+version = "0.5.0"
+description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Manon Goo", email = "manon.goo@dg-i.net" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+keywords = ["junos", "juniper", "network", "configuration", "converter", "validation", "anonymization", "ansible", "set", "json", "xml", "yaml"]
+dependencies = [
+    "click>=8.0",
+    "lxml>=4.9",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0",
+    "lark>=1.1",
+    "ipanon>=0.2.2",
+    "netutils>=1.17.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/dg-i/junoscfg"
+Repository = "https://github.com/dg-i/junoscfg"
+Documentation = "https://github.com/dg-i/junoscfg#readme"
+Issues = "https://github.com/dg-i/junoscfg/issues"
+
+[project.scripts]
+junoscfg = "junoscfg.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "CLAUDE.md",
+    ".claude/",
+    "mkdocs.yml",
+    "docs/",
+    "tests/",
+    "uv.lock",
+    "data/",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/junoscfg"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]

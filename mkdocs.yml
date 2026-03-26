@@ -1,0 +1,84 @@
+site_name: Junoscfg
+site_description: Convert and validate Junos configurations between formats
+repo_url: https://github.com/codeout/junoser-python
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - toc.integrate
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            members_order: source
+            docstring_style: google
+            merge_init_into_class: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guide:
+      - Conversion: guide/conversion.md
+      - Validation: guide/validation.md
+      - Edit YAML (Ansible): edityaml.md
+      - CLI Reference: guide/cli.md
+  - API Reference:
+      - Overview: api/index.md
+      - junoscfg: api/conversion.md
+      - junoscfg.display: api/display.md
+      - junoscfg.validate: api/validate.md
+      - junoscfg.anonymize: api/anonymize.md
+      - Internals:
+          - junoscfg.convert: api/internals/convert.md
+          - junoscfg.convert.field_validator: api/internals/field_validator.md
+          - junoscfg.input: api/internals/input.md
+          - junoscfg.cli: api/internals/cli.md
+          - junoscfg.display.set_converter: api/internals/set_converter.md
+          - junoscfg.display.config_store: api/internals/config_store.md
+          - junoscfg.display.value_format: api/internals/value_format.md
+          - junoscfg.display.constants: api/internals/constants.md
+          - junoscfg.display.to_yaml: api/internals/to_yaml.md
+          - junoscfg.display.xml_helpers: api/internals/xml_helpers.md
+          - junoscfg.validate.validator: api/internals/validator.md
+          - junoscfg.validate.schema_node: api/internals/schema_node.md
+          - junoscfg.validate.artifact_builder: api/internals/artifact_builder.md
+          - junoscfg.validate.xsd_parser: api/internals/xsd_parser.md
+          - junoscfg.validate.xsd_fixes: api/internals/xsd_fixes.md
+          - junoscfg.validate.xsd_extractor: api/internals/xsd_extractor.md
+          - junoscfg.validate.schema_generator: api/internals/schema_generator.md
+          - junoscfg.validate.grammar_generator: api/internals/grammar_generator.md
+          - junoscfg.validate.xml_validator: api/internals/xml_validator.md
+          - junoscfg.validate.json_yaml_validator: api/internals/json_yaml_validator.md
+          - junoscfg.validate.set_validator: api/internals/set_validator.md
+          - junoscfg.validate.structured_validator: api/internals/structured_validator.md
+          - junoscfg.anonymize.config: api/internals/anonymize_config.md
+          - junoscfg.anonymize.rules: api/internals/anonymize_rules.md
+          - junoscfg.anonymize.walker: api/internals/anonymize_walker.md
+          - junoscfg.anonymize.revert: api/internals/anonymize_revert.md
+          - junoscfg.anonymize.path_filter: api/internals/anonymize_path_filter.md
+  - Architecture:
+      - Developer Guide: architecture/developer-guide.md
+      - Design Decisions: architecture/design-decisions.md
+      - Schema Internals: architecture/schema-internals.md
+      - Conversion Bugfix Guide: architecture/conversion-bugfix-guide.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
