@@ -145,6 +145,17 @@ def main(ctx: click.Context) -> None:
     help="IP prefixes to pass through (repeatable).",
 )
 @click.option(
+    "--anonymize-networks",
+    multiple=True,
+    help="Subnet specs for host-bit locking (CIDR, range, or 'auto'). Repeatable.",
+)
+@click.option(
+    "--anonymize-network-file",
+    default=None,
+    type=click.Path(exists=True),
+    help="File with one subnet spec per line (for host-bit locking).",
+)
+@click.option(
     "--anonymize-ignore-subnets", is_flag=True, help="Treat sub-/8 private ranges as public."
 )
 @click.option(
@@ -199,6 +210,8 @@ def convert(
     anonymize_include: tuple[str, ...],
     anonymize_exclude: tuple[str, ...],
     anonymize_preserve_prefixes: tuple[str, ...],
+    anonymize_networks: tuple[str, ...],
+    anonymize_network_file: str | None,
     anonymize_ignore_subnets: bool,
     anonymize_ignore_reserved: bool,
     anonymize_ips_in_strings: bool,
@@ -302,6 +315,8 @@ def convert(
         anonymize_include=anonymize_include,
         anonymize_exclude=anonymize_exclude,
         anonymize_preserve_prefixes=anonymize_preserve_prefixes,
+        anonymize_networks=anonymize_networks,
+        anonymize_network_file=anonymize_network_file,
         anonymize_ignore_subnets=anonymize_ignore_subnets,
         anonymize_ignore_reserved=anonymize_ignore_reserved,
         anonymize_ips_in_strings=anonymize_ips_in_strings,
@@ -309,6 +324,10 @@ def convert(
         anonymize_log_level=anonymize_log_level,
         anonymize_config=anonymize_config,
     )
+
+    # For --anonymize-networks auto: stash source text so IpRule can scan it
+    if anon_config and "auto" in (anon_config.networks or []):
+        anon_config._source_text = source  # type: ignore[attr-defined]
 
     # Convert using the unified API
     from junoscfg import convert_config

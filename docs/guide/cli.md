@@ -164,6 +164,8 @@ Replace sensitive data with deterministic pseudonyms.
 | `--anonymize-include` | Only anonymize paths matching this glob (repeatable) |
 | `--anonymize-exclude` | Skip paths matching this glob (repeatable) |
 | `--anonymize-preserve-prefixes` | IP prefixes to preserve unchanged (repeatable) |
+| `--anonymize-networks` | Subnet specs for host-bit locking (CIDR, range, or `auto`). Repeatable |
+| `--anonymize-network-file` | File with one subnet spec per line (for host-bit locking) |
 | `--anonymize-ignore-subnets` | Treat sub-/8 private ranges as public (anonymize them fully instead of preserving the range) |
 | `--anonymize-ignore-reserved` | Remove all reserved range handling (no ranges are preserved) |
 | `--anonymize-ips-in-strings` | Also replace IPs embedded in larger strings |
@@ -285,9 +287,23 @@ junoscfg -e json --anonymize-ips --anonymize-ignore-subnets config.json
 
 # Skip reserved/private IP ranges
 junoscfg -e json --anonymize-ips --anonymize-ignore-reserved config.json
+
+# Subnet-aware anonymization: auto-detect subnets from the config
+junoscfg -e json --anonymize-all --anonymize-networks auto config.json
+
+# Subnet-aware anonymization: explicit subnets
+junoscfg -e json --anonymize-all --anonymize-networks "10.0.0.0/8-24" config.json
+
+# Load subnet specs from a file
+junoscfg -e json --anonymize-all --anonymize-network-file subnets.txt config.json
 ```
 
 - `--anonymize-preserve-prefixes` — IP addresses within these CIDR prefixes are left unchanged
+- `--anonymize-networks` — Subnet-aware host-bit locking: only permute the network portion of IPs,
+  preserving host bits so anonymized addresses never land on broadcast or network addresses.
+  Accepts plain CIDRs (`192.168.1.0/29`), range notation (`10.0.0.0/8-24`), or `auto` to
+  auto-detect subnets from the input config. Repeatable.
+- `--anonymize-network-file` — Load subnet specs from a file (one per line, `#` comments allowed)
 - `--anonymize-ignore-subnets` — Skip addresses that represent subnets (network/broadcast)
 - `--anonymize-ignore-reserved` — Skip RFC 1918 and other reserved ranges
 
@@ -403,6 +419,10 @@ anonymize:
   # IP-specific
   preserve_prefixes:
     - "10.1.0.0/16"
+  networks:
+    - "10.0.0.0/8-24"
+    - "192.168.0.0/16-24"
+  # network_file: subnets.txt
   ignore_subnets: false
   ignore_reserved: false
   ips_in_strings: true

@@ -232,11 +232,11 @@ wheels = [
 
 [[package]]
 name = "ipanon"
-version = "0.2.2"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/ff/0f6dcce08d744a35749d1af02b4022324ee9db7f8eb5495566ba046f1429/ipanon-0.2.2.tar.gz", hash = "sha256:5ad4dcdd17e2bdaffc37062192a48b90a3cc56dbb9f13d4da38506c3c5aa7ee4", size = 28613, upload-time = "2026-03-25T23:14:43.849Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/41/e5abdca93ad611f74b31e054cf73a562b4fd8b1fcb9ece7d08f10566161e/ipanon-0.3.0.tar.gz", hash = "sha256:2bae11ee0ee3bea210fc4620319a480d1a0e86f4d25a7578033e77c8822dfc34", size = 36270, upload-time = "2026-03-26T21:58:19.01Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/21/86f511edb0b6acd305a815d537e01f18f025f32833551bd73c058f6061e0/ipanon-0.2.2-py3-none-any.whl", hash = "sha256:208b6676cc4a292e516f628862f4bcf41450b2d068fefd64a4ce8e43d176d013", size = 17363, upload-time = "2026-03-25T23:14:42.755Z" },
+    { url = "https://files.pythonhosted.org/packages/84/80/6dc5bcb3e27bdbcc25205c92bf0515cbb5dbd4f77bd7b75167514b4e52d4/ipanon-0.3.0-py3-none-any.whl", hash = "sha256:6902505df556060019cb93e9d0f7cd3428b95b6586632f482182d29ab44b0d7f", size = 21227, upload-time = "2026-03-26T21:58:17.608Z" },
 ]
 
 [[package]]
@@ -311,7 +311,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0" },
-    { name = "ipanon", specifier = ">=0.2.2" },
+    { name = "ipanon", specifier = ">=0.3.0" },
     { name = "jsonschema", specifier = ">=4.0" },
     { name = "lark", specifier = ">=1.1" },
     { name = "lxml", marker = "extra == 'xml'", specifier = ">=4.9" },

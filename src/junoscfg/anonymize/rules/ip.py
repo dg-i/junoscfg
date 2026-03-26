@@ -6,7 +6,7 @@ import ipaddress
 import re
 from typing import TYPE_CHECKING, Any
 
-from ipanon import Anonymizer
+from ipanon import Anonymizer, NetworkRegistry
 
 from junoscfg.anonymize.rules import Rule
 
@@ -86,13 +86,34 @@ class IpRule(Rule):
     priority = 30  # After passwords (10) and SSH keys (20)
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        registry = self._build_network_registry(config)
         self._anonymizer = Anonymizer(
             salt=config.salt,
             pass_through_prefixes=config.preserve_prefixes or None,
             ignore_subnets=config.ignore_subnets,
             ignore_reserved=config.ignore_reserved,
             quiet=config.log_level != "debug",
+            network_registry=registry,
         )
+
+    @staticmethod
+    def _build_network_registry(config: AnonymizeConfig) -> NetworkRegistry | None:
+        """Build a NetworkRegistry from config, or return None."""
+        if not config.networks and not config.network_file:
+            return None
+        registry = NetworkRegistry()
+        for spec in config.networks:
+            if spec == "auto":
+                # "auto" requires source_text on config (set by CLI before anonymization)
+                if hasattr(config, "_source_text") and config._source_text:
+                    registry.load_from_text(config._source_text)
+            else:
+                registry.add(spec)
+        if config.network_file:
+            registry.load_file(config.network_file)
+        if not registry.entries():
+            return None
+        return registry
 
     def matches(
         self,

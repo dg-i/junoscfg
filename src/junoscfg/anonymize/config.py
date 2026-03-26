@@ -42,6 +42,8 @@ class AnonymizeConfig:
 
     # IP-specific options
     preserve_prefixes: list[str] = field(default_factory=list)
+    networks: list[str] = field(default_factory=list)
+    network_file: str | None = None
     ignore_subnets: bool = False
     ignore_reserved: bool = False
     ips_in_strings: bool = False
@@ -100,6 +102,8 @@ def build_config_from_cli(
     anonymize_include: tuple[str, ...] = (),
     anonymize_exclude: tuple[str, ...] = (),
     anonymize_preserve_prefixes: tuple[str, ...] = (),
+    anonymize_networks: tuple[str, ...] = (),
+    anonymize_network_file: str | None = None,
     anonymize_ignore_subnets: bool = False,
     anonymize_ignore_reserved: bool = False,
     anonymize_ips_in_strings: bool = False,
@@ -151,6 +155,10 @@ def build_config_from_cli(
         cfg.exclude = list(anonymize_exclude)
     if anonymize_preserve_prefixes:
         cfg.preserve_prefixes = list(anonymize_preserve_prefixes)
+    if anonymize_networks:
+        cfg.networks = list(anonymize_networks)
+    if anonymize_network_file:
+        cfg.network_file = anonymize_network_file
     if anonymize_ignore_subnets:
         cfg.ignore_subnets = True
     if anonymize_ignore_reserved:
@@ -244,6 +252,10 @@ def load_config_file(path: str) -> AnonymizeConfig:
         cfg.exclude = [str(p) for p in data["exclude"]]
     if "preserve_prefixes" in data and isinstance(data["preserve_prefixes"], list):
         cfg.preserve_prefixes = [str(p) for p in data["preserve_prefixes"]]
+    if "networks" in data and isinstance(data["networks"], list):
+        cfg.networks = [str(n) for n in data["networks"]]
+    if "network_file" in data:
+        cfg.network_file = str(data["network_file"])
     if data.get("ignore_subnets"):
         cfg.ignore_subnets = True
     if data.get("ignore_reserved"):
