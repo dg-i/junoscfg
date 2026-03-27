@@ -308,6 +308,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
 
         # Leaf node (accumulate repeated values)
         if child.get("l"):
+            is_leaf_list = child.get("ll")
             if i + 1 < len(tokens):
                 # Check if token after the value is a schema sibling
                 next_idx = i + 2
@@ -316,7 +317,8 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     or KEY_ALIASES.get(tokens[next_idx], tokens[next_idx]) in children
                 ):
                     # Sibling follows — take only one token as value
-                    current[token] = _parse_value(tokens[i + 1])
+                    val = _parse_value(tokens[i + 1])
+                    current[token] = [val] if is_leaf_list else val
                     i = next_idx
                     continue
                 # No sibling — join all remaining tokens as the value
@@ -328,7 +330,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     else:
                         current[token] = [existing, val]
                 else:
-                    current[token] = val
+                    current[token] = [val] if is_leaf_list else val
             else:
                 current[token] = None
             return

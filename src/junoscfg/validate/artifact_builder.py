@@ -216,6 +216,7 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         l: true if leaf
         p: true if presence
         L: true if named list (is_list and has children)
+        ll: true if leaf-list (repeated leaf, always array in JSON)
         nk: true if nokeyword flag
         o: true if flat/oneliner entry (name + children on single line)
         t: transparent container child name (e.g. "interface")
@@ -240,6 +241,8 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
 
     if node.is_list and not node.is_leaf:
         d["L"] = True
+    if node.is_list and node.is_leaf:
+        d["ll"] = True
 
     if "nokeyword" in node.flags:
         d["nk"] = True
