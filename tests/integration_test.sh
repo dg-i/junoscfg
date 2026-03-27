@@ -79,8 +79,20 @@ PASS=0
 FAIL=0
 NOTICE=0
 
-# cleanup only removes workdir if all tests pass (or user says so)
-trap 'rm -rf "$WORKDIR"' EXIT
+cleanup() {
+    if [[ -n "$KEEP_LOGS" ]]; then
+        LOGS_KEEP=$(mktemp -d "/tmp/junoscfg_logs.XXXXXX")
+        cp "$WORKDIR"/*.log "$LOGS_KEEP"/ 2>/dev/null
+        echo "  logs:    $LOGS_KEEP    rm -rf $LOGS_KEEP"
+    fi
+    if [[ -n "$KEEP_CONFIGS" ]]; then
+        CONFIGS_KEEP=$(mktemp -d "/tmp/junoscfg_configs.XXXXXX")
+        cp "$WORKDIR"/device.* "$WORKDIR"/rt_* "$WORKDIR"/anon.* "$CONFIGS_KEEP"/ 2>/dev/null
+        echo "  configs: $CONFIGS_KEEP    rm -rf $CONFIGS_KEEP"
+    fi
+    rm -rf "$WORKDIR"
+}
+trap cleanup EXIT
 
 echo ""
 echo "junoscfg integration test"
@@ -302,17 +314,5 @@ echo ""
 # ── Summary ───────────────────────────────────────────────────────────
 
 echo "passed: $PASS  failed: $FAIL  notices: $NOTICE"
-
-if [[ -n "$KEEP_LOGS" ]]; then
-    LOGS_KEEP=$(mktemp -d "/tmp/junoscfg_logs.XXXXXX")
-    cp "$WORKDIR"/*.log "$LOGS_KEEP"/ 2>/dev/null
-    echo "  logs:    $LOGS_KEEP    rm -rf $LOGS_KEEP"
-fi
-
-if [[ -n "$KEEP_CONFIGS" ]]; then
-    CONFIGS_KEEP=$(mktemp -d "/tmp/junoscfg_configs.XXXXXX")
-    cp "$WORKDIR"/device.* "$WORKDIR"/rt_* "$WORKDIR"/anon.* "$CONFIGS_KEEP"/ 2>/dev/null
-    echo "  configs: $CONFIGS_KEEP    rm -rf $CONFIGS_KEEP"
-fi
 
 [[ "$FAIL" -eq 0 ]]
