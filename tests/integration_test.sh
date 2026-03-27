@@ -80,17 +80,18 @@ FAIL=0
 NOTICE=0
 
 cleanup() {
-    if [[ -n "$KEEP_LOGS" ]]; then
-        LOGS_KEEP=$(mktemp -d "/tmp/junoscfg_logs.XXXXXX")
-        cp "$WORKDIR"/*.log "$LOGS_KEEP"/ 2>/dev/null
-        echo "  logs:    $LOGS_KEEP    rm -rf $LOGS_KEEP"
+    if [[ -n "$KEEP_LOGS" || -n "$KEEP_CONFIGS" ]]; then
+        if [[ -z "$KEEP_LOGS" ]]; then
+            rm -f "$WORKDIR"/*.log
+        fi
+        if [[ -z "$KEEP_CONFIGS" ]]; then
+            rm -f "$WORKDIR"/device.* "$WORKDIR"/rt_* "$WORKDIR"/anon.*
+        fi
+        echo "  workdir kept: $WORKDIR"
+        echo "  to clean up:  rm -rf $WORKDIR"
+    else
+        rm -rf "$WORKDIR"
     fi
-    if [[ -n "$KEEP_CONFIGS" ]]; then
-        CONFIGS_KEEP=$(mktemp -d "/tmp/junoscfg_configs.XXXXXX")
-        cp "$WORKDIR"/device.* "$WORKDIR"/rt_* "$WORKDIR"/anon.* "$CONFIGS_KEEP"/ 2>/dev/null
-        echo "  configs: $CONFIGS_KEEP    rm -rf $CONFIGS_KEEP"
-    fi
-    rm -rf "$WORKDIR"
 }
 trap cleanup EXIT
 
