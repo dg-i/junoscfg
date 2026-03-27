@@ -104,23 +104,35 @@ def _replace_apply_groups(obj: Any, group_rule: GroupRule) -> None:
 
 
 def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:
-    """Walk all string values and replace embedded IP addresses."""
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if isinstance(value, str):
-                replaced = ip_rule.replace_ips_in_string(value)
-                if replaced != value:
-                    obj[key] = replaced
-            elif isinstance(value, (dict, list)):
-                _replace_ips_in_strings(value, ip_rule)
-    elif isinstance(obj, list):
-        for i, item in enumerate(obj):
-            if isinstance(item, str):
-                replaced = ip_rule.replace_ips_in_string(item)
-                if replaced != item:
-                    obj[i] = replaced
-            elif isinstance(item, (dict, list)):
-                _replace_ips_in_strings(item, ip_rule)
+    """Walk all string values and replace embedded IP addresses.
+
+    Values that are already in the anonymizer's output mapping are skipped —
+    those were already transformed by the schema walker and must not be
+    re-anonymized (which would break network-registry host-bit locking).
+    """
+    already_done = set(ip_rule.get_mapping().values())
+
+    def _walk(obj: Any) -> None:
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if isinstance(value, str):
+                    if value not in already_done:
+                        replaced = ip_rule.replace_ips_in_string(value)
+                        if replaced != value:
+                            obj[key] = replaced
+                elif isinstance(value, (dict, list)):
+                    _walk(value)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                if isinstance(item, str):
+                    if item not in already_done:
+                        replaced = ip_rule.replace_ips_in_string(item)
+                        if replaced != item:
+                            obj[i] = replaced
+                elif isinstance(item, (dict, list)):
+                    _walk(item)
+
+    _walk(obj)
 
 
 def _replace_as_in_strings(obj: Any, as_rule: AsNumberRule) -> None:

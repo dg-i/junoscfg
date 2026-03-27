@@ -259,28 +259,40 @@ done
 echo ""
 
 
-# ── Summary ───────────────────────────────────────────────────────────
+# ── Anonymization review ──────────────────────────────────────────────
 
-echo "passed: $PASS  failed: $FAIL  warnings: $NOTICE"
+echo "── Anonymization review ──"
 echo ""
-
-echo "  All logs:"
-for f in "$WORKDIR"/*.log; do
+echo "  Anonymized files:"
+for f in "$WORKDIR"/anon.conf "$WORKDIR"/anon.json "$WORKDIR"/anon.set; do
     [[ -f "$f" ]] && echo "    $f"
 done
+echo ""
+echo "  Check for leaked sensitive data:"
+echo "    grep -i 'your-hostname' $WORKDIR/anon.conf"
+echo "    diff --color $WORKDIR/device.conf $WORKDIR/anon.conf | less"
+echo ""
+read -rp "  Review anonymized files before cleanup? [y/N] " review
+if [[ "${review,,}" == "y" ]]; then
+    ANON_KEEP=$(mktemp -d "/tmp/junoscfg_anon.XXXXXX")
+    cp "$WORKDIR"/anon.* "$ANON_KEEP"/
+    echo "  anonymized files copied to $ANON_KEEP"
+    echo "  to clean up:  rm -rf $ANON_KEEP"
+fi
+echo ""
+
+
+# ── Summary ───────────────────────────────────────────────────────────
+
+echo "passed: $PASS  failed: $FAIL  notices: $NOTICE"
+echo "  logs: $WORKDIR/*.log"
 
 if [[ "$FAIL" -gt 0 ]]; then
-    echo ""
-    echo "  Failed logs:"
-    for f in "$WORKDIR"/*.log; do
-        [[ -f "$f" ]] && grep -qE '^\[edit .+\]$|^[+-][[:space:]]|error:' "$f" && echo "    $f"
-    done
     echo ""
     read -rp "  Keep workdir for debugging? [Y/n] " keep
     if [[ "${keep,,}" == "n" ]]; then
         echo "  cleaning up $WORKDIR"
     else
-        # disable the cleanup trap
         trap - EXIT
         echo "  files kept in $WORKDIR"
         echo "  to clean up:  rm -rf $WORKDIR"
