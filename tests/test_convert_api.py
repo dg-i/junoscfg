@@ -149,9 +149,7 @@ class TestJsonOutputGroupsFormat:
             "groups {\n    mygroup {\n        system {\n"
             "            host-name r1;\n        }\n    }\n}\n"
         )
-        result = convert_config(
-            source, from_format=Format.STRUCTURED, to_format=Format.JSON
-        )
+        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.JSON)
         parsed = json.loads(result)
         groups = parsed["configuration"]["groups"]
         assert isinstance(groups, list), f"expected list, got {type(groups).__name__}"

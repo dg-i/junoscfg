@@ -6,6 +6,17 @@ Instructions for AI assistants (and human contributors) working on this project.
 
 Python toolkit for converting, validating, and anonymizing Junos configurations between XML, JSON, structured, YAML, and display set formats. Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser).
 
+## Pre-Commit Checklist
+
+Before every commit, **must** complete these steps in order:
+
+1. **Tests pass** — `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'`
+2. **Lint clean** — `uv run ruff check src/ tests/`
+3. **Format clean** — `uv run ruff format src/ tests/`
+4. **Documentation check** — verify changes are reflected in docs (see checklist below)
+5. **Version bump** — update version in all 3 files (see details below)
+6. **After XSD/schema changes** — run with `--regen-schema` to rebuild `junos-structure-tree.json`
+
 ## Development Commands
 
 ```bash
@@ -13,7 +24,6 @@ Python toolkit for converting, validating, and anonymizing Junos configurations 
 uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'
 
 # Full pre-commit validation — regenerates schema artifacts from XSD
-# Use after modifying xsd_fixes.py, artifact_builder.py, or before final commit
 uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip' --regen-schema
 
 # Run ALL tests including slow example validation
@@ -38,7 +48,7 @@ Real-world router configurations for integration testing go in `private_test_dat
 
 ## Version Management
 
-Every commit **must** include a version bump. Version is defined in three places that must all be updated together:
+Version is defined in three places that must all be updated together:
 
 1. `pyproject.toml` — `version = "x.y.z"`
 2. `src/junoscfg/__init__.py` — `__version__ = "x.y.z"`
@@ -52,7 +62,7 @@ Rules:
 
 ## Documentation Checklist
 
-Before committing, verify that code changes are reflected in documentation:
+Verify that code changes are reflected in documentation:
 
 1. **CLI options**: Every `@click.option` in `cli.py` must have a matching row in `docs/guide/cli.md`
 2. **Public API**: Every member of `__all__` in `__init__.py` must appear in `docs/api/conversion.md`
