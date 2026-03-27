@@ -10,6 +10,7 @@
 #
 # Options:
 #   --quiet-ssh                       Suppress SSH warnings (post-quantum etc.)
+#   --ssh-delay SECONDS               Delay between SSH sessions (avoids rate limiting)
 #   --keep-logs                       Copy log files to a temp dir before cleanup
 #   --keep-configs                    Copy config files to a temp dir before cleanup
 #   --anonymize-salt SALT             Salt for deterministic anonymization
@@ -30,6 +31,7 @@ with "rollback 0".
 
 Options:
   --quiet-ssh                       Suppress SSH warnings (post-quantum etc.)
+  --ssh-delay SECONDS               Delay between SSH sessions (avoids rate limiting)
   --keep-logs                       Copy log files to a temp dir before cleanup
   --keep-configs                    Copy config files to a temp dir before cleanup
   --anonymize-salt SALT             Salt for deterministic anonymization
@@ -48,6 +50,7 @@ EOF
 }
 
 SSH_OPTS=""
+SSH_DELAY=0
 ANON_SALT="integration-test-$$"
 ANON_EXTRA=""
 KEEP_LOGS=""
@@ -56,6 +59,7 @@ while [[ "${1:-}" == --* || "${1:-}" == -h || "${1:-}" == "-?" ]]; do
     case "$1" in
         -h|-\?|--help) usage ;;
         --quiet-ssh) SSH_OPTS="-o LogLevel=ERROR"; shift ;;
+        --ssh-delay) SSH_DELAY="$2"; shift 2 ;;
         --keep-logs) KEEP_LOGS=1; shift ;;
         --keep-configs) KEEP_CONFIGS=1; shift ;;
         --anonymize-salt) ANON_SALT="$2"; shift 2 ;;
@@ -64,6 +68,9 @@ while [[ "${1:-}" == --* || "${1:-}" == -h || "${1:-}" == "-?" ]]; do
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
+
+# delay between SSH sessions to avoid rate limiting
+ssh_wait() { [[ "$SSH_DELAY" -gt 0 ]] && sleep "$SSH_DELAY"; }
 
 DEVICE="${1:?Usage: $0 [options] <hostname>}"
 WORKDIR=$(mktemp -d "/tmp/junoscfg_test.XXXXXX")
@@ -90,8 +97,12 @@ echo "── Fetch ──"
 
 echo "  fetching json from $DEVICE ..."
 ssh -T $SSH_OPTS "$DEVICE" "show configuration | display json | no-more" > "$WORKDIR/device.json"
+
+ssh_wait
 echo "  fetching set from $DEVICE ..."
 ssh -T $SSH_OPTS "$DEVICE" "show configuration | display set | no-more"  > "$WORKDIR/device.set"
+
+ssh_wait
 echo "  fetching conf from $DEVICE ..."
 ssh -T $SSH_OPTS "$DEVICE" "show configuration | no-more"                > "$WORKDIR/device.conf"
 
@@ -169,6 +180,7 @@ for FILE in rt_conf.json rt_set.json; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     check_show_compare "$LOG" "$FILE"
@@ -183,6 +195,7 @@ for FILE in rt_json.conf; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     check_show_compare "$LOG" "$FILE"
@@ -197,6 +210,7 @@ for FILE in rt_json.set; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     check_show_compare "$LOG" "$FILE"
@@ -219,6 +233,7 @@ for FILE in anon.json; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     if grep -qi "commit check succeeds\|configuration check succeeds" "$LOG"; then
@@ -237,6 +252,7 @@ for FILE in anon.conf; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     if grep -qi "commit check succeeds\|configuration check succeeds" "$LOG"; then
@@ -255,6 +271,7 @@ for FILE in anon.set; do
     echo "# scp $FILE ${DEVICE}:${REMOTE}" >> "$LOG"
     echo "# ssh -T $SSH_OPTS $DEVICE $CMD" >> "$LOG"
     echo "# ---" >> "$LOG"
+    ssh_wait
     scp -q $SSH_OPTS "$WORKDIR/$FILE" "${DEVICE}:${REMOTE}"
     ssh -T $SSH_OPTS "$DEVICE" "$CMD" >> "$LOG" 2>&1 || true
     if grep -qi "commit check succeeds\|configuration check succeeds" "$LOG"; then
