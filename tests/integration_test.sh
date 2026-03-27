@@ -70,7 +70,7 @@ while [[ "${1:-}" == --* || "${1:-}" == -h || "${1:-}" == "-?" ]]; do
 done
 
 # delay between SSH sessions to avoid rate limiting
-ssh_wait() { [[ "$SSH_DELAY" -gt 0 ]] && sleep "$SSH_DELAY"; }
+ssh_wait() { [[ "$SSH_DELAY" -gt 0 ]] && sleep "$SSH_DELAY" || true; }
 
 DEVICE="${1:?Usage: $0 [options] <hostname>}"
 WORKDIR=$(mktemp -d "/tmp/junoscfg_test.XXXXXX")
