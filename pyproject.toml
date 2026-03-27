@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.5.5"
+version = "0.5.6"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
