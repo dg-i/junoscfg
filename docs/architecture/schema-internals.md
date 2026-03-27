@@ -184,6 +184,7 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `l` | `true` | Leaf node | xsd_parser |
 | `p` | `true` | Presence flag (no value) | xsd_parser |
 | `L` | `true` | Named list | xsd_parser |
+| `ll` | `true` | Leaf-list (repeated leaf, always array in JSON) | artifact_builder |
 | `nk` | `true` | Nokeyword | Group F fixes |
 | `o` | `true` | Oneliner (flat entry) | Group B2/H fixes |
 | `t` | `"child"` | Transparent container | Group H fix |
