@@ -390,7 +390,7 @@ artifacts at build time. These artifacts are bundled in the package for runtime 
 flowchart TD
     XSD["NETCONF XSD dump\n(output.xml)"] --> EXT["xsd_extractor.py\nextract &lt;xsd:schema&gt;"]
     EXT --> PARSE["xsd_parser.py\nparse → SchemaNode tree"]
-    PARSE --> FIX["xsd_fixes.py\napply 37 fixes (Groups A-H)"]
+    PARSE --> FIX["xsd_fixes.py\napply 41 fixes (Groups A-H)"]
     FIX --> BUILD["artifact_builder.py"]
     FIX --> SGEN["schema_generator.py"]
     FIX --> GGEN["grammar_generator.py"]

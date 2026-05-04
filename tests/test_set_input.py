@@ -270,7 +270,7 @@ class TestParserBugFixes:
         result = set_to_dict(source)
         mp = result["routing-options"]["maximum-prefixes"]
         assert mp["limit"] == "3000000"
-        assert mp["threshold"] == ["50"]
+        assert mp["threshold"] == "50"
         assert mp["log-interval"] == "5"
 
     def test_trigger_flat_dict_nokeyword(self) -> None:
@@ -298,7 +298,7 @@ class TestParserBugFixes:
         assert server["name"] == "198.51.100.1"
         assert server["version"] == "4"
         assert server["prefer"] == [None]
-        assert server["routing-instance"] == ["mgmt_junos"]
+        assert server["routing-instance"] == "mgmt_junos"
 
     def test_filter_interfaces_multiple_entries(self) -> None:
         """Bug 3: filter-interfaces interfaces creates dict entries."""

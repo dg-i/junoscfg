@@ -235,7 +235,7 @@ Each `FieldError` has `path`, `message`, `value`, and `expected` fields.
 
 ## Custom Artifacts
 
-The bundled validation artifacts are generated from the Junos 21.4R0 XSD. To validate
+The bundled validation artifacts are generated from the Junos 24.4R0 XSD. To validate
 against a different Junos version, generate artifacts from your device's XSD dump.
 
 ### Obtaining the NETCONF XSD Dump

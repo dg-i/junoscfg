@@ -17,7 +17,28 @@ def dict_to_json(config: dict[str, Any]) -> str:
     """
     config = _native_groups(config)
     _normalize_presence_flags(config)
+    config = _ensure_name_first(config)
     return json.dumps(wrap_configuration(config), indent=4) + "\n"
+
+
+def _ensure_name_first(obj: Any) -> Any:
+    """Walk the IR and move 'name' to be the first non-@ key in each list-entry dict.
+
+    Junos JSON requires the identifier key to appear first in named-list
+    array entries. Operational-attribute keys (starting with '@') may precede it.
+    """
+    if isinstance(obj, list):
+        return [_ensure_name_first(item) for item in obj]
+    if isinstance(obj, dict):
+        if "name" in obj:
+            non_at_keys = [k for k in obj if not k.startswith("@")]
+            if non_at_keys and non_at_keys[0] != "name":
+                at_keys = {k: v for k, v in obj.items() if k.startswith("@")}
+                rest = {k: v for k, v in obj.items() if not k.startswith("@") and k != "name"}
+                reordered = {**at_keys, "name": obj["name"], **rest}
+                return {k: _ensure_name_first(v) for k, v in reordered.items()}
+        return {k: _ensure_name_first(v) for k, v in obj.items()}
+    return obj
 
 
 def _native_groups(config: dict[str, Any]) -> dict[str, Any]:

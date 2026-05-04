@@ -431,3 +431,90 @@ class TestFieldValidationErrorExport:
     def test_importable_from_top_level(self) -> None:
         assert FieldValidationError is not None
         assert issubclass(FieldValidationError, Exception)
+
+
+class TestJsonNameFirst:
+    """JSON output must put 'name' first in every named-list entry."""
+
+    def test_yaml_with_uid_before_name(self) -> None:
+        source = (
+            "configuration:\n"
+            "  system:\n"
+            "    login:\n"
+            "      user:\n"
+            "        - uid: 2000\n"
+            "          class: operator\n"
+            "          name: john\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert list(user.keys())[0] == "name", "name must be first key in user list entry"
+
+    def test_yaml_name_already_first_unchanged(self) -> None:
+        source = (
+            "configuration:\n"
+            "  interfaces:\n"
+            "    interface:\n"
+            "      - name: ge-0/0/0\n"
+            "        description: uplink\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        iface = parsed["configuration"]["interfaces"]["interface"][0]
+        assert list(iface.keys())[0] == "name"
+        assert iface["name"] == "ge-0/0/0"
+
+    def test_at_key_before_name_preserved(self) -> None:
+        source = json.dumps(
+            {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {
+                                "description": "uplink",
+                                "@": {"inactive": True},
+                                "name": "ge-0/0/0",
+                            }
+                        ]
+                    }
+                }
+            }
+        )
+        result = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
+        parsed = json.loads(result)
+        iface = parsed["configuration"]["interfaces"]["interface"][0]
+        keys = list(iface.keys())
+        at_idx = keys.index("@") if "@" in keys else -1
+        name_idx = keys.index("name")
+        assert name_idx == 0 or (at_idx != -1 and at_idx < name_idx), (
+            "'name' must be first, or '@' must precede it"
+        )
+
+
+class TestUserClassSingle:
+    """system.login.user.class must be a scalar string, not an array."""
+
+    def test_set_user_class_scalar(self) -> None:
+        source = "set system login user john class operator"
+        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert user["name"] == "john"
+        assert user["class"] == "operator", f"class must be a scalar string, got {user['class']!r}"
+        assert not isinstance(user["class"], list)
+
+    def test_yaml_user_class_roundtrip(self) -> None:
+        source = (
+            "configuration:\n"
+            "  system:\n"
+            "    login:\n"
+            "      user:\n"
+            "        - name: john\n"
+            "          class: operator\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert user["class"] == "operator"
+        assert not isinstance(user["class"], list)
