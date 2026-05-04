@@ -542,3 +542,36 @@ class TestUserClassSingle:
             f"single-element class list must be coerced to scalar, got {user['class']!r}"
         )
         assert not isinstance(user["class"], list)
+
+
+class TestLeafListPromotion:
+    """YAML scalar values for leaf-list fields must be promoted to arrays."""
+
+    def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
+        """YAML scalar extended-vni-list must become a single-element JSON array."""
+        source = (
+            "configuration:\n"
+            "  protocols:\n"
+            "    evpn:\n"
+            "      encapsulation: vxlan\n"
+            "      extended-vni-list: 3001000-3001100\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
+        assert vni == ["3001000-3001100"], f"leaf-list scalar must be wrapped in array, got {vni!r}"
+
+    def test_yaml_list_leaf_list_unchanged(self) -> None:
+        """YAML list extended-vni-list with multiple entries must stay as an array."""
+        source = (
+            "configuration:\n"
+            "  protocols:\n"
+            "    evpn:\n"
+            "      extended-vni-list:\n"
+            "        - 3001000-3001100\n"
+            "        - 3002000-3002100\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
+        assert vni == ["3001000-3001100", "3002000-3002100"]
