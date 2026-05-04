@@ -518,3 +518,27 @@ class TestUserClassSingle:
         user = parsed["configuration"]["system"]["login"]["user"][0]
         assert user["class"] == "operator"
         assert not isinstance(user["class"], list)
+
+    def test_yaml_user_class_as_list_coerced(self) -> None:
+        """YAML with class as a single-element list must be coerced to scalar."""
+        source = (
+            "configuration:\n"
+            "  groups:\n"
+            "    group:\n"
+            "      - name: global-users\n"
+            "        system:\n"
+            "          login:\n"
+            "            user:\n"
+            "              - name: john\n"
+            "                uid: '2000'\n"
+            "                class:\n"
+            "                  - super-user\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        group = parsed["configuration"]["groups"][0]
+        user = group["system"]["login"]["user"][0]
+        assert user["class"] == "super-user", (
+            f"single-element class list must be coerced to scalar, got {user['class']!r}"
+        )
+        assert not isinstance(user["class"], list)
