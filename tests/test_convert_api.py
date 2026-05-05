@@ -431,3 +431,147 @@ class TestFieldValidationErrorExport:
     def test_importable_from_top_level(self) -> None:
         assert FieldValidationError is not None
         assert issubclass(FieldValidationError, Exception)
+
+
+class TestJsonNameFirst:
+    """JSON output must put 'name' first in every named-list entry."""
+
+    def test_yaml_with_uid_before_name(self) -> None:
+        source = (
+            "configuration:\n"
+            "  system:\n"
+            "    login:\n"
+            "      user:\n"
+            "        - uid: 2000\n"
+            "          class: operator\n"
+            "          name: john\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert list(user.keys())[0] == "name", "name must be first key in user list entry"
+
+    def test_yaml_name_already_first_unchanged(self) -> None:
+        source = (
+            "configuration:\n"
+            "  interfaces:\n"
+            "    interface:\n"
+            "      - name: ge-0/0/0\n"
+            "        description: uplink\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        iface = parsed["configuration"]["interfaces"]["interface"][0]
+        assert list(iface.keys())[0] == "name"
+        assert iface["name"] == "ge-0/0/0"
+
+    def test_at_key_before_name_preserved(self) -> None:
+        source = json.dumps(
+            {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {
+                                "description": "uplink",
+                                "@": {"inactive": True},
+                                "name": "ge-0/0/0",
+                            }
+                        ]
+                    }
+                }
+            }
+        )
+        result = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
+        parsed = json.loads(result)
+        iface = parsed["configuration"]["interfaces"]["interface"][0]
+        keys = list(iface.keys())
+        at_idx = keys.index("@") if "@" in keys else -1
+        name_idx = keys.index("name")
+        assert name_idx == 0 or (at_idx != -1 and at_idx < name_idx), (
+            "'name' must be first, or '@' must precede it"
+        )
+
+
+class TestUserClassSingle:
+    """system.login.user.class must be a scalar string, not an array."""
+
+    def test_set_user_class_scalar(self) -> None:
+        source = "set system login user john class operator"
+        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert user["name"] == "john"
+        assert user["class"] == "operator", f"class must be a scalar string, got {user['class']!r}"
+        assert not isinstance(user["class"], list)
+
+    def test_yaml_user_class_roundtrip(self) -> None:
+        source = (
+            "configuration:\n"
+            "  system:\n"
+            "    login:\n"
+            "      user:\n"
+            "        - name: john\n"
+            "          class: operator\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        user = parsed["configuration"]["system"]["login"]["user"][0]
+        assert user["class"] == "operator"
+        assert not isinstance(user["class"], list)
+
+    def test_yaml_user_class_as_list_coerced(self) -> None:
+        """YAML with class as a single-element list must be coerced to scalar."""
+        source = (
+            "configuration:\n"
+            "  groups:\n"
+            "    group:\n"
+            "      - name: global-users\n"
+            "        system:\n"
+            "          login:\n"
+            "            user:\n"
+            "              - name: john\n"
+            "                uid: '2000'\n"
+            "                class:\n"
+            "                  - super-user\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        group = parsed["configuration"]["groups"][0]
+        user = group["system"]["login"]["user"][0]
+        assert user["class"] == "super-user", (
+            f"single-element class list must be coerced to scalar, got {user['class']!r}"
+        )
+        assert not isinstance(user["class"], list)
+
+
+class TestLeafListPromotion:
+    """YAML scalar values for leaf-list fields must be promoted to arrays."""
+
+    def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
+        """YAML scalar extended-vni-list must become a single-element JSON array."""
+        source = (
+            "configuration:\n"
+            "  protocols:\n"
+            "    evpn:\n"
+            "      encapsulation: vxlan\n"
+            "      extended-vni-list: 3001000-3001100\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
+        assert vni == ["3001000-3001100"], f"leaf-list scalar must be wrapped in array, got {vni!r}"
+
+    def test_yaml_list_leaf_list_unchanged(self) -> None:
+        """YAML list extended-vni-list with multiple entries must stay as an array."""
+        source = (
+            "configuration:\n"
+            "  protocols:\n"
+            "    evpn:\n"
+            "      extended-vni-list:\n"
+            "        - 3001000-3001100\n"
+            "        - 3002000-3002100\n"
+        )
+        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
+        assert vni == ["3001000-3001100", "3002000-3002100"]

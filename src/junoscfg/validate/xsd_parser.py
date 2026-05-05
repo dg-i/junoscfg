@@ -12,10 +12,10 @@ from lxml import etree
 from junoscfg.validate.schema_node import Combinator, SchemaNode
 
 XSD_NS = "http://www.w3.org/2001/XMLSchema"
-JUNOS_NS = "http://xml.juniper.net/junos/21.4R0/junos"
 
-# Elements to skip during parsing
-_SKIP_REFS = {"undocumented", f"{{{JUNOS_NS}}}comment", "junos:comment"}
+# Elements to skip during parsing (ref= values and clark-notation local names)
+_SKIP_REFS = {"undocumented", "junos:comment"}
+_SKIP_REF_LOCALS = {"undocumented", "comment"}  # local names from clark-notation refs
 _SKIP_NAMES = {"undocumented", "apply-advanced", "junos:comment"}
 
 # Named types that are simple string wrappers (leaf types)
@@ -386,8 +386,9 @@ def _collect_children(
             child_name = child.get("name", "")
             ref = child.get("ref", "")
 
-            # Skip undocumented/comment refs
-            if ref and (ref in _SKIP_REFS or ref.split("}")[-1] in _SKIP_REFS):
+            # Skip undocumented/comment refs (handles both raw "junos:comment" and
+            # clark-notation "{ns}comment" regardless of Junos version namespace)
+            if ref and (ref in _SKIP_REFS or ref.split("}")[-1] in _SKIP_REF_LOCALS):
                 continue
             if child_name in _SKIP_NAMES:
                 continue

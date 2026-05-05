@@ -272,3 +272,30 @@ class TestGroupGCombinator:
 
         user_node = root.children["system"].children["login"].children["user"]
         assert user_node.combinator == Combinator.SEQ_CHOICE
+
+    def test_user_class_single(self):
+        class_node = SchemaNode(name="class", is_leaf=True, is_list=True)
+        user = SchemaNode(name="user", is_list=True, children={"class": class_node})
+        login = SchemaNode(name="login", children={"user": user})
+        system = SchemaNode(name="system", children={"login": login})
+        root = _make_root(("system", system))
+
+        fix = next(f for f in ALL_FIXES if f.id == "user-class-single")
+        applied = fix.apply(root)
+
+        assert applied is True
+        fixed = root.children["system"].children["login"].children["user"].children["class"]
+        assert fixed.is_leaf is True
+        assert fixed.is_list is False
+
+    def test_user_class_single_noop_when_already_fixed(self):
+        class_node = SchemaNode(name="class", is_leaf=True, is_list=False)
+        user = SchemaNode(name="user", is_list=True, children={"class": class_node})
+        login = SchemaNode(name="login", children={"user": user})
+        system = SchemaNode(name="system", children={"login": login})
+        root = _make_root(("system", system))
+
+        fix = next(f for f in ALL_FIXES if f.id == "user-class-single")
+        applied = fix.apply(root)
+
+        assert applied is False

@@ -491,6 +491,24 @@ def _fix_login_user_object(root: SchemaNode) -> bool:
     return True
 
 
+def _fix_user_class_single(root: SchemaNode) -> bool:
+    """Fix system.login.user.class: single-value leaf, not a leaf-list.
+
+    The 21.4 XSD has maxOccurs=unbounded on 'class' under login-user-object,
+    but a user can only belong to one login class. Applied as a safety net
+    even on XSD versions that already have this correct.
+    """
+    login = navigate(root, "system", "login")
+    if login:
+        user = login.children.get("user")
+        if user:
+            class_node = user.children.get("class")
+            if class_node is not None and class_node.is_list:
+                class_node.is_list = False
+                return True
+    return False
+
+
 # ── Fix Group H: Conversion Hints ─────────────────────────────────────
 # These flags encode runtime conversion behavior into the schema tree,
 # replacing hand-maintained constants in constants.py for JSON→set conversion.
@@ -858,6 +876,13 @@ ALL_FIXES: list[XsdFix] = [
         "Change login_user_object to sequential-choice",
         _ALL_TARGETS,
         _fix_login_user_object,
+    ),
+    XsdFix(
+        "user-class-single",
+        "combinator",
+        "Fix login user class: single-value leaf, not a leaf-list",
+        _ALL_TARGETS,
+        _fix_user_class_single,
     ),
     # Group H: Conversion hints (schema flags replacing runtime constants)
     XsdFix(

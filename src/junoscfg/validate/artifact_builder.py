@@ -6,6 +6,7 @@ Orchestrates XSD extraction, parsing, fixes, and artifact generation.
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -75,7 +76,7 @@ class ArtifactBuilder:
 
         # Metadata
         meta_path = str(output_dir / "junos-schema-meta.json")
-        _write_metadata(meta_path, stats, fixes_applied)
+        _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
         artifacts["metadata"] = meta_path
 
         return artifacts
@@ -119,7 +120,7 @@ class ArtifactBuilder:
         artifacts["structure-tree"] = structure_tree_path
 
         meta_path = str(output_dir / "junos-schema-meta.json")
-        _write_metadata(meta_path, stats, fixes_applied)
+        _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
         artifacts["metadata"] = meta_path
 
         return artifacts
@@ -156,14 +157,21 @@ def _count_stats(root: SchemaNode) -> dict[str, int]:
     }
 
 
+def _extract_junos_version(xsd_text: str) -> str:
+    """Extract Junos version from XSD namespace declaration."""
+    m = re.search(r'xmlns:junos="http://xml\.juniper\.net/junos/([^/"]+)/junos"', xsd_text)
+    return m.group(1) if m else "unknown"
+
+
 def _write_metadata(
     path: str,
     stats: dict[str, int],
     fixes_applied: int,
+    junos_version: str = "unknown",
 ) -> None:
     """Write schema metadata file."""
     meta = {
-        "junos_version": "21.4R0",
+        "junos_version": junos_version,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator_version": "0.2.0",
         "fixes_applied": fixes_applied,

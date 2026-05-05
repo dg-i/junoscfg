@@ -504,7 +504,7 @@ Example:
 
 ```bash
 junoscfg schema info
-# Schema version: 21.4R0
+# Schema version: 24.4R0
 # Generated at:   2026-02-13T12:00:00Z
 
 junoscfg schema info --artifacts ./my-artifacts/

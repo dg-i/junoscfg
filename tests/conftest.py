@@ -10,7 +10,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
-XSD_SOURCE = PROJECT_ROOT / "data" / "xml-schema-from-device.xml"
+XSD_SOURCE = PROJECT_ROOT.parent / "xsd" / "config-24.4.xsd"
 ARTIFACT_DIR = PROJECT_ROOT / "src" / "junoscfg" / "validate" / "data"
 
 

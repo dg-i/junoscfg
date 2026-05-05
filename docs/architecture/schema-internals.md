@@ -171,7 +171,7 @@ xsd_fixes.py ─────── Apply structural corrections (Groups A-H)
 ### Bundled Artifacts
 
 The package ships with pre-generated artifacts in `src/junoscfg/validate/data/`,
-generated from the Junos 21.4R0 XSD. These are used by default when no custom
+generated from the Junos 24.4R0 XSD. These are used by default when no custom
 artifacts are specified.
 
 ## Structure Tree Compact Format
