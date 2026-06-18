@@ -30,4 +30,4 @@ def filter_json_by_path(text: str, path_tokens: list[str], *, relative: bool = F
     if result is None:
         return ""
 
-    return json.dumps(result, indent=2) + "\n"
+    return json.dumps(result, indent=2, ensure_ascii=False) + "\n"
