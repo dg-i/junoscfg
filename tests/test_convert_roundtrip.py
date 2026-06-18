@@ -81,6 +81,46 @@ class TestJsonRoundTrip:
         roundtripped = json.loads(output)
         assert roundtripped["configuration"] == original
 
+    def test_leaf_annotation_ordering(self) -> None:
+        """@leaf-name must appear directly after its leaf in JSON output (Junos spec)."""
+        # Simulate IR where @virtual-gateway-address is inserted before the leaf
+        # (the order _ensure_name_first used to produce).
+        ir = {
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "irb",
+                        "unit": [
+                            {
+                                "name": "20",
+                                "family": {
+                                    "inet": {
+                                        "address": [
+                                            {
+                                                "@virtual-gateway-address": {"inactive": True},
+                                                "name": "10.2.16.13/20",
+                                                "virtual-gateway-address": "10.2.16.1",
+                                            }
+                                        ]
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        output = from_dict(ir, "json")
+        addr = json.loads(output)["configuration"]["interfaces"]["interface"][0]["unit"][0][
+            "family"
+        ]["inet"]["address"][0]
+        keys = list(addr.keys())
+        vga_idx = keys.index("virtual-gateway-address")
+        at_vga_idx = keys.index("@virtual-gateway-address")
+        assert at_vga_idx == vga_idx + 1, (
+            "@virtual-gateway-address must immediately follow virtual-gateway-address"
+        )
+
     def test_missing_configuration_raises(self) -> None:
         with pytest.raises(ValueError, match="No 'configuration' key"):
             to_dict('{"foo": "bar"}', "json")

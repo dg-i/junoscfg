@@ -20,7 +20,7 @@ def dict_to_json(config: dict[str, Any]) -> str:
     _normalize_presence_flags(config)
     _coerce_scalar_leaves(config, load_schema_tree())
     config = _ensure_name_first(config)
-    return json.dumps(wrap_configuration(config), indent=4) + "\n"
+    return json.dumps(wrap_configuration(config), indent=4, ensure_ascii=False) + "\n"
 
 
 def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:
@@ -59,23 +59,63 @@ def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:
 
 
 def _ensure_name_first(obj: Any) -> Any:
-    """Walk the IR and move 'name' to be the first non-@ key in each list-entry dict.
+    """Walk the IR and enforce Junos JSON key ordering in each dict.
 
-    Junos JSON requires the identifier key to appear first in named-list
-    array entries. Operational-attribute keys (starting with '@') may precede it.
+    Two rules from the Junos JSON spec:
+    1. ``"name"`` must be first in named-list array entries (non-``@`` keys).
+    2. ``"@leaf-name"`` (leaf annotation) must appear directly after its
+       corresponding ``"leaf-name"`` key.  Bare ``"@"`` (container annotation)
+       is placed first and is unaffected by rule 2.
     """
     if isinstance(obj, list):
         return [_ensure_name_first(item) for item in obj]
     if isinstance(obj, dict):
-        if "name" in obj:
-            non_at_keys = [k for k in obj if not k.startswith("@")]
-            if non_at_keys and non_at_keys[0] != "name":
-                at_keys = {k: v for k, v in obj.items() if k.startswith("@")}
-                rest = {k: v for k, v in obj.items() if not k.startswith("@") and k != "name"}
-                reordered = {**at_keys, "name": obj["name"], **rest}
-                return {k: _ensure_name_first(v) for k, v in reordered.items()}
-        return {k: _ensure_name_first(v) for k, v in obj.items()}
+        return {k: _ensure_name_first(v) for k, v in _reorder_dict_keys(obj).items()}
     return obj
+
+
+def _reorder_dict_keys(obj: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of *obj* with keys in Junos-compliant order.
+
+    Order produced:
+      1. Bare ``"@"`` container annotation (if present)
+      2. ``"name"`` (if present) — must lead named-list entries
+      3. All other non-``@`` keys, each immediately followed by its
+         ``"@<key>"`` leaf annotation when one exists
+      4. Any orphaned ``"@leaf-name"`` keys whose leaf is absent
+    """
+    bare_at = {"@": obj["@"]} if "@" in obj else {}
+    leaf_ats: dict[str, Any] = {}
+    non_at: dict[str, Any] = {}
+
+    for k, v in obj.items():
+        if k == "@":
+            continue
+        elif k.startswith("@"):
+            leaf_ats[k] = v
+        else:
+            non_at[k] = v
+
+    # name first among non-@ keys
+    ordered_keys: list[str] = []
+    if "name" in non_at:
+        ordered_keys.append("name")
+    ordered_keys.extend(k for k in non_at if k != "name")
+
+    result: dict[str, Any] = {**bare_at}
+    placed: set[str] = set()
+    for k in ordered_keys:
+        result[k] = non_at[k]
+        at_k = f"@{k}"
+        if at_k in leaf_ats:
+            result[at_k] = leaf_ats[at_k]
+            placed.add(at_k)
+
+    for k, v in leaf_ats.items():
+        if k not in placed:
+            result[k] = v
+
+    return result
 
 
 def _native_groups(config: dict[str, Any]) -> dict[str, Any]:
