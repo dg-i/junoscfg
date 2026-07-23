@@ -66,9 +66,10 @@ deactivate system host-name
 ## Supported Attributes
 
 Junoscfg recognizes the following attributes inside an annotation object
-(either form). Spellings must match exactly; other documented encodings of the
-same operations are listed under
-[Encoding Variants](#encoding-variants-and-unrecognized-attributes).
+(either form). Documented variant spellings — boolean/string forms and the
+YANG (jcmd) encoding — are normalized to these canonical forms when input is
+parsed (see
+[Encoding Variants](#encoding-variants-and-unrecognized-attributes)).
 
 | Attribute | Meaning | CLI / text equivalent |
 |-----------|---------|-----------------------|
@@ -250,23 +251,28 @@ set system host-name router1
 
 ## Encoding Variants and Unrecognized Attributes
 
-Junoscfg matches the attribute spellings from the
-[Supported Attributes](#supported-attributes) table exactly. Juniper's
-documentation describes several other encodings of the same operations; none
-of them are currently interpreted — like any unrecognized attribute, they are
-preserved verbatim in JSON and YAML output and silently ignored in set and
-structured output:
+Juniper's documentation describes several encodings of the same operations.
+Junoscfg normalizes these variants to the canonical spellings when parsing
+input, so every output format — including JSON and YAML — emits the canonical
+form:
 
-| Variant | Where it appears |
-|---------|------------------|
-| `"inactive": "inactive"` (string form) | Mirrors the XML attribute `inactive="inactive"` |
-| `"protect": true`, `"active": true/false` (boolean forms) | Shown in current Juniper JSON mapping documentation |
-| `"operation": "create"`, `"operation": "merge"` | NETCONF-style load operations (only `replace` and `delete` are interpreted) |
-| `"junos-configuration-metadata:active/comment/protect"` | YANG metadata encoding (`jcmd` module) used in YANG-compliant NETCONF sessions |
-| `"openconfig-metadata:protobuf-metadata"` | OpenConfig metadata at the configuration root |
+| Variant | Normalized to |
+|---------|---------------|
+| `"inactive": "inactive"` (string form, mirroring the XML attribute) | `"inactive": true` |
+| `"protect": true` / `"protect": false` (boolean forms from current Juniper JSON docs) | `"protect": "protect"` / removed |
+| `"active": true` / `"active": false` | `"active": "active"` / `"inactive": true` |
+| `"junos-configuration-metadata:active"` (YANG `jcmd` module, boolean) | `"active": "active"` / `"inactive": true` |
+| `"junos-configuration-metadata:protect"` (boolean) | `"protect": "protect"` / removed |
+| `"junos-configuration-metadata:comment"` | `"comment"` (still uninterpreted) |
 
-If you need one of these variants interpreted, normalize it to the supported
-spelling before conversion (e.g. with `jq`).
+Truly unrecognized attributes are preserved verbatim in JSON and YAML output
+and silently ignored in set and structured output:
+
+- `"operation": "create"` and `"operation": "merge"` — NETCONF-style load
+  operations (only `replace` and `delete` are interpreted)
+- `"openconfig-metadata:protobuf-metadata"` — OpenConfig metadata at the
+  configuration root
+- Read-only `junos:*` metadata and `comment` content (see above)
 
 ## References
 
