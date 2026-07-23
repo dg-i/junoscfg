@@ -500,9 +500,8 @@ class DictWalker:
             )
 
             if not has_content:
-                # Delete-only nodes emit just the delete command in set mode;
-                # structured mode needs the pushed path for ConfigStore marks.
-                if "delete" not in attrs or self._is_structured_mode():
+                # Delete-only nodes emit just the delete command
+                if "delete" not in attrs:
                     output.emit(new_path)
             elif is_oneliner:
                 self._emit_oneliner(key, formatted_name, remaining, path, schema_node)
@@ -520,9 +519,8 @@ class DictWalker:
             has_content = any(not k.startswith("@") for k in hash_)
 
             if not has_content:
-                # Delete-only nodes emit just the delete command in set mode;
-                # structured mode needs the pushed path for ConfigStore marks.
-                if "delete" not in attrs or self._is_structured_mode():
+                # Delete-only nodes emit just the delete command
+                if "delete" not in attrs:
                     output.emit(new_path)
             else:
                 self._walk(

@@ -237,10 +237,6 @@ class TestKnownBugs:
         lines = _to_set(source).strip().splitlines()
         assert lines.index("set system ntp server 10.0.0.1") < lines.index("delete system ntp")
 
-    @pytest.mark.xfail(
-        reason="B4: annotation-only leaf dict triggers a spurious field-validate warning",
-        strict=True,
-    )
     def test_no_field_validate_warning_for_annotation_only_leaf(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
@@ -248,10 +244,6 @@ class TestKnownBugs:
         _to_set(source)
         assert "field-validate" not in capsys.readouterr().err
 
-    @pytest.mark.xfail(
-        reason="B5: structured output renders a non-Junos delete: prefix",
-        strict=True,
-    )
     def test_no_delete_prefix_in_structured_output(self) -> None:
         source = _json({"system": {"ntp": {"@": {"operation": "delete"}}}})
         assert "delete:" not in _to_structured(source)

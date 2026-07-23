@@ -96,7 +96,7 @@ Which annotations junoscfg *reads* from each input format:
 | inactive | `"@": {"inactive": true}` | `deactivate <path>` | `inactive:` prefix |
 | active | `"@": {"active": "active"}` | `activate <path>` | — (active statements carry no marker) |
 | replace | `"@": {"operation": "replace"}` | — (no set command exists) | `replace:` prefix |
-| delete | `"@": {"operation": "delete"}` | `delete <path>` | — (not part of the format) |
+| delete | `"@": {"operation": "delete"}` | `delete <path>` | `delete:` prefix (legacy junoscfg output only) |
 | protect | `"@": {"protect": "protect"}` | `protect <path>` | `protect:` prefix |
 | comment | preserved, not interpreted | `annotate` lines silently dropped | `/* ... */` and `#` comments silently dropped |
 | `junos:*` metadata | preserved, not interpreted | — | — |
@@ -108,7 +108,7 @@ Which annotations junoscfg *writes* to each output format:
 | inactive | `"@": {"inactive": true}` | `deactivate <path>` | `inactive:` prefix |
 | active | `"@": {"active": "active"}` | `activate <path>` | no marker (active is the default state) |
 | replace | preserved | dropped — no set equivalent | `replace:` prefix |
-| delete | preserved | `delete <path>` (see limitations below) | `delete:` prefix — not valid Junos syntax; avoid |
+| delete | preserved | `delete <path>` | dropped with a stderr note |
 | protect | preserved | `protect <path>` | `protect:` prefix |
 | comment, `junos:*`, unrecognized | preserved verbatim | dropped | dropped |
 
@@ -182,11 +182,12 @@ result = convert_config(json_with_delete, from_format=Format.JSON, to_format=For
 # delete system host-name
 ```
 
-!!! warning "Known limitations"
-    - The leaf-as-object form above triggers a field-validation warning on
-      stderr; suppress it with `--no-field-validate`.
-    - In structured output, `operation: delete` renders a `delete:` prefix,
-      which is not valid Junos syntax. Use set output for delete operations.
+!!! note "Structured output"
+    The structured (curly-brace) format has no way to express delete
+    operations. Delete annotations are dropped from structured output with a
+    note on stderr — use set output for delete operations. `delete:` prefixes
+    in structured *input* (emitted by junoscfg versions before 0.5.14) are
+    still parsed for backward compatibility.
 
 ## Comments (`annotate`)
 

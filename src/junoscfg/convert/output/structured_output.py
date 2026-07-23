@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from typing import Any
 
 from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
@@ -16,6 +17,7 @@ class StructuredWalkOutput(WalkOutput):
     def __init__(self) -> None:
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
+        self._dropped_deletes: list[str] = []
 
     def emit(self, hierarchy: list[str]) -> None:
         self.config.push("\n".join(hierarchy))
@@ -38,7 +40,9 @@ class StructuredWalkOutput(WalkOutput):
         pass  # Active is the default state
 
     def emit_delete(self, hierarchy: list[str]) -> None:
-        self._deferred.append(("delete", hierarchy))
+        # The structured format cannot represent delete operations; dropped
+        # with an aggregated note in finalize()
+        self._dropped_deletes.append(" ".join(hierarchy))
 
     def finalize(self) -> None:
         for op, hierarchy in self._deferred:
@@ -49,8 +53,12 @@ class StructuredWalkOutput(WalkOutput):
                 self.config.mark_replaced(path_str)
             elif op == "protect":
                 self.config.mark_protected(path_str)
-            elif op == "delete":
-                self.config.mark_deleted(path_str)
+        if self._dropped_deletes:
+            print(
+                f"note: {len(self._dropped_deletes)} delete annotation(s) dropped: "
+                "structured output cannot represent delete operations",
+                file=sys.stderr,
+            )
 
 
 def dict_to_structured(config: dict[str, Any]) -> str:

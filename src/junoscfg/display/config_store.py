@@ -154,7 +154,6 @@ class ConfigStore:
         self.deactivated = False
         self.replaced = False
         self.protected = False
-        self.deleted = False
 
     def push(self, path_str: str) -> None:
         """Add a newline-separated hierarchical path to the tree."""
@@ -209,21 +208,6 @@ class ConfigStore:
             statement, store = self._inverse_match(path_str)
             if statement is not None and store is not None:
                 store.protected = True
-
-    def mark_deleted(self, path_str: str) -> None:
-        """Mark a path as deleted."""
-        statement, store = self._match(path_str)
-
-        if statement is not None and store is not None:
-            if statement == path_str:
-                store.deleted = True
-            else:
-                remaining = re.sub(f"^{re.escape(statement)} *", "", path_str)
-                store.mark_deleted(remaining)
-        else:
-            statement, store = self._inverse_match(path_str)
-            if statement is not None and store is not None:
-                store.deleted = True
 
     def empty(self) -> bool:
         """Check if this node has no children."""
@@ -345,8 +329,6 @@ class ConfigStore:
             prefix += "protect: "
         if node.deactivated:
             prefix += "inactive: "
-        if node.deleted:
-            prefix += "delete: "
         return f"{prefix}{key}" if prefix else key
 
     def subtree(self, path_tokens: list[str], *, relative: bool = True) -> ConfigStore:
@@ -392,7 +374,6 @@ class ConfigStore:
         last.deactivated = node.deactivated
         last.replaced = node.replaced
         last.protected = node.protected
-        last.deleted = node.deleted
         current._children[path_tokens[-1]] = last
         return result
 
@@ -410,7 +391,6 @@ class ConfigStore:
         clone.deactivated = self.deactivated
         clone.replaced = self.replaced
         clone.protected = self.protected
-        clone.deleted = self.deleted
         for key, child in self._children.items():
             clone._children[key] = child._reroot_at(depth + 1)
         return clone

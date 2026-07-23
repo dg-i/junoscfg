@@ -309,6 +309,14 @@ class FieldValidator:
                 self._validate_leaf(item, path, schema_node, result)
             return
 
+        # Leaf-as-object form: annotation keys carry no value to validate
+        # (e.g. {"host-name": {"@": {"operation": "delete"}}})
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if not k.startswith("@"):
+                    self._validate_leaf(v, path, schema_node, result)
+            return
+
         str_value = str(value)
         dot_path = ".".join(path)
 

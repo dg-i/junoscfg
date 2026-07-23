@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 import yaml
+
+if TYPE_CHECKING:
+    import pytest
 
 from junoscfg import Format, convert_config
 from junoscfg.display import filter_set_by_path, is_display_set
@@ -47,8 +51,8 @@ class TestJsonDeleteToSet:
 class TestJsonDeleteToStructured:
     """JSON with operation=delete → structured mode."""
 
-    def test_delete_container_structured(self) -> None:
-        """Container-level delete produces 'delete:' prefix in structured output."""
+    def test_delete_container_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Delete annotations are dropped from structured output with a note."""
         data = {
             "configuration": {
                 "system": {
@@ -62,11 +66,12 @@ class TestJsonDeleteToStructured:
         result = convert_config(
             json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
         )
-        assert "delete:" in result
-        assert "services" in result
+        assert "delete:" not in result
+        assert "ssh" in result  # content still renders
+        assert "delete annotation(s) dropped" in capsys.readouterr().err
 
-    def test_delete_leaf_structured(self) -> None:
-        """Leaf-level delete produces 'delete:' prefix in structured output."""
+    def test_delete_leaf_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """Leaf-level delete annotations are dropped from structured output."""
         data = {
             "configuration": {
                 "system": {
@@ -78,19 +83,20 @@ class TestJsonDeleteToStructured:
         result = convert_config(
             json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
         )
-        assert "delete:" in result
+        assert "delete:" not in result
         assert "host-name" in result
+        assert "delete annotation(s) dropped" in capsys.readouterr().err
 
 
 class TestSetToStructuredDelete:
-    """'delete' set commands → structured with delete: prefix."""
+    """'delete' set commands cannot be represented in structured output."""
 
-    def test_delete_command_to_structured(self) -> None:
-        """'delete system services ssh' → structured with delete: prefix."""
+    def test_delete_command_to_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """A delete-only node is omitted from structured output with a note."""
         input_text = "set system services ssh\ndelete system services ssh"
         result = convert_config(input_text, from_format=Format.SET, to_format=Format.STRUCTURED)
-        assert "delete:" in result
-        assert "ssh" in result
+        assert result.strip() == ""
+        assert "delete annotation(s) dropped" in capsys.readouterr().err
 
 
 class TestStructuredToSetDelete:
