@@ -169,53 +169,20 @@ junoscfg -i json -e set config.json --path "system.syslog" --relative
 
 ## Operational Attributes
 
-Junos configurations can include operational attributes like `inactive:`, `replace:`, and `protect:`.
-
-### Inactive Elements
-
-Inactive elements are preserved through conversion:
-
-- **JSON/XML to set**: Emits `deactivate` commands
-- **Set to structured**: Adds `inactive:` prefix
-
-### Replace and Protect
-
-The `replace:` and `protect:` attributes are preserved through the JSON→structured
-conversion path. The pipeline handles these via `DictWalker._read_attrs()` →
-`StructuredWalkOutput.emit_replace()` → `ConfigStore.mark_replaced()`.
+Junos configurations carry operational attributes — `inactive:`, `replace:`,
+`protect:`, and delete operations — encoded in JSON and YAML as `@` annotation
+keys. Junoscfg preserves these through conversion and renders them as meta
+commands (`deactivate`, `activate`, `protect`, `delete`) in set output and as
+statement prefixes (`inactive:`, `replace:`, `protect:`) in structured output:
 
 ```python
 from junoscfg import convert_config, Format
 
-# Pipeline preserves replace: and protect: attributes
-json_with_attrs = '{"configuration":{"system":{"@":{"replace":"replace"},"host-name":"router1"}}}'
+json_with_attrs = '{"configuration":{"system":{"@":{"operation":"replace"},"host-name":"router1"}}}'
 result = convert_config(json_with_attrs, from_format=Format.JSON, to_format=Format.STRUCTURED)
+# replace: system host-name router1;
 ```
 
-## Inline Meta Commands
-
-Meta commands (`deactivate`, `protect`, `activate`, `delete`) are emitted inline with
-their related `set` commands, preserving logical ordering. For example, when converting
-a JSON configuration where `system ntp` is inactive:
-
-```
-set system ntp server 10.0.0.1
-deactivate system ntp
-set system syslog host 10.0.0.2
-```
-
-The `deactivate` line appears immediately after the related `set` commands, not deferred
-to the end of the output. This makes the output easier to read and apply in sequence.
-
-## Delete Operations
-
-The conversion pipeline supports `delete` operations via the Junos JSON `@` attribute.
-Use the `{"@": {"operation": "delete"}}` format to generate `delete` commands in set output:
-
-```python
-from junoscfg import convert_config, Format
-
-json_with_delete = '{"configuration":{"system":{"host-name":{"@":{"operation":"delete"}}}}}'
-result = convert_config(json_with_delete, from_format=Format.JSON, to_format=Format.SET)
-# delete system host-name
-```
+See [Operational Attributes (`@` Annotations)](annotations.md) for the full
+syntax (container vs. leaf annotations), the supported attribute table,
+per-format behavior, and read-only `junos:*` metadata.

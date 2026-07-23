@@ -86,6 +86,6 @@ Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 Key sections:
 
 - **Getting Started** — Installation and usage examples
-- **User Guide** — Conversion, validation, and CLI reference
+- **User Guide** — Conversion, operational attributes (`@` annotations), validation, and CLI reference
 - **API Reference** — Auto-generated Python API docs
 - **Architecture** — Design decisions and schema internals

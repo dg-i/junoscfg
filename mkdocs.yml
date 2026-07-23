@@ -27,6 +27,7 @@ nav:
   - Getting Started: getting-started.md
   - User Guide:
       - Conversion: guide/conversion.md
+      - Operational Attributes (@): guide/annotations.md
       - Validation: guide/validation.md
       - Edit YAML (Ansible): edityaml.md
       - CLI Reference: guide/cli.md
@@ -72,6 +73,7 @@ nav:
 
 markdown_extensions:
   - admonition
+  - footnotes
   - pymdownx.highlight
   - pymdownx.superfences:
       custom_fences:
