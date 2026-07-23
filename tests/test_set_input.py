@@ -672,7 +672,7 @@ SET_ROUND_TRIP_SOURCES = [
         "set system host-name r1\nset system domain-name example.com\n"
         "set system name-server 8.8.8.8\nset system name-server 8.8.4.4\n"
     ),
-    "deactivate system\nset system host-name r1\n",
+    "set system host-name r1\ndeactivate system\n",
     "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n",
     (
         "set firewall family inet filter PROTECT term accept-ssh from protocol tcp\n"

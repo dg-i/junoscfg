@@ -18,8 +18,11 @@ class SetConverter:
         # set interfaces ge-0/0/0 description uplink
     """
 
-    def __init__(self, source: str | TextIO) -> None:
+    _PREFIX_TAGS = ("replace: ", "protect: ", "inactive: ", "delete: ")
+
+    def __init__(self, source: str | TextIO, *, emit_replace: bool = False) -> None:
         self._input = source
+        self._emit_replace = emit_replace
 
     def to_set(self) -> str:
         """Convert structured config to display set format."""
@@ -104,46 +107,54 @@ class SetConverter:
                 i += 1
         return "".join(result).strip()
 
-    @staticmethod
-    def _transform_line(current_stack: list[str], text: str) -> str:
+    @classmethod
+    def _strip_prefixes(cls, text: str) -> tuple[str, set[str]]:
+        """Strip leading operational tags and report which were found.
+
+        Junos operational tags (``replace:``, ``protect:``, ``inactive:``,
+        ``delete:``) only ever lead a statement, possibly stacked. Anything
+        past the first non-tag token — including quoted values that happen
+        to contain tag text — is left untouched.
+        """
+        found: set[str] = set()
+        while True:
+            for tag in cls._PREFIX_TAGS:
+                if text.startswith(tag):
+                    found.add(tag[:-2])
+                    text = text[len(tag) :]
+                    break
+            else:
+                return text, found
+
+    def _transform_line(self, current_stack: list[str], text: str) -> str:
         """Build set/deactivate/protect lines from stack context and statement.
 
-        Strips operational prefixes (replace:, protect:, inactive:) and
-        emits corresponding commands for prefixes that have set equivalents.
+        Strips operational prefixes (replace:, protect:, inactive:, delete:)
+        and emits corresponding commands for prefixes that have set
+        equivalents. When ``emit_replace`` is set, ``replace:`` additionally
+        emits a pseudo ``replace <path>`` line for the structured-input
+        bridge (not part of the display-set format).
         """
         statements: list[str] = []
         current_statement = ""
 
+        def emit_meta(tags: set[str], path: str) -> None:
+            if "protect" in tags:
+                statements.append(f"protect {path}")
+            if "inactive" in tags:
+                statements.append(f"deactivate {path}")
+            if "delete" in tags:
+                statements.append(f"delete {path}")
+            if "replace" in tags and self._emit_replace:
+                statements.append(f"replace {path}")
+
         for stack_entry in current_stack:
-            entry = stack_entry
-            has_protect = "protect: " in entry
-            has_inactive = "inactive: " in entry
-            has_delete = "delete: " in entry
-            entry = entry.replace("replace: ", "")
-            entry = entry.replace("protect: ", "")
-            entry = entry.replace("inactive: ", "")
-            entry = entry.replace("delete: ", "")
-            if has_protect:
-                statements.append(f"protect {current_statement}{entry}")
-            if has_inactive:
-                statements.append(f"deactivate {current_statement}{entry}")
-            if has_delete:
-                statements.append(f"delete {current_statement}{entry}")
+            entry, tags = self._strip_prefixes(stack_entry)
+            emit_meta(tags, f"{current_statement}{entry}")
             current_statement += f"{entry} "
 
-        has_protect = "protect: " in text
-        has_inactive = "inactive: " in text
-        has_delete = "delete: " in text
-        text = text.replace("replace: ", "")
-        text = text.replace("protect: ", "")
-        text = text.replace("inactive: ", "")
-        text = text.replace("delete: ", "")
-        if has_protect:
-            statements.append(f"protect {current_statement}{text}")
-        if has_inactive:
-            statements.append(f"deactivate {current_statement}{text}")
-        if has_delete:
-            statements.append(f"delete {current_statement}{text}")
+        text, tags = self._strip_prefixes(text)
+        emit_meta(tags, f"{current_statement}{text}")
 
         statements.insert(0, f"set {current_statement}{text}")
         return "\n".join(statements)

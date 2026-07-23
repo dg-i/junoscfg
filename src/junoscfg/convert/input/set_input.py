@@ -47,6 +47,12 @@ def set_to_dict(source: str) -> dict[str, Any]:
             tokens = _tokenize(line[9:])
             if tokens:
                 _apply_meta(config, tokens, schema, "active", "active")
+        elif line.startswith("replace "):
+            # Pseudo command emitted by the structured-input bridge
+            # (SetConverter with emit_replace=True); not display-set syntax.
+            tokens = _tokenize(line[8:])
+            if tokens:
+                _apply_meta(config, tokens, schema, "operation", "replace")
 
     return config
 
@@ -513,6 +519,12 @@ def _apply_meta(
             current_schema = child
             i += 1
             continue
+
+        # Scalar leaf followed by its value token(s): annotate the leaf and
+        # ignore the trailing value (e.g. "deactivate system host-name r1")
+        if child.get("l"):
+            current.setdefault(f"@{token}", {})[attr_key] = attr_value
+            return
 
         # Fallback
         current.setdefault("@", {})[attr_key] = attr_value

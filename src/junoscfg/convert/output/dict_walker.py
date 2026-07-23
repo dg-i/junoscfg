@@ -492,8 +492,6 @@ class DictWalker:
             else:
                 new_path = path + [f"{key} {formatted_name}"]
 
-            self._emit_attrs(new_path, attrs)
-
             is_oneliner = (
                 self._is_structured_mode()
                 and not skip_key
@@ -502,7 +500,10 @@ class DictWalker:
             )
 
             if not has_content:
-                output.emit(new_path)
+                # Delete-only nodes emit just the delete command in set mode;
+                # structured mode needs the pushed path for ConfigStore marks.
+                if "delete" not in attrs or self._is_structured_mode():
+                    output.emit(new_path)
             elif is_oneliner:
                 self._emit_oneliner(key, formatted_name, remaining, path, schema_node)
             else:
@@ -511,21 +512,26 @@ class DictWalker:
                     new_path,
                     schema_node=schema_node,
                 )
-        else:
-            new_path = path if skip_key else path + [key]
 
             self._emit_attrs(new_path, attrs)
+        else:
+            new_path = path if skip_key else path + [key]
 
             has_content = any(not k.startswith("@") for k in hash_)
 
             if not has_content:
-                output.emit(new_path)
+                # Delete-only nodes emit just the delete command in set mode;
+                # structured mode needs the pushed path for ConfigStore marks.
+                if "delete" not in attrs or self._is_structured_mode():
+                    output.emit(new_path)
             else:
                 self._walk(
                     hash_,
                     new_path,
                     schema_node=schema_node,
                 )
+
+            self._emit_attrs(new_path, attrs)
 
     def _is_structured_mode(self) -> bool:
         """Check if the output strategy is structured mode (for oneliner logic)."""

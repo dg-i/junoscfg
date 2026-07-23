@@ -193,50 +193,36 @@ class TestStructuredInputPrefixes:
 class TestKnownBugs:
     """Strict xfail regressions for confirmed bugs; markers removed as fixes land."""
 
-    @pytest.mark.xfail(
-        reason="B1: conf leaf-level inactive: attaches to the parent container",
-        strict=True,
-    )
     def test_conf_leaf_inactive_targets_leaf(self) -> None:
         source = "system {\n    inactive: host-name r1;\n    location dc-a;\n}\n"
         lines = _to_set(source, from_format=Format.STRUCTURED).strip().splitlines()
         assert "deactivate system host-name" in lines
         assert "deactivate system" not in lines
 
-    @pytest.mark.xfail(
-        reason="B2: quoted values containing prefix text are corrupted",
-        strict=True,
-    )
     def test_conf_quoted_value_not_corrupted(self) -> None:
-        source = 'system {\n    location "inactive: rack";\n}\n'
+        source = (
+            'interfaces {\n    ge-0/0/0 {\n        description "inactive: do not use";\n    }\n}\n'
+        )
         ir = to_dict(source, "structured")
-        assert ir == {"system": {"location": "inactive: rack"}}
+        assert ir == {
+            "interfaces": {
+                "interface": [{"name": "ge-0/0/0", "description": "inactive: do not use"}]
+            }
+        }
         result = _to_set(source, from_format=Format.STRUCTURED)
-        assert 'set system location "inactive: rack"' in result
+        assert 'set interfaces ge-0/0/0 description "inactive: do not use"' in result
         assert "deactivate" not in result
 
-    @pytest.mark.xfail(
-        reason="B3: annotation-only delete node emits a stray bare set line",
-        strict=True,
-    )
     def test_delete_only_node_emits_only_delete(self) -> None:
         source = _json({"system": {"ntp": {"@": {"operation": "delete"}}}})
         lines = _to_set(source).strip().splitlines()
         assert lines == ["delete system ntp"]
 
-    @pytest.mark.xfail(
-        reason="B3: container meta commands are emitted before the node's content",
-        strict=True,
-    )
     def test_container_deactivate_after_content(self) -> None:
         source = _json({"system": {"@": {"inactive": True}, "host-name": "r1"}})
         lines = _to_set(source).strip().splitlines()
         assert lines.index("set system host-name r1") < lines.index("deactivate system")
 
-    @pytest.mark.xfail(
-        reason="B3: container delete is emitted before content, re-creating the node",
-        strict=True,
-    )
     def test_container_delete_after_content(self) -> None:
         source = _json(
             {
@@ -270,10 +256,6 @@ class TestKnownBugs:
         source = _json({"system": {"ntp": {"@": {"operation": "delete"}}}})
         assert "delete:" not in _to_structured(source)
 
-    @pytest.mark.xfail(
-        reason="B6: conf replace: prefix is dropped by the set-command bridge",
-        strict=True,
-    )
     def test_conf_replace_prefix_reaches_ir(self) -> None:
         source = "replace: system {\n    host-name r1;\n}\n"
         ir = to_dict(source, "structured")

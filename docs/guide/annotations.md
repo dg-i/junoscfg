@@ -93,21 +93,13 @@ Which annotations junoscfg *reads* from each input format:
 
 | Attribute | JSON / YAML input | Set input | Structured input |
 |-----------|-------------------|-----------|------------------|
-| inactive | `"@": {"inactive": true}` | `deactivate <path>` | `inactive:` prefix[^1] |
+| inactive | `"@": {"inactive": true}` | `deactivate <path>` | `inactive:` prefix |
 | active | `"@": {"active": "active"}` | `activate <path>` | — (active statements carry no marker) |
-| replace | `"@": {"operation": "replace"}` | — (no set command exists) | not parsed — `replace:` prefix is silently dropped[^2] |
+| replace | `"@": {"operation": "replace"}` | — (no set command exists) | `replace:` prefix |
 | delete | `"@": {"operation": "delete"}` | `delete <path>` | — (not part of the format) |
 | protect | `"@": {"protect": "protect"}` | `protect <path>` | `protect:` prefix |
 | comment | preserved, not interpreted | `annotate` lines silently dropped | `/* ... */` and `#` comments silently dropped |
 | `junos:*` metadata | preserved, not interpreted | — | — |
-
-[^1]:
-    Leaf-level `inactive:` in structured input (e.g. `inactive: host-name r1;`)
-    currently attaches to the parent container, producing `deactivate system`
-    instead of `deactivate system host-name` — known bug.
-[^2]:
-    Round-tripping structured → JSON → structured therefore loses `replace:`
-    marks.
 
 Which annotations junoscfg *writes* to each output format:
 
@@ -191,9 +183,6 @@ result = convert_config(json_with_delete, from_format=Format.JSON, to_format=For
 ```
 
 !!! warning "Known limitations"
-    - For a node that contains *only* an annotation (as above), the converter
-      currently also emits a redundant bare `set <path>` line alongside the
-      `delete` line — review delete output before applying it.
     - The leaf-as-object form above triggers a field-validation warning on
       stderr; suppress it with `--no-field-validate`.
     - In structured output, `operation: delete` renders a `delete:` prefix,

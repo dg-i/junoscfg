@@ -14,5 +14,5 @@ from junoscfg.display.set_converter import SetConverter
 
 def structured_to_dict(source: str) -> dict[str, Any]:
     """Parse structured configuration into the IR dict."""
-    set_commands = SetConverter(source).to_set()
+    set_commands = SetConverter(source, emit_replace=True).to_set()
     return set_to_dict(set_commands)
