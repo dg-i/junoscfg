@@ -39,6 +39,12 @@ junoscfg -i json -e set --anonymize-all config.json
 # Anonymize with regex patterns (e.g. match site codes)
 junoscfg -e set --anonymize-sensitive-patterns 'LAX\d+' config.json
 
+# Find config objects that are defined but never referenced
+junoscfg audit unused config.conf
+
+# Generate a delete script for unused objects, with review comments
+junoscfg audit unused -o delete-script-verbose config.conf
+
 # Retrieve XSD dump and generate schema artifacts
 echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-configuration</namespace> </get-xnm-information> </rpc>" | ssh -Csp 830 router.example.com netconf > netconf.xml
 junoscfg schema generate netconf.xml -o ./artifacts/
@@ -86,6 +92,6 @@ Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 Key sections:
 
 - **Getting Started** — Installation and usage examples
-- **User Guide** — Conversion, operational attributes (`@` annotations), validation, and CLI reference
+- **User Guide** — Conversion, operational attributes (`@` annotations), validation, audit, and CLI reference
 - **API Reference** — Auto-generated Python API docs
 - **Architecture** — Design decisions and schema internals

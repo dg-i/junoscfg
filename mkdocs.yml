@@ -29,6 +29,7 @@ nav:
       - Conversion: guide/conversion.md
       - Operational Attributes (@): guide/annotations.md
       - Validation: guide/validation.md
+      - Unused-Object Audit: guide/audit.md
       - Edit YAML (Ansible): edityaml.md
       - CLI Reference: guide/cli.md
   - API Reference:
@@ -37,6 +38,7 @@ nav:
       - junoscfg.display: api/display.md
       - junoscfg.validate: api/validate.md
       - junoscfg.anonymize: api/anonymize.md
+      - junoscfg.audit: api/audit.md
       - Internals:
           - junoscfg.convert: api/internals/convert.md
           - junoscfg.convert.field_validator: api/internals/field_validator.md
@@ -65,6 +67,10 @@ nav:
           - junoscfg.anonymize.walker: api/internals/anonymize_walker.md
           - junoscfg.anonymize.revert: api/internals/anonymize_revert.md
           - junoscfg.anonymize.path_filter: api/internals/anonymize_path_filter.md
+          - junoscfg.audit.registry: api/internals/audit_registry.md
+          - junoscfg.audit.walker: api/internals/audit_walker.md
+          - junoscfg.audit.engine: api/internals/audit_engine.md
+          - junoscfg.audit.render: api/internals/audit_render.md
   - Architecture:
       - Developer Guide: architecture/developer-guide.md
       - Design Decisions: architecture/design-decisions.md
