@@ -565,14 +565,78 @@ junoscfg edityaml ansibilize -p "host:system.host-name" \
   -P "addr:interfaces.interface[*].unit[*].family.*.address[*].name" config.yaml
 ```
 
+## Audit Commands
+
+Analyze configurations for problems. See the [Audit guide](audit.md) for
+concepts, the registry format, and limitations.
+
+### audit unused
+
+Find config objects (policy statements, prefix lists, firewall filters,
+config groups, ...) that are defined but never referenced. Works on the
+parsed configuration — any input format — and classifies each finding as
+strict `unused` or `probably-unused`. Findings are suggestions requiring
+human review.
+
+```bash
+junoscfg audit unused [OPTIONS] [FILE]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-i, --import-format FORMAT` | Input format: `set`, `structured`, `json`, `yaml`, `xml`, or `conf` (default: auto-detect) |
+| `--types TYPES` | Comma-separated registry types to audit, or `all` (default: `all`) |
+| `--match REGEX` | Only check definitions whose name matches this regex (`re.search`); the reference corpus is always the whole config |
+| `-o, --output STYLE` | Output style (see below; default: `pathname`) |
+| `--include-probably-unused` | Include probably-unused findings in `delete-script`/`deactivate-script` output |
+| `--registry FILE` | Path to a custom type-registry YAML file (default: bundled registry) |
+| `--fail-on LEVEL` | Exit with code 1 when findings at or above this confidence exist: `unused`, `probably-unused`, or `never` (default: `never`) |
+
+Output styles — each also available as `<style>-verbose`:
+
+| Style | Line format |
+|-------|-------------|
+| `pathname` | `policy-options policy-statement FOO` |
+| `delete-script` | `delete policy-options policy-statement FOO` |
+| `show-script` | `show policy-options policy-statement FOO` (configuration mode) |
+| `show-configuration-script` | `show configuration policy-options policy-statement FOO` (operational mode) |
+| `deactivate-script` | `deactivate policy-options policy-statement FOO` |
+
+Non-verbose output contains only command/path lines (pipe- and
+paste-clean). Verbose output adds a comment block per finding (confidence,
+duplicate-definition hints, unresolved occurrences for probably-unused
+findings) and a summary line. `delete-script` and `deactivate-script`
+contain only strict `unused` findings unless `--include-probably-unused`
+is given; omitted findings still appear as comments in the verbose
+variants.
+
+### Examples — Audit
+
+```bash
+# List unused objects (all registry types)
+junoscfg audit unused config.conf
+
+# Generate a delete script with review comments
+junoscfg audit unused -o delete-script-verbose config.conf
+
+# Only check policy-statements and prefix-lists named legacy-*
+junoscfg audit unused --types policy-statement,prefix-list --match '^legacy-' config.set
+
+# CI gate: fail the pipeline when strictly unused objects exist
+junoscfg audit unused --fail-on unused config.json
+
+# From stdin, JSON input
+cat config.json | junoscfg audit unused -i json -o show-script
+```
+
 ## Exit Codes
 
 | Code | Meaning |
 |------|---------|
 | 0 | Success (valid config or conversion succeeded) |
-| 1 | Invalid configuration (validation or field validation errors) |
+| 1 | Invalid configuration (validation or field validation errors), or audit findings at the `--fail-on` threshold |
 | 2 | Usage error (bad arguments) |
-| 3 | Schema error (cannot load/generate artifacts) |
+| 3 | Schema error (cannot load/generate artifacts) or broken audit registry |
 
 ## Full Help
 
@@ -587,3 +651,4 @@ junoscfg fullhelp
 | Variable | Description |
 |----------|-------------|
 | `JUNOSCFG_ARTIFACTS` | Default path to validation artifacts directory (overridden by explicit `--artifacts` flag) |
+| `JUNOSCFG_AUDIT_REGISTRY` | Default path to the audit type-registry YAML (overridden by explicit `--registry` flag) |

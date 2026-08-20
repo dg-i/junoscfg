@@ -7,6 +7,7 @@ import sys
 import click
 
 from junoscfg import Format, __version__
+from junoscfg.audit.render import STYLE_CHOICES as _AUDIT_STYLE_CHOICES
 
 _FORMAT_CHOICES = [f.value for f in Format] + ["conf"]
 
@@ -771,6 +772,138 @@ def info(artifacts: str | None) -> None:
         sys.exit(3)
 
 
+@main.group()
+def audit() -> None:
+    """Audit configurations for unused or problematic objects."""
+
+
+@audit.command()
+@click.argument("file", required=False, type=click.Path(exists=True))
+@click.option(
+    "-i",
+    "--import-format",
+    "import_format",
+    type=click.Choice(_FORMAT_CHOICES, case_sensitive=False),
+    default=None,
+    help="Input format (default: auto-detect).",
+)
+@click.option(
+    "--types",
+    "types_csv",
+    default="all",
+    help="Comma-separated registry types to audit, or 'all'.",
+)
+@click.option(
+    "--match",
+    "match_regex",
+    default=None,
+    help="Only check definitions whose name matches this regex (re.search).",
+)
+@click.option(
+    "-o",
+    "--output",
+    "output_style",
+    type=click.Choice(_AUDIT_STYLE_CHOICES, case_sensitive=False),
+    default="pathname",
+    help="Output style.",
+)
+@click.option(
+    "--include-probably-unused",
+    is_flag=True,
+    help="Include probably-unused findings in delete/deactivate script output.",
+)
+@click.option(
+    "--registry",
+    "registry_path",
+    type=click.Path(exists=True, dir_okay=False),
+    envvar="JUNOSCFG_AUDIT_REGISTRY",
+    default=None,
+    help="Path to a custom type-registry YAML file.",
+)
+@click.option(
+    "--fail-on",
+    "fail_on",
+    type=click.Choice(["unused", "probably-unused", "never"], case_sensitive=False),
+    default="never",
+    help="Exit with code 1 when findings at or above this confidence exist.",
+)
+def unused(
+    file: str | None,
+    import_format: str | None,
+    types_csv: str,
+    match_regex: str | None,
+    output_style: str,
+    include_probably_unused: bool,
+    registry_path: str | None,
+    fail_on: str,
+) -> None:
+    """Find config objects that are defined but never referenced.
+
+    Findings are suggestions requiring human review. Strict `unused`
+    findings have no potential reference anywhere; `probably-unused`
+    findings have occurrences at positions the type registry does not
+    know, listed in the verbose output styles.
+
+    \b
+    Examples:
+      junoscfg audit unused config.conf
+      junoscfg audit unused -o delete-script-verbose config.conf
+      cat config.set | junoscfg audit unused --types policy-statement,prefix-list
+      junoscfg audit unused --fail-on unused config.conf
+    """
+    import yaml
+
+    from junoscfg.audit import AuditLoadError, find_unused, load_registry
+    from junoscfg.audit.render import render
+    from junoscfg.convert import to_dict
+
+    source = _read_input(file)
+    if not source.strip():
+        return
+
+    fmt = (import_format or _detect_format(source)).lower()
+    if fmt == "conf":
+        fmt = "structured"
+
+    try:
+        registry = load_registry(registry_path)
+    except AuditLoadError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(3)
+
+    types = None
+    if types_csv.strip().lower() != "all":
+        types = [t.strip() for t in types_csv.split(",") if t.strip()]
+        if not types:
+            click.echo("Error: --types is empty; use 'all' or a comma-separated list.", err=True)
+            sys.exit(2)
+
+    try:
+        ir = to_dict(source, fmt)
+    except (ValueError, NotImplementedError, yaml.YAMLError) as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(2)
+
+    try:
+        result = find_unused(ir, types=types, match=match_regex, registry=registry)
+    except AuditLoadError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(3)
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(2)
+
+    output = render(result, output_style.lower(), include_probably_unused=include_probably_unused)
+    if output:
+        click.echo(output, nl=False)
+
+    fail_on = fail_on.lower()
+    if fail_on == "unused" and result.n_unused:
+        sys.exit(1)
+    if fail_on == "probably-unused" and result.findings:
+        sys.exit(1)
+
+
 @main.command()
 @click.pass_context
 def fullhelp(ctx: click.Context) -> None:
@@ -788,6 +921,8 @@ def fullhelp(ctx: click.Context) -> None:
         ("junoscfg schema generate", generate),
         ("junoscfg schema makedoc", makedoc),
         ("junoscfg schema info", info),
+        ("junoscfg audit", audit),
+        ("junoscfg audit unused", unused),
     ]
 
     parts: list[str] = []
