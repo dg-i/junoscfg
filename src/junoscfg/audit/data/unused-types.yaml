@@ -1,0 +1,229 @@
+# Curated type registry for the unused-config-objects audit.
+#
+# Format (validated by junoscfg.audit.registry.load_registry):
+#   version: 1
+#   types:                  # insertion order defines report output order
+#     <type-name>:
+#       source: curated     # curated | generated
+#       definition:         # path patterns where objects of the type are DEFINED
+#         - policy-options policy-statement
+#       references:         # where names of the type may legitimately appear
+#         paths: []         # path patterns ending at the reference position
+#         schema-types: []  # schema `tr` type names marking reference positions
+#       implicit: []        # name globs that are never reported as unused
+#       report: true        # false = namespace-only anchor, produces no findings
+#
+# Path patterns are space-separated schema keys (no instance names, transparent
+# child keywords included, fnmatch globs allowed) and are matched TAIL-ANCHORED
+# against the schema-key path of an occurrence: `policy-options policy-statement`
+# also matches inside `groups group ...`, `logical-systems ...` and
+# `dynamic-profiles ...` automatically — do not add prefixed variants.
+#
+# A reference position may be a leaf (value = object name), a leaf-list, or a
+# named list whose entry key is the object name.
+#
+# All patterns and schema-type names below are verified against the bundled
+# schema tree (validate/data/junos-structure-tree.json).
+#
+# apply-macro objects are deliberately NOT audited: macro bodies are free-form
+# key/value data interpreted by off-box tooling, so there is no schema-backed
+# notion of a "reference" to them.
+version: 1
+types:
+  policy-statement:
+    source: curated
+    definition:
+      - policy-options policy-statement
+    references:
+      # Every import/export/policy leaf typed as a policy expression
+      # (7636 leaf positions in the schema tree).
+      schema-types:
+        - policy-algebra
+  prefix-list:
+    source: curated
+    definition:
+      - policy-options prefix-list
+    references:
+      # control-prefix-list-type:        policy-statement [term] from prefix-list
+      # control-prefix-list-filter-type: policy-statement [term] from prefix-list-filter
+      # firewall-prefix-list:            all firewall/services-filter
+      #   [ipv6-](source-|destination-)prefix-list match positions (462 named lists)
+      schema-types:
+        - control-prefix-list-type
+        - control-prefix-list-filter-type
+        - firewall-prefix-list
+  community:
+    source: curated
+    definition:
+      - policy-options community
+    references:
+      paths:
+        # policy-statement [term] from/to community (leaf-lists)
+        - from community
+        - to community
+        # policy-statement [term] then community (named list, ops as children)
+        # and routing-options rib flow route then community (leaf)
+        - then community
+  as-path:
+    source: curated
+    definition:
+      - policy-options as-path
+    references:
+      paths:
+        # policy-statement [term] from/to as-path (leaf-lists)
+        - from as-path
+        - to as-path
+  as-path-group:
+    source: curated
+    definition:
+      - policy-options as-path-group
+    references:
+      paths:
+        # policy-statement [term] from/to as-path-group (leaf-lists)
+        - from as-path-group
+        - to as-path-group
+  as-list:
+    source: curated
+    definition:
+      - policy-options as-list
+    references:
+      # policy-statement [term] from as-path-neighbors / as-path-origins /
+      # as-path-transits (named lists, entry key = name). These positions
+      # accept both as-list and as-list-group names.
+      schema-types:
+        - control-as-list-type
+  as-list-group:
+    source: curated
+    definition:
+      - policy-options as-list-group
+    references:
+      # Same match positions as as-list (shared namespace, anchored by the
+      # as-list-group-member entry below).
+      schema-types:
+        - control-as-list-type
+  condition:
+    source: curated
+    definition:
+      - policy-options condition
+    references:
+      paths:
+        # policy-statement [term] from condition (leaf-list)
+        - from condition
+  damping:
+    source: curated
+    definition:
+      - policy-options damping
+    references:
+      paths:
+        # policy-statement [term] then damping (leaf)
+        - then damping
+  route-filter-list:
+    source: curated
+    definition:
+      - policy-options route-filter-list
+    references:
+      # policy-statement [term] from route-filter-list (named list)
+      schema-types:
+        - control-route-filter-list-type
+  firewall-filter:
+    source: curated
+    definition:
+      - firewall filter
+      # families: any bridge ccc ethernet-switching evpn inet inet6 mpls vpls
+      - firewall family * filter
+    references:
+      paths:
+        # Container families (inet, inet6, vpls, bridge): the applied filter
+        # name is a filter-name leaf under filter input/output.
+        - filter input filter-name
+        - filter output filter-name
+        # Bare-leaf families (ethernet-switching, mpls, ccc, any) and
+        # forwarding-options: the filter name is the input/output leaf value
+        # itself. Every "filter input"/"filter output" leaf in the schema is
+        # a firewall-filter reference, so the 2-segment pattern is safe.
+        - filter input
+        - filter output
+        # interfaces ... family <f> filter input-list/output-list (leaf-lists)
+        - filter input-list
+        - filter output-list
+        # interfaces ... family <f> filter input-chain/output-chain (leaf-lists)
+        - filter input-chain
+        - filter output-chain
+  policer:
+    source: curated
+    definition:
+      - firewall policer
+    references:
+      paths:
+        # firewall [family <f>] {filter,fast-update-filter,simple-filter}
+        # term then policer (leaves)
+        - then policer
+        # interfaces ... family <f> policer input/output/arp leaves; also
+        # covers accept-source-mac / ethernet-switch-profile mac-address
+        # policer input/output leaves
+        - policer input
+        - policer output
+        - policer arp
+  rib-group:
+    source: curated
+    definition:
+      - routing-options rib-groups
+    references:
+      # References are leaves whose enclosing `rib-group` container carries
+      # the type: rib-group-inet-type (protocols bgp family ... rib-group ->
+      # ribgroup-name) and rib-group-type (routing-options interface-routes
+      # rib-group -> inet/inet6, forwarding-table, etc.).
+      schema-types:
+        - rib-group-type
+        - rib-group-inet-type
+  config-group:
+    source: curated
+    definition:
+      - groups group
+    references:
+      paths:
+        # Not in the schema tree: the audit walker emits apply-groups /
+        # apply-groups-except occurrences with a synthetic schema path
+        # ending in these keys.
+        - apply-groups
+        - apply-groups-except
+    implicit:
+      - re0
+      - re1
+      - global
+      - "node*"
+      - "member*"
+      - "fabric*"
+  login-class:
+    source: curated
+    definition:
+      - system login class
+    references:
+      paths:
+        - system login user class
+  snmp-view:
+    source: curated
+    definition:
+      - snmp view
+    references:
+      paths:
+        - snmp community view
+        # snmp v3 vacm access group ... security-model ... security-level
+        # read-view/write-view/notify-view and snmp access context group
+        # read-view/write-view; these key names occur nowhere else in the
+        # schema tree, so the single-segment patterns are unambiguous.
+        - read-view
+        - write-view
+        - notify-view
+  # Namespace-only anchors: member objects live in a nested namespace and are
+  # never referenced directly, but anchor collision classification.
+  as-path-group-member:
+    source: curated
+    definition:
+      - policy-options as-path-group as-path
+    report: false
+  as-list-group-member:
+    source: curated
+    definition:
+      - policy-options as-list-group as-list
+    report: false
