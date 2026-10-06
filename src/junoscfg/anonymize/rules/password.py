@@ -122,21 +122,41 @@ def _encrypt_j9_deterministic(hex_digest: str, plaintext: str) -> str:
     return encrypted
 
 
-def _make_crypt_hash(hex_digest: str, prefix: str, original_salt: str) -> str:
+# Body lengths the crypt formats specify, used when the original gives no
+# length to copy.  md5crypt is 22 characters, sha256crypt 43, sha512crypt 86.
+_CRYPT_BODY_LENGTH = {"$1$": 22, "$5$": 43, "$6$": 86}
+
+
+def _extend_hex(hex_digest: str, length: int) -> str:
+    """Deterministic hex of exactly *length* characters.
+
+    One SHA-256 hexdigest is 64 characters, which is shorter than a
+    sha512crypt body, so the digest is folded forward until it is long enough.
+    Same input, same output, on every platform.
+    """
+    out = hex_digest
+    while len(out) < length:
+        out += hashlib.sha256(out.encode()).hexdigest()
+    return out[:length]
+
+
+def _make_crypt_hash(hex_digest: str, prefix: str, original_salt: str, body_length: int) -> str:
     """Produce a structurally valid ``$1$``/``$5$``/``$6$`` hash.
 
-    The body is derived deterministically from *hex_digest*, so the same input
-    and salt give the same output on every platform and interpreter.  That
-    matters more here than realism: a configuration anonymized on one machine
-    has to match one anonymized on another.
+    The body is derived deterministically from *hex_digest* and is as long as
+    the body it replaces, which is what every other format in this module
+    already does.  Same input and salt give the same output on every platform
+    and interpreter: a configuration anonymized on one machine has to match one
+    anonymized on another.
 
     This used to call ``crypt.crypt()``.  macOS answers an unsupported ``$N$``
     salt with a 13-character DES hash rather than the requested format, so the
     result depended on the host's libc; and ``crypt`` was removed from the
-    standard library in 3.13, which silently made this the only path there.
-    Now it is the only path everywhere.
+    standard library in 3.13, which silently made the fallback the only path
+    there.  The fallback is now the only path everywhere, and length-correct.
     """
-    return f"{prefix}{original_salt}${hex_digest[:64]}"
+    length = body_length or _CRYPT_BODY_LENGTH.get(prefix, 64)
+    return f"{prefix}{original_salt}${_extend_hex(hex_digest, length)}"
 
 
 class PasswordRule(Rule):
@@ -227,7 +247,7 @@ class PasswordRule(Rule):
             # Unix crypt formats — generate a real crypt hash when possible.
             parts = body.split("$", 1)
             if len(parts) == 2:
-                return _make_crypt_hash(hex_digest, prefix, parts[0])
+                return _make_crypt_hash(hex_digest, prefix, parts[0], len(parts[1]))
 
         if prefix == "$8$":
             # AES-256-GCM: $8$crypt-algo$hash-algo$iterations$salt$iv$tag$encrypted

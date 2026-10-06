@@ -36,14 +36,14 @@ than fetching or deriving them at run time.
   `src/junoscfg/`. Retrieving an XSD dump from a router is the operator's own
   `ssh ... netconf` pipeline, documented in README.md; junoscfg reads the
   resulting file.
-- **Python 3.13 or later.** Decided in onboarding, against the measurement:
-  the suite is 1373-green on 3.14 and 6-red on both 3.11 and 3.12, all six in
-  `tests/test_anonymize/test_password_rule.py`. `_make_crypt_hash()` calls
-  `crypt.crypt()`, which macOS answers with a 13-character DES hash instead of
-  the requested `$1$`/`$5$`/`$6$` format; from 3.13 the module is gone and the
-  documented fallback runs. The declared floor was `>=3.10`; aligning
-  `requires-python`, the classifiers, `ruff target-version`, `mypy
-  python_version` and `.copier-answers.yml` is the first tracked change.
+- **Python 3.10 or later.** The suite is green on 3.10, 3.11, 3.12, 3.13 and
+  3.14. Onboarding briefly raised this floor to 3.13 to get past six failures
+  in `tests/test_anonymize/test_password_rule.py`; the failures were a defect,
+  not a language requirement. `_make_crypt_hash()` called `crypt.crypt()`,
+  which macOS answers with a 13-character DES hash instead of the requested
+  `$1$`/`$5$`/`$6$` format, and which Python removed in 3.13. The branch is
+  gone: the body is derived deterministically and keeps the length it replaces,
+  so output is identical on every platform and interpreter.
 - **lxml is optional.** XML input, XSD extraction and XSD parsing need the
   `xml` extra; `_ensure_xml_imports()` in `src/junoscfg/display/to_yaml.py`
   imports it lazily so that every non-XML conversion path works without it.

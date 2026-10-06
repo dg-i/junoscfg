@@ -50,6 +50,9 @@ No capability changes, so `.openspec.yaml` sets `skip_specs: true`.
 
 `src/junoscfg/anonymize/rules/password.py` (red zone),
 `src/junoscfg/validate/artifact_builder.py`, `pyproject.toml`,
-`.copier-answers.yml`, `uv.lock`. Anonymizer output on 3.10 to 3.12 changes to
-match 3.13+; no caller on those versions can be running 0.6.0 today, since it
-refuses to install there.
+`.copier-answers.yml`, `uv.lock`.
+
+Anonymizer output changes for real callers, and this proposal first claimed
+otherwise. v0.5.0 to v0.5.11 shipped `>=3.10` *with* the crypt branch and the
+collection pins `>=0.5.8`, so a glibc user on 3.10 to 3.12 gets a libc hash
+today and a deterministic one of the same length after upgrading.

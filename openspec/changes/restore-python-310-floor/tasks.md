@@ -22,6 +22,6 @@
 
 ## 3. Verification
 
-- [x] 3.1 Full suite on 3.10, 3.11, 3.12, 3.13 and 3.14: **1394 passed** on each.
+- [x] 3.1 Full suite on 3.10, 3.11, 3.12, 3.13 and 3.14: **1397 passed** on each.
 - [x] 3.2 Anonymizer output identical on all five interpreters, verified by
   hashing the result of a three-password fixture.
