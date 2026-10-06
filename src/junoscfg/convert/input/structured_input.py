@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from junoscfg.convert.input.set_input import set_to_dict
-from junoscfg.display.set_converter import SetConverter
+from junoscfg.display import SetConverter
 
 
 def structured_to_dict(source: str) -> dict[str, Any]:

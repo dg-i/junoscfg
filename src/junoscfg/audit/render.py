@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from junoscfg.display.value_format import format_value
+from junoscfg.display import format_value
 
 if TYPE_CHECKING:
     from junoscfg.audit.model import AuditResult, Finding

@@ -10,7 +10,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TextIO
 
-from junoscfg.convert.field_validator import FieldValidationError  # noqa: TC001
+from junoscfg.convert import FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
 __version__ = "0.5.18"
@@ -143,15 +143,15 @@ def _filter_by_path(result: str, to_format: Format, path: str, relative: bool) -
 
         return filter_set_by_path(result, path_tokens, relative=relative)
     elif to_format is Format.STRUCTURED:
-        from junoscfg.display.config_store import filter_structured_by_path
+        from junoscfg.display import filter_structured_by_path
 
         return filter_structured_by_path(result, path_tokens, relative=relative)
     elif to_format is Format.YAML:
-        from junoscfg.display.to_yaml import filter_yaml_by_path
+        from junoscfg.display import filter_yaml_by_path
 
         return filter_yaml_by_path(result, path_tokens, relative=relative)
     elif to_format is Format.JSON:
-        from junoscfg.display.to_json import filter_json_by_path
+        from junoscfg.display import filter_json_by_path
 
         return filter_json_by_path(result, path_tokens, relative=relative)
     return result
@@ -442,7 +442,7 @@ def validate_xml(source: str, artifacts_dir: str | None = None) -> ValidationRes
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     return JunosValidator(artifacts_dir=artifacts_dir).validate_xml(source)
 
@@ -458,7 +458,7 @@ def validate_json(source: str, artifacts_dir: str | None = None) -> ValidationRe
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     return JunosValidator(artifacts_dir=artifacts_dir).validate_json(source)
 
@@ -474,7 +474,7 @@ def validate_yaml(source: str, artifacts_dir: str | None = None) -> ValidationRe
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     return JunosValidator(artifacts_dir=artifacts_dir).validate_yaml(source)
 
@@ -490,7 +490,7 @@ def validate_set(source: str, artifacts_dir: str | None = None) -> ValidationRes
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     return JunosValidator(artifacts_dir=artifacts_dir).validate_set(source)
 
@@ -508,7 +508,7 @@ def validate_structured(source: str, artifacts_dir: str | None = None) -> Valida
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     return JunosValidator(artifacts_dir=artifacts_dir).validate_structured(source)
 

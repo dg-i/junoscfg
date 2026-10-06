@@ -49,3 +49,43 @@ depends_on = ["junoscfg.input"]
 [[modules]]
 path = "junoscfg.input"
 layer = "kernel"
+
+# The interfaces. `expose` is derived from observed cross-module usage, not from
+# __all__, which covers 4 of 68 modules here. agent-ready interfaces holds the
+# two in step: the list and the module's own __all__ must agree.
+
+[[interfaces]]
+from = ["junoscfg.display"]
+expose = [
+    "ConfigStore", "KEY_ALIASES", "SetConverter", "filter_json_by_path",
+    "filter_set_by_path", "filter_structured_by_path", "filter_yaml_by_path",
+    "format_value", "get_flat_entry_config", "get_transparent_child",
+    "is_display_set", "is_flat_dict", "is_freeform_nk", "is_positional_key",
+    "is_transparent_list_key", "load_schema_tree", "resolve_key_alias",
+    "xml_to_yaml",
+]
+
+[[interfaces]]
+from = ["junoscfg.input"]
+expose = ["normalize"]
+
+[[interfaces]]
+from = ["junoscfg.validate"]
+expose = [
+    "ArtifactBuilder", "JunosValidator", "SchemaLoadError", "ValidationError",
+    "ValidationResult",
+]
+
+[[interfaces]]
+from = ["junoscfg.anonymize"]
+expose = [
+    "AnonymizeConfig", "AnonymizeResult", "anonymize", "apply_revert",
+    "build_config_from_cli", "export_mapping", "load_mapping",
+]
+
+[[interfaces]]
+from = ["junoscfg.convert"]
+expose = [
+    "FieldValidationError", "find_configuration", "from_dict", "pipeline",
+    "to_dict", "validate_ir",
+]

@@ -27,9 +27,11 @@ import sys
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from junoscfg.anonymize.config import AnonymizeConfig
+    from junoscfg.anonymize import AnonymizeConfig
 
+from junoscfg.convert.field_validator import FieldValidationError
 from junoscfg.convert.input import to_dict
+from junoscfg.convert.ir import find_configuration
 from junoscfg.convert.output import from_dict
 
 
@@ -76,7 +78,7 @@ def pipeline(
 
         # Revert mode: apply a saved mapping to restore originals
         if cfg.revert_map:
-            from junoscfg.anonymize.revert import apply_revert, load_mapping
+            from junoscfg.anonymize import apply_revert, load_mapping
 
             mapping = load_mapping(cfg.revert_map)
             apply_revert(ir, mapping)
@@ -90,7 +92,7 @@ def pipeline(
 
             # Dump the revert mapping if requested
             if cfg.dump_map:
-                from junoscfg.anonymize.revert import export_mapping
+                from junoscfg.anonymize import export_mapping
 
                 export_mapping(anon_result.mapping, cfg.dump_map)
 
@@ -129,4 +131,11 @@ def _report_warnings(result: Any) -> None:
         print(f"field-validate: {warn.path}: {warn.message}", file=sys.stderr)
 
 
-__all__ = ["pipeline", "to_dict", "from_dict", "validate_ir"]
+__all__ = [
+    "FieldValidationError",
+    "find_configuration",
+    "from_dict",
+    "pipeline",
+    "to_dict",
+    "validate_ir",
+]

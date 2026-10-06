@@ -174,7 +174,7 @@ class FieldValidator:
     def __init__(self, schema: dict[str, Any] | None = None) -> None:
         """Build the validator against *schema*, or the bundled schema tree."""
         if schema is None:
-            from junoscfg.display.constants import load_schema_tree
+            from junoscfg.display import load_schema_tree
 
             schema = load_schema_tree()
         self._schema = schema

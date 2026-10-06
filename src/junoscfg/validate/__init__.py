@@ -7,6 +7,19 @@ format-specific validators and the unified ``JunosValidator`` facade.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # the heavy modules stay lazy; see __getattr__ below
+    from junoscfg.validate.artifact_builder import ArtifactBuilder
+    from junoscfg.validate.validator import JunosValidator
+
+__all__ = [
+    "ArtifactBuilder",
+    "JunosValidator",
+    "SchemaLoadError",
+    "ValidationError",
+    "ValidationResult",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,3 +58,21 @@ class SchemaLoadError(Exception):
     This typically occurs when the artifacts directory does not exist
     or is missing required files (XSD, JSON Schema, Lark grammar).
     """
+
+
+def __getattr__(name: str) -> object:
+    """Resolve the heavy re-exports on first use.
+
+    ``artifact_builder`` and ``validator`` pull in lxml and the schema
+    artifacts; importing them eagerly would make ``junoscfg.validate`` costly
+    for callers that only want ``ValidationResult``.
+    """
+    if name == "ArtifactBuilder":
+        from junoscfg.validate.artifact_builder import ArtifactBuilder
+
+        return ArtifactBuilder
+    if name == "JunosValidator":
+        from junoscfg.validate.validator import JunosValidator
+
+        return JunosValidator
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

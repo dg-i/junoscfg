@@ -17,7 +17,8 @@ import secrets
 from dataclasses import dataclass, field
 from typing import Any
 
-from junoscfg.anonymize.config import AnonymizeConfig
+from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli
+from junoscfg.anonymize.revert import apply_revert, export_mapping, load_mapping
 from junoscfg.anonymize.rules import build_rules
 from junoscfg.anonymize.rules.as_number import AsNumberRule
 from junoscfg.anonymize.rules.group import GroupRule
@@ -155,4 +156,12 @@ def _replace_as_in_strings(obj: Any, as_rule: AsNumberRule) -> None:
                 _replace_as_in_strings(item, as_rule)
 
 
-__all__ = ["AnonymizeConfig", "AnonymizeResult", "anonymize"]
+__all__ = [
+    "AnonymizeConfig",
+    "AnonymizeResult",
+    "anonymize",
+    "apply_revert",
+    "build_config_from_cli",
+    "export_mapping",
+    "load_mapping",
+]

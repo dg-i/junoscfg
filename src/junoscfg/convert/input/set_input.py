@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from junoscfg.display.constants import KEY_ALIASES, load_schema_tree
+from junoscfg.display import KEY_ALIASES, load_schema_tree
 from junoscfg.input import normalize
 
 

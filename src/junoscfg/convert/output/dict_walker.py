@@ -10,7 +10,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from junoscfg.display.constants import (
+from junoscfg.display import (
+    format_value,
     get_flat_entry_config,
     get_transparent_child,
     is_flat_dict,
@@ -20,7 +21,6 @@ from junoscfg.display.constants import (
     load_schema_tree,
     resolve_key_alias,
 )
-from junoscfg.display.value_format import format_value
 
 
 class WalkOutput(ABC):

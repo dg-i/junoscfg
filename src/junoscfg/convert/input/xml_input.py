@@ -18,7 +18,7 @@ def xml_to_dict(source: str) -> dict[str, Any]:
         ValueError: If the XML does not contain a configuration element.
     """
     from junoscfg.convert.input.yaml_input import yaml_to_dict
-    from junoscfg.display.to_yaml import xml_to_yaml
+    from junoscfg.display import xml_to_yaml
 
     yaml_content = xml_to_yaml(source)
     if not yaml_content:

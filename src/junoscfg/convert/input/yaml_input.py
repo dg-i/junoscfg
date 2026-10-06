@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 
 from junoscfg.convert.ir import find_configuration
-from junoscfg.display.constants import load_schema_tree
+from junoscfg.display import load_schema_tree
 
 # Meta key prefixes stripped before conversion (Ansible inventory artifacts).
 _STRIP_PREFIXES = ("_ansible", "_meta_")

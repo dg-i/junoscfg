@@ -6,6 +6,8 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
+__all__ = ["normalize"]
+
 import re
 from typing import TextIO
 

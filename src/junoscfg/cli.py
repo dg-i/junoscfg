@@ -297,7 +297,7 @@ def convert(
             return
 
     # Build anonymization config if any anonymize flags are set
-    from junoscfg.anonymize.config import build_config_from_cli
+    from junoscfg.anonymize import build_config_from_cli
 
     anon_config = build_config_from_cli(
         anonymize_all=anonymize_all,
@@ -684,7 +684,7 @@ def generate(xsd_source: str, output_dir: str) -> None:
         ssh -Csp 830 router.example.com netconf > netconf.xml
       junoscfg schema generate netconf.xml -o ./artifacts/
     """
-    from junoscfg.validate.artifact_builder import ArtifactBuilder
+    from junoscfg.validate import ArtifactBuilder
 
     builder = ArtifactBuilder()
     try:
@@ -762,7 +762,7 @@ def info(artifacts: str | None) -> None:
       junoscfg schema info
       junoscfg schema info --artifacts ./my-artifacts/
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     try:
         v = JunosValidator(artifacts_dir=artifacts)

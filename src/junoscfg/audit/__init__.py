@@ -67,7 +67,7 @@ def find_unused(
         AuditLoadError: If the registry or schema artifacts cannot be loaded.
         ValueError: On unknown type names or an invalid regex.
     """
-    from junoscfg.convert.ir import find_configuration
+    from junoscfg.convert import find_configuration
 
     config = find_configuration(ir)
     if config is None:
