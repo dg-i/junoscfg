@@ -13,6 +13,7 @@ business logic that downstream consumers (e.g. an Ansible collection) would need
 to duplicate.
 
 Examples:
+
 - **Path filtering** (`--path`, `--relative`) is implemented in `convert_config()`
   with `path` and `relative` parameters, not in the CLI.
 - **Format conversion** is handled by `convert_config()`, not by CLI-specific code.

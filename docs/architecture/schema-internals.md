@@ -139,7 +139,7 @@ class SchemaNode:
 
 ## Artifact Pipeline
 
-```
+```text
 NETCONF XSD dump (output.xml)
     │
     ▼

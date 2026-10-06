@@ -112,7 +112,7 @@ def generate_lark_grammar(root: SchemaNode) -> str:
 
         lines.append("")
 
-    # Footer: terminals
+    # Footer holding the terminals
     lines.append("// Terminals")
     lines.append('SET: "set"')
     lines.append('DEACTIVATE: "deactivate"')

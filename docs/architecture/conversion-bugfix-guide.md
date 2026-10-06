@@ -16,6 +16,7 @@ Step-by-step methodology for diagnosing and fixing JSON/XML-to-structured conver
 The schema tree doesn't have the right conversion hint for this element. Fix via xsd_fixes.py Group H — sets a flag that persists across XSD regeneration and is serialized into the schema artifact.
 
 **Symptoms:**
+
 - Transparent container not recognized (child keyword leaks into set commands)
 - Flat entry emits key names instead of values only
 - Positional key not recognized
@@ -28,6 +29,7 @@ The schema tree doesn't have the right conversion hint for this element. Fix via
 The XSD schema doesn't model the element correctly. Fix via xsd_fixes.py Groups A-G.
 
 **Symptoms:**
+
 - Element renders as container block instead of oneliner (missing `oneliner` flag)
 - Element renders with wrong nesting depth (wrong `is_list` or container structure)
 - Element children appear as separate set lines instead of flat line
@@ -39,6 +41,7 @@ The XSD schema doesn't model the element correctly. Fix via xsd_fixes.py Groups 
 The schema is correct but the runtime conversion code needs a name mapping or XML-compat constant.
 
 **Symptoms:**
+
 - JSON input uses original XML name that differs from set command keyword
 - XML/YAML converter doesn't recognize element (these walk XML trees, not the schema)
 
@@ -49,6 +52,7 @@ The schema is correct but the runtime conversion code needs a name mapping or XM
 The field validator rejects a valid configuration value. Fix in `convert/field_validator.py`.
 
 **Symptoms:**
+
 - Valid numeric value rejected in an enum-only field (XSD union type not handled)
 - Valid IPv6 address rejected in a dual-stack field (`ipaddr`/`ipprefix`)
 - List of values rejected because the list was validated as a single string
@@ -57,6 +61,7 @@ The field validator rejects a valid configuration value. Fix in `convert/field_v
 **Fix location:** `src/junoscfg/convert/field_validator.py`
 
 **Validation pass order:**
+
 1. **Enum check** — Definitive if no fallback types exist
 2. **Numeric/range fallback** — For enum fields, accept values matching `[0-9]+(-[0-9]+)?`
 3. **Pattern check** — Fallback for fields with both enum and regex constraints
@@ -146,10 +151,12 @@ Encoded as schema flag `t: "interface"` on the `interfaces` node.
 Some named lists render everything on a single line rather than as a container block. Example: `route-filter 0.0.0.0/0 exact;`
 
 Two mechanisms work together:
+
 1. **Schema flag `o: true`** — Tells `structured_output.py` to emit all tokens on one line
 2. **Schema flag `fe: {"k": key, "p": position}`** — Tells `dict_walker.py` how to flatten the dict (read via `get_flat_entry_config()` helper)
 
 Positions:
+
 - `"first"` — positional key value appears before remaining keys
 - `"last"` — positional key value appears after remaining keys
 - `"values-only"` — all dict values emitted without key names
@@ -163,6 +170,7 @@ Positions:
 **Root cause:** Schema-level — `_fix_groups()` set `groups.is_list = True` with children directly, instead of creating a container→named-list pattern.
 
 **Fix:**
+
 1. `xsd_fixes.py` — Changed `_fix_groups()` to create `groups` (container) → `group` (named list)
 2. `xsd_fixes.py` — Group H `_fix_transparent_containers()` adds `transparent:group` flag
 3. `constants.py` — `"groups": "group"` in `TRANSPARENT_CONTAINERS` (XML-compat)
@@ -175,6 +183,7 @@ Positions:
 **Root cause:** Schema-level — XSD had no `oneliner` flag for `attributes-match`.
 
 **Fix:**
+
 1. `xsd_fixes.py` — Group B2: `_fix_attributes_match_oneliner()` adds `oneliner` flag
 2. `xsd_fixes.py` — Group H: `_fix_flat_entry_keys()` adds `flat-entry::values-only` flag + `oneliner`
 3. `dict_walker.py` — `get_flat_entry_config()` reads `fe` flag for flattening config

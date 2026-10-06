@@ -160,7 +160,7 @@ flat-dict elements, since these children are functionally optional in the config
 Field-level validation runs automatically during conversion via `convert_config()` and the
 CLI. Warnings are printed to stderr but do not cause failure:
 
-```
+```text
 field-validate: system.syslog.file.facility: Invalid value 'bogus': must be one of [any, kernel, ...]
 ```
 

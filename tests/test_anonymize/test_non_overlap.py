@@ -90,10 +90,10 @@ class TestNonOverlap:
         assert ep.startswith("$9$")
         assert ep != "$9$secrethash"
 
-        # IP: anonymized
+        # the IP is anonymized
         assert result.ir["configuration"]["system"]["name-server"][0]["name"] != "8.8.8.8"
 
-        # Community: anonymized
+        # the community is anonymized
         assert result.ir["configuration"]["snmp"]["community"][0]["name"] != "public"
 
         # Non-sensitive fields untouched

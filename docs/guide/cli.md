@@ -4,7 +4,7 @@ The `junoscfg` CLI converts and validates Junos configurations.
 
 ## Usage
 
-```
+```text
 junoscfg [OPTIONS] COMMAND [ARGS]...
 ```
 
@@ -12,7 +12,7 @@ junoscfg [OPTIONS] COMMAND [ARGS]...
 
 Convert Junos configurations between formats. This is the default command.
 
-```
+```text
 junoscfg convert [OPTIONS] [FILE]
 ```
 
@@ -247,7 +247,7 @@ anonymize:
 It does **not** enable `--anonymize-as-numbers`, `--anonymize-sensitive-words`, or
 `--anonymize-sensitive-patterns` — these require explicit user-provided lists.
 
-#### Path Filtering
+#### Anonymization Path Filtering
 
 Use `--anonymize-include` and `--anonymize-exclude` to restrict which configuration
 sections are anonymized. Paths use dot-separated segments with glob matching.
@@ -446,7 +446,7 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 
 Generate validation artifacts from a NETCONF XSD dump.
 
-```
+```text
 junoscfg schema generate XSD_SOURCE -o OUTPUT_DIR
 ```
 
@@ -466,7 +466,7 @@ junoscfg schema generate netconf.xml -o ./my-artifacts/
 
 Generate a YAML-like configuration reference from XSD.
 
-```
+```text
 junoscfg schema makedoc XSD_SOURCE [OPTIONS]
 ```
 
@@ -492,7 +492,7 @@ junoscfg schema makedoc netconf.xml --max-depth 3 --no-deprecated
 
 Display schema artifact information.
 
-```
+```text
 junoscfg schema info [--artifacts PATH]
 ```
 
@@ -518,7 +518,7 @@ Transform YAML for Ansible consumption. See [edityaml](../edityaml.md) for full 
 
 Add derived keys to YAML using transform rules.
 
-```
+```text
 junoscfg edityaml addvars [OPTIONS] [FILE]
 ```
 
@@ -539,7 +539,7 @@ junoscfg edityaml addvars --path "a.b[*]" --set "_x=copy(name)" config.yaml
 
 Extract leaf values into Ansible `host_vars` and templatize `group_vars`.
 
-```
+```text
 junoscfg edityaml ansibilize [OPTIONS] [FILE]
 ```
 

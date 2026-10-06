@@ -61,7 +61,7 @@ than fetching or deriving them at run time.
 
 ## 3. Context and scope
 
-**Who calls this system**
+### Who calls this system
 
 - Network operators, through the `junoscfg` CLI: `convert` (the default
   subcommand), `edityaml`, `schema`, `audit`.
@@ -74,7 +74,7 @@ than fetching or deriving them at run time.
   This consumer must keep working; it is why `api` and `cli` are the declared
   surfaces in `[tool.template.stage]`.
 
-**What it consumes**
+### What it consumes
 
 - Junos configuration text in five formats, from a file or stdin.
 - NETCONF XSD dumps, as a file the operator captured.
@@ -82,13 +82,13 @@ than fetching or deriving them at run time.
   grammar), `ipanon` (prefix-preserving IP mapping), `netutils` (Juniper `$9$`
   constants), `lxml` (XML and XSD), `click`, `jsonschema`, `pyyaml`.
 
-**What it produces**
+### What it produces
 
 - Converted configuration text; validation results; an anonymization mapping
   that `anonymize/revert.py` can replay; Ansible `host_vars` / `group_vars`;
   unused-object audit reports and delete scripts.
 
-**Where responsibility ends**
+### Where responsibility ends
 
 - It never talks to a router and never applies a configuration. Capture and
   deployment are the operator's.
@@ -104,7 +104,7 @@ than fetching or deriving them at run time.
 runtime edges, 1 of them `TYPE_CHECKING`-guarded (`convert` -> `anonymize`) and
 none in a `__main__` block. Dependencies run one way:
 
-```
+```text
 display + input.py        shared kernel, imported by 6 of 7 packages
   <- validate, anonymize  schema and rules
   <- convert              the pipeline; also imports anonymize

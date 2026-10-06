@@ -6,3 +6,46 @@ source_roots = ["src"]
 exclude = ["tests", "docs"]
 forbid_circular_dependencies = true
 ignore_type_checking_imports = true
+
+# Modules mirror the zone table. `tach sync` fills depends_on from the real
+# imports; the layer order is the DAG ARCHITECTURE.md section 8 records.
+layers = ["surface", "feature", "pipeline", "kernel"]
+
+[[modules]]
+path = "junoscfg"
+layer = "surface"
+
+[[modules]]
+path = "junoscfg.cli"
+layer = "surface"
+depends_on = ["junoscfg"]
+
+[[modules]]
+path = "junoscfg.audit"
+layer = "feature"
+
+[[modules]]
+path = "junoscfg.edityaml"
+layer = "feature"
+
+[[modules]]
+path = "junoscfg.convert"
+layer = "pipeline"
+depends_on = ["junoscfg.anonymize"]
+
+[[modules]]
+path = "junoscfg.validate"
+layer = "pipeline"
+
+[[modules]]
+path = "junoscfg.anonymize"
+layer = "pipeline"
+
+[[modules]]
+path = "junoscfg.display"
+layer = "kernel"
+depends_on = ["junoscfg.input"]
+
+[[modules]]
+path = "junoscfg.input"
+layer = "kernel"

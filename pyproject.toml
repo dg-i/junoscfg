@@ -7,7 +7,7 @@ name = "junoscfg"
 version = "0.5.18"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 license = "MIT"
 authors = [
     { name = "Manon Goo", email = "manon.goo@dg-i.net" },
@@ -19,10 +19,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Networking",
     "Topic :: Utilities",
     "Typing :: Typed",
@@ -52,15 +50,62 @@ junoscfg = "junoscfg.cli:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+# The stage levers are rendered from [tool.template.stage] into the delimited
+# blocks below by `agent-ready render levers`; edit the stage, not a block.
 [tool.ruff]
-target-version = "py310"
 line-length = 100
+# The vulture whitelist is a stub file of bare names, not source: ruff reads it
+# as useless expressions and undefined names. Both tools ship with the template.
+extend-exclude = [".agent-ready/"]
+# agent-ready:stage-levers:ruff:begin
+target-version = "py313"
+# agent-ready:stage-levers:ruff:end
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
+# agent-ready:stage-levers:select:begin
+select = ["FIX", "ERA", "ARG", "BLE", "TID251", "UP", "D1"]
+# agent-ready:stage-levers:select:end
+# junoscfg's own families, kept beside the stage's. They cannot live inside the
+# block above, which is regenerated from the stage on every render.
+extend-select = ["E", "F", "W", "I", "N", "B", "A", "SIM", "TCH"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test methods carry their intent in the name; a docstring per test is not a
+# convention this project follows, and D1 on tests/ is 1248 of 1306 findings.
+# ARG is the same story: a test double implements an interface it does not use.
+"tests/**" = ["D1", "ARG"]
+# Every rule implements AnonymizeRule.matches(value, schema_node, path) and uses
+# only the parameters it needs. The unused ones are the interface, not dead
+# arguments; renaming them to _value would break the shared signature.
+"src/junoscfg/anonymize/rules/*.py" = ["ARG002"]
+# The XSD fix functions share one signature so the fix table can call them
+# uniformly; a fix that does not need the tree root still declares it.
+"src/junoscfg/validate/xsd_fixes.py" = ["ARG001"]
+# The CLI's top-level handlers turn any failure into a message and an exit
+# code. That is what a command-line boundary is for; a narrower except would
+# let an unexpected error reach the user as a traceback.
+"src/junoscfg/cli.py" = ["BLE001", "ARG001"]
+# Same boundary argument: a validator converts arbitrary parse failures into a
+# ValidationResult rather than crashing the caller that asked "is this valid?".
+"src/junoscfg/validate/structured_validator.py" = ["BLE001"]
+
+# agent-ready:stage-levers:tables:begin
+[tool.towncrier]
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# agent-ready:stage-levers:tables:end
+
+[tool.deptry.per_rule_ignores]
+# `crypt` was removed from the stdlib in 3.13. The import in
+# anonymize/rules/password.py is inside a try/except whose ImportError is the
+# expected path on every supported interpreter, so it is neither a dependency
+# nor a missing one.
+DEP001 = ["crypt"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -85,6 +130,8 @@ dev = [
     "ruff>=0.4",
     "lxml>=4.9",
     "mypy>=2.4",
+    "deptry>=0.25.1",
+    "agent-ready-checks>=0.10.0",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -98,10 +145,15 @@ docs = [
 # coming back at the cap means coming back here next week.
 [tool.template]
 reorganise-to = 0.7
-# The ref the stage gates and the metrics compare with. Unset, `origin/main`,
-# then `main`. On a directory remote name the previous release tag or `HEAD~1`,
-# because `origin/main` there is only what was last pushed.
-# base = "origin/main"
+# The ref the stage gates and the metrics compare with. This repository's
+# default branch is master, not main, so it is named explicitly: the fallback
+# would look for origin/main and find nothing.
+base = "origin/master"
+
+# The native acceptance leaf. The full set runs it; the fast set defers it.
+# This is the complete suite including the example roundtrips, which the
+# project's own inner-loop command deselects.
+test-command = ["uv", "run", "pytest", "tests/", "-q"]
 
 # Budgets what is loaded at session start, not what the repository stores:
 # `agent-ready budget` counts AGENTS.md, CLAUDE.md beyond a bridge, every
@@ -175,6 +227,14 @@ break-bumps = { api = "minor", cli = "minor" }
 # gets worse fails, and every tolerated violation starts failing once the expiry
 # passes. Warn mode without an expiry is a configuration error, so a warn period
 # is always one somebody has to end.
+
+# AGENTS.md is 190 lines against a cap of 100. Phase 7 reorganises it, so this
+# warn period is short by design: the baseline records the debt, a new
+# over-cap document fails from day one, and AGENTS.md getting longer fails too.
+[tool.template.gates.caps]
+mode = "warn"
+expires = "2026-12-31"
+baseline = ".agent-ready/caps.json"
 
 # What to move first when a document is over its cap. The generic ladder is in
 # the failure message; these are the rungs that differ by artefact.

@@ -513,7 +513,7 @@ def _apply_meta(
             current_schema = child
             continue
 
-        # Container: descend
+        # Container, so descend
         if child.get("c"):
             current = current.setdefault(token, {})
             current_schema = child

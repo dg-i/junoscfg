@@ -35,6 +35,7 @@ class DescriptionRule(Rule):
     priority = 70  # After group (60)
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        """Build the rule from *config*: the salt and an empty mapping."""
         self._salt = config.salt or ""
         self._mapping: dict[str, str] = {}
 

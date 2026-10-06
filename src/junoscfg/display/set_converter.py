@@ -21,6 +21,7 @@ class SetConverter:
     _PREFIX_TAGS = ("replace: ", "protect: ", "inactive: ", "delete: ")
 
     def __init__(self, source: str | TextIO, *, emit_replace: bool = False) -> None:
+        """Convert *source*, optionally emitting ``replace:`` markers."""
         self._input = source
         self._emit_replace = emit_replace
 

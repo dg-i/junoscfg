@@ -37,6 +37,7 @@ class SchemaNode:
     flags: set[str] = field(default_factory=set)
 
     def __repr__(self) -> str:
+        """Render the node, its combinator and its children for debugging."""
         parts = [f"SchemaNode({self.name!r}"]
         if self.children:
             parts.append(f", children={len(self.children)}")

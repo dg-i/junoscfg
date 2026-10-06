@@ -18,6 +18,7 @@ class DefaultGroup(click.Group):
     """Click group that defaults to 'convert' subcommand for backward compat."""
 
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        """Insert the default ``convert`` subcommand when none was given."""
         # If first arg is not a known subcommand, prepend 'convert'
         if args and args[0] not in self.commands and not args[0].startswith("-"):
             args = ["convert"] + args

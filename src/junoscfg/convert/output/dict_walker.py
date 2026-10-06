@@ -62,6 +62,7 @@ class DictWalker:
     """Walk a Junos JSON dict IR and emit output via a strategy object."""
 
     def __init__(self, output: WalkOutput) -> None:
+        """Walk into *output*, the strategy that renders each emitted path."""
         self._output = output
 
     def walk(self, config: dict[str, Any]) -> None:

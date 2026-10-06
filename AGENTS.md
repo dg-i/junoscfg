@@ -6,6 +6,19 @@ Instructions for AI assistants (and human contributors) working on this project.
 
 Python toolkit for converting, validating, and anonymizing Junos configurations between XML, JSON, structured, YAML, and display set formats. Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser).
 
+<!-- agent-ready:stage:begin -->
+## Stage
+
+beta: what the named surfaces do today holds until the next minor release under
+this repository's versioning scheme. A change to one of them is declared in the
+change's `.openspec.yaml` with its migration, and a removal is deprecated first.
+Named surfaces: api, cli. The change that retires an import bans it: list the
+import under `bans` in the decision record that retires it and run `agent-ready
+render levers`, which renders the ban into `pyproject.toml`. What each stage
+flips is in the `## Stage` section of every phase of `agent-ready-change`, and
+the lever blocks of `pyproject.toml` carry what this stage renders.
+<!-- agent-ready:stage:end -->
+
 ## Pre-Commit Checklist
 
 Before every commit, **must** complete these steps in order:
@@ -75,7 +88,7 @@ Verify that code changes are reflected in documentation:
 
 ## Project Structure
 
-```
+```text
 src/junoscfg/
   cli.py              # CLI (convert, edityaml, schema)
   input.py            # Input parsing/normalization
@@ -120,53 +133,12 @@ src/junoscfg/
 
 ## Architecture
 
-### Schema Pipeline (build time)
-
-```
-NETCONF XSD dump
-  -> xsd_extractor.py (extract XSD text)
-  -> xsd_parser.py (parse into SchemaNode tree)
-  -> xsd_fixes.py (apply structural corrections, Groups A-H)
-  -> artifact_builder.py (serialize to JSON artifacts)
-  -> data/ (bundled schema artifacts)
-```
-
-XSD fixes are Python code (not stored in artifacts), so they persist across any XSD regeneration.
-
-### Conversion Pipeline (runtime)
-
-```
-Any input format (JSON, XML, YAML, set, structured)
-  -> convert/input/ (parse to dict IR)
-  -> optional field validation
-  -> convert/output/ (render to target format)
-```
-
-The pipeline uses the DictWalker + WalkOutput strategy pattern for set and structured output. XML input uses a bridge: xml_to_yaml() -> yaml_to_dict().
-
-Operational attributes (`replace:`, `protect:`, `inactive:`) are preserved through the JSON->structured path via DictWalker._read_attrs() -> StructuredWalkOutput.emit_replace() -> ConfigStore.mark_replaced().
-
-### edityaml Pipeline
-
-```
-addvars:      YAML -> resolve_path() -> apply_transform() -> enriched YAML
-ansibilize:   YAML -> resolve_path_with_context() -> extract leaf -> (host_vars, group_vars)
-ansibilize -P: YAML -> detect value type -> offset expressions -> (host_vars, offset_vars, group_vars)
-```
-
-### Where Fixes Go
-
-| Symptom | Fix location |
-|---------|-------------|
-| Element renders as block instead of oneliner | `xsd_fixes.py` — add `oneliner` flag |
-| Wrong nesting depth or structure | `xsd_fixes.py` — fix structure/combinator |
-| Transparent container not recognized | `xsd_fixes.py` — add `transparent:{child}` flag |
-| Flat entry emits keys instead of values | `xsd_fixes.py` — add `flat-entry:{k}:{p}` flag |
-| Positional key not recognized | `xsd_fixes.py` — add `positional-key` flag |
-| JSON input uses original XML name | `constants.py` — add to `KEY_ALIASES` |
-| XML/YAML converter needs constant | `constants.py` — add to XML-compat section |
-
-For detailed diagnosis and fix methodology, see `docs/architecture/conversion-bugfix-guide.md`.
+The layering, the one-IR rule and the cross-cutting conventions are in
+`ARCHITECTURE.md` section 8. The three pipelines — schema, conversion and
+edityaml — are documented in full in `docs/architecture/developer-guide.md`,
+and the symptom-to-fix table for conversion bugs is in
+`docs/architecture/conversion-bugfix-guide.md`. This file carried a summary of
+all three; it was a copy that drifted, so it points instead.
 
 ## Test Data Conventions
 

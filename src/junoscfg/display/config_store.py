@@ -149,6 +149,7 @@ class ConfigStore:
     COMPOUND_KEYWORDS: frozenset[str] = frozenset({"family"})
 
     def __init__(self, depth: int = 0) -> None:
+        """Create an empty node at *depth* in the configuration tree."""
         self._children: dict[str, ConfigStore] = {}
         self._depth = depth
         self.deactivated = False
@@ -216,7 +217,7 @@ class ConfigStore:
     def __str__(self) -> str:
         """Render tree as indented curly-brace config (iterative to avoid recursion limits)."""
         parts: list[str] = []
-        # Stack: (action, depth, key_or_none, node)
+        # Stack entries are (action, depth, key_or_none, node)
         # action: "open" = emit key + opening brace or leaf, "close" = emit closing brace
         stack: list[tuple[str, int, str | None, ConfigStore]] = []
 

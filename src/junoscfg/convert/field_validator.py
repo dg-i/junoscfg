@@ -31,6 +31,7 @@ class FieldValidationResult:
 
     @property
     def valid(self) -> bool:
+        """True when no field errors were recorded."""
         return len(self.errors) == 0
 
 
@@ -38,6 +39,7 @@ class FieldValidationError(Exception):
     """Raised when field validation fails in strict mode."""
 
     def __init__(self, result: FieldValidationResult) -> None:
+        """Build the error from *result*, summarising its first few messages."""
         self.result = result
         msgs = [e.message for e in result.errors[:5]]
         detail = "; ".join(msgs)
@@ -170,6 +172,7 @@ class FieldValidator:
     """Validates leaf values in the JSON dict IR against schema constraints."""
 
     def __init__(self, schema: dict[str, Any] | None = None) -> None:
+        """Build the validator against *schema*, or the bundled schema tree."""
         if schema is None:
             from junoscfg.display.constants import load_schema_tree
 
