@@ -19,12 +19,13 @@ asserts only that its name appears in `--help`, which is why nothing caught it.
 
 ### New Capabilities
 
-None.
+This change adds no capability; it removes one that never functioned.
 
 ### Modified Capabilities
 
-None; `skip_specs: true`. No requirement exists for a command that has never
-run, and phase 6 recorded that this repository backfills no specs.
+No capability changes, so `.openspec.yaml` sets `skip_specs: true`. No
+requirement was ever written for this command, and onboarding phase 6 recorded
+that this repository backfills no specs for existing behaviour.
 
 ## Non-goals
 

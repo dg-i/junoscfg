@@ -160,6 +160,11 @@ test-command = ["uv", "run", "pytest", "tests/", "-q"]
 # skill's name and description, and every command's description.
 always-loaded-budget = 4600
 
+# Onboarding completed. agent-ready fields validates this date and, once it is
+# set, stops reporting the stage, instruction-file and bridge checks as
+# deferred and starts failing on them.
+onboarded = 2026-10-06
+
 # A vendored skill is its upstream's: left out of frontmatter, parity, and
 # mirror checks, and kept rather than deleted when the mirror regenerates.
 vendored-skills = ["openspec-*", ".openspec-*"]
