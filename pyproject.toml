@@ -388,30 +388,35 @@ paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
 owners = ["manon.goo@dg-i.net"]
 tier = "yellow"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.zones.conversion]
 paths = ["src/junoscfg/convert/**"]
 owners = ["manon.goo@dg-i.net"]
 tier = "yellow"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.zones.schema]
 paths = ["src/junoscfg/validate/**"]
 owners = ["manon.goo@dg-i.net"]
 tier = "yellow"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.zones.anonymize]
 paths = ["src/junoscfg/anonymize/**"]
 owners = ["manon.goo@dg-i.net"]
 tier = "red"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.zones.edityaml]
 paths = ["src/junoscfg/edityaml/**"]
 owners = ["manon.goo@dg-i.net"]
 tier = "yellow"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.zones.audit]
 paths = ["src/junoscfg/audit/**"]
@@ -424,6 +429,7 @@ paths = ["src/junoscfg/cli.py", "src/junoscfg/__init__.py"]
 owners = ["manon.goo@dg-i.net"]
 tier = "yellow"
 intent = "active"
+pinned = "2026-10-06"
 
 [tool.template.domains.conversion]
 paths = ["src/junoscfg/convert/**"]

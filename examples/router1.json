@@ -1,0 +1,403 @@
+{
+    "configuration": {
+        "system": {
+            "host-name": "router1",
+            "domain-name": "example.com",
+            "time-zone": "UTC",
+            "root-authentication": {
+                "encrypted-password": "$9$ExAmPlEhAsH.KEY"
+            },
+            "name-server": [
+                {
+                    "name": "192.168.0.53"
+                },
+                {
+                    "name": "192.168.0.54"
+                }
+            ],
+            "login": {
+                "user": [
+                    {
+                        "name": "admin",
+                        "uid": "2000",
+                        "class": "super-user",
+                        "authentication": {
+                            "encrypted-password": "$9$ExAmPlEhAsH.KEY"
+                        }
+                    },
+                    {
+                        "name": "operator",
+                        "uid": "2001",
+                        "class": "read-only",
+                        "authentication": {
+                            "encrypted-password": "$9$ExAmPlEhAsH.KEY"
+                        }
+                    }
+                ]
+            },
+            "services": {
+                "ssh": {
+                    "root-login": "deny",
+                    "protocol-version": [
+                        "v2"
+                    ]
+                },
+                "netconf": {
+                    "ssh": [
+                        null
+                    ]
+                }
+            },
+            "syslog": {
+                "user": [
+                    {
+                        "name": "*",
+                        "contents": [
+                            {
+                                "name": "any",
+                                "emergency": [
+                                    null
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "file": [
+                    {
+                        "name": "messages",
+                        "contents": [
+                            {
+                                "name": "any",
+                                "notice": [
+                                    null
+                                ]
+                            },
+                            {
+                                "name": "authorization",
+                                "info": [
+                                    null
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "host": [
+                    {
+                        "name": "192.168.0.10",
+                        "contents": [
+                            {
+                                "name": "any",
+                                "warning": [
+                                    null
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "ntp": {
+                "server": [
+                    {
+                        "name": "192.168.0.123"
+                    }
+                ]
+            }
+        },
+        "interfaces": {
+            "interface": [
+                {
+                    "name": "ge-0/0/0",
+                    "description": "uplink to core",
+                    "mtu": "9192",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [
+                                        {
+                                            "name": "198.51.100.1/30"
+                                        }
+                                    ]
+                                },
+                                "inet6": {
+                                    "address": [
+                                        {
+                                            "name": "2001:db8:100::1/126"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "ge-0/0/1",
+                    "description": "downlink to access",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "vlan-id": "100",
+                            "family": {
+                                "inet": {
+                                    "address": [
+                                        {
+                                            "name": "10.0.100.1/24"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "ge-0/0/2",
+                    "description": "customer handoff",
+                    "ether-options": {
+                        "802.3ad": {
+                            "bundle": "ae0"
+                        }
+                    }
+                },
+                {
+                    "name": "ge-0/0/3",
+                    "description": "customer handoff backup",
+                    "ether-options": {
+                        "802.3ad": {
+                            "bundle": "ae0"
+                        }
+                    }
+                },
+                {
+                    "name": "ae0",
+                    "description": "bundled customer handoff",
+                    "aggregated-ether-options": {
+                        "lacp": {
+                            "active": [
+                                null
+                            ]
+                        }
+                    },
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [
+                                        {
+                                            "name": "10.0.200.1/24"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "lo0",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [
+                                        {
+                                            "name": "10.255.255.1/32"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "routing-options": {
+            "router-id": "10.255.255.1",
+            "autonomous-system": {
+                "as-number": "64496"
+            },
+            "static": {
+                "route": [
+                    {
+                        "name": "0.0.0.0/0",
+                        "next-hop": [
+                            "198.51.100.2"
+                        ]
+                    }
+                ]
+            }
+        },
+        "protocols": {
+            "bgp": {
+                "group": [
+                    {
+                        "name": "ebgp-peers",
+                        "type": "external",
+                        "peer-as": "64497",
+                        "neighbor": [
+                            {
+                                "name": "198.51.100.2",
+                                "description": "transit provider",
+                                "import": [
+                                    "import-transit"
+                                ],
+                                "export": [
+                                    "export-customers"
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "ibgp-peers",
+                        "type": "internal",
+                        "local-address": "10.255.255.1",
+                        "neighbor": [
+                            {
+                                "name": "10.255.255.2",
+                                "description": "core router"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "ospf": {
+                "area": [
+                    {
+                        "name": "0.0.0.0",
+                        "interface": [
+                            {
+                                "name": "ge-0/0/0.0",
+                                "metric": "10"
+                            },
+                            {
+                                "name": "lo0.0",
+                                "passive": [
+                                    null
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "lldp": {
+                "interface": [
+                    {
+                        "name": "all"
+                    }
+                ]
+            }
+        },
+        "policy-options": {
+            "policy-statement": [
+                {
+                    "name": "import-transit",
+                    "term": [
+                        {
+                            "name": "reject-bogons",
+                            "from": {
+                                "route-filter": [
+                                    {
+                                        "address": "10.0.0.0/8",
+                                        "orlonger": [
+                                            null
+                                        ]
+                                    }
+                                ]
+                            },
+                            "then": {
+                                "reject": [
+                                    null
+                                ]
+                            }
+                        },
+                        {
+                            "name": "accept-rest",
+                            "then": {
+                                "accept": [
+                                    null
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "export-customers",
+                    "term": [
+                        {
+                            "name": "customers",
+                            "from": {
+                                "community": [
+                                    "customer-routes"
+                                ]
+                            },
+                            "then": {
+                                "accept": [
+                                    null
+                                ]
+                            }
+                        },
+                        {
+                            "name": "default",
+                            "then": {
+                                "reject": [
+                                    null
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ],
+            "community": [
+                {
+                    "name": "customer-routes",
+                    "members": [
+                        "64496:100"
+                    ]
+                }
+            ]
+        },
+        "firewall": {
+            "family": {
+                "inet": {
+                    "filter": [
+                        {
+                            "name": "protect-re",
+                            "term": [
+                                {
+                                    "name": "allow-ssh",
+                                    "from": {
+                                        "source-address": [
+                                            {
+                                                "name": "10.0.0.0/8"
+                                            }
+                                        ],
+                                        "protocol": [
+                                            "tcp"
+                                        ],
+                                        "destination-port": [
+                                            "ssh"
+                                        ]
+                                    },
+                                    "then": {
+                                        "accept": [
+                                            null
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "discard-rest",
+                                    "then": {
+                                        "discard": [
+                                            null
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

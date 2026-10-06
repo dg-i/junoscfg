@@ -171,14 +171,19 @@ class TestExampleRoundtrip:
         match_pct = matches / total * 100
         assert match_pct >= 99.9, f"Only {matches}/{total} ({match_pct:.2f}%)"
 
-    def test_structured_to_set_matches_ruby(self, structured_config: str) -> None:
-        """Structured → set produces same 3063 lines as Ruby."""
+    def test_structured_to_set_line_count(self, structured_config: str) -> None:
+        """Structured → set produces 61 lines from examples/router1.conf.
+
+        Characterization: the count is what this implementation produces today,
+        recorded so a change to it is visible. The previous 3063 came from a
+        real router config that was never committed, and no comparison against
+        the Ruby gem is implied.
+        """
         result = convert_config(
             structured_config, from_format=Format.STRUCTURED, to_format=Format.SET
         )
         result_lines = result.strip().splitlines()
-        # Ruby Display::Set also produces 3063 lines
-        assert len(result_lines) == 3063
+        assert len(result_lines) == 61
 
     def test_set_to_struct_to_set_roundtrip(self, set_lines: str) -> None:
         """Set → struct → set roundtrip preserves all set lines."""
