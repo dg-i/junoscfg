@@ -1,0 +1,4 @@
+# OpenSpec configuration. The schema is the template's, under
+# openspec/schemas/agent-ready/, and is updated with the template; this file is
+# this repository's own from the first copy.
+schema: agent-ready

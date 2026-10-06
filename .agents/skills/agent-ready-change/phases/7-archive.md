@@ -1,0 +1,51 @@
+# Phase 7 — Archive
+
+## Outcome
+
+The change folder under `openspec/changes/archive/`, reviewed requirements in
+the main capability specs, and `metrics.md` plus `metrics.json` carrying
+provenanced evidence.
+
+## Process
+
+After implementation and review, in this order:
+
+1. While the live change folder exists, apply its reviewed delta to
+   `openspec/specs/` on the same branch. Use OpenSpec archive in a disposable
+   checkout to produce the main-spec result, then bring those spec edits into
+   the live branch without moving its change folder. Review the resulting
+   main specs against the delta. The lane gate requires the live folder for
+   these governed edits. Run `openspec validate <slug> --strict` and
+   `openspec validate --specs`; resolve any new-capability Purpose placeholder.
+2. Commit code, tests, main specs, and the live change folder, then record
+   full immutable base and code-head commit IDs. Run `agent-ready metrics
+   <slug> --base-sha SHA --head-sha SHA` before merge, while the live folder
+   exists. Optional `--session-log PATH --runtime codex|claude
+   --session-binding PATH` imports a native JSONL window declared by the
+   operator; `--human-effort PATH` imports explicit human observations. The
+   binding and manual files carry the same change and SHA pair. Missing or
+   unsupported evidence remains `UNMEASURED`; no agent estimates it.
+3. Review and commit both metrics files, then merge. The capture head remains
+   the code commit, even if the evidence commit or squash merge has another ID.
+4. Archive only when `openspec status --change <slug>` shows every artefact
+   the type needs complete and `tasks.md` has no open box: an open task is a
+   question for the human, never a warning to pass, and `openspec validate
+   --archived` fails an archived change that carries one. Then `openspec
+   validate <slug> --strict` and `openspec archive <slug> --yes --skip-specs`.
+   The main specs were already reviewed and merged. A fix-lane change has
+   `skip_specs: true` and no delta.
+5. `openspec list --specs` confirms the capability and requirement count.
+6. Commit the archive move, or use a small pull request where main is protected.
+
+OpenSpec moves both metrics files with the change folder. Context-expansion
+rows in the existing `metrics.md` Field/Value table survive capture. They
+record a decision to expand context, not measured read telemetry.
+
+The pre-merge spec application is part of the same reviewed change. Never
+merge a live delta with unapplied main-spec edits: after the merge, the
+supported `--skip-specs` archive operation moves the folder without applying
+the delta a second time.
+
+## Approval
+
+The merge was the approval. Archiving records it.

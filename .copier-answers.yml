@@ -1,0 +1,12 @@
+# Written by Copier from the template's answers; `copier update` reads it. Not hand-edited.
+_commit: v0.5.0
+_src_path: /Users/manon-dev/src/agent-ready-python
+description: A Python package maintained with coding agents
+github_workflows: false
+gitlab_workflows: false
+hosting: github
+mode: brownfield
+package_name: junoscfg
+project_name: junoscfg
+python_version: '3.11'
+template_url: file:///Users/manon-dev/src/agent-ready-python

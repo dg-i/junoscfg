@@ -1,0 +1,8 @@
+# The module boundaries. `tach sync` derives the modules and layers from the
+# imports in onboarding phase 4 and nowhere else: outside bootstrap it is out of
+# the agent's reach, because widening a boundary is a human decision under
+# review. A freshness diff in CI catches hand edits.
+source_roots = ["src"]
+exclude = ["tests", "docs"]
+forbid_circular_dependencies = true
+ignore_type_checking_imports = true

@@ -22,3 +22,5 @@ data/*.conf
 data/*.md
 data/*.schema
 graphify-out/
+scratchpad/
+.agent-ready/codemap/
