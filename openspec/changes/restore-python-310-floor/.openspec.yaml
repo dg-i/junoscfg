@@ -1,0 +1,6 @@
+schema: agent-ready
+created: 2026-10-06
+type: bug
+zone: anonymize
+domains: [anonymization]
+skip_specs: true

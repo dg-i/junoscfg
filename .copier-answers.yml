@@ -8,5 +8,5 @@ hosting: github
 mode: brownfield
 package_name: junoscfg
 project_name: junoscfg
-python_version: '3.13'
+python_version: '3.10'
 template_url: file:///Users/manon-dev/src/agent-ready-python

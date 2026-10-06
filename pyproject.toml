@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.6.0"
+version = "0.6.1"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 license = "MIT"
 authors = [
     { name = "Manon Goo", email = "manon.goo@dg-i.net" },
@@ -19,6 +19,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: System :: Networking",
@@ -58,7 +61,7 @@ line-length = 100
 # as useless expressions and undefined names. Both tools ship with the template.
 extend-exclude = [".agent-ready/"]
 # agent-ready:stage-levers:ruff:begin
-target-version = "py313"
+target-version = "py310"
 # agent-ready:stage-levers:ruff:end
 
 [tool.ruff.lint]
@@ -97,15 +100,8 @@ filename = "CHANGELOG.md"
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 # agent-ready:stage-levers:tables:end
 
-[tool.deptry.per_rule_ignores]
-# `crypt` was removed from the stdlib in 3.13. The import in
-# anonymize/rules/password.py is inside a try/except whose ImportError is the
-# expected path on every supported interpreter, so it is neither a dependency
-# nor a missing one.
-DEP001 = ["crypt"]
-
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -131,7 +127,9 @@ dev = [
     "lxml>=4.9",
     "mypy>=2.4",
     "deptry>=0.25.1",
-    "agent-ready-checks>=0.10.0",
+    # Development tooling only. It needs 3.11+, and must not drag the
+    # published package's floor up with it.
+    "agent-ready-checks>=0.10.0; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",

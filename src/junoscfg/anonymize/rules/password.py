@@ -123,20 +123,20 @@ def _encrypt_j9_deterministic(hex_digest: str, plaintext: str) -> str:
 
 
 def _make_crypt_hash(hex_digest: str, prefix: str, original_salt: str) -> str:
-    """Produce a real Unix crypt hash for ``$1$``/``$5$``/``$6$`` formats.
+    """Produce a structurally valid ``$1$``/``$5$``/``$6$`` hash.
 
-    Derives a pseudo-plaintext from *hex_digest* and uses the ``crypt`` module
-    to generate a structurally valid hash.  Falls back to the hex-body approach
-    if ``crypt`` is unavailable (Python ≥3.13 removed it).
+    The body is derived deterministically from *hex_digest*, so the same input
+    and salt give the same output on every platform and interpreter.  That
+    matters more here than realism: a configuration anonymized on one machine
+    has to match one anonymized on another.
+
+    This used to call ``crypt.crypt()``.  macOS answers an unsupported ``$N$``
+    salt with a 13-character DES hash rather than the requested format, so the
+    result depended on the host's libc; and ``crypt`` was removed from the
+    standard library in 3.13, which silently made this the only path there.
+    Now it is the only path everywhere.
     """
-    try:
-        import crypt  # noqa: S105
-
-        pseudo_plain = hex_digest[:16]
-        return crypt.crypt(pseudo_plain, f"{prefix}{original_salt}$")
-    except (ImportError, ModuleNotFoundError):
-        # crypt module unavailable — fall back to hex body
-        return f"{prefix}{original_salt}${hex_digest[:64]}"
+    return f"{prefix}{original_salt}${hex_digest[:64]}"
 
 
 class PasswordRule(Rule):

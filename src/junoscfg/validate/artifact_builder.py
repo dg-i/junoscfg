@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -172,7 +172,7 @@ def _write_metadata(
     """Write schema metadata file."""
     meta = {
         "junos_version": junos_version,
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator_version": "0.2.0",
         "fixes_applied": fixes_applied,
         "fixes_registered": get_fix_count(),

@@ -429,3 +429,42 @@ class TestPasswordAnonymizeIntegration:
         # Both mappings present
         assert "password" in result.mapping
         assert "ip" in result.mapping
+
+
+class TestCryptIndependence:
+    """The password rule must not depend on the stdlib ``crypt`` module.
+
+    ``crypt.crypt()`` answers an unsupported ``$N$`` salt with a 13-character
+    DES hash on macOS, and the module was removed in Python 3.13, so output
+    used to depend on both the host libc and the interpreter. These pin the
+    deterministic replacement.
+    """
+
+    def test_no_crypt_import_anywhere_in_the_package(self) -> None:
+        import ast
+        from pathlib import Path
+
+        offenders = []
+        for path in Path("src/junoscfg").rglob("*.py"):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, ast.Import) and any(a.name == "crypt" for a in node.names):
+                    offenders.append(str(path))
+                if isinstance(node, ast.ImportFrom) and node.module == "crypt":
+                    offenders.append(str(path))
+        assert offenders == []
+
+    def test_output_is_fixed_for_a_fixed_salt(self) -> None:
+        """Byte-for-byte stable, so two machines anonymize a config alike."""
+        rule = self._make_rule()
+        assert rule.transform("$1$abc123$xyzHashValueHere") == (
+            "$1$abc123$9f910e33980334f59fcfed4153db206e7633ebfe4810da1447506634a5052c5e"
+        )
+
+    @staticmethod
+    def _make_rule() -> object:
+        from junoscfg.anonymize.config import AnonymizeConfig
+        from junoscfg.anonymize.rules.password import PasswordRule
+
+        config = AnonymizeConfig(passwords=True, salt="fixed-salt")
+        config.expand_all()
+        return PasswordRule(config)
