@@ -45,6 +45,10 @@ conversation happening again.
 - The gate stops failing locally today and keeps passing in CI.
 - It also stops reporting a real signal for longer: at 4600 the set could grow
   by another 1800 tokens before anyone is told. The `review-by` is the backstop.
-- Revisit at the review date with the post-phase-7 measurement. If the committed
-  set is near 2286 as projected, 4600 is more headroom than this repository
-  needs and should come back down.
+- Measured after phase 7's reorganisation, on the same day: **3150 total, 2626
+  committed**, against 4600. AGENTS.md went from 2818 tokens to 1558. So the
+  breach this record was written for is gone, and 4600 is roughly 2000 tokens
+  of headroom over the committed set.
+- Revisit at the review date. On this measurement 4600 is more than the
+  repository needs; 3600 would still leave room for another tool's skills while
+  keeping the gate able to say something.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.5.18"
+version = "0.6.0"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -227,14 +227,6 @@ break-bumps = { api = "minor", cli = "minor" }
 # gets worse fails, and every tolerated violation starts failing once the expiry
 # passes. Warn mode without an expiry is a configuration error, so a warn period
 # is always one somebody has to end.
-
-# AGENTS.md is 190 lines against a cap of 100. Phase 7 reorganises it, so this
-# warn period is short by design: the baseline records the debt, a new
-# over-cap document fails from day one, and AGENTS.md getting longer fails too.
-[tool.template.gates.caps]
-mode = "warn"
-expires = "2026-12-31"
-baseline = ".agent-ready/caps.json"
 
 # What to move first when a document is over its cap. The generic ladder is in
 # the failure message; these are the rungs that differ by artefact.

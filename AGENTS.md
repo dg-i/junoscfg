@@ -1,10 +1,15 @@
 # AGENTS.md
 
-Instructions for AI assistants (and human contributors) working on this project.
+Instructions for agents and human contributors. What this system *is* — its
+goals, constraints, layering and cross-cutting rules — is `ARCHITECTURE.md`.
+This file is only the house rules: break one and the repository is badly
+written, not wrong.
 
 ## Project Overview
 
-Python toolkit for converting, validating, and anonymizing Junos configurations between XML, JSON, structured, YAML, and display set formats. Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser).
+Python toolkit for converting, validating, anonymizing and auditing Junos
+configurations between XML, JSON, structured, YAML and display set formats.
+Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser).
 
 <!-- agent-ready:stage:begin -->
 ## Stage
@@ -19,144 +24,71 @@ flips is in the `## Stage` section of every phase of `agent-ready-change`, and
 the lever blocks of `pyproject.toml` carry what this stage renders.
 <!-- agent-ready:stage:end -->
 
+## Before you edit a module
+
+1. Read its `CONTRACT.md` (or `<module>.CONTRACT.md`) — invariants and what the
+   module is *not* for.
+2. Prefer an existing helper. `display` is the shared kernel; six packages
+   import from it, and a seventh copy of a formatter belongs there instead.
+3. Import through the package door, never a submodule path: `tach check` and
+   `agent-ready interfaces` both refuse `junoscfg.display.constants.X`.
+
 ## Pre-Commit Checklist
 
-Before every commit, **must** complete these steps in order:
+`pre-commit` runs ruff, deptry, document caps and markdownlint on commit, so
+those are not your job. Yours, in order:
 
-1. **Tests pass** — `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'`
-2. **Lint clean** — `uv run ruff check src/ tests/`
-3. **Format clean** — `uv run ruff format src/ tests/`
-4. **Documentation check** — verify changes are reflected in docs (see checklist below)
-5. **Version bump** — update version in all 3 files (see details below)
-6. **After XSD/schema changes** — run with `--regen-schema` to rebuild `junos-structure-tree.json`
-
-## Development Commands
-
-```bash
-# Run tests (fast, for normal development)
-uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'
-
-# Full pre-commit validation — regenerates schema artifacts from XSD
-uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip' --regen-schema
-
-# Run ALL tests including slow example validation
-uv run pytest tests/ -q --regen-schema
-
-# Lint
-uv run ruff check src/ tests/
-
-# Format
-uv run ruff format src/ tests/
-```
-
-### Testing workflow
-
-1. **During development**: Run fast tests without `--regen-schema`
-2. **Before committing**: Run with `--regen-schema` to ensure XSD fixes are reflected in bundled artifacts
-3. **After XSD/schema changes**: Always use `--regen-schema` to regenerate `junos-structure-tree.json`
-
-### Private test data
-
-Real-world router configurations for integration testing go in `private_test_data/`. All files there (except the README) are gitignored. These are not part of the public repository.
+1. **Tests pass** — `uv run pytest tests/ -q` (the full suite; the fast inner
+   loop is the same with `-k 'not ExampleValidation and not ExampleRoundtrip'`).
+2. **After XSD or schema changes** — rerun with `--regen-schema` so the bundled
+   artifacts match `xsd_fixes.py`.
+3. **Documentation check** — see below.
+4. **Version bump** — see below.
 
 ## Version Management
 
-Version is defined in three places that must all be updated together:
+Version lives in three places that move together: `pyproject.toml`,
+`src/junoscfg/__init__.py`, and the assertion in `tests/test_cli.py`.
 
-1. `pyproject.toml` — `version = "x.y.z"`
-2. `src/junoscfg/__init__.py` — `__version__ = "x.y.z"`
-3. `tests/test_cli.py` — version string assertion
-
-Rules:
-
-- Use **patch** bumps (e.g. 0.4.0 -> 0.4.1) for all changes including new features
-- Include the version bump in the same commit as the code changes
-- After committing, create a git tag: `git tag v{version}`
+- A break on a named surface (`api`, `cli`) raises the **minor**, as
+  `[tool.template.stage] break-bumps` declares. Everything else is a patch.
+- Bump in the same commit as the code; tag `v{version}` after committing.
 
 ## Documentation Checklist
 
-Verify that code changes are reflected in documentation:
-
-1. **CLI options**: Every `@click.option` in `cli.py` must have a matching row in `docs/guide/cli.md`
-2. **Public API**: Every member of `__all__` in `__init__.py` must appear in `docs/api/conversion.md`
-3. **Code examples**: Python snippets in docs must use real function names from `__all__` — verify imports match actual exports
-4. **File paths**: Any `src/junoscfg/...` path in `docs/architecture/` must point to an actual file
-5. **mkdocs nav**: Every `.md` file in `docs/` must appear in `mkdocs.yml` `nav:` section
-6. **XSD fix counts**: When adding/removing XSD fixes, update count tables in `docs/architecture/developer-guide.md` and `docs/architecture/schema-internals.md`
-7. **README.md**: Must mention all major features and use only real imports in examples
-8. **Ruby gem references**: Lines mentioning `[Ruby Junoser gem]` or `github.com/codeout/junoser)` refer to the upstream Ruby project — do not rename these
-
-## Project Structure
-
-```text
-src/junoscfg/
-  cli.py              # CLI (convert, edityaml, schema)
-  input.py            # Input parsing/normalization
-  edityaml/           # Post-process YAML (addvars + ansibilize)
-    __init__.py       # Public API: apply_rules(data, ruleset)
-    path_walker.py    # resolve_path(), resolve_path_with_context()
-    transforms.py     # Transform implementations (6 types)
-    rules.py          # Rule file loader and inline --set parser
-    ansibilize.py     # ansibilize() — split YAML into host_vars + Jinja2 group_vars
-  convert/            # Unified conversion pipeline (any format -> IR -> any format)
-    __init__.py       # pipeline(), to_dict(), from_dict(), validate_ir()
-    ir.py             # IR utilities (find_configuration, wrap_configuration)
-    input/            # Format -> dict IR parsers
-    output/           # Dict IR -> format renderers
-    field_validator.py  # Field-level value validation
-  display/            # Shared conversion utilities
-    __init__.py       # is_display_set(), filter_set_by_path()
-    constants.py      # Schema flag helpers, XML-compat constants, key aliases
-    to_yaml.py        # xml_to_yaml(), filter_yaml_by_path()
-    set_converter.py  # Structured -> set commands
-    value_format.py   # Value formatting (quoting, escaping)
-    config_store.py   # Configuration tree storage and rendering
-    xml_helpers.py    # XML element utilities
-  anonymize/          # Configuration anonymization
-    __init__.py       # Public API: anonymize(ir, config) -> AnonymizeResult
-    config.py         # AnonymizeConfig — rule selection and settings
-    walker.py         # IR tree walker
-    revert.py         # Revert anonymization using saved mapping
-    path_filter.py    # Include/exclude path glob matching
-    rules/            # Per-category anonymization rules
-  validate/           # Schema pipeline (XSD -> artifacts)
-    xsd_extractor.py  # Extract XSD from NETCONF dump
-    xsd_parser.py     # Parse XSD into SchemaNode tree
-    xsd_fixes.py      # Structural corrections (Groups A-H)
-    schema_node.py    # SchemaNode tree data structure
-    artifact_builder.py   # Serialize schema tree to JSON artifacts
-    schema_generator.py   # Generate JSON Schema for validation
-    grammar_generator.py  # Generate Lark grammar for set commands
-    validator.py      # Main validation orchestrator
-    data/             # Bundled schema artifacts (runtime)
-```
-
-## Architecture
-
-The layering, the one-IR rule and the cross-cutting conventions are in
-`ARCHITECTURE.md` section 8. The three pipelines — schema, conversion and
-edityaml — are documented in full in `docs/architecture/developer-guide.md`,
-and the symptom-to-fix table for conversion bugs is in
-`docs/architecture/conversion-bugfix-guide.md`. This file carried a summary of
-all three; it was a copy that drifted, so it points instead.
+1. Every `@click.option` in `cli.py` has a row in `docs/guide/cli.md`.
+2. Every name in a module's `__all__` appears in its `docs/api/` page.
+3. Python snippets use real names from `__all__`.
+4. Any `src/junoscfg/...` path in `docs/architecture/` points at a real file.
+5. Every `.md` under `docs/` is in `mkdocs.yml` `nav:` or its `not_in_nav`.
+6. Adding or removing an XSD fix updates the counts in
+   `docs/architecture/developer-guide.md` and `schema-internals.md`.
+7. `README.md` mentions every major feature and imports only real names.
+8. Lines citing the `[Ruby Junoser gem]` or `github.com/codeout/junoser)` name
+   the upstream Ruby project — never rename them.
 
 ## Test Data Conventions
 
-All test data uses generic, non-identifying values. Never use real operator data in tests.
+Never use real operator data. Real configurations go in `private_test_data/`,
+which is gitignored except its README.
 
 | Category | Standard values | Notes |
 |----------|----------------|-------|
 | AS numbers | 64496-64511 | RFC 5398 documentation range |
-| IPv4 (to anonymize) | 203.0.114.x, 198.0.2.x | Public routable, outside documentation ranges |
+| IPv4 (to anonymize) | 203.0.114.x, 198.0.2.x | Outside the documentation ranges |
 | IPv4 (preserved) | 10.x, 192.168.x, 198.51.100.x | RFC 1918 / RFC 5737 |
-| IPv6 (to anonymize) | `3ffe:0b00:*` | Old 6bone (RFC 3701), always anonymized |
-| Passwords | `$9$ExAmPlEhAsH.KEY` | Synthetic $9$ format |
-| Usernames | admin, operator, user1 | Generic |
-| Hostnames | router1, switch1, r1, sw1 | Generic |
+| IPv6 (to anonymize) | `3ffe:0b00:*` | Old 6bone (RFC 3701) |
+| Passwords | `$9$ExAmPlEhAsH.KEY` | Synthetic `$9$` format |
+| Usernames / hostnames | admin, operator, router1, sw1 | Generic |
 
-## Key Dependencies
+## Where things are
 
-- **netutils** — Juniper `$9$` encoding constants for the password anonymizer
-- **ipanon** — IP address anonymization with prefix-preserving mapping
-- **lark** — Grammar-based parser for set command validation
-- **lxml** — XML parsing and XSD extraction
+| Looking for | Read |
+|---|---|
+| Layering, the one-IR rule, error handling | `ARCHITECTURE.md` section 8 |
+| A module's invariants | its `CONTRACT.md` |
+| The three pipelines in detail | `docs/architecture/developer-guide.md` |
+| Why a conversion renders wrongly | `docs/architecture/conversion-bugfix-guide.md` |
+| Approved tools and versions | `docs/TOOLBOX.md` |
+| A decision and its expiry | `docs/decisions/index.md` |
+| How to run a change | the `agent-ready-change` skill |

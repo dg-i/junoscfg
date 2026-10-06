@@ -698,56 +698,6 @@ def generate(xsd_source: str, output_dir: str) -> None:
 
 
 @schema.command()
-@click.argument("xsd_source", type=click.Path(exists=True))
-@click.option("-o", "--output", "output_file", type=click.Path(), default=None, help="Output file.")
-@click.option("--max-depth", type=int, default=0, help="Maximum nesting depth (0 = unlimited).")
-@click.option(
-    "--section", default=None, help="Only show this section (e.g. 'system' or 'system syslog')."
-)
-@click.option("--no-enums", is_flag=True, help="Omit enum value listings.")
-@click.option("--no-deprecated", is_flag=True, help="Omit deprecated elements.")
-@click.option("--compact", is_flag=True, help="Omit descriptions, show only structure.")
-def makedoc(
-    xsd_source: str,
-    output_file: str | None,
-    max_depth: int,
-    section: str | None,
-    no_enums: bool,
-    no_deprecated: bool,
-    compact: bool,
-) -> None:
-    """Generate a YAML-like configuration reference from XSD.
-
-    \b
-    Examples:
-      junoscfg schema makedoc netconf.xml -o reference.yaml
-      junoscfg schema makedoc netconf.xml --section "system" --compact
-      junoscfg schema makedoc netconf.xml --max-depth 3 --no-deprecated
-    """
-    from junoscfg.validate.schema_doc import generate_doc
-
-    try:
-        result = generate_doc(
-            xsd_source,
-            max_depth=max_depth,
-            section=section,
-            no_enums=no_enums,
-            no_deprecated=no_deprecated,
-            compact=compact,
-        )
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(3)
-
-    if output_file:
-        with open(output_file, "w") as f:
-            f.write(result)
-        click.echo(f"Written to {output_file}", err=True)
-    else:
-        click.echo(result, nl=False)
-
-
-@schema.command()
 @click.option(
     "--artifacts",
     type=click.Path(exists=True, file_okay=False),
@@ -920,7 +870,6 @@ def fullhelp(ctx: click.Context) -> None:
         ("junoscfg edityaml rename-root", rename_root),
         ("junoscfg schema", schema),
         ("junoscfg schema generate", generate),
-        ("junoscfg schema makedoc", makedoc),
         ("junoscfg schema info", info),
         ("junoscfg audit", audit),
         ("junoscfg audit unused", unused),

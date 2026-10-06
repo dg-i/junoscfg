@@ -14,7 +14,7 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.5.18" in result.output
+        assert "0.6.0" in result.output
 
     def test_no_mode_shows_help(self) -> None:
         runner = CliRunner()
@@ -752,7 +752,7 @@ class TestFullHelp:
         runner = CliRunner()
         result = runner.invoke(main, ["fullhelp"])
         assert result.exit_code == 0
-        for keyword in ("convert", "addvars", "ansibilize", "generate", "makedoc", "info"):
+        for keyword in ("convert", "addvars", "ansibilize", "generate", "info"):
             assert keyword in result.output
 
     def test_fullhelp_contains_all_sections(self) -> None:
@@ -768,7 +768,6 @@ class TestFullHelp:
             "junoscfg edityaml rename-root\n",
             "junoscfg schema\n",
             "junoscfg schema generate\n",
-            "junoscfg schema makedoc\n",
             "junoscfg schema info\n",
         ]
         for header in expected_headers:

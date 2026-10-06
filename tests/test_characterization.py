@@ -65,26 +65,33 @@ class TestValidateXmlNeedsAnXsdNobodyShips:
         assert list(data.glob("*.xsd")) == []
 
 
-class TestSchemaMakedocIsDead:
-    """``junoscfg schema makedoc`` imports a module that has never existed.
+class TestSchemaMakedocIsGone:
+    """``junoscfg schema makedoc`` was removed; it had never worked.
 
-    ``cli.py:726`` does ``from junoscfg.validate.schema_doc import
-    generate_doc``; there is no ``schema_doc.py`` in the tree or anywhere in
-    git history.  The command is documented in ``docs/guide/cli.md`` with
-    worked examples and is listed in the help test, which is why nothing has
-    caught it.  Its ``-o`` write path is unreachable for the same reason.
+    ``cli.py`` imported ``junoscfg.validate.schema_doc``, a module that never
+    existed in the tree or in git history, so every invocation raised
+    ModuleNotFoundError while ``docs/guide/cli.md`` documented the command with
+    worked examples. Removed by openspec/changes/remove-dead-makedoc as a
+    declared ``cli`` surface break. This test replaces the one that pinned the
+    crash, and fails against the merge base, where the command still exists.
     """
 
-    def test_makedoc_raises_module_not_found(self, tmp_path: Path) -> None:
-        xsd = tmp_path / "mini.xsd"
-        xsd.write_text(MINIMAL_XSD)
-
+    def test_makedoc_is_not_a_command(self) -> None:
         runner = CliRunner()
-        result = runner.invoke(main, ["schema", "makedoc", str(xsd)])
+        result = runner.invoke(main, ["schema", "makedoc", "--help"])
 
         assert result.exit_code != 0
-        assert isinstance(result.exception, ModuleNotFoundError)
-        assert "schema_doc" in str(result.exception)
+        assert "No such command" in result.output
+
+    def test_schema_help_does_not_offer_it(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(main, ["schema", "--help"])
+
+        assert result.exit_code == 0
+        assert "makedoc" not in result.output
+        # the commands that do work are still there
+        assert "generate" in result.output
+        assert "info" in result.output
 
 
 class TestSchemaGenerateWritesOutsideTheRepo:

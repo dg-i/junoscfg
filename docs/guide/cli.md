@@ -462,32 +462,6 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 junoscfg schema generate netconf.xml -o ./my-artifacts/
 ```
 
-### schema makedoc
-
-Generate a YAML-like configuration reference from XSD.
-
-```text
-junoscfg schema makedoc XSD_SOURCE [OPTIONS]
-```
-
-| Argument/Option | Description |
-|-----------------|-------------|
-| `XSD_SOURCE` | Path to NETCONF XSD dump file |
-| `-o`, `--output` | Output file (prints to stdout if omitted) |
-| `--max-depth` | Maximum nesting depth (0 = unlimited) |
-| `--section` | Only show this section (e.g. `"system"` or `"system syslog"`) |
-| `--no-enums` | Omit enum value listings |
-| `--no-deprecated` | Omit deprecated elements |
-| `--compact` | Omit descriptions, show only structure |
-
-Examples:
-
-```bash
-junoscfg schema makedoc netconf.xml -o reference.yaml
-junoscfg schema makedoc netconf.xml --section "system" --compact
-junoscfg schema makedoc netconf.xml --max-depth 3 --no-deprecated
-```
-
 ### schema info
 
 Display schema artifact information.
