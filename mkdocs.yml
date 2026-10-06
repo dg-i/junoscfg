@@ -10,6 +10,9 @@ theme:
     - content.code.copy
     - toc.integrate
 
+not_in_nav: |
+  /decisions/20*.md
+
 plugins:
   - search
   - mkdocstrings:
@@ -76,6 +79,8 @@ nav:
       - Design Decisions: architecture/design-decisions.md
       - Schema Internals: architecture/schema-internals.md
       - Conversion Bugfix Guide: architecture/conversion-bugfix-guide.md
+  - Toolbox: TOOLBOX.md
+  - Decisions: decisions/index.md
   - Working with Agents:
       - Work with Agents: how-to/work-with-agents.md
       - Solo Review: how-to/solo-review.md

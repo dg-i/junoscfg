@@ -84,6 +84,7 @@ dev = [
     "pytest>=7.0",
     "ruff>=0.4",
     "lxml>=4.9",
+    "mypy>=2.4",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -197,19 +198,19 @@ break-bumps = { api = "minor", cli = "minor" }
 [[tool.template.toolbox.approved]]
 name = "ruff"
 purpose = "format and lint"
-minimum-version = "0.16.8"
+minimum-version = "0.15.0"
 licence = "MIT"
 
 [[tool.template.toolbox.approved]]
 name = "mypy"
-purpose = "types, whole package"
-minimum-version = "2.3.1"
+purpose = "types, whole package; 102 errors in 25 of 68 files at adoption, so phase 4 installs it warn-mode against a baseline"
+minimum-version = "2.4.0"
 licence = "MIT"
 
 [[tool.template.toolbox.approved]]
 name = "pytest"
 purpose = "tests"
-minimum-version = "9.1.1"
+minimum-version = "9.0.2"
 licence = "MIT"
 
 [[tool.template.toolbox.approved]]
@@ -238,8 +239,8 @@ licence = "MIT"
 
 [[tool.template.toolbox.approved]]
 name = "PyYAML"
-purpose = "safe YAML parsing for workflow metadata and decision front matter"
-minimum-version = "6.0.2"
+purpose = "YAML input and output in the conversion pipeline; also workflow metadata and decision front matter"
+minimum-version = "6.0.3"
 licence = "MIT"
 
 [[tool.template.toolbox.approved]]
@@ -265,6 +266,84 @@ name = "peter-evans/create-pull-request"
 purpose = "opens the scheduled update pull requests"
 minimum-version = "7.0.0"
 licence = "MIT"
+
+# The application's own runtime libraries. Minimum versions are the uv.lock
+# pins, which is what the suite actually exercises.
+
+[[tool.template.toolbox.approved]]
+name = "click"
+purpose = "CLI argument parsing and command groups"
+minimum-version = "8.3.1"
+licence = "BSD-3-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "jsonschema"
+purpose = "validate JSON and YAML configurations against the generated JSON Schema"
+minimum-version = "4.26.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "lark"
+purpose = "grammar-based parser for set-command validation, from the generated grammar"
+minimum-version = "1.3.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "ipanon"
+purpose = "prefix-preserving IP address anonymization; first-party, github.com/dg-i/ipanon"
+minimum-version = "0.3.3"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "netutils"
+purpose = "Juniper $9$ encoding constants for the password anonymizer"
+minimum-version = "1.17.1"
+licence = "Apache-2.0"
+
+[[tool.template.toolbox.approved]]
+name = "lxml"
+purpose = "XML parsing and XSD extraction; optional, behind the xml extra"
+minimum-version = "6.0.2"
+licence = "BSD-3-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocs"
+purpose = "the documentation site"
+minimum-version = "1.6.1"
+licence = "BSD-2-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocs-material"
+purpose = "the documentation theme"
+minimum-version = "9.7.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocstrings"
+purpose = "API reference pages generated from docstrings"
+minimum-version = "1.0.3"
+licence = "ISC"
+
+# System tools. A binary the tests shell out to is a dependency whether or not
+# it appears in a manifest.
+
+[[tool.template.toolbox.approved]]
+name = "uv"
+purpose = "the runner every documented command goes through; tests/conftest.py shells out to it under --regen-schema"
+minimum-version = "0.12.18"
+licence = "Apache-2.0 OR MIT"
+
+[[tool.template.toolbox.approved]]
+name = "git"
+purpose = "the checks read refs: stage, lane, retired, metrics"
+minimum-version = "2.55.0"
+licence = "GPL-2.0-only"
+
+[[tool.template.toolbox.approved]]
+name = "OpenSSH (ssh, scp)"
+purpose = "tests/integration_test.sh drives a live device; run by hand, never by pytest"
+minimum-version = "9.0"
+licence = "BSD-2-Clause"
 
 [[tool.template.toolbox.rejected]]
 name = "markdownlint for document caps"
