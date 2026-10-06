@@ -162,7 +162,7 @@ always-loaded-budget = 4000
 
 # A vendored skill is its upstream's: left out of frontmatter, parity, and
 # mirror checks, and kept rather than deleted when the mirror regenerates.
-vendored-skills = ["openspec-*"]
+vendored-skills = ["openspec-*", ".openspec-*"]
 
 # Every cap the checks read lives here, and raising one takes a decision record
 # naming the measurement that justifies it (AC39).

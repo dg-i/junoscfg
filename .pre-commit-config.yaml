@@ -48,4 +48,6 @@ repos:
         # agent-ready fields enforces and MD041 (first line must be an h1)
         # rejects. The bridge wins: it is a loader directive, not a document.
         # changelog.d holds towncrier fragments: one sentence each, no h1.
-        exclude: ^(openspec/schemas/|changelog\.d/|CLAUDE\.md$)
+        # Vendored skills belong to their upstream; pyproject declares them
+        # under vendored-skills and we do not reformat someone else's docs.
+        exclude: ^(openspec/schemas/|changelog\.d/|\.agents/skills/openspec-|CLAUDE\.md$)
