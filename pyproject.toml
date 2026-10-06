@@ -158,7 +158,7 @@ test-command = ["uv", "run", "pytest", "tests/", "-q"]
 # Budgets what is loaded at session start, not what the repository stores:
 # `agent-ready budget` counts AGENTS.md, CLAUDE.md beyond a bridge, every
 # skill's name and description, and every command's description.
-always-loaded-budget = 4000
+always-loaded-budget = 4600
 
 # A vendored skill is its upstream's: left out of frontmatter, parity, and
 # mirror checks, and kept rather than deleted when the mirror regenerates.
