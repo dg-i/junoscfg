@@ -21,3 +21,4 @@ data/*.yaml_edit
 data/*.conf
 data/*.md
 data/*.schema
+graphify-out/
