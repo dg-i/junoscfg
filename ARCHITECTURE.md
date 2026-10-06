@@ -100,4 +100,47 @@ than fetching or deriving them at run time.
 
 ## 8. Cross-cutting concepts
 
-<the rules that hold everywhere: layering, error handling, money, time, identity>
+**Layering.** The package import graph is a DAG with no cycles — measured, 51
+runtime edges, 1 of them `TYPE_CHECKING`-guarded (`convert` -> `anonymize`) and
+none in a `__main__` block. Dependencies run one way:
+
+```
+display + input.py        shared kernel, imported by 6 of 7 packages
+  <- validate, anonymize  schema and rules
+  <- convert              the pipeline; also imports anonymize
+  <- audit                reads the pipeline's output
+  <- cli.py, __init__.py  the two declared surfaces
+edityaml                  standalone: imports nothing else in the package
+```
+
+A new edge that points up this list is a defect. `display` is the kernel by
+use, not by name: 1337 lines of which `config_store.py` (416) and
+`constants.py` (194) are a data structure and a schema-flag table, not display
+logic.
+
+**One interchange format.** Every conversion is `format -> dict IR -> format`;
+there is no direct format-to-format path and adding one is the "second way to
+do the same thing" that section 1 calls a defect. XML input bridges through
+`xml_to_yaml()` rather than getting its own parser.
+
+**Generated artifacts are never hand-edited.** Everything under
+`validate/data/` comes from the XSD pipeline. A correction goes in
+`xsd_fixes.py` as Python so that it survives the next regeneration; editing the
+JSON is a change that the next `--regen-schema` silently reverts.
+
+**Errors leave by three different doors, and that is a defect, not a design.**
+Schema validation returns a `ValidationResult`; a structural failure raises
+(`SchemaLoadError`, `AuditLoadError`, `FieldValidationError`, `ValueError`);
+and field warnings are `print(..., file=sys.stderr)` from inside the library —
+`convert/__init__.py:127`, `anonymize/walker.py:186`,
+`convert/output/structured_output.py`. `cli.py` contains no `sys.stderr` call
+at all, so the inversion is complete: the library writes to the terminal and
+the CLI does not. For an in-process consumer such as the Ansible collection
+those lines are unaddressable output. The rule is that the library returns
+diagnostics and the caller decides where they go; the three sites above are the
+known exceptions.
+
+**Not applicable here.** No money, no wall-clock time, no user identity or
+authorization: junoscfg is a pure text-to-text transformation with no session
+and no clock. The one identity-shaped concern is anonymization, whose mapping
+is deterministic from a caller-supplied salt — see `anonymize/config.py`.

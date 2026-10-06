@@ -303,3 +303,90 @@ date = "2026-10-06"
 
 [tool.uv.sources]
 agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.10.0" }
+
+[tool.template.zones.kernel]
+paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.conversion]
+paths = ["src/junoscfg/convert/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.schema]
+paths = ["src/junoscfg/validate/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.anonymize]
+paths = ["src/junoscfg/anonymize/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "red"
+intent = "active"
+
+[tool.template.zones.edityaml]
+paths = ["src/junoscfg/edityaml/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.audit]
+paths = ["src/junoscfg/audit/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.surface]
+paths = ["src/junoscfg/cli.py", "src/junoscfg/__init__.py"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.domains.conversion]
+paths = ["src/junoscfg/convert/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "turn any supported representation of a Junos configuration into any other without changing its meaning"
+
+[tool.template.domains.validation]
+paths = [
+    "src/junoscfg/validate/validator.py",
+    "src/junoscfg/validate/json_yaml_validator.py",
+    "src/junoscfg/validate/set_validator.py",
+    "src/junoscfg/validate/structured_validator.py",
+    "src/junoscfg/validate/xml_validator.py",
+    "src/junoscfg/convert/field_validator.py",
+]
+owners = ["manon.goo@dg-i.net"]
+purpose = "answer whether a configuration is one the device would accept, before it reaches a device"
+
+[tool.template.domains.anonymization]
+paths = ["src/junoscfg/anonymize/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "make a real configuration safe to share, reversibly for whoever holds the mapping"
+
+[tool.template.domains.schema-pipeline]
+paths = [
+    "src/junoscfg/validate/xsd_extractor.py",
+    "src/junoscfg/validate/xsd_parser.py",
+    "src/junoscfg/validate/xsd_fixes.py",
+    "src/junoscfg/validate/schema_node.py",
+    "src/junoscfg/validate/artifact_builder.py",
+    "src/junoscfg/validate/schema_generator.py",
+    "src/junoscfg/validate/grammar_generator.py",
+]
+owners = ["manon.goo@dg-i.net"]
+purpose = "turn a vendor XSD dump into the artifacts the rest of the toolkit treats as the schema's truth"
+
+[tool.template.domains.ansible-vars]
+paths = ["src/junoscfg/edityaml/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "split one configuration into host_vars and templated group_vars so it becomes many routers"
+
+[tool.template.domains.audit]
+paths = ["src/junoscfg/audit/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "find configuration objects that are defined but never referenced"
