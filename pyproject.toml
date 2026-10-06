@@ -90,3 +90,216 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
 ]
+
+# Where a reorganisation lands, as a share of the cap. One ratio for every cap:
+# a second line count per cap would double the guessing, and a ratio follows a
+# cap that is raised rather than drifting away from it. Nothing enforces it —
+# coming back at the cap means coming back here next week.
+[tool.template]
+reorganise-to = 0.7
+# The ref the stage gates and the metrics compare with. Unset, `origin/main`,
+# then `main`. On a directory remote name the previous release tag or `HEAD~1`,
+# because `origin/main` there is only what was last pushed.
+# base = "origin/main"
+
+# Budgets what is loaded at session start, not what the repository stores:
+# `agent-ready budget` counts AGENTS.md, CLAUDE.md beyond a bridge, every
+# skill's name and description, and every command's description.
+always-loaded-budget = 4000
+
+# A vendored skill is its upstream's: left out of frontmatter, parity, and
+# mirror checks, and kept rather than deleted when the mirror regenerates.
+vendored-skills = ["openspec-*"]
+
+# Every cap the checks read lives here, and raising one takes a decision record
+# naming the measurement that justifies it (AC39).
+[tool.template.caps]
+"AGENTS.md" = 100
+"ARCHITECTURE.md" = 200
+"docs/TOOLBOX.md" = 80
+"src/**/CONTRACT.md" = 30
+# A single-file module's contract sits beside it under the module's own name.
+"src/**/*.CONTRACT.md" = 30
+"openspec/specs/**/*.md" = 200
+"docs/decisions/*.md" = 60
+"openspec/changes/*/proposal.md" = 60
+"openspec/changes/*/specs/**/*.md" = 100
+"openspec/changes/*/design.md" = 80
+"openspec/changes/*/retires.md" = 100
+"openspec/changes/*/checklist.md" = 20
+".agents/skills/*/SKILL.md" = 300
+".agents/skills/*/**/*.md" = 100
+
+# Per-section budgets, read by `agent-ready caps` beside the file caps: inside a
+# file the glob matches, the named section may not exceed the line count.
+[tool.template.section-caps]
+".agents/skills/*/SKILL.md" = { Stage = 10 }
+
+# The compatibility promise, declared by the owner and never deduced. A scaffold
+# value fails `agent-ready fields`, as do an unknown name, a missing or passed
+# review date, a single named approver, a named surface with no `break-bumps`
+# entry or with a component outside `components`, and a lowered `name` that
+# arrives without the escape hatch in `stage.md`. `owners` renders into a
+# CODEOWNERS rule for this file, so a stage change takes a second human.
+[tool.template.stage]
+name = "beta"
+review-by = "2027-04-06"
+owners = ["manon.goo@dg-i.net"]
+solo = true                     # one maintainer; drop it when a second owner arrives
+surfaces = ["api", "cli"]
+# `dg-i/ansible-collection-junos-config` is in production against both: its
+# render filter imports convert_config, validate_config, Format and
+# FieldValidationError, and its pipelines drive `convert`, `edityaml
+# rename-root` and `edityaml ansibilize`. See ARCHITECTURE.md section 3.
+surface-paths = { cli = ["src/junoscfg/cli.py"] }
+# Semver-shaped, pre-1.0. A break on either surface raises the minor, which
+# replaces the current patch-bump-for-everything rule in AGENTS.md.
+components = ["major", "minor", "patch"]
+break-bumps = { api = "minor", cli = "minor" }
+
+# Gates enforce by default. A gate installed on an existing codebase that
+# cannot pass it starts in warn mode against a committed baseline, which is how
+# an imperfect project adopts the gate on the day it arrives rather than after a
+# cleanup. The gates with a baseline are caps, interfaces, specs, and reconcile;
+# the other checks have no debt to carry, and `agent-ready gates` rejects a
+# gate declared under any other name:
+#
+#   [tool.template.gates.caps]
+#   mode = "warn"
+#   expires = "2026-12-31"
+#   baseline = ".agent-ready/caps.json"
+#
+# Write the baseline with `agent-ready caps --write-baseline`. A violation absent
+# from the baseline fails from day one in either mode, a baselined violation that
+# gets worse fails, and every tolerated violation starts failing once the expiry
+# passes. Warn mode without an expiry is a configuration error, so a warn period
+# is always one somebody has to end.
+
+# What to move first when a document is over its cap. The generic ladder is in
+# the failure message; these are the rungs that differ by artefact.
+[tool.template.caps-remedy]
+"AGENTS.md" = "move pointer targets into the files they point at; only the rule that matters most stays"
+"ARCHITECTURE.md" = "sections 4 to 7 and 9 to 12 are optional; a fact that changes at a different cadence belongs in the toolbox or a decision record"
+"src/**/CONTRACT.md" = "move interface facts back to __all__; drop an invariant that names no check"
+"src/**/*.CONTRACT.md" = "move interface facts back to __all__; drop an invariant that names no check"
+"openspec/specs/**/*.md" = "split by capability into a directory under the domain's, never truncate"
+"docs/decisions/*.md" = "a decision states what was decided and what enforces it; the debate belongs in the pull request"
+
+# Measured and printed, never failed: skills a vendored CLI installs, since
+# rewriting one forks it, and the generated decisions index, which grows with
+# the records it lists.
+[tool.template.caps-report-only]
+".agents/skills/openspec-*/SKILL.md" = 300
+"docs/decisions/index.md" = 60
+
+# Approved tools, and what was considered and rejected. An entry without a
+# licence fails the check, because the licence decision is made from this table.
+[[tool.template.toolbox.approved]]
+name = "ruff"
+purpose = "format and lint"
+minimum-version = "0.16.8"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "mypy"
+purpose = "types, whole package"
+minimum-version = "2.3.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "pytest"
+purpose = "tests"
+minimum-version = "9.1.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "deptry"
+purpose = "undeclared and unused dependencies"
+minimum-version = "0.25.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "tach"
+purpose = "module boundaries and the public name surface"
+minimum-version = "0.35.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "griffe"
+purpose = "the symbol index, and the API surface check in the mode the stage sets"
+minimum-version = "2.3.0"
+licence = "ISC"
+
+[[tool.template.toolbox.approved]]
+name = "markdownlint-cli"
+purpose = "duplicate headings and dead fragments"
+minimum-version = "0.45.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "PyYAML"
+purpose = "safe YAML parsing for workflow metadata and decision front matter"
+minimum-version = "6.0.2"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "agent-ready-checks"
+purpose = "the checks no tool covers, starting with document caps"
+minimum-version = "0.10.0"
+licence = "see LICENCE"
+
+[[tool.template.toolbox.approved]]
+name = "openspec"
+purpose = "the change folder and the specs: new change, validate, archive"
+minimum-version = "1.13.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "copier"
+purpose = "the versioned template: copy at adoption, update afterwards"
+minimum-version = "9.0.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "peter-evans/create-pull-request"
+purpose = "opens the scheduled update pull requests"
+minimum-version = "7.0.0"
+licence = "MIT"
+
+[[tool.template.toolbox.rejected]]
+name = "markdownlint for document caps"
+reason = "its length rules bound a line, not a file, and it cannot read a per-artefact cap from pyproject.toml; no maintained tool enforces declared per-file line budgets, which is why agent-ready-checks owns this one"
+date = "2026-09-28"
+
+[[tool.template.toolbox.rejected]]
+name = "tach's [[interfaces]] expose on its own"
+reason = "it enforces the expose list only against member-path imports; a name reached as `from pkg import mod` then `mod.name` passes whatever the list says, so a codebase that imports modules rather than members has a declared interface that is never enforced. agent-ready-checks covers that half, against the same declaration"
+date = "2026-09-30"
+
+[[tool.template.toolbox.rejected]]
+name = "import-linter"
+reason = "module-to-module only, so it cannot express the public name surface a module contract rests on, and it has no command that derives a first contract set from an existing codebase; it is the documented exit if tach is abandoned"
+date = "2026-09-28"
+
+[[tool.template.toolbox.rejected]]
+name = "semgrep, Vale, a markdownlint custom rule, or git grep for the retired-terms check"
+reason = "the check bans a vocabulary declared per pivot across source, tests, docs, and configuration, with identifier splitting and a per-term occurrence delta; semgrep and a markdownlint rule each read one language, Vale is prose-only and is kept out of the core (AC18), and git grep has no word model and no delta. agent-ready-checks owns it"
+date = "2026-10-02"
+
+[[tool.template.toolbox.rejected]]
+name = "griffe check alone for the release deprecation rule and the __all__ diff"
+reason = "it reports a removal whether or not the name carried the deprecation decorator at the previous tag, and it has no per-ref __all__ diff; both are a few lines on griffe's own load_git API, which is reuse of griffe rather than a replacement for it, and they live in agent-ready-checks"
+date = "2026-10-02"
+
+[[tool.template.toolbox.rejected]]
+name = "cookiecutter and cruft for the template"
+reason = "cookiecutter has no update; cruft adds one as a patch over a fresh render, with rejected hunks as its only conflict handling and no versioned migrations, and neither renders a conditional path, which is how the skeleton stays out of a brownfield repository (AC25)"
+date = "2026-10-03"
+
+[[tool.template.toolbox.rejected]]
+name = "OpenTelemetry SDK for change metrics import"
+reason = "it instruments future events but does not parse existing Codex exec and Claude stream-json files or bind a selected window to an immutable change and exact log hash; agent-ready-checks uses narrow native parsers with stdlib JSON and hashing"
+date = "2026-10-06"
+
+[tool.uv.sources]
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.10.0" }
