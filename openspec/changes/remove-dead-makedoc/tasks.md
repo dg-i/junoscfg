@@ -9,7 +9,7 @@
 ## 2. Implementation
 
 - [x] 2.1 Remove the `makedoc` command, its seven options and its dead
-  `junoscfg.validate.schema_doc` import from `src/junoscfg/cli.py` (50 lines),
+  `junoscfg.validate.schema_doc` import from `src/junoscfg/cli.py` (51 lines),
   and its entry from the `fullhelp` registry.
 - [x] 2.2 Remove the `### schema makedoc` section from `docs/guide/cli.md`
   (26 lines), which documented it with worked examples.

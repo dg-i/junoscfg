@@ -5,8 +5,11 @@ characterization test is not an assertion that the behaviour is correct; it is
 a record that it was this before an agent touched the code.  Each test here was
 seen to fail against a deliberate mutation before being committed.
 
-Three of these pin defects.  The fix for each is a separate change, and that
-change is expected to rewrite the test rather than delete it.
+Three of these still pin defects — validate_xml, networks=["auto"], and the
+XML/structured IR divergence.  The fix for each is a separate change, and that
+change is expected to rewrite the test rather than delete it, which is what
+happened to the fourth: TestSchemaMakedocIsDead became TestSchemaMakedocIsGone
+when the command was removed.
 """
 
 from __future__ import annotations

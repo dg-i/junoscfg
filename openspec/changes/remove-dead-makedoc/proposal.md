@@ -4,7 +4,17 @@
 `junoscfg.validate.schema_doc`, a module that does not exist in the tree or
 anywhere in git history, so every invocation ends in `ModuleNotFoundError`.
 `docs/guide/cli.md` documents it with worked examples, and `tests/test_cli.py`
-asserts only that its name appears in `--help`, which is why nothing caught it.
+asserts only that its name appears in `--help` — and because the import is
+function-local, `--help` worked and only execution crashed.
+
+Something did catch it. mypy reports
+`cli.py:727: Cannot find implementation or library stub for module named
+"junoscfg.validate.schema_doc"` at the merge base, verified in a detached
+worktree. It survived seven patch releases not because no tool saw it, but
+because mypy was in no dependency group until onboarding phase 2 and is
+CI-reported-but-non-blocking by the decision in
+`docs/decisions/2026-10-06-adopt-mypy-strict.md`. That is the lesson worth
+keeping.
 
 ## What Changes
 

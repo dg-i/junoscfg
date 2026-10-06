@@ -33,6 +33,16 @@ The `py.typed` marker stays. Removing it would be the honest alternative to
 fixing the errors, but the Ansible collection imports four names from this
 package and a typed package is the more useful promise to keep.
 
+## Evidence it matters
+
+The first change through the workflow removed `junoscfg schema makedoc`, dead
+since the initial public release because it imported a module that never
+existed. mypy names that import at the merge base
+(`cli.py:727: Cannot find implementation or library stub for module named
+"junoscfg.validate.schema_doc"`). The defect survived seven patch releases
+because mypy was installed nowhere, not because it was undetectable. That is
+the strongest argument for ending this record early rather than renewing it.
+
 ## Consequences
 
 - A new type error cannot be caught at commit time until the backlog is clear;

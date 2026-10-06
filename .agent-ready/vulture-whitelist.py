@@ -13,8 +13,13 @@
 #   docs/api/internals/config_store.md, so removing it is an API change with a
 #   docs edit, not a phase 4 edit. Carried forward as its own change.
 #
-# Three genuinely dead private members were removed rather than whitelisted in
-# phase 4: CommunityRule._counter, SetWalkOutput.meta_lines, _add_sibling.
+# - `junoscfg.validate.__getattr__` is the lazy re-export shim phase 5 added so
+#   that importing the package pulls neither lxml nor the schema artifacts. The
+#   interpreter calls it; vulture sees no caller.
+#
+# Two genuinely dead private members were removed rather than whitelisted in
+# phase 4: CommunityRule._counter and _add_sibling. SetWalkOutput.meta_lines was
+# restored after `stage griffe` caught its removal as an undeclared API break.
 _convert_json_to_set  # unused function (src/junoscfg/__init__.py:186)
 _convert_json_to_structured  # unused function (src/junoscfg/__init__.py:198)
 _convert_json_to_yaml  # unused function (src/junoscfg/__init__.py:210)
@@ -39,10 +44,11 @@ _convert_set_to_set  # unused function (src/junoscfg/__init__.py:390)
 _convert_yaml_to_yaml  # unused function (src/junoscfg/__init__.py:402)
 _convert_structured_to_structured  # unused function (src/junoscfg/__init__.py:414)
 types_audited  # unused variable (src/junoscfg/audit/model.py:87)
-fullhelp  # unused function (src/junoscfg/cli.py:908)
+fullhelp  # unused function (src/junoscfg/cli.py:858)
 _.meta_lines  # unused attribute (src/junoscfg/convert/output/set_output.py:19)
 _.subtree  # unused method (src/junoscfg/display/config_store.py:335)
 json_to_yaml  # unused function (src/junoscfg/display/to_yaml.py:19)
+__getattr__  # unused function (src/junoscfg/validate/__init__.py:63)
 _.build_from_xsd  # unused method (src/junoscfg/validate/artifact_builder.py:84)
 category  # unused variable (src/junoscfg/validate/xsd_fixes.py:24)
 description  # unused variable (src/junoscfg/validate/xsd_fixes.py:25)
