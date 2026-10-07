@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: schema
+domains: [validation, schema-pipeline]
+skip_specs: true
+removes:
+  - "none; this adds an artifact the documented workflow already promised"
