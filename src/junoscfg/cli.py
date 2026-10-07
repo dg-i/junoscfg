@@ -483,7 +483,7 @@ def addvars(
 
     data = yaml.safe_load(source)
     result = apply_rules(data, ruleset)
-    click.echo(yaml.dump(result, default_flow_style=False), nl=False)
+    click.echo(yaml.dump(result, default_flow_style=False, sort_keys=False), nl=False)
 
 
 @edityaml.command()
@@ -648,7 +648,7 @@ def rename_root(from_key: str, to_key: str, file: str | None) -> None:
         out = {}
         for k, v in data.items():
             out[to_key if k == from_key else k] = v
-    click.echo(yaml.dump(out, default_flow_style=False), nl=False)
+    click.echo(yaml.dump(out, default_flow_style=False, sort_keys=False), nl=False)
 
 
 @main.group()

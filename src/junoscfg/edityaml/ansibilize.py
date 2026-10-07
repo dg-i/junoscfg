@@ -304,8 +304,8 @@ def format_output(host_vars: dict, group_vars: dict) -> str:
     by Ansible. Values starting with ``{`` must be quoted in YAML or the
     YAML parser interprets them as flow mappings.
     """
-    host_doc = yaml.dump(host_vars, default_flow_style=False)
-    group_doc = yaml.dump(group_vars, default_flow_style=False)
+    host_doc = yaml.dump(host_vars, default_flow_style=False, sort_keys=False)
+    group_doc = yaml.dump(group_vars, default_flow_style=False, sort_keys=False)
     return host_doc + "---\n" + group_doc
 
 
@@ -314,7 +314,7 @@ def format_output_with_offset(host_vars: dict, offset_vars: dict, template: dict
 
     Separated by ``---`` lines, suitable for Ansible group_vars/host_vars split.
     """
-    _kw: dict = {"default_flow_style": False, "width": 10000}
+    _kw: dict = {"default_flow_style": False, "width": 10000, "sort_keys": False}
     host_doc = yaml.dump(host_vars, **_kw)
     offset_doc = yaml.dump(offset_vars, **_kw)
     template_doc = yaml.dump(template, **_kw)

@@ -190,8 +190,14 @@ class TestEdityamlSurfaceTheCollectionDrives:
         out.write_text(convert_config(src, from_format=Format.STRUCTURED, to_format=Format.YAML))
         return out
 
-    def test_rename_root_renames_and_sorts_keys(self, tmp_path: Path) -> None:
-        """The new root is emitted first and its children come out sorted."""
+    def test_rename_root_preserves_key_order(self, tmp_path: Path) -> None:
+        """The new root is emitted first and configuration order is kept.
+
+        This pinned the opposite until openspec/changes/yaml-key-order:
+        cli.py called yaml.dump without sort_keys=False, so every edityaml
+        command alphabetised its output while the code right above it said
+        "Preserve key order by rebuilding dict".
+        """
         cfg = self._yaml_config(tmp_path)
         runner = CliRunner()
         result = runner.invoke(main, ["edityaml", "rename-root", "--to", "junos_config", str(cfg)])
@@ -199,12 +205,12 @@ class TestEdityamlSurfaceTheCollectionDrives:
         assert result.exit_code == 0
         lines = result.output.splitlines()
         assert lines[0] == "junos_config:"
-        # Characterization: children are reordered alphabetically, not kept in
-        # configuration order.  firewall sorts before system.
         children = [
             ln.strip().rstrip(":") for ln in lines if ln.startswith("  ") and ln.endswith(":")
         ]
-        assert children[0] == "firewall"
+        # system comes first in examples/router1.conf; firewall is last.
+        assert children[0] == "system"
+        assert children.index("system") < children.index("firewall")
 
     def test_ansibilize_emits_host_vars_then_group_vars(self, tmp_path: Path) -> None:
         """Output is host_vars, a '---' separator, then templated group_vars."""
