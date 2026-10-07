@@ -43,6 +43,12 @@ def anonymize(ir: dict[str, Any], config: AnonymizeConfig) -> AnonymizeResult:
 
     Returns:
         An :class:`AnonymizeResult` with the modified IR and the revert mapping.
+
+    Raises:
+        ValueError: If ``config.networks`` contains ``"auto"`` without
+            ``config.source_text``. Auto-detection scans the configuration
+            text for subnets, so it needs that text; asking for it without
+            supplying the text used to do nothing at all.
     """
     # Auto-generate a random salt when none is provided to prevent
     # trivially reversible HMAC outputs (empty-string key).

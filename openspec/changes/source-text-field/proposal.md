@@ -39,7 +39,20 @@ No requirement changes, so `.openspec.yaml` sets `skip_specs: true`.
 ## Impact
 
 `src/junoscfg/anonymize/config.py` and `rules/ip.py` (red zone), and `cli.py`.
+
 A Python caller passing `networks=["auto"]` without `source_text` now gets a
-`ValueError` where it previously got silently unanonymized networks — louder,
-and the old behaviour was the dangerous one. The CLI is unaffected: it has
-always supplied the text, verified end to end.
+`ValueError`. A first draft described that as "you were getting nothing",
+which is only true when `auto` is the sole spec. With `auto` alongside an
+explicit CIDR or a `network_file`, the explicit entries worked and the `auto`
+half was dropped — so those callers were getting *something*, just not what
+they asked for, and they now get an error until they supply the text. That is
+the intended direction: half-done auto-detection in the red zone is the
+failure this change exists to end.
+
+`source_text` is appended to the dataclass rather than grouped with the IP
+options, because `AnonymizeConfig` is positional and inserting mid-list moves
+every later parameter — `agent-ready stage griffe` reports five such moves as
+an api break, and a positional caller would be silently rebound.
+
+The CLI is unaffected: it supplies the text whenever `auto` is requested,
+including from `--anonymize-config`.

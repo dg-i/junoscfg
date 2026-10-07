@@ -44,11 +44,6 @@ class AnonymizeConfig:
     preserve_prefixes: list[str] = field(default_factory=list)
     networks: list[str] = field(default_factory=list)
     network_file: str | None = None
-    # The configuration text `networks=["auto"]` scans for subnets. It is a
-    # real field because "auto" is otherwise a silent no-op: the CLI used to
-    # attach it dynamically, so a caller going through the Python API asked
-    # for auto-detection and got nothing, with no error and no warning.
-    source_text: str | None = None
     ignore_subnets: bool = False
     ignore_reserved: bool = False
     ips_in_strings: bool = False
@@ -58,6 +53,14 @@ class AnonymizeConfig:
 
     # Logging
     log_level: str = "normal"
+
+    # Appended rather than grouped with the IP options: AnonymizeConfig is a
+    # positional dataclass, so inserting mid-list moves every parameter after
+    # it. `agent-ready stage griffe` calls that an api break, and it would
+    # silently rebind a positional caller's arguments.
+    #
+    # The configuration text that `networks=["auto"]` scans for subnets.
+    source_text: str | None = None
 
     @property
     def any_enabled(self) -> bool:

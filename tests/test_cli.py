@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
 from junoscfg.cli import main
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestCli:
@@ -898,3 +902,41 @@ class TestCliRenameRoot:
         )
         assert result.exit_code == 2
         assert "not found" in result.output
+
+
+class TestAnonymizeNetworksAuto:
+    """`--anonymize-networks auto` had no automated test at all.
+
+    `cli.py` is the only place that supplies `source_text`, so deleting those
+    two lines would have broken subnet auto-detection with zero test failures.
+    """
+
+    def test_auto_preserves_subnet_structure(self, tmp_path: Path) -> None:
+        source = tmp_path / "in.set"
+        source.write_text(
+            "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.1/24\n"
+            "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.254/24\n"
+        )
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                "-i",
+                "set",
+                "-e",
+                "set",
+                "--anonymize-ips",
+                "--anonymize-networks",
+                "auto",
+                "--anonymize-salt",
+                "fixed",
+                str(source),
+            ],
+        )
+
+        assert result.exit_code == 0
+        addrs = [line.rsplit(" ", 1)[-1] for line in result.output.strip().splitlines()]
+        assert addrs[0] != "203.0.114.1/24"
+        assert addrs[0].endswith(".1/24")
+        assert addrs[1].endswith(".254/24")
+        assert addrs[0].rsplit(".", 1)[0] == addrs[1].rsplit(".", 1)[0]
