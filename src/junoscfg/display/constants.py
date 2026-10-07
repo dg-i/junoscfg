@@ -9,8 +9,13 @@ name-based constants.
 from __future__ import annotations
 
 import json
+import os
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # ── XML-compat constants ─────────────────────────────────────────────
 # These mirror schema flags for converters that walk XML trees instead
@@ -173,22 +178,81 @@ def is_freeform_nk(schema_node: dict[str, Any] | None) -> bool:
     return bool(schema_node.get("frnk"))
 
 
-# ── Shared schema tree loader ────────────────────────────────────────
+# ── Shared artifact resolution ───────────────────────────────────────
+#
+# One resolver for the whole package. Conversion and validation used to answer
+# "where do the artifacts live?" separately: `JunosValidator` took an argument,
+# then `JUNOSCFG_ARTIFACTS`, then the bundle, and documented it; this module
+# hardcoded the bundled path and cached it in a process-wide singleton. So
+# `JUNOSCFG_ARTIFACTS` switched validation and was silently ignored by
+# conversion, which is the larger feature and the one the Ansible collection
+# uses. A documented option that works for half a tool is worse than one that
+# does not exist.
 
-_DATA_DIR = Path(__file__).resolve().parent.parent / "validate" / "data"
-_STRUCTURE_TREE_PATH = _DATA_DIR / "junos-structure-tree.json"
+_BUNDLED_DIR = Path(__file__).resolve().parent.parent / "validate" / "data"
+_ARTIFACTS_ENV = "JUNOSCFG_ARTIFACTS"
+STRUCTURE_TREE_NAME = "junos-structure-tree.json"
 
-# Lazy-loaded schema tree (module-level singleton)
-_schema_tree: dict[str, Any] | None = None
+# Set for the length of one CLI invocation by `--artifacts`, which is a
+# single-schema context by definition. The library takes the directory as an
+# argument instead; nothing in the package mutates this.
+_override_dir: Path | None = None
+
+# Keyed on the resolved directory, so two schemas can coexist in one process.
+# The old singleton could not: an Ansible play touching two device roles would
+# have got whichever tree was loaded first.
+_schema_trees: dict[Path, dict[str, Any]] = {}
 
 
-def load_schema_tree() -> dict[str, Any] | None:
-    """Load the bundled schema tree (lazy, cached). Returns None on error."""
-    global _schema_tree  # noqa: PLW0603
-    if _schema_tree is None:
-        try:
-            with open(_STRUCTURE_TREE_PATH) as f:
-                _schema_tree = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return None
-    return _schema_tree
+def resolve_artifacts_dir(artifacts_dir: str | Path | None = None) -> Path:
+    """Where the artifacts live, by one rule for every caller.
+
+    Explicit argument, then the process override an invocation may set, then
+    ``JUNOSCFG_ARTIFACTS``, then the bundled directory.
+    """
+    if artifacts_dir is not None:
+        return Path(artifacts_dir)
+    if _override_dir is not None:
+        return _override_dir
+    env = os.environ.get(_ARTIFACTS_ENV)
+    if env:
+        return Path(env)
+    return _BUNDLED_DIR
+
+
+@contextmanager
+def artifacts_dir(path: str | Path | None) -> Iterator[None]:
+    """Resolve to *path* for the duration of the block, then restore.
+
+    A context manager rather than a setter, because the override is process
+    state and junoscfg is not only a command. `CliRunner` runs the CLI in the
+    test process, and the Ansible collection imports the library into a
+    long-lived `ansible-playbook`; a setter with no matching reset leaks one
+    invocation's schema into everything after it. That is what this very
+    change did on first writing, and 109 conversion tests caught it.
+
+    A library caller should pass the directory to the call instead; this is
+    for a command that processes one configuration against one schema.
+    """
+    global _override_dir  # noqa: PLW0603
+    previous = _override_dir
+    _override_dir = Path(path) if path is not None else None
+    try:
+        yield
+    finally:
+        _override_dir = previous
+
+
+def load_schema_tree(artifacts_dir: str | Path | None = None) -> dict[str, Any] | None:
+    """Load a structure tree, cached per directory. None if it cannot be read."""
+    directory = resolve_artifacts_dir(artifacts_dir)
+    cached = _schema_trees.get(directory)
+    if cached is not None:
+        return cached
+    try:
+        with open(directory / STRUCTURE_TREE_NAME) as f:
+            tree = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    _schema_trees[directory] = tree
+    return tree

@@ -13,6 +13,7 @@ import re
 from junoscfg.display.config_store import ConfigStore, filter_structured_by_path
 from junoscfg.display.constants import (
     KEY_ALIASES,
+    artifacts_dir,
     get_flat_entry_config,
     get_transparent_child,
     is_flat_dict,
@@ -20,6 +21,7 @@ from junoscfg.display.constants import (
     is_positional_key,
     is_transparent_list_key,
     load_schema_tree,
+    resolve_artifacts_dir,
     resolve_key_alias,
 )
 from junoscfg.display.set_converter import SetConverter
@@ -44,6 +46,8 @@ __all__ = [
     "is_positional_key",
     "is_transparent_list_key",
     "load_schema_tree",
+    "artifacts_dir",
+    "resolve_artifacts_dir",
     "resolve_key_alias",
     "xml_to_yaml",
 ]

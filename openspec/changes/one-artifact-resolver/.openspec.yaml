@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: kernel
+domains: [conversion, validation]
+skip_specs: true
+removes:
+  - "a second, divergent answer to where the artifacts live"

@@ -271,6 +271,23 @@ def convert(
         click.echo("Error: --relative requires --path.", err=True)
         sys.exit(2)
 
+    # One flag, whole tool. `--artifacts` used to reach validation only, so a
+    # user pointing at a schema they had generated got it for `-v` and the
+    # bundled one for the conversion in the same command.
+    #
+    # Closed on the click context rather than left set: `CliRunner` runs this
+    # in the test process and the Ansible collection imports the library into a
+    # long-lived `ansible-playbook`, so an override with no matching reset
+    # leaks one invocation's schema into every later one.
+    if artifacts:
+        import contextlib
+
+        from junoscfg.display import artifacts_dir as _artifacts_dir
+
+        _stack = contextlib.ExitStack()
+        _stack.enter_context(_artifacts_dir(artifacts))
+        click.get_current_context().call_on_close(_stack.close)
+
     # If validate-only (no export format), just validate
     validate_only = validate and not export_format
 

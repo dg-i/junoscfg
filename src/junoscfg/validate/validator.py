@@ -7,15 +7,12 @@ directory via constructor arg, JUNOSCFG_ARTIFACTS env var, or bundled defaults.
 from __future__ import annotations
 
 import json
-import os
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from junoscfg.validate import SchemaLoadError, ValidationResult
 
-
-def _default_artifacts_dir() -> Path:
-    """Return the path to bundled default artifacts."""
-    return Path(__file__).parent / "data"
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class JunosValidator:
@@ -24,10 +21,9 @@ class JunosValidator:
     def __init__(self, artifacts_dir: str | Path | None = None) -> None:
         """Initialize the validator.
 
-        Artifact resolution order:
-        1. Explicit artifacts_dir argument
-        2. JUNOSCFG_ARTIFACTS environment variable
-        3. Bundled default artifacts in data/
+        Artifacts are resolved by `display.resolve_artifacts_dir`, the one
+        rule the whole package uses: explicit argument, then a process
+        override, then JUNOSCFG_ARTIFACTS, then the bundled directory.
 
         Args:
             artifacts_dir: Path to directory containing validation artifacts.
@@ -35,12 +31,12 @@ class JunosValidator:
         Raises:
             SchemaLoadError: If artifacts directory does not exist.
         """
-        if artifacts_dir is not None:
-            self._artifacts_dir = Path(artifacts_dir)
-        elif os.environ.get("JUNOSCFG_ARTIFACTS"):
-            self._artifacts_dir = Path(os.environ["JUNOSCFG_ARTIFACTS"])
-        else:
-            self._artifacts_dir = _default_artifacts_dir()
+        from junoscfg.display import resolve_artifacts_dir
+
+        # One resolver for the package; see display.constants. This used to be
+        # a second, independent if/elif here, and conversion had a third rule
+        # that honoured neither the argument nor the environment variable.
+        self._artifacts_dir = resolve_artifacts_dir(artifacts_dir)
 
         if not self._artifacts_dir.exists():
             raise SchemaLoadError(f"Artifacts directory not found: {self._artifacts_dir}")
