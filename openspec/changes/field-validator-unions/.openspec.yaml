@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: conversion
+domains: [validation]
+skip_specs: true
+removes:
+  - "field warnings on values the XSD type permits"

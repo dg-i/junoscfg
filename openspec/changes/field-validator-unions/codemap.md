@@ -1,0 +1,99 @@
+openspec/changes/field-validator-unions/codemap.md written: 13 modules listed, 55 below the cut
+dex, ranked by the paths the proposal's domains name, cut at 1,500 tokens. Not hand-written. -->
+
+## junoscfg.convert.field_validator
+
+zone conversion · layer pipeline · contract none
+
+- `FieldError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldError`
+- `FieldValidationError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationError`
+- `FieldValidationResult` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationResult`
+- `FieldValidator` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidator`
+
+## junoscfg.validate.json_yaml_validator
+
+zone schema · layer pipeline · contract none
+
+- `JsonYamlValidator` class: `agent-ready codemap show junoscfg.validate.json_yaml_validator.JsonYamlValidator`
+
+## junoscfg.validate.set_validator
+
+zone schema · layer pipeline · contract none
+
+- `SetValidator` class: `agent-ready codemap show junoscfg.validate.set_validator.SetValidator`
+
+## junoscfg.validate.structured_validator
+
+zone schema · layer pipeline · contract none
+
+- `StructuredValidator` class: `agent-ready codemap show junoscfg.validate.structured_validator.StructuredValidator`
+
+## junoscfg.validate.validator
+
+zone schema · layer pipeline · contract none
+
+- `JunosValidator` class: `agent-ready codemap show junoscfg.validate.validator.JunosValidator`
+
+## junoscfg.validate.xml_validator
+
+zone schema · layer pipeline · contract none
+
+- `XmlValidator` class: `agent-ready codemap show junoscfg.validate.xml_validator.XmlValidator`
+
+## junoscfg.convert
+
+zone conversion · layer pipeline · contract `src/junoscfg/convert/CONTRACT.md`
+
+- `pipeline` function: `agent-ready codemap show junoscfg.convert.pipeline`
+- `validate_ir` function: `agent-ready codemap show junoscfg.convert.validate_ir`
+
+## junoscfg.display
+
+zone kernel · layer kernel · contract `src/junoscfg/display/CONTRACT.md`
+
+- `filter_set_by_path` function: `agent-ready codemap show junoscfg.display.filter_set_by_path`
+- `is_display_set` function: `agent-ready codemap show junoscfg.display.is_display_set`
+
+## junoscfg.validate
+
+zone schema · layer pipeline · contract `src/junoscfg/validate/CONTRACT.md`
+
+- `SchemaLoadError` class: `agent-ready codemap show junoscfg.validate.SchemaLoadError`
+- `ValidationError` class: `agent-ready codemap show junoscfg.validate.ValidationError`
+- `ValidationResult` class: `agent-ready codemap show junoscfg.validate.ValidationResult`
+
+## junoscfg
+
+zone surface · layer surface · contract `src/junoscfg/CONTRACT.md`
+
+- `Format` class: `agent-ready codemap show junoscfg.Format`
+- `convert_config` function: `agent-ready codemap show junoscfg.convert_config`
+- `validate_config` function: `agent-ready codemap show junoscfg.validate_config`
+- `validate_json` function: `agent-ready codemap show junoscfg.validate_json`
+- `validate_set` function: `agent-ready codemap show junoscfg.validate_set`
+- `validate_structured` function: `agent-ready codemap show junoscfg.validate_structured`
+- `validate_xml` function: `agent-ready codemap show junoscfg.validate_xml`
+- `validate_yaml` function: `agent-ready codemap show junoscfg.validate_yaml`
+
+## junoscfg.validate.grammar_generator
+
+zone schema · layer pipeline · contract none
+
+- `generate_lark_grammar` function: `agent-ready codemap show junoscfg.validate.grammar_generator.generate_lark_grammar`
+- `write_lark_grammar` function: `agent-ready codemap show junoscfg.validate.grammar_generator.write_lark_grammar`
+
+## junoscfg.validate.artifact_builder
+
+zone schema · layer pipeline · contract none
+
+- `ArtifactBuilder` class: `agent-ready codemap show junoscfg.validate.artifact_builder.ArtifactBuilder`
+- `read_structure_tree` function: `agent-ready codemap show junoscfg.validate.artifact_builder.read_structure_tree`
+- `write_structure_tree` function: `agent-ready codemap show junoscfg.validate.artifact_builder.write_structure_tree`
+
+## junoscfg.anonymize.rules.password
+
+zone anonymize · layer pipeline · contract none
+
+- `PasswordRule` class: `agent-ready codemap show junoscfg.anonymize.rules.password.PasswordRule`
+
+<!-- cut at 1,500 tokens; 55 modules below the cut -->

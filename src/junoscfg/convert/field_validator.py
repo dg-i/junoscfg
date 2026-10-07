@@ -51,7 +51,13 @@ class FieldValidationError(Exception):
 # XSD type names that indicate IP address fields
 _IPV4_TYPES = frozenset({"ipv4addr", "ipv4address", "ipv4prefix"})
 _IPV6_TYPES = frozenset({"ipv6addr", "ipv6address", "ipv6prefix"})
-_IP_ANY_TYPES = frozenset({"ipaddr", "ipprefix", "ipaddr-or-interface", "ipprefix-optional"})
+_IP_ANY_TYPES = frozenset({"ipaddr", "ipprefix", "ipprefix-optional"})
+
+# Union types that take an IP address *or* a name. The XSD says so in the type
+# name, and `policy-options policy-statement <p> term <t> from interface lo0.0`
+# is the ordinary form. Validating these as IP-only raised 215 of the 557 field
+# warnings left over Juniper's own validated-design configurations.
+_IP_OR_NAME_TYPES = frozenset({"ipaddr-or-interface"})
 
 # Patterns that look like IP address regex patterns
 _IPV4_PATTERN_HINT = re.compile(r"\d.*\\d.*\\\.")
@@ -335,6 +341,16 @@ class FieldValidator:
                     return  # Accept numeric values — XSD union types often allow them
                 elif _has_enum_placeholder(allowed):
                     return  # XSD union with placeholder for arbitrary values
+                elif schema_node.get("nk"):
+                    # A nokeyword leaf is positional: the value stands where
+                    # the element name would, and the XSD models it as a union
+                    # of an enum with a freeform type, of which extraction keeps
+                    # only the enum. `classifier-name` carries `['default']` and
+                    # takes any classifier name; `vlan-id` carries
+                    # `['none', 'vlan-id']` and takes any VLAN number. Enforcing
+                    # these produced 9,903 of the 10,021 field warnings raised
+                    # over 200 of Juniper's own validated-design configurations.
+                    return
                 else:
                     # Enum-only field, non-numeric — mismatch is definitive
                     shown = allowed[:5]
@@ -409,6 +425,8 @@ class FieldValidator:
         tr_lower = type_ref.lower()
 
         # IP address validation
+        if tr_lower in _IP_OR_NAME_TYPES:
+            return  # an IP or a name; both are valid, so there is nothing to check
         if tr_lower in _IPV4_TYPES or tr_lower in _IPV6_TYPES or tr_lower in _IP_ANY_TYPES:
             self._validate_ip(str_value, dot_path, tr_lower, result)
             return
