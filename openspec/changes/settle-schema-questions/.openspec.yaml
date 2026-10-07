@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: feature
+zone: schema
+domains: [schema-pipeline]
+skip_specs: true
+removes:
+  - "inferring what Junos accepts instead of asking a device"

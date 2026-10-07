@@ -1,9 +1,8 @@
 # AGENTS.md
 
-Instructions for agents and human contributors. What this system *is* — its
-goals, constraints, layering and cross-cutting rules — is `ARCHITECTURE.md`.
-This file is only the house rules: break one and the repository is badly
-written, not wrong.
+Instructions for agents and human contributors. What this system *is* — its goals,
+constraints, layering and cross-cutting rules — is `ARCHITECTURE.md`. This file is
+only the house rules: break one and the repository is badly written, not wrong.
 
 ## Project Overview
 
@@ -32,6 +31,13 @@ the lever blocks of `pyproject.toml` carry what this stage renders.
    import from it, and a seventh copy of a formatter belongs there instead.
 3. Import through the package door, never a submodule path: `tach check` and
    `agent-ready interfaces` both refuse `junoscfg.display.constants.X`.
+
+## Before you change what junoscfg accepts
+
+**Ask for a device artefact before inferring**, in set, JSON and XML. **Never
+request a whole configuration** — name a path. **Fix at the owning layer, or
+record why not.** **Measure the blast radius before loosening**: slots and a
+negative test. Examples: [settle a schema question](docs/how-to/settle-a-schema-question.md).
 
 ## Pre-Commit Checklist
 

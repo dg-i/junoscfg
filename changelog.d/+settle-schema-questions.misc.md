@@ -1,0 +1,1 @@
+Added `docs/how-to/settle-a-schema-question.md`, four rules for anyone changing what junoscfg accepts: ask a device for an artefact before inferring one, never request a whole configuration, fix at the owning layer or record why not, and measure the blast radius before loosening. Each carries the defect from this repository's history that it exists to prevent.
