@@ -530,3 +530,47 @@ class TestPolicyExpressionIsOneValue:
         assert _parses(
             self._tree(), "set policy-options policy-statement P term T from policy PLAIN"
         )
+
+
+class TestFlattenedRenderingsTakeARunOfValues:
+    """`flat-dict` and `flat-entry` mark where the tree is not the syntax.
+
+    `trigger {"after": [null], "count": 1}` is written `trigger after 1`, and
+    an `attributes-match` entry is written `<attribute> matches <regex>` with
+    no key. The generator read neither flag, so every `attributes-match` line
+    and `within <n> trigger after <n>` was rejected — 20 of the 42 lines still
+    failing across three real devices.
+
+    24.4R0 carries nine conversion-hint flags and the generator read four of
+    them. `positional-key`, `positional-key-flat` and `transparent-list-key`
+    are still unread; nothing in the corpora reaches them yet.
+    """
+
+    @staticmethod
+    def _flat_dict_tree() -> SchemaNode:
+        trigger = SchemaNode(
+            name="trigger",
+            children={
+                "after": SchemaNode(name="after", is_presence=True),
+                "count": SchemaNode(name="count", is_leaf=True),
+            },
+        )
+        trigger.flags.add("flat-dict")
+        within = SchemaNode(name="within", is_list=True, children={"trigger": trigger})
+        return SchemaNode(name="configuration", children={"within": within})
+
+    @staticmethod
+    def _flat_entry_tree() -> SchemaNode:
+        match = SchemaNode(name="attributes-match", is_presence=True, is_list=True)
+        match.flags.update({"oneliner", "flat-entry::values-only"})
+        policy = SchemaNode(name="policy", is_list=True, children={"attributes-match": match})
+        return SchemaNode(name="configuration", children={"policy": policy})
+
+    def test_a_flat_dict_takes_the_flattened_run(self) -> None:
+        assert _parses(self._flat_dict_tree(), "set within 1800 trigger after 1")
+
+    def test_a_flat_entry_takes_its_values(self) -> None:
+        assert _parses(
+            self._flat_entry_tree(),
+            'set policy P attributes-match ping.test-owner matches "^uptime$"',
+        )

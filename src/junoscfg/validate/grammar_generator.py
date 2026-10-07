@@ -255,6 +255,19 @@ def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> s
     else:
         keyword = f'"{name}"'
 
+    # Flattened renderings. `flat-dict` and `flat-entry` mark the places where
+    # the schema's own shape is not what a set command writes:
+    # `trigger {"after": [null], "count": 1}` is written `trigger after 1`, and
+    # an `attributes-match` entry is written `<attribute> matches <regex>` with
+    # no key at all. Both put a run of tokens where the tree has structure, so
+    # there is nothing to descend into and the run itself is the value.
+    #
+    # 24.4R0 has 108 `flat-dict` and 46 `flat-entry` nodes. The generator read
+    # neither, which left every `attributes-match` line and
+    # `within 1800 trigger after 1` rejected on real devices.
+    if "flat-dict" in node.flags or any(f.startswith("flat-entry:") for f in node.flags):
+        return f"{keyword} QUOTED_OR_VALUE+"
+
     # Leaf nodes
     if node.is_leaf:
         if "nokeyword" in node.flags and "freeform-nk" not in node.flags:

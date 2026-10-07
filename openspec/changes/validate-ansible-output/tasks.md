@@ -18,7 +18,10 @@
   keyword with nowhere for the name to go.
 - [x] 2.8 A parenthesised policy expression is one value, confirmed against the
   device's own `| display json`: it carries the expression as one opaque string.
-- [x] 2.9 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
+- [x] 2.9 `flat-dict` and `flat-entry` take a run of values.
+- [x] 2.10 The apply-* stripper stops at a quote; the check is positional, so
+  `apply-groups "foo"` is still stripped while a description is not.
+- [x] 2.11 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
 
 ## 3. Verification
 
@@ -30,7 +33,7 @@
 - [x] 3.3 A real 6,941-line border-gateway configuration converts to set, JSON
   and YAML in 1.2s, 2.1s and 1.4s. Validation rejects 8.6% of its 3,369 set
   lines, from 9.1%. Across three devices -- a border router, an admin switch
-  and a lab switch, 7,093 set lines -- 7.1% to 0.6%. The admin switch validates
+  and a lab switch, 7,093 set lines -- 7.1% to 0.30%. The admin switch validates
   completely clean. `then community <action> <name>` was 343 of the 507,
   `snmp filter-interfaces interfaces <n>` 43, and policy algebra 33.
 - [x] 3.4 The collection's 33 tests pass and its four filters produce output

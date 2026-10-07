@@ -1,0 +1,1 @@
+Set validation accepts the two flattened renderings the schema flags but the grammar generator never read: `within 1800 trigger after 1` (`flat-dict`, 108 nodes) and `attributes-match <attribute> matches <regex>` (`flat-entry`, 46 nodes). The apply-groups stripper also no longer reaches inside a quoted value, so `description "uplink to apply-groups foo"` keeps its closing quote.

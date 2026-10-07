@@ -109,7 +109,24 @@ def _strip_apply_groups(line: str) -> str:
     # "set ... apply-macro m1 key1 val1"     → "set ..."
     import re
 
-    line = re.sub(r"\s+apply-groups(-except)?\s+(\S+|\[.*?\])\s*$", "", line)
-    line = re.sub(r"\s+apply-flags\s+(\S+|\[.*?\])\s*$", "", line)
-    line = re.sub(r"\s+apply-macro\s+\S+(\s+\S+)*\s*$", "", line)
+    for pattern in (
+        r"\s+apply-groups(-except)?\s+(\S+|\[.*?\])\s*$",
+        r"\s+apply-flags\s+(\S+|\[.*?\])\s*$",
+        r"\s+apply-macro\s+\S+(\s+\S+)*\s*$",
+    ):
+        match = re.search(pattern, line)
+        if match and not _inside_quotes(line, match.start()):
+            line = line[: match.start()]
     return line
+
+
+def _inside_quotes(line: str, position: int) -> bool:
+    """True when *position* falls inside a quoted value.
+
+    `set interfaces ge-0/0/0 description "uplink to apply-groups foo"` is a
+    description that happens to contain the words, and stripping there cut the
+    closing quote off and left something that could never parse. An odd number
+    of quotes before the match means it is inside one — which also keeps
+    `apply-groups "foo"`, whose quote comes after, strippable.
+    """
+    return line.count('"', 0, position) % 2 == 1

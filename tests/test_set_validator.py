@@ -7,7 +7,7 @@ import tempfile
 import pytest
 
 from junoscfg.validate import SchemaLoadError
-from junoscfg.validate.set_validator import SetValidator
+from junoscfg.validate.set_validator import SetValidator, _strip_apply_groups
 
 # Minimal Lark grammar for testing
 MINIMAL_GRAMMAR = """\
@@ -101,3 +101,24 @@ class TestStripApplyGroups:
     def test_strip_except(self, validator):
         result = validator.validate("set system host-name r1 apply-groups-except foo")
         assert result.valid is True
+
+
+class TestApplyGroupsStrippingStopsAtQuotes:
+    """A description that mentions apply-groups is not an apply-groups.
+
+    The stripper removes a trailing `apply-groups`/`apply-flags`/`apply-macro`
+    before parsing, because none of them is in the schema. It reached inside a
+    quoted value too, cutting the closing quote off
+    `description "uplink to apply-groups foo"` and leaving something that could
+    never parse. Found on a real device.
+    """
+
+    def test_a_description_mentioning_apply_groups_survives(self) -> None:
+        line = 'set interfaces ge-0/0/0 description "uplink to apply-groups foo"'
+        assert _strip_apply_groups(line) == line
+
+    def test_a_real_apply_groups_is_still_stripped(self) -> None:
+        assert (
+            _strip_apply_groups("set protocols bgp group G apply-groups foo")
+            == "set protocols bgp group G"
+        )
