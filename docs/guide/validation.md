@@ -56,17 +56,26 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 !!! warning "Structural only, and it rejects some valid configuration"
     Set validation checks *shape*, not values: every leaf accepts any token.
-    It also over-rejects. Measured against 113 set commands taken from this
-    repository's own tests, 97 are accepted. The known causes:
+    It also over-rejects. Against the 116 commands in
+    `tests/data/set_corpus.txt`, harvested from this repository's own tests,
+    100 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    which are correct. The causes:
 
     - **One setting per list entry, per line.** `set system ntp server
       198.51.100.1 version 4 prefer` is rejected; write one setting per line.
       Accepting several would make a 5,000-line configuration take about 19
       minutes to validate instead of about 18 seconds, so it is deliberate.
-    - **`set groups ...`** is rejected beyond a bare `set groups`.
+    - **A rule merged from several places offers one choice**, so
+      `set protocols bgp traceoptions file bgp-log size 10m` is rejected even
+      though only one setting follows the entry name.
+    - **Bracket value lists** — `[ tcp udp ]` — are not tokenised; `VALUE` is
+      `/\S+/`, so `[` becomes a token of its own.
+    - **`set groups ...`** beyond a bare `set groups`.
+    - **`apply-macro`**, which takes arbitrary key/value pairs, and **policy
+      algebra** such as `( pol-a && ! pol-b )`.
 
-    Loading the grammar costs about 5 seconds, once per process, and then
-    about 4 ms per line. Conversion to and from set format does not use the
+    Loading the grammar costs about 4 seconds, once per process, and then
+    about 3 ms per line. Conversion to and from set format does not use the
     grammar and is unaffected by any of this.
 
 ```python

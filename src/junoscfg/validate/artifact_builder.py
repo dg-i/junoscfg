@@ -64,15 +64,21 @@ class ArtifactBuilder:
         write_json_schema(schema_tree, yaml_schema_path, variant="yaml")
         artifacts["yaml-schema"] = yaml_schema_path
 
-        # Lark grammar
-        grammar_path = str(output_dir / "junos-set.lark")
-        write_lark_grammar(schema_tree, grammar_path)
-        artifacts["lark-grammar"] = grammar_path
-
         # Structure tree (compact schema for set-to-structured conversion)
         structure_tree_path = str(output_dir / "junos-structure-tree.json")
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
+
+        # Lark grammar
+        # The grammar is built from the structure tree just written, not from
+        # `schema_tree` directly, so that it is a function of the artefact that
+        # ships beside it. Built from the XSD tree the two disagree -- the
+        # writer cannot store `is_presence` on a node that has children, so
+        # `groups` renders differently -- and `--regen-schema` would then turn
+        # TestBundledGrammarIsReproducible red on a correctly regenerated set.
+        grammar_path = str(output_dir / "junos-set.lark")
+        write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
+        artifacts["lark-grammar"] = grammar_path
 
         # Metadata
         meta_path = str(output_dir / "junos-schema-meta.json")
@@ -111,13 +117,19 @@ class ArtifactBuilder:
         write_json_schema(schema_tree, yaml_schema_path, variant="yaml")
         artifacts["yaml-schema"] = yaml_schema_path
 
-        grammar_path = str(output_dir / "junos-set.lark")
-        write_lark_grammar(schema_tree, grammar_path)
-        artifacts["lark-grammar"] = grammar_path
-
         structure_tree_path = str(output_dir / "junos-structure-tree.json")
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
+
+        # The grammar is built from the structure tree just written, not from
+        # `schema_tree` directly, so that it is a function of the artefact that
+        # ships beside it. Built from the XSD tree the two disagree -- the
+        # writer cannot store `is_presence` on a node that has children, so
+        # `groups` renders differently -- and `--regen-schema` would then turn
+        # TestBundledGrammarIsReproducible red on a correctly regenerated set.
+        grammar_path = str(output_dir / "junos-set.lark")
+        write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
+        artifacts["lark-grammar"] = grammar_path
 
         meta_path = str(output_dir / "junos-schema-meta.json")
         _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
@@ -377,15 +389,27 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     reads only ``name``, ``children``, ``is_leaf``, ``is_list``,
     ``is_presence`` and ``flags``, all of which the format carries.
 
-    Three things it does not carry, because ``_serialize_node`` never writes
-    them. Do not use this tree where they matter:
+    What it does not carry, because ``_serialize_node`` never writes it. This
+    is a lossy format, not a faithful copy; do not use this tree where any of
+    these matter:
 
     - ``combinator``, which every node gets back as ``Combinator.CHOICE``.
     - ``is_key``, which comes back ``False``.
     - ``is_presence`` on a node that has children. The writer stores ``p``
       only for a childless node, so such a node returns as a plain container.
       In 24.4R0 that is ``groups``, and it is the one place a grammar rebuilt
-      from this tree differs from one built from the XSD.
+      from this tree differs from one built straight off the XSD —
+      ``ArtifactBuilder`` therefore builds the grammar through this function
+      so the two cannot drift.
+    - ``accepts-bracket``, and any flag the XSD carried verbatim that is not
+      in the writer's allow-list (``oneliner-plus``, ``homogeneous``, …).
+    - ``oneliner`` on a node that is not a list with children, which the
+      writer guards away.
+    - ``is_presence`` on a leaf, and ``pattern_negated`` with no ``pattern``.
+
+    None of these reaches ``generate_lark_grammar``, which reads only ``name``,
+    ``children``, ``is_leaf``, ``is_list``, ``is_presence`` and the ``nokeyword``
+    and ``freeform-nk`` flags — all of which survive.
 
     Args:
         path: Path to a ``junos-structure-tree.json`` artifact.

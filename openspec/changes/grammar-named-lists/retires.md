@@ -22,7 +22,9 @@ No requirement is retired; this change sets `skip_specs: true`.
 ## Tests and fixtures
 
 No test is retired. The two `xfail(strict=True)` pins from `grammar-rule-names`
-become ordinary regression guards, and five tests are added.
+become ordinary regression guards, and six test functions are added
+(`git show 0f3f7ef -- tests/ | grep -c '^+ *def test_'` counts seven; one of
+those lines is a move).
 
 ## Docs
 

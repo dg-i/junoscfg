@@ -1187,7 +1187,7 @@ client_request: "radius" radius?
 
 client_type__list: VALUE ("chassis" chassis? | "fpc" fpc__list)?
 
-clients: "client"
+clients: VALUE
 
 clients__list: VALUE ("accounting" accounting? | "address" VALUE | "prefer-framed-ip-address" | "prefer-framed-ipv6-prefix" | "restrict" | "source-interface" source_interface?)?
 
@@ -1703,7 +1703,7 @@ destination_option: "home-address" home_address? | "option-type" option_type?
 
 destination_override: "syslog" syslog?
 
-destination_port: "afs" | "bgp" | "biff" | "bootpc" | "bootps" | "cmd" | "cvspserver" | "dhcp" | "domain" | "eklogin" | "ekshell" | "exec" | "finger" | "ftp" | "ftp-data" | "http" | "https" | "ident" | "imap" | "kerberos-sec" | "klogin" | "kpasswd" | "krb-prop" | "krbupdate" | "kshell" | "ldap" | "ldp" | "login" | "match" VALUE | "mobileip-agent" | "mobilip-mn" | "msdp" | "netbios-dgm" | "netbios-ns" | "netbios-ssn" | "nfsd" | "nntp" | "ntalk" | "ntp" | "pop3" | "pptp" | "printer" | "radacct" | "radius" | "range" | "range" range? | "rip" | "rkinit" | "smtp" | "snmp" | "snmptrap" | "snpp" | "socks" | "ssh" | "sunrpc" | "syslog" | "tacacs" | "tacacs-ds" | "talk" | "telnet" | "tftp" | "timed" | "value" VALUE | "who" | "xdmcp" | "zephyr-clt" | "zephyr-hm" | "zephyr-srv"
+destination_port: "afs" | "bgp" | "biff" | "bootpc" | "bootps" | "cmd" | "cvspserver" | "dhcp" | "domain" | "eklogin" | "ekshell" | "exec" | "finger" | "ftp" | "ftp-data" | "http" | "https" | "ident" | "imap" | "kerberos-sec" | "klogin" | "kpasswd" | "krb-prop" | "krbupdate" | "kshell" | "ldap" | "ldp" | "login" | "match" VALUE | "mobileip-agent" | "mobilip-mn" | "msdp" | "netbios-dgm" | "netbios-ns" | "netbios-ssn" | "nfsd" | "nntp" | "ntalk" | "ntp" | "pop3" | "pptp" | "printer" | "radacct" | "radius" | "range" range? | "rip" | "rkinit" | "smtp" | "snmp" | "snmptrap" | "snpp" | "socks" | "ssh" | "sunrpc" | "syslog" | "tacacs" | "tacacs-ds" | "talk" | "telnet" | "tftp" | "timed" | "value" VALUE | "who" | "xdmcp" | "zephyr-clt" | "zephyr-hm" | "zephyr-srv" | VALUE
 
 destination_prefix_list__list: VALUE ("except")?
 
@@ -1913,7 +1913,7 @@ ds1: "ais" VALUE | "ylw" VALUE
 
 ds_lite__list: VALUE ("auto-update-mtu" | "copy-dscp" | "flow-limit" VALUE | "mtu-v6" VALUE | "session-limit-per-prefix" VALUE | "softwire-address" VALUE)?
 
-dscp: "af11" | "af12" | "af13" | "af21" | "af22" | "af23" | "af31" | "af32" | "af33" | "af41" | "af42" | "af43" | "be" | "code-point" code_point? | "cs0" | "cs1" | "cs2" | "cs3" | "cs4" | "cs5" | "cs6" | "cs7" | "default" VALUE | "ef" | "ignore-signaled-value" | "range" | VALUE
+dscp: "af11" | "af12" | "af13" | "af21" | "af22" | "af23" | "af31" | "af32" | "af33" | "af41" | "af42" | "af43" | "be" | "code-point" code_point? | "cs0" | "cs1" | "cs2" | "cs3" | "cs4" | "cs5" | "cs6" | "cs7" | "default" VALUE | "ef" | "ignore-signaled-value" | VALUE
 
 dscp__list: VALUE ("code-point" VALUE | "family" VALUE | "forwarding-class" forwarding_class__list | "import" VALUE | "protocol" VALUE | "traffic-class" traffic_class__list | VALUE)?
 
@@ -2327,7 +2327,7 @@ exclude__list: VALUE ("destination-address" VALUE | "destination-port" VALUE | "
 
 exclude_attributes: "apn-ni" | "apn-selection-mode" | "cc-selection-mode" | "dynamic-address" | "list-of-service-data" | "list-of-traffic-volumes" | "lrsn" | "ms-time-zone" | "network-initiation" | "node-id" | "pdn-connection-id" | "pdppdn-type" | "pgw-address-used" | "pgw-plmn-identifier" | "ps-furnish-info" | "rat-type" | "record-sequence-number" | "served-imeisv" | "served-msisdn" | "served-pdp-address-extension" | "served-pdppdn-address" | "serving-node-plmn-identifier" | "sgw-change" | "start-time" | "stop-time" | "user-location-information"
 
-exclude_hops__list: VALUE ("exclude-hop-list")?
+exclude_hops__list: VALUE (VALUE)?
 
 exclude_queue_overhead_bytes: "include-hierarchy"
 
@@ -2507,7 +2507,7 @@ family__list: VALUE ("bfd-liveness-detection" bfd_liveness_detection? | "export"
 
 fast_failover: "et" | "ge" | "vcp" vcp? | "xe"
 
-fast_lookup_tuple_list__list: VALUE ("fast_lookup_tuple_list_item")?
+fast_lookup_tuple_list__list: VALUE (VALUE)?
 
 fast_reroute: "bandwidth" VALUE | "bandwidth-percent" VALUE | "exclude" VALUE | "hop-limit" VALUE | "include-all" VALUE | "include-any" VALUE | "no-exclude" | "no-include-all" | "no-include-any" | "optimize-timer" VALUE
 
@@ -2561,7 +2561,7 @@ fields: "all-fields" | "cpu-load-1" | "cpu-load-15" | "cpu-load-5" | "cpu-usage-
 
 file: "core-size" VALUE | "filename" VALUE | "files" VALUE | "match" VALUE | "microsecond-stamp" | "no-stamp" | "no-world-readable" | "open" VALUE | "replace" | "size" VALUE | "stamp" | "world-readable" | VALUE
 
-file__list: VALUE ("allow-commands" VALUE | "allow-duplicates" | "allow-transients" | "archive" archive? | "archive-sites" archive_sites__list | "arguments" VALUE | "arguments" arguments__list | "backup-on-failure" backup_on_failure? | "cert-file" VALUE | "checksum" checksum? | "command" VALUE | "compress" | "daemonize" | "dampen" dampen? | "description" QUOTED_OR_VALUE | "explicit-priority" | "files" VALUE | "interpreter" VALUE | "linear" | "match" VALUE | "match-strings" VALUE | "max-size" VALUE | "nonpersistent" | "oid" oid__list | "optional" | "push-backup-to-master" | "python-script-user" VALUE | "refresh" | "refresh-from" VALUE | "remote-execution" remote_execution__list | "respawn-on-normal-exit" | "routing-instance" VALUE | "size" VALUE | "source" VALUE | "start" start_element? | "start-time" VALUE | "structured-data" structured_data? | "traceoptions" traceoptions? | "transfer-interval" VALUE | "username" VALUE | "vmhost-syslog-object" | contents__list)?
+file__list: VALUE ("allow-commands" VALUE | "allow-duplicates" | "allow-transients" | "archive" archive? | "archive-sites" archive_sites__list | "arguments" VALUE | "arguments" arguments__list | "backup-on-failure" backup_on_failure? | "cert-file" VALUE | "checksum" checksum? | "command" VALUE | "compress" | "daemonize" | "dampen" dampen? | "description" QUOTED_OR_VALUE | "explicit-priority" | "files" VALUE | "interpreter" VALUE | "linear" | "match" VALUE | "match-strings" VALUE | "max-size" VALUE | "nonpersistent" | "oid" oid__list | "optional" | "push-backup-to-master" | "python-script-user" VALUE | "refresh" | "refresh-from" VALUE | "remote-execution" remote_execution__list | "respawn-on-normal-exit" | "routing-instance" VALUE | "size" VALUE | "source" VALUE | "start" start_element? | "start-time" VALUE | "structured-data" structured_data? | "traceoptions" traceoptions? | "transfer-interval" VALUE | "username" VALUE | VALUE | contents__list)?
 
 file_age: "disable" | VALUE
 
@@ -3093,7 +3093,7 @@ hop_list: "ip-address" VALUE | "label" VALUE | "label-type" label_type? | "loose
 
 host: "bandwidth" VALUE | "burst" VALUE | "bypass-aggregate" | "case" | "class" class? | "contains" VALUE | "disable-fpc" | "disable-logging" | "disable-routing-engine" | "ends-with" VALUE | "facility-override" VALUE | "flow-detect-time" VALUE | "flow-detection-mode" VALUE | "flow-level-bandwidth" flow_level_bandwidth? | "flow-level-control" flow_level_control? | "flow-level-detection" flow_level_detection? | "flow-recover-time" VALUE | "flow-timeout-time" VALUE | "fpc" fpc__list | "hostbound-queue" VALUE | "is" VALUE | "log-prefix" VALUE | "matches" VALUE | "no-flow-logging" | "not-contains" VALUE | "not-ends-with" VALUE | "not-is" VALUE | "not-starts-with" VALUE | "port" VALUE | "priority" VALUE | "recover-time" VALUE | "source-address" VALUE | "starts-with" VALUE | "tcp-log" tcp_log? | "timeout-active-flows" | "violation" violation? | VALUE | contents__list
 
-host__list: VALUE ("allow-duplicates" | "dsa-key" VALUE | "ecdsa-key" VALUE | "ecdsa-sha2-nistp256-key" VALUE | "ecdsa-sha2-nistp384-key" VALUE | "ecdsa-sha2-nistp521-key" VALUE | "ed25519-key" VALUE | "exclude-hostname" | "explicit-priority" | "facility-override" VALUE | "hardware-address" VALUE | "ip-address" VALUE | "log-prefix" VALUE | "match" VALUE | "match-strings" VALUE | "port" VALUE | "routing-instance" VALUE | "rsa-key" VALUE | "source-address" VALUE | "structured-data" structured_data? | "tlsdetails" tlsdetails? | "transport" VALUE | "user-name" | "vmhost-syslog-object" | contents__list)?
+host__list: VALUE ("allow-duplicates" | "dsa-key" VALUE | "ecdsa-key" VALUE | "ecdsa-sha2-nistp256-key" VALUE | "ecdsa-sha2-nistp384-key" VALUE | "ecdsa-sha2-nistp521-key" VALUE | "ed25519-key" VALUE | "exclude-hostname" | "explicit-priority" | "facility-override" VALUE | "hardware-address" VALUE | "ip-address" VALUE | "log-prefix" VALUE | "match" VALUE | "match-strings" VALUE | "port" VALUE | "routing-instance" VALUE | "rsa-key" VALUE | "source-address" VALUE | "structured-data" structured_data? | "tlsdetails" tlsdetails? | "transport" VALUE | "user-name" | VALUE | contents__list)?
 
 host_discovery: "aging-timer" VALUE | "discovery-interval" VALUE
 
@@ -3497,7 +3497,7 @@ interface_routes: "family" family__list | "rib-group" rib_group?
 
 interface_service: "load-balancing-options" load_balancing_options? | "service-interface" VALUE
 
-interface_set__list: VALUE ("access-identifier" VALUE | "excess-bandwidth-share" excess_bandwidth_share? | "input-excess-bandwidth-share" input_excess_bandwidth_share? | "input-traffic-control-profile" input_traffic_control_profile? | "input-traffic-control-profile-remaining" input_traffic_control_profile_remaining? | "interface" interface__list | "interface-list" | "interface-set" | "internal-node" | "load-balance" load_balance? | "monitoring-profile" monitoring_profile? | "neighbor" VALUE | "output-traffic-control-profile" output_traffic_control_profile? | "output-traffic-control-profile-remaining" output_traffic_control_profile_remaining? | "pppoe-underlying-options" pppoe_underlying_options? | "queues" VALUE | "refresh" VALUE | "targeted-distribution" | "targeted-options" targeted_options?)?
+interface_set__list: VALUE ("access-identifier" VALUE | "excess-bandwidth-share" excess_bandwidth_share? | "input-excess-bandwidth-share" input_excess_bandwidth_share? | "input-traffic-control-profile" input_traffic_control_profile? | "input-traffic-control-profile-remaining" input_traffic_control_profile_remaining? | "interface" interface__list | "interface-set" | "internal-node" | "load-balance" load_balance? | "monitoring-profile" monitoring_profile? | "neighbor" VALUE | "output-traffic-control-profile" output_traffic_control_profile? | "output-traffic-control-profile-remaining" output_traffic_control_profile_remaining? | "pppoe-underlying-options" pppoe_underlying_options? | "queues" VALUE | "refresh" VALUE | "targeted-distribution" | "targeted-options" targeted_options? | VALUE)?
 
 interface_set_input: VALUE
 
@@ -3517,7 +3517,7 @@ interface_traceoptions: "file" file? | "flag" | "level" VALUE | "no-remote-trace
 
 interface_type: "redundant-logical-tunnel" redundant_logical_tunnel? | "redundant-virtual-tunnel" redundant_virtual_tunnel?
 
-interfaces: "aggregate" aggregate__list | "bridge" bridge__list | "ethernet" ethernet__list | "family" family? | "interface-range" interface_range__list | "interface-set" interface_set__list | "interfaces" | "pic-set" pic_set__list | "stacked-interface-set" stacked_interface_set? | "traceoptions" traceoptions? | "tunnel-interface" | arp_interface__list | interface__list
+interfaces: "aggregate" aggregate__list | "bridge" bridge__list | "ethernet" ethernet__list | "family" family? | "interface-range" interface_range__list | "interface-set" interface_set__list | "interfaces" | "pic-set" pic_set__list | "stacked-interface-set" stacked_interface_set? | "traceoptions" traceoptions? | VALUE | arp_interface__list | interface__list
 
 interfaces__list: VALUE ("aggregated-ether" VALUE | "auto-configure" auto_configure? | "connectivity-association" VALUE | "creation" VALUE | "debug-level" VALUE | "e1-options" e1_options? | "family" family? | "flag" | "hold-off-time" VALUE | "holdover-mode-disable" | "interface-tag" VALUE | "limit" VALUE | "minimum-quality" VALUE | "no-ssm-support" | "polling-interval" VALUE | "port-id" VALUE | "pre-shared-key-chain" VALUE | "priority" VALUE | "pulse-per-second-enable" | "quality-level" VALUE | "replay-protect" replay_protect? | "request" VALUE | "sample-rate" sample_rate? | "signal-type" VALUE | "source-mode" VALUE | "squelch" squelch? | "ssm" ssm? | "t1-options" t1_options? | "traceoptions" traceoptions? | "tx-dnu-to-line-source-enable" | "unit" unit__list | "wait-to-restore" VALUE | "wander-filter-disable")?
 
@@ -4245,7 +4245,7 @@ mac_ip_table_size: VALUE
 
 mac_learning_priority: "packet-action" VALUE | VALUE
 
-mac_list__list: VALUE ("mac-addr-list-item" | "mac-address" VALUE)?
+mac_list__list: VALUE ("mac-address" VALUE | VALUE)?
 
 mac_mobility: "no-sequence-numbers"
 
@@ -4861,7 +4861,7 @@ new_transaction_policy: "term" term?
 
 new_transaction_policy_set: VALUE
 
-next_header: "ah" | "dstopts" | "egp" | "esp" | "fragment" | "gre" | "hop-by-hop" | "icmp" | "icmp6" | "icmpv6" | "icmpv6" VALUE | "igmp" | "ipip" | "ipv6" | "match" VALUE | "no-next-header" | "ospf" | "pim" | "range" | "routing" | "rsvp" | "sctp" | "tcp" | "udp" | "value" VALUE | "vrrp"
+next_header: "ah" | "dstopts" | "egp" | "esp" | "fragment" | "gre" | "hop-by-hop" | "icmp" | "icmp6" | "icmpv6" | "icmpv6" VALUE | "igmp" | "ipip" | "ipv6" | "match" VALUE | "no-next-header" | "ospf" | "pim" | "routing" | "rsvp" | "sctp" | "tcp" | "udp" | "value" VALUE | "vrrp" | VALUE
 
 next_hop: "address" address? | "arp-detect" VALUE | "arp-throttle" VALUE | "discard" | "merged" merged? | "next-table" VALUE | "no-rsvp-tunneling" no_rsvp_tunneling? | "peer-address" | "reject" | "request-uri" | "self" | "sip-based" | VALUE
 
@@ -5527,7 +5527,7 @@ payload_length: "match" VALUE | "value" VALUE
 
 payload_port_profile: "inet" VALUE | "inet6" VALUE | "iso" VALUE | "mpls" VALUE | VALUE
 
-payload_protocol: "ah" | "egp" | "esp" | "gre" | "icmp" | "icmp6" | "icmpv6" | "icmpv6" VALUE | "igmp" | "ipip" | "ipv6" | "no-next-header" | "ospf" | "pim" | "range" | "rsvp" | "sctp" | "tcp" | "udp" | "vrrp"
+payload_protocol: "ah" | "egp" | "esp" | "gre" | "icmp" | "icmp6" | "icmpv6" | "icmpv6" VALUE | "igmp" | "ipip" | "ipv6" | "no-next-header" | "ospf" | "pim" | "rsvp" | "sctp" | "tcp" | "udp" | "vrrp" | VALUE
 
 payload_scrambler: VALUE
 
@@ -5915,7 +5915,7 @@ prefix_limit: "drop-excess" drop_excess? | "hide-excess" hide_excess? | "maximum
 
 prefix_list: "table" table__list
 
-prefix_list__list: VALUE ("apply-path" QUOTED_OR_VALUE | "except" | "invert-match" | "prefix-list-item" | "source" source__list | "wildcard-source" wildcard_source?)?
+prefix_list__list: VALUE ("apply-path" QUOTED_OR_VALUE | "except" | "invert-match" | "source" source__list | "wildcard-source" wildcard_source? | VALUE)?
 
 prefix_list_filter__list: VALUE ("exact" | "longer" | "orlonger")?
 
@@ -6047,7 +6047,7 @@ protector_pe: "context-identifier" VALUE | "lsp" VALUE | VALUE
 
 proto_802_1x: "aggregate" aggregate?
 
-protocol: "ah" | "all" | "cdp" | "destination" VALUE | "destination-port" VALUE | "destination-port-except" VALUE | "dstopts" | "egp" | "elmi" | "esp" | "ethernet" ethernet? | "evpn" evpn? | "fragment" | "gre" | "gvrp" | "hop-by-hop" | "http" http? | "icmp" | "icmp" icmp? | "icmp6" | "icmpv6" | "icmpv6" icmpv6? | "ieee8021x" | "ieee8023ah" | "igmp" | "ipip" | "ipv4" ipv4? | "ipv6" | "ipv6" ipv6? | "isis-over-gre" isis_over_gre? | "l2circuit" l2circuit? | "l2vpn" l2vpn? | "lacp" | "lldp" | "match" VALUE | "mmrp" | "mvrp" | "no-next-header" | "ospf" | "pim" | "protocol-type" VALUE | "pseudo-wire" | "pvstp" | "range" | "routing" | "rsvp" | "sctp" | "source-id" VALUE | "source-port" VALUE | "source-port-except" VALUE | "ssl" ssl? | "stp" | "tcp" | "tcp" tcp? | "udld" | "udp" | "udp" udp? | "value" VALUE | "vrrp" | "vstp" | "vtp"
+protocol: "ah" | "all" | "cdp" | "destination" VALUE | "destination-port" VALUE | "destination-port-except" VALUE | "dstopts" | "egp" | "elmi" | "esp" | "ethernet" ethernet? | "evpn" evpn? | "fragment" | "gre" | "gvrp" | "hop-by-hop" | "http" http? | "icmp" | "icmp" icmp? | "icmp6" | "icmpv6" | "icmpv6" icmpv6? | "ieee8021x" | "ieee8023ah" | "igmp" | "ipip" | "ipv4" ipv4? | "ipv6" | "ipv6" ipv6? | "isis-over-gre" isis_over_gre? | "l2circuit" l2circuit? | "l2vpn" l2vpn? | "lacp" | "lldp" | "match" VALUE | "mmrp" | "mvrp" | "no-next-header" | "ospf" | "pim" | "protocol-type" VALUE | "pseudo-wire" | "pvstp" | "routing" | "rsvp" | "sctp" | "source-id" VALUE | "source-port" VALUE | "source-port-except" VALUE | "ssl" ssl? | "stp" | "tcp" | "tcp" tcp? | "udld" | "udp" | "udp" udp? | "value" VALUE | "vrrp" | "vstp" | "vtp" | VALUE
 
 protocol_attributes__list: VALUE ("dhcp" dhcp? | "dhcpv6" dhcpv6?)?
 
@@ -6647,7 +6647,7 @@ rib_groups: "inet" VALUE | "inet3" VALUE
 
 rib_groups__list: VALUE ("export-rib" VALUE | "import-policy" VALUE | "import-rib" VALUE)?
 
-rib_list__list: VALUE ("rib-list-item")?
+rib_list__list: VALUE (VALUE)?
 
 rib_out: "post-policy" | "pre-policy"
 
@@ -6797,7 +6797,7 @@ rsvpv6: "aggregate" aggregate?
 
 rtcp: "fixed-value" VALUE | "percentage" VALUE
 
-rtf_prefix_list__list: VALUE ("prefix-list")?
+rtf_prefix_list__list: VALUE (VALUE)?
 
 rtg_config: "preempt-cutover-timer" VALUE
 
@@ -7071,7 +7071,7 @@ server_fail_voip: "deny" | "permit" | "use-cache" | "vlan-name" VALUE
 
 server_group: server_group__list
 
-server_group__list: VALUE ("address")?
+server_group__list: VALUE (VALUE)?
 
 server_ip: VALUE
 
@@ -7399,7 +7399,7 @@ snmp_trap_thresholds: "address-port" address_port? | "flow" flow? | "nat-address
 
 snmpv6: "aggregate" aggregate?
 
-snoop_segments: "snoop-segment"
+snoop_segments: VALUE
 
 snoop_segments__list: VALUE ("destination-ip-address" VALUE | "destination-port" VALUE | "request-cache-timeout" VALUE | "shared-secret" VALUE | "source-interface" source_interface? | "source-ip-address" VALUE)?
 
@@ -7471,7 +7471,7 @@ source_mac_address__list: VALUE ("except")?
 
 source_packet_routing: "adjacency-segment" adjacency_segment? | "compute-profile" compute_profile__list | "entropy-label" | "explicit-null" | "flex-algorithm" VALUE | "import-color-only-cross-af" | "inet-color-append-explicit-null" | "inet6-color-append-explicit-null" | "inherit-label-nexthops" | "install-prefix-sid-for-best-route" | "ipv6-tunneling-append-explicit-null" | "ldp-stitching" | "lsp-external-controller" | "mapping-server" VALUE | "mapping-server-entry" mapping_server_entry__list | "maximum-segment-list-depth" VALUE | "maximum-srv6-te-segment-list-depth" VALUE | "new-capability-subtlv" | "no-binding-sid-leaking" | "no-chained-composite-next-hop" | "no-strict-spf" | "node-segment" node_segment? | "preference" VALUE | "prefix-segment" VALUE | "preserve-nexthop-hierarchy" preserve_nexthop_hierarchy? | "retry-timer" VALUE | "rib-group" rib_group? | "sbfd-frr" | "segment-list" segment_list__list | "sensor-based-stats" sensor_based_stats? | "source-routing-path" source_routing_path__list | "source-routing-path-template" source_routing_path_template__list | "source-routing-path-template-map" source_routing_path_template_map? | "sr-preference" VALUE | "sr-preference-override" VALUE | "srgb" srgb? | "srms-preference" VALUE | "srv6" | "srv6" srv6? | "strict-asla-based-flex-algorithm" | "telemetry" telemetry? | "traceoptions" traceoptions? | "traffic-engineering" traffic_engineering? | "traffic-statistics" traffic_statistics? | "tunnel-tracking" | "udp-tunneling" udp_tunneling? | "use-flex-algorithm-metric-always" | "use-transport-class" use_transport_class? | VALUE
 
-source_port: "afs" | "bgp" | "biff" | "bootpc" | "bootps" | "cmd" | "cvspserver" | "dhcp" | "domain" | "eklogin" | "ekshell" | "exec" | "finger" | "ftp" | "ftp-data" | "http" | "https" | "ident" | "imap" | "kerberos-sec" | "klogin" | "kpasswd" | "krb-prop" | "krbupdate" | "kshell" | "ldap" | "ldp" | "login" | "match" VALUE | "mobileip-agent" | "mobilip-mn" | "msdp" | "netbios-dgm" | "netbios-ns" | "netbios-ssn" | "nfsd" | "nntp" | "ntalk" | "ntp" | "pop3" | "pptp" | "printer" | "radacct" | "radius" | "range" | "rip" | "rkinit" | "smtp" | "snmp" | "snmptrap" | "snpp" | "socks" | "ssh" | "sunrpc" | "syslog" | "tacacs" | "tacacs-ds" | "talk" | "telnet" | "tftp" | "timed" | "upper-limit" VALUE | "value" VALUE | "who" | "xdmcp" | "zephyr-clt" | "zephyr-hm" | "zephyr-srv"
+source_port: "afs" | "bgp" | "biff" | "bootpc" | "bootps" | "cmd" | "cvspserver" | "dhcp" | "domain" | "eklogin" | "ekshell" | "exec" | "finger" | "ftp" | "ftp-data" | "http" | "https" | "ident" | "imap" | "kerberos-sec" | "klogin" | "kpasswd" | "krb-prop" | "krbupdate" | "kshell" | "ldap" | "ldp" | "login" | "match" VALUE | "mobileip-agent" | "mobilip-mn" | "msdp" | "netbios-dgm" | "netbios-ns" | "netbios-ssn" | "nfsd" | "nntp" | "ntalk" | "ntp" | "pop3" | "pptp" | "printer" | "radacct" | "radius" | "rip" | "rkinit" | "smtp" | "snmp" | "snmptrap" | "snpp" | "socks" | "ssh" | "sunrpc" | "syslog" | "tacacs" | "tacacs-ds" | "talk" | "telnet" | "tftp" | "timed" | "upper-limit" VALUE | "value" VALUE | "who" | "xdmcp" | "zephyr-clt" | "zephyr-hm" | "zephyr-srv" | VALUE
 
 source_prefix_list__list: VALUE ("except")?
 
@@ -8115,7 +8115,7 @@ tracking_area__list: VALUE ("plmn" plmn?)?
 
 traffic: "monitor-timer" monitor_timer? | "traceoptions" traceoptions?
 
-traffic_class: "af11" | "af12" | "af13" | "af21" | "af22" | "af23" | "af31" | "af32" | "af33" | "af41" | "af42" | "af43" | "be" | "cs0" | "cs1" | "cs2" | "cs3" | "cs4" | "cs5" | "cs6" | "cs7" | "ef" | "match" VALUE | "range" | "value" VALUE
+traffic_class: "af11" | "af12" | "af13" | "af21" | "af22" | "af23" | "af31" | "af32" | "af33" | "af41" | "af42" | "af43" | "be" | "cs0" | "cs1" | "cs2" | "cs3" | "cs4" | "cs5" | "cs6" | "cs7" | "ef" | "match" VALUE | "value" VALUE | VALUE
 
 traffic_class__list: VALUE ("average-sample-size" VALUE | "code-points" VALUE | "loss-threshold" VALUE | "loss-threshold-window" VALUE | "measurement-quantity" VALUE | "padding-size" VALUE | "query-interval" VALUE | "rtt-delay-threshold" VALUE | "twcd-delay-threshold" VALUE)?
 
@@ -8605,7 +8605,7 @@ vlan_steering: "vlan-rule" VALUE
 
 vlan_tags: "inner" VALUE | "inner-list" VALUE | "inner-range" VALUE | "outer" VALUE
 
-vlans: "vlan-config" | "vlan-groups" vlan_groups? | vlan__list | vlan_config__list
+vlans: "vlan-groups" vlan_groups? | VALUE | vlan__list | vlan_config__list
 
 vmhost: "interfaces" interfaces__list | "management-if" management_if? | "no-auto-recovery" | "resize" resize? | "services" services? | "syslog" syslog?
 

@@ -24,8 +24,9 @@ No requirement is retired; this change sets `skip_specs: true`.
 No test is retired. `TestBundledGrammarCompiles` loses its `xfail` and
 `TestUnknownTokensInsideANamedList` loses its own, both by passing.
 `TestListEntryTakesSiblingsOnOneLine` gains one, recording the rejection the
-one-continuation rule buys. Four tests are added across
-`test_artifact_builder.py` and `test_grammar_generator.py`.
+one-continuation rule buys. Twelve test functions are added across
+`test_artifact_builder.py`, `test_grammar_generator.py` and the new
+`test_set_corpus.py`, which also brings `tests/data/set_corpus.txt`.
 
 ## Docs
 

@@ -51,9 +51,10 @@ _NAME_ESCAPES = {
 
 # Names the grammar itself uses. A schema element called `start` would
 # otherwise emit a second `start:` rule and the whole grammar stops compiling,
-# which is what happened: Junos has `start-options`, so every bundled grammar
-# since the 24.4 migration has been invalid and set validation silently passed
-# everything.
+# which is what happened: Junos has an element `start` -- it is `start-options`
+# that is its child, not the collision -- so every bundled grammar from the
+# 24.4 migration until the artefact was rebuilt was invalid. Set validation did
+# not pass silently; `SetValidator` raised and the CLI exited 3.
 _RESERVED_RULE_NAMES = {"start"}
 
 # Rules are merged by name across the whole tree, which keeps the grammar a
@@ -62,10 +63,12 @@ _RESERVED_RULE_NAMES = {"start"}
 # rule loses the entry-name slot, and every `set` line addressing a list entry
 # stops parsing. `user` is both a list under `system login` and a container
 # under `snmp`, and that one collision rejected most of a valid config. List
-# nodes therefore get their own rule. `_safe_rule_name` maps each run of
-# non-alphanumerics to a single underscore, so a doubled one cannot come from
-# an element name: none of the 10,958 in the bundled 24.4R0 produces one, nor
-# any of the ~11,000 in each of 23.2R2, 23.4R2 and 25.2R2.
+# nodes therefore get their own rule. The suffix is collision-free by
+# measurement, not by construction: `_safe_rule_name` maps each non-alphanumeric
+# to one underscore and does not collapse runs, so `a--b` would give `a__b` --
+# but no element name carries two consecutive non-alphanumerics. Checked over
+# every name in the bundled 24.4R0 (10,958) and in the 23.2R2, 23.4R2 and
+# 25.2R2 dumps (10,840 / 10,105 / 10,455): zero produce a doubled underscore.
 _LIST_RULE_SUFFIX = "__list"
 
 
@@ -245,6 +248,14 @@ def _child_reference(name: str, node: SchemaNode) -> str:
 
     # Presence containers (no value)
     if node.is_presence:
+        if "nokeyword" in node.flags:
+            # A nokeyword presence node is a hidden list: the token is the
+            # entry name and the element name is never written.
+            # `set policy-options prefix-list PL-A 10.0.0.0/8` writes no
+            # `prefix-list-item`, and junoscfg's own converter emits exactly
+            # that line -- which this validator used to reject. 24.4R0 has 204
+            # such nodes, `prefix-list-item` and syslog `contents` among them.
+            return "VALUE"
         return keyword
 
     # Containers with children

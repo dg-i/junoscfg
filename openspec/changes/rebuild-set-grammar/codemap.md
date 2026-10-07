@@ -15,6 +15,7 @@ zone conversion · layer pipeline · contract none
 zone schema · layer pipeline · contract none
 
 - `ArtifactBuilder` class: `agent-ready codemap show junoscfg.validate.artifact_builder.ArtifactBuilder`
+- `read_structure_tree` function: `agent-ready codemap show junoscfg.validate.artifact_builder.read_structure_tree`
 - `write_structure_tree` function: `agent-ready codemap show junoscfg.validate.artifact_builder.write_structure_tree`
 
 ## junoscfg.validate.grammar_generator

@@ -138,7 +138,7 @@ class TestRuleNamesAreValidLark:
     Lark as a *terminal*, and Junos has elements like
     `jnx-tel-RE-local-interfaces-stats`. And a schema element named `start`
     emitted a second `start:` rule, colliding with the grammar's own entry
-    point — Junos has `start-options`, so every bundled grammar since the 24.4
+    point — Junos has an element `start`, so every bundled grammar since the 24.4
     migration has been invalid.
     """
 
@@ -154,6 +154,8 @@ class TestRuleNamesAreValidLark:
         from junoscfg.validate.grammar_generator import _safe_rule_name
 
         assert _safe_rule_name("start") == "start_element"
+        # Only the exact name is reserved: `start-options`, the child of the
+        # colliding element, keeps its own rule name.
         assert _safe_rule_name("start-options") == "start_options"
 
     def test_every_generated_name_matches_larks_rule_pattern(self) -> None:
