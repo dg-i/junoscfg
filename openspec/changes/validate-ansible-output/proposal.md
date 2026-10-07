@@ -23,10 +23,12 @@ in production, so `-v` was unusable for it. Three causes, none of which
   already was.
 - `_strip_apply_groups` also strips `apply-flags` and `apply-macro`.
 - A named list's entry name is `QUOTED_OR_VALUE`.
-- Every leaf value is `QUOTED_OR_VALUE`, not thirteen hard-coded names. Found
-  on a real 6,941-line device configuration, which puts a nested `set` command
-  inside `event-options policy <n> then change-configuration commands "..."`.
-  `VALUE` is `/\S+/`, so any quoted value holding a space was unparseable.
+- Every leaf value is `QUOTED_OR_VALUE`, not thirteen hard-coded names: a real
+  configuration puts a nested `set` command inside `event-options policy <n>
+  then change-configuration commands "..."`, and `VALUE` is `/\S+/`.
+- A oneliner list of bare keywords takes them on either side of the entry
+  name; nothing in the schema says which, and `community add COMM-A` and
+  `flag all detail` disagree.
 - The grammar is rebuilt.
 
 ## Capabilities
@@ -45,16 +47,14 @@ No requirement changes, so `.openspec.yaml` sets `skip_specs: true`.
   lists the largest class. `xsd_fixes` carries an `accepts-bracket` flag the
   generator still ignores.
 - Running the collection's playbook in CI; verified by hand instead.
-- The 8.6% of a real device configuration still rejected. The largest class is
-  `policy-statement <n> term <t> then community add <c>`: `community` is a
-  *oneliner* list, and the generator reads the `oneliner` flag nowhere, though
-  24.4R0 has 3,456 such nodes. Emitting them action-first is not the fix —
-  measured, it takes the real config from 308 rejections to 1,025 and the
-  corpus from 104 to 73, so oneliner lists are not uniformly ordered.
+- The 2.3% of real configurations still rejected, chiefly
+  `snmp filter-interfaces interfaces <n>`.
 
 ## Impact
 
 `grammar_generator.py`, `set_validator.py` and `data/junos-set.lark`. The
-collection's rendered configs validate clean, from seven errors each. The
-corpus goes 100 to 104 of 116, all nine adversarial commands are still
-rejected, and compile rises 4.3s to 5.6s.
+collection's rendered configs validate clean, from seven errors each. Measured
+on three real device configurations, 7,093 set lines: rejections fall from
+roughly 40% before this session's grammar work to 2.3%. The corpus goes 100 to
+105 of 116, all nine adversarial commands are still rejected, and grammar load
+rises 4.3s to 5.7s.

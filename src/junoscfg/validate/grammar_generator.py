@@ -94,11 +94,14 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
 class _RuleInfo:
     """Accumulated info for a single Lark rule (may be merged from multiple nodes)."""
 
-    __slots__ = ("alts", "is_named_list")
+    __slots__ = ("alts", "is_named_list", "either_order")
 
     def __init__(self) -> None:
         self.alts: set[str] = set()
         self.is_named_list: bool = False
+        # A oneliner list whose children are all bare keywords may write them
+        # before the entry name or after it; see `generate_lark_grammar`.
+        self.either_order: bool = False
 
 
 def generate_lark_grammar(root: SchemaNode) -> str:
@@ -131,7 +134,18 @@ def generate_lark_grammar(root: SchemaNode) -> str:
         alts = sorted(info.alts)
         body = " | ".join(alts)
 
-        if info.is_named_list:
+        if info.is_named_list and info.either_order:
+            # A oneliner list whose children are all bare keywords takes them
+            # on either side of the entry name, and nothing in the schema says
+            # which: `community add COMM-A` puts the keyword first, while
+            # `flag all detail` and `from source-address 10/8 except` put it
+            # last. Across three real device configurations the first form
+            # alone accounted for 343 of 507 rejected lines, and assuming it
+            # universally was worse than assuming it never happened -- that
+            # took 7.1% rejected to 30.4%. Accepting both costs 1.4s of
+            # grammar load and takes 7.1% to 2.3%.
+            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})? | ({body}) QUOTED_OR_VALUE")
+        elif info.is_named_list:
             # Named list: VALUE captures the entry name. Only list nodes reach
             # this rule name, so the slot can no longer be merged away.
             #
@@ -205,6 +219,12 @@ def _collect_rules(
         info.alts.update(child_alts)
         if node.is_list:
             info.is_named_list = True
+            if (
+                "oneliner" in node.flags
+                and node.children
+                and all(c.is_presence and not c.children for c in node.children.values())
+            ):
+                info.either_order = True
 
     # Recurse into children
     for child_node in node.children.values():

@@ -1,0 +1,1 @@
+Set validation accepts a oneliner list's bare keywords on either side of the entry name, so `set policy-options policy-statement P term T then community add COMM-A` is no longer reported as invalid syntax. Measured over three real device configurations totalling 7,093 set commands, this alone removed 343 of 507 false errors, taking the rejection rate from 7.1% to 2.3%.

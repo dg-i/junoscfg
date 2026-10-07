@@ -10,7 +10,9 @@
 - [x] 2.2 Strip `apply-flags` and `apply-macro` as well as `apply-groups`.
 - [x] 2.3 A named list's entry name is `QUOTED_OR_VALUE`.
 - [x] 2.4 Every leaf value is `QUOTED_OR_VALUE`; `_QUOTED_FIELDS` goes.
-- [x] 2.5 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
+- [x] 2.5 A oneliner list of bare keywords takes them on either side of the
+  entry name.
+- [x] 2.6 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
 
 ## 3. Verification
 
@@ -21,6 +23,8 @@
   4.2s compile, 4 ms a line.
 - [x] 3.3 A real 6,941-line border-gateway configuration converts to set, JSON
   and YAML in 1.2s, 2.1s and 1.4s. Validation rejects 8.6% of its 3,369 set
-  lines, from 9.1%; the remaining classes are recorded in the Non-goals.
+  lines, from 9.1%. Across three devices -- a border router, an admin switch
+  and a lab switch, 7,093 set lines -- 7.1% to 2.3%, with `then community
+  <action> <name>` accounting for 343 of the 507 rejections it removed.
 - [x] 3.4 The collection's 33 tests pass and its four filters produce output
   byte-identical to junoscfg 0.6.8, before any of this session's work.

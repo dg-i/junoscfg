@@ -40,7 +40,6 @@ CORRECTLY_REJECTED = {
 OVER_REJECTED = {
     "set groups foo snmp location": "merged",
     "set policy-options community FOO members": "brackets",
-    "set policy-options policy-statement p1 term 1 then community add comm-a": "siblings",
     "set protocols bgp group ibgp import ( pol-a && ! pol-b )": "algebra",
     "set protocols bgp traceoptions file bgp-log size 10m files 10": "merged",
     "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5": "siblings",
