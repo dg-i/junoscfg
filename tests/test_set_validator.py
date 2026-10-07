@@ -122,3 +122,47 @@ class TestApplyGroupsStrippingStopsAtQuotes:
             _strip_apply_groups("set protocols bgp group G apply-groups foo")
             == "set protocols bgp group G"
         )
+
+
+class TestTheShippedGrammarKeepsRejecting:
+    """What a validator must say no to, measured against the artefact we ship.
+
+    Every other test in this module runs against `MINIMAL_GRAMMAR`, which has
+    three rules. That is why a defect in the real one shipped: a global
+    `EXPRESSION` terminal was added to `QUOTED_OR_VALUE`, which the generated
+    grammar writes in 11,853 value slots, so every slot in the product took a
+    parenthesised run of anything. `set system host-name (foo bar)` validated.
+
+    These assertions are deliberately negative. A validator that accepts
+    everything passes every positive test there is.
+    """
+
+    def test_a_hostname_is_not_a_policy_expression(self, bundled_set_validator) -> None:
+        result = bundled_set_validator.validate("set system host-name (foo bar)")
+        assert result.valid is False
+
+    def test_a_description_is_not_a_policy_expression(self, bundled_set_validator) -> None:
+        result = bundled_set_validator.validate(
+            "set interfaces ge-0/0/0 description (not a policy expression)"
+        )
+        assert result.valid is False
+
+    def test_a_policy_expression_is_still_one_value(self, bundled_set_validator) -> None:
+        result = bundled_set_validator.validate(
+            "set policy-options policy-statement P term T from policy "
+            "(( A && ! B ) || ( ! C && D ))"
+        )
+        assert result.valid is True
+
+    def test_a_hostname_still_takes_a_plain_value(self, bundled_set_validator) -> None:
+        assert bundled_set_validator.validate("set system host-name router1").valid is True
+
+    def test_an_unknown_element_is_rejected(self, bundled_set_validator) -> None:
+        result = bundled_set_validator.validate("set interfaces ge-0/0/0 bogus-thing 5")
+        assert result.valid is False
+
+    def test_a_leaf_with_no_value_is_rejected(self, bundled_set_validator) -> None:
+        assert bundled_set_validator.validate("set system host-name").valid is False
+
+    def test_a_leaf_with_three_values_is_rejected(self, bundled_set_validator) -> None:
+        assert bundled_set_validator.validate("set system host-name foo bar baz").valid is False

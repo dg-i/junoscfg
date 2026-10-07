@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from junoscfg.validate.set_validator import SetValidator
+from junoscfg.validate.set_validator import SetValidator  # noqa: TC001
 
 CORPUS = Path(__file__).parent / "data" / "set_corpus.txt"
 
@@ -56,11 +56,9 @@ def _corpus() -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def validator() -> SetValidator:
-    """One grammar compile for the module; it costs about four seconds."""
-    import junoscfg.validate as validate_pkg
-
-    return SetValidator(Path(validate_pkg.__file__).parent / "data" / "junos-set.lark")
+def validator(bundled_set_validator: SetValidator) -> SetValidator:
+    """The session's one grammar compile; it costs about four seconds."""
+    return bundled_set_validator
 
 
 class TestShippedGrammarAgainstTheCorpus:

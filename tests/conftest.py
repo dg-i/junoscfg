@@ -209,6 +209,19 @@ def artifacts_dir(tmp_path: Path) -> str:
     return str(tmp_path)
 
 
+@pytest.fixture(scope="session")
+def bundled_set_validator() -> object:
+    """The shipped grammar, compiled once for the whole session.
+
+    Compiling it costs about four seconds, and more than one module needs it:
+    the corpus tier and the negative tests that pin what the grammar must keep
+    rejecting. A module-scoped fixture paid for it twice.
+    """
+    from junoscfg.validate.set_validator import SetValidator
+
+    return SetValidator(ARTIFACT_DIR / "junos-set.lark")
+
+
 @pytest.fixture
 def examples_dir() -> Path:
     """Path to the examples directory with test data."""

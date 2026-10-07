@@ -387,7 +387,8 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     from the bundled artifacts when the XSD dump they came from is no longer
     to hand. :func:`junoscfg.validate.grammar_generator.generate_lark_grammar`
     reads only ``name``, ``children``, ``is_leaf``, ``is_list``,
-    ``is_presence`` and ``flags``, all of which the format carries.
+    ``is_presence``, ``flags`` and ``type_ref``, all of which the format
+    carries.
 
     What it does not carry, because ``_serialize_node`` never writes it. This
     is a lossy format, not a faithful copy; do not use this tree where any of
@@ -408,8 +409,10 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     - ``is_presence`` on a leaf, and ``pattern_negated`` with no ``pattern``.
 
     None of these reaches ``generate_lark_grammar``, which reads only ``name``,
-    ``children``, ``is_leaf``, ``is_list``, ``is_presence`` and the ``nokeyword``
-    and ``freeform-nk`` flags — all of which survive.
+    ``children``, ``is_leaf``, ``is_list``, ``is_presence``, ``type_ref`` and
+    the ``nokeyword``, ``freeform-nk``, ``flat-dict`` and ``flat-entry`` flags —
+    all of which survive. ``type_ref`` is how a policy-algebra slot is told
+    apart from every other value slot.
 
     Args:
         path: Path to a ``junos-structure-tree.json`` artifact.

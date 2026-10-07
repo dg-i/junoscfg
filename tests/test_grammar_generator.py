@@ -499,11 +499,22 @@ class TestPolicyExpressionIsOneValue:
     Confirmed against the device's own ``| display json``, which is the only
     thing that could settle whether Junos keeps the expression opaque or
     structured.
+
+    The expression alternative belongs to the slot, not to the grammar. It
+    first went into ``QUOTED_OR_VALUE``, which the shipped grammar writes in
+    11,853 places, so every value slot took a parenthesised run of anything --
+    see ``TestExpressionsAreScopedToPolicyAlgebra``. The key is the XSD type
+    reference ``policy-algebra``, carried on 7,636 nodes of the bundled
+    structure tree and on none of the rest.
     """
 
     @staticmethod
-    def _tree() -> SchemaNode:
-        policy = SchemaNode(name="policy", is_leaf=True)
+    def _tree(*, typed: bool = True) -> SchemaNode:
+        policy = SchemaNode(
+            name="policy",
+            is_leaf=True,
+            type_ref="policy-algebra" if typed else "xsd:string",
+        )
         term = SchemaNode(
             name="term",
             is_list=True,
@@ -530,6 +541,55 @@ class TestPolicyExpressionIsOneValue:
         assert _parses(
             self._tree(), "set policy-options policy-statement P term T from policy PLAIN"
         )
+
+    def test_the_same_leaf_untyped_rejects_the_expression(self) -> None:
+        """Only the type reference opens the slot, not the element name."""
+        assert not _parses(
+            self._tree(typed=False),
+            "set policy-options policy-statement P term T from policy "
+            "(( A && ! B ) || ( ! C && D ))",
+        )
+
+
+class TestExpressionsAreScopedToPolicyAlgebra:
+    """A parenthesised run is a value in 159 slots, not in all 11,853.
+
+    ``EXPRESSION`` was added to ``QUOTED_OR_VALUE``, the terminal every value
+    slot in the generated grammar writes. That made
+    ``set system host-name (anything at all goes here)`` and
+    ``set interfaces ge-0/0/0 description (not a policy expression)`` validate
+    against the shipped grammar; a hostname holds neither a space nor a
+    parenthesis. ``_value_token`` now hands ``ALGEBRA_OR_VALUE`` to the nodes
+    whose ``type_ref`` is ``policy-algebra`` and ``QUOTED_OR_VALUE`` to the
+    rest.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        return SchemaNode(
+            name="configuration",
+            children={
+                "system": SchemaNode(
+                    name="system",
+                    children={
+                        "host-name": SchemaNode(
+                            name="host-name", is_leaf=True, type_ref="host-name-type"
+                        ),
+                    },
+                ),
+            },
+        )
+
+    def test_a_plain_leaf_rejects_a_parenthesised_run(self) -> None:
+        assert not _parses(self._tree(), "set system host-name (foo bar)")
+
+    def test_a_plain_leaf_still_takes_its_value(self) -> None:
+        assert _parses(self._tree(), "set system host-name router1")
+
+    def test_the_shared_terminal_no_longer_offers_expression(self) -> None:
+        grammar = generate_lark_grammar(self._tree())
+        assert "QUOTED_OR_VALUE: QUOTED | VALUE" in grammar
+        assert "ALGEBRA_OR_VALUE: QUOTED | EXPRESSION | VALUE" in grammar
 
 
 class TestFlattenedRenderingsTakeARunOfValues:

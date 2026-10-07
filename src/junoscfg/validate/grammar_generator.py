@@ -58,6 +58,17 @@ _RESERVED_RULE_NAMES = {"start"}
 # 25.2R2 dumps (10,840 / 10,105 / 10,455): zero produce a doubled underscore.
 _LIST_RULE_SUFFIX = "__list"
 
+# The XSD type whose value is a policy expression rather than a token:
+# `from policy (( A && ! B ) || ( ! C && D ))`. In 24.4R0 it is on 7,636 nodes,
+# `import`, `export`, `prefix-policy` and `retention-policy` among them, and
+# every one of them is a leaf. It is the only slot where a value may hold
+# spaces and parentheses without being quoted.
+#
+# This is a *type reference*, not an element name. `_fix_policy_algebra` in
+# `xsd_fixes.py` tries to find these by element name through `find_all` and
+# matches nothing, because `policy-algebra` exists only as a type.
+_POLICY_ALGEBRA_TYPE = "policy-algebra"
+
 
 def _safe_rule_name(name: str) -> str:
     """Convert an element name to a valid Lark rule name.
@@ -81,6 +92,21 @@ def _safe_rule_name(name: str) -> str:
     if safe in _RESERVED_RULE_NAMES:
         safe = f"{safe}_element"
     return safe
+
+
+def _value_token(node: SchemaNode) -> str:
+    """The value terminal for a slot that writes *node*'s own value.
+
+    `QUOTED_OR_VALUE` everywhere except a policy-algebra slot, which also takes
+    an unquoted parenthesised expression. The expression alternative used to
+    sit in `QUOTED_OR_VALUE` itself, which put it in all 11,854 value slots of
+    the shipped grammar rather than the 7,636 nodes that take one: a hostname
+    cannot hold a space or a parenthesis, yet
+    `set system host-name (anything at all goes here)` validated.
+    """
+    if node.type_ref == _POLICY_ALGEBRA_TYPE:
+        return "ALGEBRA_OR_VALUE"
+    return "QUOTED_OR_VALUE"
 
 
 def _rule_name_for(name: str, node: SchemaNode) -> str:
@@ -179,8 +205,13 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     # and junoscfg converts it to exactly that, so conversion was already
     # right and only the grammar was wrong: VALUE is /\S+/ and stops at the
     # first space. Confirmed against a device's own `| display json`.
+    #
+    # It reaches only ALGEBRA_OR_VALUE, which `_value_token` hands to the
+    # nodes typed `policy-algebra` and to nothing else. Put in QUOTED_OR_VALUE
+    # it widened every value slot in the grammar instead.
     lines.append("EXPRESSION: /\\([^\\n]*\\)/")
-    lines.append("QUOTED_OR_VALUE: QUOTED | EXPRESSION | VALUE")
+    lines.append("QUOTED_OR_VALUE: QUOTED | VALUE")
+    lines.append("ALGEBRA_OR_VALUE: QUOTED | EXPRESSION | VALUE")
     lines.append("")
     lines.append("// Whitespace handling")
     lines.append("%import common.WS")
@@ -265,20 +296,22 @@ def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> s
     # 24.4R0 has 108 `flat-dict` and 46 `flat-entry` nodes. The generator read
     # neither, which left every `attributes-match` line and
     # `within 1800 trigger after 1` rejected on real devices.
+    value = _value_token(node)
+
     if "flat-dict" in node.flags or any(f.startswith("flat-entry:") for f in node.flags):
-        return f"{keyword} QUOTED_OR_VALUE+"
+        return f"{keyword} {value}+"
 
     # Leaf nodes
     if node.is_leaf:
         if "nokeyword" in node.flags and "freeform-nk" not in node.flags:
-            return "QUOTED_OR_VALUE"  # No keyword, just a value
+            return value  # No keyword, just a value
         # `freeform-nk` marks a node carrying `nokeyword` only so its value is
         # validated as freeform; `_fix_freeform_nk_keys` says it is still
         # "treated as a normal keyword in conversion". Reading the bare
         # `nokeyword` here rejected `set interfaces ge-0/0/1 unit 0 vlan-id
         # 100`, which is every VLAN-bearing configuration. In 24.4R0 the flag
         # is on `vlan-id` and `vlan-name` only.
-        return f"{keyword} QUOTED_OR_VALUE"
+        return f"{keyword} {value}"
 
     # Presence containers (no value)
     if node.is_presence:
