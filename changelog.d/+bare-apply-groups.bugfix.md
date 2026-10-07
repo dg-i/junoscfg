@@ -1,0 +1,1 @@
+Set validation accepts a bare `set apply-groups <name>` at the top level. The apply-groups stripper reduced it to `set`, which parses as nothing, so a statement that applies a group to the whole configuration was reported as invalid syntax.

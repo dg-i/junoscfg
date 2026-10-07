@@ -79,6 +79,11 @@ class SetValidator:
 
     def _validate_line(self, line: str, lineno: int) -> ValidationError | None:
         """Validate a single set command line."""
+        if line.strip() in ("set", "deactivate"):
+            # Nothing left after `_strip_apply_groups`, so the whole statement
+            # was one: `set apply-groups global-vxlan` at the top level sets no
+            # path of its own. There is nothing to check against the schema.
+            return None
         try:
             self._parser.parse(line)
             return None

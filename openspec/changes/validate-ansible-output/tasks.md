@@ -12,7 +12,9 @@
 - [x] 2.4 Every leaf value is `QUOTED_OR_VALUE`; `_QUOTED_FIELDS` goes.
 - [x] 2.5 A oneliner list of bare keywords takes them on either side of the
   entry name.
-- [x] 2.6 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
+- [x] 2.6 A bare `set apply-groups <name>` is accepted: stripping left `set`,
+  which parses as nothing.
+- [x] 2.7 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
 
 ## 3. Verification
 
