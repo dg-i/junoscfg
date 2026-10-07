@@ -105,9 +105,15 @@ class IpRule(Rule):
         registry = NetworkRegistry()
         for spec in config.networks:
             if spec == "auto":
-                # "auto" requires source_text on config (set by CLI before anonymization)
-                if hasattr(config, "_source_text") and config._source_text:
-                    registry.load_from_text(config._source_text)
+                # "auto" scans the configuration text for subnets, so it needs
+                # that text. A caller who asks for it without supplying
+                # source_text gets told, rather than silently getting nothing.
+                if not config.source_text:
+                    raise ValueError(
+                        'networks=["auto"] needs the configuration text: set '
+                        "AnonymizeConfig.source_text to the source being anonymized."
+                    )
+                registry.load_from_text(config.source_text)
             else:
                 registry.add(spec)
         if config.network_file:

@@ -5,10 +5,10 @@ characterization test is not an assertion that the behaviour is correct; it is
 a record that it was this before an agent touched the code.  Each test here was
 seen to fail against a deliberate mutation before being committed.
 
-One of these still pins a defect: networks=["auto"].  A fix is a separate
-change, and it rewrites the pin rather than deleting it -- as happened to
-makedoc, validate_xml, rename-root ordering and the XML/structured IR
-divergence, each of which now pins working behaviour instead.
+Every defect these once pinned has since been fixed, and each pin was
+rewritten rather than deleted: makedoc, validate_xml, rename-root ordering,
+the XML/structured IR divergence and networks=["auto"]. They now pin the
+working behaviour, which is what keeps the fixes fixed.
 """
 
 from __future__ import annotations
@@ -156,19 +156,52 @@ class TestSchemaGenerateWritesOutsideTheRepo:
         assert stale.read_text() != "STALE"
 
 
-class TestNetworksAutoNoOpsThroughThePythonApi:
-    """``networks=["auto"]`` silently does nothing through the Python API.
+class TestNetworksAutoNeedsSourceText:
+    """``networks=["auto"]`` scans the configuration text for subnets.
 
-    ``cli.py:331`` attaches ``_source_text`` dynamically with a ``type:
-    ignore``; ``anonymize/rules/ip.py:108`` reads it back through ``hasattr``.
-    A caller using the documented Python API never sets it, so auto-detection
-    is dropped with no error and no warning.  Pinned as a defect.
+    It used to read that text from ``_source_text``, attached dynamically by
+    ``cli.py`` with a ``type: ignore`` and read back through ``hasattr``. A
+    caller using the documented Python API never set it, so asking for
+    auto-detection silently did nothing. ``source_text`` is a declared field
+    now, and asking for auto without it is an error rather than a no-op.
     """
 
-    def test_auto_is_dropped_silently(self) -> None:
+    IR = {
+        "configuration": {
+            "system": {"host-name": "router1"},
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "ge-0/0/0",
+                        "unit": [
+                            {
+                                "name": "0",
+                                "family": {"inet": {"address": [{"name": "203.0.114.1/24"}]}},
+                            }
+                        ],
+                    }
+                ]
+            },
+        }
+    }
+
+    def test_auto_without_source_text_is_an_error(self) -> None:
+        config = AnonymizeConfig(ips=True, networks=["auto"], salt="pin-salt")
+        config.expand_all()
+
+        with pytest.raises(ValueError, match="source_text"):
+            anonymize(self.IR, config)
+
+    def test_auto_with_source_text_preserves_subnet_structure(self) -> None:
+        """What `auto` is actually for: host bits survive within a subnet.
+
+        Asserting only that the address changed would pass even if
+        auto-detection found nothing, because plain IP anonymization changes it
+        too. The point of `auto` is that two addresses in one subnet stay in
+        one subnet, keeping their host bits.
+        """
         ir = {
             "configuration": {
-                "system": {"host-name": "router1"},
                 "interfaces": {
                     "interface": [
                         {
@@ -176,20 +209,51 @@ class TestNetworksAutoNoOpsThroughThePythonApi:
                             "unit": [
                                 {
                                     "name": "0",
-                                    "family": {"inet": {"address": [{"name": "203.0.114.1/24"}]}},
+                                    "family": {
+                                        "inet": {
+                                            "address": [
+                                                {"name": "203.0.114.1/24"},
+                                                {"name": "203.0.114.254/24"},
+                                            ]
+                                        }
+                                    },
                                 }
                             ],
                         }
                     ]
-                },
+                }
             }
         }
-        config = AnonymizeConfig(ips=True, networks=["auto"], salt="pin-salt")
+        config = AnonymizeConfig(
+            ips=True,
+            networks=["auto"],
+            salt="pin-salt",
+            source_text=(
+                "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.1/24\n"
+                "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.254/24\n"
+            ),
+        )
         config.expand_all()
 
-        assert not hasattr(config, "_source_text")
         result = anonymize(ir, config)
-        assert result is not None
+        addrs = [
+            a["name"]
+            for a in result.ir["configuration"]["interfaces"]["interface"][0]["unit"][0]["family"][
+                "inet"
+            ]["address"]
+        ]
+        assert addrs[0] != "203.0.114.1/24"
+        # host bits kept, and both still in the same /24
+        assert addrs[0].endswith(".1/24")
+        assert addrs[1].endswith(".254/24")
+        assert addrs[0].rsplit(".", 1)[0] == addrs[1].rsplit(".", 1)[0]
+
+    def test_source_text_is_a_declared_field(self) -> None:
+        import dataclasses
+
+        names = {f.name for f in dataclasses.fields(AnonymizeConfig)}
+        assert "source_text" in names
+        assert "_source_text" not in names
 
 
 class TestEdityamlSurfaceTheCollectionDrives:

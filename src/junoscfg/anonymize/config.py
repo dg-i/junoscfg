@@ -54,6 +54,14 @@ class AnonymizeConfig:
     # Logging
     log_level: str = "normal"
 
+    # Appended rather than grouped with the IP options: AnonymizeConfig is a
+    # positional dataclass, so inserting mid-list moves every parameter after
+    # it. `agent-ready stage griffe` calls that an api break, and it would
+    # silently rebind a positional caller's arguments.
+    #
+    # The configuration text that `networks=["auto"]` scans for subnets.
+    source_text: str | None = None
+
     @property
     def any_enabled(self) -> bool:
         """Return True if at least one anonymization rule is enabled."""

@@ -1,0 +1,1 @@
+`AnonymizeConfig.source_text` is a declared field. `networks=["auto"]` used to read it from an undeclared attribute the CLI attached, so it silently did nothing through the Python API; it now raises if the text is missing.
