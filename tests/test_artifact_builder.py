@@ -107,7 +107,7 @@ class TestArtifactBuilder:
             netconf_path = f.name
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts = builder.build(netconf_path, tmpdir)
-            assert len(artifacts) == 6  # five generated + the XSD XmlValidator compiles
+            assert len(artifacts) == 5
             for path in artifacts.values():
                 assert Path(path).exists()
 
@@ -117,4 +117,4 @@ class TestArtifactBuilder:
             new_dir = Path(tmpdir) / "subdir" / "deep"
             artifacts = builder.build_from_xsd(SAMPLE_XSD, new_dir)
             assert new_dir.exists()
-            assert len(artifacts) == 6  # five generated + the XSD XmlValidator compiles
+            assert len(artifacts) == 5

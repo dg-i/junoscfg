@@ -18,10 +18,13 @@ print(result.errors)   # ()
 ### XML
 
 !!! warning "Requires custom artifacts"
-    XML validation needs a `junos-validated.xsd` file that is **not bundled** with the
-    package. You must obtain a NETCONF XSD dump from a Juniper device and generate
-    artifacts with `junoscfg schema generate`. See [Custom Artifacts](#custom-artifacts)
-    below. JSON, YAML, set, and structured validation work out of the box.
+    XML validation needs a `junos-validated.xsd` — a **cleaned** XSD — and
+    nothing in this package produces one. A raw NETCONF dump does not compile:
+    lxml rejects element names such as `openconfig-lldp:lldp`, which are not
+    valid `xs:NCName` values, and a real 23.2R2 dump carries 85 of them.
+    `junoscfg schema generate` builds the JSON, YAML and set artifacts from
+    that dump but not the XSD, so you must supply a cleaned one yourself.
+    JSON, YAML, set and structured validation work out of the box.
 
 ```python
 from junoscfg import validate_xml
