@@ -1,0 +1,1 @@
+XML input now produces the same IR as structured input: key aliases are resolved and leaf values stay strings. Previously the same configuration gave `ieee-802.3ad` and `"uid": 2000` through XML but `802.3ad` and `"uid": "2000"` through structured.

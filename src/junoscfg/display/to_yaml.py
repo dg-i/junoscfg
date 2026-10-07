@@ -63,11 +63,21 @@ def _ensure_xml_imports() -> None:
         return
     from lxml import etree as _etree
 
-    from junoscfg.display.constants import FLAT_ENTRY_ELEMENTS
+    from junoscfg.display.constants import FLAT_ENTRY_ELEMENTS, resolve_key_alias
     from junoscfg.display.xml_helpers import filtered_children, local_name
 
+    def _aliased_local_name(element: object) -> str:
+        """The element's IR name.
+
+        XML carries the schema's original names, so `<ieee-802.3ad>` must
+        become the `802.3ad` the rest of the package uses. `set_input.py`
+        resolved these aliases and this path did not, so the same
+        configuration produced two different IRs depending on input format.
+        """
+        return resolve_key_alias(local_name(element))
+
     _etree_mod = _etree
-    _local_name = local_name
+    _local_name = _aliased_local_name
     _filtered_children = filtered_children
     _FLAT_ENTRY_ELEMENTS = FLAT_ENTRY_ELEMENTS
 
@@ -287,16 +297,13 @@ def filter_yaml_by_path(text: str, path_tokens: list[str], *, relative: bool = F
     return yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
-def _coerce_value(text: str) -> Any:
-    """Coerce string to int/float if possible, for cleaner YAML output."""
-    try:
-        return int(text)
-    except ValueError:
-        pass
-    try:
-        f = float(text)
-        if "." in text and str(f) == text:
-            return f
-    except ValueError:
-        pass
+def _coerce_value(text: str) -> str:
+    """The leaf value as the IR holds it: a string.
+
+    This used to return an ``int`` or ``float`` where the text looked
+    numeric, for tidier YAML. The structured and set paths never did, and
+    Junos JSON is string-valued, so the same configuration produced
+    ``"uid": 2000`` through XML and ``"uid": "2000"`` through structured.
+    One interchange format cannot have two spellings of the same leaf.
+    """
     return text

@@ -256,7 +256,7 @@ class TestXmlToYamlBasic:
         assert isinstance(iface, list)
         assert len(iface) == 1
         assert iface[0]["name"] == "ae0"
-        assert iface[0]["mtu"] == 9216
+        assert iface[0]["mtu"] == "9216"  # the IR is string-valued in every path
 
     def test_inactive_attribute_becomes_at_key(self) -> None:
         """inactive XML attribute becomes @ key with inactive: true."""
@@ -290,7 +290,7 @@ class TestXmlToYamlBasic:
         assert isinstance(ifaces, list)
         assert len(ifaces) == 2
         assert ifaces[0]["name"] == "ae0"
-        assert ifaces[0]["mtu"] == 9216
+        assert ifaces[0]["mtu"] == "9216"
         assert ifaces[1]["name"] == "ge-0/0/0"
         assert ifaces[1]["description"] == "uplink"
 

@@ -121,7 +121,9 @@ logic.
 **One interchange format.** Every conversion is `format -> dict IR -> format`;
 there is no direct format-to-format path and adding one is the "second way to
 do the same thing" that section 1 calls a defect. XML input bridges through
-`xml_to_yaml()` rather than getting its own parser.
+`xml_to_yaml()` rather than getting its own parser. One configuration has one
+IR whatever format it arrived in: leaf values are strings, as Junos JSON holds
+them, and `KEY_ALIASES` is applied on every input path.
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in
