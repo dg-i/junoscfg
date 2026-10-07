@@ -5,8 +5,8 @@ characterization test is not an assertion that the behaviour is correct; it is
 a record that it was this before an agent touched the code.  Each test here was
 seen to fail against a deliberate mutation before being committed.
 
-Three of these still pin defects — validate_xml, networks=["auto"], and the
-XML/structured IR divergence.  The fix for each is a separate change, and that
+Two of these still pin defects — networks=["auto"] and the XML/structured IR
+divergence.  The fix for each is a separate change, and that
 change is expected to rewrite the test rather than delete it, which is what
 happened to the fourth: TestSchemaMakedocIsDead became TestSchemaMakedocIsGone
 when the command was removed.
@@ -46,26 +46,44 @@ MINIMAL_XSD = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-class TestValidateXmlNeedsAnXsdNobodyShips:
-    """``validate_xml`` is in ``__all__`` but cannot run on bundled artifacts.
+class TestValidateXmlWorksOnGeneratedArtifacts:
+    """``validate_xml`` needs ``junos-validated.xsd``, which is not bundled.
 
-    It requires ``junos-validated.xsd`` in the artifacts directory
-    (``validate/validator.py:77``).  No such file exists under
-    ``src/junoscfg/validate/data/``, which ships five JSON/lark artifacts and
-    no XSD, so every call that does not point at a caller-supplied directory
-    raises.  Pinned as a defect on the declared beta ``api`` surface.
+    That is deliberate and documented: the XSD comes from a NETCONF dump off a
+    real device, and ``docs/guide/validation.md`` says so. What was broken is
+    that the workflow it points at -- ``junoscfg schema generate`` -- wrote five
+    artifacts and not the XSD, so following the documentation still left XML
+    validation unusable. Fixed by openspec/changes/validate-xml-promise.
     """
 
-    def test_raises_without_a_validated_xsd(self, artifacts_dir: str) -> None:
+    def test_raises_with_a_usable_message_when_the_xsd_is_absent(self, artifacts_dir: str) -> None:
         with pytest.raises(SchemaLoadError, match="XSD not found"):
             validate_xml(SIMPLE_XML, artifacts_dir=artifacts_dir)
 
-    def test_bundled_artifacts_ship_no_xsd(self) -> None:
+    def test_bundled_artifacts_still_ship_no_xsd(self) -> None:
+        """Unchanged and intended: the XSD is per-device, not per-release."""
         import junoscfg.validate as validate_pkg
 
         data = Path(validate_pkg.__file__).parent / "data"
         assert data.is_dir()
         assert list(data.glob("*.xsd")) == []
+
+    def test_schema_generate_produces_what_validate_xml_needs(self, tmp_path: Path) -> None:
+        """The documented workflow now actually works, end to end."""
+        xsd = tmp_path / "mini.xsd"
+        xsd.write_text(MINIMAL_XSD)
+        out = tmp_path / "artifacts"
+
+        runner = CliRunner()
+        assert runner.invoke(main, ["schema", "generate", str(xsd), "-o", str(out)]).exit_code == 0
+        assert (out / "junos-validated.xsd").is_file()
+
+        assert validate_xml(SIMPLE_XML, artifacts_dir=str(out)).valid
+        bad = validate_xml(
+            "<configuration><system><bogus>x</bogus></system></configuration>",
+            artifacts_dir=str(out),
+        )
+        assert not bad.valid
 
 
 class TestSchemaMakedocIsGone:
@@ -105,7 +123,7 @@ class TestSchemaGenerateWritesOutsideTheRepo:
     the silent overwrite, is visible.
     """
 
-    def test_creates_dir_and_writes_five_artifacts(self, tmp_path: Path) -> None:
+    def test_creates_dir_and_writes_its_artifacts(self, tmp_path: Path) -> None:
         xsd = tmp_path / "mini.xsd"
         xsd.write_text(MINIMAL_XSD)
         out = tmp_path / "does-not-exist-yet"
@@ -121,6 +139,7 @@ class TestSchemaGenerateWritesOutsideTheRepo:
             "junos-yaml-schema.json",
             "junos-set.lark",
             "junos-schema-meta.json",
+            "junos-validated.xsd",
         }
 
     def test_existing_artifacts_are_overwritten_without_prompt(self, tmp_path: Path) -> None:
