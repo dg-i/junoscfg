@@ -13,9 +13,9 @@ except through this one function signature.
 - `convert_config`, `validate_config`, `Format` and `FieldValidationError` are
   what `dg-i/ansible-collection-junos-config` imports; removing or changing one
   is a declared break — enforced by `agent-ready stage griffe`.
-- `validate_xml` needs `junos-validated.xsd`, which is per-device and comes
-  from `junoscfg schema generate`, not from the wheel — enforced by
-  `tests/test_characterization.py::TestValidateXmlWorksOnGeneratedArtifacts`.
+- `validate_xml` needs a cleaned `junos-validated.xsd` that nothing in this
+  package produces: a raw NETCONF dump does not compile — enforced by
+  `tests/test_characterization.py::TestValidateXmlNeedsACleanedXsd`.
 
 ## Precedent
 

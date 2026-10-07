@@ -74,15 +74,6 @@ class ArtifactBuilder:
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
 
-        # The XSD itself. XmlValidator compiles this directly, and
-        # docs/guide/validation.md tells callers that `schema generate`
-        # produces what XML validation needs -- which was untrue until it
-        # was written here.
-        xsd_path = output_dir / "junos-validated.xsd"
-        with open(xsd_path, "w", encoding="utf-8") as handle:
-            handle.write(xsd_text)
-        artifacts["validated-xsd"] = str(xsd_path)
-
         # Metadata
         meta_path = str(output_dir / "junos-schema-meta.json")
         _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
@@ -127,11 +118,6 @@ class ArtifactBuilder:
         structure_tree_path = str(output_dir / "junos-structure-tree.json")
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
-
-        xsd_path = output_dir / "junos-validated.xsd"
-        with open(xsd_path, "w", encoding="utf-8") as handle:
-            handle.write(xsd_text)
-        artifacts["validated-xsd"] = str(xsd_path)
 
         meta_path = str(output_dir / "junos-schema-meta.json")
         _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))

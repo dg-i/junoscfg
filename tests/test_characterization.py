@@ -45,44 +45,44 @@ MINIMAL_XSD = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-class TestValidateXmlWorksOnGeneratedArtifacts:
-    """``validate_xml`` needs ``junos-validated.xsd``, which is not bundled.
+class TestValidateXmlNeedsACleanedXsd:
+    """``validate_xml`` needs ``junos-validated.xsd``, which nothing produces.
 
-    That is deliberate and documented: the XSD comes from a NETCONF dump off a
-    real device, and ``docs/guide/validation.md`` says so. What was broken is
-    that the workflow it points at -- ``junoscfg schema generate`` -- wrote five
-    artifacts and not the XSD, so following the documentation still left XML
-    validation unusable. Fixed by openspec/changes/validate-xml-promise.
+    The name is the point: a *validated* XSD is a cleaned one. A raw NETCONF
+    dump does not compile. Measured on a real 163 MB dump at Junos 23.2R2,
+    lxml refuses it with::
+
+        Element 'xsd:element', attribute 'name': 'openconfig-lldp:lldp' is
+        not a valid value of the atomic type 'xs:NCName'
+
+    85 element names carry OpenConfig prefixes containing a colon, and that is
+    only the first error lxml reports. `schema generate` briefly wrote the raw
+    extract under this name; it was reverted, because a 156 MB file that does
+    not compile is worse than an honest absence. Cleaning the XSD is real work
+    and is not yet done.
     """
 
-    def test_raises_with_a_usable_message_when_the_xsd_is_absent(self, artifacts_dir: str) -> None:
+    def test_raises_when_the_xsd_is_absent(self, artifacts_dir: str) -> None:
         with pytest.raises(SchemaLoadError, match="XSD not found"):
             validate_xml(SIMPLE_XML, artifacts_dir=artifacts_dir)
 
-    def test_bundled_artifacts_still_ship_no_xsd(self) -> None:
-        """Unchanged and intended: the XSD is per-device, not per-release."""
+    def test_bundled_artifacts_ship_no_xsd(self) -> None:
+        """Intended: the XSD is per-device and per-release, not per-wheel."""
         import junoscfg.validate as validate_pkg
 
         data = Path(validate_pkg.__file__).parent / "data"
         assert data.is_dir()
         assert list(data.glob("*.xsd")) == []
 
-    def test_schema_generate_produces_what_validate_xml_needs(self, tmp_path: Path) -> None:
-        """The documented workflow now actually works, end to end."""
+    def test_schema_generate_does_not_claim_to_produce_one(self, tmp_path: Path) -> None:
+        """It writes five artifacts and no XSD, which is honest."""
         xsd = tmp_path / "mini.xsd"
         xsd.write_text(MINIMAL_XSD)
         out = tmp_path / "artifacts"
 
         runner = CliRunner()
         assert runner.invoke(main, ["schema", "generate", str(xsd), "-o", str(out)]).exit_code == 0
-        assert (out / "junos-validated.xsd").is_file()
-
-        assert validate_xml(SIMPLE_XML, artifacts_dir=str(out)).valid
-        bad = validate_xml(
-            "<configuration><system><bogus>x</bogus></system></configuration>",
-            artifacts_dir=str(out),
-        )
-        assert not bad.valid
+        assert list(out.glob("*.xsd")) == []
 
 
 class TestSchemaMakedocIsGone:
@@ -138,7 +138,6 @@ class TestSchemaGenerateWritesOutsideTheRepo:
             "junos-yaml-schema.json",
             "junos-set.lark",
             "junos-schema-meta.json",
-            "junos-validated.xsd",
         }
 
     def test_existing_artifacts_are_overwritten_without_prompt(self, tmp_path: Path) -> None:
