@@ -8,6 +8,10 @@ type-appropriate prefixes.
 ``apply-groups`` and ``apply-groups-except`` values are handled by a
 second pass in :func:`junoscfg.anonymize.anonymize` because their schema
 nodes are empty (``{}``), making them invisible to the schema-guided walker.
+``xsd_fixes._fix_apply_statements`` declares both on the root with the
+``universal`` flag, but only the grammar and JSON-schema generators read
+that flag, and the bundled artifacts predate the fix in any case. Teaching
+the walker to read it would retire this pass.
 """
 
 from __future__ import annotations

@@ -213,6 +213,11 @@ _BOOL_FLAG_KEYS = {
     "pkf": "positional-key-flat",
     "fd": "flat-dict",
     "frnk": "freeform-nk",
+    # `universal` marks a statement Junos accepts at every hierarchy level --
+    # the four `apply-*` meta-statements, which no NETCONF XSD models. They are
+    # declared once, on the root, and the generators splice them in. Adding
+    # this key took one line here, which is the point of the tables.
+    "u": "universal",
 }
 
 # The one key the writer guards. `oneliner` means "entry name and children on
@@ -310,6 +315,7 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         fd: true if flat dict element
         fe: {"k": key, "p": position} for flat entry config
         frnk: true if freeform nk key
+        u: true if the statement is valid at every hierarchy level
         e: index into root _enums dedup table
         r: index into root _patterns dedup table
         m: true if mandatory field

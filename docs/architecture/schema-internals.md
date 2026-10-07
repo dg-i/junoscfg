@@ -220,6 +220,7 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `fd` | `true` | Flat dict element | Group H fix |
 | `fe` | `{"k":"..","p":".."}` | Flat entry config | Group H fix |
 | `frnk` | `true` | Freeform NK key | Group H fix |
+| `u` | `true` | Valid at every level (the `apply-*` statements); not in the bundled 24.4R0 artifacts, which predate the fix | Group D fix |
 | `e` | `int` | Enum list index (into `_enums` table) | artifact_builder |
 | `r` | `int` | Regex pattern index (into `_patterns` table) | artifact_builder |
 | `m` | `true` | Mandatory field | xsd_parser |
@@ -281,7 +282,7 @@ after parsing. Fixes are organized into groups:
 | B | Complete structure replacement (`groups`) | 1 |
 | B2 | Missing flags (oneliner) | 1 |
 | C | Literal symbol names (`=`, `+`, `-`) | 3 |
-| D | Missing elements | 13 |
+| D | Missing elements | 14 |
 | E | Wrong element names | 5 |
 | F | Nokeyword / generic name fixes | 4 |
 | G | Structure/combinator fixes | 5 |

@@ -166,3 +166,31 @@ class TestTheShippedGrammarKeepsRejecting:
 
     def test_a_leaf_with_three_values_is_rejected(self, bundled_set_validator) -> None:
         assert bundled_set_validator.validate("set system host-name foo bar baz").valid is False
+
+
+class TestTheApplyGroupsStripperIsStillLoadBearing:
+    """The bridge is still carrying weight, and that is recorded, not hidden.
+
+    `xsd_fixes._fix_apply_statements` models all four `apply-*` statements and
+    `TestUniversalStatementsAreSplicedEverywhere` pins the grammar it produces,
+    but the bundled artefacts are 24.4R0 and predate the fix. Until they are
+    regenerated the stripper is what makes these lines validate, so this class
+    asserts the compensation still works *and* that the shipped grammar still
+    needs it. Both flip together on the day the artefacts carry the four nodes,
+    and that is the signal to delete the stripper, `_inside_quotes` and the
+    `_validate_line` early return.
+    """
+
+    def test_the_shipped_grammar_does_not_yet_model_apply_groups(
+        self, bundled_set_validator
+    ) -> None:
+        import lark
+
+        with pytest.raises(lark.exceptions.UnexpectedInput):
+            bundled_set_validator._parser.parse(  # noqa: SLF001
+                "set protocols bgp group G apply-groups foo"
+            )
+
+    def test_the_stripper_makes_it_validate_anyway(self, bundled_set_validator) -> None:
+        result = bundled_set_validator.validate("set protocols bgp group G apply-groups foo")
+        assert result.valid is True

@@ -107,3 +107,44 @@ class TestYamlVariant:
         schema = generate_json_schema(_make_tree(), variant="json")
         config = schema["properties"]["configuration"]
         assert "patternProperties" not in config
+
+
+class TestUniversalStatementsReachEveryContainer:
+    """`apply-groups` and its siblings are legal at every hierarchy level.
+
+    JSON and YAML validation rejected them at every level, including the top,
+    because no NETCONF XSD models them and every container carries
+    `additionalProperties: false`. The schema declares the four once, on the
+    root with the `universal` flag, and this generator names them as one
+    `patternProperties` entry per container — 51,085 containers, so a property
+    per container would be four copies of each name in each of them.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        tree = _make_tree()
+        groups = SchemaNode(name="apply-groups", is_leaf=True, is_list=True)
+        groups.flags.add("universal")
+        tree.children["apply-groups"] = groups
+        return tree
+
+    _PATTERN = "^(apply\\-groups)$"
+
+    def test_the_root_names_them(self) -> None:
+        schema = generate_json_schema(self._tree())
+        assert self._PATTERN in schema["properties"]["configuration"]["patternProperties"]
+
+    def test_a_nested_container_names_them(self) -> None:
+        schema = generate_json_schema(self._tree())
+        system = schema["properties"]["configuration"]["properties"]["system"]
+        assert self._PATTERN in system["patternProperties"]
+
+    def test_the_yaml_variant_keeps_its_own_patterns(self) -> None:
+        schema = generate_json_schema(self._tree(), variant="yaml")
+        system = schema["properties"]["configuration"]["properties"]["system"]
+        assert set(system["patternProperties"]) == {self._PATTERN, "^_ansible_", "^_meta_"}
+
+    def test_a_tree_without_the_flag_gains_no_pattern(self) -> None:
+        schema = generate_json_schema(_make_tree())
+        system = schema["properties"]["configuration"]["properties"]["system"]
+        assert "patternProperties" not in system

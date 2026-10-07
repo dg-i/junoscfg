@@ -272,6 +272,69 @@ def _fix_security_policy_zones(root: SchemaNode) -> bool:
     return True
 
 
+# The four meta-statements Junos accepts at every hierarchy level and no
+# NETCONF XSD models. Checked in 21.4R0, 23.2R2, 23.4R2 and 25.2R2: not one of
+# the four appears as an element, a ref or even a substring in any of them.
+# Junos renders them, the Ansible collection downstream emits them, and six
+# modules in this package each compensate for their absence in a different way.
+_APPLY_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
+
+
+def _apply_statement_nodes() -> dict[str, SchemaNode]:
+    """The four nodes, shaped as the IR already carries them.
+
+    `apply-groups` and `apply-groups-except` are leaf-lists: `set ... apply-groups
+    foo` repeats, and `convert/input/set_input.py` appends to a list. `apply-flags`
+    is a single leaf. `apply-macro` is a named list whose entries carry a `data`
+    list of name/value pairs, which is what `set_input` builds and
+    `convert/output/dict_walker.py` flattens back out.
+    """
+    groups = SchemaNode(name="apply-groups", is_leaf=True, is_list=True)
+    groups_except = SchemaNode(name="apply-groups-except", is_leaf=True, is_list=True)
+    flags = SchemaNode(name="apply-flags", is_leaf=True)
+    macro = SchemaNode(
+        name="apply-macro",
+        is_list=True,
+        children={
+            "data": SchemaNode(
+                name="data",
+                is_list=True,
+                children={
+                    "name": SchemaNode(name="name", is_leaf=True),
+                    "value": SchemaNode(name="value", is_leaf=True),
+                },
+            )
+        },
+    )
+    # `apply-macro m1 key1 val1` writes a run of tokens where the tree has
+    # structure, which is what `flat-dict` already names: the same shape as
+    # `trigger {"after": [null], "count": 1}` written `trigger after 1`.
+    macro.flags.add("flat-dict")
+
+    nodes = {n.name: n for n in (groups, groups_except, flags, macro)}
+    for node in nodes.values():
+        node.flags.add("universal")
+    return nodes
+
+
+def _fix_apply_statements(root: SchemaNode) -> bool:
+    """Model `apply-groups`/`-except`/`apply-flags`/`apply-macro` (Group D).
+
+    They are declared once, on the root, carrying the `universal` flag. The
+    alternative is a copy under each of the 123,769 containers, which Junos
+    semantics would equally justify and which measures at +24 MB on the
+    structure tree and +0.6 MB on the grammar, against ~250 bytes this way.
+    The flag says what Junos means -- valid at every level -- in one place, and
+    `grammar_generator` and `schema_generator` splice it where they need it.
+    """
+    added = False
+    for name, node in _apply_statement_nodes().items():
+        if name not in root.children:
+            root.children[name] = node
+            added = True
+    return added
+
+
 def _fix_members_bracket(root: SchemaNode) -> bool:
     """Make 'members' a leaf, so a community list takes values (ruler.rb 270).
 
@@ -729,6 +792,13 @@ ALL_FIXES: list[XsdFix] = [
         "Add from-zone/to-zone to security policy",
         _ALL_TARGETS,
         _fix_security_policy_zones,
+    ),
+    XsdFix(
+        "apply-statements",
+        "missing-element",
+        "Model apply-groups/-except/apply-flags/apply-macro as universal statements",
+        _ALL_TARGETS,
+        _fix_apply_statements,
     ),
     XsdFix(
         "members-bracket",

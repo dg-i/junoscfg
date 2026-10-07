@@ -634,3 +634,114 @@ class TestFlattenedRenderingsTakeARunOfValues:
             self._flat_entry_tree(),
             'set policy P attributes-match ping.test-owner matches "^uptime$"',
         )
+
+
+class TestUniversalStatementsAreSplicedEverywhere:
+    """`apply-groups` and its three siblings are valid at every level.
+
+    No NETCONF XSD models them -- not as an element, not as a ref, in 21.4R0,
+    23.2R2, 23.4R2 or 25.2R2 -- so `junoscfg` compensated in six modules, the
+    set validator with three regexes that stripped the statement off the line
+    before parsing it. The schema declares them once now, as root children
+    flagged `universal`, and this generator emits one rule that every other
+    rule references.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        groups = SchemaNode(name="apply-groups", is_leaf=True, is_list=True)
+        groups.flags.add("universal")
+        unit = SchemaNode(
+            name="unit",
+            is_list=True,
+            children={"mtu": SchemaNode(name="mtu", is_leaf=True)},
+        )
+        interfaces = SchemaNode(name="interfaces", children={"unit": unit})
+        return SchemaNode(
+            name="configuration",
+            children={"interfaces": interfaces, "apply-groups": groups},
+        )
+
+    def test_one_rule_holds_them(self) -> None:
+        grammar = generate_lark_grammar(self._tree())
+        assert 'universal_statement: "apply-groups" QUOTED_OR_VALUE' in grammar
+
+    def test_a_nested_container_takes_one(self) -> None:
+        assert _parses(self._tree(), "set interfaces apply-groups foo")
+
+    def test_a_list_entry_takes_one(self) -> None:
+        assert _parses(self._tree(), "set interfaces unit 0 apply-groups foo")
+
+    def test_the_top_level_takes_one(self) -> None:
+        assert _parses(self._tree(), "set apply-groups foo")
+
+    def test_an_ordinary_root_child_is_not_spliced(self) -> None:
+        """Only the `universal` flag opens the splice, not being a root child."""
+        assert not _parses(self._tree(), "set interfaces interfaces")
+
+
+class TestTheApplyFixReachesARealGrammar:
+    """End to end on the bundled tree, without shipping the result.
+
+    `_fix_apply_statements` lives in `xsd_fixes.py`, which is where a schema
+    correction belongs, and it reaches a user only through regenerated
+    artifacts. The bundled ones are 24.4R0 from a dump that is not in this
+    repository, and the 23.2R2-S7.5 dump that is to hand regresses Juniper's
+    Validated Designs corpus from 217 field warnings to 3,254 -- over the
+    budget `tests/test_jvd_corpus.py` enforces -- so nothing was regenerated.
+
+    Mutating `junos-structure-tree.json` to ship it anyway was considered and
+    rejected: `ARCHITECTURE.md` section 8 forbids hand-editing a generated
+    artefact, and a tree carrying nodes no XSD run produced would make the
+    shipped grammar and the shipped JSON schemas disagree about the same four
+    statements. This test is the substitute: it proves the fix produces the
+    grammar it claims to, on the real 427,978-node tree, so the next
+    regeneration ships a known quantity.
+    """
+
+    @staticmethod
+    def _fixed_tree() -> SchemaNode:
+        from junoscfg.validate.artifact_builder import read_structure_tree
+        from junoscfg.validate.xsd_fixes import ALL_FIXES
+
+        tree = read_structure_tree(_bundled_dir() / "junos-structure-tree.json")
+        fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
+        assert fix.apply(tree), "the bundled tree already carries them; retire the stripper"
+        return tree
+
+    def test_the_bundled_tree_does_not_carry_them_yet(self) -> None:
+        from junoscfg.validate.artifact_builder import read_structure_tree
+
+        tree = read_structure_tree(_bundled_dir() / "junos-structure-tree.json")
+        assert "apply-groups" not in tree.children
+
+    def test_the_fixed_tree_builds_a_grammar_that_takes_them(self) -> None:
+        import lark
+
+        grammar = generate_lark_grammar(self._fixed_tree())
+        assert "universal_statement:" in grammar
+        parser = lark.Lark(grammar, parser="earley")
+        for command in (
+            "set apply-groups global-vxlan",
+            "set protocols bgp group G apply-groups foo",
+            "set interfaces ge-0/0/0 unit 0 apply-groups foo",
+            "set protocols bgp group overlay apply-flags replace",
+            "set interfaces ge-0/0/0 apply-groups-except bar",
+            "set policy-options policy-statement p1 apply-macro m1 key1 val1",
+            'set interfaces ge-0/0/0 description "uplink to apply-groups foo"',
+        ):
+            parser.parse(command)
+
+    def test_the_fixed_grammar_still_rejects_what_it_should(self) -> None:
+        """The splice is four names, not a hole."""
+        import lark
+
+        parser = lark.Lark(generate_lark_grammar(self._fixed_tree()), parser="earley")
+        for command in (
+            "set system host-name (foo bar)",
+            "set interfaces ge-0/0/0 bogus-thing 5",
+            "set system host-name",
+            "set system apply-nonsense foo",
+        ):
+            with pytest.raises(lark.exceptions.UnexpectedInput):
+                parser.parse(command)

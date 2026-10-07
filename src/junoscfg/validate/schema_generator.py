@@ -10,6 +10,7 @@ Limits depth to keep output manageable for large schemas.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
@@ -17,6 +18,21 @@ from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 # Maximum recursion depth for schema generation.
 # Beyond this, containers accept any object structure.
 _MAX_DEPTH = 12
+
+# The statements a configuration may carry at any hierarchy level, declared
+# once on the root with the `universal` flag by `_fix_apply_statements`. The
+# generated schema names them as a `patternProperties` entry on every
+# container: a property per container would be 51,085 copies of four names,
+# and `additionalProperties: false` rejects them anywhere it does not say.
+_UNIVERSAL_FLAG = "universal"
+
+
+def _universal_properties(root: SchemaNode) -> dict[str, Any]:
+    """The `patternProperties` entry for the universal statements, or nothing."""
+    names = sorted(name for name, node in root.children.items() if _UNIVERSAL_FLAG in node.flags)
+    if not names:
+        return {}
+    return {"^(" + "|".join(re.escape(name) for name in names) + ")$": {}}
 
 
 def generate_json_schema(
@@ -32,6 +48,7 @@ def generate_json_schema(
     Returns:
         A JSON Schema dict.
     """
+    universal = _universal_properties(root)
     defs: dict[str, Any] = {}
     seen_refs: set[str] = set()
 
@@ -41,7 +58,7 @@ def generate_json_schema(
         "description": "Validates Junos configuration hierarchy (structural only).",
         "type": "object",
         "properties": {
-            "configuration": _node_to_schema(root, variant, 0, defs, seen_refs),
+            "configuration": _node_to_schema(root, variant, 0, defs, seen_refs, universal),
         },
         "additionalProperties": False,
     }
@@ -55,7 +72,7 @@ def generate_json_schema(
             }
         else:
             schema["properties"][child_name] = _node_to_schema(
-                child_node, variant, 1, defs, seen_refs
+                child_node, variant, 1, defs, seen_refs, universal
             )
 
     if defs:
@@ -70,6 +87,7 @@ def _node_to_schema(
     depth: int,
     defs: dict[str, Any],
     seen_refs: set[str],
+    universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Convert a SchemaNode to its JSON Schema representation."""
     # Leaf node: accept any value type (structural only)
@@ -96,10 +114,12 @@ def _node_to_schema(
         if ref_name not in seen_refs:
             seen_refs.add(ref_name)
             # Generate the def inline (not yet recursive-safe, but type_ref stops recursion)
-            defs[ref_name] = _container_or_list_schema(node, variant, depth, defs, seen_refs)
+            defs[ref_name] = _container_or_list_schema(
+                node, variant, depth, defs, seen_refs, universal
+            )
         return {"$ref": f"#/$defs/{ref_name}"}
 
-    return _container_or_list_schema(node, variant, depth, defs, seen_refs)
+    return _container_or_list_schema(node, variant, depth, defs, seen_refs, universal)
 
 
 def _container_or_list_schema(
@@ -108,11 +128,12 @@ def _container_or_list_schema(
     depth: int,
     defs: dict[str, Any],
     seen_refs: set[str],
+    universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Generate schema for list or container nodes."""
     # List node: array of items
     if node.is_list and node.children:
-        item_schema = _container_schema(node, variant, depth, defs, seen_refs)
+        item_schema = _container_schema(node, variant, depth, defs, seen_refs, universal)
         return {
             "oneOf": [
                 {"type": "array", "items": item_schema},
@@ -122,7 +143,7 @@ def _container_or_list_schema(
 
     # Container with children
     if node.children:
-        return _container_schema(node, variant, depth, defs, seen_refs)
+        return _container_schema(node, variant, depth, defs, seen_refs, universal)
 
     # Fallback: accept anything
     return {}
@@ -134,6 +155,7 @@ def _container_schema(
     depth: int,
     defs: dict[str, Any],
     seen_refs: set[str],
+    universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Generate schema for a container node with children."""
     properties: dict[str, Any] = {}
@@ -145,7 +167,7 @@ def _container_schema(
             properties[child_name] = {"type": ["object", "array", "null"]}
         else:
             properties[child_name] = _node_to_schema(
-                child_node, variant, depth + 1, defs, seen_refs
+                child_node, variant, depth + 1, defs, seen_refs, universal
             )
         if child_node.is_mandatory:
             required.append(child_name)
@@ -159,12 +181,15 @@ def _container_schema(
     if required:
         schema["required"] = sorted(required)
 
+    pattern_properties: dict[str, Any] = dict(universal)
+
     # YAML variant allows Ansible/meta keys
     if variant == "yaml":
-        schema["patternProperties"] = {
-            "^_ansible_": {},
-            "^_meta_": {},
-        }
+        pattern_properties["^_ansible_"] = {}
+        pattern_properties["^_meta_"] = {}
+
+    if pattern_properties:
+        schema["patternProperties"] = pattern_properties
 
     return schema
 

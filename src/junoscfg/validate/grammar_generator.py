@@ -69,6 +69,14 @@ _LIST_RULE_SUFFIX = "__list"
 # matches nothing, because `policy-algebra` exists only as a type.
 _POLICY_ALGEBRA_TYPE = "policy-algebra"
 
+# The rule holding the statements a configuration may carry at any level. The
+# schema declares them once, as root children flagged `universal`
+# (`_fix_apply_statements` in `xsd_fixes.py`), and every rule here references
+# this one rule rather than repeating them: a copy under each of 123,769
+# containers costs +24 MB on the structure tree and +0.6 MB on the grammar.
+_UNIVERSAL_RULE = "universal_statement"
+_UNIVERSAL_FLAG = "universal"
+
 
 def _safe_rule_name(name: str) -> str:
     """Convert an element name to a valid Lark rule name.
@@ -139,10 +147,22 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     Returns:
         Lark grammar string.
     """
+    # The statements valid at every level, declared once on the root.
+    universal = {
+        name: node for name, node in root.children.items() if _UNIVERSAL_FLAG in node.flags
+    }
+
     # Pass 1: collect all rule definitions (merged by rule name)
     rule_map: dict[str, _RuleInfo] = {}
     visited: set[int] = set()  # id(node) to prevent infinite recursion
-    _collect_rules(root, rule_map, visited)
+    _collect_rules(root, rule_map, visited, skip=set(universal))
+
+    if universal:
+        # One rule, referenced from every other. `configuration` included, so
+        # `set apply-groups global-vxlan` at the top level parses as itself
+        # rather than being stripped to a bare `set` before it reaches here.
+        for info in rule_map.values():
+            info.alts.add(_UNIVERSAL_RULE)
 
     # Pass 2: emit grammar
     lines: list[str] = []
@@ -153,6 +173,11 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     lines.append("")
     lines.append("start: SET configuration")
     lines.append("")
+
+    if universal:
+        alts = sorted(_child_reference(name, node) for name, node in universal.items())
+        lines.append(f"{_UNIVERSAL_RULE}: {' | '.join(alts)}")
+        lines.append("")
 
     # Emit rules in stable order
     for rule_name in sorted(rule_map):
@@ -225,11 +250,16 @@ def _collect_rules(
     node: SchemaNode,
     rule_map: dict[str, _RuleInfo],
     visited: set[int],
+    skip: set[str] | None = None,
 ) -> None:
     """Recursively collect rule definitions from the schema tree.
 
     Uses id(node) for dedup to handle shared schema nodes correctly.
     Same-named rules from different tree locations merge their alternatives.
+
+    ``skip`` names root children that belong to ``universal_statement`` rather
+    than to ``configuration``'s own alternatives; their own sub-rules are still
+    collected, so ``apply-macro``'s entry shape gets a rule.
     """
     node_id = id(node)
     if node_id in visited:
@@ -245,6 +275,8 @@ def _collect_rules(
     # Build child alternatives
     child_alts: list[str] = []
     for child_name, child_node in node.children.items():
+        if skip and child_name in skip:
+            continue
         spliced = f"transparent:{child_name}" in node.flags
         child_ref = _child_reference(child_name, child_node, spliced=spliced)
         child_alts.append(child_ref)

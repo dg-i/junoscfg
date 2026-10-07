@@ -114,6 +114,48 @@ class TestGroupDMissingElements:
         procs = root.children["system"].children["processes"]
         assert "dhcp" in procs.children
 
+    def test_apply_statements_are_modelled_once_on_the_root(self):
+        """The four meta-statements no NETCONF XSD carries.
+
+        Checked in 21.4R0, 23.2R2, 23.4R2 and 25.2R2: not one of them appears
+        as an element or a ref in any of them, so six modules in this package
+        each compensated for their absence in a different way.
+        """
+        root = _make_root(("system", SchemaNode(name="system")))
+
+        fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
+        assert fix.apply(root)
+
+        for name in (
+            "apply-groups",
+            "apply-groups-except",
+            "apply-flags",
+            "apply-macro",
+        ):
+            assert name in root.children, name
+            assert "universal" in root.children[name].flags, name
+
+        assert root.children["apply-groups"].is_leaf
+        assert root.children["apply-groups"].is_list
+        assert root.children["apply-flags"].is_leaf
+        assert not root.children["apply-flags"].is_list
+        # `apply-macro m1 key1 val1` writes a run where the tree has structure.
+        assert "flat-dict" in root.children["apply-macro"].flags
+
+    def test_apply_statements_do_not_land_below_the_root(self):
+        """Declared once, not copied under each of 123,769 containers.
+
+        A copy per container is equally true of Junos and costs +24 MB on the
+        structure tree; the `universal` flag says the same thing in 242 bytes
+        and the generators splice it.
+        """
+        system = SchemaNode(name="system")
+        root = _make_root(("system", system))
+
+        next(f for f in ALL_FIXES if f.id == "apply-statements").apply(root)
+
+        assert "apply-groups" not in system.children
+
     def test_members_is_made_a_leaf(self):
         """What the fix achieves, not what it used to claim.
 

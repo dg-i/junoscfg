@@ -1,6 +1,25 @@
 """Set command validation via Lark parser.
 
 Validates Junos set commands against generated Lark grammar.
+
+`_strip_apply_groups` and `_inside_quotes` below are a **temporary bridge**,
+not a design. `apply-groups`, `apply-groups-except`, `apply-flags` and
+`apply-macro` are valid at every hierarchy level and appear in no NETCONF XSD,
+so the generated grammar had no rule for them and this module cut them off the
+line before parsing. The schema models them now --
+`xsd_fixes._fix_apply_statements` declares all four on the root with the
+`universal` flag and `grammar_generator` splices them into every rule -- but a
+fix in `xsd_fixes.py` reaches a user only through regenerated artifacts, and
+the bundled ones are 24.4R0 from a dump that is not in this repository.
+
+What retires this bridge: a 24.4R0-or-later dump to regenerate from, or a
+decision to move the bundled release. Regenerating from the 23.2R2-S7.5 dump
+that is to hand was measured and rejected -- it takes Juniper's Validated
+Designs corpus from 217 field warnings to 3,254, over the budget
+`tests/test_jvd_corpus.py` enforces. Delete both helpers and the
+`_validate_line` early return on the day the artifacts carry the four nodes;
+`TestUniversalStatementsAreSplicedEverywhere` already pins the grammar they
+produce.
 """
 
 from __future__ import annotations
@@ -83,6 +102,7 @@ class SetValidator:
             # Nothing left after `_strip_apply_groups`, so the whole statement
             # was one: `set apply-groups global-vxlan` at the top level sets no
             # path of its own. There is nothing to check against the schema.
+            # Part of the same temporary bridge; it goes with the stripper.
             return None
         try:
             self._parser.parse(line)
@@ -102,6 +122,8 @@ def _strip_apply_groups(line: str) -> str:
     grammar has no rule for them. Only `apply-groups` was stripped, which left
     `set protocols bgp group overlay apply-flags replace` -- a line the
     downstream Ansible collection renders -- reported as invalid syntax.
+
+    Temporary. The module docstring says what retires it.
     """
     # "set ... apply-groups foo"             → "set ..."
     # "set ... apply-groups-except [foo bar]" → "set ..."
