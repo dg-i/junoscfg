@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: schema
+domains: [schema-pipeline]
+skip_specs: true
+removes:
+  - "the hardcoded ../xsd/config-24.4.xsd path"

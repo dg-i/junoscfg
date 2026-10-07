@@ -1,0 +1,1 @@
+`pytest --regen-schema` works in a clean clone. It used to look for the device XSD beside the repository and, finding nothing, skip all 1414 tests while exiting 0; it now looks in the gitignored `private_test_data/` or at `JUNOSCFG_XSD_SOURCE`, and warns rather than skipping.
