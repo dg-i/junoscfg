@@ -42,8 +42,9 @@ class TestGenerateLarkGrammar:
         assert 'SET: "set"' in grammar
 
     def test_leaf_uses_value(self):
+        """A leaf takes QUOTED_OR_VALUE: any Junos value may be quoted."""
         grammar = generate_lark_grammar(_make_tree())
-        assert '"host-name" VALUE' in grammar
+        assert '"host-name" QUOTED_OR_VALUE' in grammar
 
     def test_presence_is_bare_keyword(self):
         grammar = generate_lark_grammar(_make_tree())
@@ -456,3 +457,31 @@ class TestFreeformNokeywordKeepsItsKeyword:
         """Control: without the flag the keyword is suppressed, as before."""
         assert not _parses(self._tree(freeform=False), "set unit 0 vlan-id 100")
         assert _parses(self._tree(freeform=False), "set unit 0 100")
+
+
+class TestAnyLeafValueMayBeQuoted:
+    """Junos quotes any value holding a space, not a known list of fields.
+
+    A real device configuration puts a nested `set` command inside
+    `event-options policy <n> then change-configuration commands "..."`. The
+    generator used to give `QUOTED_OR_VALUE` only to 13 hard-coded names, so
+    every other quoted value was unparseable — `VALUE` is `/\\S+/`.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        return SchemaNode(
+            name="configuration",
+            children={
+                "system": SchemaNode(
+                    name="system",
+                    children={"host-name": SchemaNode(name="host-name", is_leaf=True)},
+                )
+            },
+        )
+
+    def test_a_quoted_value_with_a_space_parses(self) -> None:
+        assert _parses(self._tree(), 'set system host-name "a b"')
+
+    def test_an_unquoted_value_still_parses(self) -> None:
+        assert _parses(self._tree(), "set system host-name r1")

@@ -1,0 +1,1 @@
+Set validation accepts a quoted value on any leaf, not on thirteen hard-coded field names. Junos quotes any value containing a space, and a real device configuration puts a nested `set` command inside `event-options policy <name> then change-configuration commands "..."`; `VALUE` is `/\S+/`, so every other quoted value was reported as invalid syntax.

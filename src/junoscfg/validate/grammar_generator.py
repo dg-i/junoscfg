@@ -20,24 +20,11 @@ import re
 
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
-# Elements whose values can be quoted strings in set commands
-_QUOTED_FIELDS = frozenset(
-    {
-        "description",
-        "message",
-        "as-path-prepend",
-        "tcp-flags",
-        "full-name",
-        "location",
-        "contact",
-        "apply-path",
-        "name",  # in snmp context and license key context
-        "ssh-dss",
-        "ssh-ecdsa",
-        "ssh-ed25519",
-        "ssh-rsa",
-    }
-)
+# Every leaf value may be quoted, so there is no list of which ones. Junos
+# quotes any value holding a space, and a real device configuration puts a
+# nested `set` command inside `event-options policy <n> then
+# change-configuration commands "..."`. The former hard-coded list of 13 names
+# left every other such value unparseable.
 
 # Lark-safe name mapping for special characters
 _NAME_ESCAPES = {
@@ -243,17 +230,15 @@ def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> s
 
     # Leaf nodes
     if node.is_leaf:
-        if name in _QUOTED_FIELDS:
-            return f"{keyword} QUOTED_OR_VALUE"
         if "nokeyword" in node.flags and "freeform-nk" not in node.flags:
-            return "VALUE"  # No keyword, just a value
+            return "QUOTED_OR_VALUE"  # No keyword, just a value
         # `freeform-nk` marks a node carrying `nokeyword` only so its value is
         # validated as freeform; `_fix_freeform_nk_keys` says it is still
         # "treated as a normal keyword in conversion". Reading the bare
         # `nokeyword` here rejected `set interfaces ge-0/0/1 unit 0 vlan-id
         # 100`, which is every VLAN-bearing configuration. In 24.4R0 the flag
         # is on `vlan-id` and `vlan-name` only.
-        return f"{keyword} VALUE"
+        return f"{keyword} QUOTED_OR_VALUE"
 
     # Presence containers (no value)
     if node.is_presence:
