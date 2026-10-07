@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: surface
+domains: [ansible-vars]
+skip_specs: true
+removes:
+  - "alphabetical reordering of edityaml output"
