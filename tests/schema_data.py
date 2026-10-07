@@ -17,9 +17,10 @@ as a statement of what the box is. Feature depth says the same: ``unified-edge``
 is 1,771 nodes in both a vMX's 23.2R2 dump and the bundled 24.4R0, and
 ``virtual-chassis`` is 63 in every one. What varies is the release.
 
-So the platform is recorded at capture time, from ``show version``, or not at
-all. Pass it to :func:`promote_staged`, or write it into ``new.platform``
-beside the staged dump.
+So the platform is not deduced and not asked for: a dump is promoted to
+``<release>.xsd`` and a developer who knows where it came from renames it by
+hand, by convention to ``<release>_<platform>.xsd``. Anything ending ``.xsd``
+is picked up, so the suffix costs nothing here.
 """
 
 from __future__ import annotations
@@ -30,9 +31,6 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_DIR = PROJECT_ROOT / "private_test_data" / "schemas"
 STAGING_NAME = "new.xsd"
-# `show version` reports `Model: vmx`; put that word here beside the staged
-# dump and the promoted name carries it.
-STAGING_PLATFORM = "new.platform"
 SOURCE_ENV = "JUNOSCFG_XSD_SOURCE"
 
 # The release appears in the junos namespace declaration near the top of the
@@ -49,46 +47,27 @@ def read_version(path: Path) -> str:
     return match.group(1) if match else "unknown"
 
 
-def read_platform(directory: Path | None = None) -> str | None:
-    """The platform recorded beside a staged dump, or None.
+def promote_staged(directory: Path | None = None) -> Path | None:
+    """Rename ``new.xsd`` to a name carrying its release.
 
-    The dump itself cannot say — see the module docstring — so this reads what
-    `show version` reported, if anybody wrote it down.
-    """
-    directory = directory or SCHEMA_DIR
-    marker = directory / STAGING_PLATFORM
-    if not marker.is_file():
-        return None
-    word = marker.read_text(encoding="utf-8").strip().split()
-    if not word:
-        return None
-    return re.sub(r"[^A-Za-z0-9]+", "-", word[-1]).strip("-").lower() or None
+    Returns the new path, or None when there is nothing staged. Two devices on
+    one release are fine: the second becomes ``<version>-2.xsd``. The staged
+    file is never overwritten and never silently replaces an existing dump.
 
-
-def promote_staged(directory: Path | None = None, platform: str | None = None) -> Path | None:
-    """Rename ``new.xsd`` to a name carrying its release, and its platform.
-
-    Returns the new path, or None when there is nothing staged. The platform is
-    whatever ``show version`` called the model; it comes from the *platform*
-    argument, else from a ``new.platform`` file beside the dump, else the name
-    carries the release alone. Two dumps of one release and platform are fine:
-    the second becomes ``<version>-<platform>-2.xsd``. The staged file is never
-    overwritten and never silently replaces an existing dump.
+    The platform is not added here; see the module docstring.
     """
     directory = directory or SCHEMA_DIR
     staged = directory / STAGING_NAME
     if not staged.is_file():
         return None
 
-    platform = platform or read_platform(directory)
-    stem = f"{read_version(staged)}-{platform}" if platform else read_version(staged)
-    target = directory / f"{stem}.xsd"
+    version = read_version(staged)
+    target = directory / f"{version}.xsd"
     counter = 2
     while target.exists():
-        target = directory / f"{stem}-{counter}.xsd"
+        target = directory / f"{version}-{counter}.xsd"
         counter += 1
     staged.rename(target)
-    (directory / STAGING_PLATFORM).unlink(missing_ok=True)
     return target
 
 

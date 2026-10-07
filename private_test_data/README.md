@@ -17,22 +17,24 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 ```
 
 Stage it as `schemas/new.xsd`; `tests/schema_data.promote_staged()` reads the
-Junos version out of it and renames it to `<version>-<platform>.xsd`,
-appending `-2` and so on if that name is taken.
+Junos version out of it and renames it to `<release>.xsd`, appending `-2` and
+so on if that name is taken.
 
-**The platform cannot be read out of the dump.** A NETCONF XSD is release-wide
-— it describes everything a Junos release supports across the product line, so
-every dump names every platform (ACX, EX, MX, PTX, QFX, SRX, vMX) as enum
-values for hardware-specific configuration. Feature depth says the same:
-`unified-edge` is 1,771 nodes in both a vMX's 23.2R2 dump and the bundled
-24.4R0. So record it at capture time:
+Then rename it by hand to record which box it came from, by convention
+`<release>_<platform>.xsd` — `23.2R2-S7.5_vmx.xsd`. Anything ending `.xsd` is
+picked up, so the suffix costs nothing.
 
-```bash
-ssh router 'show version' | awk -F': *' '/^Model/ {print $2}'   > private_test_data/schemas/new.platform
-```
+**The platform cannot be read out of the dump**, which is why nothing tries. A
+NETCONF XSD is release-wide: it describes everything a Junos release supports
+across the product line, so every dump names every platform (ACX, EX, MX, PTX,
+QFX, SRX, vMX) as enum values for hardware-specific configuration. Feature
+depth says the same — `unified-edge` is 1,771 nodes in both a vMX's 23.2R2 dump
+and the bundled 24.4R0, and `virtual-chassis` is 63 in all of them. What varies
+is the release. `show version` is the only source, and it is not in the file.
 
-`promote_staged()` reads that, names the file `23.2R2-S7.5-vmx.xsd`, and
-deletes the marker. Without it the name carries the release alone.
+Worth recording, because matching matters: validating a config against the dump
+pulled from that same device left 1 rejected line of 3,369, against 12 for the
+bundled 24.4R0.
 
 `JUNOSCFG_XSD_SOURCE` overrides the location for `--regen-schema`. A legacy
 `*.xsd` directly in this directory is still found.
