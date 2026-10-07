@@ -3,15 +3,39 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import warnings
 from pathlib import Path
 
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
-XSD_SOURCE = PROJECT_ROOT.parent / "xsd" / "config-24.4.xsd"
 ARTIFACT_DIR = PROJECT_ROOT / "src" / "junoscfg" / "validate" / "data"
+
+# Where --regen-schema looks for the device XSD. It cannot be committed: it is
+# a NETCONF dump from a real device at a specific Junos release, which is both
+# large and operator data. private_test_data/ is the documented, gitignored
+# home for exactly that.
+XSD_SOURCE_ENV = "JUNOSCFG_XSD_SOURCE"
+XSD_SOURCE_DIR = PROJECT_ROOT / "private_test_data"
+
+
+def find_xsd_source() -> Path | None:
+    """The device XSD to regenerate from, or None when there is none.
+
+    Checked in order: the ``JUNOSCFG_XSD_SOURCE`` environment variable, then
+    the newest ``*.xsd`` in ``private_test_data/``. This used to be a hardcoded
+    ``../xsd/config-24.4.xsd`` beside the repository, which existed on one
+    machine and nowhere else, so ``--regen-schema`` skipped silently in any
+    clean clone and the message named a path nobody could act on.
+    """
+    override = os.environ.get(XSD_SOURCE_ENV)
+    if override:
+        return Path(override).expanduser()
+    candidates = sorted(XSD_SOURCE_DIR.glob("*.xsd"))
+    return candidates[-1] if candidates else None
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -34,8 +58,21 @@ def _regenerate_schema_artifacts(request: pytest.FixtureRequest) -> None:
     if not request.config.getoption("--regen-schema"):
         return
 
-    if not XSD_SOURCE.exists():
-        pytest.skip(f"XSD source not found: {XSD_SOURCE}")
+    xsd_source = find_xsd_source()
+    if xsd_source is None or not xsd_source.exists():
+        # Warn and carry on. This used to call pytest.skip() from a
+        # session-scoped autouse fixture, which skipped all 1414 tests and
+        # exited 0 -- so `pytest --regen-schema`, the command AGENTS.md tells
+        # you to run before committing, reported success having tested nothing
+        # in any clone without the XSD.
+        warnings.warn(
+            "--regen-schema: no device XSD found, so the bundled artifacts "
+            "were not regenerated. The suite ran against the committed ones. "
+            f"Put a NETCONF XSD dump in {XSD_SOURCE_DIR.relative_to(PROJECT_ROOT)}/ "
+            f"(gitignored) or set {XSD_SOURCE_ENV} to its path; "
+            "docs/guide/validation.md says how to capture one.",
+            stacklevel=2,
+        )
         return
 
     subprocess.run(
@@ -45,7 +82,7 @@ def _regenerate_schema_artifacts(request: pytest.FixtureRequest) -> None:
             "junoscfg",
             "schema",
             "generate",
-            str(XSD_SOURCE),
+            str(xsd_source),
             "-o",
             str(ARTIFACT_DIR),
         ],
