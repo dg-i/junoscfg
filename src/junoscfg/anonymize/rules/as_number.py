@@ -44,6 +44,7 @@ class AsNumberRule(Rule):
     priority = 80  # After description (70)
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        """Build the rule from *config*: the target AS set and any explicit map."""
         self._target_set: frozenset[int] = frozenset(config.as_numbers)
         self._explicit_map: dict[int, int] = dict(config.as_number_map)
         self._mapping: dict[str, str] = {}

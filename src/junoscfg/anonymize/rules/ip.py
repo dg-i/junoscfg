@@ -86,6 +86,7 @@ class IpRule(Rule):
     priority = 30  # After passwords (10) and SSH keys (20)
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        """Build the rule from *config*, including its network registry."""
         registry = self._build_network_registry(config)
         self._anonymizer = Anonymizer(
             salt=config.salt,

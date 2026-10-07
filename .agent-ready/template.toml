@@ -1,0 +1,4 @@
+# The template owns checks-tag and moves the lockfile to its tested release.
+# The application owns optional [local-policy.<id>] tables below it. Keep
+# those owner decisions during updates; agent-ready fields checks their expiry.
+checks-tag = "checks-v0.10.0"

@@ -24,6 +24,7 @@ class PathFilter:
         include: list[str] | None = None,
         exclude: list[str] | None = None,
     ) -> None:
+        """Build the filter from *include* and *exclude* path globs."""
         self._include = [p.split(".") for p in (include or [])]
         self._exclude = [p.split(".") for p in (exclude or [])]
 

@@ -567,13 +567,13 @@ The `DefaultGroup` class extends `click.Group` to provide backward compatibility
 If the first CLI argument is not a known subcommand, `convert` is prepended
 automatically:
 
-```
+```bash
 junoscfg -i json -e set config.json
 ```
 
 is equivalent to:
 
-```
+```bash
 junoscfg convert -i json -e set config.json
 ```
 

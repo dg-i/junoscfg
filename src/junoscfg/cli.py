@@ -18,6 +18,7 @@ class DefaultGroup(click.Group):
     """Click group that defaults to 'convert' subcommand for backward compat."""
 
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        """Insert the default ``convert`` subcommand when none was given."""
         # If first arg is not a known subcommand, prepend 'convert'
         if args and args[0] not in self.commands and not args[0].startswith("-"):
             args = ["convert"] + args
@@ -296,7 +297,7 @@ def convert(
             return
 
     # Build anonymization config if any anonymize flags are set
-    from junoscfg.anonymize.config import build_config_from_cli
+    from junoscfg.anonymize import build_config_from_cli
 
     anon_config = build_config_from_cli(
         anonymize_all=anonymize_all,
@@ -683,7 +684,7 @@ def generate(xsd_source: str, output_dir: str) -> None:
         ssh -Csp 830 router.example.com netconf > netconf.xml
       junoscfg schema generate netconf.xml -o ./artifacts/
     """
-    from junoscfg.validate.artifact_builder import ArtifactBuilder
+    from junoscfg.validate import ArtifactBuilder
 
     builder = ArtifactBuilder()
     try:
@@ -694,56 +695,6 @@ def generate(xsd_source: str, output_dir: str) -> None:
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(3)
-
-
-@schema.command()
-@click.argument("xsd_source", type=click.Path(exists=True))
-@click.option("-o", "--output", "output_file", type=click.Path(), default=None, help="Output file.")
-@click.option("--max-depth", type=int, default=0, help="Maximum nesting depth (0 = unlimited).")
-@click.option(
-    "--section", default=None, help="Only show this section (e.g. 'system' or 'system syslog')."
-)
-@click.option("--no-enums", is_flag=True, help="Omit enum value listings.")
-@click.option("--no-deprecated", is_flag=True, help="Omit deprecated elements.")
-@click.option("--compact", is_flag=True, help="Omit descriptions, show only structure.")
-def makedoc(
-    xsd_source: str,
-    output_file: str | None,
-    max_depth: int,
-    section: str | None,
-    no_enums: bool,
-    no_deprecated: bool,
-    compact: bool,
-) -> None:
-    """Generate a YAML-like configuration reference from XSD.
-
-    \b
-    Examples:
-      junoscfg schema makedoc netconf.xml -o reference.yaml
-      junoscfg schema makedoc netconf.xml --section "system" --compact
-      junoscfg schema makedoc netconf.xml --max-depth 3 --no-deprecated
-    """
-    from junoscfg.validate.schema_doc import generate_doc
-
-    try:
-        result = generate_doc(
-            xsd_source,
-            max_depth=max_depth,
-            section=section,
-            no_enums=no_enums,
-            no_deprecated=no_deprecated,
-            compact=compact,
-        )
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(3)
-
-    if output_file:
-        with open(output_file, "w") as f:
-            f.write(result)
-        click.echo(f"Written to {output_file}", err=True)
-    else:
-        click.echo(result, nl=False)
 
 
 @schema.command()
@@ -761,7 +712,7 @@ def info(artifacts: str | None) -> None:
       junoscfg schema info
       junoscfg schema info --artifacts ./my-artifacts/
     """
-    from junoscfg.validate.validator import JunosValidator
+    from junoscfg.validate import JunosValidator
 
     try:
         v = JunosValidator(artifacts_dir=artifacts)
@@ -919,7 +870,6 @@ def fullhelp(ctx: click.Context) -> None:
         ("junoscfg edityaml rename-root", rename_root),
         ("junoscfg schema", schema),
         ("junoscfg schema generate", generate),
-        ("junoscfg schema makedoc", makedoc),
         ("junoscfg schema info", info),
         ("junoscfg audit", audit),
         ("junoscfg audit unused", unused),

@@ -30,7 +30,7 @@ class StructuredValidator:
         Returns:
             ValidationResult with errors if invalid.
         """
-        from junoscfg.display.set_converter import SetConverter
+        from junoscfg.display import SetConverter
 
         try:
             set_commands = SetConverter(source).to_set()

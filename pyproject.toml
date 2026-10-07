@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.5.18"
+version = "0.6.1"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Networking",
     "Topic :: Utilities",
     "Typing :: Typed",
@@ -52,12 +53,52 @@ junoscfg = "junoscfg.cli:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
+# The stage levers are rendered from [tool.template.stage] into the delimited
+# blocks below by `agent-ready render levers`; edit the stage, not a block.
 [tool.ruff]
-target-version = "py310"
 line-length = 100
+# The vulture whitelist is a stub file of bare names, not source: ruff reads it
+# as useless expressions and undefined names. Both tools ship with the template.
+extend-exclude = [".agent-ready/"]
+# agent-ready:stage-levers:ruff:begin
+target-version = "py310"
+# agent-ready:stage-levers:ruff:end
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "SIM", "TCH"]
+# agent-ready:stage-levers:select:begin
+select = ["FIX", "ERA", "ARG", "BLE", "TID251", "UP", "D1"]
+# agent-ready:stage-levers:select:end
+# junoscfg's own families, kept beside the stage's. They cannot live inside the
+# block above, which is regenerated from the stage on every render.
+extend-select = ["E", "F", "W", "I", "N", "B", "A", "SIM", "TCH"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test methods carry their intent in the name; a docstring per test is not a
+# convention this project follows, and D1 on tests/ is 1248 of 1306 findings.
+# ARG is the same story: a test double implements an interface it does not use.
+"tests/**" = ["D1", "ARG"]
+# Every rule implements AnonymizeRule.matches(value, schema_node, path) and uses
+# only the parameters it needs. The unused ones are the interface, not dead
+# arguments; renaming them to _value would break the shared signature.
+"src/junoscfg/anonymize/rules/*.py" = ["ARG002"]
+# The XSD fix functions share one signature so the fix table can call them
+# uniformly; a fix that does not need the tree root still declares it.
+"src/junoscfg/validate/xsd_fixes.py" = ["ARG001"]
+# The CLI's top-level handlers turn any failure into a message and an exit
+# code. That is what a command-line boundary is for; a narrower except would
+# let an unexpected error reach the user as a traceback.
+"src/junoscfg/cli.py" = ["BLE001", "ARG001"]
+# Same boundary argument: a validator converts arbitrary parse failures into a
+# ValidationResult rather than crashing the caller that asked "is this valid?".
+"src/junoscfg/validate/structured_validator.py" = ["BLE001"]
+
+# agent-ready:stage-levers:tables:begin
+[tool.towncrier]
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# agent-ready:stage-levers:tables:end
 
 [tool.mypy]
 python_version = "3.10"
@@ -84,9 +125,408 @@ dev = [
     "pytest>=7.0",
     "ruff>=0.4",
     "lxml>=4.9",
+    "mypy>=2.4",
+    "deptry>=0.25.1",
+    # Development tooling only. It needs 3.11+, and must not drag the
+    # published package's floor up with it.
+    "agent-ready-checks>=0.10.0; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
 ]
+
+# Where a reorganisation lands, as a share of the cap. One ratio for every cap:
+# a second line count per cap would double the guessing, and a ratio follows a
+# cap that is raised rather than drifting away from it. Nothing enforces it —
+# coming back at the cap means coming back here next week.
+[tool.template]
+reorganise-to = 0.7
+# The ref the stage gates and the metrics compare with. This repository's
+# default branch is master, not main, so it is named explicitly: the fallback
+# would look for origin/main and find nothing.
+base = "origin/master"
+
+# The native acceptance leaf. The full set runs it; the fast set defers it.
+# This is the complete suite including the example roundtrips, which the
+# project's own inner-loop command deselects.
+test-command = ["uv", "run", "pytest", "tests/", "-q"]
+
+# Budgets what is loaded at session start, not what the repository stores:
+# `agent-ready budget` counts AGENTS.md, CLAUDE.md beyond a bridge, every
+# skill's name and description, and every command's description.
+always-loaded-budget = 4600
+
+# Onboarding completed. agent-ready fields validates this date and, once it is
+# set, stops reporting the stage, instruction-file and bridge checks as
+# deferred and starts failing on them.
+onboarded = 2026-10-06
+
+# A vendored skill is its upstream's: left out of frontmatter, parity, and
+# mirror checks, and kept rather than deleted when the mirror regenerates.
+vendored-skills = ["openspec-*", ".openspec-*", "source-command-*"]
+
+# Every cap the checks read lives here, and raising one takes a decision record
+# naming the measurement that justifies it (AC39).
+[tool.template.caps]
+"AGENTS.md" = 100
+"ARCHITECTURE.md" = 200
+"docs/TOOLBOX.md" = 80
+"src/**/CONTRACT.md" = 30
+# A single-file module's contract sits beside it under the module's own name.
+"src/**/*.CONTRACT.md" = 30
+"openspec/specs/**/*.md" = 200
+"docs/decisions/*.md" = 60
+"openspec/changes/*/proposal.md" = 60
+"openspec/changes/*/specs/**/*.md" = 100
+"openspec/changes/*/design.md" = 80
+"openspec/changes/*/retires.md" = 100
+"openspec/changes/*/checklist.md" = 20
+".agents/skills/*/SKILL.md" = 300
+".agents/skills/*/**/*.md" = 100
+
+# Per-section budgets, read by `agent-ready caps` beside the file caps: inside a
+# file the glob matches, the named section may not exceed the line count.
+[tool.template.section-caps]
+".agents/skills/*/SKILL.md" = { Stage = 10 }
+
+# The compatibility promise, declared by the owner and never deduced. A scaffold
+# value fails `agent-ready fields`, as do an unknown name, a missing or passed
+# review date, a single named approver, a named surface with no `break-bumps`
+# entry or with a component outside `components`, and a lowered `name` that
+# arrives without the escape hatch in `stage.md`. `owners` renders into a
+# CODEOWNERS rule for this file, so a stage change takes a second human.
+[tool.template.stage]
+name = "beta"
+review-by = "2027-04-06"
+owners = ["manon.goo@dg-i.net"]
+solo = true                     # one maintainer; drop it when a second owner arrives
+surfaces = ["api", "cli"]
+# `dg-i/ansible-collection-junos-config` is in production against both: its
+# render filter imports convert_config, validate_config, Format and
+# FieldValidationError, and its pipelines drive `convert`, `edityaml
+# rename-root` and `edityaml ansibilize`. See ARCHITECTURE.md section 3.
+surface-paths = { cli = ["src/junoscfg/cli.py"] }
+# Semver-shaped, pre-1.0. A break on either surface raises the minor, which
+# replaces the current patch-bump-for-everything rule in AGENTS.md.
+components = ["major", "minor", "patch"]
+break-bumps = { api = "minor", cli = "minor" }
+
+# Gates enforce by default. A gate installed on an existing codebase that
+# cannot pass it starts in warn mode against a committed baseline, which is how
+# an imperfect project adopts the gate on the day it arrives rather than after a
+# cleanup. The gates with a baseline are caps, interfaces, specs, and reconcile;
+# the other checks have no debt to carry, and `agent-ready gates` rejects a
+# gate declared under any other name:
+#
+#   [tool.template.gates.caps]
+#   mode = "warn"
+#   expires = "2026-12-31"
+#   baseline = ".agent-ready/caps.json"
+#
+# Write the baseline with `agent-ready caps --write-baseline`. A violation absent
+# from the baseline fails from day one in either mode, a baselined violation that
+# gets worse fails, and every tolerated violation starts failing once the expiry
+# passes. Warn mode without an expiry is a configuration error, so a warn period
+# is always one somebody has to end.
+
+# What to move first when a document is over its cap. The generic ladder is in
+# the failure message; these are the rungs that differ by artefact.
+[tool.template.caps-remedy]
+"AGENTS.md" = "move pointer targets into the files they point at; only the rule that matters most stays"
+"ARCHITECTURE.md" = "sections 4 to 7 and 9 to 12 are optional; a fact that changes at a different cadence belongs in the toolbox or a decision record"
+"src/**/CONTRACT.md" = "move interface facts back to __all__; drop an invariant that names no check"
+"src/**/*.CONTRACT.md" = "move interface facts back to __all__; drop an invariant that names no check"
+"openspec/specs/**/*.md" = "split by capability into a directory under the domain's, never truncate"
+"docs/decisions/*.md" = "a decision states what was decided and what enforces it; the debate belongs in the pull request"
+
+# Measured and printed, never failed: skills a vendored CLI installs, since
+# rewriting one forks it, and the generated decisions index, which grows with
+# the records it lists.
+[tool.template.caps-report-only]
+".agents/skills/openspec-*/SKILL.md" = 300
+"docs/decisions/index.md" = 60
+
+# Approved tools, and what was considered and rejected. An entry without a
+# licence fails the check, because the licence decision is made from this table.
+[[tool.template.toolbox.approved]]
+name = "ruff"
+purpose = "format and lint"
+minimum-version = "0.15.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "mypy"
+purpose = "types, whole package; 102 errors in 25 of 68 files at adoption, so phase 4 installs it warn-mode against a baseline"
+minimum-version = "2.4.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "pytest"
+purpose = "tests"
+minimum-version = "9.0.2"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "deptry"
+purpose = "undeclared and unused dependencies"
+minimum-version = "0.25.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "tach"
+purpose = "module boundaries and the public name surface"
+minimum-version = "0.35.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "griffe"
+purpose = "the symbol index, and the API surface check in the mode the stage sets"
+minimum-version = "2.3.0"
+licence = "ISC"
+
+[[tool.template.toolbox.approved]]
+name = "markdownlint-cli"
+purpose = "duplicate headings and dead fragments"
+minimum-version = "0.45.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "PyYAML"
+purpose = "YAML input and output in the conversion pipeline; also workflow metadata and decision front matter"
+minimum-version = "6.0.3"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "agent-ready-checks"
+purpose = "the checks no tool covers, starting with document caps"
+minimum-version = "0.10.0"
+licence = "see LICENCE"
+
+[[tool.template.toolbox.approved]]
+name = "openspec"
+purpose = "the change folder and the specs: new change, validate, archive"
+minimum-version = "1.13.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "copier"
+purpose = "the versioned template: copy at adoption, update afterwards"
+minimum-version = "9.0.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "peter-evans/create-pull-request"
+purpose = "opens the scheduled update pull requests"
+minimum-version = "7.0.0"
+licence = "MIT"
+
+# The application's own runtime libraries. Minimum versions are the uv.lock
+# pins, which is what the suite actually exercises.
+
+[[tool.template.toolbox.approved]]
+name = "click"
+purpose = "CLI argument parsing and command groups"
+minimum-version = "8.3.1"
+licence = "BSD-3-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "jsonschema"
+purpose = "validate JSON and YAML configurations against the generated JSON Schema"
+minimum-version = "4.26.0"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "lark"
+purpose = "grammar-based parser for set-command validation, from the generated grammar"
+minimum-version = "1.3.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "ipanon"
+purpose = "prefix-preserving IP address anonymization; first-party, github.com/dg-i/ipanon"
+minimum-version = "0.3.3"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "netutils"
+purpose = "Juniper $9$ encoding constants for the password anonymizer"
+minimum-version = "1.17.1"
+licence = "Apache-2.0"
+
+[[tool.template.toolbox.approved]]
+name = "lxml"
+purpose = "XML parsing and XSD extraction; optional, behind the xml extra"
+minimum-version = "6.0.2"
+licence = "BSD-3-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocs"
+purpose = "the documentation site"
+minimum-version = "1.6.1"
+licence = "BSD-2-Clause"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocs-material"
+purpose = "the documentation theme"
+minimum-version = "9.7.1"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "mkdocstrings"
+purpose = "API reference pages generated from docstrings"
+minimum-version = "1.0.3"
+licence = "ISC"
+
+# System tools. A binary the tests shell out to is a dependency whether or not
+# it appears in a manifest.
+
+[[tool.template.toolbox.approved]]
+name = "uv"
+purpose = "the runner every documented command goes through; tests/conftest.py shells out to it under --regen-schema"
+minimum-version = "0.12.18"
+licence = "Apache-2.0 OR MIT"
+
+[[tool.template.toolbox.approved]]
+name = "git"
+purpose = "the checks read refs: stage, lane, retired, metrics"
+minimum-version = "2.55.0"
+licence = "GPL-2.0-only"
+
+[[tool.template.toolbox.approved]]
+name = "OpenSSH (ssh, scp)"
+purpose = "tests/integration_test.sh drives a live device; run by hand, never by pytest"
+minimum-version = "9.0"
+licence = "BSD-2-Clause"
+
+[[tool.template.toolbox.rejected]]
+name = "markdownlint for document caps"
+reason = "its length rules bound a line, not a file, and it cannot read a per-artefact cap from pyproject.toml; no maintained tool enforces declared per-file line budgets, which is why agent-ready-checks owns this one"
+date = "2026-09-28"
+
+[[tool.template.toolbox.rejected]]
+name = "tach's [[interfaces]] expose on its own"
+reason = "it enforces the expose list only against member-path imports; a name reached as `from pkg import mod` then `mod.name` passes whatever the list says, so a codebase that imports modules rather than members has a declared interface that is never enforced. agent-ready-checks covers that half, against the same declaration"
+date = "2026-09-30"
+
+[[tool.template.toolbox.rejected]]
+name = "import-linter"
+reason = "module-to-module only, so it cannot express the public name surface a module contract rests on, and it has no command that derives a first contract set from an existing codebase; it is the documented exit if tach is abandoned"
+date = "2026-09-28"
+
+[[tool.template.toolbox.rejected]]
+name = "semgrep, Vale, a markdownlint custom rule, or git grep for the retired-terms check"
+reason = "the check bans a vocabulary declared per pivot across source, tests, docs, and configuration, with identifier splitting and a per-term occurrence delta; semgrep and a markdownlint rule each read one language, Vale is prose-only and is kept out of the core (AC18), and git grep has no word model and no delta. agent-ready-checks owns it"
+date = "2026-10-02"
+
+[[tool.template.toolbox.rejected]]
+name = "griffe check alone for the release deprecation rule and the __all__ diff"
+reason = "it reports a removal whether or not the name carried the deprecation decorator at the previous tag, and it has no per-ref __all__ diff; both are a few lines on griffe's own load_git API, which is reuse of griffe rather than a replacement for it, and they live in agent-ready-checks"
+date = "2026-10-02"
+
+[[tool.template.toolbox.rejected]]
+name = "cookiecutter and cruft for the template"
+reason = "cookiecutter has no update; cruft adds one as a patch over a fresh render, with rejected hunks as its only conflict handling and no versioned migrations, and neither renders a conditional path, which is how the skeleton stays out of a brownfield repository (AC25)"
+date = "2026-10-03"
+
+[[tool.template.toolbox.rejected]]
+name = "OpenTelemetry SDK for change metrics import"
+reason = "it instruments future events but does not parse existing Codex exec and Claude stream-json files or bind a selected window to an immutable change and exact log hash; agent-ready-checks uses narrow native parsers with stdlib JSON and hashing"
+date = "2026-10-06"
+
+[tool.uv.sources]
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.10.0" }
+
+[tool.template.zones.kernel]
+paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.zones.conversion]
+paths = ["src/junoscfg/convert/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.zones.schema]
+paths = ["src/junoscfg/validate/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.zones.anonymize]
+paths = ["src/junoscfg/anonymize/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "red"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.zones.edityaml]
+paths = ["src/junoscfg/edityaml/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.zones.audit]
+paths = ["src/junoscfg/audit/**"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+
+[tool.template.zones.surface]
+paths = ["src/junoscfg/cli.py", "src/junoscfg/__init__.py"]
+owners = ["manon.goo@dg-i.net"]
+tier = "yellow"
+intent = "active"
+pinned = "2026-10-06"
+
+[tool.template.domains.conversion]
+paths = ["src/junoscfg/convert/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "turn any supported representation of a Junos configuration into any other without changing its meaning"
+
+[tool.template.domains.validation]
+paths = [
+    "src/junoscfg/validate/validator.py",
+    "src/junoscfg/validate/json_yaml_validator.py",
+    "src/junoscfg/validate/set_validator.py",
+    "src/junoscfg/validate/structured_validator.py",
+    "src/junoscfg/validate/xml_validator.py",
+    "src/junoscfg/convert/field_validator.py",
+]
+owners = ["manon.goo@dg-i.net"]
+purpose = "answer whether a configuration is one the device would accept, before it reaches a device"
+
+[tool.template.domains.anonymization]
+paths = ["src/junoscfg/anonymize/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "make a real configuration safe to share, reversibly for whoever holds the mapping"
+
+[tool.template.domains.schema-pipeline]
+paths = [
+    "src/junoscfg/validate/xsd_extractor.py",
+    "src/junoscfg/validate/xsd_parser.py",
+    "src/junoscfg/validate/xsd_fixes.py",
+    "src/junoscfg/validate/schema_node.py",
+    "src/junoscfg/validate/artifact_builder.py",
+    "src/junoscfg/validate/schema_generator.py",
+    "src/junoscfg/validate/grammar_generator.py",
+]
+owners = ["manon.goo@dg-i.net"]
+purpose = "turn a vendor XSD dump into the artifacts the rest of the toolkit treats as the schema's truth"
+
+[tool.template.domains.ansible-vars]
+paths = ["src/junoscfg/edityaml/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "split one configuration into host_vars and templated group_vars so it becomes many routers"
+
+[tool.template.domains.audit]
+paths = ["src/junoscfg/audit/**"]
+owners = ["manon.goo@dg-i.net"]
+purpose = "find configuration objects that are defined but never referenced"

@@ -1,0 +1,145 @@
+# CODEOWNERS is generated from [tool.template.zones], [tool.template.domains]
+# and [tool.template.stage] in pyproject.toml by `agent-ready render codeowners`.
+# It is not hand-edited: `agent-ready render codeowners --check` fails while
+# the two differ.
+# Routing only: hosting settings require approvals; tier is not an approval count.
+# Rules run broad to specific; complex wildcard overlaps may route extra owners.
+
+# stage: compatibility, caps and policy
+/pyproject.toml                               manon.goo@dg-i.net
+
+# unassigned capability: every domain owner
+openspec/specs/**                             manon.goo@dg-i.net
+
+# unassigned capability: every domain owner
+openspec/changes/*/specs/**                   manon.goo@dg-i.net
+
+# domain conversion specs and deltas
+openspec/changes/*/specs/conversion/**        manon.goo@dg-i.net
+
+# domain validation specs and deltas
+# WARNING: possible overlap: domain conversion specs and deltas [openspec/changes/*/specs/conversion/**] and domain validation specs and deltas [openspec/changes/*/specs/validation/**]; owners unioned.
+openspec/changes/*/specs/validation/**        manon.goo@dg-i.net
+
+# domain anonymization specs and deltas
+# WARNING: possible overlap: domain conversion specs and deltas [openspec/changes/*/specs/conversion/**] and domain anonymization specs and deltas [openspec/changes/*/specs/anonymization/**]; owners unioned.
+# WARNING: possible overlap: domain validation specs and deltas [openspec/changes/*/specs/validation/**] and domain anonymization specs and deltas [openspec/changes/*/specs/anonymization/**]; owners unioned.
+openspec/changes/*/specs/anonymization/**     manon.goo@dg-i.net
+
+# domain schema-pipeline specs and deltas
+# WARNING: possible overlap: domain conversion specs and deltas [openspec/changes/*/specs/conversion/**] and domain schema-pipeline specs and deltas [openspec/changes/*/specs/schema-pipeline/**]; owners unioned.
+# WARNING: possible overlap: domain validation specs and deltas [openspec/changes/*/specs/validation/**] and domain schema-pipeline specs and deltas [openspec/changes/*/specs/schema-pipeline/**]; owners unioned.
+# WARNING: possible overlap: domain anonymization specs and deltas [openspec/changes/*/specs/anonymization/**] and domain schema-pipeline specs and deltas [openspec/changes/*/specs/schema-pipeline/**]; owners unioned.
+openspec/changes/*/specs/schema-pipeline/**   manon.goo@dg-i.net
+
+# domain ansible-vars specs and deltas
+# WARNING: possible overlap: domain conversion specs and deltas [openspec/changes/*/specs/conversion/**] and domain ansible-vars specs and deltas [openspec/changes/*/specs/ansible-vars/**]; owners unioned.
+# WARNING: possible overlap: domain validation specs and deltas [openspec/changes/*/specs/validation/**] and domain ansible-vars specs and deltas [openspec/changes/*/specs/ansible-vars/**]; owners unioned.
+# WARNING: possible overlap: domain anonymization specs and deltas [openspec/changes/*/specs/anonymization/**] and domain ansible-vars specs and deltas [openspec/changes/*/specs/ansible-vars/**]; owners unioned.
+# WARNING: possible overlap: domain schema-pipeline specs and deltas [openspec/changes/*/specs/schema-pipeline/**] and domain ansible-vars specs and deltas [openspec/changes/*/specs/ansible-vars/**]; owners unioned.
+openspec/changes/*/specs/ansible-vars/**      manon.goo@dg-i.net
+
+# domain audit specs and deltas
+# WARNING: possible overlap: domain conversion specs and deltas [openspec/changes/*/specs/conversion/**] and domain audit specs and deltas [openspec/changes/*/specs/audit/**]; owners unioned.
+# WARNING: possible overlap: domain validation specs and deltas [openspec/changes/*/specs/validation/**] and domain audit specs and deltas [openspec/changes/*/specs/audit/**]; owners unioned.
+# WARNING: possible overlap: domain anonymization specs and deltas [openspec/changes/*/specs/anonymization/**] and domain audit specs and deltas [openspec/changes/*/specs/audit/**]; owners unioned.
+# WARNING: possible overlap: domain schema-pipeline specs and deltas [openspec/changes/*/specs/schema-pipeline/**] and domain audit specs and deltas [openspec/changes/*/specs/audit/**]; owners unioned.
+# WARNING: possible overlap: domain ansible-vars specs and deltas [openspec/changes/*/specs/ansible-vars/**] and domain audit specs and deltas [openspec/changes/*/specs/audit/**]; owners unioned.
+openspec/changes/*/specs/audit/**             manon.goo@dg-i.net
+
+# zone audit (yellow, active); domain audit
+src/junoscfg/audit/**                         manon.goo@dg-i.net
+
+# zone surface (yellow, active)
+src/junoscfg/cli.py                           manon.goo@dg-i.net
+
+# zone kernel (yellow, active)
+src/junoscfg/display/**                       manon.goo@dg-i.net
+
+# zone kernel (yellow, active)
+src/junoscfg/input.py                         manon.goo@dg-i.net
+
+# zone conversion (yellow, active); domain conversion
+src/junoscfg/convert/**                       manon.goo@dg-i.net
+
+# domain audit specs and deltas
+openspec/specs/audit/**                       manon.goo@dg-i.net
+
+# zone schema (yellow, active)
+src/junoscfg/validate/**                      manon.goo@dg-i.net
+
+# zone edityaml (yellow, active); domain ansible-vars
+src/junoscfg/edityaml/**                      manon.goo@dg-i.net
+
+# zone anonymize (red, active); domain anonymization
+src/junoscfg/anonymize/**                     manon.goo@dg-i.net
+
+# zone surface (yellow, active)
+src/junoscfg/__init__.py                      manon.goo@dg-i.net
+
+# domain conversion specs and deltas
+openspec/specs/conversion/**                  manon.goo@dg-i.net
+
+# domain validation specs and deltas
+openspec/specs/validation/**                  manon.goo@dg-i.net
+
+# domain ansible-vars specs and deltas
+openspec/specs/ansible-vars/**                manon.goo@dg-i.net
+
+# domain anonymization specs and deltas
+openspec/specs/anonymization/**               manon.goo@dg-i.net
+
+# domain schema-pipeline specs and deltas
+openspec/specs/schema-pipeline/**             manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain validation [src/junoscfg/validate/validator.py]; owners unioned.
+src/junoscfg/validate/validator.py            manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/xsd_fixes.py]; owners unioned.
+src/junoscfg/validate/xsd_fixes.py            manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/xsd_parser.py]; owners unioned.
+src/junoscfg/validate/xsd_parser.py           manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/schema_node.py]; owners unioned.
+src/junoscfg/validate/schema_node.py          manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain validation [src/junoscfg/validate/set_validator.py]; owners unioned.
+src/junoscfg/validate/set_validator.py        manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain validation [src/junoscfg/validate/xml_validator.py]; owners unioned.
+src/junoscfg/validate/xml_validator.py        manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/xsd_extractor.py]; owners unioned.
+src/junoscfg/validate/xsd_extractor.py        manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone conversion (yellow, active); domain conversion [src/junoscfg/convert/**] and domain validation [src/junoscfg/convert/field_validator.py]; owners unioned.
+src/junoscfg/convert/field_validator.py       manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/artifact_builder.py]; owners unioned.
+src/junoscfg/validate/artifact_builder.py     manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/schema_generator.py]; owners unioned.
+src/junoscfg/validate/schema_generator.py     manon.goo@dg-i.net
+
+# domain schema-pipeline
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain schema-pipeline [src/junoscfg/validate/grammar_generator.py]; owners unioned.
+src/junoscfg/validate/grammar_generator.py    manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain validation [src/junoscfg/validate/json_yaml_validator.py]; owners unioned.
+src/junoscfg/validate/json_yaml_validator.py  manon.goo@dg-i.net
+
+# domain validation
+# WARNING: possible overlap: zone schema (yellow, active) [src/junoscfg/validate/**] and domain validation [src/junoscfg/validate/structured_validator.py]; owners unioned.
+src/junoscfg/validate/structured_validator.py manon.goo@dg-i.net

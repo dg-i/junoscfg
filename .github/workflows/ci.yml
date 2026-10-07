@@ -1,0 +1,34 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+env:
+  OPENSPEC_TELEMETRY: "0"
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      # This repository's default branch is master, so the template's
+      # origin/main fallback would resolve to nothing.
+      - run: uv run --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
+
+      # Reported, never blocking: 102 errors at adoption. The deadline lives in
+      # docs/decisions/2026-10-06-adopt-mypy-strict.md, which agent-ready
+      # decisions fails once its review-by passes.
+      - name: mypy (reported, not enforced)
+        if: always()
+        continue-on-error: true
+        run: uv run --group dev mypy

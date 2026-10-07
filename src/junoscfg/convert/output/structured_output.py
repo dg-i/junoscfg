@@ -6,45 +6,52 @@ import sys
 from typing import Any
 
 from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
-from junoscfg.display.config_store import ConfigStore
-from junoscfg.display.constants import load_schema_tree
-from junoscfg.display.value_format import format_value
+from junoscfg.display import ConfigStore, format_value, load_schema_tree
 
 
 class StructuredWalkOutput(WalkOutput):
     """Pushes hierarchy paths into a ConfigStore for curly-brace rendering."""
 
     def __init__(self) -> None:
+        """Start with an empty store and no deferred operations."""
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
 
     def emit(self, hierarchy: list[str]) -> None:
+        """Push *hierarchy* into the store as one path."""
         self.config.push("\n".join(hierarchy))
 
     def emit_positional(self, path: list[str], value: str) -> None:
+        """Push a positional-key leaf, merging *value* into the last segment."""
         merged = list(path)
         merged[-1] = f"{merged[-1]} {value}"
         self.config.push("\n".join(merged))
 
     def emit_deactivate(self, hierarchy: list[str]) -> None:
+        """Defer an ``inactive:`` marker until :meth:`finalize`."""
         self._deferred.append(("deactivate", hierarchy))
 
     def emit_replace(self, hierarchy: list[str]) -> None:
+        """Defer a ``replace:`` marker until :meth:`finalize`."""
         self._deferred.append(("replace", hierarchy))
 
     def emit_protect(self, hierarchy: list[str]) -> None:
+        """Defer a ``protect:`` marker until :meth:`finalize`."""
         self._deferred.append(("protect", hierarchy))
 
     def emit_activate(self, hierarchy: list[str]) -> None:
+        """Do nothing: active is the default state in structured output."""
         pass  # Active is the default state
 
     def emit_delete(self, hierarchy: list[str]) -> None:
+        """Record a dropped delete; structured output cannot express one."""
         # The structured format cannot represent delete operations; dropped
         # with an aggregated note in finalize()
         self._dropped_deletes.append(" ".join(hierarchy))
 
     def finalize(self) -> None:
+        """Apply the deferred markers and warn about any dropped deletes."""
         for op, hierarchy in self._deferred:
             path_str = " ".join(hierarchy)
             if op == "deactivate":

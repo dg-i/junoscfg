@@ -29,7 +29,7 @@ def walk(
         rules: Ordered list of active rules.
         config: Anonymization config (for include/exclude filters, log level).
     """
-    from junoscfg.display.constants import load_schema_tree
+    from junoscfg.display import load_schema_tree
 
     schema = load_schema_tree()
     if not schema:

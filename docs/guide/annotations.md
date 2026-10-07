@@ -27,7 +27,7 @@ A bare `"@"` key inside an object annotates *the object itself*:
 
 Converted to structured format, the annotation becomes a prefix on the block:
 
-```
+```text
 replace: system {
     host-name router1;
     location dc-a;
@@ -53,7 +53,7 @@ name:
 
 Converted to set commands:
 
-```
+```text
 set system host-name router1
 deactivate system host-name
 ```
@@ -160,7 +160,7 @@ are emitted inline with their related `set` commands, preserving logical
 ordering. For example, when converting a JSON configuration where `system ntp`
 is inactive:
 
-```
+```text
 set system ntp server 10.0.0.1
 deactivate system ntp
 set system syslog host 10.0.0.2

@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-06
+type: bug
+zone: anonymize
+domains: [anonymization]
+skip_specs: true
+removes:
+  - "the crypt.crypt() branch in _make_crypt_hash"
+  - "[tool.deptry.per_rule_ignores] DEP001 = [\"crypt\"]"

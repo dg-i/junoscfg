@@ -258,6 +258,7 @@ Apply nested transforms only when a condition matches. Supports `matches` (regex
 ### BGP Peer Name Extraction
 
 **Input YAML** (`config.yaml`):
+
 ```yaml
 configuration:
   protocols:
@@ -272,6 +273,7 @@ configuration:
 ```
 
 **Rule file** (`rules.yaml`):
+
 ```yaml
 rules:
   - path: "configuration.protocols.bgp.group[*].neighbor[*]"
@@ -283,11 +285,13 @@ rules:
 ```
 
 **Command**:
+
 ```bash
 junoscfg edityaml addvars -r rules.yaml config.yaml
 ```
 
 **Output**:
+
 ```yaml
 configuration:
   protocols:
@@ -324,6 +328,7 @@ junoscfg edityaml addvars \
 ```
 
 **Input**:
+
 ```yaml
 configuration:
   interfaces:
@@ -335,6 +340,7 @@ configuration:
 ```
 
 **Output**:
+
 ```yaml
 configuration:
   interfaces:
@@ -372,6 +378,7 @@ junoscfg edityaml addvars \
 ```
 
 **Output** (each interface gets a label):
+
 ```yaml
 - name: ge-0/0/0
   _label: intf-ge-0/0/0
@@ -384,6 +391,7 @@ junoscfg edityaml addvars \
 Only add `_is_uplink: true` to interfaces whose description contains "uplink":
 
 **Rule file** (`uplinks.yaml`):
+
 ```yaml
 rules:
   - path: "configuration.interfaces.interface[*]"
@@ -403,6 +411,7 @@ junoscfg edityaml addvars -r uplinks.yaml config.yaml
 ```
 
 **Input**:
+
 ```yaml
 configuration:
   interfaces:
@@ -414,6 +423,7 @@ configuration:
 ```
 
 **Output** (only the uplink gets tagged):
+
 ```yaml
 configuration:
   interfaces:
@@ -807,6 +817,7 @@ junoscfg edityaml ansibilize \
 ```
 
 **Input**:
+
 ```yaml
 configuration:
   system:
@@ -815,6 +826,7 @@ configuration:
 ```
 
 **Output**:
+
 ```yaml
 junos_hostname: router1
 ---
@@ -837,6 +849,7 @@ junoscfg edityaml ansibilize \
 ```
 
 **Input**:
+
 ```yaml
 configuration:
   protocols:
@@ -851,6 +864,7 @@ configuration:
 ```
 
 **Output**:
+
 ```yaml
 bgp_peer_overlay_0: 10.0.0.1
 bgp_peer_overlay_1: 10.0.0.2
@@ -880,6 +894,7 @@ junoscfg edityaml ansibilize \
 ```
 
 **Input**:
+
 ```yaml
 configuration:
   protocols:
@@ -894,6 +909,7 @@ configuration:
 ```
 
 **Output**:
+
 ```yaml
 ospf_cost_0_0_0_0_xe_0_0_0_0: 100
 ospf_cost_0_0_0_0_xe_0_0_1_0: 200

@@ -1,0 +1,1 @@
+Restore `requires-python = ">=3.10"`. The floor was raised during onboarding to hide a `crypt.crypt()` defect that returned a DES hash on macOS; the defect is fixed instead, and anonymizer output is now identical on Python 3.10 through 3.14.

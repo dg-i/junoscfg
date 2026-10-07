@@ -90,7 +90,7 @@ def _walk_dict(
     collector: list[Occurrence],
 ) -> None:
     """Walk one IR dict level against its schema node."""
-    from junoscfg.display.constants import resolve_key_alias
+    from junoscfg.display import resolve_key_alias
 
     children = schema_node.get("c", {})
 
@@ -256,7 +256,7 @@ def _entry_key_field(list_schema: dict[str, Any], entry: dict[str, Any]) -> str 
     ``name`` key, then ``community-name`` (hardcoded in the set parser and
     dict walker because the schema node carries no ``fe`` flag there).
     """
-    from junoscfg.display.constants import get_flat_entry_config
+    from junoscfg.display import get_flat_entry_config
 
     fe = get_flat_entry_config(list_schema)
     if fe is not None and fe[0] and fe[0] in entry:

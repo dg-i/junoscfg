@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from junoscfg.convert.ir import wrap_configuration
-from junoscfg.display.constants import load_schema_tree
+from junoscfg.display import load_schema_tree
 
 
 def dict_to_json(config: dict[str, Any]) -> str:

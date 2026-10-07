@@ -157,31 +157,31 @@ def examples_dir() -> Path:
 
 @pytest.fixture
 def set_lines(examples_dir: Path) -> str:
-    """Expected 'display set' output from the example router config."""
-    return (examples_dir / "load_ox_conf.set").read_text()
+    """Expected 'display set' output from the synthetic example config."""
+    return (examples_dir / "router1.set").read_text()
 
 
 @pytest.fixture
 def json_config(examples_dir: Path) -> str:
-    """Example router config in JSON format."""
-    return (examples_dir / "load_ox_conf.json").read_text()
+    """Synthetic example config in JSON format."""
+    return (examples_dir / "router1.json").read_text()
 
 
 @pytest.fixture
 def xml_config(examples_dir: Path) -> str:
-    """Example router config in XML format."""
-    return (examples_dir / "load_ox_conf.xml").read_text()
+    """Synthetic example config in XML format."""
+    return (examples_dir / "router1.xml").read_text()
 
 
 @pytest.fixture
 def structured_config(examples_dir: Path) -> str:
-    """Example router config in structured (curly-brace) format."""
-    return (examples_dir / "load_ox_conf.conf").read_text()
+    """Synthetic example config in structured (curly-brace) format."""
+    return (examples_dir / "router1.conf").read_text()
 
 
 @pytest.fixture
 def yaml_config(json_config: str) -> str:
-    """Example router config in hyphenated YAML format (generated from JSON)."""
+    """Synthetic example config in hyphenated YAML format (generated from JSON)."""
     from junoscfg import Format, convert_config
 
     return convert_config(json_config, from_format=Format.JSON, to_format=Format.YAML)

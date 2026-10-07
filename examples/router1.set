@@ -1,0 +1,61 @@
+set system host-name router1
+set system domain-name example.com
+set system time-zone UTC
+set system root-authentication encrypted-password "$9$ExAmPlEhAsH.KEY"
+set system name-server 192.168.0.53
+set system name-server 192.168.0.54
+set system login user admin uid 2000
+set system login user admin class super-user
+set system login user admin authentication encrypted-password "$9$ExAmPlEhAsH.KEY"
+set system login user operator uid 2001
+set system login user operator class read-only
+set system login user operator authentication encrypted-password "$9$ExAmPlEhAsH.KEY"
+set system services ssh root-login deny
+set system services ssh protocol-version v2
+set system services netconf ssh
+set system syslog user * any emergency
+set system syslog file messages any notice
+set system syslog file messages authorization info
+set system syslog host 192.168.0.10 any warning
+set system ntp server 192.168.0.123
+set interfaces ge-0/0/0 description "uplink to core"
+set interfaces ge-0/0/0 mtu 9192
+set interfaces ge-0/0/0 unit 0 family inet address 198.51.100.1/30
+set interfaces ge-0/0/0 unit 0 family inet6 address 2001:db8:100::1/126
+set interfaces ge-0/0/1 description "downlink to access"
+set interfaces ge-0/0/1 unit 0 vlan-id 100
+set interfaces ge-0/0/1 unit 0 family inet address 10.0.100.1/24
+set interfaces ge-0/0/2 description "customer handoff"
+set interfaces ge-0/0/2 ether-options 802.3ad ae0
+set interfaces ge-0/0/3 description "customer handoff backup"
+set interfaces ge-0/0/3 ether-options 802.3ad ae0
+set interfaces ae0 description "bundled customer handoff"
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 unit 0 family inet address 10.0.200.1/24
+set interfaces lo0 unit 0 family inet address 10.255.255.1/32
+set routing-options router-id 10.255.255.1
+set routing-options autonomous-system 64496
+set routing-options static route 0.0.0.0/0 next-hop 198.51.100.2
+set protocols bgp group ebgp-peers type external
+set protocols bgp group ebgp-peers peer-as 64497
+set protocols bgp group ebgp-peers neighbor 198.51.100.2 description "transit provider"
+set protocols bgp group ebgp-peers neighbor 198.51.100.2 import import-transit
+set protocols bgp group ebgp-peers neighbor 198.51.100.2 export export-customers
+set protocols bgp group ibgp-peers type internal
+set protocols bgp group ibgp-peers local-address 10.255.255.1
+set protocols bgp group ibgp-peers neighbor 10.255.255.2 description "core router"
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 metric 10
+set protocols ospf area 0.0.0.0 interface lo0.0 passive
+set protocols lldp interface all
+set policy-options policy-statement import-transit term reject-bogons from route-filter 10.0.0.0/8 orlonger
+set policy-options policy-statement import-transit term reject-bogons then reject
+set policy-options policy-statement import-transit term accept-rest then accept
+set policy-options policy-statement export-customers term customers from community customer-routes
+set policy-options policy-statement export-customers term customers then accept
+set policy-options policy-statement export-customers term default then reject
+set policy-options community customer-routes members 64496:100
+set firewall family inet filter protect-re term allow-ssh from source-address 10.0.0.0/8
+set firewall family inet filter protect-re term allow-ssh from protocol tcp
+set firewall family inet filter protect-re term allow-ssh from destination-port ssh
+set firewall family inet filter protect-re term allow-ssh then accept
+set firewall family inet filter protect-re term discard-rest then discard

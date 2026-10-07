@@ -1,0 +1,26 @@
+schema: agent-ready
+created: 2026-10-06
+type: bug
+zone: surface
+domains: [schema-pipeline]
+skip_specs: true
+removes:
+  - "junoscfg schema makedoc"
+declared-break:
+  cli:
+    why: >-
+      A documented CLI command is removed. It never executed successfully, so no
+      caller can have depended on its behaviour, but the name was in the help
+      output and in docs/guide/cli.md, and that is the surface.
+    migration: >-
+      None available and none needed: every invocation raised
+      ModuleNotFoundError. A schema documentation generator, if wanted, is a new
+      feature rather than a restoration.
+  api:
+    why: >-
+      griffe sees the click command object junoscfg.cli.makedoc as a public
+      name, so its removal is an api-surface removal by that reading, even
+      though the package exports nothing from cli and __all__ is unchanged.
+    migration: >-
+      None. Nothing imports junoscfg.cli.makedoc; it was reachable only through
+      the command line, where it failed.

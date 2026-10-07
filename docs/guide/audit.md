@@ -27,7 +27,7 @@ Findings are suggestions requiring human review — see
 
 Given `config.set`:
 
-```
+```text
 set policy-options prefix-list CUSTOMER-ROUTES 10.0.0.0/8
 set policy-options prefix-list OLD-PEERS 192.168.0.0/16
 set policy-options policy-statement EXPORT-CUSTOMERS term customers from prefix-list CUSTOMER-ROUTES

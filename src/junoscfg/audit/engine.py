@@ -60,7 +60,7 @@ def run_audit(
         AuditLoadError: If the bundled schema tree cannot be loaded.
         ValueError: On unknown type names or an invalid regex.
     """
-    from junoscfg.display.constants import load_schema_tree
+    from junoscfg.display import load_schema_tree
 
     schema = load_schema_tree()
     if schema is None:

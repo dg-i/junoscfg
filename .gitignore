@@ -22,3 +22,12 @@ data/*.conf
 data/*.md
 data/*.schema
 graphify-out/
+scratchpad/
+.agent-ready/codemap/
+
+# OpenSpec regenerates its slash commands as a second set of skills under a
+# `source-command-` prefix on unrelated invocations (seen on `openspec
+# archive`). They duplicate the committed `openspec-*` skills, are derived from
+# the gitignored .claude/commands/opsx/, and break the vendored-skills,
+# caps and markdownlint globs. Keep them out of the tree.
+.agents/skills/source-command-*/

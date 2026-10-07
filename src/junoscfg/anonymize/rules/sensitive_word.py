@@ -34,6 +34,7 @@ class SensitiveWordRule(Rule):
     priority = 90  # Lowest priority — last resort
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        """Build the rule from *config*: the salt and the word list."""
         self._salt = config.salt or ""
         self._words = config.sensitive_words
         self._raw_patterns = config.sensitive_patterns

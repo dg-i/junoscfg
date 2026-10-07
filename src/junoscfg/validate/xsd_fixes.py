@@ -52,14 +52,6 @@ def _fix_parent_keys(node: SchemaNode, old_key: str, new_key: str) -> None:
         _fix_parent_keys(child, old_key, new_key)
 
 
-def _add_sibling(
-    root: SchemaNode, target_name: str, new_name: str, new_node: SchemaNode | None = None
-) -> bool:
-    """Add a sibling element next to an existing element. Returns True if added."""
-    _add_sibling_impl(root, target_name, new_name, new_node, added_ref=[False])
-    return True  # Best-effort
-
-
 def _add_sibling_impl(
     node: SchemaNode,
     target_name: str,

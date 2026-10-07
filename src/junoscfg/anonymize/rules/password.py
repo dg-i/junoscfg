@@ -122,21 +122,41 @@ def _encrypt_j9_deterministic(hex_digest: str, plaintext: str) -> str:
     return encrypted
 
 
-def _make_crypt_hash(hex_digest: str, prefix: str, original_salt: str) -> str:
-    """Produce a real Unix crypt hash for ``$1$``/``$5$``/``$6$`` formats.
+# Body lengths the crypt formats specify, used when the original gives no
+# length to copy.  md5crypt is 22 characters, sha256crypt 43, sha512crypt 86.
+_CRYPT_BODY_LENGTH = {"$1$": 22, "$5$": 43, "$6$": 86}
 
-    Derives a pseudo-plaintext from *hex_digest* and uses the ``crypt`` module
-    to generate a structurally valid hash.  Falls back to the hex-body approach
-    if ``crypt`` is unavailable (Python ≥3.13 removed it).
+
+def _extend_hex(hex_digest: str, length: int) -> str:
+    """Deterministic hex of exactly *length* characters.
+
+    One SHA-256 hexdigest is 64 characters, which is shorter than a
+    sha512crypt body, so the digest is folded forward until it is long enough.
+    Same input, same output, on every platform.
     """
-    try:
-        import crypt  # noqa: S105
+    out = hex_digest
+    while len(out) < length:
+        out += hashlib.sha256(out.encode()).hexdigest()
+    return out[:length]
 
-        pseudo_plain = hex_digest[:16]
-        return crypt.crypt(pseudo_plain, f"{prefix}{original_salt}$")
-    except (ImportError, ModuleNotFoundError):
-        # crypt module unavailable — fall back to hex body
-        return f"{prefix}{original_salt}${hex_digest[:64]}"
+
+def _make_crypt_hash(hex_digest: str, prefix: str, original_salt: str, body_length: int) -> str:
+    """Produce a structurally valid ``$1$``/``$5$``/``$6$`` hash.
+
+    The body is derived deterministically from *hex_digest* and is as long as
+    the body it replaces, which is what every other format in this module
+    already does.  Same input and salt give the same output on every platform
+    and interpreter: a configuration anonymized on one machine has to match one
+    anonymized on another.
+
+    This used to call ``crypt.crypt()``.  macOS answers an unsupported ``$N$``
+    salt with a 13-character DES hash rather than the requested format, so the
+    result depended on the host's libc; and ``crypt`` was removed from the
+    standard library in 3.13, which silently made the fallback the only path
+    there.  The fallback is now the only path everywhere, and length-correct.
+    """
+    length = body_length or _CRYPT_BODY_LENGTH.get(prefix, 64)
+    return f"{prefix}{original_salt}${_extend_hex(hex_digest, length)}"
 
 
 class PasswordRule(Rule):
@@ -159,6 +179,7 @@ class PasswordRule(Rule):
     priority = 10  # Highest priority — checked before all other rules
 
     def __init__(self, config: AnonymizeConfig) -> None:
+        """Build the rule from *config*: the salt and an empty mapping."""
         self._salt = config.salt or ""
         self._mapping: dict[str, str] = {}
         self._plain_counter = 0
@@ -226,7 +247,7 @@ class PasswordRule(Rule):
             # Unix crypt formats — generate a real crypt hash when possible.
             parts = body.split("$", 1)
             if len(parts) == 2:
-                return _make_crypt_hash(hex_digest, prefix, parts[0])
+                return _make_crypt_hash(hex_digest, prefix, parts[0], len(parts[1]))
 
         if prefix == "$8$":
             # AES-256-GCM: $8$crypt-algo$hash-algo$iterations$salt$iv$tag$encrypted

@@ -429,3 +429,54 @@ class TestPasswordAnonymizeIntegration:
         # Both mappings present
         assert "password" in result.mapping
         assert "ip" in result.mapping
+
+
+class TestCryptIndependence:
+    """The password rule must not depend on the stdlib ``crypt`` module.
+
+    ``crypt.crypt()`` answers an unsupported ``$N$`` salt with a 13-character
+    DES hash on macOS, and the module was removed in Python 3.13, so output
+    used to depend on both the host libc and the interpreter. These pin the
+    deterministic replacement.
+    """
+
+    def test_no_crypt_import_anywhere_in_the_package(self) -> None:
+        import ast
+        from pathlib import Path
+
+        package = Path(__file__).resolve().parents[2] / "src" / "junoscfg"
+        assert package.is_dir(), package
+        scanned = 0
+        offenders = []
+        for path in package.rglob("*.py"):
+            scanned += 1
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+                if isinstance(node, ast.Import) and any(a.name == "crypt" for a in node.names):
+                    offenders.append(str(path))
+                if isinstance(node, ast.ImportFrom) and node.module == "crypt":
+                    offenders.append(str(path))
+        assert scanned > 50, f"only scanned {scanned} files; the glob is wrong"
+        assert offenders == []
+
+    def test_output_is_fixed_for_a_fixed_salt(self) -> None:
+        """Byte-for-byte stable, so two machines anonymize a config alike."""
+        rule = self._make_rule()
+        # The body is as long as the one it replaces (17 chars here), which is
+        # what every other format in password.py already does.
+        assert rule.transform("$1$abc123$xyzHashValueHere") == "$1$abc123$9f910e33980334f5"
+
+    def test_body_length_matches_the_format(self) -> None:
+        """A $1$/$5$/$6$ body keeps the length of the body it replaces."""
+        rule = self._make_rule()
+        for prefix, length in (("$1$", 22), ("$5$", 43), ("$6$", 86)):
+            out = rule.transform(f"{prefix}abcdefgh${'x' * length}")
+            assert len(out.split("$")[-1]) == length, f"{prefix} body wrong length: {out}"
+
+    @staticmethod
+    def _make_rule() -> PasswordRule:
+        from junoscfg.anonymize.config import AnonymizeConfig
+        from junoscfg.anonymize.rules.password import PasswordRule
+
+        config = AnonymizeConfig(passwords=True, salt="fixed-salt")
+        config.expand_all()
+        return PasswordRule(config)

@@ -1,8 +1,52 @@
-"""Junoscfg display format converters."""
+"""Junoscfg display format converters: the shared kernel.
+
+Six of the eight packages import from here, so this module is the one door.
+Everything other packages may use is re-exported below and listed in
+``__all__``; reaching past it into a submodule is what ``tach check`` and
+``agent-ready interfaces`` both refuse.
+"""
 
 from __future__ import annotations
 
 import re
+
+from junoscfg.display.config_store import ConfigStore, filter_structured_by_path
+from junoscfg.display.constants import (
+    KEY_ALIASES,
+    get_flat_entry_config,
+    get_transparent_child,
+    is_flat_dict,
+    is_freeform_nk,
+    is_positional_key,
+    is_transparent_list_key,
+    load_schema_tree,
+    resolve_key_alias,
+)
+from junoscfg.display.set_converter import SetConverter
+from junoscfg.display.to_json import filter_json_by_path
+from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_yaml
+from junoscfg.display.value_format import format_value
+
+__all__ = [
+    "KEY_ALIASES",
+    "ConfigStore",
+    "SetConverter",
+    "filter_json_by_path",
+    "filter_set_by_path",
+    "filter_structured_by_path",
+    "filter_yaml_by_path",
+    "format_value",
+    "get_flat_entry_config",
+    "get_transparent_child",
+    "is_display_set",
+    "is_flat_dict",
+    "is_freeform_nk",
+    "is_positional_key",
+    "is_transparent_list_key",
+    "load_schema_tree",
+    "resolve_key_alias",
+    "xml_to_yaml",
+]
 
 _SET_PREFIXES = ("set", "deactivate", "protect", "activate", "delete")
 
