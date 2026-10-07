@@ -49,7 +49,8 @@ class TestNonOverlap:
         # Password field anonymized by password rule (not IP rule)
         ep = result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
         assert ep != "$6$abc$hash123"
-        assert ep.startswith("$6$abc$")
+        assert ep.startswith("$6$")
+        assert "$abc$" not in ep  # the original salt is replaced, not copied
         assert "password" in result.mapping
         assert "$6$abc$hash123" in result.mapping["password"]
 

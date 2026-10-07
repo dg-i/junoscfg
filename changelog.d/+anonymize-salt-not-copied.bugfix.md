@@ -1,0 +1,1 @@
+The anonymizer no longer copies the original crypt salt into its output, which left a correlation handle back to the source account. `$5$rounds=N$` is also parsed correctly: the rounds field is a parameter, not a salt.

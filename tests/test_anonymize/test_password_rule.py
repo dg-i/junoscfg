@@ -117,22 +117,34 @@ class TestPasswordRuleTransform:
         rule = self._make_rule()
         original = "$1$abc123$xyzHashValueHere"
         result = rule.transform(original)
-        assert result.startswith("$1$abc123$")
+        assert result.startswith("$1$")
         assert result != original
+        # The original salt is per-password entropy from the customer's
+        # configuration; re-emitting it would leave a correlation handle.
+        assert "abc123" not in result
+        _, _, salt, body = result.split("$")
+        assert len(salt) == len("abc123")
+        assert len(body) == len("xyzHashValueHere")
 
     def test_sha256_format_preserved(self) -> None:
         rule = self._make_rule()
         original = "$5$rounds=5000$saltsalt$hashbodyhashbodyhashbody"
         result = rule.transform(original)
-        assert result.startswith("$5$")
+        # rounds= is a parameter and survives; the salt after it does not.
+        assert result.startswith("$5$rounds=5000$")
         assert result != original
+        assert "saltsalt" not in result
 
     def test_sha512_format_preserved(self) -> None:
         rule = self._make_rule()
         original = "$6$abc$xyzLongHashValueHereThatIsLong"
         result = rule.transform(original)
-        assert result.startswith("$6$abc$")
+        assert result.startswith("$6$")
         assert result != original
+        assert "$abc$" not in result
+        _, _, salt, body = result.split("$")
+        assert len(salt) == len("abc")
+        assert len(body) == len("xyzLongHashValueHereThatIsLong")
 
     def test_sha1_format_preserved(self) -> None:
         """$sha1$ (NetBSD crypt-sha1, used in FIPS mode) format preserved."""
@@ -281,7 +293,8 @@ class TestPasswordAnonymizeIntegration:
         result = anonymize(ir, cfg)
         ep = result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
         assert ep != "$6$abc$longHashValue123"
-        assert ep.startswith("$6$abc$")
+        assert ep.startswith("$6$")
+        assert "$abc$" not in ep  # the original salt is replaced, not copied
 
     def test_j9_password_in_login_user(self) -> None:
         cfg = AnonymizeConfig(passwords=True, salt="test")
@@ -463,7 +476,7 @@ class TestCryptIndependence:
         rule = self._make_rule()
         # The body is as long as the one it replaces (17 chars here), which is
         # what every other format in password.py already does.
-        assert rule.transform("$1$abc123$xyzHashValueHere") == "$1$abc123$9f910e33980334f5"
+        assert rule.transform("$1$abc123$xyzHashValueHere") == "$1$TFCnM1$9f910e33980334f5"
 
     def test_body_length_matches_the_format(self) -> None:
         """A $1$/$5$/$6$ body keeps the length of the body it replaces."""
@@ -480,3 +493,51 @@ class TestCryptIndependence:
         config = AnonymizeConfig(passwords=True, salt="fixed-salt")
         config.expand_all()
         return PasswordRule(config)
+
+
+class TestSaltIsNotCopied:
+    """The original crypt salt must not survive into the output.
+
+    A crypt salt is per-password entropy lifted from the customer's
+    configuration. The hash body is safe -- HMAC-SHA256 is one-way -- but
+    re-emitting the salt verbatim leaves a correlation handle: anyone holding
+    the original hash can match ``$6$<salt>$...`` to the exact account.
+    """
+
+    @staticmethod
+    def _make_rule() -> PasswordRule:
+        from junoscfg.anonymize.config import AnonymizeConfig
+        from junoscfg.anonymize.rules.password import PasswordRule
+
+        config = AnonymizeConfig(passwords=True, salt="fixed-salt")
+        config.expand_all()
+        return PasswordRule(config)
+
+    def test_salt_is_replaced_for_every_crypt_format(self) -> None:
+        rule = self._make_rule()
+        for prefix, salt, body_len in (
+            ("$1$", "abc123", 22),
+            ("$5$", "saltsalt", 43),
+            ("$6$", "s8chars.", 86),
+        ):
+            out = rule.transform(f"{prefix}{salt}${'x' * body_len}")
+            assert salt not in out, f"{prefix} leaked its salt: {out}"
+            new_salt = out.split("$")[2]
+            assert len(new_salt) == len(salt)
+            assert all(
+                c in "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                for c in new_salt
+            )
+
+    def test_rounds_is_a_parameter_not_a_salt(self) -> None:
+        """$5$rounds=N$ keeps the rounds field and still replaces the salt."""
+        rule = self._make_rule()
+        out = rule.transform("$5$rounds=5000$realsalt$" + "y" * 43)
+        assert out.startswith("$5$rounds=5000$")
+        assert "realsalt" not in out
+        assert len(out.split("$")[3]) == len("realsalt")
+
+    def test_replacement_salt_is_deterministic(self) -> None:
+        a, b = self._make_rule(), self._make_rule()
+        original = "$6$saltsalt$" + "z" * 86
+        assert a.transform(original) == b.transform(original)

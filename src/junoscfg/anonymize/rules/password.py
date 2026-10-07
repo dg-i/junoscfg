@@ -126,6 +126,25 @@ def _encrypt_j9_deterministic(hex_digest: str, plaintext: str) -> str:
 # length to copy.  md5crypt is 22 characters, sha256crypt 43, sha512crypt 86.
 _CRYPT_BODY_LENGTH = {"$1$": 22, "$5$": 43, "$6$": 86}
 
+# The alphabet crypt salts and bodies are drawn from.
+_CRYPT64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def _pseudo_salt(hex_digest: str, length: int) -> str:
+    """A replacement salt of *length* crypt64 characters.
+
+    The original salt is per-password entropy lifted straight from the
+    customer's configuration.  Re-emitting it verbatim leaves a correlation
+    handle: anyone holding the original hash can match ``$6$<salt>$...`` to the
+    exact account even though the body is safe.  This derives a new one from
+    the same HMAC, so the output stays deterministic and still looks like a
+    salt.
+    """
+    source = _extend_hex(hex_digest, max(length * 2, 2))
+    return "".join(
+        _CRYPT64[int(source[i * 2 : i * 2 + 2], 16) % len(_CRYPT64)] for i in range(length)
+    )
+
 
 def _extend_hex(hex_digest: str, length: int) -> str:
     """Deterministic hex of exactly *length* characters.
@@ -244,10 +263,25 @@ class PasswordRule(Rule):
             return _encrypt_j9_deterministic(hex_digest[8:], pseudo_plain)
 
         if prefix in ("$6$", "$5$", "$1$"):
-            # Unix crypt formats — generate a real crypt hash when possible.
-            parts = body.split("$", 1)
+            # Unix crypt formats: $N$[rounds=X$]salt$hash.  The rounds field is
+            # a parameter, not a salt, and was previously mistaken for one,
+            # which dropped the real salt and left rounds= in its place.
+            rounds = ""
+            rest = body
+            if rest.startswith("rounds="):
+                rounds_field, _, remainder = rest.partition("$")
+                if remainder:
+                    rounds = f"{rounds_field}$"
+                    rest = remainder
+            parts = rest.split("$", 1)
             if len(parts) == 2:
-                return _make_crypt_hash(hex_digest, prefix, parts[0], len(parts[1]))
+                original_salt, original_body = parts
+                return _make_crypt_hash(
+                    hex_digest,
+                    f"{prefix}{rounds}",
+                    _pseudo_salt(hex_digest, len(original_salt)),
+                    len(original_body),
+                )
 
         if prefix == "$8$":
             # AES-256-GCM: $8$crypt-algo$hash-algo$iterations$salt$iv$tag$encrypted
