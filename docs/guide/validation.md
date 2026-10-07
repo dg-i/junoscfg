@@ -24,7 +24,7 @@ print(result.errors)   # ()
     valid `xs:NCName` values, and a real 23.2R2 dump carries 85 of them.
     `junoscfg schema generate` builds the JSON, YAML and set artifacts from
     that dump but not the XSD, so you must supply a cleaned one yourself.
-    JSON, YAML, set and structured validation work out of the box.
+    JSON and YAML validation work out of the box.
 
 ```python
 from junoscfg import validate_xml
@@ -54,6 +54,15 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 ### Set Commands
 
+!!! bug "Not working in this release"
+    The bundled `junos-set.lark` does not load — it carries two `start:` rules,
+    so every call raises `SchemaLoadError` and the CLI reports "Error loading
+    validation artifacts". Structured validation uses the same grammar and is
+    affected identically. Converting to and from set format is unaffected;
+    only validation is. Three generator defects stand between here and a
+    working grammar; one is fixed, two are pinned in
+    `tests/test_grammar_generator.py`.
+
 ```python
 from junoscfg import validate_set
 
@@ -61,6 +70,8 @@ result = validate_set("set system host-name router1\nset system domain-name exam
 ```
 
 ### Structured (Curly-Brace)
+
+Uses the same Lark grammar as set validation, so the bug above applies here too.
 
 ```python
 from junoscfg import validate_structured

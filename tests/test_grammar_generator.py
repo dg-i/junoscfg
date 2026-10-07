@@ -178,9 +178,10 @@ class TestBundledGrammarCompiles:
     """The shipped grammar must be loadable, or set validation does nothing.
 
     While it does not compile, `junoscfg -i set -v` reports "Error loading
-    validation artifacts" and exits 0 — on a valid and an invalid config
-    alike. JSON, YAML and structured validation are unaffected; they do not
-    use this grammar.
+    validation artifacts" — on a valid and an invalid config alike. Structured
+    input is affected too: JunosValidator builds StructuredValidator around the
+    same SetValidator. JSON and YAML validation are unaffected; they do not use
+    this grammar.
     """
 
     @pytest.mark.xfail(
@@ -198,3 +199,107 @@ class TestBundledGrammarCompiles:
 
         grammar = Path(validate_pkg.__file__).parent / "data" / "junos-set.lark"
         lark.Lark(grammar.read_text(encoding="utf-8"), start="start")
+
+
+def _parses(root: SchemaNode, command: str) -> bool:
+    """Generate a grammar from ``root`` and report whether ``command`` parses."""
+    import lark
+
+    parser = lark.Lark(generate_lark_grammar(root), parser="earley")
+    try:
+        parser.parse(command)
+    except lark.exceptions.UnexpectedInput:
+        return False
+    return True
+
+
+class TestNamedListKeysSurviveRuleMerging:
+    """A named list must keep its key slot even when the name is reused.
+
+    ``_collect_rules`` merges rules by name across the whole tree, so one
+    non-list node named ``user`` anywhere strips the key slot from every
+    ``user`` list. On the real schema this rejects most of a valid config:
+    every line addressing a list entry — ``interfaces ge-0/0/0``,
+    ``system login user``, ``protocols bgp group`` — fails to parse.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        """``user`` as a named list under system/login, and a container under snmp."""
+        return SchemaNode(
+            name="configuration",
+            children={
+                "system": SchemaNode(
+                    name="system",
+                    children={
+                        "login": SchemaNode(
+                            name="login",
+                            children={
+                                "user": SchemaNode(
+                                    name="user",
+                                    is_list=True,
+                                    children={"uid": SchemaNode(name="uid", is_leaf=True)},
+                                )
+                            },
+                        )
+                    },
+                ),
+                "snmp": SchemaNode(
+                    name="snmp",
+                    children={
+                        "user": SchemaNode(
+                            name="user",
+                            children={"name": SchemaNode(name="name", is_leaf=True)},
+                        )
+                    },
+                ),
+            },
+        )
+
+    def test_unmerged_list_keeps_its_key(self) -> None:
+        """Control: with no competing ``user``, the key slot is emitted."""
+        tree = self._tree()
+        del tree.children["snmp"]
+        assert _parses(tree, "set system login user admin uid 2000")
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "_collect_rules merges rules by name across the tree, so a non-list "
+            "`user` elsewhere drops the key slot from the `user` list"
+        ),
+    )
+    def test_merged_list_keeps_its_key(self) -> None:
+        assert _parses(self._tree(), "set system login user admin uid 2000")
+
+
+class TestTransparentListChildrenAreSpliced:
+    """A nokeyword list child must contribute its own children to the parent.
+
+    ``interfaces`` is transparent over ``interface``, which is a nokeyword
+    list. The generator reads neither the ``transparent:`` flag nor the
+    nokeyword child's subtree, so ``interfaces`` offers a bare ``VALUE`` and
+    nothing may follow the interface name.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        interface = SchemaNode(
+            name="interface",
+            is_list=True,
+            children={"mtu": SchemaNode(name="mtu", is_leaf=True)},
+        )
+        interface.flags.add("nokeyword")
+        interfaces = SchemaNode(name="interfaces", children={"interface": interface})
+        interfaces.flags.add("transparent:interface")
+        return SchemaNode(name="configuration", children={"interfaces": interfaces})
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "generate_lark_grammar ignores transparent: flags and does not splice "
+            "a nokeyword list child's children into the parent rule"
+        ),
+    )
+    def test_leaf_under_transparent_list_parses(self) -> None:
+        assert _parses(self._tree(), "set interfaces ge-0/0/0 mtu 9192")

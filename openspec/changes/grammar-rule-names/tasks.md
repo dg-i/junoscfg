@@ -17,3 +17,8 @@
   `jnx_tel_RE_local_interfaces_stats`.
 - [x] 3.2 Confirmed the defect predates onboarding by loading the grammar from
   commit a2edd22: it fails identically.
+- [x] Pin the two further generator defects found while testing a rebuilt
+      grammar: rule merging dropping named-list keys, and transparent/nokeyword
+      list children not being spliced. Each pin has a passing control.
+- [x] Record why the bundled artifacts are not regenerated from the 25.2R2-S1.5
+      dump: the device lacks packages, so shared sections lose 7,096 nodes.

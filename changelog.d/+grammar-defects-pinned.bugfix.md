@@ -1,0 +1,1 @@
+Pinned two further Lark grammar generator defects that keep set and structured validation broken even once the rule-name collision is fixed: rules are merged by name across the whole tree, which strips the key slot from named lists, and transparent/nokeyword list children are not spliced into their parent rule.

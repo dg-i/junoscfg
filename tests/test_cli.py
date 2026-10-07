@@ -18,7 +18,7 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.6.8" in result.output
+        assert "0.6.9" in result.output
 
     def test_no_mode_shows_help(self) -> None:
         runner = CliRunner()
