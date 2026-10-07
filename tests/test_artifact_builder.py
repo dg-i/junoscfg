@@ -6,7 +6,13 @@ import json
 import tempfile
 from pathlib import Path
 
-from junoscfg.validate.artifact_builder import ArtifactBuilder
+from junoscfg.validate.artifact_builder import (
+    ArtifactBuilder,
+    read_structure_tree,
+    write_structure_tree,
+)
+from junoscfg.validate.grammar_generator import generate_lark_grammar
+from junoscfg.validate.schema_node import Combinator, SchemaNode
 
 SAMPLE_XSD = """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -118,3 +124,100 @@ class TestArtifactBuilder:
             artifacts = builder.build_from_xsd(SAMPLE_XSD, new_dir)
             assert new_dir.exists()
             assert len(artifacts) == 5
+
+
+def _rich_tree() -> SchemaNode:
+    """A tree touching every field the structure tree format carries."""
+    vlan_id = SchemaNode(name="vlan-id", is_leaf=True, enums=["none", "vlan-id"])
+    vlan_id.flags.update({"nokeyword", "freeform-nk"})
+
+    unit = SchemaNode(
+        name="unit",
+        is_list=True,
+        children={"vlan-id": vlan_id, "mtu": SchemaNode(name="mtu", is_leaf=True)},
+    )
+    interface = SchemaNode(name="interface", is_list=True, children={"unit": unit})
+    interface.flags.add("nokeyword")
+    interfaces = SchemaNode(name="interfaces", children={"interface": interface})
+    interfaces.flags.add("transparent:interface")
+
+    name_leaf = SchemaNode(
+        name="name",
+        is_leaf=True,
+        is_mandatory=True,
+        pattern="^[a-z]+$",
+        type_ref="string-type",
+    )
+    term = SchemaNode(name="term", is_list=True, children={"name": name_leaf})
+    term.flags.update({"oneliner", "positional-key", "flat-entry:k:0"})
+
+    negated = SchemaNode(name="not-this", is_leaf=True, pattern="^bad$", pattern_negated=True)
+    extras = SchemaNode(name="extras", children={"not-this": negated, "term": term})
+    extras.flags.update({"transparent-list-key", "positional-key-flat", "flat-dict"})
+
+    return SchemaNode(
+        name="configuration",
+        children={"interfaces": interfaces, "extras": extras},
+    )
+
+
+class TestStructureTreeRoundTrip:
+    """`read_structure_tree` is the inverse of `write_structure_tree`.
+
+    A grammar can only be rebuilt from the bundled artifacts if this holds;
+    the XSD dump the artifacts came from is not in the repository.
+    """
+
+    @staticmethod
+    def _round_trip(tree: SchemaNode) -> SchemaNode:
+        with tempfile.TemporaryDirectory() as d:
+            path = str(Path(d) / "tree.json")
+            write_structure_tree(tree, path)
+            return read_structure_tree(path)
+
+    def test_grammar_is_identical(self) -> None:
+        """What this is for: the rebuilt tree generates the same grammar."""
+        tree = _rich_tree()
+        assert generate_lark_grammar(self._round_trip(tree)) == generate_lark_grammar(tree)
+
+    def test_every_carried_field_survives(self) -> None:
+        back = self._round_trip(_rich_tree())
+
+        iface = back.children["interfaces"].children["interface"]
+        assert iface.is_list and "nokeyword" in iface.flags
+        assert "transparent:interface" in back.children["interfaces"].flags
+
+        vlan = iface.children["unit"].children["vlan-id"]
+        assert vlan.is_leaf and vlan.enums == ["none", "vlan-id"]
+        assert vlan.flags == {"nokeyword", "freeform-nk"}
+
+        term = back.children["extras"].children["term"]
+        assert term.flags == {"oneliner", "positional-key", "flat-entry:k:0"}
+        name = term.children["name"]
+        assert name.is_mandatory and name.pattern == "^[a-z]+$"
+        assert name.type_ref == "string-type"
+
+        negated = back.children["extras"].children["not-this"]
+        assert negated.pattern == "^bad$" and negated.pattern_negated
+
+        extras = back.children["extras"]
+        assert extras.flags == {"transparent-list-key", "positional-key-flat", "flat-dict"}
+
+    def test_the_three_fields_the_format_drops(self) -> None:
+        """Pinned so nobody reads this tree as a faithful copy.
+
+        `_serialize_node` writes none of these, so the loader cannot restore
+        them. The docstring of `read_structure_tree` says the same.
+        """
+        tree = SchemaNode(name="configuration")
+        tree.children["seq"] = SchemaNode(name="seq", combinator=Combinator.SEQUENCE)
+        tree.children["keyed"] = SchemaNode(name="keyed", is_key=True, is_leaf=True)
+        presence_with_children = SchemaNode(name="groups", is_presence=True)
+        presence_with_children.children["g"] = SchemaNode(name="g", is_leaf=True)
+        tree.children["groups"] = presence_with_children
+
+        back = self._round_trip(tree)
+
+        assert back.children["seq"].combinator is Combinator.CHOICE
+        assert back.children["keyed"].is_key is False
+        assert back.children["groups"].is_presence is False

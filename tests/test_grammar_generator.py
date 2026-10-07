@@ -174,31 +174,54 @@ class TestRuleNamesAreValidLark:
             assert pattern.match(_safe_rule_name(name)), name
 
 
+def _bundled_dir() -> Path:
+    import junoscfg.validate as validate_pkg
+
+    return Path(validate_pkg.__file__).parent / "data"
+
+
 class TestBundledGrammarCompiles:
     """The shipped grammar must be loadable, or set validation does nothing.
 
-    While it does not compile, `junoscfg -i set -v` reports "Error loading
-    validation artifacts" — on a valid and an invalid config alike. Structured
-    input is affected too: JunosValidator builds StructuredValidator around the
-    same SetValidator. JSON and YAML validation are unaffected; they do not use
-    this grammar.
+    It did not, from the 24.4 migration until the artefact was rebuilt: both
+    `junoscfg -i set -v` and `-i structured -v` reported "Error loading
+    validation artifacts" on a valid and an invalid config alike, because
+    JunosValidator builds StructuredValidator around the same SetValidator.
+    JSON and YAML validation never used this grammar.
     """
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "the bundled grammar predates the _safe_rule_name fix and has two "
-            "`start:` rules; regenerate the artifacts from a device dump to "
-            "clear this, then delete the xfail"
-        ),
-    )
     def test_bundled_grammar_loads(self) -> None:
         import lark
 
-        import junoscfg.validate as validate_pkg
-
-        grammar = Path(validate_pkg.__file__).parent / "data" / "junos-set.lark"
+        grammar = _bundled_dir() / "junos-set.lark"
         lark.Lark(grammar.read_text(encoding="utf-8"), start="start")
+
+
+class TestBundledGrammarIsReproducible:
+    """The shipped grammar is what the generator makes from the shipped tree.
+
+    `ARCHITECTURE.md` section 8 forbids hand-editing a generated artefact, so
+    there has to be a way to tell. The XSD dump the artefacts came from is not
+    in the repository, so the grammar is rebuilt from `junos-structure-tree
+    .json` instead — which produces, on a real 25.2R2 tree, a grammar differing
+    from the XSD-built one in a single token. See `read_structure_tree`.
+
+    To rebuild it::
+
+        from junoscfg.validate.artifact_builder import read_structure_tree
+        from junoscfg.validate.grammar_generator import write_lark_grammar
+
+        root = read_structure_tree(".../data/junos-structure-tree.json")
+        write_lark_grammar(root, ".../data/junos-set.lark")
+    """
+
+    def test_bundled_grammar_matches_its_structure_tree(self) -> None:
+        from junoscfg.validate.artifact_builder import read_structure_tree
+
+        data = _bundled_dir()
+        rebuilt = generate_lark_grammar(read_structure_tree(data / "junos-structure-tree.json"))
+        shipped = (data / "junos-set.lark").read_text(encoding="utf-8")
+        assert rebuilt.strip() == shipped.strip()
 
 
 def _parses(root: SchemaNode, command: str) -> bool:
@@ -322,10 +345,21 @@ class TestContainerMayBeSetBare:
 
 
 class TestListEntryTakesSiblingsOnOneLine:
-    """Several settings may follow one list entry name on a single line.
+    """A list entry name may be followed by one setting, not several.
 
-    `set system ntp server 198.51.100.1 version 4 prefer` is one command, so a
-    named list repeats its alternatives rather than accepting just one.
+    `set system ntp server 198.51.100.1 version 4 prefer` is a valid command
+    this grammar rejects. Accepting it needs `(alts)*` where the rule has
+    `(alts)?`, and that repetition makes the grammar ambiguous enough to cost
+    228 ms a line against 4 ms: a 5,000-line configuration would take 19
+    minutes to validate instead of 18 seconds. Rejecting a few valid lines
+    beats a validator nobody can run on a real config.
+
+    The repetition also let a bare `VALUE` absorb any run of unknown tokens,
+    which is why `TestUnknownTokensInsideANamedList` passes now.
+
+    Measured on the bundled 24.4R0 tree at 61, 244 and 976 lines. Lark's
+    `~0..n` range is not a middle way: it expands combinatorially and does not
+    finish compiling.
     """
 
     @staticmethod
@@ -343,25 +377,33 @@ class TestListEntryTakesSiblingsOnOneLine:
             children={"ntp": SchemaNode(name="ntp", children={"server": server})},
         )
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "one continuation per list entry: the repetition that would accept "
+            "this costs 228 ms a line against 4 ms"
+        ),
+    )
     def test_two_siblings_after_the_entry_name(self) -> None:
         assert _parses(self._tree(), "set ntp server 198.51.100.1 version 4 prefer")
+
+    def test_one_setting_after_the_entry_name(self) -> None:
+        assert _parses(self._tree(), "set ntp server 198.51.100.1 version 4")
 
     def test_entry_name_alone(self) -> None:
         assert _parses(self._tree(), "set ntp server 198.51.100.1")
 
 
 class TestUnknownTokensInsideANamedList:
-    """A named list holding a nokeyword leaf accepts unknown tokens.
+    """A named list holding a nokeyword leaf rejects unknown tokens.
 
-    The grammar is structural: a nokeyword leaf becomes a bare ``VALUE``, and
-    inside a named list's repetition that matches any run of tokens. So
-    ``set interfaces ge-0/0/0 bogus-thing 5`` parses, because ``interface``
+    The grammar is structural: a nokeyword leaf becomes a bare ``VALUE``. While
+    a named list repeated its alternatives that matched any run of tokens, so
+    ``set interfaces ge-0/0/0 bogus-thing 5`` parsed, because ``interface``
     holds the nokeyword leaf ``enable-disable``.
 
-    This is the cost of the repetition that
-    ``TestListEntryTakesSiblingsOnOneLine`` needs. Hoisting the bare value to a
-    single optional slot closes most of it, but rejected two commands the
-    project's own corpus treats as valid, so it is recorded rather than taken.
+    Closed by giving a named list one continuation rather than a repetition;
+    see ``TestListEntryTakesSiblingsOnOneLine`` for what that cost.
     """
 
     @staticmethod
@@ -382,12 +424,5 @@ class TestUnknownTokensInsideANamedList:
     def test_known_element_still_parses(self) -> None:
         assert _parses(self._tree(), "set interfaces ge-0/0/0 mtu 9192")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "a nokeyword leaf becomes a bare VALUE, and a named list's "
-            "repetition lets it match any run of unknown tokens"
-        ),
-    )
     def test_unknown_element_is_rejected(self) -> None:
         assert not _parses(self._tree(), "set interfaces ge-0/0/0 bogus-thing 5")

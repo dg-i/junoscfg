@@ -144,7 +144,16 @@ def generate_lark_grammar(root: SchemaNode) -> str:
         if info.is_named_list:
             # Named list: VALUE captures the entry name. Only list nodes reach
             # this rule name, so the slot can no longer be merged away.
-            lines.append(f"{rule_name}: VALUE ({body})*")
+            #
+            # One continuation, not a repetition. `(...)*` here would let a
+            # line carry several settings after the entry name --
+            # `set system ntp server 198.51.100.1 version 4 prefer` -- but it
+            # makes the grammar ambiguous enough to cost 228 ms a line against
+            # 4 ms, so a 5,000-line configuration takes 19 minutes instead of
+            # 18 seconds. It also let a bare VALUE alternative absorb any run
+            # of unknown tokens. Lark's `~0..n` range is not a middle way: it
+            # expands combinatorially and does not finish compiling.
+            lines.append(f"{rule_name}: VALUE ({body})?")
         else:
             lines.append(f"{rule_name}: {body}")
 

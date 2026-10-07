@@ -318,3 +318,83 @@ def write_structure_tree(root: SchemaNode, output_path: str) -> None:
     with open(output_path, "w") as f:
         json.dump(data, f, separators=(",", ":"))
         f.write("\n")
+
+
+# Flags the structure tree stores as a plain boolean key, in both directions.
+_BOOL_FLAG_KEYS = {
+    "nk": "nokeyword",
+    "o": "oneliner",
+    "tk": "transparent-list-key",
+    "pk": "positional-key",
+    "pkf": "positional-key-flat",
+    "fd": "flat-dict",
+    "frnk": "freeform-nk",
+}
+
+
+def _deserialize_node(
+    name: str,
+    d: dict[str, Any],
+    enums: list[list[str]],
+    patterns: list[str],
+) -> SchemaNode:
+    """Rebuild one SchemaNode from its compact dict. Inverse of _serialize_node."""
+    node = SchemaNode(name=name)
+
+    node.is_leaf = bool(d.get("l"))
+    node.is_presence = bool(d.get("p"))
+    node.is_list = bool(d.get("L")) or bool(d.get("ll"))
+    node.is_mandatory = bool(d.get("m"))
+    node.type_ref = d.get("tr")
+
+    if "e" in d:
+        node.enums = list(enums[d["e"]])
+    if "r" in d:
+        stored = patterns[d["r"]]
+        node.pattern_negated = stored.startswith("!")
+        node.pattern = stored[1:] if node.pattern_negated else stored
+
+    for key, flag in _BOOL_FLAG_KEYS.items():
+        if d.get(key):
+            node.flags.add(flag)
+    if "t" in d:
+        node.flags.add(f"transparent:{d['t']}")
+    if "fe" in d:
+        node.flags.add(f"flat-entry:{d['fe']['k']}:{d['fe']['p']}")
+
+    for child_name, child in (d.get("c") or {}).items():
+        node.children[child_name] = _deserialize_node(child_name, child, enums, patterns)
+
+    return node
+
+
+def read_structure_tree(path: str | Path) -> SchemaNode:
+    """Rebuild a SchemaNode tree from a structure tree artifact.
+
+    The inverse of :func:`write_structure_tree`, so a grammar can be rebuilt
+    from the bundled artifacts when the XSD dump they came from is no longer
+    to hand. :func:`junoscfg.validate.grammar_generator.generate_lark_grammar`
+    reads only ``name``, ``children``, ``is_leaf``, ``is_list``,
+    ``is_presence`` and ``flags``, all of which the format carries.
+
+    Three things it does not carry, because ``_serialize_node`` never writes
+    them. Do not use this tree where they matter:
+
+    - ``combinator``, which every node gets back as ``Combinator.CHOICE``.
+    - ``is_key``, which comes back ``False``.
+    - ``is_presence`` on a node that has children. The writer stores ``p``
+      only for a childless node, so such a node returns as a plain container.
+      In 24.4R0 that is ``groups``, and it is the one place a grammar rebuilt
+      from this tree differs from one built from the XSD.
+
+    Args:
+        path: Path to a ``junos-structure-tree.json`` artifact.
+
+    Returns:
+        The tree rooted at ``configuration``.
+    """
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return _deserialize_node(
+        "configuration", data, data.get("_enums", []), data.get("_patterns", [])
+    )

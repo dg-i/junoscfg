@@ -54,15 +54,23 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 ### Set Commands
 
-!!! bug "Not working in this release"
-    The bundled `junos-set.lark` does not load — it carries two `start:` rules,
-    so every call raises `SchemaLoadError` and the CLI reports "Error loading
-    validation artifacts". Structured validation uses the same grammar and is
-    affected identically. Converting to and from set format is unaffected;
-    only validation is. The generator itself is repaired — a grammar rebuilt
-    from the bundled schema tree accepts every line of `examples/router1.set`
-    — but the artefact shipped in this package predates the repair, and
-    rebuilding it needs a device dump at the bundled release.
+!!! warning "Structural only, and it rejects some valid configuration"
+    Set validation checks *shape*, not values: every leaf accepts any token.
+    It also over-rejects. Measured against 113 set commands taken from this
+    repository's own tests, 96 are accepted. The known causes:
+
+    - **One setting per list entry, per line.** `set system ntp server
+      198.51.100.1 version 4 prefer` is rejected; write one setting per line.
+      Accepting several would make a 5,000-line configuration take about 19
+      minutes to validate instead of about 18 seconds, so it is deliberate.
+    - **`vlan-id`** is marked in the bundled schema as taking no keyword, so
+      `set interfaces ge-0/0/1 unit 0 vlan-id 100` is rejected. A schema-fix
+      defect, not a grammar one.
+    - **`set groups ...`** is rejected beyond a bare `set groups`.
+
+    Loading the grammar costs about 5 seconds, once per process, and then
+    about 4 ms per line. Conversion to and from set format does not use the
+    grammar and is unaffected by any of this.
 
 ```python
 from junoscfg import validate_set
@@ -72,7 +80,7 @@ result = validate_set("set system host-name router1\nset system domain-name exam
 
 ### Structured (Curly-Brace)
 
-Uses the same Lark grammar as set validation, so the bug above applies here too.
+Converts to set commands and validates those, so the limitations above apply here too.
 
 ```python
 from junoscfg import validate_structured

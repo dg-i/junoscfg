@@ -174,6 +174,32 @@ The package ships with pre-generated artifacts in `src/junoscfg/validate/data/`,
 generated from the Junos 24.4R0 XSD. These are used by default when no custom
 artifacts are specified.
 
+### Rebuilding the grammar without a dump
+
+The 24.4R0 dump the bundled artifacts came from is not in the repository, so
+`junos-set.lark` is rebuilt from `junos-structure-tree.json` instead of from
+the XSD:
+
+```python
+from junoscfg.validate.artifact_builder import read_structure_tree
+from junoscfg.validate.grammar_generator import write_lark_grammar
+
+data = "src/junoscfg/validate/data"
+write_lark_grammar(read_structure_tree(f"{data}/junos-structure-tree.json"),
+                   f"{data}/junos-set.lark")
+```
+
+`read_structure_tree` is the inverse of `write_structure_tree` and restores
+every field the format carries. It cannot restore `combinator`, `is_key`, or
+`is_presence` on a node that has children, because the writer stores none of
+them — see its docstring. Only the last of the three reaches the grammar: on a
+real 25.2R2 tree the rebuilt grammar differs from the XSD-built one in a single
+token, `groups`. `TestBundledGrammarIsReproducible` holds the shipped artifact
+to this command, so a hand-edit is caught.
+
+Regenerating everything from an XSD dump still goes through
+`junoscfg schema generate`; this path exists only for the grammar.
+
 ## Structure Tree Compact Format
 
 The `junos-structure-tree.json` uses single-letter keys for compactness:

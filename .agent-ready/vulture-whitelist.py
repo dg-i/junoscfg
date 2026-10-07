@@ -8,7 +8,9 @@
 # - `fullhelp` is a click command registered by its decorator.
 # - `types_audited`, `category`, `description` and `applies_to` are dataclass
 #   fields read by the test suite, which vulture does not scan.
-# - `json_to_yaml` and `build_from_xsd` are public API exercised by tests only.
+# - `json_to_yaml`, `build_from_xsd` and `read_structure_tree` are public API
+#   exercised by tests only. `read_structure_tree` is also the documented way to
+#   rebuild `junos-set.lark`; see docs/architecture/schema-internals.md.
 # - `ConfigStore.subtree` is genuinely unreferenced. It is public and appears in
 #   docs/api/internals/config_store.md, so removing it is an API change with a
 #   docs edit, not a phase 4 edit. Carried forward as its own change.
@@ -50,6 +52,7 @@ _.subtree  # unused method (src/junoscfg/display/config_store.py:335)
 json_to_yaml  # unused function (src/junoscfg/display/to_yaml.py:19)
 __getattr__  # unused function (src/junoscfg/validate/__init__.py:63)
 _.build_from_xsd  # unused method (src/junoscfg/validate/artifact_builder.py:84)
+read_structure_tree  # unused function (src/junoscfg/validate/artifact_builder.py:371)
 category  # unused variable (src/junoscfg/validate/xsd_fixes.py:24)
 description  # unused variable (src/junoscfg/validate/xsd_fixes.py:25)
 applies_to  # unused variable (src/junoscfg/validate/xsd_fixes.py:26)
