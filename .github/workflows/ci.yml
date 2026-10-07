@@ -9,6 +9,65 @@ env:
   OPENSPEC_TELEMETRY: "0"
 
 jobs:
+  # The tested interpreters are derived from pyproject.toml, not listed here,
+  # so supporting a new Python means adding the classifier you would add
+  # anyway. A floor that disagrees with the classifiers fails the job.
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.derive.outputs.list }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: derive
+        shell: python
+        run: |
+          import json, os, re, tomllib
+
+          with open("pyproject.toml", "rb") as handle:
+              project = tomllib.load(handle)["project"]
+
+          declared = sorted(
+              (
+                  tuple(int(part) for part in match.group(1).split("."))
+                  for classifier in project["classifiers"]
+                  if (match := re.fullmatch(r"Programming Language :: Python :: (\d+\.\d+)", classifier))
+              )
+          )
+          if not declared:
+              raise SystemExit("no 'Programming Language :: Python :: X.Y' classifiers to test")
+
+          floor = re.search(r">=\s*(\d+)\.(\d+)", project["requires-python"])
+          if not floor:
+              raise SystemExit(f"cannot read a floor from requires-python {project['requires-python']!r}")
+          expected = (int(floor.group(1)), int(floor.group(2)))
+          if declared[0] != expected:
+              raise SystemExit(
+                  f"requires-python floor is {expected[0]}.{expected[1]} but the lowest "
+                  f"classifier is {declared[0][0]}.{declared[0][1]}; they must agree"
+              )
+
+          versions = [f"{major}.{minor}" for major, minor in declared]
+          print(f"testing on: {', '.join(versions)}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(f"list={json.dumps(versions)}\n")
+
+  # The suite only. Cheap enough to run on every declared interpreter; the
+  # gates below are interpreter-independent and run once.
+  tests:
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ${{ fromJSON(needs.versions.outputs.list) }}
+    name: tests (py${{ matrix.python }})
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - run: uv run --python ${{ matrix.python }} --with pytest --with lxml --no-dev pytest tests/ -q
+
   full:
     runs-on: ubuntu-latest
     steps:
@@ -25,10 +84,8 @@ jobs:
       # origin/main fallback would resolve to nothing.
       - run: uv run --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
 
-      # Reported, never blocking: 102 errors at adoption. The deadline lives in
-      # docs/decisions/2026-10-06-adopt-mypy-strict.md, which agent-ready
-      # decisions fails once its review-by passes.
+      # Reported, never blocking: see docs/decisions/2026-10-06-adopt-mypy-strict.md
       - name: mypy (reported, not enforced)
         if: always()
         continue-on-error: true
-        run: uv run --group dev mypy
+        run: uv run --group dev mypy src tests
