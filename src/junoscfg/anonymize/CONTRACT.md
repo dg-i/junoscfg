@@ -16,9 +16,9 @@ across calls.
 - No per-password field of the original survives: not the salt, and for `$8$`
   not the IV or the tag — enforced by
   `tests/test_anonymize/test_password_rule.py::TestSaltIsNotCopied`.
-- `networks=["auto"]` silently does nothing through the Python API, because
-  `_source_text` is attached only by the CLI. Pinned, not fixed, by
-  `tests/test_characterization.py::TestNetworksAutoNoOpsThroughThePythonApi`.
+- `networks=["auto"]` needs `source_text` and says so rather than doing
+  nothing — enforced by
+  `tests/test_characterization.py::TestNetworksAutoNeedsSourceText`.
 
 ## Precedent
 

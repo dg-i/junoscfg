@@ -44,6 +44,11 @@ class AnonymizeConfig:
     preserve_prefixes: list[str] = field(default_factory=list)
     networks: list[str] = field(default_factory=list)
     network_file: str | None = None
+    # The configuration text `networks=["auto"]` scans for subnets. It is a
+    # real field because "auto" is otherwise a silent no-op: the CLI used to
+    # attach it dynamically, so a caller going through the Python API asked
+    # for auto-detection and got nothing, with no error and no warning.
+    source_text: str | None = None
     ignore_subnets: bool = False
     ignore_reserved: bool = False
     ips_in_strings: bool = False

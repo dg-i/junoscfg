@@ -329,7 +329,7 @@ def convert(
 
     # For --anonymize-networks auto: stash source text so IpRule can scan it
     if anon_config and "auto" in (anon_config.networks or []):
-        anon_config._source_text = source  # type: ignore[attr-defined]
+        anon_config.source_text = source
 
     # Convert using the unified API
     from junoscfg import convert_config
