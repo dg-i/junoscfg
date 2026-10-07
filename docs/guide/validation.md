@@ -57,15 +57,12 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 !!! warning "Structural only, and it rejects some valid configuration"
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Measured against 113 set commands taken from this
-    repository's own tests, 96 are accepted. The known causes:
+    repository's own tests, 97 are accepted. The known causes:
 
     - **One setting per list entry, per line.** `set system ntp server
       198.51.100.1 version 4 prefer` is rejected; write one setting per line.
       Accepting several would make a 5,000-line configuration take about 19
       minutes to validate instead of about 18 seconds, so it is deliberate.
-    - **`vlan-id`** is marked in the bundled schema as taking no keyword, so
-      `set interfaces ge-0/0/1 unit 0 vlan-id 100` is rejected. A schema-fix
-      defect, not a grammar one.
     - **`set groups ...`** is rejected beyond a bare `set groups`.
 
     Loading the grammar costs about 5 seconds, once per process, and then

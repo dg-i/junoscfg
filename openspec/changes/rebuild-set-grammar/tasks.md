@@ -6,6 +6,8 @@
 - [x] 1.2 `TestBundledGrammarIsReproducible`: the shipped artefact equals what
   the generator makes from the shipped structure tree.
 - [x] 1.3 Drop the `xfail` from `TestBundledGrammarCompiles`.
+- [x] 1.5 `TestFreeformNokeywordKeepsItsKeyword`, with a control showing a
+  plain `nokeyword` leaf still suppresses its keyword.
 - [x] 1.4 Record the one-continuation trade in
   `TestListEntryTakesSiblingsOnOneLine`, and drop the `xfail` from
   `TestUnknownTokensInsideANamedList`, which the same change closes.
@@ -14,7 +16,8 @@
 
 - [x] 2.1 `read_structure_tree` and `_deserialize_node`.
 - [x] 2.2 A named list emits `VALUE (alts)?` rather than `VALUE (alts)*`.
-- [x] 2.3 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
+- [x] 2.3 A `freeform-nk` leaf keeps its keyword.
+- [x] 2.4 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
 
 ## 3. Verification
 
@@ -27,7 +30,10 @@
 - [x] 3.3 `junoscfg -v` on set and structured input: `examples/router1.set`
   reports the `vlan-id` line, `set system bogus-element value` is rejected with
   its line number and exit 1.
-- [x] 3.4 113 set commands from this repository's tests: 96 accepted, and all
-  nine adversarial commands rejected.
-- [x] 3.5 The Ansible collection's 33 tests pass and its four filters produce
+- [x] 3.4 113 set commands from this repository's tests: 97 accepted, and all
+  nine adversarial commands rejected. Two of the sixteen rejections are
+  commands that should be rejected.
+- [x] 3.5 `examples/router1.set` and `router1.conf` both validate clean, after
+  the `freeform-nk` fix; the `vlan-id` line was the only failure.
+- [x] 3.6 The Ansible collection's 33 tests pass and its four filters produce
   byte-identical output; it constructs no `SetValidator`.

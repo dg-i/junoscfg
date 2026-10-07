@@ -1,0 +1,1 @@
+Set validation no longer rejects `vlan-id` and `vlan-name`. Both carry the schema's `nokeyword` flag purely so their values validate as freeform, and the grammar generator read it as "the keyword is not written" — which rejected every VLAN-bearing configuration.

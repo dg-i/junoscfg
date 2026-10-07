@@ -233,8 +233,14 @@ def _child_reference(name: str, node: SchemaNode) -> str:
     if node.is_leaf:
         if name in _QUOTED_FIELDS:
             return f"{keyword} QUOTED_OR_VALUE"
-        if "nokeyword" in node.flags:
+        if "nokeyword" in node.flags and "freeform-nk" not in node.flags:
             return "VALUE"  # No keyword, just a value
+        # `freeform-nk` marks a node carrying `nokeyword` only so its value is
+        # validated as freeform; `_fix_freeform_nk_keys` says it is still
+        # "treated as a normal keyword in conversion". Reading the bare
+        # `nokeyword` here rejected `set interfaces ge-0/0/1 unit 0 vlan-id
+        # 100`, which is every VLAN-bearing configuration. In 24.4R0 the flag
+        # is on `vlan-id` and `vlan-name` only.
         return f"{keyword} VALUE"
 
     # Presence containers (no value)

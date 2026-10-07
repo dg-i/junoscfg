@@ -21,6 +21,11 @@ from, which is not in the repository.
   seconds — because the repetition is ambiguous and lets a bare `VALUE` absorb
   any run of tokens. Lark's `~0..n` range is not a middle way: it expands
   combinatorially and does not finish compiling.
+- A `freeform-nk` leaf keeps its keyword. The flag marks a node carrying
+  `nokeyword` only so its value is validated as freeform — `vlan-id` and
+  `vlan-name` — which `_fix_freeform_nk_keys` says is "treated as a normal
+  keyword in conversion". Reading the bare `nokeyword` rejected every
+  VLAN-bearing configuration, `examples/router1.set` among them.
 - `TestBundledGrammarIsReproducible` holds the shipped artefact to the command
   that builds it, which is what `ARCHITECTURE.md` section 8 needs to be
   checkable. `TestBundledGrammarCompiles` loses its `xfail`.
@@ -38,19 +43,15 @@ No requirement changes, so `.openspec.yaml` sets `skip_specs: true`.
 ## Non-goals
 
 - The over-rejection that remains. Of 113 set commands taken from this
-  repository's tests, 96 are accepted; two of the rest should be rejected and
-  the others are the one-continuation rule, `vlan-id`, and `set groups`.
-  Documented in `docs/guide/validation.md`, not fixed.
-- `vlan-id`: `_fix_vlan_id_freeform` marks every one nokeyword, so the grammar
-  expects no keyword where a set command writes one. Correcting it would change
-  the structure tree, which `set_input.py` reads in five places for conversion,
-  and the tree cannot be rebuilt to verify that without a 24.4R0 dump.
+  repository's tests, 97 are accepted and two of the rest should be rejected,
+  leaving 14 the one-continuation rule and `set groups` explain. Documented in
+  `docs/guide/validation.md`, not fixed.
 - Regenerating the other four artefacts. Only the grammar is rebuilt; the
   schema version and every conversion artefact are untouched.
 
 ## Impact
 
 `src/junoscfg/validate/` and `data/junos-set.lark`, which grows 734 KB to 761
-KB. `junoscfg -v -i set` goes from exit 3 and no validation to a 5.3s run that
-reports real errors. Nothing on the conversion path changes, and the Ansible
+KB. `junoscfg -v -i set` goes from exit 3 and no validation to a 4.3s run that
+reports real errors, and `examples/router1.set` validates clean. Nothing on the conversion path changes, and the Ansible
 collection never constructs a `SetValidator`.

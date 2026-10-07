@@ -426,3 +426,31 @@ class TestUnknownTokensInsideANamedList:
 
     def test_unknown_element_is_rejected(self) -> None:
         assert not _parses(self._tree(), "set interfaces ge-0/0/0 bogus-thing 5")
+
+
+class TestFreeformNokeywordKeepsItsKeyword:
+    """`freeform-nk` carries `nokeyword` for validation, not for syntax.
+
+    `_fix_freeform_nk_keys` sets it on `vlan-id` and `vlan-name`, which "have
+    the nk flag for freeform validation but should be treated as normal
+    keywords in conversion". Reading the bare `nokeyword` rejected
+    `set interfaces ge-0/0/1 unit 0 vlan-id 100` — every VLAN-bearing config,
+    and a line of `examples/router1.set`.
+    """
+
+    @staticmethod
+    def _tree(freeform: bool) -> SchemaNode:
+        vlan = SchemaNode(name="vlan-id", is_leaf=True)
+        vlan.flags.add("nokeyword")
+        if freeform:
+            vlan.flags.add("freeform-nk")
+        unit = SchemaNode(name="unit", is_list=True, children={"vlan-id": vlan})
+        return SchemaNode(name="configuration", children={"unit": unit})
+
+    def test_freeform_nk_leaf_takes_its_keyword(self) -> None:
+        assert _parses(self._tree(freeform=True), "set unit 0 vlan-id 100")
+
+    def test_plain_nokeyword_leaf_does_not(self) -> None:
+        """Control: without the flag the keyword is suppressed, as before."""
+        assert not _parses(self._tree(freeform=False), "set unit 0 vlan-id 100")
+        assert _parses(self._tree(freeform=False), "set unit 0 100")
