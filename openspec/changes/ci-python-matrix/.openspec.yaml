@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: surface
+domains: [conversion]
+skip_specs: true
+removes:
+  - "none; this adds CI coverage and removes nothing"
