@@ -485,3 +485,48 @@ class TestAnyLeafValueMayBeQuoted:
 
     def test_an_unquoted_value_still_parses(self) -> None:
         assert _parses(self._tree(), "set system host-name r1")
+
+
+class TestPolicyExpressionIsOneValue:
+    """`from policy (( A && ! B ) || ( ! C && D ))` is a single value.
+
+    A device carries it as one opaque string --
+    ``"policy": ["(( A && ! B ) || ( ! C && D ))"]`` -- and junoscfg converts
+    it to exactly that, so conversion was already right. Only the grammar was
+    wrong: ``VALUE`` is ``/\\S+/`` and stops at the first space, so 33 of the
+    75 lines still rejected across three real devices were this one shape.
+
+    Confirmed against the device's own ``| display json``, which is the only
+    thing that could settle whether Junos keeps the expression opaque or
+    structured.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        policy = SchemaNode(name="policy", is_leaf=True)
+        term = SchemaNode(
+            name="term",
+            is_list=True,
+            children={"from": SchemaNode(name="from", children={"policy": policy})},
+        )
+        statement = SchemaNode(name="policy-statement", is_list=True, children={"term": term})
+        return SchemaNode(
+            name="configuration",
+            children={
+                "policy-options": SchemaNode(
+                    name="policy-options", children={"policy-statement": statement}
+                )
+            },
+        )
+
+    def test_an_expression_parses(self) -> None:
+        assert _parses(
+            self._tree(),
+            "set policy-options policy-statement P term T from policy "
+            "(( A && ! B ) || ( ! C && D ))",
+        )
+
+    def test_a_plain_name_still_parses(self) -> None:
+        assert _parses(
+            self._tree(), "set policy-options policy-statement P term T from policy PLAIN"
+        )

@@ -8764,7 +8764,8 @@ SET: "set"
 DEACTIVATE: "deactivate"
 VALUE: /\S+/
 QUOTED: /"[^"]*"/
-QUOTED_OR_VALUE: QUOTED | VALUE
+EXPRESSION: /\([^\n]*\)/
+QUOTED_OR_VALUE: QUOTED | EXPRESSION | VALUE
 
 // Whitespace handling
 %import common.WS

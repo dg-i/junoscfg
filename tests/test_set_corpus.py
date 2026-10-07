@@ -36,11 +36,9 @@ CORRECTLY_REJECTED = {
 #   siblings  more than one setting after a list entry name, on one line
 #   merged    a rule merged from several tree positions offers one choice
 #   brackets  a `[ a b ]` value list; VALUE is /\S+/, so `[` is its own token
-#   algebra   policy expressions, `( a && ! b )`
 OVER_REJECTED = {
     "set groups foo snmp location": "merged",
     "set policy-options community FOO members": "brackets",
-    "set protocols bgp group ibgp import ( pol-a && ! pol-b )": "algebra",
     "set protocols bgp traceoptions file bgp-log size 10m files 10": "merged",
     "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5": "siblings",
     "set system location dc-a": "merged",

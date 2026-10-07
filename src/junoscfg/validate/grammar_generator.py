@@ -173,7 +173,14 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     lines.append('DEACTIVATE: "deactivate"')
     lines.append("VALUE: /\\S+/")
     lines.append('QUOTED: /"[^"]*"/')
-    lines.append("QUOTED_OR_VALUE: QUOTED | VALUE")
+    # A policy expression is one value spanning several tokens:
+    # `from policy (( A && ! B ) || ( ! C && D ))`. A device carries it as a
+    # single opaque string -- `"policy": ["(( A && ! B ) || ( ! C && D ))"]` --
+    # and junoscfg converts it to exactly that, so conversion was already
+    # right and only the grammar was wrong: VALUE is /\S+/ and stops at the
+    # first space. Confirmed against a device's own `| display json`.
+    lines.append("EXPRESSION: /\\([^\\n]*\\)/")
+    lines.append("QUOTED_OR_VALUE: QUOTED | EXPRESSION | VALUE")
     lines.append("")
     lines.append("// Whitespace handling")
     lines.append("%import common.WS")

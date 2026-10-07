@@ -2,34 +2,34 @@
 
 Running the downstream `dgi/junos-config` collection's example playbook and
 validating what it rendered gave **7 false errors per host**; the collection is
-in production, so `-v` was unusable for it. Three causes, none of which
-`examples/router1.set` or the harvested corpus exposed:
+in production, so `-v` was unusable for it. Pointing junoscfg at three real
+devices then at the stanzas they render took the total to 507 of 7,093 set
+commands rejected, every one of them valid configuration.
 
-- `set groups <name> ...` — six of the seven. `groups` carries
-  `transparent:group`, and `group` is the one transparent child of 135 in
-  24.4R0 that is not `nokeyword`, so the splice added in `grammar-named-lists`
-  missed exactly it. Its own review predicted this; the corpus confirmed it;
-  the collection renders `global_personalized_users` into it by default.
-- `set ... apply-flags replace` — `apply-flags`, `apply-macro` and
-  `apply-groups` are universal Junos meta-statements and none is in the schema.
-  Only `apply-groups` was stripped before parsing.
-- `set ... authentication ssh-ed25519 "ssh-ed25519 AAAA..."` — `ssh-ed25519` is
-  itself a list, so the key is the entry name, which is quoted and holds
-  spaces, and list rules took `VALUE`, which is `/\S+/`.
+None of it was reachable from `examples/router1.set`, which I wrote, or from
+the corpus harvested out of this repository's own tests. The shapes only exist
+on real hardware: `set groups <n> ...` is six of the seven playbook errors, and
+`groups` is the one transparent child of 135 in 24.4R0 that is not `nokeyword`
+— the review of `grammar-named-lists` predicted exactly that, and I recorded it
+as an accepted cost while the collection renders into it by default.
 
 ## What Changes
 
-- A child the parent is transparent over is spliced, as a `nokeyword` child
-  already was.
-- `_strip_apply_groups` also strips `apply-flags` and `apply-macro`.
-- A named list's entry name is `QUOTED_OR_VALUE`.
-- Every leaf value is `QUOTED_OR_VALUE`, not thirteen hard-coded names: a real
-  configuration puts a nested `set` command inside `event-options policy <n>
-  then change-configuration commands "..."`, and `VALUE` is `/\S+/`.
-- A oneliner list of bare keywords takes them on either side of the entry
-  name; nothing in the schema says which, and `community add COMM-A` and
-  `flag all detail` disagree.
-- The grammar is rebuilt.
+Seven shapes the generator read wrongly, every one found on a real device and
+none reachable from a committed fixture:
+
+- A child the parent is transparent over is spliced, as a `nokeyword` child was.
+- `_strip_apply_groups` also strips `apply-flags` and `apply-macro`, and a bare
+  `set apply-groups <n>`, which stripping reduced to `set`, is accepted.
+- A named list's entry name, and every leaf value, is `QUOTED_OR_VALUE`: a real
+  configuration nests a `set` command inside `event-options policy <n> then
+  change-configuration commands "..."`, and `VALUE` is `/\S+/`.
+- A oneliner list of bare keywords takes them on either side of the entry name;
+  `community add COMM-A` and `flag all detail` disagree and the schema is silent.
+- A presence list takes its entry name; 5,808 nodes emitted a bare keyword.
+- A parenthesised policy expression is one value. A device carries it as one
+  opaque string and junoscfg already converted it to that, so only the grammar
+  was wrong.
 
 ## Capabilities
 

@@ -1,0 +1,1 @@
+Set validation accepts a policy expression as one value. `set policy-options policy-statement P term T from policy (( A && ! B ) || ( ! C && D ))` was reported as invalid syntax because `VALUE` is `/\S+/` and stops at the first space. A device carries the expression as a single opaque string and junoscfg already converted it to exactly that, so only the grammar was wrong.
