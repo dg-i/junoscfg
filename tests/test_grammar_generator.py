@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from junoscfg.validate.grammar_generator import generate_lark_grammar
 from junoscfg.validate.schema_node import Combinator, SchemaNode
 
@@ -125,3 +129,72 @@ class TestCombinators:
         )
         grammar = generate_lark_grammar(root)
         assert "*" in grammar
+
+
+class TestRuleNamesAreValidLark:
+    """Rule names Lark will actually accept.
+
+    Two defects shipped here. A name containing an uppercase letter is read by
+    Lark as a *terminal*, and Junos has elements like
+    `jnx-tel-RE-local-interfaces-stats`. And a schema element named `start`
+    emitted a second `start:` rule, colliding with the grammar's own entry
+    point — Junos has `start-options`, so every bundled grammar since the 24.4
+    migration has been invalid.
+    """
+
+    def test_names_are_lowercased(self) -> None:
+        from junoscfg.validate.grammar_generator import _safe_rule_name
+
+        assert _safe_rule_name("jnx-tel-RE-local-interfaces-stats") == (
+            "jnx_tel_re_local_interfaces_stats"
+        )
+        assert _safe_rule_name("MixedCase") == "mixedcase"
+
+    def test_start_does_not_collide_with_the_entry_rule(self) -> None:
+        from junoscfg.validate.grammar_generator import _safe_rule_name
+
+        assert _safe_rule_name("start") == "start_element"
+        assert _safe_rule_name("start-options") == "start_options"
+
+    def test_every_generated_name_matches_larks_rule_pattern(self) -> None:
+        import re as _re
+
+        from junoscfg.validate.grammar_generator import _safe_rule_name
+
+        pattern = _re.compile(r"_?[a-z][_a-z0-9]*\Z")
+        for name in (
+            "start",
+            "ge-0/0/0",
+            "802.3ad",
+            "jnx-tel-RE-local",
+            "ieee-802.3ad",
+            "A",
+            "",
+        ):
+            assert pattern.match(_safe_rule_name(name)), name
+
+
+class TestBundledGrammarCompiles:
+    """The shipped grammar must be loadable, or set validation does nothing.
+
+    While it does not compile, `junoscfg -i set -v` reports "Error loading
+    validation artifacts" and exits 0 — on a valid and an invalid config
+    alike. JSON, YAML and structured validation are unaffected; they do not
+    use this grammar.
+    """
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "the bundled grammar predates the _safe_rule_name fix and has two "
+            "`start:` rules; regenerate the artifacts from a device dump to "
+            "clear this, then delete the xfail"
+        ),
+    )
+    def test_bundled_grammar_loads(self) -> None:
+        import lark
+
+        import junoscfg.validate as validate_pkg
+
+        grammar = Path(validate_pkg.__file__).parent / "data" / "junos-set.lark"
+        lark.Lark(grammar.read_text(encoding="utf-8"), start="start")

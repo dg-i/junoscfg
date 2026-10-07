@@ -7,8 +7,11 @@ import os
 import subprocess
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+
+from . import schema_data
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
@@ -25,8 +28,9 @@ XSD_SOURCE_DIR = PROJECT_ROOT / "private_test_data"
 def find_xsd_source() -> Path | None:
     """The device XSD to regenerate from, or None when there is none.
 
-    Checked in order: the ``JUNOSCFG_XSD_SOURCE`` environment variable, then
-    the newest ``*.xsd`` in ``private_test_data/``. This used to be a hardcoded
+    Checked in order: the ``JUNOSCFG_XSD_SOURCE`` environment variable, the
+    newest dump under ``private_test_data/schemas/``, then any ``*.xsd`` left
+    directly in ``private_test_data/``. This used to be a hardcoded
     ``../xsd/config-24.4.xsd`` beside the repository, which existed on one
     machine and nowhere else, so ``--regen-schema`` skipped silently in any
     clean clone and the message named a path nobody could act on.
@@ -34,11 +38,20 @@ def find_xsd_source() -> Path | None:
     override = os.environ.get(XSD_SOURCE_ENV)
     if override:
         return Path(override).expanduser()
+    synced = schema_data.available()
+    if synced:
+        return synced[-1]
     candidates = sorted(XSD_SOURCE_DIR.glob("*.xsd"))
     return candidates[-1] if candidates else None
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--schema",
+        action="store_true",
+        default=False,
+        help="run tests that need a device XSD dump in private_test_data/schemas/",
+    )
     parser.addoption(
         "--regen-schema",
         action="store_true",
@@ -68,9 +81,10 @@ def _regenerate_schema_artifacts(request: pytest.FixtureRequest) -> None:
         warnings.warn(
             "--regen-schema: no device XSD found, so the bundled artifacts "
             "were not regenerated. The suite ran against the committed ones. "
-            f"Put a NETCONF XSD dump in {XSD_SOURCE_DIR.relative_to(PROJECT_ROOT)}/ "
-            f"(gitignored) or set {XSD_SOURCE_ENV} to its path; "
-            "docs/guide/validation.md says how to capture one.",
+            f"Put a NETCONF XSD dump in "
+            f"{schema_data.SCHEMA_DIR.relative_to(PROJECT_ROOT)}/ (gitignored, "
+            f"as new.xsd to have it named for you) or set {XSD_SOURCE_ENV}; "
+            "private_test_data/README.md says how to capture one.",
             stacklevel=2,
         )
         return
@@ -222,3 +236,59 @@ def yaml_config(json_config: str) -> str:
     from junoscfg import Format, convert_config
 
     return convert_config(json_config, from_format=Format.JSON, to_format=Format.YAML)
+
+
+# ----------------------------------------------------------------------
+# Schema-backed tests
+#
+# A user needs no device data. A developer should sync one or more NETCONF
+# XSD dumps into private_test_data/schemas/; the tests marked `schema` then
+# run against each. Parsing one dump costs about three minutes, so they are
+# opt-in rather than part of the inner loop.
+# ----------------------------------------------------------------------
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "schema: needs a device XSD dump in private_test_data/schemas/; run with --schema",
+    )
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    if config.getoption("--schema"):
+        return
+    skip = pytest.mark.skip(reason="needs --schema and a dump in private_test_data/schemas/")
+    for item in items:
+        if "schema" in item.keywords:
+            item.add_marker(skip)
+
+
+@pytest.fixture(scope="session", params=[p.name for p in schema_data.available()])
+def schema_dump(request: pytest.FixtureRequest) -> Path:
+    """One synced device dump. Parametrised over every dump found."""
+    return schema_data.SCHEMA_DIR / str(request.param)
+
+
+@pytest.fixture(scope="session")
+def parsed_schema(schema_dump: Path) -> object:
+    """The dump parsed into a SchemaNode tree, with fixes applied.
+
+    Session-scoped and parametrised, so each dump is parsed once however many
+    tests use it.
+    """
+    from junoscfg.validate.xsd_extractor import extract_xsd
+    from junoscfg.validate.xsd_fixes import apply_all_fixes, get_fix_count
+    from junoscfg.validate.xsd_parser import parse_xsd
+
+    xsd_text = extract_xsd(schema_dump.read_text(encoding="utf-8", errors="replace"))
+    tree = parse_xsd(xsd_text)
+    applied = apply_all_fixes(tree)
+    return SimpleNamespace(
+        path=schema_dump,
+        version=schema_data.read_version(schema_dump),
+        xsd_text=xsd_text,
+        tree=tree,
+        fixes_applied=applied,
+        fixes_registered=get_fix_count(),
+    )

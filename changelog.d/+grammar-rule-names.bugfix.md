@@ -1,0 +1,1 @@
+Fix two defects in the Lark grammar generator: rule names are now lowercased, and a schema element named `start` no longer collides with the grammar's entry rule. The bundled grammar has not compiled since the 24.4 migration, so `junoscfg -i set -v` reported an error and exited 0 on every input; regenerating the artifacts completes the fix.

@@ -47,18 +47,35 @@ _NAME_ESCAPES = {
 }
 
 
+# Names the grammar itself uses. A schema element called `start` would
+# otherwise emit a second `start:` rule and the whole grammar stops compiling,
+# which is what happened: Junos has `start-options`, so every bundled grammar
+# since the 24.4 migration has been invalid and set validation silently passed
+# everything.
+_RESERVED_RULE_NAMES = {"start"}
+
+
 def _safe_rule_name(name: str) -> str:
-    """Convert an element name to a valid Lark rule name."""
+    """Convert an element name to a valid Lark rule name.
+
+    Lark reads a name containing an uppercase letter as a *terminal*, not a
+    rule, so the result is lowercased: Junos has elements such as
+    `jnx-tel-RE-local-interfaces-stats`, which produced
+    `jnx_tel_RE_local_...` and an unparseable grammar.
+    """
     if name in _NAME_ESCAPES:
         return _NAME_ESCAPES[name]
-    # Replace non-alphanumeric with underscore
-    safe = re.sub(r"[^a-zA-Z0-9]", "_", name)
+    # Replace non-alphanumeric with underscore, and lowercase: an uppercase
+    # letter anywhere makes Lark treat the name as a terminal.
+    safe = re.sub(r"[^a-zA-Z0-9]", "_", name).lower()
     # Ensure it starts with a letter
     if safe and safe[0].isdigit():
         safe = "n" + safe
     # Avoid empty names
     if not safe:
         safe = "unnamed"
+    if safe in _RESERVED_RULE_NAMES:
+        safe = f"{safe}_element"
     return safe
 
 
