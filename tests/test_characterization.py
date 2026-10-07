@@ -22,6 +22,7 @@ from junoscfg import validate_xml
 from junoscfg.anonymize import anonymize
 from junoscfg.anonymize.config import AnonymizeConfig
 from junoscfg.cli import main
+from junoscfg.display import read_artifact_text
 from junoscfg.validate import SchemaLoadError
 
 SIMPLE_XML = "<configuration><system><host-name>router1</host-name></system></configuration>"
@@ -133,11 +134,11 @@ class TestSchemaGenerateWritesOutsideTheRepo:
         assert result.exit_code == 0
         assert out.is_dir()
         assert {p.name for p in out.iterdir()} == {
-            "junos-structure-tree.json",
-            "junos-json-schema.json",
-            "junos-yaml-schema.json",
-            "junos-set.lark",
-            "junos-schema-meta.json",
+            "junos-structure-tree.json.gz",
+            "junos-json-schema.json.gz",
+            "junos-yaml-schema.json.gz",
+            "junos-set.lark.gz",
+            "junos-schema-meta.json.gz",
         }
 
     def test_existing_artifacts_are_overwritten_without_prompt(self, tmp_path: Path) -> None:
@@ -145,14 +146,16 @@ class TestSchemaGenerateWritesOutsideTheRepo:
         xsd.write_text(MINIMAL_XSD)
         out = tmp_path / "artifacts"
         out.mkdir()
-        stale = out / "junos-schema-meta.json"
-        stale.write_text("STALE")
+        stale = out / "junos-schema-meta.json.gz"
+        stale.write_text("STALE")  # deliberately not valid gzip
 
         runner = CliRunner()
         result = runner.invoke(main, ["schema", "generate", str(xsd), "-o", str(out)])
 
         assert result.exit_code == 0
-        assert stale.read_text() != "STALE"
+        # Artifacts ship compressed, so a readable one proves it was rewritten:
+        # the stale bytes are not valid gzip and would raise.
+        assert "junos_version" in read_artifact_text(stale)
 
 
 class TestNetworksAutoNeedsSourceText:

@@ -72,7 +72,9 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
       `/\S+/`, so `[` becomes a token of its own.
     - **Policy algebra**, such as `( pol-a && ! pol-b )`.
 
-    Loading the grammar costs about 4 seconds, once per process, and then
+    Artifacts ship gzipped and a set generated from your own device's XSD works
+    the same way; `--artifacts DIR` and `JUNOSCFG_ARTIFACTS` select one, for
+    conversion as well as validation. Loading the grammar costs about 4 seconds, once per process, and then
     about 4 ms per line. Conversion to and from set format does not use the
     grammar and is unaffected by any of this.
 

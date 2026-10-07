@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: feature
+zone: kernel
+domains: [conversion, validation]
+skip_specs: true
+removes:
+  - "34 MB of uncompressed artifacts in the wheel"

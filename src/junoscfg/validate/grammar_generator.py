@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 
+from junoscfg.display import open_artifact_write
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
 # Every leaf value may be quoted, so there is no list of which ones. Junos
@@ -401,6 +402,6 @@ def write_lark_grammar(root: SchemaNode, output_path: str) -> None:
         output_path: Path to write the grammar.
     """
     grammar = generate_lark_grammar(root)
-    with open(output_path, "w") as f:
+    with open_artifact_write(output_path) as f:
         f.write(grammar)
         f.write("\n")

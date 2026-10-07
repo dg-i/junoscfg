@@ -6,6 +6,7 @@ import json
 import tempfile
 from pathlib import Path
 
+from junoscfg.display import find_artifact, read_artifact_text
 from junoscfg.validate.artifact_builder import (
     _BOOL_FLAG_KEYS,
     _VALUE_FLAG_KEYS,
@@ -75,8 +76,7 @@ class TestArtifactBuilder:
         builder = ArtifactBuilder()
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts = builder.build_from_xsd(SAMPLE_XSD, tmpdir)
-            with open(artifacts["json-schema"]) as f:
-                schema = json.load(f)
+            schema = json.loads(read_artifact_text(artifacts["json-schema"]))
             assert schema["$schema"] == "http://json-schema.org/draft-07/schema#"
             assert "configuration" in schema["properties"]
 
@@ -84,8 +84,7 @@ class TestArtifactBuilder:
         builder = ArtifactBuilder()
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts = builder.build_from_xsd(SAMPLE_XSD, tmpdir)
-            with open(artifacts["yaml-schema"]) as f:
-                schema = json.load(f)
+            schema = json.loads(read_artifact_text(artifacts["yaml-schema"]))
             config = schema["properties"]["configuration"]
             assert "patternProperties" in config
 
@@ -93,7 +92,7 @@ class TestArtifactBuilder:
         builder = ArtifactBuilder()
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts = builder.build_from_xsd(SAMPLE_XSD, tmpdir)
-            grammar = Path(artifacts["lark-grammar"]).read_text()
+            grammar = read_artifact_text(artifacts["lark-grammar"])
             assert "start:" in grammar
             assert "SET" in grammar
 
@@ -101,8 +100,7 @@ class TestArtifactBuilder:
         builder = ArtifactBuilder()
         with tempfile.TemporaryDirectory() as tmpdir:
             artifacts = builder.build_from_xsd(SAMPLE_XSD, tmpdir)
-            with open(artifacts["metadata"]) as f:
-                meta = json.load(f)
+            meta = json.loads(read_artifact_text(artifacts["metadata"]))
             assert "junos_version" in meta
             assert "stats" in meta
             assert meta["stats"]["total_nodes"] > 0
@@ -264,8 +262,10 @@ class TestStructureTreeRoundTrip:
         """
         import junoscfg.validate as validate_pkg
 
-        src = Path(validate_pkg.__file__).parent / "data" / "junos-structure-tree.json"
-        original = json.loads(src.read_text(encoding="utf-8"))
+        src = find_artifact(
+            Path(validate_pkg.__file__).parent / "data", "junos-structure-tree.json"
+        )
+        original = json.loads(read_artifact_text(src))
         with tempfile.TemporaryDirectory() as d:
             out = str(Path(d) / "tree.json")
             write_structure_tree(read_structure_tree(src), out)

@@ -13,6 +13,7 @@ import json
 import re
 from typing import Any
 
+from junoscfg.display import open_artifact_write
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
 # Maximum recursion depth for schema generation.
@@ -207,6 +208,6 @@ def write_json_schema(
         variant: "json" or "yaml".
     """
     schema = generate_json_schema(root, variant)
-    with open(output_path, "w") as f:
+    with open_artifact_write(output_path) as f:
         json.dump(schema, f, separators=(",", ":"))
         f.write("\n")

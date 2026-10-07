@@ -13,6 +13,7 @@ exist, because the documentation is true and nobody checks the other half.
 
 from __future__ import annotations
 
+import gzip
 import json
 from typing import TYPE_CHECKING
 
@@ -133,3 +134,66 @@ class TestValidationSharesTheResolver:
 
         monkeypatch.setenv("JUNOSCFG_ARTIFACTS", str(tmp_path))
         assert JunosValidator()._artifacts_dir == resolve_artifacts_dir()
+
+
+class TestCompressedAndPlainBothWork:
+    """Artifacts ship gzipped; a directory generated before that still works.
+
+    The set is 34.5 MB raw and 2.1 MB compressed — the two JSON schemas alone
+    give back 20 MB at a 5% ratio, and the package goes 38 MB to 5.2 MB. But a
+    developer who ran `schema generate` last week has the plain files, so every
+    reader takes either, compressed first.
+    """
+
+    def test_the_compressed_form_is_preferred(self, tmp_path: Path) -> None:
+        (tmp_path / "a.json").write_text("plain")
+        with gzip.open(tmp_path / "a.json.gz", "wt", encoding="utf-8") as h:
+            h.write("compressed")
+        found = constants.find_artifact(tmp_path, "a.json")
+        assert found is not None
+        assert constants.read_artifact_text(found) == "compressed"
+
+    def test_a_plain_artifact_is_still_found(self, tmp_path: Path) -> None:
+        (tmp_path / "a.json").write_text("plain")
+        found = constants.find_artifact(tmp_path, "a.json")
+        assert found is not None
+        assert constants.read_artifact_text(found) == "plain"
+
+    def test_a_missing_artifact_is_none(self, tmp_path: Path) -> None:
+        assert constants.find_artifact(tmp_path, "nothing.json") is None
+
+    def test_the_writer_compresses_when_the_name_says_to(self, tmp_path: Path) -> None:
+        target = tmp_path / "out.json.gz"
+        with constants.open_artifact_write(target) as handle:
+            handle.write("payload")
+        assert target.read_bytes()[:2] == b"\x1f\x8b", "not gzip"
+        assert constants.read_artifact_text(target) == "payload"
+
+    def test_the_writer_leaves_a_plain_name_plain(self, tmp_path: Path) -> None:
+        target = tmp_path / "out.json"
+        with constants.open_artifact_write(target) as handle:
+            handle.write("payload")
+        assert target.read_text() == "payload"
+
+    def test_a_schema_tree_loads_from_either_form(self, tmp_path: Path) -> None:
+        plain = tmp_path / "plain"
+        plain.mkdir()
+        (plain / constants.STRUCTURE_TREE_NAME).write_text(json.dumps({"c": {"p": {}}}))
+        packed = tmp_path / "packed"
+        packed.mkdir()
+        with gzip.open(packed / f"{constants.STRUCTURE_TREE_NAME}.gz", "wt") as h:
+            h.write(json.dumps({"c": {"z": {}}}))
+        assert "p" in load_schema_tree(plain)["c"]
+        assert "z" in load_schema_tree(packed)["c"]
+
+
+class TestTheShippedArtifactsAreCompressed:
+    def test_every_bundled_artifact_is_gzipped(self) -> None:
+        shipped = sorted(p.name for p in constants._BUNDLED_DIR.iterdir() if p.is_file())
+        assert shipped, "no bundled artifacts"
+        assert all(n.endswith(".gz") for n in shipped), shipped
+
+    def test_the_bundled_set_stays_small(self) -> None:
+        """34.5 MB raw. A plain file slipping back in would be visible here."""
+        total = sum(p.stat().st_size for p in constants._BUNDLED_DIR.iterdir() if p.is_file())
+        assert total < 6 * 1024 * 1024, f"{total / 1048576:.1f} MB"

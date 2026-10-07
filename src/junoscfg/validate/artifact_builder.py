@@ -11,6 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from junoscfg.display import open_artifact_write, read_artifact_text
 from junoscfg.validate.grammar_generator import write_lark_grammar
 from junoscfg.validate.schema_generator import write_json_schema
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
@@ -58,17 +59,17 @@ class ArtifactBuilder:
         artifacts: dict[str, str] = {}
 
         # JSON Schema (JSON variant)
-        json_schema_path = str(output_dir / "junos-json-schema.json")
+        json_schema_path = str(output_dir / "junos-json-schema.json.gz")
         write_json_schema(schema_tree, json_schema_path, variant="json")
         artifacts["json-schema"] = json_schema_path
 
         # JSON Schema (YAML variant)
-        yaml_schema_path = str(output_dir / "junos-yaml-schema.json")
+        yaml_schema_path = str(output_dir / "junos-yaml-schema.json.gz")
         write_json_schema(schema_tree, yaml_schema_path, variant="yaml")
         artifacts["yaml-schema"] = yaml_schema_path
 
         # Structure tree (compact schema for set-to-structured conversion)
-        structure_tree_path = str(output_dir / "junos-structure-tree.json")
+        structure_tree_path = str(output_dir / "junos-structure-tree.json.gz")
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
 
@@ -79,12 +80,12 @@ class ArtifactBuilder:
         # writer cannot store `is_presence` on a node that has children, so
         # `groups` renders differently -- and `--regen-schema` would then turn
         # TestBundledGrammarIsReproducible red on a correctly regenerated set.
-        grammar_path = str(output_dir / "junos-set.lark")
+        grammar_path = str(output_dir / "junos-set.lark.gz")
         write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
         artifacts["lark-grammar"] = grammar_path
 
         # Metadata
-        meta_path = str(output_dir / "junos-schema-meta.json")
+        meta_path = str(output_dir / "junos-schema-meta.json.gz")
         _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
         artifacts["metadata"] = meta_path
 
@@ -112,15 +113,15 @@ class ArtifactBuilder:
         stats = _count_stats(schema_tree)
         artifacts: dict[str, str] = {}
 
-        json_schema_path = str(output_dir / "junos-json-schema.json")
+        json_schema_path = str(output_dir / "junos-json-schema.json.gz")
         write_json_schema(schema_tree, json_schema_path, variant="json")
         artifacts["json-schema"] = json_schema_path
 
-        yaml_schema_path = str(output_dir / "junos-yaml-schema.json")
+        yaml_schema_path = str(output_dir / "junos-yaml-schema.json.gz")
         write_json_schema(schema_tree, yaml_schema_path, variant="yaml")
         artifacts["yaml-schema"] = yaml_schema_path
 
-        structure_tree_path = str(output_dir / "junos-structure-tree.json")
+        structure_tree_path = str(output_dir / "junos-structure-tree.json.gz")
         write_structure_tree(schema_tree, structure_tree_path)
         artifacts["structure-tree"] = structure_tree_path
 
@@ -130,11 +131,11 @@ class ArtifactBuilder:
         # writer cannot store `is_presence` on a node that has children, so
         # `groups` renders differently -- and `--regen-schema` would then turn
         # TestBundledGrammarIsReproducible red on a correctly regenerated set.
-        grammar_path = str(output_dir / "junos-set.lark")
+        grammar_path = str(output_dir / "junos-set.lark.gz")
         write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
         artifacts["lark-grammar"] = grammar_path
 
-        meta_path = str(output_dir / "junos-schema-meta.json")
+        meta_path = str(output_dir / "junos-schema-meta.json.gz")
         _write_metadata(meta_path, stats, fixes_applied, _extract_junos_version(xsd_text))
         artifacts["metadata"] = meta_path
 
@@ -193,7 +194,7 @@ def _write_metadata(
         "fixes_registered": get_fix_count(),
         "stats": stats,
     }
-    with open(path, "w") as f:
+    with open_artifact_write(path) as f:
         json.dump(meta, f, indent=2)
         f.write("\n")
 
@@ -386,7 +387,7 @@ def write_structure_tree(root: SchemaNode, output_path: str) -> None:
     if state.pattern_table:
         data["_patterns"] = state.pattern_table
 
-    with open(output_path, "w") as f:
+    with open_artifact_write(output_path) as f:
         json.dump(data, f, separators=(",", ":"))
         f.write("\n")
 
@@ -468,8 +469,7 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     Returns:
         The tree rooted at ``configuration``.
     """
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
+    data = json.loads(read_artifact_text(path))
     return _deserialize_node(
         "configuration", data, data.get("_enums", []), data.get("_patterns", [])
     )

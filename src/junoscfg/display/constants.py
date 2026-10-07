@@ -8,6 +8,7 @@ name-based constants.
 
 from __future__ import annotations
 
+import gzip
 import json
 import os
 from contextlib import contextmanager
@@ -243,16 +244,63 @@ def artifacts_dir(path: str | Path | None) -> Iterator[None]:
         _override_dir = previous
 
 
+# ── Reading an artifact ──────────────────────────────────────────────
+#
+# Artifacts ship gzipped: the set is 34.5 MB raw and 2.1 MB compressed, and the
+# two JSON schemas alone give back 20 MB at a 5% ratio. Readers accept either
+# form, newest-first, because a directory a user generated before this, or by
+# hand, has the plain files and should keep working. One pair of helpers rather
+# than seven call sites each deciding — the divergence that produced
+# `resolve_artifacts_dir` started exactly that way.
+
+
+def find_artifact(directory: str | Path, name: str) -> Path | None:
+    """The gzipped artifact if present, else the plain one, else None."""
+    directory = Path(directory)
+    compressed = directory / f"{name}.gz"
+    if compressed.is_file():
+        return compressed
+    plain = directory / name
+    return plain if plain.is_file() else None
+
+
+def read_artifact_text(path: str | Path) -> str:
+    """Read an artifact, decompressing when the name says to."""
+    path = Path(path)
+    if path.suffix == ".gz":
+        with gzip.open(path, "rt", encoding="utf-8") as handle:
+            return handle.read()
+    return path.read_text(encoding="utf-8")
+
+
+@contextmanager
+def open_artifact_write(path: str | Path) -> Iterator[Any]:
+    """Open an artifact for writing, compressing when the name says to.
+
+    The pair of `read_artifact_text`: a writer names `.gz` and this does the
+    rest, so no generator has to know about compression.
+    """
+    path = Path(path)
+    if path.suffix == ".gz":
+        with gzip.open(path, "wt", encoding="utf-8") as handle:
+            yield handle
+    else:
+        with open(path, "w", encoding="utf-8") as handle:
+            yield handle
+
+
 def load_schema_tree(artifacts_dir: str | Path | None = None) -> dict[str, Any] | None:
     """Load a structure tree, cached per directory. None if it cannot be read."""
     directory = resolve_artifacts_dir(artifacts_dir)
     cached = _schema_trees.get(directory)
     if cached is not None:
         return cached
+    path = find_artifact(directory, STRUCTURE_TREE_NAME)
+    if path is None:
+        return None
     try:
-        with open(directory / STRUCTURE_TREE_NAME) as f:
-            tree = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+        tree = json.loads(read_artifact_text(path))
+    except (OSError, json.JSONDecodeError):
         return None
     _schema_trees[directory] = tree
     return tree

@@ -11,6 +11,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from junoscfg.display import find_artifact
+
 from . import jvd_data, schema_data
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -219,7 +221,7 @@ def bundled_set_validator() -> object:
     """
     from junoscfg.validate.set_validator import SetValidator
 
-    return SetValidator(ARTIFACT_DIR / "junos-set.lark")
+    return SetValidator(find_artifact(ARTIFACT_DIR, "junos-set.lark"))
 
 
 @pytest.fixture

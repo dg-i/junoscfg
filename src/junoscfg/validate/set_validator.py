@@ -25,11 +25,16 @@ produce.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from lark import Lark
 from lark.exceptions import UnexpectedInput
 
+from junoscfg.display import read_artifact_text
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SetValidator:
@@ -45,7 +50,7 @@ class SetValidator:
             SchemaLoadError: If grammar cannot be loaded.
         """
         try:
-            grammar_text = Path(grammar_path).read_text()
+            grammar_text = read_artifact_text(grammar_path)
             self._parser = Lark(grammar_text, parser="earley", propagate_positions=True)
         except Exception as e:
             raise SchemaLoadError(f"Failed to load Lark grammar: {e}") from e

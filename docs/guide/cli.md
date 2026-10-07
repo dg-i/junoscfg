@@ -45,7 +45,7 @@ keywords, or structured curly-brace blocks.
 | Option | Description |
 |--------|-------------|
 | `-v`, `--validate` | Validate configuration before converting |
-| `--artifacts PATH` | Path to validation artifacts directory |
+| `--artifacts PATH` | Schema artifacts directory, for conversion and validation alike |
 
 Use `-v` alone (without `-e`) to validate without converting.
 
@@ -447,7 +447,9 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 
 ### schema generate
 
-Generate validation artifacts from a NETCONF XSD dump.
+Generate schema artifacts from a NETCONF XSD dump. They are written
+gzipped; readers accept either form, so an older uncompressed directory still
+works.
 
 ```text
 junoscfg schema generate XSD_SOURCE -o OUTPUT_DIR

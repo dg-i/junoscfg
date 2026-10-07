@@ -1,0 +1,1 @@
+The bundled schema artifacts now ship gzipped, taking the installed package from 38 MB to 5.2 MB. Readers accept either form, so a directory of artifacts generated before this still works, and `--artifacts` pointed at one behaves as before. `junoscfg schema generate` writes the compressed form.

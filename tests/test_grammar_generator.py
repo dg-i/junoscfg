@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from junoscfg.display import find_artifact, read_artifact_text
 from junoscfg.validate.grammar_generator import generate_lark_grammar
 from junoscfg.validate.schema_node import Combinator, SchemaNode
 
@@ -196,8 +197,8 @@ class TestBundledGrammarCompiles:
     def test_bundled_grammar_loads(self) -> None:
         import lark
 
-        grammar = _bundled_dir() / "junos-set.lark"
-        lark.Lark(grammar.read_text(encoding="utf-8"), start="start")
+        grammar = find_artifact(_bundled_dir(), "junos-set.lark")
+        lark.Lark(read_artifact_text(grammar), start="start")
 
 
 class TestBundledGrammarIsReproducible:
@@ -222,8 +223,10 @@ class TestBundledGrammarIsReproducible:
         from junoscfg.validate.artifact_builder import read_structure_tree
 
         data = _bundled_dir()
-        rebuilt = generate_lark_grammar(read_structure_tree(data / "junos-structure-tree.json"))
-        shipped = (data / "junos-set.lark").read_text(encoding="utf-8")
+        rebuilt = generate_lark_grammar(
+            read_structure_tree(find_artifact(data, "junos-structure-tree.json"))
+        )
+        shipped = read_artifact_text(find_artifact(data, "junos-set.lark"))
         assert rebuilt.strip() == shipped.strip()
 
 
@@ -704,7 +707,7 @@ class TestTheApplyFixReachesARealGrammar:
         from junoscfg.validate.artifact_builder import read_structure_tree
         from junoscfg.validate.xsd_fixes import ALL_FIXES
 
-        tree = read_structure_tree(_bundled_dir() / "junos-structure-tree.json")
+        tree = read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
         fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
         assert fix.apply(tree), "the bundled tree already carries them; retire the stripper"
         return tree
@@ -712,7 +715,7 @@ class TestTheApplyFixReachesARealGrammar:
     def test_the_bundled_tree_does_not_carry_them_yet(self) -> None:
         from junoscfg.validate.artifact_builder import read_structure_tree
 
-        tree = read_structure_tree(_bundled_dir() / "junos-structure-tree.json")
+        tree = read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
         assert "apply-groups" not in tree.children
 
     def test_the_fixed_tree_builds_a_grammar_that_takes_them(self) -> None:

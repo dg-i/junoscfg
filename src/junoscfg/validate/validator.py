@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+from junoscfg.display import find_artifact, read_artifact_text, resolve_artifacts_dir
 from junoscfg.validate import SchemaLoadError, ValidationResult
 
 if TYPE_CHECKING:
@@ -31,7 +32,6 @@ class JunosValidator:
         Raises:
             SchemaLoadError: If artifacts directory does not exist.
         """
-        from junoscfg.display import resolve_artifacts_dir
 
         # One resolver for the package; see display.constants. This used to be
         # a second, independent if/elif here, and conversion had a third rule
@@ -70,8 +70,8 @@ class JunosValidator:
         if self._xml_validator is None:
             from junoscfg.validate.xml_validator import XmlValidator
 
-            xsd_path = self._artifacts_dir / "junos-validated.xsd"
-            if not xsd_path.exists():
+            xsd_path = find_artifact(self._artifacts_dir, "junos-validated.xsd")
+            if xsd_path is None:
                 raise SchemaLoadError(
                     f"XSD not found: {xsd_path}. XML validation requires a cleaned XSD artifact."
                 )
@@ -114,8 +114,8 @@ class JunosValidator:
         if self._set_validator is None:
             from junoscfg.validate.set_validator import SetValidator
 
-            grammar_path = self._artifacts_dir / "junos-set.lark"
-            if not grammar_path.exists():
+            grammar_path = find_artifact(self._artifacts_dir, "junos-set.lark")
+            if grammar_path is None:
                 raise SchemaLoadError(f"Lark grammar not found: {grammar_path}")
             self._set_validator = SetValidator(grammar_path)
         return self._set_validator.validate(source)
@@ -138,8 +138,8 @@ class JunosValidator:
             if self._set_validator is None:
                 from junoscfg.validate.set_validator import SetValidator
 
-                grammar_path = self._artifacts_dir / "junos-set.lark"
-                if not grammar_path.exists():
+                grammar_path = find_artifact(self._artifacts_dir, "junos-set.lark")
+                if grammar_path is None:
                     raise SchemaLoadError(f"Lark grammar not found: {grammar_path}")
                 self._set_validator = SetValidator(grammar_path)
             self._structured_validator = StructuredValidator(self._set_validator)
@@ -150,21 +150,20 @@ class JunosValidator:
         if self._json_yaml_validator is None:
             from junoscfg.validate.json_yaml_validator import JsonYamlValidator
 
-            json_path = self._artifacts_dir / "junos-json-schema.json"
-            yaml_path = self._artifacts_dir / "junos-yaml-schema.json"
+            json_path = find_artifact(self._artifacts_dir, "junos-json-schema.json")
+            yaml_path = find_artifact(self._artifacts_dir, "junos-yaml-schema.json")
 
             self._json_yaml_validator = JsonYamlValidator(
-                json_schema_path=json_path if json_path.exists() else None,
-                yaml_schema_path=yaml_path if yaml_path.exists() else None,
+                json_schema_path=json_path,
+                yaml_schema_path=yaml_path,
             )
 
     def _load_metadata(self) -> dict:
         """Load and cache schema metadata."""
         if self._metadata is None:
-            meta_path = self._artifacts_dir / "junos-schema-meta.json"
-            if meta_path.exists():
-                with open(meta_path) as f:
-                    self._metadata = json.load(f)
+            meta_path = find_artifact(self._artifacts_dir, "junos-schema-meta.json")
+            if meta_path is not None:
+                self._metadata = json.loads(read_artifact_text(meta_path))
             else:
                 self._metadata = {}
         return self._metadata
