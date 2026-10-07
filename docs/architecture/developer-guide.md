@@ -653,19 +653,44 @@ supplementary passes handle cases the schema walker cannot reach:
 
 ## Testing Architecture
 
-Tests are organized into three tiers with increasing cost:
+Tests are organized into tiers with increasing cost. The last two need data
+this repository cannot carry, so they are opt-in and skip by default:
 
 | Tier | Command | Duration | Purpose |
 |------|---------|----------|---------|
-| **Fast** | `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'` | ~0.5s | Unit tests, conversion tests, structural tests |
-| **Regen** | Add `--regen-schema` to fast tests | ~90s | Regenerates schema artifacts from XSD, verifies pipeline integrity |
-| **Full** | `uv run pytest tests/ -q --regen-schema` | ~90s+ | Includes slow example validation and roundtrip tests |
+| **Fast** | `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'` | ~17s | Unit tests, conversion tests, structural tests |
+| **Full** | `uv run pytest tests/ -q` | ~17s | Adds the slow example validation and roundtrip tests |
+| **Regen** | Add `--regen-schema` | ~90s | Rebuilds the schema artifacts from a device XSD |
+| **Schema** | Add `--schema` | minutes | Runs against each NETCONF dump in `private_test_data/schemas/` |
+| **Corpus** | Add `--jvd` | ~3.5min | Runs against Juniper's published jvd corpus |
+
+### The jvd corpus tier
+
+`github.com/Juniper/jvd` is Juniper's own Validated Designs: roughly 1,500
+configurations and five million lines across QFX, ACX, MX, PTX and SRX. It is
+the only broad, independent Junos corpus this project can reach, and it found
+three defects that every committed fixture, the harvested `set_corpus.txt` and
+three real device configurations had all missed.
+
+It is **cloned at test time, never vendored** — it is someone else's
+repository, it is large, and a stale copy would be worse than none:
+
+```bash
+uv run pytest tests/ -q --jvd                        # clones into private_test_data/jvd/
+JUNOSCFG_JVD_PATH=~/src/jvd uv run pytest -q --jvd   # reuse a clone you have
+```
+
+`tests/test_jvd_corpus.py` asserts thresholds rather than exact counts, because
+the corpus is upstream and will change. It also carries one guard per defect
+the corpus found, each taking its example from the corpus itself.
 
 ### When to use each tier
 
-- **During development** — Run fast tests (no `--regen-schema`)
+- **During development** — Run fast tests (no flags)
 - **Before committing** — Run with `--regen-schema` to ensure schema artifacts are current
 - **After XSD/schema changes** — Always use `--regen-schema` to regenerate `junos-structure-tree.json`
+- **After a grammar or field-validator change** — Run `--jvd`; it is where
+  false positives on real configuration show up
 
 For the full list of development commands, see the project CLAUDE.md.
 

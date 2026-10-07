@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: feature
+zone: conversion
+domains: [validation]
+skip_specs: true
+removes:
+  - "the absence of any broad independent corpus"

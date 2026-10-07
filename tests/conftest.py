@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from . import schema_data
+from . import jvd_data, schema_data
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
@@ -51,6 +51,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         default=False,
         help="run tests that need a device XSD dump in private_test_data/schemas/",
+    )
+    parser.addoption(
+        "--jvd",
+        action="store_true",
+        default=False,
+        help=(
+            "run tests against Juniper's published jvd corpus; clones it under "
+            "private_test_data/ unless JUNOSCFG_JVD_PATH names a clone"
+        ),
     )
     parser.addoption(
         "--regen-schema",
@@ -253,15 +262,23 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "schema: needs a device XSD dump in private_test_data/schemas/; run with --schema",
     )
+    config.addinivalue_line(
+        "markers",
+        "jvd: needs Juniper's jvd corpus; run with --jvd",
+    )
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    if config.getoption("--schema"):
-        return
-    skip = pytest.mark.skip(reason="needs --schema and a dump in private_test_data/schemas/")
-    for item in items:
-        if "schema" in item.keywords:
-            item.add_marker(skip)
+    if not config.getoption("--schema"):
+        skip = pytest.mark.skip(reason="needs --schema and a dump in private_test_data/schemas/")
+        for item in items:
+            if "schema" in item.keywords:
+                item.add_marker(skip)
+    if not config.getoption("--jvd"):
+        skip = pytest.mark.skip(reason="needs --jvd; clones Juniper's jvd corpus")
+        for item in items:
+            if "jvd" in item.keywords:
+                item.add_marker(skip)
 
 
 @pytest.fixture(scope="session", params=[p.name for p in schema_data.available()])
@@ -292,3 +309,25 @@ def parsed_schema(schema_dump: Path) -> object:
         fixes_applied=applied,
         fixes_registered=get_fix_count(),
     )
+
+
+# ----------------------------------------------------------------------
+# Juniper's published jvd corpus. Cloned at test time rather than vendored:
+# it is someone else's repository, it is large, and a stale copy would be
+# worse than none. Converting all of it costs about three minutes, so it is
+# opt-in like the schema tier.
+# ----------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def jvd_corpus() -> Path:
+    """The jvd checkout, cloned on first use. Skips if it cannot be had."""
+    root = jvd_data.ensure_corpus()
+    if root is None:
+        pytest.skip(
+            f"could not obtain the jvd corpus; clone {jvd_data.CLONE_URL} and set "
+            f"{jvd_data.PATH_ENV}, or check network access"
+        )
+    if not jvd_data.configs(root):
+        pytest.skip(f"no .conf files under {root}")
+    return root

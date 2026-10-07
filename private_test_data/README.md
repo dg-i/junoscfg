@@ -34,3 +34,16 @@ uv run pytest tests/test_schema_data.py --schema -k 23.2R2
 Without `--schema` those tests are skipped and the rest of the suite runs in
 full against the committed artifacts. Parsing a dump takes minutes, and the
 fixtures are parametrised over every file in `schemas/`, so narrow with `-k`.
+
+## Juniper's jvd corpus
+
+`pytest --jvd` runs the tests marked `jvd` against Juniper's published
+Validated Designs. It clones `github.com/Juniper/jvd` into `jvd/` here on first
+use, shallowly. Set `JUNOSCFG_JVD_PATH` to reuse a clone you already have:
+
+```bash
+JUNOSCFG_JVD_PATH=~/src/jvd uv run pytest tests/ -q --jvd
+```
+
+The corpus is not vendored: it is someone else's repository, about five million
+lines, and a stale copy would be worse than none.
