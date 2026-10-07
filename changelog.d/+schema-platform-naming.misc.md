@@ -1,0 +1,1 @@
+A synced device dump can now carry its platform in the filename, as `<release>-<platform>.xsd`. The platform cannot be read out of the dump — a NETCONF XSD is release-wide and names every platform Junos supports — so it is recorded at capture time from `show version`, either passed to `promote_staged` or written to `new.platform` beside the staged file.

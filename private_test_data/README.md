@@ -17,9 +17,22 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 ```
 
 Stage it as `schemas/new.xsd`; `tests/schema_data.promote_staged()` reads the
-Junos version out of it and renames it to `<version>.xsd`, appending `-2` and
-so on if that name is taken. Syncing several devices is the point — each one
-emits only the features it has, so one dump is never the whole schema.
+Junos version out of it and renames it to `<version>-<platform>.xsd`,
+appending `-2` and so on if that name is taken.
+
+**The platform cannot be read out of the dump.** A NETCONF XSD is release-wide
+— it describes everything a Junos release supports across the product line, so
+every dump names every platform (ACX, EX, MX, PTX, QFX, SRX, vMX) as enum
+values for hardware-specific configuration. Feature depth says the same:
+`unified-edge` is 1,771 nodes in both a vMX's 23.2R2 dump and the bundled
+24.4R0. So record it at capture time:
+
+```bash
+ssh router 'show version' | awk -F': *' '/^Model/ {print $2}'   > private_test_data/schemas/new.platform
+```
+
+`promote_staged()` reads that, names the file `23.2R2-S7.5-vmx.xsd`, and
+deletes the marker. Without it the name carries the release alone.
 
 `JUNOSCFG_XSD_SOURCE` overrides the location for `--regen-schema`. A legacy
 `*.xsd` directly in this directory is still found.
