@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: schema
+domains: [schema-pipeline, validation]
+skip_specs: true
+removes:
+  - "merging a named list with a same-named container"

@@ -59,9 +59,10 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     so every call raises `SchemaLoadError` and the CLI reports "Error loading
     validation artifacts". Structured validation uses the same grammar and is
     affected identically. Converting to and from set format is unaffected;
-    only validation is. Three generator defects stand between here and a
-    working grammar; one is fixed, two are pinned in
-    `tests/test_grammar_generator.py`.
+    only validation is. The generator itself is repaired — a grammar rebuilt
+    from the bundled schema tree accepts every line of `examples/router1.set`
+    — but the artefact shipped in this package predates the repair, and
+    rebuilding it needs a device dump at the bundled release.
 
 ```python
 from junoscfg import validate_set

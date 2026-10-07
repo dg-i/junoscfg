@@ -216,11 +216,12 @@ def _parses(root: SchemaNode, command: str) -> bool:
 class TestNamedListKeysSurviveRuleMerging:
     """A named list must keep its key slot even when the name is reused.
 
-    ``_collect_rules`` merges rules by name across the whole tree, so one
-    non-list node named ``user`` anywhere strips the key slot from every
-    ``user`` list. On the real schema this rejects most of a valid config:
-    every line addressing a list entry — ``interfaces ge-0/0/0``,
-    ``system login user``, ``protocols bgp group`` — fails to parse.
+    ``_collect_rules`` merges rules by name across the whole tree. It used to
+    merge a list and a plain container under one rule, and the merged rule lost
+    the entry-name slot: one non-list node named ``user`` stripped it from
+    every ``user`` list, and every line addressing a list entry stopped
+    parsing — ``interfaces ge-0/0/0``, ``system login user``,
+    ``protocols bgp group``. List nodes now get their own rule.
     """
 
     @staticmethod
@@ -262,13 +263,6 @@ class TestNamedListKeysSurviveRuleMerging:
         del tree.children["snmp"]
         assert _parses(tree, "set system login user admin uid 2000")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "_collect_rules merges rules by name across the tree, so a non-list "
-            "`user` elsewhere drops the key slot from the `user` list"
-        ),
-    )
     def test_merged_list_keeps_its_key(self) -> None:
         assert _parses(self._tree(), "set system login user admin uid 2000")
 
@@ -276,10 +270,12 @@ class TestNamedListKeysSurviveRuleMerging:
 class TestTransparentListChildrenAreSpliced:
     """A nokeyword list child must contribute its own children to the parent.
 
-    ``interfaces`` is transparent over ``interface``, which is a nokeyword
-    list. The generator reads neither the ``transparent:`` flag nor the
-    nokeyword child's subtree, so ``interfaces`` offers a bare ``VALUE`` and
-    nothing may follow the interface name.
+    ``interfaces`` holds a nokeyword ``interface`` list, so a set command names
+    no ``interface``: ``set interfaces ge-0/0/0 mtu 9192``. The generator used
+    to emit the keyword anyway, leaving ``interfaces`` offering a bare
+    ``VALUE`` with nothing allowed after the name. 24.4R0 has 534 nokeyword
+    non-leaf nodes. The fix keys on ``nokeyword``, not on the ``transparent:``
+    flag, which often names a child the node does not have.
     """
 
     @staticmethod
@@ -294,12 +290,104 @@ class TestTransparentListChildrenAreSpliced:
         interfaces.flags.add("transparent:interface")
         return SchemaNode(name="configuration", children={"interfaces": interfaces})
 
+    def test_leaf_under_transparent_list_parses(self) -> None:
+        assert _parses(self._tree(), "set interfaces ge-0/0/0 mtu 9192")
+
+
+class TestContainerMayBeSetBare:
+    """`set <path> <container>` is a complete command.
+
+    A container is brought into being by naming it, with nothing under it:
+    `set system services netconf ssh` names a container that also holds `port`
+    and `connection-limit`. The generator used to require content after every
+    container, which rejected the bare form.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        ssh = SchemaNode(
+            name="ssh",
+            children={"port": SchemaNode(name="port", is_leaf=True)},
+        )
+        return SchemaNode(
+            name="configuration",
+            children={"services": SchemaNode(name="services", children={"ssh": ssh})},
+        )
+
+    def test_bare_container(self) -> None:
+        assert _parses(self._tree(), "set services ssh")
+
+    def test_container_with_content(self) -> None:
+        assert _parses(self._tree(), "set services ssh port 830")
+
+
+class TestListEntryTakesSiblingsOnOneLine:
+    """Several settings may follow one list entry name on a single line.
+
+    `set system ntp server 198.51.100.1 version 4 prefer` is one command, so a
+    named list repeats its alternatives rather than accepting just one.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        server = SchemaNode(
+            name="server",
+            is_list=True,
+            children={
+                "version": SchemaNode(name="version", is_leaf=True),
+                "prefer": SchemaNode(name="prefer", is_presence=True),
+            },
+        )
+        return SchemaNode(
+            name="configuration",
+            children={"ntp": SchemaNode(name="ntp", children={"server": server})},
+        )
+
+    def test_two_siblings_after_the_entry_name(self) -> None:
+        assert _parses(self._tree(), "set ntp server 198.51.100.1 version 4 prefer")
+
+    def test_entry_name_alone(self) -> None:
+        assert _parses(self._tree(), "set ntp server 198.51.100.1")
+
+
+class TestUnknownTokensInsideANamedList:
+    """A named list holding a nokeyword leaf accepts unknown tokens.
+
+    The grammar is structural: a nokeyword leaf becomes a bare ``VALUE``, and
+    inside a named list's repetition that matches any run of tokens. So
+    ``set interfaces ge-0/0/0 bogus-thing 5`` parses, because ``interface``
+    holds the nokeyword leaf ``enable-disable``.
+
+    This is the cost of the repetition that
+    ``TestListEntryTakesSiblingsOnOneLine`` needs. Hoisting the bare value to a
+    single optional slot closes most of it, but rejected two commands the
+    project's own corpus treats as valid, so it is recorded rather than taken.
+    """
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        bare = SchemaNode(name="enable-disable", is_leaf=True)
+        bare.flags.add("nokeyword")
+        iface = SchemaNode(
+            name="interface",
+            is_list=True,
+            children={"mtu": SchemaNode(name="mtu", is_leaf=True), "enable-disable": bare},
+        )
+        iface.flags.add("nokeyword")
+        return SchemaNode(
+            name="configuration",
+            children={"interfaces": SchemaNode(name="interfaces", children={"interface": iface})},
+        )
+
+    def test_known_element_still_parses(self) -> None:
+        assert _parses(self._tree(), "set interfaces ge-0/0/0 mtu 9192")
+
     @pytest.mark.xfail(
         strict=True,
         reason=(
-            "generate_lark_grammar ignores transparent: flags and does not splice "
-            "a nokeyword list child's children into the parent rule"
+            "a nokeyword leaf becomes a bare VALUE, and a named list's "
+            "repetition lets it match any run of unknown tokens"
         ),
     )
-    def test_leaf_under_transparent_list_parses(self) -> None:
-        assert _parses(self._tree(), "set interfaces ge-0/0/0 mtu 9192")
+    def test_unknown_element_is_rejected(self) -> None:
+        assert not _parses(self._tree(), "set interfaces ge-0/0/0 bogus-thing 5")
