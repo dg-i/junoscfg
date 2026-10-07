@@ -1,0 +1,1 @@
+`junoscfg convert -i xml` reports an error instead of printing a Python traceback when the XML cannot be parsed. Pasting a `<configuration>` element out of the `<rpc-reply>` a device sends leaves the `junos:` namespace prefix undeclared, and lxml's exception reached the CLI unhandled.

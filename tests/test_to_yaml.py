@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 import yaml
 
 from junoscfg.display.to_yaml import json_to_yaml, xml_to_yaml
@@ -364,3 +365,33 @@ class TestLazyXmlImport:
         xml_set = convert_config(xml, from_format=Format.XML, to_format=Format.SET)
 
         assert set(yaml_set.strip().splitlines()) == set(xml_set.strip().splitlines())
+
+
+class TestInvalidXmlIsReported:
+    """Bad XML is an error, not a traceback.
+
+    A device renders `show configuration | display xml` inside an `<rpc-reply>`
+    carrying the `junos:` namespace declaration, and the `<configuration>`
+    element inside uses that prefix for its commit attributes. Pasting the
+    inner element on its own — an ordinary thing to do — leaves the prefix
+    undeclared. lxml raised straight through the CLI as a stack trace, where
+    malformed JSON and malformed XML both reported an error and exited 2.
+    """
+
+    def test_an_undeclared_namespace_prefix_is_an_error(self) -> None:
+        inner = (
+            '<configuration junos:commit-user="x">'
+            "<chassis><dump-on-panic/></chassis></configuration>"
+        )
+        with pytest.raises(ValueError, match="Invalid XML"):
+            xml_to_yaml(inner)
+
+    def test_the_same_element_inside_its_rpc_reply_converts(self) -> None:
+        """The namespace is declared on the parent, which is how a device sends it."""
+        full = (
+            '<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2/junos">'
+            '<configuration junos:commit-user="x">'
+            "<chassis><undocumented><dump-on-panic/></undocumented></chassis>"
+            "</configuration></rpc-reply>"
+        )
+        assert "dump-on-panic" in xml_to_yaml(full)

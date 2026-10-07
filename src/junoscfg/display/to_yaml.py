@@ -37,7 +37,17 @@ def xml_to_yaml(source: str | TextIO) -> str:
 
     text = source.read() if hasattr(source, "read") else str(source)  # type: ignore[union-attr]
 
-    root = _etree_mod.fromstring(text.encode())  # noqa: S320
+    try:
+        root = _etree_mod.fromstring(text.encode())  # noqa: S320
+    except _etree_mod.XMLSyntaxError as exc:
+        # A device renders `show configuration | display xml` inside an
+        # `<rpc-reply>` that carries the `junos:` namespace declaration, and
+        # the `<configuration>` element inside it uses that prefix for its
+        # commit attributes. Pasting the inner element alone -- an ordinary
+        # thing to do -- leaves the prefix undeclared, and lxml raised through
+        # the CLI as a traceback where every other input format reports an
+        # error.
+        raise ValueError(f"Invalid XML: {exc}") from exc
     config_el = find_xml_configuration(root)
     if config_el is None:
         return ""
