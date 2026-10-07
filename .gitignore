@@ -31,3 +31,4 @@ scratchpad/
 # the gitignored .claude/commands/opsx/, and break the vendored-skills,
 # caps and markdownlint globs. Keep them out of the tree.
 .agents/skills/source-command-*/
+tmp/
