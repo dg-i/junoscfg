@@ -58,7 +58,7 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Against the 116 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    100 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    104 are accepted; `tests/test_set_corpus.py` lists every rejection and
     which are correct. The causes:
 
     - **One setting per list entry, per line.** `set system ntp server
@@ -70,12 +70,10 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
       though only one setting follows the entry name.
     - **Bracket value lists** — `[ tcp udp ]` — are not tokenised; `VALUE` is
       `/\S+/`, so `[` becomes a token of its own.
-    - **`set groups ...`** beyond a bare `set groups`.
-    - **`apply-macro`**, which takes arbitrary key/value pairs, and **policy
-      algebra** such as `( pol-a && ! pol-b )`.
+    - **Policy algebra**, such as `( pol-a && ! pol-b )`.
 
     Loading the grammar costs about 4 seconds, once per process, and then
-    about 3 ms per line. Conversion to and from set format does not use the
+    about 4 ms per line. Conversion to and from set format does not use the
     grammar and is unaffected by any of this.
 
 ```python

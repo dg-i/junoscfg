@@ -33,20 +33,13 @@ CORRECTLY_REJECTED = {
 # is a limitation listed in docs/guide/validation.md; shrinking this set is
 # progress. The codes:
 #
-#   groups    `groups`/`group` is the one transparent child of 135 that is not
-#             nokeyword, so the splice keys on the wrong thing for it
 #   siblings  more than one setting after a list entry name, on one line
 #   merged    a rule merged from several tree positions offers one choice
 #   brackets  a `[ a b ]` value list; VALUE is /\S+/, so `[` is its own token
-#   freeform  `apply-macro` takes arbitrary key/value pairs
 #   algebra   policy expressions, `( a && ! b )`
 OVER_REJECTED = {
-    "set groups foo snmp location": "groups",
-    "set groups g1": "groups",
-    "set groups g1 system host-name router1": "groups",
-    "set groups re0 system host-name router1": "groups",
+    "set groups foo snmp location": "merged",
     "set policy-options community FOO members": "brackets",
-    "set policy-options policy-statement p1 apply-macro m1 key1 val1": "freeform",
     "set policy-options policy-statement p1 term 1 then community add comm-a": "siblings",
     "set protocols bgp group ibgp import ( pol-a && ! pol-b )": "algebra",
     "set protocols bgp traceoptions file bgp-log size 10m files 10": "merged",

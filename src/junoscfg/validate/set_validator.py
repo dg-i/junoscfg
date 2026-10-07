@@ -90,10 +90,21 @@ class SetValidator:
 
 
 def _strip_apply_groups(line: str) -> str:
-    """Strip apply-groups(-except) suffix from a set command."""
-    # "set ... apply-groups foo" → "set ..."
+    """Strip a trailing apply-* meta-statement from a set command.
+
+    `apply-groups`, `apply-groups-except`, `apply-flags` and `apply-macro` may
+    be attached at any level and none of them appears in the schema, so the
+    grammar has no rule for them. Only `apply-groups` was stripped, which left
+    `set protocols bgp group overlay apply-flags replace` -- a line the
+    downstream Ansible collection renders -- reported as invalid syntax.
+    """
+    # "set ... apply-groups foo"             → "set ..."
     # "set ... apply-groups-except [foo bar]" → "set ..."
+    # "set ... apply-flags replace"          → "set ..."
+    # "set ... apply-macro m1 key1 val1"     → "set ..."
     import re
 
     line = re.sub(r"\s+apply-groups(-except)?\s+(\S+|\[.*?\])\s*$", "", line)
+    line = re.sub(r"\s+apply-flags\s+(\S+|\[.*?\])\s*$", "", line)
+    line = re.sub(r"\s+apply-macro\s+\S+(\s+\S+)*\s*$", "", line)
     return line

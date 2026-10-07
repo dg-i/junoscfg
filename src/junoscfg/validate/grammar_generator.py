@@ -148,6 +148,10 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # Named list: VALUE captures the entry name. Only list nodes reach
             # this rule name, so the slot can no longer be merged away.
             #
+            # The entry name is QUOTED_OR_VALUE, not VALUE: `ssh-ed25519` is
+            # itself a list, so the key is the entry name, and a key is quoted
+            # and contains spaces. VALUE is /\S+/ and cannot match one.
+            #
             # One continuation, not a repetition. `(...)*` here would let a
             # line carry several settings after the entry name --
             # `set system ntp server 198.51.100.1 version 4 prefer` -- but it
@@ -156,7 +160,7 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # 18 seconds. It also let a bare VALUE alternative absorb any run
             # of unknown tokens. Lark's `~0..n` range is not a middle way: it
             # expands combinatorially and does not finish compiling.
-            lines.append(f"{rule_name}: VALUE ({body})?")
+            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})?")
         else:
             lines.append(f"{rule_name}: {body}")
 
@@ -202,7 +206,8 @@ def _collect_rules(
     # Build child alternatives
     child_alts: list[str] = []
     for child_name, child_node in node.children.items():
-        child_ref = _child_reference(child_name, child_node)
+        spliced = f"transparent:{child_name}" in node.flags
+        child_ref = _child_reference(child_name, child_node, spliced=spliced)
         child_alts.append(child_ref)
 
     if child_alts:
@@ -219,8 +224,12 @@ def _collect_rules(
         _collect_rules(child_node, rule_map, visited)
 
 
-def _child_reference(name: str, node: SchemaNode) -> str:
-    """Generate the Lark expression for referencing a child node."""
+def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> str:
+    """Generate the Lark expression for referencing a child node.
+
+    ``spliced`` says the parent carries ``transparent:<name>``, so this child's
+    own name is not written in a set command.
+    """
     safe_name = _rule_name_for(name, node)
 
     # Determine the keyword token
@@ -260,12 +269,19 @@ def _child_reference(name: str, node: SchemaNode) -> str:
 
     # Containers with children
     if node.children:
-        if "nokeyword" in node.flags:
+        if spliced or "nokeyword" in node.flags:
             # The keyword is not written in a set command, so the child's own
             # content follows the parent directly. `interfaces` holds a
             # nokeyword `interface` list: `set interfaces ge-0/0/0 mtu 9192`
             # names no `interface`. Emitting the keyword here left the parent
             # offering a bare VALUE, with nothing allowed after the name.
+            #
+            # `nokeyword` carries all but one of these. The exception is
+            # `groups`, whose `group` child is a list with no such flag, and it
+            # is the single case of 135 where the parent's `transparent:` flag
+            # is the only signal -- which is why `spliced` exists. Without it
+            # every `set groups <name> ...` is rejected, including the output
+            # the downstream Ansible collection renders by default.
             return safe_name
         if node.is_list:
             # A list entry is named, so the entry name is not optional.
