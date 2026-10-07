@@ -15,6 +15,8 @@ duplicate `ARCHITECTURE.md` section 1 calls a defect.
   `tests/test_convert_consistency.py::TestJsonRoundTripConsistency::test_roundtrip_preserves_content`.
 - XML input has no parser of its own; it bridges through `xml_to_yaml()` —
   enforced by `tests/test_integration.py::TestExampleRoundtrip::test_xml_to_set_high_match`.
+- One configuration yields one IR whatever format it arrived in — enforced by
+  `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr`.
 
 ## Precedent
 

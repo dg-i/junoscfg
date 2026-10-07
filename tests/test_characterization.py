@@ -5,11 +5,10 @@ characterization test is not an assertion that the behaviour is correct; it is
 a record that it was this before an agent touched the code.  Each test here was
 seen to fail against a deliberate mutation before being committed.
 
-Two of these still pin defects — networks=["auto"] and the XML/structured IR
-divergence.  The fix for each is a separate change, and that
-change is expected to rewrite the test rather than delete it, which is what
-happened to the fourth: TestSchemaMakedocIsDead became TestSchemaMakedocIsGone
-when the command was removed.
+One of these still pins a defect: networks=["auto"].  A fix is a separate
+change, and it rewrites the pin rather than deleting it -- as happened to
+makedoc, validate_xml, rename-root ordering and the XML/structured IR
+divergence, each of which now pins working behaviour instead.
 """
 
 from __future__ import annotations
@@ -251,20 +250,14 @@ class TestEdityamlSurfaceTheCollectionDrives:
         assert "\n---\n" in result.output
 
 
-class TestXmlAndStructuredInputDisagreeOnTheIr:
-    """The same configuration yields two different IRs depending on input format.
+class TestXmlAndStructuredInputAgreeOnTheIr:
+    """The same configuration gives one IR, whichever format it arrived in.
 
-    Surfaced by ``examples/router1.*``, which are three renderings of one
-    configuration.  ``set``-side rendering hides both divergences — XML and
-    structured both produce byte-identical ``.set`` output — so only the JSON
-    IR shows them.  Both are pinned as defects.
-
-    1. ``KEY_ALIASES`` (``display/constants.py:82``) is applied only in
-       ``convert/input/set_input.py``.  The XML path never consults it, so
-       ``<ieee-802.3ad>`` stays ``ieee-802.3ad`` where the structured path
-       normalises to ``802.3ad``.
-    2. Numeric leaves come back as ``int`` from XML and ``str`` from
-       structured, at eleven sites in this fixture alone.
+    It did not until openspec/changes/xml-ir-parity. ``KEY_ALIASES`` was
+    consulted only in ``convert/input/set_input.py``, so ``<ieee-802.3ad>``
+    stayed ``ieee-802.3ad`` where the structured path gave ``802.3ad``; and
+    numeric leaves came back ``int`` from XML and ``str`` from structured.
+    Set-side rendering hid both, which is why it went unnoticed.
     """
 
     @staticmethod
@@ -280,23 +273,26 @@ class TestXmlAndStructuredInputDisagreeOnTheIr:
             json.loads(convert_config(xml, from_format=Format.XML, to_format=Format.JSON)),
         )
 
-    def test_key_alias_not_applied_on_the_xml_path(self) -> None:
+    def test_the_two_irs_are_identical(self) -> None:
+        from_conf, from_xml = self._irs()
+        assert from_conf == from_xml
+
+    def test_key_aliases_are_applied_on_the_xml_path(self) -> None:
         from_conf, from_xml = self._irs()
         conf_eo = from_conf["configuration"]["interfaces"]["interface"][2]["ether-options"]
         xml_eo = from_xml["configuration"]["interfaces"]["interface"][2]["ether-options"]
         assert list(conf_eo) == ["802.3ad"]
-        assert list(xml_eo) == ["ieee-802.3ad"]
+        assert list(xml_eo) == ["802.3ad"]
 
-    def test_numeric_leaves_are_int_from_xml_and_str_from_structured(self) -> None:
+    def test_numeric_leaves_are_strings_from_both_paths(self) -> None:
+        """Junos JSON is string-valued; the IR follows it."""
         from_conf, from_xml = self._irs()
         conf_uid = from_conf["configuration"]["system"]["login"]["user"][0]["uid"]
         xml_uid = from_xml["configuration"]["system"]["login"]["user"][0]["uid"]
         assert conf_uid == "2000" and isinstance(conf_uid, str)
-        assert xml_uid == 2000 and isinstance(xml_uid, int)
+        assert xml_uid == "2000" and isinstance(xml_uid, str)
 
-    def test_set_output_hides_both_divergences(self) -> None:
-        """Both paths still render identical set output, which is why this
-        went unnoticed."""
+    def test_set_output_still_agrees(self) -> None:
         from junoscfg import Format, convert_config
 
         conf = Path("examples/router1.conf").read_text()
