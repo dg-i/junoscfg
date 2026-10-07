@@ -690,3 +690,39 @@ class TestSetDictSetRoundTrip:
         ir = set_to_dict(source)
         roundtripped = dict_to_set(ir)
         assert roundtripped == source, f"IR was: {ir}"
+
+
+class TestStatementNameNokeywordLeaf:
+    """An on/off switch keys on the statement, not on the schema node.
+
+    The schema folds `enable`/`disable` into one nokeyword leaf named
+    `enable-disable` whose enum is `['disable']`, so the token in a
+    configuration is the statement itself. A device renders it
+    `"disable": [null]`; keying on the node name invented an `enable-disable`
+    statement no Junos would accept, and it reached JSON and YAML output
+    silently — no validation failure, just wrong output on the path the
+    downstream Ansible collection renders through.
+
+    Found by round-tripping a device's own `| display json` and diffing:
+    147 of the differences were this.
+    """
+
+    def test_disable_keys_on_the_statement(self) -> None:
+        assert set_to_dict("set protocols ospf disable") == {
+            "protocols": {"ospf": {"disable": [None]}}
+        }
+
+    def test_an_ordinary_presence_statement_is_unchanged(self) -> None:
+        assert set_to_dict("set system no-redirects") == {"system": {"no-redirects": [None]}}
+
+    def test_a_freeform_nokeyword_leaf_keeps_its_name(self) -> None:
+        """`vlan-id` is nokeyword only so its value validates freeform."""
+        result = set_to_dict("set interfaces ge-0/0/1 unit 0 vlan-id 100")
+        unit = result["interfaces"]["interface"][0]["unit"][0]
+        assert unit["vlan-id"] == "100"
+
+    def test_a_positional_nokeyword_leaf_keeps_its_name(self) -> None:
+        """26,386 nokeyword leaves carry a value and must not be re-keyed."""
+        result = set_to_dict("set policy-options prefix-list PL 10.0.0.0/8")
+        entry = result["policy-options"]["prefix-list"][0]
+        assert entry["prefix-list-item"] == [{"name": "10.0.0.0/8"}]

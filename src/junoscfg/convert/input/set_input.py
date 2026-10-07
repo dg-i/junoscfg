@@ -12,6 +12,31 @@ from junoscfg.display import KEY_ALIASES, load_schema_tree
 from junoscfg.input import normalize
 
 
+def _is_statement_name(cname: str, cnode: dict[str, Any], token: str) -> bool:
+    """True when a nokeyword leaf's value is itself the statement name.
+
+    The schema folds an on/off switch into a single node whose name joins both
+    spellings — ``enable-disable``, carrying the enum ``['disable']`` — so the
+    token in the configuration *is* the statement rather than a value beneath
+    it. A device renders it ``"disable": [null]``; keying the dict on the
+    schema node invents an ``enable-disable`` statement no Junos would accept.
+
+    In 24.4R0 this is 4,238 nodes and every one of them is ``enable-disable``.
+    The other 26,386 nokeyword leaves carry a positional value and keep the
+    node name, as do the 352 marked ``freeform-nk``.
+    """
+    if cnode.get("frnk") or "e" not in cnode:
+        return False
+    tree = load_schema_tree() or {}
+    enums = tree.get("_enums", [])
+    index = cnode["e"]
+    if not isinstance(index, int) or index >= len(enums):
+        return False
+    allowed = enums[index]
+    parts = cname.split("-")
+    return token in allowed and all(value in parts for value in allowed)
+
+
 def set_to_dict(source: str) -> dict[str, Any]:
     """Parse display set commands into the IR dict.
 
@@ -184,7 +209,10 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
             nk_found = False
             for cname, cnode in children.items():
                 if isinstance(cnode, dict) and cnode.get("nk") and cnode.get("l"):
-                    current[cname] = _parse_value(token)
+                    if _is_statement_name(cname, cnode, token):
+                        current[token] = [None]
+                    else:
+                        current[cname] = _parse_value(token)
                     i += 1
                     nk_found = True
                     break

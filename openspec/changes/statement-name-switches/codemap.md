@@ -1,0 +1,108 @@
+openspec/changes/statement-name-switches/codemap.md written: 16 modules listed, 52 below the cut
+dex, ranked by the paths the proposal's domains name, cut at 1,500 tokens. Not hand-written. -->
+
+## junoscfg.convert
+
+zone conversion · layer pipeline · contract `src/junoscfg/convert/CONTRACT.md`
+
+- `pipeline` function: `agent-ready codemap show junoscfg.convert.pipeline`
+- `validate_ir` function: `agent-ready codemap show junoscfg.convert.validate_ir`
+
+## junoscfg.convert.field_validator
+
+zone conversion · layer pipeline · contract none
+
+- `FieldError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldError`
+- `FieldValidationError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationError`
+- `FieldValidationResult` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationResult`
+- `FieldValidator` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidator`
+
+## junoscfg.convert.input
+
+zone conversion · layer pipeline · contract none
+
+- `to_dict` function: `agent-ready codemap show junoscfg.convert.input.to_dict`
+
+## junoscfg.convert.input.json_input
+
+zone conversion · layer pipeline · contract none
+
+- `json_to_dict` function: `agent-ready codemap show junoscfg.convert.input.json_input.json_to_dict`
+
+## junoscfg.convert.input.set_input
+
+zone conversion · layer pipeline · contract none
+
+- `set_to_dict` function: `agent-ready codemap show junoscfg.convert.input.set_input.set_to_dict`
+
+## junoscfg.convert.input.structured_input
+
+zone conversion · layer pipeline · contract none
+
+- `structured_to_dict` function: `agent-ready codemap show junoscfg.convert.input.structured_input.structured_to_dict`
+
+## junoscfg.convert.input.xml_input
+
+zone conversion · layer pipeline · contract none
+
+- `xml_to_dict` function: `agent-ready codemap show junoscfg.convert.input.xml_input.xml_to_dict`
+
+## junoscfg.convert.input.yaml_input
+
+zone conversion · layer pipeline · contract none
+
+- `yaml_to_dict` function: `agent-ready codemap show junoscfg.convert.input.yaml_input.yaml_to_dict`
+
+## junoscfg.convert.ir
+
+zone conversion · layer pipeline · contract none
+
+- `find_configuration` function: `agent-ready codemap show junoscfg.convert.ir.find_configuration`
+- `wrap_configuration` function: `agent-ready codemap show junoscfg.convert.ir.wrap_configuration`
+
+## junoscfg.convert.output
+
+zone conversion · layer pipeline · contract none
+
+- `from_dict` function: `agent-ready codemap show junoscfg.convert.output.from_dict`
+
+## junoscfg.convert.output.dict_walker
+
+zone conversion · layer pipeline · contract none
+
+- `DictWalker` class: `agent-ready codemap show junoscfg.convert.output.dict_walker.DictWalker`
+- `WalkOutput` class: `agent-ready codemap show junoscfg.convert.output.dict_walker.WalkOutput`
+
+## junoscfg.convert.output.json_output
+
+zone conversion · layer pipeline · contract none
+
+- `dict_to_json` function: `agent-ready codemap show junoscfg.convert.output.json_output.dict_to_json`
+
+## junoscfg.convert.output.set_output
+
+zone conversion · layer pipeline · contract none
+
+- `SetWalkOutput` class: `agent-ready codemap show junoscfg.convert.output.set_output.SetWalkOutput`
+- `dict_to_set` function: `agent-ready codemap show junoscfg.convert.output.set_output.dict_to_set`
+
+## junoscfg.convert.output.structured_output
+
+zone conversion · layer pipeline · contract none
+
+- `StructuredWalkOutput` class: `agent-ready codemap show junoscfg.convert.output.structured_output.StructuredWalkOutput`
+- `dict_to_structured` function: `agent-ready codemap show junoscfg.convert.output.structured_output.dict_to_structured`
+
+## junoscfg.convert.output.xml_output
+
+zone conversion · layer pipeline · contract none
+
+- `dict_to_xml` function: `agent-ready codemap show junoscfg.convert.output.xml_output.dict_to_xml`
+
+## junoscfg.convert.output.yaml_output
+
+zone conversion · layer pipeline · contract none
+
+- `dict_to_yaml` function: `agent-ready codemap show junoscfg.convert.output.yaml_output.dict_to_yaml`
+
+<!-- cut at 1,500 tokens; 52 modules below the cut -->

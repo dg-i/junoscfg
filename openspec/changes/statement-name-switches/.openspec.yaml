@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: conversion
+domains: [conversion]
+skip_specs: true
+removes:
+  - "an enable-disable key no device accepts"
