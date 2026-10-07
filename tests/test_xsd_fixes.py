@@ -114,14 +114,22 @@ class TestGroupDMissingElements:
         procs = root.children["system"].children["processes"]
         assert "dhcp" in procs.children
 
-    def test_members_accepts_bracket(self):
-        members = SchemaNode(name="members", is_leaf=True)
+    def test_members_is_made_a_leaf(self):
+        """What the fix achieves, not what it used to claim.
+
+        It also set an `accepts-bracket` flag that `_serialize_node` had no key
+        for, so the flag never reached an artifact and nothing ever read it.
+        This assertion passed on an in-memory tree while the correction could
+        not ship.
+        """
+        members = SchemaNode(name="members")
         root = _make_root(("members", members))
 
         fix = next(f for f in ALL_FIXES if f.id == "members-bracket")
         fix.apply(root)
 
-        assert "accepts-bracket" in root.children["members"].flags
+        assert root.children["members"].is_leaf
+        assert not root.children["members"].flags
 
     def test_800g_speed_added(self):
         speed = SchemaNode(name="speed", enums=["100g", "400g"], is_leaf=True)

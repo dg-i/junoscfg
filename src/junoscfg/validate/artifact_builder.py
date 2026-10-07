@@ -9,7 +9,7 @@ import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from junoscfg.validate.grammar_generator import write_lark_grammar
 from junoscfg.validate.schema_generator import write_json_schema
@@ -17,6 +17,9 @@ from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 from junoscfg.validate.xsd_extractor import extract_xsd
 from junoscfg.validate.xsd_fixes import apply_all_fixes, get_fix_count
 from junoscfg.validate.xsd_parser import parse_xsd
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class ArtifactBuilder:
@@ -195,6 +198,67 @@ def _write_metadata(
         f.write("\n")
 
 
+# The flag tables. Both directions read them: `_serialize_node` writes every
+# key here and `_deserialize_node` reads every key back. That was once only
+# half true -- the reader was table-driven and the writer was an if/elif chain,
+# so adding a flag took two edits that looked nothing alike and the comment
+# claiming "in both directions" was false.
+
+# Flags the structure tree stores as a plain boolean key.
+_BOOL_FLAG_KEYS = {
+    "nk": "nokeyword",
+    "o": "oneliner",
+    "tk": "transparent-list-key",
+    "pk": "positional-key",
+    "pkf": "positional-key-flat",
+    "fd": "flat-dict",
+    "frnk": "freeform-nk",
+}
+
+# The one key the writer guards. `oneliner` means "entry name and children on
+# one line", which only a named list with children can be, and `xsd_fixes` sets
+# the flag on nodes that are neither. The guard is declared here rather than
+# buried in the writer, so the asymmetry it creates is readable: a node whose
+# `oneliner` the guard drops comes back without it.
+_GUARDED_BOOL_KEYS = {
+    "o": lambda node: node.is_list and bool(node.children),
+}
+
+
+class _ValueFlag(NamedTuple):
+    """A flag whose compact key carries a payload rather than a bare ``true``.
+
+    ``encode`` turns the text after ``prefix`` into the JSON value, ``decode``
+    turns it back. Adding one is a single entry here, read by both directions.
+    """
+
+    prefix: str
+    encode: Callable[[str], Any]
+    decode: Callable[[Any], str]
+
+
+def _encode_flat_entry(payload: str) -> dict[str, str]:
+    """``<key>:<position>`` to ``{"k": key, "p": position}``.
+
+    The key may be empty: `_fix_flat_entry_keys` writes
+    ``flat-entry::values-only`` where the entry has no key at all.
+    """
+    key, position = payload.split(":", 1)
+    return {"k": key, "p": position}
+
+
+_VALUE_FLAG_KEYS: dict[str, _ValueFlag] = {
+    # `transparent:interface` -> "t": "interface"
+    "t": _ValueFlag("transparent:", str, str),
+    # `flat-entry:<key>:<position>` -> "fe": {"k": key, "p": position}
+    "fe": _ValueFlag(
+        "flat-entry:",
+        _encode_flat_entry,
+        lambda value: f"{value['k']}:{value['p']}",
+    ),
+}
+
+
 class _SerializeState:
     """Deduplication state for structure tree serialization."""
 
@@ -264,30 +328,19 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
     if node.is_list and node.is_leaf:
         d["ll"] = True
 
-    if "nokeyword" in node.flags:
-        d["nk"] = True
+    # Flags, off the same tables `_deserialize_node` reads.
+    for key, flag in _BOOL_FLAG_KEYS.items():
+        if flag not in node.flags:
+            continue
+        guard = _GUARDED_BOOL_KEYS.get(key)
+        if guard is None or guard(node):
+            d[key] = True
 
-    # Oneliner named lists: all tokens on single line
-    if node.is_list and node.children and "oneliner" in node.flags:
-        d["o"] = True
-
-    # Conversion-hint flags (Group H)
-    for flag in node.flags:
-        if flag.startswith("transparent:"):
-            d["t"] = flag.split(":", 1)[1]
-        elif flag == "transparent-list-key":
-            d["tk"] = True
-        elif flag == "positional-key":
-            d["pk"] = True
-        elif flag == "positional-key-flat":
-            d["pkf"] = True
-        elif flag == "flat-dict":
-            d["fd"] = True
-        elif flag.startswith("flat-entry:"):
-            _, key, position = flag.split(":", 2)
-            d["fe"] = {"k": key, "p": position}
-        elif flag == "freeform-nk":
-            d["frnk"] = True
+    for key, codec in _VALUE_FLAG_KEYS.items():
+        for flag in sorted(node.flags):
+            if flag.startswith(codec.prefix):
+                d[key] = codec.encode(flag[len(codec.prefix) :])
+                break
 
     # Field-level validation metadata
     if node.enums:
@@ -332,18 +385,6 @@ def write_structure_tree(root: SchemaNode, output_path: str) -> None:
         f.write("\n")
 
 
-# Flags the structure tree stores as a plain boolean key, in both directions.
-_BOOL_FLAG_KEYS = {
-    "nk": "nokeyword",
-    "o": "oneliner",
-    "tk": "transparent-list-key",
-    "pk": "positional-key",
-    "pkf": "positional-key-flat",
-    "fd": "flat-dict",
-    "frnk": "freeform-nk",
-}
-
-
 def _deserialize_node(
     name: str,
     d: dict[str, Any],
@@ -369,10 +410,9 @@ def _deserialize_node(
     for key, flag in _BOOL_FLAG_KEYS.items():
         if d.get(key):
             node.flags.add(flag)
-    if "t" in d:
-        node.flags.add(f"transparent:{d['t']}")
-    if "fe" in d:
-        node.flags.add(f"flat-entry:{d['fe']['k']}:{d['fe']['p']}")
+    for key, codec in _VALUE_FLAG_KEYS.items():
+        if key in d:
+            node.flags.add(codec.prefix + codec.decode(d[key]))
 
     for child_name, child in (d.get("c") or {}).items():
         node.children[child_name] = _deserialize_node(child_name, child, enums, patterns)
@@ -402,8 +442,10 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
       from this tree differs from one built straight off the XSD —
       ``ArtifactBuilder`` therefore builds the grammar through this function
       so the two cannot drift.
-    - ``accepts-bracket``, and any flag the XSD carried verbatim that is not
-      in the writer's allow-list (``oneliner-plus``, ``homogeneous``, …).
+    - any flag the XSD carried verbatim that is not in the writer's tables
+      (``oneliner-plus``, ``homogeneous``, …). The tables are
+      ``_BOOL_FLAG_KEYS`` and ``_VALUE_FLAG_KEYS``, and both directions read
+      them, so what is dropped is exactly what is not in them.
     - ``oneliner`` on a node that is not a list with children, which the
       writer guards away.
     - ``is_presence`` on a leaf, and ``pattern_negated`` with no ``pattern``.

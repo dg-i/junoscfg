@@ -273,10 +273,25 @@ def _fix_security_policy_zones(root: SchemaNode) -> bool:
 
 
 def _fix_members_bracket(root: SchemaNode) -> bool:
-    """Make 'members' accept bracket expressions (ruler.rb line 270)."""
+    """Make 'members' a leaf, so a community list takes values (ruler.rb 270).
+
+    It used to add an `accepts-bracket` flag beside the leaf, on 74 nodes. The
+    flag shipped nowhere and nothing read it: `_serialize_node` has no key for
+    it, so it never reached `junos-structure-tree.json` and no runtime could
+    see it. `tests/test_xsd_fixes.py` asserted it on the in-memory tree, which
+    made a correction that could not ship look green.
+
+    It also modelled the wrong thing. `[ a b c ]` is how Junos writes any
+    value list, on every leaf-list in the schema; it is not a property of
+    `members`. Marking 74 nodes would have promised bracket support exactly
+    where the grammar does not need to be told. `set policy-options community
+    FOO members` is still over-rejected, under the `brackets` code in
+    `tests/test_set_corpus.py`, and the fix for it is a grammar one.
+
+    What survives is the half that was always real: `members` is a leaf.
+    """
     for node in find_all(root, "members"):
         node.is_leaf = True
-        node.flags.add("accepts-bracket")
     return True
 
 
@@ -453,14 +468,6 @@ def _fix_term_object(root: SchemaNode) -> bool:
 def _fix_exact_longer_orlonger(root: SchemaNode) -> bool:
     """Remove arg from exact/longer/orlonger (ruler.rb lines 251-253)."""
     return _mark_as_presence(root, "exact", "longer", "orlonger")
-
-
-def _fix_policy_algebra(root: SchemaNode) -> bool:
-    """Make policy_algebra accept any (ruler.rb lines 308-310)."""
-    for node in find_all(root, "policy-algebra"):
-        node.is_leaf = True
-        node.flags.add("accepts-bracket")
-    return True
 
 
 def _fix_poe_interface(root: SchemaNode) -> bool:
@@ -847,13 +854,6 @@ ALL_FIXES: list[XsdFix] = [
         "Remove arg from exact/longer/orlonger",
         _ALL_TARGETS,
         _fix_exact_longer_orlonger,
-    ),
-    XsdFix(
-        "policy-algebra-any",
-        "combinator",
-        "Make policy_algebra accept any",
-        _ALL_TARGETS,
-        _fix_policy_algebra,
     ),
     XsdFix(
         "poe-interface-seqchoice",

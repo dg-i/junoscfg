@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 
 from junoscfg.validate.artifact_builder import (
+    _BOOL_FLAG_KEYS,
+    _VALUE_FLAG_KEYS,
     ArtifactBuilder,
     read_structure_tree,
     write_structure_tree,
@@ -126,6 +128,15 @@ class TestArtifactBuilder:
             assert len(artifacts) == 5
 
 
+# One payload per key of `_VALUE_FLAG_KEYS`, so the round-trip test can build
+# a node for each. `test_the_value_flag_samples_cover_the_table` fails if a key
+# arrives without one.
+_VALUE_FLAG_SAMPLES = {
+    "t": "interface",
+    "fe": "k:last",
+}
+
+
 def _rich_tree() -> SchemaNode:
     """A tree touching every field the structure tree format carries."""
     vlan_id = SchemaNode(name="vlan-id", is_leaf=True, enums=["none", "vlan-id"])
@@ -202,6 +213,64 @@ class TestStructureTreeRoundTrip:
 
         extras = back.children["extras"]
         assert extras.flags == {"transparent-list-key", "positional-key-flat", "flat-dict"}
+
+    def test_every_flag_the_tables_name_survives(self) -> None:
+        """Driven off the tables, so a flag with no writer fails here.
+
+        `test_every_carried_field_survives` walks a fixed sample tree, so a
+        flag added to `_BOOL_FLAG_KEYS` and wired into the reader but not the
+        writer passed it. That was the live state: the reader was table-driven
+        and the writer was a hand-written if/elif chain.
+        """
+        tree = SchemaNode(name="configuration")
+        for key, flag in _BOOL_FLAG_KEYS.items():
+            # A named list with children: the shape `o`'s guard requires, so
+            # every key is tested on a node that may legitimately carry it.
+            node = SchemaNode(
+                name=f"bool-{key}",
+                is_list=True,
+                children={"leaf": SchemaNode(name="leaf", is_leaf=True)},
+            )
+            node.flags.add(flag)
+            tree.children[node.name] = node
+
+        for key, payload in _VALUE_FLAG_SAMPLES.items():
+            node = SchemaNode(
+                name=f"value-{key}",
+                children={"leaf": SchemaNode(name="leaf", is_leaf=True)},
+            )
+            node.flags.add(_VALUE_FLAG_KEYS[key].prefix + payload)
+            tree.children[node.name] = node
+
+        back = self._round_trip(tree)
+
+        for key, flag in _BOOL_FLAG_KEYS.items():
+            assert flag in back.children[f"bool-{key}"].flags, f"{key} lost"
+        for key, payload in _VALUE_FLAG_SAMPLES.items():
+            expected = _VALUE_FLAG_KEYS[key].prefix + payload
+            assert expected in back.children[f"value-{key}"].flags, f"{key} lost"
+
+    def test_the_value_flag_samples_cover_the_table(self) -> None:
+        """A new value flag with no sample above leaves itself untested."""
+        assert set(_VALUE_FLAG_SAMPLES) == set(_VALUE_FLAG_KEYS)
+
+    def test_the_bundled_tree_survives_a_round_trip_exactly(self) -> None:
+        """Reader and writer are inverses over the artefact we actually ship.
+
+        13 MB and 428,000 nodes, which is the only sample that covers every
+        flag combination the XSD produces. Equality is on the parsed data, not
+        the bytes: the writer emits its keys in table order now, where it used
+        to iterate a set.
+        """
+        import junoscfg.validate as validate_pkg
+
+        src = Path(validate_pkg.__file__).parent / "data" / "junos-structure-tree.json"
+        original = json.loads(src.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as d:
+            out = str(Path(d) / "tree.json")
+            write_structure_tree(read_structure_tree(src), out)
+            rebuilt = json.loads(Path(out).read_text(encoding="utf-8"))
+        assert rebuilt == original
 
     def test_the_three_fields_the_format_drops(self) -> None:
         """Pinned so nobody reads this tree as a faithful copy.
