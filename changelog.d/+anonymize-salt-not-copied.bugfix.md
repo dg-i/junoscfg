@@ -1,0 +1,1 @@
+The anonymizer no longer copies any per-password field of the original into its output: not the crypt salt, and for `$8$` not the IV or the GCM authentication tag either. A blank or null `salt:` in an `--anonymize-config` file now falls through to the documented random salt instead of becoming the HMAC key.

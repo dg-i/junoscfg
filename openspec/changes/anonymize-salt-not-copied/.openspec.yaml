@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-07
+type: bug
+zone: anonymize
+domains: [anonymization]
+skip_specs: true
+removes:
+  - "verbatim re-emission of the original crypt salt"

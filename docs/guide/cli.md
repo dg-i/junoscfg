@@ -364,7 +364,10 @@ anonymization — it retains CIDR relationships for troubleshooting at the cost 
 reduced confidentiality. If full IP confidentiality is required, use a non-prefix-preserving
 approach instead.
 
-**A random salt is generated automatically** when `--anonymize-salt` is not provided.
+**A random salt is generated automatically** when no salt is provided — whether
+that means omitting `--anonymize-salt` or leaving `salt:` blank in an
+`--anonymize-config` file. Supply one explicitly only when you need two runs
+to produce the same output.
 This prevents trivially reversible outputs but means results are not reproducible across
 runs. Provide an explicit salt if you need deterministic output (e.g., for diff-friendly
 anonymization).

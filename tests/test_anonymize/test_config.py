@@ -279,3 +279,55 @@ class TestBuildConfigRevertOnly:
         assert cfg is not None
         assert cfg.dump_map == "revert.json"
         assert cfg.ips is True
+
+
+class TestBlankSaltFallsThroughToAutoGeneration:
+    """A blank or null `salt:` must not become the HMAC key.
+
+    `str(data["salt"])` turned a YAML null into the literal string "None" and
+    an empty string into "", neither of which is None, so `anonymize()`'s
+    auto-generation never fired. The whole mapping was then reproducible by
+    anyone: compute HMAC("None", candidate) and compare.
+    """
+
+    @staticmethod
+    def _load(body: str) -> object:
+        import tempfile
+        from pathlib import Path
+
+        from junoscfg.anonymize.config import load_config_file
+
+        path = Path(tempfile.mkdtemp()) / "anon.yaml"
+        path.write_text(body, encoding="utf-8")
+        return load_config_file(str(path))
+
+    def test_null_salt_is_unset(self) -> None:
+        assert self._load("salt:\npasswords: true\n").salt is None
+
+    def test_empty_salt_is_unset(self) -> None:
+        assert self._load('salt: ""\npasswords: true\n').salt is None
+
+    def test_whitespace_salt_is_unset(self) -> None:
+        assert self._load('salt: "   "\npasswords: true\n').salt is None
+
+    def test_a_real_salt_survives(self) -> None:
+        assert self._load("salt: s3cr3t\npasswords: true\n").salt == "s3cr3t"
+
+    def test_a_blank_salt_gives_different_output_each_run(self) -> None:
+        from junoscfg.anonymize import anonymize
+
+        outputs = set()
+        for _ in range(3):
+            config = self._load("salt:\npasswords: true\n")
+            result = anonymize(
+                {
+                    "configuration": {
+                        "system": {"root-authentication": {"encrypted-password": "$6$s$h"}}
+                    }
+                },
+                config,
+            )
+            outputs.add(
+                result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
+            )
+        assert len(outputs) == 3

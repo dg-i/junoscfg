@@ -126,6 +126,30 @@ def _encrypt_j9_deterministic(hex_digest: str, plaintext: str) -> str:
 # length to copy.  md5crypt is 22 characters, sha256crypt 43, sha512crypt 86.
 _CRYPT_BODY_LENGTH = {"$1$": 22, "$5$": 43, "$6$": 86}
 
+# The alphabet crypt salts and bodies are drawn from.
+_CRYPT64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def _pseudo_field(hex_digest: str, length: int, domain: str) -> str:
+    """A replacement field of *length* crypt64 characters.
+
+    Every per-password field a hash carries -- the salt, and for ``$8$`` the
+    IV and the authentication tag -- is entropy lifted straight from the
+    customer's configuration.  Re-emitting any of them verbatim leaves a
+    correlation handle: anyone holding the original string can match it to the
+    exact account even though the body is safe.
+
+    *domain* separates the streams, so no field can be recomputed from another
+    and the salt is not a function of the emitted body.
+    """
+    if length <= 0:
+        return ""
+    seed = hashlib.sha256(f"{domain}:{hex_digest}".encode()).hexdigest()
+    source = _extend_hex(seed, max(length * 2, 2))
+    return "".join(
+        _CRYPT64[int(source[i * 2 : i * 2 + 2], 16) % len(_CRYPT64)] for i in range(length)
+    )
+
 
 def _extend_hex(hex_digest: str, length: int) -> str:
     """Deterministic hex of exactly *length* characters.
@@ -244,17 +268,40 @@ class PasswordRule(Rule):
             return _encrypt_j9_deterministic(hex_digest[8:], pseudo_plain)
 
         if prefix in ("$6$", "$5$", "$1$"):
-            # Unix crypt formats — generate a real crypt hash when possible.
-            parts = body.split("$", 1)
+            # Unix crypt formats: $N$[rounds=X$]salt$hash.  The rounds field is
+            # a parameter, not a salt, and was previously mistaken for one,
+            # which dropped the real salt and left rounds= in its place.
+            rounds = ""
+            rest = body
+            if rest.startswith("rounds="):
+                rounds_field, _, remainder = rest.partition("$")
+                if remainder:
+                    rounds = f"{rounds_field}$"
+                    rest = remainder
+            parts = rest.split("$", 1)
             if len(parts) == 2:
-                return _make_crypt_hash(hex_digest, prefix, parts[0], len(parts[1]))
+                original_salt, original_body = parts
+                return _make_crypt_hash(
+                    hex_digest,
+                    f"{prefix}{rounds}",
+                    _pseudo_field(hex_digest, len(original_salt), "salt"),
+                    len(original_body),
+                )
 
         if prefix == "$8$":
             # AES-256-GCM: $8$crypt-algo$hash-algo$iterations$salt$iv$tag$encrypted
             # Preserve structure markers, replace encrypted payload
             parts = body.split("$")
+            if len(parts) >= 7:
+                # $8$crypt-algo$hash-algo$iterations$salt$iv$tag$encrypted.
+                # The first three are parameters; salt, IV and the GCM
+                # authentication tag are per-password entropy and a tag is a
+                # MAC over the real plaintext, so none may survive.
+                for index, domain in ((3, "salt"), (4, "iv"), (5, "tag")):
+                    parts[index] = _pseudo_field(hex_digest, len(parts[index]), domain)
+                parts[-1] = hex_digest[: len(parts[-1])] if parts[-1] else hex_digest[:32]
+                return f"$8${'$'.join(parts)}"
             if len(parts) >= 6:
-                # Replace the last field (encrypted payload) with hex
                 parts[-1] = hex_digest[: len(parts[-1])] if parts[-1] else hex_digest[:32]
                 return f"$8${'$'.join(parts)}"
             # Fallback: replace entire body
@@ -267,7 +314,8 @@ class PasswordRule(Rule):
             if len(parts) == 3:
                 iterations, sha_salt, sha_hash = parts
                 new_hash = hex_digest[: len(sha_hash)] if sha_hash else hex_digest[:28]
-                return f"$sha1${iterations}${sha_salt}${new_hash}"
+                new_salt = _pseudo_field(hex_digest, len(sha_salt), "salt")
+                return f"$sha1${iterations}${new_salt}${new_hash}"
             new_body = hex_digest[: len(body)] if body else hex_digest[:32]
             return f"$sha1${new_body}"
 
@@ -278,19 +326,19 @@ class PasswordRule(Rule):
                 cost = parts[0]
                 salt_hash = parts[1]
                 if len(salt_hash) >= 22:
-                    bcrypt_salt = salt_hash[:22]
                     hash_len = len(salt_hash) - 22
                     new_hash = hex_digest[:hash_len] if hash_len > 0 else hex_digest[:31]
-                    return f"{prefix}{cost}${bcrypt_salt}{new_hash}"
+                    new_salt = _pseudo_field(hex_digest, 22, "salt")
+                    return f"{prefix}{cost}${new_salt}{new_hash}"
                 new_body = hex_digest[: len(salt_hash)] if salt_hash else hex_digest[:53]
                 return f"{prefix}{cost}${new_body}"
 
         # Other Unix crypt formats ($3$): prefix$salt$hash
         parts = body.split("$", 1)
         if len(parts) == 2:
-            crypt_salt = parts[0]
             new_hash = hex_digest[: len(parts[1])] if parts[1] else hex_digest[:32]
-            return f"{prefix}{crypt_salt}${new_hash}"
+            new_salt = _pseudo_field(hex_digest, len(parts[0]), "salt")
+            return f"{prefix}{new_salt}${new_hash}"
 
         # Fallback: just replace the body with hex
         new_body = hex_digest[: len(body)] if body else hex_digest[:32]
