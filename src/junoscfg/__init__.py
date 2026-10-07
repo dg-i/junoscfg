@@ -13,7 +13,7 @@ from typing import TextIO
 from junoscfg.convert import FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.6.19"
+__version__ = "0.6.20"
 
 __all__ = [
     "Format",

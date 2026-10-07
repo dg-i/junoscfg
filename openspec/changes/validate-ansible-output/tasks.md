@@ -14,7 +14,9 @@
   entry name.
 - [x] 2.6 A bare `set apply-groups <name>` is accepted: stripping left `set`,
   which parses as nothing.
-- [x] 2.7 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
+- [x] 2.7 A presence list takes its entry name: 5,808 nodes emitted a bare
+  keyword with nowhere for the name to go.
+- [x] 2.8 Rebuild `src/junoscfg/validate/data/junos-set.lark`.
 
 ## 3. Verification
 

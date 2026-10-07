@@ -1,0 +1,1 @@
+Set validation accepts the entry name of a presence list. `set snmp filter-interfaces interfaces "^sxe-.*"` was reported as invalid syntax because a presence list with no children emitted a bare keyword, leaving the pattern nowhere to go. 24.4R0 has 5,808 such nodes across 193 names, and this was the only failure class that appeared on all three real devices tested.

@@ -262,6 +262,15 @@ def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> s
 
     # Presence containers (no value)
     if node.is_presence:
+        if node.is_list and "nokeyword" not in node.flags:
+            # A presence *list* with no children still names its entries: the
+            # entry name is the whole content. `snmp filter-interfaces
+            # interfaces "^sxe-.*"` is one, and emitting a bare keyword left
+            # the pattern with nowhere to go -- 43 rejected lines across three
+            # devices, the only class that appeared on all of them. 24.4R0 has
+            # 5,808 of these across 193 names. The name is optional because the
+            # bare keyword brings the list into being.
+            return f"{keyword} QUOTED_OR_VALUE?"
         if "nokeyword" in node.flags:
             # A nokeyword presence node is a hidden list: the token is the
             # entry name and the element name is never written.
