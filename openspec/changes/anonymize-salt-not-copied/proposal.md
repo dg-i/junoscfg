@@ -1,34 +1,38 @@
 ## Why
 
-`_replace_hashed()` copies the original crypt salt straight into the output:
-`$6$<original salt>$<safe body>`. The body is one-way and safe. The salt is
-per-password entropy lifted from the customer's configuration, and re-emitting
-it leaves a correlation handle — anyone holding the original hash string, from
-an old backup or a prior unanonymized share, can match it to the exact account.
+`_replace_hashed()` copied every per-password field except the body straight
+into the output. The body is one-way and safe; the salt, and for `$8$` the IV
+and authentication tag, are entropy lifted from the customer's configuration.
+Re-emitting them leaves a correlation handle: anyone holding the original hash
+string can match it to the exact account.
 
-Found by the fresh-session review of the Python-floor change, which flagged it
-as pre-existing and never written down.
+The same review raised a second concern: an empty salt makes the whole mapping
+reproducible by anyone. A first draft of this proposal dismissed it, having
+checked only that `anonymize()` auto-generates a salt when `config.salt is
+None`. That check was too narrow and the dismissal was wrong.
 
-The same review raised a second concern, that an empty default salt makes the
-mapping globally reproducible. **That one does not hold**: `anonymize()`
-already generates a random 32-character salt when none is supplied
-(`anonymize/__init__.py:47`), verified — three runs with no salt give three
-distinct outputs. The reviewer reached the empty-salt path by constructing a
-`PasswordRule` directly, bypassing the entry point. Requiring an explicit salt
-would therefore break callers to fix nothing, and is not done here.
+`load_config_file` did `cfg.salt = str(data["salt"])`, so a `--anonymize-config`
+file containing `salt:` produced the literal string `"None"` and one containing
+`salt: ""` produced `""`. Neither is `None`, so auto-generation never fired and
+the HMAC key became publicly known. Verified through the shipped CLI: both
+forms give byte-identical output across separate runs. That is a confirmation
+oracle — compute `HMAC("None", candidate)` and compare.
 
 While in this code: `$5$rounds=N$` was parsed as though `rounds=N` were the
 salt, so the real salt was dropped and `rounds=5000` appeared in its place.
 
 ## What Changes
 
-- Derive the replacement salt from the same HMAC, in the crypt64 alphabet and
-  at the original's length, so the output still looks like a crypt hash and
-  stays deterministic.
-- Parse `$5$rounds=N$` and `$6$rounds=N$` correctly: the rounds field is a
-  parameter and survives; the salt after it is replaced.
-- Update the four tests that asserted the salt was preserved. They were
-  asserting the leak.
+- Derive every replaced field from the HMAC, in the crypt64 alphabet and at the
+  original's length, so output still looks like a hash and stays deterministic.
+  Streams are domain-separated, so no field is recomputable from another.
+- Replace the salt in every format that carried one: `$1$`, `$5$`, `$6$`,
+  bcrypt, `$sha1$`, `$3$`, and for `$8$` the salt, the IV and the tag.
+- Treat a blank or null `salt:` in a config file as unset, so `anonymize()`
+  generates a random one as the documentation already promised.
+- Parse `$5$rounds=N$` correctly: rounds is a parameter and survives; the salt
+  after it is replaced. It was previously read as the salt.
+- Update the tests that asserted a salt was preserved. They asserted the leak.
 
 ## Capabilities
 
@@ -43,14 +47,14 @@ No requirement changes, so `.openspec.yaml` sets `skip_specs: true`.
 ## Non-goals
 
 - Requiring an explicit config salt. See above: the hole is already closed.
-- Replacing the bcrypt, `$sha1$` or `$3$` salts. They have the same shape and
-  the same argument applies, but each needs its own format handling and its own
-  test; this change covers the three crypt formats that share one code path.
+- Nothing. A first draft covered only the three crypt formats and listed
+  bcrypt, `$sha1$` and `$3$` as non-goals, omitting `$8$` entirely. That was
+  the wrong cut: bcrypt's salt is 22 characters, a stronger handle than the one
+  being fixed, and `$8$` carries a GCM tag — a MAC over the real plaintext.
 
 ## Impact
 
-`src/junoscfg/anonymize/rules/password.py` (red zone) and four test files.
-Anonymizer output changes for every `$1$`/`$5$`/`$6$` password: the salt differs.
-A previously anonymized configuration cannot be re-anonymized to the same text,
-which is the point. The revert mapping is unaffected — it maps original to
-replacement and is written at anonymization time.
+`anonymize/rules/password.py` and `anonymize/config.py` (red zone), plus tests
+and `docs/guide/cli.md`. Output changes for every hashed password: the salt
+differs. The revert mapping is unaffected — it maps original to replacement and
+is written at anonymization time.

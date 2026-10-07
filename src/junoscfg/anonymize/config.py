@@ -243,7 +243,12 @@ def load_config_file(path: str) -> AnonymizeConfig:
     if "sensitive_patterns" in data and isinstance(data["sensitive_patterns"], list):
         cfg.sensitive_patterns = [str(p) for p in data["sensitive_patterns"]]
     if "salt" in data:
-        cfg.salt = str(data["salt"])
+        # A blank or null `salt:` must stay unset so anonymize() generates a
+        # random one. Without this, `salt:` became the literal string "None"
+        # and `salt: ""` became "", either of which is a publicly known HMAC
+        # key: the whole mapping is then reproducible by anyone.
+        raw = data["salt"]
+        cfg.salt = str(raw) if raw is not None and str(raw).strip() else None
     if "dump_map" in data:
         cfg.dump_map = str(data["dump_map"])
     if "include" in data and isinstance(data["include"], list):

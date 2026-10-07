@@ -7,15 +7,16 @@ No vocabulary is retired.
 
 ## Symbols
 
-None removed. `_make_crypt_hash` keeps its name; `_pseudo_salt` is added.
+None removed. `_make_crypt_hash` keeps its name and `_pseudo_field` is added,
+both private.
 
 ## Dependencies
 
-None.
+No dependency is added or released by this change.
 
 ## Requirements
 
-None; `skip_specs: true`.
+No requirement is retired; this change sets `skip_specs: true`.
 
 ## Tests and fixtures
 
