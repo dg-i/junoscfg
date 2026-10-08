@@ -8,5 +8,5 @@
 - [x] 2.1 Make the measured seven-file stable-interface mypy command clean and blocking.
 - [x] 2.2 Supersede the prior decision and align toolbox, workflow and typing-policy documentation.
 - [x] 2.3 Bump the patch version and add the changelog fragment required by repository policy.
-- [ ] 2.4 Run the requested mypy, focused, full-suite, Ruff, agent-ready and OpenSpec checks.
-- [ ] 2.5 Inspect the final diff for production or behavioral changes.
+- [x] 2.4 Run the requested mypy, focused, full-suite, Ruff, agent-ready and OpenSpec checks.
+- [x] 2.5 Inspect the final diff for production or behavioral changes.
