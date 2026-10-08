@@ -6,8 +6,9 @@ All files in this directory (except this README) are gitignored.
 ## Device XSD dumps
 
 Dumps live in `schemas/`. They drive two things: `pytest --regen-schema`,
-which rebuilds the bundled artifacts, and the schema-backed test tier, which
-runs only when a dump is present.
+which rebuilds the bundled artifacts from the dump of the shipped release and
+refuses to use another, and the schema-backed test tier, which runs against
+every dump present.
 
 Capture one with:
 
@@ -18,7 +19,10 @@ echo "<rpc> <get-xnm-information> <type>xml-schema</type> <namespace>junos-confi
 
 Stage it as `schemas/new.xsd`; `tests/schema_data.promote_staged()` reads the
 Junos version out of it and renames it to `<release>.xsd`, appending `-2` and
-so on if that name is taken.
+so on if that name is taken. The `--schema` tier promotes it; `--regen-schema`
+reads it where it is and renames nothing. A second dump of the shipped
+release, a refresh of the same train say, makes the choice ambiguous, and
+`--regen-schema` stops until `JUNOSCFG_XSD_SOURCE` names one.
 
 Then rename it by hand to record which box it came from, by convention
 `<release>_<platform>.xsd` — `23.2R2-S7.5_vmx.xsd`. Anything ending `.xsd` is
@@ -36,8 +40,11 @@ Worth recording, because matching matters: validating a config against the dump
 pulled from that same device left 1 rejected line of 3,369, against 12 for the
 bundled 24.4R0.
 
-`JUNOSCFG_XSD_SOURCE` overrides the location for `--regen-schema`. A legacy
-`*.xsd` directly in this directory is still found.
+`JUNOSCFG_XSD_SOURCE` names a different dump for `--regen-schema`, which is
+how the shipped release moves on purpose; set but empty, or not a file, or a
+dump with no release in its header, it is an error. A legacy `*.xsd` directly
+in this directory is still found, under the same release rule. Every such
+stop happens before collection, with the reason and exit code 7.
 
 ## Device captures
 

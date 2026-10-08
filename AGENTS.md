@@ -46,8 +46,8 @@ those are not your job. Yours, in order:
 
 1. **Tests pass** — `uv run pytest tests/ -q` (the full suite; the fast inner
    loop is the same with `-k 'not ExampleValidation and not ExampleRoundtrip'`).
-2. **After XSD or schema changes** — rerun with `--regen-schema` so the bundled
-   artifacts match `xsd_fixes.py`.
+2. **After XSD or schema changes** — rerun with `--regen-schema`; it rebuilds
+   from the shipped release's dump only, `JUNOSCFG_XSD_SOURCE` names another.
 3. **Documentation check** — see below.
 4. **Version bump** — see below.
 

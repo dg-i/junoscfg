@@ -84,7 +84,7 @@ For each bug, apply fixes in this order:
    | Freeform NK key | `freeform-nk` | `_fix_freeform_nk_keys()` |
    | Oneliner rendering | `oneliner` | (add directly or via `_fix_flat_entry_keys()`) |
 
-2. **Regenerate schema** — `uv run pytest tests/ -q --regen-schema` to rebuild `junos-structure-tree.json` with new flags.
+2. **Regenerate schema** — `uv run pytest tests/ -q --regen-schema` to rebuild `junos-structure-tree.json` with new flags. It rebuilds from the shipped release's dump under `private_test_data/schemas/` and stops, exit code 7, without it.
 
 3. **Constants (only for XML/YAML converters)** — If the fix affects the XML→YAML bridge (`to_yaml.py`), also update the XML-compat constants in `constants.py` (they mirror schema flags for converters that walk XML trees).
 

@@ -49,8 +49,8 @@ Pre-1.0.0 (current state), breaking changes are acceptable with documentation.
 **Test After Code Changes.** Every code change should be accompanied by tests that prevent
 regressions and verify new behavior. Bug fixes require a test that reproduces the bug before
 the fix. New features require tests that verify the feature works. Schema changes require
-running the test suite with `--regen-schema` to verify artifacts remain correct. Test
-behavior, not implementation details.
+running the test suite with `--regen-schema`, which needs the shipped release's dump under
+`private_test_data/schemas/` and stops otherwise. Test behavior, not implementation details.
 
 !!! note "For AI coding agents"
     If you are an AI agent generating code for this project, treat these five principles
@@ -661,7 +661,7 @@ Device truth runs wherever a capture pair is present:
 |------|---------|----------|---------|
 | **Fast** | `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'` | ~17s | Unit tests, conversion tests, structural tests |
 | **Full** | `uv run pytest tests/ -q` | ~17s | Adds the slow example validation and roundtrip tests |
-| **Regen** | Add `--regen-schema` | ~90s | Rebuilds the schema artifacts from a device XSD |
+| **Regen** | Add `--regen-schema` | ~3min | Rebuilds the artifacts before collection from the one dump of the shipped release under `private_test_data/schemas/`, or the dump `JUNOSCFG_XSD_SOURCE` names; with none, two, or an unusable override it stops with exit code 7 |
 | **Schema** | Add `--schema` | minutes | Runs against each NETCONF dump in `private_test_data/schemas/` |
 | **Corpus** | Add `--jvd` | ~3.5min | Runs against Juniper's published jvd corpus |
 | **Device truth** | Automatic | seconds | Runs against capture pairs under `tests/data/captures/` and `private_test_data/captures/`; skipped where there are none |
@@ -702,8 +702,9 @@ A pair is one operator's configuration: it sits under the gitignored
 ### When to use each tier
 
 - **During development** — Run fast tests (no flags)
-- **Before committing** — Run with `--regen-schema` to ensure schema artifacts are current
-- **After XSD/schema changes** — Always use `--regen-schema` to regenerate `junos-structure-tree.json`
+- **After XSD/schema changes** — Run `--regen-schema`; it rebuilds from the dump
+  of the shipped release, never whichever sorts newest, so what ships does not
+  move as a side effect of which files you have synced
 - **After a grammar or field-validator change** — Run `--jvd`; it is where
   false positives on real configuration show up
 - **After an artifact regeneration** — The device-truth tier runs on its own;
@@ -737,7 +738,7 @@ Follow the methodology in the [Conversion Bugfix Guide](conversion-bugfix-guide.
 1. Reproduce and diff against expected output
 2. Classify root cause (schema flag, schema structure, or runtime constant)
 3. Apply fix in `xsd_fixes.py` (preferred) or `constants.py` (XML-compat only)
-4. Regenerate artifacts with `--regen-schema`
+4. Regenerate artifacts with `--regen-schema` (needs the shipped release's dump)
 5. Add regression test
 
 ### Adding a new schema flag

@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: schema
+domains: [schema-pipeline]
+skip_specs: true
+removes:
+  - "the silent pick: --regen-schema rebuilt from whichever dump sorted newest, and ran on against the committed artifacts when there was none"
