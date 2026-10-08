@@ -34,8 +34,15 @@ sections as sentinels, and the shipped caps match both spellings.
 `agent-ready interfaces` enforces it against names reached through a module
 reference, and fails when `__all__` and the expose list disagree, so the two are
 written together and `__all__`, the one a person editing the module sees, is the
-single source. Probe the pair once before trusting it: remove one exposed name
-and watch each gate go red.
+single source.
+
+Satisfying both enforcers is a refactor, not a documentation pass: every
+cross-module import moves to the package door, and `__all__` may not exist yet
+to match an expose list against. Two shapes make import cycles: a sibling that
+imports its own package back, and a package `__init__` that imports a submodule
+which reaches back to it. A sibling never imports its own package; a heavy
+re-export, one that would pull a large dependency at import time, is a
+module-level `__getattr__` rather than an eager import.
 
 ## Greenfield
 
@@ -47,11 +54,18 @@ Not every module at once. Start with touched, boundary-heavy, or high-exposure m
 contract on first touch. A contract written for a module nobody edits is a
 document nobody reads.
 
-Derive the `expose` list from observed cross-module usage, not from `__all__`.
-Across surveyed projects `__all__` coverage ran from 0 of 70 modules to 262 of
-289, so it cannot be relied on either way. Where it is near-total it is real
-intent: reconcile your derived list against it and raise the difference rather
-than silently overriding it.
+Derive the `expose` list from observed cross-module usage, not from `__all__`:
+`agent-ready scaffold contract <path> --expose-from-usage` writes the contract,
+derives the list from what other modules take from the module, prints the
+reconciliation against `__all__` and the line to paste, and declares the
+`tach.toml` stanza where the module has none. Across surveyed projects
+`__all__` coverage ran from 0 of 70 modules to 262 of 289, so it cannot be
+relied on either way; where it is near-total it is real intent, so raise the
+difference rather than silently overriding it.
+
+A module that imports a moved helper carries a precedent pointer to it, and
+`agent-ready codemap check` fails once that pointer no longer resolves, so
+the next agent that reads the contract before editing meets the home.
 
 ## Questions you must ask
 
@@ -65,4 +79,7 @@ than silently overriding it.
 ## Approval
 
 The human approves each contract. A contract whose invariant names no check is
-not approved; write the check or delete the line.
+not approved; write the check or delete the line. Before the approval, probe
+the pair once: remove one exposed name and watch each gate go red, which is the
+only thing that proves the two are wired to the code rather than to each other.
+Stop here: the next phase is a new session, and `agent-ready status` resumes it.

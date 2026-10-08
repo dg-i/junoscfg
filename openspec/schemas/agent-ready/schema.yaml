@@ -17,7 +17,8 @@ artifacts:
       The fields the lane gate reads go in .openspec.yaml beside this file:
       `type`, `zone`, `domains`, `removes` on the standard lane, which may read
       "none, because ...", and in beta and release `declared-break`, one entry
-      per named surface the change touches with its `why` and `migration`. A
+      per named surface the change touches with its `why` and `migration`,
+      shaped `declared-break: {api: {why: ..., migration: ...}}`. A
       change with no spec-level behaviour change sets `skip_specs: true` there
       rather than inventing a requirement.
     requires: []
@@ -62,25 +63,10 @@ artifacts:
       lands, so an interrupted session resumes here.
     requires: [specs]
 
-  - id: retires
-    generates: retires.md
-    description: What a pivot retires - terms, symbols, dependencies, requirements, tests, docs
-    template: retires.md
-    instruction: |
-      Pivot changes only. Terms go in the delimited block, and `agent-ready
-      retired` prints each term's occurrence count beside it for the human who
-      approves the proposal.
-    requires: [proposal]
-
-  - id: checklist
-    generates: checklist.md
-    description: The advisory half of a stage-up, one line per item with the owner's answer
-    template: checklist.md
-    instruction: |
-      Stage-up changes only. One line per advisory item carrying the owner's
-      answer, so the garden audits a file rather than re-deriving a judgment.
-    requires: [proposal]
-
+  # A pivot's retires.md and a stage-up's checklist.md are not artefacts here:
+  # the graph has no per-type artefact, so listing them had `status` ask every
+  # change for both. Their templates sit in templates/ and the type bodies of
+  # the change skill copy them into the folder.
   - id: review
     generates: review.md
     description: The agent review report, written in a fresh session

@@ -65,12 +65,13 @@ target-version = "py310"
 # agent-ready:stage-levers:ruff:end
 
 [tool.ruff.lint]
+# junoscfg's own families. The stage block below renders `extend-select` from
+# the stage on every render, so the repository's set is `select`, named in
+# full: `E` and `F` are listed because `select` replaces ruff's defaults.
+select = ["E", "F", "W", "I", "N", "B", "A", "SIM", "TCH"]
 # agent-ready:stage-levers:select:begin
-select = ["FIX", "ERA", "ARG", "BLE", "TID251", "UP", "D1"]
+extend-select = ["FIX", "ERA", "ARG", "BLE", "TID251", "UP", "D1"]
 # agent-ready:stage-levers:select:end
-# junoscfg's own families, kept beside the stage's. They cannot live inside the
-# block above, which is regenerated from the stage on every render.
-extend-select = ["E", "F", "W", "I", "N", "B", "A", "SIM", "TCH"]
 
 [tool.ruff.lint.per-file-ignores]
 # Test methods carry their intent in the name; a docstring per test is not a
@@ -93,6 +94,9 @@ extend-select = ["E", "F", "W", "I", "N", "B", "A", "SIM", "TCH"]
 "src/junoscfg/validate/structured_validator.py" = ["BLE001"]
 
 # agent-ready:stage-levers:tables:begin
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**" = ["D1", "ARG"]  # a test names its intent; a double leaves parameters unused
+
 [tool.towncrier]
 directory = "changelog.d"
 filename = "CHANGELOG.md"
@@ -133,7 +137,7 @@ dev = [
     "deptry>=0.25.1",
     # Development tooling only. It needs 3.11+, and must not drag the
     # published package's floor up with it.
-    "agent-ready-checks>=0.10.0; python_version >= '3.11'",
+    "agent-ready-checks>=0.15.2; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -440,7 +444,7 @@ reason = "it instruments future events but does not parse existing Codex exec an
 date = "2026-10-06"
 
 [tool.uv.sources]
-agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.10.0" }
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.2" }
 
 [tool.template.zones.kernel]
 paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
@@ -534,3 +538,10 @@ purpose = "split one configuration into host_vars and templated group_vars so it
 paths = ["src/junoscfg/audit/**"]
 owners = ["manon.goo@dg-i.net"]
 purpose = "find configuration objects that are defined but never referenced"
+
+# The garden sweep's state, declared and never deduced: `questions` holds this
+# repository's own questions beyond the seven the sweep job carries, each one a
+# question the code answers that the sweep reads for a second answer; `swept`
+# is the commit the last sweep read, absent until the first sweep sets it.
+[tool.template.garden]
+questions = []

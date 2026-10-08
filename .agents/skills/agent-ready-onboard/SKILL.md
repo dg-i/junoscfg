@@ -5,9 +5,11 @@ description: Bring a repository under this workflow, one approved phase at a tim
 
 # Onboard
 
-Invoke as `agent-ready-onboard <phase>`, one phase per session, each ending in a human
-approval. Read this file and the one phase file you are running. Do not read the
-others; they cost tokens you will not use.
+Invoke as `agent-ready-onboard <phase>`, one phase per session, each ending in a
+human approval. Read this file and the one phase file you are running,
+`phases/<phase>-<name>.md`. Do not read the others; they cost tokens you will
+not use. `agent-ready status` says what each phase still has outstanding, and
+on greenfield which phase comes next.
 
 ## Two stances
 
@@ -55,16 +57,22 @@ unnoticed. Deriving a boundary set you believe is already clean costs minutes
 and either confirms your reading or contradicts it; skipping it leaves your
 reading unchecked, and your reading is the thing under test.
 
-Use no asking mechanism that only one runtime has: Claude Code offers a
-structured picker and Codex does not, so a phase that leans on one stops working
-for half the adopters.
+Ask in prose first. Where the runtime offers a structured picker, as Claude
+Code does and Codex does not, offer it after the prose with the same numbered
+options: the prose stands on its own on the runtime that has none, and the
+picker is a convenience a phase never leans on.
 
 ## Sessions, approval, and the log
 
-A session boundary sits at every approval. The phase table is the ceiling on
-how much one session does, not a quota: on a small package phase 3 may pin every
-module in one sitting, while on a large one each pinned module is its own pull
-request. What never moves is the order: pin, then gate, then contract.
+A session boundary sits at every approval, and the boundary is the cost
+control: a session that carries every phase re-reads its whole context on every
+turn, and on the second brownfield adoption 43 percent of the run's cache-read
+tokens were spent above 850k of context. Each phase ends with the same line:
+stop here, the next phase is a new session, and `agent-ready status` resumes
+it. A phase is the ceiling on how much one session does, not a quota: on a
+small package phase 3 may pin every module in one sitting, while on a large
+one each pinned module is its own pull request. What never moves is the order:
+pin, then gate, then contract.
 
 Approval is a human act on the artefact, never a field the agent writes. Where
 the repository has pull requests, it is the CODEOWNERS review. Where it has
@@ -81,31 +89,22 @@ project at the end of phase 7.
 
 ## The tool
 
-`agent-ready` is the check package the template pins. This is its whole
-surface, so a gap is found by reading this table rather than by writing a
-script; a phase that needs something not listed here reports the gap.
+`agent-ready` is the check package the template pins, and `agent-ready --help`
+is its whole surface: read it rather than writing a script, and report a gap
+rather than working around one. The flags the phases pass are
+`--write-baseline`, `--check`, `--base`, `--sections` and `--regenerate`.
 
-| Subcommand | Checks or writes |
-|---|---|
-| `scaffold architecture\|zone\|domain\|contract\|decision\|template\|agents` | an artefact, its underivable fields written as sentinels; `template` seeds a brownfield `pyproject.toml` with the shipped tables, the check package's source; hook activation waits for phase 4; `agents` writes the instruction file skeleton and the Claude bridge |
-| `fields [--sections N ...] [--base REF]` | sentinels and `[inferred]` markers, the zone vocabularies, contracts, the `onboarded` date, the live changes' fields, the stage key against `stage.md`'s rules and the base ref, the instruction file with its stage block and the Claude bridge |
-| `caps [--write-baseline\|--homes]` | document line caps from `[tool.template.caps]` and section caps from `[tool.template.section-caps]`; `--homes` lists the artefact homes no cap covers |
-| `gates` | every gate's mode and expiry |
-| `toolbox` | a licence per approved tool, a reason and a date per rejection |
-| `interfaces [--write-baseline]` | names reached through a module reference, and `__all__` against the expose list |
-| `specs [--write-baseline]` | every capability under `openspec/specs/` sits under a declared domain |
-| `reconcile [--write-baseline]` | every requirement under `openspec/specs/` names an acceptance test that exists |
-| `render codeowners\|toolbox\|decisions\|levers\|stage [--check]` | the renderings from `pyproject.toml` and the decision records, the stage block of `AGENTS.md` among them, or whether they are current |
-| `decisions` | decision records and toolbox trial entries: fields answered, `review-by` not passed |
-| `stage griffe\|towncrier\|vulture` | the tool, in the mode the declared stage sets |
-| `metrics <change>` | the git-supplied fields of a change's metrics record |
-| `check [--base REF]` | the slow set in one command: every check the CI workflow runs, the names of the failed ones last |
-| `update [--to REF] [--data K=V] [--no-checks]` | the repository brought to the newest template release: `copier update`, the check package's tag, the lock, the conflicts and the failing checks reported |
-| `codemap build\|show <symbol>\|slice --change <slug>\|check` | the symbol index from griffe and tach, one symbol's span, the change's code-map slice, the contracts' precedent pointers and the slice against the index |
-| `lane [--base REF]` | the live change against its lane: the fix lane's caps, `removes`, the design, the retires list, the declared breaks on touched surfaces |
-| `retired [--base REF]` | a live pivot's retired terms outside the allowed homes, each term's count at the base, the record that names them, the removed symbols against its list |
-| `budget [--report]` | the always-loaded set against its token budget and Codex's metadata ceiling |
-| `skills [--regenerate]` | skill frontmatter, runtime parity, the generated mirror |
+`agent-ready status` prints what each phase still has outstanding, read from
+this repository. It is a report over the other checks' audits, never a gate,
+and it says `not applicable` and `nothing outstanding` but never `done`:
+approval is a human act on an artefact, and nothing in a tree records one.
+
+Run the check package's own internals, when a check has to be reproduced
+against its source, with `uvx --from <source> ...`, never `uv run` in this
+repository's tree: `uv run` syncs the project environment first and rebuilds
+it around what it was given. The template adds files under `docs/`, the
+how-to guides, `TOOLBOX.md` and the decision records; a site generator with a
+navigation list needs them listed or excluded.
 
 ## Prerequisites
 
@@ -114,44 +113,7 @@ which `npx --yes @fission-ai/openspec@1.13.0` runs; Copier and pre-commit
 through `uvx`; griffe, tach, towncrier, and vulture through `uv run --with`,
 as the CI workflow does; and clone access to the template repository, whose
 git history is where the check package comes from until it is on PyPI.
-
-## Step zero: the template in the repository
-
-Greenfield arrives complete from `copier copy`; `uv lock` pins the check
-package and nothing else is needed before phase 0.
-
-Brownfield brings the template in before any phase, from the application root:
-
-1. Run `uvx --from 'git+<template-url>@<checks-tag>#subdirectory=checks' agent-ready --root . scaffold template --dry-run` and present its keep, add,
-   merge, and activate-later report. It writes nothing. Confirm the existing
-   acceptance command, canonical sources, container route, local instructions,
-   measured limits, hooks, and CI with the owner before applying additions.
-2. Run `uvx --from 'copier==9.18.2' copier copy --vcs-ref <tag> --defaults --data mode=brownfield
-   <template-url> .`. Brownfield hosting defaults are off. If a file collides,
-   use Copier's skip for that path and record a merge proposal; preserve the
-   application file. Copy inert resources only. Do not install hooks or enable
-   hosting before phase 4.
-3. Run `uvx --from 'git+<template-url>@<checks-tag>#subdirectory=checks' agent-ready --root . scaffold template` for safe missing seeds. It retains
-   existing template tables, test-command argv, dependencies, uv settings,
-   tool settings, instructions, hooks, and CI. Review each merge proposal.
-   Use the application's native dependency workflow. Run `uv lock` only if
-   this application uses uv; otherwise install the check package as a tool
-   through the existing workflow.
-
-From here every phase has the tool it names.
-
-## Phases
-
-| Phase | File | Ends with |
-|---|---|---|
-| 0 Interview | `phases/0-interview.md` | arc42 sections 1 to 3, owners, the stage key |
-| 1 Architecture | `phases/1-architecture.md` | section 8, zone and domain tables |
-| 2 Toolbox | `phases/2-toolbox.md` | toolbox and dependency policy |
-| 3 Pinning | `phases/3-pinning.md` | characterization tests (brownfield only) |
-| 4 Gates | `phases/4-gates.md` | the answers file, gates installed, baselines, expiry dates |
-| 5 Contracts | `phases/5-contracts.md` | module contracts |
-| 6 Specs | `phases/6-specs.md` | OpenSpec configured, every capability under its domain |
-| 7 Handover | `phases/7-handover.md` | `AGENTS.md`, `onboarded` dated, first change recorded |
+`agent-ready init` checks the first four before it writes anything.
 
 ## Stopping
 

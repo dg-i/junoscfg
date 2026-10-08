@@ -10,7 +10,12 @@ phase; lines added never trigger it, because they are unknowable here.
 
 Walk it in order and stop at the first rung that holds:
 
-1. a helper this repository already has, found through the slice;
+1. a helper this repository already has, found through the slice or the
+   search the intent phase states; where the layering forbids the import and
+   no later rung answers, move the helper to the first answerer's layer or
+   one below and import it back, with `tach.toml`, the expose list and both
+   contracts updated and the move's cost in the design, never the bottom by
+   default and never a local copy;
 2. the standard library;
 3. an established library that passes the dependency policy;
 4. build it;

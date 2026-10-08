@@ -27,6 +27,10 @@ After implementation and review, in this order:
    unsupported evidence remains `UNMEASURED`; no agent estimates it.
 3. Review and commit both metrics files, then merge. The capture head remains
    the code commit, even if the evidence commit or squash merge has another ID.
+   A change whose point is that something works better now records the
+   measurement that shows it as a row of `metrics.md`, where the next person
+   finds it. With every task ticked, `agent-ready lane` expects `review.md` and
+   `metrics.md` in the folder before the merge: presence, not approval.
 4. Archive only when `openspec status --change <slug>` shows every artefact
    the type needs complete and `tasks.md` has no open box: an open task is a
    question for the human, never a warning to pass, and `openspec validate
@@ -35,7 +39,9 @@ After implementation and review, in this order:
    The main specs were already reviewed and merged. A fix-lane change has
    `skip_specs: true` and no delta.
 5. `openspec list --specs` confirms the capability and requirement count.
-6. Commit the archive move, or use a small pull request where main is protected.
+6. Where there is no pull request, the archive move rides in the merge
+   commit, and the lane gate reads the archived folder as the merge's change;
+   where main is protected, a small pull request carries it.
 
 OpenSpec moves both metrics files with the change folder. Context-expansion
 rows in the existing `metrics.md` Field/Value table survive capture. They

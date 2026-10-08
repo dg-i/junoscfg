@@ -3,49 +3,49 @@
 ## Outcome
 
 `ARCHITECTURE.md` exists with sections 1, 2, and 3 answered and every
-`[inferred]` marker in them confirmed or corrected; every area has a named
-owner, carried into phase 1's zone table; `[tool.template.stage]` is written
-with `name`, `surfaces`, `components`, `break-bumps`, `owners`, and
-`review-by`, no scaffold value left. `agent-ready fields --sections 1 2 3`
-passes.
+`[inferred` marker in them confirmed or corrected; every area has a named
+owner, carried into phase 1's zone table; `[tool.template.stage]` carries
+`name`, `surfaces`, `surface-paths`, `owners`, and `review-by`, no scaffold
+value left among them. `components` and `break-bumps` are phase 7's, where the
+first change has run and the version scheme has been used once. `agent-ready
+fields --sections 1 2 3` passes.
 
 ## Start
 
-Run `agent-ready scaffold architecture`. It writes the skeleton with each
-required section carrying a sentinel, so nothing you leave unanswered can pass
-quietly.
+Run `agent-ready scaffold architecture`: it writes the skeleton with a sentinel
+in each required section, so nothing left unanswered passes quietly.
 
 ## Greenfield — the package first
 
-Copier ships the skeleton at `src/package`, which is not the name
-`pyproject.toml` imports. Run `agent-ready scaffold package` before anything
-else: it moves the directory to the package this project named. Nothing that
-reads the package works until it has run.
+Copier ships the skeleton at `src/package`, not the name `pyproject.toml`
+imports; `agent-ready scaffold package` moves it there, and nothing that reads
+the package works before it has run.
 
 ## Greenfield
 
-Nothing can be derived, so all of it is asked. Work through the sentinels in
+Nothing can be derived, so all of it is asked: work through the sentinels in
 order and write the answers in the human's words, not yours.
 
 ## Brownfield
 
-Read the step-zero dry-run report first. Present the existing test and acceptance
-oracle candidates, canonical configuration and generated relationships,
-container or other environment constraints, retained local instructions,
-existing gates with observed value, measured caps with their stated reasons,
-and proposed additions. Distinguish references from filename candidates and
-ask for confirmation where the report is uncertain. The application evidence
-describes current controls; only the owner decides future intent.
+Read the keep, add, merge and activate-later report `agent-ready init` printed
+first. Present the existing test and acceptance oracle candidates, canonical
+configuration and generated relationships, container or other environment
+constraints, retained local instructions, existing gates with observed value,
+measured caps with their stated reasons, and proposed additions. Distinguish
+references from filename candidates and ask for confirmation where the report
+is uncertain. The evidence describes current controls; the owner decides intent.
 
 Read first, then ask. The README, the top-level docs, the CI configuration and
 the dependency list will answer parts of sections 2 and 3 on their own. Draft
-those, mark each claim you concluded rather than read with `[inferred]`, and
-bring the draft to the interview so the human is correcting a proposal rather
-than starting from a blank page. The marker is a sentinel: `agent-ready fields`
-fails while one remains, so approval is the act of removing them.
+those, mark each claim you concluded rather than read where it stands, as
+`[inferred: from the imports]`, and bring the draft to the interview so the
+human is correcting a proposal rather than starting from a blank page. The
+marker is a sentinel: `agent-ready fields` fails while one remains, whatever
+follows the word inside the brackets, so approval is the act of removing them.
 
-Section 1 is the one you cannot draft. The code shows what the system does; it
-never shows which quality the team would sacrifice to keep another.
+Section 1 is the one you cannot draft: the code shows what the system does,
+never which quality the team would sacrifice to keep another.
 
 Two documents come out of this onboarding, and nothing but this test tells
 them apart: would violating the line produce a wrong artefact, or merely a
@@ -79,11 +79,10 @@ second kind, and none of them is a constraint in section 2.
 8. Which surfaces does that promise cover: the API, the CLI, the config
    schema, the stored data, the log lines, a wire protocol? Name only what you
    would actually hold still; anything unnamed is regenerated rather than
-   migrated. For each surface other than the API, which paths carry it? They
-   go in `surface-paths`, which is how the lane gate sees a change touching it.
-9. In your own versioning scheme, what are the components, widest to
-   narrowest, and which one does a break in each named surface raise? `none`
-   is a real answer for a surface whose breaks raise nothing.
+   migrated.
+9. For each surface other than the API, which paths carry it? Propose a glob
+   per named surface from the tree; the answer is `surface-paths`, which is
+   how the lane gate sees a change touching the surface.
 10. Who owns this declaration? It has to be a team or more than one person:
     they become the reviewers of `pyproject.toml`, which holds every cap and
     policy in this template. A repository with one maintainer says so with
@@ -94,6 +93,8 @@ second kind, and none of them is a constraint in section 2.
 
 ## Approval
 
-The human approves `ARCHITECTURE.md` sections 1 to 3, the owner list, and
-`[tool.template.stage]`, which means every `[inferred]` marker is gone: a confirmed claim loses the marker and
-a wrong one is corrected. Do not continue to phase 1 without it.
+The human approves `ARCHITECTURE.md` sections 1 to 3, the owner list, and the
+part of `[tool.template.stage]` this phase answers, which means every
+`[inferred` marker is gone: a confirmed claim loses the marker and a wrong one
+is corrected. Do not continue to phase 1 without it, and not in this session:
+`agent-ready status` resumes the next one.

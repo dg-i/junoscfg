@@ -6,9 +6,11 @@ is never deferred, because residue reproduces itself.
 
 ## retires.md
 
-`openspec instructions retires --change <slug>` prints the template. List what
-retires: the concept's terms in the delimited block, its symbols, its
-dependencies, the requirements it satisfied, its tests and fixtures, its docs.
+Copy `openspec/schemas/agent-ready/templates/retires.md` into the change
+folder: it is a pivot's artefact alone, which OpenSpec's schema cannot say, so
+`status` never lists it. List what retires: the concept's terms in the
+delimited block, its symbols, its dependencies, the requirements it satisfied,
+its tests and fixtures, its docs.
 `agent-ready retired` prints each term's occurrence count at the merge base
 beside it, so a term too common to ban is visible to the human approving the
 proposal. A term whose shape needs a regex goes under `Patterns:` in the

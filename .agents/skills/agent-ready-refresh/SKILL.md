@@ -24,10 +24,11 @@ running `agent-ready check`, the slow set in one command, which a repository
 on any platform runs by hand the same way. A repository
 that installed the package as a tool runs `agent-ready update` directly, and
 one whose pinned copy predates the command bootstraps it once:
-`uvx --from "git+<template_url>@<checks-tag>#subdirectory=checks" agent-ready
-update`, with `template_url` from `.copier-answers.yml` and the tag from
+`uvx --from "git+<template_url>@<checks-commit>#subdirectory=checks" agent-ready
+update`, with `template_url` from `.copier-answers.yml` and the commit from
 `.agent-ready/template.toml`, or the template's newest `checks-v*` tag where
-that file does not exist yet; from then on the pinned copy has it. The
+that file does not record one yet; a tag can move under a cached `uvx` build
+and a commit cannot. From then on the pinned copy has it. The
 scheduled workflow has already run it with `--no-checks` when the branch is
 its pull request; run it again then, for the checks. `--to <ref>` picks a
 template ref other than the newest tag, and `--data key=value` changes a
@@ -44,7 +45,12 @@ edits.
 The command
 refuses `project_name`, `package_name`, `python_version`, and `mode`, because
 Copier would re-render the seeds and delete the old package directory; those
-are edited by hand. The report
+are edited by hand. Where the question at the recorded release refuses a
+recorded answer that the target accepts, the command renders the merge base
+with the nearest value the old question takes, carried in a commit of the
+answers file that is undone before the command returns, and keeps the
+recorded answer, saying so in the report; the answers file is never edited
+by hand for it. The report
 names the template commit before and after, the check package tag before and
 after, the files with conflict markers, and the failing checks. Nothing is
 committed by the command.

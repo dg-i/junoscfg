@@ -2,15 +2,15 @@
 
 ## Outcome
 
-OpenSpec configured: `openspec/config.yaml` names the template's schema,
-`agent-ready`, whose artefacts and templates sit under `openspec/schemas/`, and
-`openspec/specs/` and `openspec/changes/archive/` exist. Every capability
-directory sits under the directory of its domain, named exactly as the domain's
-key in `[tool.template.domains]`, and `agent-ready specs` and `agent-ready
-reconcile` pass or carry a baseline with an expiry. There is no index file: `openspec list --specs` is the
-inventory, one line per capability with its requirement count. OpenSpec's
-telemetry is off, `OPENSPEC_TELEMETRY=0` in the shell that runs it, as the
-shipped CI workflow sets it.
+Every capability directory sits under the directory of its domain, named
+exactly as the domain's key in `[tool.template.domains]`, and `agent-ready
+specs` and `agent-ready reconcile` pass or carry a baseline with an expiry.
+The copy already configured OpenSpec: `openspec/config.yaml` names the
+template's schema, `agent-ready`, whose artefacts and templates sit under
+`openspec/schemas/`, and `openspec/specs/` and `openspec/changes/archive/`
+exist. There is no index file: `openspec list --specs` is the inventory, one
+line per capability with its requirement count. OpenSpec's telemetry is off,
+`OPENSPEC_TELEMETRY=0` in the shell that runs it, as the shipped CI sets it.
 
 A domain's spec is `openspec/specs/<domain>/spec.md`; above its cap it splits
 into `openspec/specs/<domain>/<capability>/spec.md`. OpenSpec refuses a
@@ -26,9 +26,14 @@ pass.
 
 ## Brownfield
 
-Reference canonical executable specs and generated relationships without copying their values. Write requirements for promises that need change history. Do not backfill specs for existing behaviour. Specs arrive per change, as deltas
-whose reviewed main-spec edits are applied before merge using a disposable
-OpenSpec archive. Post-merge archive uses `--skip-specs`.
+On a brownfield repository this phase usually writes nothing: the
+configuration arrived with the copy, and the first spec arrives with the
+change that needs it. Reference canonical executable specs and generated
+relationships without copying their values. Write requirements for promises
+that need change history. Do not backfill specs for existing behaviour. Specs
+arrive per change, as deltas whose reviewed main-spec edits are applied before
+merge using a disposable OpenSpec archive. Post-merge archive uses
+`--skip-specs`.
 
 Backfilling looks productive and is not: a spec written from code says what the
 code does, which the code already said, and it will be wrong in exactly the
@@ -71,4 +76,4 @@ in `pyproject.toml` for the mirror check to leave them to their upstream.
 
 The human approves the capability placement and every baseline entry with its
 expiry. Question 3 can send you back to phase 1; that is cheaper now than after
-the specs exist.
+the specs exist. Stop here: the next phase is a new session, and `agent-ready status` resumes it.

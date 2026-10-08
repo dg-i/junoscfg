@@ -11,7 +11,8 @@
 Propose the layering from the interview, not from code that does not exist yet.
 Two or three layers is usually right; more is a guess about a future you have
 not seen. Write section 8 as the rules that hold everywhere: layering, error
-handling, money, time, identity.
+handling, money, time, identity, and the named home of each resource the code
+resolves.
 
 ## Brownfield — evidence to gather
 
@@ -25,6 +26,13 @@ handling, money, time, identity.
   acceptance path reaches it at all, and what it does that leaves the process —
   writes outside the repository, network calls, subprocesses. Structure tells you
   how the code is arranged; only this tells you what would go unnoticed.
+- Generated data under the source tree: artefacts the build writes and nobody
+  edits by hand. Name their paths in section 8, so a session knows what not to
+  read; nothing else keeps a grep out of them.
+- Every place that reads the environment, builds a path from `__file__`, or
+  loads a bundled resource, as one list: it is the first sweep's starting
+  point, and two readers of one resource with different capability are a
+  split answer, pinned in phase 3 before anything moves.
 
 Exclude from the evidence, or you will over-report: imports inside
 `if __name__ == "__main__":` demonstration blocks, and imports under
@@ -63,8 +71,7 @@ rendered from the approved tables with `agent-ready render codeowners`, never
 hand-edited; `agent-ready render codeowners --check` is the gate that keeps it
 so.
 
-CODEOWNERS routes review; hosting settings make it mandatory. Inspect generated
-warnings: exact paths union their owners; nested paths run broad to specific
-and retain broader owners. Complex globs and basename rules may route extra
-owners. GitHub accepts any one listed owner, so this does not require both
-zone and domain approval. Agree the approval policy separately from routing.
+CODEOWNERS routes review; hosting settings make it mandatory, and
+`docs/how-to/hosting.md` holds how each platform behaves and what the generated
+file's overlap warnings mean. Agree the approval policy separately from routing.
+Stop here: the next phase is a new session, and `agent-ready status` resumes it.

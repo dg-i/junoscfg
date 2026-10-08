@@ -30,10 +30,12 @@ The fix lane, type `fix`, is a ten-line proposal, one regression test, and
 code: two files, thirty lines, no delta, and `skip_specs: true`, in any zone.
 Write the test first and watch it fail; `agent-ready lane` runs it against the
 merge base and fails the pull request when it passes there. The zone's tier
-picks the reviewer, not the route. A fix that exceeds those caps is retyped
-`bug` and takes the standard lane, which every other type takes and which runs
-every phase its type needs. A spike is a branch that never merges; its outputs
-reach main on one standard-lane change.
+picks the reviewer, not the route. A fix proposal names the failure mode that
+remains after the fix: a repair that turns a loud failure into a quiet wrong
+answer is worse than the failure, and the caps never ask. A fix that exceeds
+those caps is retyped `bug` and takes the standard lane, which every other type
+takes and which runs every phase its type needs. A spike is a branch that never
+merges; its outputs reach main on one standard-lane change.
 
 ## Sessions
 

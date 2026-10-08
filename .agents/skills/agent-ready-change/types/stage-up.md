@@ -25,8 +25,10 @@ measured against from then on.
 
 ## The advisory half
 
-`checklist.md`, one line per item with the owner's answer, so the garden
-audits a file rather than re-deriving a judgment: the exported surface
+`checklist.md`, copied from `openspec/schemas/agent-ready/templates/`
+because it is a stage-up's artefact alone and OpenSpec's `status` never lists
+it, one line per item with the owner's answer, so the garden audits a file
+rather than re-deriving a judgment: the exported surface
 minimised from observed usage, as the brownfield expose derivation does, and
 the deprecation policy stated. Every item is answered before the change
 archives: `agent-ready fields` fails an unanswered one, and the archive step's

@@ -46,4 +46,4 @@ probation is a trial entry, `[tool.template.toolbox.trial]`, with a `review-by`
 date that `agent-ready decisions` validates until it is confirmed or removed.
 `docs/TOOLBOX.md` is rendered from the approved table with `agent-ready render
 toolbox`, never hand-edited; `agent-ready render toolbox --check` is the gate
-that keeps it so.
+that keeps it so. Stop here: the next phase is a new session, and `agent-ready status` resumes it.

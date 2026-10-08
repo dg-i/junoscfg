@@ -6,7 +6,7 @@
 
 ## Already provided
 
-<!-- What the toolbox, the standard library, or a declared dependency already covers. -->
+<!-- What the toolbox, the standard library, a declared dependency, or this repository already covers. -->
 
 ## Specification challenges
 

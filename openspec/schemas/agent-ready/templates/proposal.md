@@ -1,4 +1,4 @@
-<!-- The fields the lane gate reads live in .openspec.yaml beside this file: type, zone, domains, removes, and declared-break. This file is the prose a human approves. -->
+<!-- The fields the lane gate reads live in .openspec.yaml beside this file: type, zone, domains, removes, and declared-break, shaped `declared-break: {<surface>: {why: ..., migration: ...}}`. This file is the prose a human approves. -->
 
 ## Why
 
@@ -7,6 +7,7 @@
 ## What Changes
 
 <!-- Specific: new capabilities, modifications, removals. Mark breaking changes **BREAKING**. -->
+<!-- An override, fallback, parameter or environment read: one line naming the search you ran for the thing it configures and every reader it found. -->
 
 ## Capabilities
 
@@ -25,3 +26,4 @@
 ## Impact
 
 <!-- Affected code, APIs, dependencies, systems. -->
+<!-- A figure this change rests on names the corpus and the command that reproduce it, both in this repository, so a reviewer can rerun it. -->

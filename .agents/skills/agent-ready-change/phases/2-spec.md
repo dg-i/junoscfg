@@ -53,12 +53,19 @@ through the existing spec/test approval points. See the review template.
    behaviour, with at least one scenario and the id of an acceptance test:
    `Tests: tests/<file>.py::<test>`. A test that does not exist yet is written
    in phase 4; a requirement that names none fails `agent-ready reconcile`.
+   A requirement about a capability several entry points expose names each
+   door in its scenarios, the readers the intent search found and never the
+   stage's surface list, and its test drives every door.
 4. A MODIFIED block carries the whole requirement, every scenario it keeps
    included: `archive` replaces the block, and strict validation refuses one
    that drops a scenario silently.
 5. A new capability carries a Purpose someone wrote, in a sentence or two.
 6. `[NEEDS CLARIFICATION]` marks a gap you could not close; it is a question
    for the human, never a placeholder to fill.
+7. A requirement about a pair of inverse functions, serialise and
+   deserialise, parse and render, encode and decode, states which direction
+   is the identity, since render after parse is not one for unnormalised
+   input.
 
 Lite spec is the default. A full spec, with error conditions and design
 implications spelled out, only for cross-domain, API, migration, or security

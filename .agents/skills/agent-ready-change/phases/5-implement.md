@@ -12,13 +12,21 @@ the slow set green, and nothing in the diff the proposal did not ask for.
 2. Before touching a module, read its contract and its block in the slice.
    Read a named symbol alone with `agent-ready codemap show <pkg.mod.symbol>`,
    which prints the span the index records, rather than the file around it.
-3. Prefer an existing helper over a new one. The slice names them.
+3. Prefer an existing helper over a new one. The slice names them. A
+   layering block is a move to the first answerer's layer or one below,
+   never a copy, and the importing module's contract gains a precedent
+   pointer to the home.
 4. Run the fast set with `pre-commit run --all-files`, then the slow set in
-   one command, `agent-ready check --base origin/main`, which runs every gate
-   the pull request will meet, the lane gate among them, and `openspec
-   validate <slug> --strict`.
+   one command, `agent-ready check`, which reads the change's own base and
+   runs every gate the pull request will meet, the lane gate among them, and
+   `openspec validate <slug> --strict`.
 5. Tick each task as it lands. `openspec status --change <slug>` shows what
    remains.
+6. A function that is the inverse of one that exists is written beside it:
+   one table is the only source of field names for both sides, and the
+   round-trip of phase 4 is what proves the pair. A second table or a
+   hand-written remainder is a split answer: a design question in the
+   proposal, never a local copy.
 
 ## Classify failures
 

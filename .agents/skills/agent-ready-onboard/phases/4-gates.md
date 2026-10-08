@@ -10,14 +10,19 @@ a hosting platform to run it. `agent-ready gates` passes.
 
 GitHub and GitLab run the same `agent-ready check --set full --base <target-ref>`
 command. It includes hooks, tach, OpenSpec validation, internal gates, and
-tests. Run it locally before enabling CI. When the application has an existing
+tests. Run it locally before enabling CI. The gates are what `agent-ready check
+--set fast` runs, the three stage gates among them: `agent-ready stage` with no
+tool runs griffe, towncrier and vulture, and each one fails. `lane` reads red
+on the onboarding branch until phase 7's first change opens a folder: the diff
+carries governed files and no live change, which is what the gate refuses.
+When the application has an existing
 test adapter, declare its argv under `[tool.template]` as `test-command`; the
 full set runs it and the fast set defers that environment-heavy command. GitLab
 scheduled updates need CI job token push access to create `update/template`.
 
 ## Greenfield
 
-The project arrived complete from `copier copy`, answers file included. `uv
+The project arrived complete from `agent-ready init`, answers file included. `uv
 lock` pins the check package from the template repository at the `checks-v*`
 tag `[tool.uv.sources]` names; `agent-ready render codeowners` and `agent-ready
 render toolbox` write the two generated files; the fast set runs green. A
@@ -37,6 +42,9 @@ requires, including containers.
 Template caps are proposals. Preserve a measured local cap and its reason;
 record new debt in approved baselines with expiry. Keep local safety checks.
 Run `tach sync` during this bootstrap after the owner approves the boundary.
+The seeded hook set has no type hook: run mypy in CI behind a dated decision
+record and add the hook once it passes. ERA001 reads a `# Word: value` comment
+as code; reword the comment, never suppress the rule.
 
 Only after fast checks, gate and baseline validation, native acceptance, and
 portable full pass in the required environment may hooks or hosting activate.
@@ -66,11 +74,11 @@ one independent check on that reading. Do not baseline a cycle: record it in
 
 Where the remote is a directory rather than a hosting platform, there is no CI
 and no CODEOWNERS review: the hooks are the whole enforcement and approval is
-the human's commit. Name the ref the stage gates and the metrics compare with
-as `base` under `[tool.template]`, the previous release tag or `HEAD~1` where
-changes land on main directly, because `origin/main` there is only what was
-last pushed; record it in the friction log and in `docs/how-to/work-with-agents.md`
-when phase 7 writes it, so nobody reads the rendered `CODEOWNERS` as a gate.
+the human's commit, and `docs/how-to/work-with-agents.md` says so when phase 7
+writes it, so nobody reads the rendered `CODEOWNERS` as a gate. The diff-reading
+gates compare with the change's own base, the branch point with the local
+default branch or the commit that opened the one live change; `base` under
+`[tool.template]` is the fallback for a tree with neither, never a remote ref.
 
 ## Questions you must ask
 
@@ -85,4 +93,4 @@ when phase 7 writes it, so nobody reads the rendered `CODEOWNERS` as a gate.
 ## Approval
 
 The human approves the gate set, each baseline, and each expiry date. A cap is
-raised in this phase only by a decision record naming its measurement.
+raised in this phase only by a decision record naming its measurement. Stop here: the next phase is a new session, and `agent-ready status` resumes it.

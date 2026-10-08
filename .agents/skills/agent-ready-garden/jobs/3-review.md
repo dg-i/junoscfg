@@ -38,7 +38,7 @@ retired, or flagged before it can surprise anyone.
 
 ## A cap-raise decision arriving from the audit job
 
-A cap raise proposed by `jobs/1-audit.md` is one line naming the measurement
-that justifies it. Fold it into this run's batch like any other decision
-needing a human signature, rather than opening it as a separate, smaller
-review cycle.
+A cap raise proposed by `jobs/1-audit.md` names, in its decision line, the
+measurement that justifies it. Fold it into this run's batch like any other
+decision needing a human signature, rather than opening it as a separate,
+smaller review cycle.

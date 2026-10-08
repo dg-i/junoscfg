@@ -1,6 +1,6 @@
 ---
 name: agent-ready-garden
-description: Audit shared documents and specs, propose removing unread artefact types, and review decisions due for renewal. Run before each release or monthly, whichever is sooner.
+description: Audit shared documents and specs, propose removing unread artefact types, review decisions due for renewal, and sweep for split answers. Run before each release or monthly, whichever is sooner.
 ---
 
 # Garden
@@ -20,6 +20,7 @@ will not use.
 | Audit | `jobs/1-audit.md` | one PR per document brought under its cap or made sound |
 | Remove | `jobs/2-remove.md` | one PR per unread artefact type, proposing deletion |
 | Review | `jobs/3-review.md` | one PR per decision renewed or retired |
+| Sweep | `jobs/4-sweep.md` | one PR per split answer, pinned and dated |
 
 ## The rule that governs every job
 

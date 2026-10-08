@@ -9,12 +9,22 @@ in one pass with no implementation, and reviewed by the human.
 
 1. For each requirement in the delta, the test its `Tests:` line names, in
    that file and under that name: `agent-ready reconcile` reads the id phase 2
-   wrote and fails while the test does not exist.
+   wrote and fails while the test does not exist. A requirement with several
+   doors has one test that drives each door with the input only the richer
+   side accepts, the override set and unset.
 2. Contract tests where a module's `__all__` or a Protocol changes: the
    conformance suite runs over real and fake implementations.
-3. No implementation. A test that passes before the change exists is not
-   testing the change.
-4. The human reviews the test files, not the diff of the whole change. Approved
+3. A requirement about a pair names one round-trip property as its test. Its
+   Hypothesis strategy is derived from the value type and never from the
+   table, so inputs the table does not cover reach a hand-written remainder
+   and fail it. Hypothesis is approved in the toolbox already, so the change
+   that writes the first pair adds it to the dev group without a design.
+4. No implementation. A test that passes before the change exists is not
+   testing the change. A scanning test asserts what it scanned, not only what
+   it found, or an empty scan passes it; a test asserts the property the
+   feature exists for, not that something moved; a test command that can skip
+   everything needs a check that it did not.
+5. The human reviews the test files, not the diff of the whole change. Approved
    tests are the baseline, subject to the formal challenge path; never silently
    change approved intent or weaken a kept requirement's assertion.
 

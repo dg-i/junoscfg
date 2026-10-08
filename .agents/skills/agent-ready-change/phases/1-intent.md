@@ -21,9 +21,15 @@ than rounds later.
    lane's metadata carries no `removes`. Non-goals are prose in the proposal.
 4. In beta and release, a change touching a named surface adds a
    `declared-break` entry per surface there, with `why` the break is necessary
-   and the `migration`. It takes the red approval column whatever the zone.
-5. A change with no spec-level behaviour change sets `skip_specs: true` in
-   `.openspec.yaml`; never invent a requirement to satisfy validation.
+   and the `migration`: `declared-break: {api: {why: ..., migration: ...}}`,
+   one key per surface. It takes the red approval column whatever the zone.
+   A proposal that touches what a decision record governs cites the record's
+   id, so a superseded or expiring decision is met here and not in the index.
+5. A refactor, a stage-up or a bootstrap that changes no behaviour sets
+   `skip_specs: true` in `.openspec.yaml`; never invent a requirement to
+   satisfy validation. A bug, a feature or a pivot never sets it: a fix in a
+   domain with no spec writes the first requirement for the behaviour it pins,
+   and `agent-ready lane` refuses the flag on those types.
 6. `openspec validate <slug>` passes, and `agent-ready fields` reports no
    unanswered field in `.openspec.yaml`.
 
@@ -42,9 +48,21 @@ deprecation requirement first, and every break is declared here.
 ## Questions you must ask
 
 1. What does this change remove? "Nothing" is an answer that needs a reason.
+   A rejected alternative is not a non-goal: a road taken and abandoned goes
+   in `design.md` or the decision record with the measurement that rejected
+   it; a non-goal is what the change leaves alone.
 2. Which domain owns the behaviour that changes, and does its spec exist?
 3. Is this a fix inside the fix-lane caps, or a bug that needs the standard
    lane?
+4. Does this change add an override, a fallback, a parameter or an
+   environment read? Then name the resource it redirects, the file, the
+   table, the directory, and search this repository for every place that
+   resolves it: by its name, constant and concept words, and for the
+   `__file__`-relative and bundled-resource loads that carry none of them.
+   State the search in the proposal and list every reader it found under
+   What Changes. In alpha the list reads "none", because a change there adds
+   one choice and no option; an override wanted in alpha is a stage question
+   for the human, not a search skipped.
 
 ## Approval
 
