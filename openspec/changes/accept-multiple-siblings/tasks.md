@@ -11,7 +11,7 @@
 - [x] 2.2 Recognize flat positional children and allow their parent rule to
   append repeated keyworded siblings after consuming the positional value.
 - [x] 2.3 Regenerate the shipped Lark grammar from the shipped structure tree.
-- [x] 2.4 Update validation documentation, changelog, and patch version.
+- [x] 2.4 Update validation documentation, changelog, and minor version.
 - [x] 2.5 Run the reviewed acceptance tests, pre-commit, and the complete
   agent-ready check; tick every task only after its evidence is green.
   Acceptance tests, pre-commit, full pytest, and every change-scoped gate are
