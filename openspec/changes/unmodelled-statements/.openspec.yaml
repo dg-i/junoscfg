@@ -1,0 +1,33 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: conversion
+domains: [conversion, validation]
+skip_specs: true
+removes:
+  - "the silent drop on a set line: a statement the reader cannot place lost the rest of its line, and the result validated"
+declared-break:
+  api:
+    why: >-
+      A statement the schema does not know is now kept whole in the IR and
+      reported by field validation, so convert_config(strict=True) and
+      validate_ir report errors where they reported none, and the output
+      carries text that was silently discarded before.
+      With anonymization on, convert_config raises on such a statement
+      whatever validate and strict say, since the anonymizer cannot see it and
+      it would otherwise leave verbatim.
+    migration: >-
+      Nothing to change for a configuration the schema places. For one it
+      does not, the error names the statement and its list entry; drop strict
+      to keep converting, or generate artifacts from the device's own release.
+      Anonymization has no opt-out: remove the statement or supply artifacts
+      that place it.
+  cli:
+    why: >-
+      convert --strict exits 1 on a configuration with an unmodelled
+      statement, where it exited 0 having discarded it; without --strict a
+      field-validate line goes to stderr. Any --anonymize-* option exits 1 on
+      such a statement.
+    migration: >-
+      Same as api: the line names the statement; --no-field-validate silences
+      it, --artifacts points at a matching release.

@@ -11,7 +11,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from junoscfg.display import INTEGER_TYPES, enum_is_fragment, strip_type_prefix
+from junoscfg.display import (
+    ENTRY_KEY_OVERRIDES,
+    INTEGER_TYPES,
+    UNIVERSAL_STATEMENTS,
+    enum_is_fragment,
+    statement_name_spellings,
+    strip_type_prefix,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,6 +117,9 @@ _POSIX_CLASSES: dict[str, str] = {
 }
 
 
+_FLAT_VALUE_RE = re.compile(r"_v\d+")
+
+
 def _posix_to_python_re(pattern: str) -> str:
     """Convert POSIX character classes in a regex to Python equivalents."""
     for posix, python in _POSIX_CLASSES.items():
@@ -149,6 +159,11 @@ def _has_enum_placeholder(allowed: list[str]) -> bool:
         if v.endswith("-name") or v.endswith("-id"):
             return True
     return False
+
+
+#: The ``expected`` of an error for a statement the schema could not place;
+#: the pipeline filters on it, since anonymization cannot see such a statement.
+UNPLACED = "a statement the schema places"
 
 
 class FieldValidator:
@@ -197,6 +212,10 @@ class FieldValidator:
         result = FieldValidationResult()
         if not self._schema:
             return result
+        if isinstance(config, dict) and "configuration" in config:
+            # The wrapper `find_configuration` strips; passed whole it used to
+            # validate nothing and say so with silence.
+            config = config["configuration"]
 
         # Navigate to configuration node in schema
         schema_root = self._schema.get("c", {}).get("configuration", self._schema)
@@ -224,6 +243,10 @@ class FieldValidator:
                 if key.startswith("@"):
                     continue
 
+                # Valid at every level; the reader shapes them, not the tree.
+                if key in UNIVERSAL_STATEMENTS:
+                    continue
+
                 child_schema = children.get(key)
 
                 # Handle transparent containers
@@ -246,6 +269,24 @@ class FieldValidator:
                         continue
 
                 if child_schema is None:
+                    # A key the schema does not name and no reader writes by
+                    # rule is configuration junoscfg could not model. The set
+                    # reader keeps such a statement whole as one key; it used
+                    # to pass here without a word, which is how a defective
+                    # artifact set went unnoticed for five months.
+                    if not self._is_structural_key(key, schema_node, path):
+                        entry_key = self._entry_key(schema_node, path)
+                        entry = obj.get(entry_key) if entry_key else None
+                        where = f" under {path[-1]} {entry}" if entry and path else ""
+                        message = (
+                            f"'{key}'{where} could not be placed in the schema: "
+                            "kept as written, not validated"
+                        )
+                        result.errors.append(
+                            FieldError(
+                                path=".".join(path), message=message, value=key, expected=UNPLACED
+                            )
+                        )
                     continue
 
                 # Named list (L flag)
@@ -276,6 +317,45 @@ class FieldValidator:
         elif isinstance(obj, list):
             for item in obj:
                 self._walk(item, schema_node, path, result)
+
+    def _is_structural_key(self, key: str, schema_node: dict[str, Any], path: list[str]) -> bool:
+        """Whether *key* is one the readers write by rule rather than from the tree.
+
+        A list entry carries its key -- ``name``, the ``fe`` key such as
+        ``address``, or the override such as ``community-name`` -- and a flat
+        entry its ``_v0``, ``_v1`` values, the one ``_`` shape a reader
+        writes. The spelling of a folded on/off switch, ``disable`` for
+        ``enable-disable``, is written in place of the node, by
+        `statement_name_spellings`.
+        """
+        if _FLAT_VALUE_RE.fullmatch(key):
+            return True
+        entry_key = self._entry_key(schema_node, path)
+        if entry_key and key in (entry_key, "name"):
+            return True
+        for cname, cnode in schema_node.get("c", {}).items():
+            if key in self._switch_spellings(cname, cnode):
+                return True
+        return False
+
+    @staticmethod
+    def _entry_key(schema_node: dict[str, Any], path: list[str]) -> str | None:
+        """The key a named list's entries carry, or None for a container."""
+        if not schema_node.get("L"):
+            return None
+        fe = schema_node.get("fe")
+        if fe and fe["k"]:
+            return str(fe["k"])
+        return ENTRY_KEY_OVERRIDES.get(path[-1] if path else "", "name")
+
+    def _switch_spellings(self, name: str, node: Any) -> tuple[str, ...]:
+        """The spellings a folded on/off switch node is written as, or ``()``."""
+        if not (isinstance(node, dict) and node.get("nk") and node.get("l") and "e" in node):
+            return ()
+        index = node["e"]
+        if not (isinstance(index, int) and index < len(self._enums)):
+            return ()
+        return statement_name_spellings(name, self._enums[index])
 
     def _validate_leaf(
         self,
@@ -569,6 +649,11 @@ class FieldValidator:
 
         for child_name, child_schema in children_schema.items():
             if child_schema.get("m") and child_name not in obj:
+                # A folded switch is written by its spelling: `enable` or
+                # `disable` in the IR satisfies the node `enable-disable`.
+                spellings = self._switch_spellings(child_name, child_schema)
+                if any(spelling in obj for spelling in spellings):
+                    continue
                 dot_path = ".".join([*path, child_name])
                 result.warnings.append(
                     FieldError(

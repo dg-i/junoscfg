@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import re
+from collections import Counter
 from contextlib import redirect_stderr
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -39,6 +40,7 @@ MIN_CONVERSION_RATE = 0.95
 MAX_FIELD_WARNINGS_PER_1K_LINES = 0.5
 
 _FIELD_WARNING_RE = re.compile(r"^field-validate: (.*)$", re.MULTILINE)
+_UNMODELLED_MARK = "could not be placed in the schema"
 
 
 @pytest.fixture(scope="session")
@@ -48,6 +50,7 @@ def corpus_run(jvd_corpus: Path) -> SimpleNamespace:
     ok: list[Path] = []
     failed: list[tuple[Path, str]] = []
     warnings: list[str] = []
+    unmodelled: list[str] = []
     lines = 0
 
     for path in files:
@@ -65,9 +68,14 @@ def corpus_run(jvd_corpus: Path) -> SimpleNamespace:
             ok.append(path)
         except Exception as exc:  # noqa: BLE001 - the corpus decides what breaks
             failed.append((path, f"{type(exc).__name__}: {exc}"))
-        warnings.extend(_FIELD_WARNING_RE.findall(captured.getvalue()))
+        for message in _FIELD_WARNING_RE.findall(captured.getvalue()):
+            # Two axes: a value the schema constrains and rejects, and a
+            # statement the schema does not model at all.
+            (unmodelled if _UNMODELLED_MARK in message else warnings).append(message)
 
-    return SimpleNamespace(files=files, ok=ok, failed=failed, warnings=warnings, lines=lines)
+    return SimpleNamespace(
+        files=files, ok=ok, failed=failed, warnings=warnings, unmodelled=unmodelled, lines=lines
+    )
 
 
 class TestCorpusConverts:
@@ -118,6 +126,31 @@ class TestFieldWarningBudget:
             f"{len(corpus_run.warnings)} warnings over {corpus_run.lines:,} lines "
             f"({per_1k:.2f} per 1k):\n" + "\n".join(f"  {n:>5}  {k}" for k, n in worst)
         )
+
+
+class TestUnmodelledStatementsAreCounted:
+    """What the shipped schema cannot model, measured rather than hidden.
+
+    Until 0.9.0 the set reader kept such a statement whole as one key and
+    nothing said so, which is how a defective artifact set went unnoticed for
+    five months. Measured at 0.9.0 against the 25.2R2 artifacts: 69,122 of
+    2,222,948 set lines, 1.4% of the corpus's 4,945,686 structured lines, in
+    407 shapes, `bridge-domains` and `routing-instances bridge-domains` 85% of
+    them -- an MX-style wrapper the transparent-container fix does not name.
+    That is schema coverage, a different axis from the value budget above;
+    the cap is for growth, not a target, and the shapes are printed so a
+    change to them is visible.
+    """
+
+    MAX_UNMODELLED_SHARE = 0.03
+
+    def test_the_share_does_not_grow(self, corpus_run: SimpleNamespace) -> None:
+        share = len(corpus_run.unmodelled) / corpus_run.lines
+        shapes = Counter(re.sub(r"'[^']*'", "'<s>'", m)[:90] for m in corpus_run.unmodelled)
+        count = len(corpus_run.unmodelled)
+        report = f"{count} unmodelled statements over {corpus_run.lines:,} lines"
+        print(f"\n{report}:\n" + "\n".join(f"  {n:>6}  {k}" for k, n in shapes.most_common(8)))
+        assert share <= self.MAX_UNMODELLED_SHARE, report
 
 
 def _first_match(corpus: Path, pattern: re.Pattern[str], limit: int = 400) -> str | None:

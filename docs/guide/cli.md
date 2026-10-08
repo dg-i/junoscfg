@@ -173,6 +173,10 @@ Replace sensitive data with deterministic pseudonyms.
 | `--anonymize-log-level` | Logging verbosity: `quiet`, `normal` (default), or `debug` |
 | `--anonymize-config` | YAML config file with all anonymization options |
 
+Anonymization refuses a configuration with a statement the schema cannot place, exiting
+1 with the statement named, since it cannot rewrite what the schema does not name and
+the statement would otherwise leave as written. See [validation](validation.md).
+
 #### Examples — Anonymization
 
 ```bash

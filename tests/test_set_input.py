@@ -726,3 +726,54 @@ class TestStatementNameNokeywordLeaf:
         result = set_to_dict("set policy-options prefix-list PL 10.0.0.0/8")
         entry = result["policy-options"]["prefix-list"][0]
         assert entry["prefix-list-item"] == [{"name": "10.0.0.0/8"}]
+
+
+class TestAnUnmodelledStatementIsKeptWhole:
+    """A statement the schema cannot place keeps every token, as one key.
+
+    The nokeyword catch-all took an unknown token as the leaf's value and
+    returned, so `set interfaces ge-0/0/0 nonsense alpha beta gamma` became
+    `{"enable-disable": "nonsense"}` and three tokens vanished -- into a key
+    the JSON schema accepts, so nothing anywhere said so. That is the
+    mechanism that hid the defective 24.4R0 artifacts for five months. The
+    rest of the line is now kept verbatim, as the unknown-token path always
+    did, and field validation reports it.
+    """
+
+    def test_the_rest_of_the_line_is_not_dropped(self) -> None:
+        ir = set_to_dict("set interfaces ge-0/0/0 nonsense alpha beta gamma")
+        entry = ir["interfaces"]["interface"][0]
+        assert entry == {"name": "ge-0/0/0", "nonsense alpha beta gamma": True}
+
+    def test_it_round_trips_to_set(self) -> None:
+        source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
+        assert dict_to_set(set_to_dict(source)).strip() == source
+
+    def test_a_switch_is_still_the_statement(self) -> None:
+        assert set_to_dict("set interfaces ge-0/0/0 disable") == {
+            "interfaces": {"interface": [{"name": "ge-0/0/0", "disable": [None]}]}
+        }
+
+    def test_a_switch_followed_by_a_sibling_still_parses(self) -> None:
+        entry = set_to_dict("set interfaces ge-0/0/0 disable mtu 9000")["interfaces"]["interface"][
+            0
+        ]
+        assert entry == {"name": "ge-0/0/0", "disable": [None], "mtu": "9000"}
+
+    def test_a_valid_line_with_two_positional_values_is_kept_whole(self) -> None:
+        """The one case where the guard moves a valid Junos line: a nokeyword
+        leaf takes one value, so the second used to vanish. 69 of 1.4 million
+        jvd set lines, every one kept whole now and reported as unplaced."""
+        source = "set protocols mpls label-range srgb-label-range 16000 23999"
+        ir = set_to_dict(source)
+        assert "23999" in str(ir)
+        assert dict_to_set(ir).strip() == source
+
+    def test_a_schema_node_without_a_type_keeps_the_line_too(self) -> None:
+        """The last fallback took one token as the value and dropped the rest."""
+        from junoscfg.convert.input.set_input import _merge_tokens
+
+        tree = {"c": {"system": {"c": {"odd": {}}}}}
+        config: dict = {}
+        _merge_tokens(config, ["system", "odd", "a", "b"], tree)
+        assert config == {"system": {"odd a b": True}}

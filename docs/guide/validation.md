@@ -163,6 +163,7 @@ field-level validation that checks individual leaf values against schema constra
 | **Booleans** | Value must be `true` or `false` | |
 | **List elements** | Each element in a list is validated individually | `ciphers: ["aes128-ctr", "aes256-ctr"]` |
 | **Mandatory fields** | Required fields must be present (skipped for flat-dict children) | Reported as warnings |
+| **Unplaced statements** | A statement the schema cannot place is kept as written and reported as an error, never dropped | `'nonsense alpha' could not be placed in the schema` |
 
 ### Validation Details
 
@@ -183,6 +184,17 @@ than validating the stringified list as a whole.
 **Mandatory field checks.** Mandatory field warnings are suppressed for children of
 flat-dict elements, since these children are functionally optional in the configuration.
 
+**Unplaced statements.** A statement the bundled schema cannot place, because the device
+runs another release or platform, or because the set reader takes one value where the
+line carries two, is kept whole in the output and reported as an *error*: printed by
+default, fatal under `--strict`. Before 0.9.0 the set reader kept one token of such a
+line and dropped the rest without a word. Anonymization refuses such a configuration
+outright, since it cannot rewrite what the schema does not name and the statement would
+otherwise leave verbatim. The keys junoscfg writes by rule are not reported: a list
+entry's key (`name`, `address`, `community-name`), a flat entry's `_v0` values, `@`
+attributes, the `apply-*` statements, and `enable` or `disable` written for a folded
+switch.
+
 ### Default Behavior
 
 Field-level validation runs automatically during conversion via `convert_config()` and the
@@ -190,6 +202,7 @@ CLI. Warnings are printed to stderr but do not cause failure:
 
 ```text
 field-validate: system.syslog.file.facility: Invalid value 'bogus': must be one of [any, kernel, ...]
+field-validate: interfaces: 'nonsense alpha beta gamma' under interfaces ge-0/0/0 could not be placed in the schema: kept as written, not validated
 ```
 
 ### Strict Mode

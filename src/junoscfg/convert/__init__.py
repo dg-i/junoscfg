@@ -76,6 +76,9 @@ def pipeline(
     if anon_config is not None:
         cfg: AnonymizeConfig = anon_config  # type: ignore[assignment]
 
+        if cfg.any_enabled:
+            _refuse_unplaced(ir)
+
         # Revert mode: apply a saved mapping to restore originals
         if cfg.revert_map:
             from junoscfg.anonymize import apply_revert, load_mapping
@@ -121,6 +124,32 @@ def validate_ir(config: dict[str, Any]) -> Any:
     from junoscfg.convert.field_validator import FieldValidator
 
     return FieldValidator().validate(config)
+
+
+def _refuse_unplaced(ir: dict[str, Any]) -> None:
+    """Fail anonymization on a statement the schema could not place.
+
+    The anonymizer is schema-guided and never rewrites a key the schema does
+    not name, so a statement kept as written would leave verbatim -- with the
+    address in `set protocols bgp neighbor 10.11.12.13 ...` in it -- where the
+    reader used to drop it. Refusing is the one answer that neither loses nor
+    leaks; it holds whatever ``validate`` and ``strict`` say.
+    """
+    from junoscfg.convert.field_validator import (
+        UNPLACED,
+        FieldError,
+        FieldValidationError,
+        FieldValidationResult,
+        FieldValidator,
+    )
+
+    unplaced = [
+        FieldError(path=e.path, message=f"cannot anonymize: {e.message}", value=e.value)
+        for e in FieldValidator().validate(ir).errors
+        if e.expected == UNPLACED
+    ]
+    if unplaced:
+        raise FieldValidationError(FieldValidationResult(errors=unplaced))
 
 
 def _report_warnings(result: Any) -> None:

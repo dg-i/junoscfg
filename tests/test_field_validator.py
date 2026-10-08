@@ -710,13 +710,148 @@ class TestStructuralValidation:
         result = validator.validate({"system": {"name": "r1", "@system": {"inactive": True}}})
         assert result.valid is True
 
-    def test_unknown_keys_ignored(self) -> None:
-        schema = _make_schema(
-            tree=_container(configuration=_container(system=_container(name=_leaf()))),
+
+class TestAnUnmodelledStatementIsReported:
+    """A key the schema does not know is an error, never silence.
+
+    The walk used to `continue` past it, which is how a statement the set
+    reader could not place -- kept verbatim as one key -- reached JSON and
+    YAML output with no word said, and how `{"interfaces": {"interface":
+    [{"name": "x", "no-such-child": "y"}]}}` validated. The IR carries keys
+    the schema does not name by design, and each of those is exempt by its
+    rule, not by a list: a list entry's key, a flat entry's `_v` values, an
+    `@` attribute, a universal statement, and the spelling of a folded
+    on/off switch.
+    """
+
+    @staticmethod
+    def _system(**children: dict) -> dict:
+        return _make_schema(
+            tree=_container(configuration=_container(system=_container(**children)))
         )
-        validator = FieldValidator(schema=schema)
-        result = validator.validate({"system": {"name": "r1", "unknown": "val"}})
-        assert result.valid is True
+
+    def test_an_unknown_key_is_an_error(self) -> None:
+        result = FieldValidator(schema=self._system(name=_leaf())).validate(
+            {"system": {"name": "r1", "nonsense alpha beta": True}}
+        )
+        assert result.valid is False
+        assert [e.path for e in result.errors] == ["system"]
+        assert "nonsense alpha beta" in result.errors[0].message
+
+    def test_a_key_that_merely_starts_with_an_underscore_is(self) -> None:
+        """Only `_v0`, `_v1`... is a reader's; `_bogus alpha` is a statement."""
+        result = FieldValidator(schema=self._system(name=_leaf())).validate(
+            {"system": {"_bogus alpha beta": True}}
+        )
+        assert [e.value for e in result.errors] == ["_bogus alpha beta"]
+
+    def test_the_configuration_wrapper_is_stripped_not_reported(self) -> None:
+        """Passed whole, the IR used to validate nothing and say so with silence."""
+        validator = FieldValidator(schema=self._system(name=_leaf(e=0)))
+        validator._enums = [["r1"]]  # noqa: SLF001
+        wrapped = validator.validate({"configuration": {"system": {"name": "wrong"}}})
+        bare = validator.validate({"system": {"name": "wrong"}})
+        assert [e.path for e in wrapped.errors] == [e.path for e in bare.errors] == ["system.name"]
+
+    def test_the_message_names_the_list_entry(self) -> None:
+        schema = _make_schema(
+            tree=_container(
+                configuration=_container(
+                    interfaces=_container(interface={"L": True, "c": {"mtu": _leaf()}})
+                )
+            )
+        )
+        result = FieldValidator(schema=schema).validate(
+            {"interfaces": {"interface": [{"name": "ge-0/0/0", "nonsense alpha": True}]}}
+        )
+        assert result.errors[0].message.startswith(
+            "'nonsense alpha' under interface ge-0/0/0 could not be placed in the schema"
+        )
+
+    def test_a_list_entrys_key_is_not(self) -> None:
+        schema = _make_schema(
+            tree=_container(
+                configuration=_container(
+                    interfaces=_container(interface={"L": True, "c": {"mtu": _leaf()}})
+                )
+            )
+        )
+        result = FieldValidator(schema=schema).validate(
+            {"interfaces": {"interface": [{"name": "ge-0/0/0", "mtu": "9000"}]}}
+        )
+        assert result.valid is True, result.errors
+
+    def test_a_flat_entrys_key_and_values_are_not(self) -> None:
+        """`route-filter` keys on `address`; `attributes-match` on `_v0`, `_v1`."""
+        schema = self._system(
+            **{
+                "route-filter": {
+                    "L": True,
+                    "o": True,
+                    "fe": {"k": "address", "p": "first"},
+                    "c": {"exact": {"p": True}},
+                },
+                "attributes-match": {"L": True, "p": True, "fe": {"k": "", "p": "values-only"}},
+            }
+        )
+        result = FieldValidator(schema=schema).validate(
+            {
+                "system": {
+                    "route-filter": [{"address": "10.0.0.0/8", "exact": [None]}],
+                    "attributes-match": [{"name": "a", "_v0": "equals", "_v1": "b"}],
+                }
+            }
+        )
+        assert result.valid is True, result.errors
+
+    def test_an_overridden_entry_key_is_not(self) -> None:
+        schema = self._system(community={"L": True, "o": True, "c": {"add": {"p": True}}})
+        result = FieldValidator(schema=schema).validate(
+            {"system": {"community": [{"community-name": "C", "add": [None]}]}}
+        )
+        assert result.valid is True, result.errors
+
+    def test_a_universal_statement_is_not(self) -> None:
+        result = FieldValidator(schema=self._system(name=_leaf())).validate(
+            {
+                "system": {
+                    "name": "r1",
+                    "apply-groups": ["g1"],
+                    "apply-macro": [{"name": "m", "data": []}],
+                }
+            }
+        )
+        assert result.valid is True, result.errors
+
+    def test_a_switch_spelling_is_not(self) -> None:
+        """`disable` is written for the node `enable-disable`."""
+        schema = _make_schema(
+            enums=[["disable"]],
+            tree=_container(
+                configuration=_container(
+                    system=_container(**{"enable-disable": _leaf(nk=True, e=0)})
+                )
+            ),
+        )
+        result = FieldValidator(schema=schema).validate({"system": {"disable": [None]}})
+        assert result.valid is True, result.errors
+
+    def test_a_switch_spelling_satisfies_its_mandatory_node(self) -> None:
+        """`watchdog enable` carries the mandatory `enable-disable`, by spelling.
+
+        The warning this raised was false and went unseen: the pipeline prints
+        warnings only beside an error, and reporting unmodelled statements
+        made it visible 21 times on Juniper's published designs."""
+        schema = _make_schema(
+            enums=[["disable"]],
+            tree=_container(
+                configuration=_container(
+                    watchdog=_container(**{"enable-disable": _leaf(nk=True, e=0, m=True)})
+                )
+            ),
+        )
+        result = FieldValidator(schema=schema).validate({"watchdog": {"enable": [None]}})
+        assert result.warnings == [], result.warnings
 
 
 # ── No schema available ──────────────────────────────────────────────
@@ -787,6 +922,36 @@ class TestPipelineIntegration:
         ir = to_dict('{"configuration": {"system": {"host-name": "bad-host"}}}', "json")
         result = validator.validate(ir)
         assert result.valid is False
+
+    def test_an_unmodelled_statement_warns_and_fails_strict(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """What was silently discarded is kept, named on stderr, fatal under strict."""
+        from junoscfg.convert import pipeline
+
+        source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
+        assert pipeline(source, from_format="set", to_format="set").strip() == source
+        err = capsys.readouterr().err
+        assert "field-validate: interfaces: " in err
+        # `interfaces` is transparent, so the path names it as Junos does
+        assert "'nonsense alpha beta gamma' under interfaces ge-0/0/0 could not be placed" in err
+        with pytest.raises(FieldValidationError):
+            pipeline(source, from_format="set", to_format="json", strict=True)
+
+    def test_anonymization_refuses_what_it_cannot_see(self) -> None:
+        """A kept statement would leave verbatim, address and all, where the
+        reader used to drop it: the anonymizer never rewrites a key the
+        schema does not name. So it fails, whatever validate and strict say."""
+        from junoscfg.anonymize.config import AnonymizeConfig
+        from junoscfg.convert import pipeline
+
+        cfg = AnonymizeConfig(ips=True, salt="s")
+        source = "set protocols bgp neighbor 203.0.114.9 description peer"
+        with pytest.raises(FieldValidationError, match="cannot anonymize"):
+            pipeline(source, from_format="set", to_format="set", anon_config=cfg, validate=False)
+        modelled = "set protocols bgp group G neighbor 203.0.114.9 description peer"
+        out = pipeline(modelled, from_format="set", to_format="set", anon_config=cfg)
+        assert "203.0.114.9" not in out
 
     def test_validate_ir_standalone(self) -> None:
         from junoscfg.convert import validate_ir

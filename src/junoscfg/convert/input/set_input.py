@@ -213,10 +213,18 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                 current_schema = tc_child
                 continue
 
-            # Check nokeyword leaf
+            # Check nokeyword leaf. It takes one token; when more follow and
+            # the next is no sibling, the statement is one the schema does not
+            # model. It used to be cut here -- the token kept as this leaf's
+            # value, the rest of the line dropped without a word, and the
+            # result validated -- so it falls through to be kept whole instead.
             nk_found = False
             for cname, cnode in children.items():
                 if isinstance(cnode, dict) and cnode.get("nk") and cnode.get("l"):
+                    if i + 1 < len(tokens):
+                        after = tokens[i + 1]
+                        if after not in children and KEY_ALIASES.get(after, after) not in children:
+                            break
                     if _is_statement_name(cname, cnode, token):
                         current[token] = [None]
                     else:
@@ -225,9 +233,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     nk_found = True
                     break
             if nk_found:
-                if i < len(tokens) and (
-                    tokens[i] in children or KEY_ALIASES.get(tokens[i], tokens[i]) in children
-                ):
+                if i < len(tokens):
                     continue  # Process sibling tokens
                 return
 
@@ -392,11 +398,9 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
             i += 1
             continue
 
-        # Unknown node type
-        if i + 1 < len(tokens):
-            current[token] = _parse_value(tokens[i + 1])
-        else:
-            current[token] = None
+        # A schema node of no type the reader knows: keep the line whole from
+        # here, as the unknown-token path does, rather than one token of it.
+        current[" ".join(_parse_value(t) for t in tokens[i:])] = True
         return
 
 
