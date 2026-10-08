@@ -2,8 +2,8 @@
 
 Set validation falsely rejects compact Junos commands that assign multiple
 sibling settings on one line, although device evidence confirms the compact
-and expanded forms are equivalent. Repeating every grammar alternative was
-measured at 228 ms per line versus 4 ms and also accepted unknown tokens.
+and expanded forms are equivalent. Repeating every grammar alternative made
+parsing impractical and also accepted unknown tokens.
 
 ## What Changes
 

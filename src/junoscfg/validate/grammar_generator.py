@@ -63,6 +63,11 @@ _LIST_RULE_SUFFIX = "__list"
 # Keep their rules separate from ordinary same-named lists: rule definitions
 # merge globally, so sharing a name would widen every occurrence of that list.
 _ONELINER_SUFFIX = "__ol"
+
+# A container with a flat positional child gains a different production shape
+# from an ordinary same-named container. Isolate it before global rule merging,
+# just as oneliner lists are isolated above.
+_POSITIONAL_FLAT_SUFFIX = "__pkf"
 # A oneliner list that takes its keyword on either side of the entry name gets
 # its own rule, for the same reason `__list` exists: rules merge by name, and a
 # node that qualifies must not hand the either-order shape to one that does
@@ -160,6 +165,10 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
         if "oneliner" in node.flags:
             return f"{base}{_LIST_RULE_SUFFIX}{_ONELINER_SUFFIX}"
         return f"{base}{_LIST_RULE_SUFFIX}"
+    if node.children and any(
+        "positional-key-flat" in child.flags for child in node.children.values()
+    ):
+        return f"{base}{_POSITIONAL_FLAT_SUFFIX}"
     return base
 
 
@@ -263,14 +272,12 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # itself a list, so the key is the entry name, and a key is quoted
             # and contains spaces. VALUE is /\S+/ and cannot match one.
             #
-            # One continuation, not a repetition. `(...)*` here would let a
-            # line carry several settings after the entry name --
-            # `set system ntp server 198.51.100.1 version 4 prefer` -- but it
-            # makes the grammar ambiguous enough to cost 228 ms a line against
-            # 4 ms, so a 5,000-line configuration takes 19 minutes instead of
-            # 18 seconds. It also let a bare VALUE alternative absorb any run
-            # of unknown tokens. Lark's `~0..n` range is not a middle way: it
-            # expands combinatorially and does not finish compiling.
+            # One continuation, not a global repetition. `(...)*` here would
+            # also repeat bare VALUE alternatives, making the grammar highly
+            # ambiguous and allowing arbitrary runs of unknown tokens. Marked
+            # oneliner rules take the narrow keyword-only path above instead.
+            # Lark's `~0..n` range is not a middle way: it expands
+            # combinatorially and does not finish compiling.
             lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})?")
         elif info.positional_alts and info.repeatable_alts:
             # A flat positional child is a standalone alternative in expanded

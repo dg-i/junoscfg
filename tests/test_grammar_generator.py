@@ -413,6 +413,22 @@ class TestFlatPositionalContainerTakesSiblingsOnOneLine:
         command = "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5"
         assert _parses(self._tree(), command)
 
+    def test_unmarked_same_named_container_does_not_repeat_siblings(self) -> None:
+        marked = self._tree().children["routing-options"].children["maximum-prefixes"]
+        unmarked = SchemaNode(
+            name="maximum-prefixes",
+            children={"ordinary": SchemaNode(name="ordinary", is_leaf=True)},
+        )
+        root = SchemaNode(
+            name="configuration",
+            children={
+                "alpha": SchemaNode(name="alpha", children={"maximum-prefixes": marked}),
+                "beta": SchemaNode(name="beta", children={"maximum-prefixes": unmarked}),
+            },
+        )
+        command = "set beta maximum-prefixes rogue threshold 50"
+        assert not _parses(root, command)
+
 
 class TestUnknownTokensInsideANamedList:
     """A named list holding a nokeyword leaf rejects unknown tokens.

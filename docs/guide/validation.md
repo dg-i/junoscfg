@@ -76,9 +76,9 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
     Artifacts ship gzipped and a set generated from your own device's XSD works
     the same way; `--artifacts DIR` and `JUNOSCFG_ARTIFACTS` select one, for
-    conversion as well as validation. Loading the grammar costs about 4
-    seconds, once per process, and then about 4 ms per line. Conversion to and
-    from set format does not use the grammar and is unaffected by any of this.
+    conversion as well as validation. The committed performance guard checks
+    100 compact sibling commands in under five seconds. Conversion to and from
+    set format does not use the grammar and is unaffected by any of this.
 
 ```python
 from junoscfg import validate_set

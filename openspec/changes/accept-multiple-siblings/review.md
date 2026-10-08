@@ -27,3 +27,38 @@
 - `agent-ready render levers --check` cannot render the unchanged stage-lever
   blocks on local `master` because the result would contain a TOML table/key
   collision; reconcile it through `agent-ready-refresh`, not this grammar fix.
+
+## Fresh review findings
+
+### P1: isolate flat-positional rules
+
+The first implementation stored positional metadata on a globally merged rule,
+so a marked container could give compact sibling syntax to an unmarked
+same-named container. The reviewer executed a counterexample and found mixed
+marked/unmarked names in the shipped tree. Add a metadata-specific rule suffix
+and a same-name collision regression.
+
+### P1: use the declared-break version bump
+
+The change declares `api` and `cli` surface changes. Beta policy maps either
+declared break to a minor bump, so the release is `0.12.0`, not `0.11.3`.
+
+### P2: keep the performance claim reproducible
+
+The accepted implementation's five-second bound for 100 commands is executable,
+but the historical 228 ms versus 4 ms comparison cannot be reconstructed from
+committed repository state. Make the executable bound the requirement and keep
+the historical measurement out of the change's claims.
+
+## Review resolution
+
+- Flat-positional parent rules now use a metadata-specific `__pkf` suffix; a
+  marked/unmarked same-name regression failed before the correction and passes
+  after it.
+- The project, package, CLI assertion, and lockfile now agree on version
+  `0.12.0`.
+- Proposal, specification, implementation commentary, and validation guide now
+  rely on the executable five-second/100-command guard rather than the
+  unreproducible historical comparison.
+- After the corrections, pre-commit passes and the full suite reports 1,587
+  passed, 72 skipped, and the one bracket-list xfail.

@@ -35,7 +35,7 @@ WHEN sibling repetition is generated for a flattened hierarchy THEN the system
 SHALL repeat only keyworded sibling alternatives after consuming the entry or
 positional value once, and SHALL continue to reject unknown trailing tokens and
 unmarked hierarchies that do not permit compact siblings.
-Tests: `tests/test_grammar_generator.py::TestUnknownTokensInsideANamedList::test_unknown_element_is_rejected`, `tests/test_grammar_generator.py::TestListEntryTakesSiblingsOnOneLine::test_unmarked_list_does_not_repeat_siblings`, `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_unknown_sibling_is_rejected`
+Tests: `tests/test_grammar_generator.py::TestUnknownTokensInsideANamedList::test_unknown_element_is_rejected`, `tests/test_grammar_generator.py::TestListEntryTakesSiblingsOnOneLine::test_unmarked_list_does_not_repeat_siblings`, `tests/test_grammar_generator.py::TestFlatPositionalContainerTakesSiblingsOnOneLine::test_unmarked_same_named_container_does_not_repeat_siblings`, `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_unknown_sibling_is_rejected`
 
 #### Scenario: Unknown named-list sibling
 
@@ -57,8 +57,8 @@ Tests: `tests/test_grammar_generator.py::TestUnknownTokensInsideANamedList::test
 
 WHEN the shipped validator checks a representative multi-line configuration
 containing compact sibling commands THEN the system SHALL complete within a
-guard that distinguishes the measured approximately 4 ms-per-line grammar from
-the rejected approximately 228 ms-per-line global repetition.
+five-second bound for 100 commands, keeping the performance promise executable
+from committed repository state.
 Tests: `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_compact_siblings_keep_practical_parse_time`
 
 #### Scenario: Representative repeated commands
