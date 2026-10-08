@@ -82,10 +82,10 @@ jobs:
           enable-cache: true
       # This repository's default branch is master, so the template's
       # origin/main fallback would resolve to nothing.
-      - run: uv run --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
+      - run: uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
 
       # Reported, never blocking: see docs/decisions/2026-10-06-adopt-mypy-strict.md
       - name: mypy (reported, not enforced)
         if: always()
         continue-on-error: true
-        run: uv run --group dev mypy src tests
+        run: uv run --locked --group dev mypy src tests
