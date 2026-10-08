@@ -777,3 +777,37 @@ class TestAnUnmodelledStatementIsKeptWhole:
         config: dict = {}
         _merge_tokens(config, ["system", "odd", "a", "b"], tree)
         assert config == {"system": {"odd a b": True}}
+
+
+class TestUplinkFailureDetectionGroupIsAList:
+    """`uplink-failure-detection group G ...` is a list entry, not a fused key.
+
+    The XSD wraps the named list `ufd-group-name` in a `group` container, the
+    shape `groups`/`group` takes, but no fix named the wrapper because `group`
+    is also BGP's list. Every release held read the line as one key; the
+    `ufd-group-transparent` fix scopes the flag to its parent.
+    """
+
+    SOURCE = (
+        "set protocols uplink-failure-detection group G link-to-monitor ae0\n"
+        "set protocols uplink-failure-detection group G link-to-disable ge-0/0/1\n"
+    )
+
+    def test_the_group_is_an_entry_with_its_links(self) -> None:
+        ir = set_to_dict(self.SOURCE)
+        entries = ir["protocols"]["uplink-failure-detection"]["group"]["ufd-group-name"]
+        assert entries == [
+            {
+                "name": "G",
+                "link-to-monitor": [{"name": "ae0"}],
+                "link-to-disable": [{"name": "ge-0/0/1"}],
+            }
+        ]
+
+    def test_it_round_trips_to_set(self) -> None:
+        assert dict_to_set(set_to_dict(self.SOURCE)).strip() == self.SOURCE.strip()
+
+    def test_a_deactivate_keeps_the_group_name(self) -> None:
+        """Under the fused key, `deactivate ... group G` lost its `G`."""
+        source = self.SOURCE + "deactivate protocols uplink-failure-detection group G\n"
+        assert dict_to_set(set_to_dict(source)).strip() == source.strip()

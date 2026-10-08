@@ -597,6 +597,24 @@ def _fix_transparent_containers(root: SchemaNode) -> bool:
     return found
 
 
+def _fix_ufd_group_transparent(root: SchemaNode) -> bool:
+    """Make `uplink-failure-detection group` transparent to its list (Group H).
+
+    The XSD wraps the named list `ufd-group-name` in a `group` container, the
+    shape `groups`/`group` and `interfaces`/`interface` take; the table above
+    cannot name it because `group` is also BGP's list. Scoped to the parent:
+    `set protocols uplink-failure-detection group G link-to-monitor ae0` read
+    as one fused key on every release held, which no release gap explains.
+    """
+    found = False
+    for node in find_all(root, "uplink-failure-detection"):
+        group = node.children.get("group")
+        if group is not None and "ufd-group-name" in group.children:
+            group.flags.add("transparent:ufd-group-name")
+            found = True
+    return found
+
+
 def _fix_transparent_list_keys(root: SchemaNode) -> bool:
     """Set transparent-list-key flag on array wrapper keys.
 
@@ -960,6 +978,13 @@ ALL_FIXES: list[XsdFix] = [
         "Set transparent container flags on wrapper elements",
         _ALL_TARGETS,
         _fix_transparent_containers,
+    ),
+    XsdFix(
+        "ufd-group-transparent",
+        "conversion-hint",
+        "Make uplink-failure-detection group transparent to its list",
+        _ALL_TARGETS,
+        _fix_ufd_group_transparent,
     ),
     XsdFix(
         "transparent-list-keys",

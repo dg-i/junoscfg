@@ -1,0 +1,1 @@
+`protocols uplink-failure-detection group <name>` converts as the named list entry it is, with `link-to-monitor` and `link-to-disable` as its children, where every release's artifacts read the line as one fused key. A new conversion-hint fix scopes the transparent-container flag to that parent, since `group` is also BGP's list.

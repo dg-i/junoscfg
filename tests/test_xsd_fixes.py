@@ -349,3 +349,54 @@ class TestGroupGCombinator:
         applied = fix.apply(root)
 
         assert applied is False
+
+
+class TestGroupHUfdGroupTransparent:
+    """`uplink-failure-detection group` is transparent to `ufd-group-name`.
+
+    The name-keyed transparent table cannot say so, because `group` is also
+    BGP's list; this fix is scoped to the parent and leaves every other
+    `group` alone.
+    """
+
+    @staticmethod
+    def _fix():
+        return next(f for f in ALL_FIXES if f.id == "ufd-group-transparent")
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        ufd_list = SchemaNode(
+            name="ufd-group-name",
+            is_list=True,
+            children={"link-to-monitor": SchemaNode(name="link-to-monitor", is_list=True)},
+        )
+        ufd = SchemaNode(
+            name="uplink-failure-detection",
+            children={"group": SchemaNode(name="group", children={"ufd-group-name": ufd_list})},
+        )
+        bgp = SchemaNode(
+            name="bgp",
+            children={"group": SchemaNode(name="group", is_list=True)},
+        )
+        return _make_root(
+            (
+                "protocols",
+                SchemaNode(
+                    name="protocols", children={"uplink-failure-detection": ufd, "bgp": bgp}
+                ),
+            )
+        )
+
+    def test_the_wrapper_is_flagged(self) -> None:
+        tree = self._tree()
+        assert self._fix().apply(tree) is True
+        group = tree.children["protocols"].children["uplink-failure-detection"].children["group"]
+        assert "transparent:ufd-group-name" in group.flags
+
+    def test_bgps_group_is_left_alone(self) -> None:
+        tree = self._tree()
+        self._fix().apply(tree)
+        assert not tree.children["protocols"].children["bgp"].children["group"].flags
+
+    def test_a_tree_without_the_statement_reports_nothing_applied(self) -> None:
+        assert self._fix().apply(_make_root()) is False

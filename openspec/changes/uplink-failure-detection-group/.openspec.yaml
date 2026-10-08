@@ -1,0 +1,26 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: schema
+domains: [schema-pipeline, conversion]
+skip_specs: true
+removes:
+  - "the fused key `uplink-failure-detection group` produced on every release held"
+declared-break:
+  api:
+    why: >-
+      `validate.xsd_fixes.ALL_FIXES` gains a `ufd-group-transparent` entry; the
+      list is public and its value is part of the compared surface. The
+      regenerated artifacts convert `protocols uplink-failure-detection group`
+      as a list of named entries where they produced one fused key.
+    migration: >-
+      Nothing to migrate for a caller of the fixes. A consumer of the JSON for
+      that subtree sees `group` as a list keyed by name, which is the device's
+      own shape; JUNOSCFG_ARTIFACTS still selects the previous set.
+  cli:
+    why: >-
+      `convert` renders that subtree differently, and field validation no
+      longer reports it as unplaced.
+    migration: >-
+      None needed; --artifacts points at a previous set if the fused form is
+      wanted.

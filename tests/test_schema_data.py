@@ -23,8 +23,10 @@ pytestmark = pytest.mark.schema
 class TestFixesApply:
     """Every registered XSD fix should do something on a real schema.
 
-    23.2R2, 24.4R0 and 25.2R2 all report 38 of 41 applied, so the same three
-    never fire on any release. A fix that never fires is dead code or a matcher
+    25.2R2 reports 39 of 42 applied and 23.2R2 38 of 42: the same three never
+    fire on either, and `ufd-group-transparent` fires only where
+    `uplink-failure-detection` exists, which 23.2R2 lacks. A fix that never
+    fires on every release is dead code or a matcher
     that stopped matching, and either way the bundled artifacts are missing a
     correction someone thought was needed.
     """

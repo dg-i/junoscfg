@@ -285,8 +285,8 @@ after parsing. Fixes are organized into groups:
 | D | Missing elements | 14 |
 | E | Wrong element names | 5 |
 | F | Nokeyword / generic name fixes | 4 |
-| G | Structure/combinator fixes | 5 |
-| H | Conversion hints (transparent, flat entry, etc.) | 7 |
+| G | Structure/combinator fixes | 6 |
+| H | Conversion hints (transparent, flat entry, etc.) | 8 |
 
 Groups A-G fix genuine XSD deficiencies. Group H encodes conversion-hint flags
 that tell the runtime converters how to handle specific elements. All fixes persist

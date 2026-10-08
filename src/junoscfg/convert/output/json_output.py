@@ -123,8 +123,10 @@ def _native_groups(config: dict[str, Any]) -> dict[str, Any]:
 
     The set/structured parsers produce ``"groups": {"group": [...]}``,
     but native Junos JSON uses ``"groups": [...]`` directly.  All other
-    transparent containers (interfaces, routing-instances, vlans) keep
-    their wrapper keys — ``groups`` is the only exception.
+    transparent containers (interfaces, routing-instances, vlans, and
+    ``uplink-failure-detection group``) keep their wrapper keys, as the XSD
+    declares them: ``groups`` is the only exception, the one wrapper the XSD
+    itself declares unbounded.
     """
     if "groups" in config and isinstance(config["groups"], dict):
         inner = config["groups"].get("group")
