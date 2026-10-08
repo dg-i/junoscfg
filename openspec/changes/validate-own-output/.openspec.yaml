@@ -17,5 +17,17 @@ declared-break:
     migration: >-
       Drop --strict to keep the old exit status; the warnings go to stderr
       either way. A value that now fails is one a device rejects: `set
-      protocols pim rp auto-rp frobnicate` and a non-numeric `maximum-entries`
-      are the shapes. Nothing in the api surface changes signature.
+      protocols pim rp auto-rp frobnicate` and a non-numeric `idle-timeout`
+      are the shapes; `mtu` carries no type in the shipped tree and still
+      passes anything.
+  api:
+    why: >-
+      Declared late, at the fresh review of 2026-10-08. convert_config with
+      strict=True raises FieldValidationError on exactly the values --strict
+      now fails, and validate_json and validate_yaml return valid for list
+      entries and containers of any shape, which the previous artifacts
+      rejected; the signatures are unchanged.
+    migration: >-
+      Catch FieldValidationError or pass strict=False for the first; for the
+      second there is no migration, it is the open defect
+      `validate-list-entries` closes.
