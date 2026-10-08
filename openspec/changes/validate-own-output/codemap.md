@@ -15,6 +15,7 @@ zone conversion · layer pipeline · contract none
 - `FieldValidationError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationError`
 - `FieldValidationResult` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationResult`
 - `FieldValidator` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidator`
+- `UNPLACED` attribute: `agent-ready codemap show junoscfg.convert.field_validator.UNPLACED`
 
 ## junoscfg.convert.input
 

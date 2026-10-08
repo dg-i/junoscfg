@@ -8,6 +8,7 @@ zone conversion · layer pipeline · contract none
 - `FieldValidationError` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationError`
 - `FieldValidationResult` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidationResult`
 - `FieldValidator` class: `agent-ready codemap show junoscfg.convert.field_validator.FieldValidator`
+- `UNPLACED` attribute: `agent-ready codemap show junoscfg.convert.field_validator.UNPLACED`
 
 ## junoscfg.validate.artifact_builder
 
@@ -86,11 +87,4 @@ zone schema · layer pipeline · contract none
 - `apply_all_fixes` function: `agent-ready codemap show junoscfg.validate.xsd_fixes.apply_all_fixes`
 - `get_fix_count` function: `agent-ready codemap show junoscfg.validate.xsd_fixes.get_fix_count`
 
-## junoscfg.validate.xsd_parser
-
-zone schema · layer pipeline · contract none
-
-- `XSD_NS` attribute: `agent-ready codemap show junoscfg.validate.xsd_parser.XSD_NS`
-- `parse_xsd` function: `agent-ready codemap show junoscfg.validate.xsd_parser.parse_xsd`
-
-<!-- cut at 1,500 tokens; 55 modules below the cut -->
+<!-- cut at 1,500 tokens; 56 modules below the cut -->

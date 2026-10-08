@@ -59,3 +59,10 @@ the findings in summary, chose to fix the blockers and the over-acceptance
 before archiving. They did not review each finding individually. Everything
 recorded as fixed was fixed in `v0.7.0` (`validate-own-output`); everything
 recorded as accepted is accepted on that basis.
+
+## Measurements superseded
+
+Any real-device rejection figure above was taken against the bundled 24.4R0
+artifacts, found defective on 2026-10-08 and replaced in v0.8.0. The numbers
+that stand are in `ship-25-2r2-artifacts`; see
+`docs/decisions/2026-10-08-superseded-device-measurements.md`.
