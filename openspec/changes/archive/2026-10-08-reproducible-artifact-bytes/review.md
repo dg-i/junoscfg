@@ -48,5 +48,6 @@ amended commit, 4 recorded.
 
 ## Owner acceptance
 
-Pending. The findings and their resolutions are recorded above for the owner
-to accept or reopen.
+Accepted by the owner on 2026-10-08, in one pass over the eight live reviews,
+on the summary that each review's findings were resolved or recorded as
+accepted-as-is. The owner did not sign off per finding.

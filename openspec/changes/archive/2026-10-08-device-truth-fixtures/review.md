@@ -53,6 +53,13 @@ ship with 1, 2 and 3 applied, which the amended commit does.
 
 ## Owner acceptance
 
-Pending. One decision sits here for the owner: whether the two private pairs
-may move to `tests/data/captures/`; the test is written so that the move is
-a rename.
+Accepted by the owner on 2026-10-08, in one pass over the eight live reviews,
+on the summary that each review's findings were resolved or recorded as
+accepted-as-is. The owner did not sign off per finding.
+
+Decision: the real capture pairs may be public. All three (the two bordergw
+subtrees and the uplink-failure-detection capture that arrived in step 4)
+are cleared to move to `tests/data/captures/`. The agent's tooling refused
+to move real-device files out of `private_test_data/` itself, so the owner
+performs the `git mv`; the test already reads both locations, so nothing
+changes until then and the move is a rename when it happens.

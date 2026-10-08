@@ -63,4 +63,6 @@ Archive once the owner accepts that, not before.
 
 ## Owner acceptance
 
-Pending.
+Accepted by the owner on 2026-10-08, in one pass over the eight live reviews,
+on the summary that each review's findings were resolved or recorded as
+accepted-as-is. The owner did not sign off per finding.

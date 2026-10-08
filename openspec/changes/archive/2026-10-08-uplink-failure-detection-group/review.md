@@ -63,4 +63,8 @@ amended commit does.
 
 ## Owner acceptance
 
-Pending. The capture asked for in finding 7 was supplied and settled it.
+Accepted by the owner on 2026-10-08, in one pass over the eight live reviews,
+on the summary that each review's findings were resolved or recorded as
+accepted-as-is. The owner did not sign off per finding.
+
+The capture asked for in finding 7 was supplied by the owner and settled it.

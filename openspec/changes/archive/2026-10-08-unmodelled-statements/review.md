@@ -60,7 +60,11 @@ recorded.
 
 ## Owner acceptance
 
-Pending. The findings and their resolutions are recorded above for the owner
-to accept or reopen. Two decisions sit here for the owner: anonymization now
-fails rather than passes on an unplaced statement, with no opt-out; and the
-meta-command drop (4) is left as a known defect.
+Accepted by the owner on 2026-10-08, in one pass over the eight live reviews,
+on the summary that each review's findings were resolved or recorded as
+accepted-as-is. The owner did not sign off per finding.
+
+Decisions: anonymization keeps the hard fail on a statement the schema
+cannot place, with no opt-out — a statement that cannot be placed is one
+whose scrubbing cannot be promised; the meta-command drop (4) stays a
+recorded known defect, outside this plan's scope.
