@@ -179,6 +179,12 @@ class TestTheApplyGroupsStripperIsStillLoadBearing:
     needs it. Both flip together on the day the artefacts carry the four nodes,
     and that is the signal to delete the stripper, `_inside_quotes` and the
     `_validate_line` early return.
+
+    The second test asserts the *difference* stripping makes, not that the line
+    validates. It used to assert `valid is True`, which stays true after the
+    artefacts are regenerated -- so only the first test would have flipped, and
+    the surviving green one would have read as evidence the bridge was still
+    needed. The signal the paragraph above promises did not exist.
     """
 
     def test_the_shipped_grammar_does_not_yet_model_apply_groups(
@@ -191,6 +197,18 @@ class TestTheApplyGroupsStripperIsStillLoadBearing:
                 "set protocols bgp group G apply-groups foo"
             )
 
-    def test_the_stripper_makes_it_validate_anyway(self, bundled_set_validator) -> None:
-        result = bundled_set_validator.validate("set protocols bgp group G apply-groups foo")
-        assert result.valid is True
+    def test_the_stripper_is_what_rescues_it(self, bundled_set_validator) -> None:
+        import lark
+
+        line = "set protocols bgp group G apply-groups foo"
+        stripped = _strip_apply_groups(line)
+        assert stripped != line, "the stripper did not fire"
+
+        # The shipped grammar takes the stripped form and refuses the raw one.
+        # When the artefacts carry the four nodes this assertion fails, which
+        # is what makes it flip with its sibling.
+        with pytest.raises(lark.exceptions.UnexpectedInput):
+            bundled_set_validator._parser.parse(line)  # noqa: SLF001
+        bundled_set_validator._parser.parse(stripped)  # noqa: SLF001
+
+        assert bundled_set_validator.validate(line).valid is True

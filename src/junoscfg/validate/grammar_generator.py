@@ -72,9 +72,9 @@ _EITHER_ORDER_SUFFIX = "__eo"
 # every one of them is a leaf. It is the only slot where a value may hold
 # spaces and parentheses without being quoted.
 #
-# This is a *type reference*, not an element name. `_fix_policy_algebra` in
-# `xsd_fixes.py` tries to find these by element name through `find_all` and
-# matches nothing, because `policy-algebra` exists only as a type.
+# This is a *type reference*, not an element name, which is why an `xsd_fixes`
+# entry that searched for it by element name through `find_all` matched
+# nothing in four releases and was deleted.
 _POLICY_ALGEBRA_TYPE = "policy-algebra"
 
 # The rule holding the statements a configuration may carry at any level. The

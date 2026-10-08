@@ -19,7 +19,13 @@ Designs corpus from 217 field warnings to 3,254, over the budget
 `tests/test_jvd_corpus.py` enforces. Delete both helpers and the
 `_validate_line` early return on the day the artifacts carry the four nodes;
 `TestUniversalStatementsAreSplicedEverywhere` already pins the grammar they
-produce.
+produce, and `TestTheApplyGroupsStripperIsStillLoadBearing` is the pair of
+tests that go red together on that day.
+
+Only the *grammar* still needs this. The JSON and YAML schemas name the four
+from `display.UNIVERSAL_STATEMENTS` rather than from the flag, because
+junoscfg emitted `apply-groups` and then rejected its own output for all three
+real device configurations.
 """
 
 from __future__ import annotations

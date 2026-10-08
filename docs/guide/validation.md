@@ -58,7 +58,7 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Against the 116 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    104 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    106 are accepted; `tests/test_set_corpus.py` lists every rejection and
     which are correct. The causes:
 
     - **One setting per list entry, per line.** `set system ntp server
@@ -70,7 +70,6 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
       though only one setting follows the entry name.
     - **Bracket value lists** — `[ tcp udp ]` — are not tokenised; `VALUE` is
       `/\S+/`, so `[` becomes a token of its own.
-    - **Policy algebra**, such as `( pol-a && ! pol-b )`.
 
     Artifacts ship gzipped and a set generated from your own device's XSD works
     the same way; `--artifacts DIR` and `JUNOSCFG_ARTIFACTS` select one, for
