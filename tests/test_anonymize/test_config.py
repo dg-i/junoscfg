@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli, load_config_file
+
+if TYPE_CHECKING:
+    import pytest
 
 
 class TestAnonymizeConfig:
@@ -313,21 +318,35 @@ class TestBlankSaltFallsThroughToAutoGeneration:
     def test_a_real_salt_survives(self) -> None:
         assert self._load("salt: s3cr3t\npasswords: true\n").salt == "s3cr3t"
 
-    def test_a_blank_salt_gives_different_output_each_run(self) -> None:
+    def test_a_blank_salt_uses_a_generated_salt(self, monkeypatch: pytest.MonkeyPatch) -> None:
         from junoscfg.anonymize import anonymize
 
-        outputs = set()
-        for _ in range(3):
+        generated = iter(("generated-one", "generated-two"))
+        requested_sizes: list[int] = []
+
+        def generate_salt(size: int) -> str:
+            requested_sizes.append(size)
+            return next(generated)
+
+        monkeypatch.setattr("junoscfg.anonymize.secrets.token_hex", generate_salt)
+        for expected_salt in ("generated-one", "generated-two"):
             config = self._load("salt:\npasswords: true\n")
-            result = anonymize(
+            source = {
+                "configuration": {
+                    "system": {"root-authentication": {"encrypted-password": "$6$salt$hash"}}
+                }
+            }
+            result = anonymize(source, config)
+            explicit = anonymize(
                 {
                     "configuration": {
-                        "system": {"root-authentication": {"encrypted-password": "$6$s$h"}}
+                        "system": {"root-authentication": {"encrypted-password": "$6$salt$hash"}}
                     }
                 },
-                config,
+                AnonymizeConfig(passwords=True, salt=expected_salt),
             )
-            outputs.add(
-                result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
-            )
-        assert len(outputs) == 3
+
+            assert config.salt == expected_salt
+            assert result.ir == explicit.ir
+
+        assert requested_sizes == [16, 16]

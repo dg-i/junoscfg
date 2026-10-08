@@ -15,7 +15,7 @@ Generated from `[tool.template.toolbox]` in `pyproject.toml` by `agent-ready ren
 | griffe | the symbol index, and the API surface check in the mode the stage sets | 2.3.0 | ISC |
 | markdownlint-cli | duplicate headings and dead fragments | 0.45.0 | MIT |
 | PyYAML | YAML input and output in the conversion pipeline; also workflow metadata and decision front matter | 6.0.3 | MIT |
-| agent-ready-checks | the checks no tool covers, starting with document caps | 0.10.0 | see LICENCE |
+| agent-ready-checks | the checks no tool covers, starting with document caps | 0.15.4 | see LICENCE |
 | openspec | the change folder and the specs: new change, validate, archive | 1.13.0 | MIT |
 | copier | the versioned template: copy at adoption, update afterwards | 9.0.0 | MIT |
 | peter-evans/create-pull-request | opens the scheduled update pull requests | 7.0.0 | MIT |

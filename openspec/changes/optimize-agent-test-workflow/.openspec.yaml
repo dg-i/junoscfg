@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-08
+type: refactor
+zone: anonymize
+domains: [validation, anonymization, schema-pipeline]
+skip_specs: true
+removes:
+  - "the redundant local full-pytest and pre-commit instructions that duplicate a full agent-ready checkpoint"
+  - "the governance CI job's second execution of the complete application suite"
+  - "the probabilistic three-output uniqueness assertion for blank-salt auto-generation"
