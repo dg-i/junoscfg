@@ -1,0 +1,30 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: schema
+domains: [schema-pipeline, validation]
+skip_specs: true
+removes:
+  - "the array escape in the generated JSON Schema: a container's or a list entry's array form matched no `items` constraint, so `properties` and `additionalProperties: false` bound nothing behind an array wrapper and every named list's entries went unchecked"
+  - "the 8,782 `required` arrays in the generated schema: inert behind the escape, and once live they reject every fragment for a mandatory field the field validator reports as a warning"
+declared-break:
+  api:
+    why: >-
+      validate_json and validate_yaml report a document invalid where they
+      reported it valid: an unknown key inside any named-list entry, a
+      container given as an array of objects, or a bare string where the
+      configuration should be. These were accepted by accident, not by
+      promise; the field validator and the set grammar rejected the same
+      content all along.
+    migration: >-
+      Nothing to change for a configuration the schema places. For a key the
+      schema does not name, the error names the path; generate artifacts from
+      the device's own release with `junoscfg schema generate`, or validate
+      through convert_config(strict=False), which reports and continues.
+  cli:
+    why: >-
+      `junoscfg -v` on JSON or YAML exits 1 on a document it passed before,
+      for the same three shapes.
+    migration: >-
+      Same as api: the error names the path; `--artifacts` points at a
+      matching release.
