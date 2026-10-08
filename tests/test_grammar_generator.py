@@ -422,11 +422,21 @@ class TestFlatPositionalContainerTakesSiblingsOnOneLine:
         root = SchemaNode(
             name="configuration",
             children={
-                "alpha": SchemaNode(name="alpha", children={"maximum-prefixes": marked}),
-                "beta": SchemaNode(name="beta", children={"maximum-prefixes": unmarked}),
+                "alpha": SchemaNode(
+                    name="alpha",
+                    children={
+                        "outer": SchemaNode(name="outer", children={"maximum-prefixes": marked})
+                    },
+                ),
+                "beta": SchemaNode(
+                    name="beta",
+                    children={
+                        "outer": SchemaNode(name="outer", children={"maximum-prefixes": unmarked})
+                    },
+                ),
             },
         )
-        command = "set beta maximum-prefixes rogue threshold 50"
+        command = "set beta outer maximum-prefixes rogue threshold 50"
         assert not _parses(root, command)
 
 

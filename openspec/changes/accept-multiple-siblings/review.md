@@ -52,9 +52,11 @@ the historical measurement out of the change's claims.
 
 ## Review resolution
 
-- Flat-positional parent rules now use a metadata-specific `__pkf` suffix; a
-  marked/unmarked same-name regression failed before the correction and passes
-  after it.
+- Flat-positional parent rules use a metadata-specific `__pkf` suffix, and a
+  stable variant identity propagates through affected ancestor rules. Ordinary
+  alternatives retain the established global union; only metadata-sensitive
+  child references remain path-local. Same-named child and parent regressions
+  failed before their corrections and pass afterwards.
 - The project, package, CLI assertion, and lockfile now agree on version
   `0.12.0`.
 - Proposal, specification, implementation commentary, and validation guide now
@@ -62,3 +64,12 @@ the historical measurement out of the change's claims.
   unreproducible historical comparison.
 - After the corrections, pre-commit passes and the full suite reports 1,587
   passed, 72 skipped, and the one bracket-list xfail.
+
+## Correction review
+
+The reviewer found that the first `__pkf` correction still leaked through a
+same-named parent rule and that the proposal still said "patch version". The
+second correction propagates variant identity through ancestors, pins the
+shipped SNMP/BGP `traceoptions` collision, preserves the existing ordinary-rule
+merge, and records the minor bump consistently. Final pre-commit and the full
+suite are green with 1,587 passed, 72 skipped, and one xfailed bracket-list case.

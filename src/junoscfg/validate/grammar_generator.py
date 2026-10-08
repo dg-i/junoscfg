@@ -16,6 +16,7 @@ tree cannot merge the entry name away.
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 from junoscfg.display import UNQUOTABLE_TYPES, open_artifact_write, strip_type_prefix
@@ -172,6 +173,71 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
     return base
 
 
+def _has_direct_sibling_variant(node: SchemaNode) -> bool:
+    """Whether *node* itself gains metadata-specific sibling repetition."""
+    return bool(
+        (node.is_list and node.children and "oneliner" in node.flags)
+        or any("positional-key-flat" in child.flags for child in node.children.values())
+    )
+
+
+def _variant_rule_names(root: SchemaNode) -> dict[int, str]:
+    """Name metadata-sensitive subtrees without leaking through merged parents.
+
+    Rules normally merge globally by element name. A compact-sibling rule has
+    context-specific syntax, so every ancestor carrying it needs a stable
+    variant name until the unique configuration root. Otherwise a same-named
+    parent merges the marked and unmarked child references back together.
+    """
+    names: dict[int, str] = {}
+    visited: dict[int, tuple[str, str | None]] = {}
+
+    def visit(node: SchemaNode, *, is_root: bool = False) -> tuple[str, str | None]:
+        node_id = id(node)
+        if node_id in visited:
+            return visited[node_id]
+
+        children = [(name, *visit(child)) for name, child in sorted(node.children.items())]
+        own_shape = (
+            node.name,
+            node.combinator.value,
+            node.is_key,
+            node.is_list,
+            node.is_mandatory,
+            node.is_leaf,
+            node.is_presence,
+            tuple(node.enums or ()),
+            node.pattern,
+            node.pattern_negated,
+            node.type_ref,
+            tuple(sorted(node.flags)),
+        )
+        full_payload = repr((own_shape, [(name, full) for name, full, _ in children]))
+        full_digest = hashlib.sha256(full_payload.encode()).hexdigest()
+
+        direct = _has_direct_sibling_variant(node)
+        affected_children = [(name, variant) for name, _, variant in children if variant]
+        variant_digest: str | None = None
+        if direct or affected_children:
+            variant_payload = repr(
+                (
+                    "direct" if direct else "ancestor",
+                    full_digest if direct else own_shape,
+                    affected_children,
+                )
+            )
+            variant_digest = hashlib.sha256(variant_payload.encode()).hexdigest()
+            if node.children and not is_root:
+                names[node_id] = f"{_rule_name_for(node.name, node)}__v{variant_digest[:10]}"
+
+        result = (full_digest, variant_digest)
+        visited[node_id] = result
+        return result
+
+    visit(root, is_root=True)
+    return names
+
+
 class _RuleInfo:
     """Accumulated info for a single Lark rule (may be merged from multiple nodes)."""
 
@@ -208,11 +274,29 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     universal = {
         name: node for name, node in root.children.items() if _UNIVERSAL_FLAG in node.flags
     }
+    variant_names = _variant_rule_names(root)
 
     # Pass 1: collect all rule definitions (merged by rule name)
     rule_map: dict[str, _RuleInfo] = {}
+    common_alts: dict[str, set[str]] = {}
+    merge_families: dict[str, str] = {}
     visited: set[int] = set()  # id(node) to prevent infinite recursion
-    _collect_rules(root, rule_map, visited, skip=set(universal))
+    _collect_rules(
+        root,
+        rule_map,
+        visited,
+        variant_names,
+        common_alts,
+        merge_families,
+        skip=set(universal),
+    )
+
+    # Ancestor variants keep metadata-sensitive child references local, while
+    # retaining the grammar's established union of ordinary alternatives for
+    # same-named rules. This prevents compact syntax leaking across paths
+    # without turning unrelated historical merges into new rejections.
+    for rule_name, family in merge_families.items():
+        rule_map[rule_name].alts.update(common_alts.get(family, ()))
 
     if universal:
         # One rule, referenced from every other. `configuration` included, so
@@ -232,7 +316,10 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     lines.append("")
 
     if universal:
-        alts = sorted(_child_reference(name, node) for name, node in universal.items())
+        alts = sorted(
+            _child_reference(name, node, variant_names=variant_names)
+            for name, node in universal.items()
+        )
         lines.append(f"{_UNIVERSAL_RULE}: {' | '.join(alts)}")
         lines.append("")
 
@@ -325,6 +412,9 @@ def _collect_rules(
     node: SchemaNode,
     rule_map: dict[str, _RuleInfo],
     visited: set[int],
+    variant_names: dict[int, str],
+    common_alts: dict[str, set[str]],
+    merge_families: dict[str, str],
     skip: set[str] | None = None,
 ) -> None:
     """Recursively collect rule definitions from the schema tree.
@@ -345,18 +435,27 @@ def _collect_rules(
         # Leaf or presence — no rule needed (handled inline by parent)
         return
 
-    rule_name = _rule_name_for(node.name, node)
+    family = _rule_name_for(node.name, node)
+    rule_name = variant_names.get(node_id, family)
 
     # Build child alternatives
     child_alts: list[str] = []
+    ordinary_alts: list[str] = []
     repeatable_alts: list[str] = []
     positional_alts: list[str] = []
     for child_name, child_node in node.children.items():
         if skip and child_name in skip:
             continue
         spliced = f"transparent:{child_name}" in node.flags
-        child_ref = _child_reference(child_name, child_node, spliced=spliced)
+        child_ref = _child_reference(
+            child_name,
+            child_node,
+            spliced=spliced,
+            variant_names=variant_names,
+        )
         child_alts.append(child_ref)
+        if id(child_node) not in variant_names:
+            ordinary_alts.append(child_ref)
         # Every written keyword reference begins with its quoted literal;
         # bare VALUE and spliced sub-rules do not. Only the former are safe to
         # repeat without widening the grammar to arbitrary unknown tokens.
@@ -371,6 +470,9 @@ def _collect_rules(
             rule_map[rule_name] = _RuleInfo()
         info = rule_map[rule_name]
         info.alts.update(child_alts)
+        if not _has_direct_sibling_variant(node):
+            common_alts.setdefault(family, set()).update(ordinary_alts)
+            merge_families[rule_name] = family
         info.repeatable_alts.update(repeatable_alts)
         info.positional_alts.update(positional_alts)
         if node.is_list:
@@ -382,16 +484,29 @@ def _collect_rules(
 
     # Recurse into children
     for child_node in node.children.values():
-        _collect_rules(child_node, rule_map, visited)
+        _collect_rules(
+            child_node,
+            rule_map,
+            visited,
+            variant_names,
+            common_alts,
+            merge_families,
+        )
 
 
-def _child_reference(name: str, node: SchemaNode, *, spliced: bool = False) -> str:
+def _child_reference(
+    name: str,
+    node: SchemaNode,
+    *,
+    spliced: bool = False,
+    variant_names: dict[int, str] | None = None,
+) -> str:
     """Generate the Lark expression for referencing a child node.
 
     ``spliced`` says the parent carries ``transparent:<name>``, so this child's
     own name is not written in a set command.
     """
-    safe_name = _rule_name_for(name, node)
+    safe_name = (variant_names or {}).get(id(node), _rule_name_for(name, node))
 
     # Determine the keyword token
     if name in _NAME_ESCAPES:

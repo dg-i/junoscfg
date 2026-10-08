@@ -215,6 +215,7 @@ class TestTheShippedGrammarAcceptsMultipleSiblings:
         commands = (
             "set system ntp server 198.51.100.1 bogus-option 5",
             "set routing-options maximum-prefixes 3000000 bogus-option 5",
+            "set snmp traceoptions file rogue size 1",
         )
         for command in commands:
             assert bundled_set_validator.validate(command).valid is False, command

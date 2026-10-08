@@ -37,5 +37,5 @@ None; this is the first specification for set-command validation.
 ## Impact
 
 Grammar generation, the shipped grammar artifact, validation tests and corpus,
-documentation counts, changelog, and patch version. No new dependencies or
+documentation counts, changelog, and minor version. No new dependencies or
 configuration overrides.
