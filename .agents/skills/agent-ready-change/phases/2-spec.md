@@ -11,8 +11,8 @@ owners.
 
 `agent-ready codemap build`, then `agent-ready codemap slice --change <slug>`,
 which writes `codemap.md` from the symbol index: modules ranked by the paths
-the proposal's domains name, then their neighbours in the import map, then by
-churn, cut at 1,500 tokens, each with its zone, layer, and contract path and,
+the proposal's domains name, each domain in turn, then their neighbours in the
+import map, then by churn, cut at 1,500 tokens, each with its zone, layer, and contract path and,
 beside every public symbol, the `agent-ready codemap show` command that prints
 it alone. Later phases stay within the slice unless a concrete counterexample
 requires a minimal read outside it. Record each extra path as its own row in

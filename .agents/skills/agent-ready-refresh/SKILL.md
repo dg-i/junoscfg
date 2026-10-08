@@ -59,6 +59,12 @@ committed by the command. When you commit a resolution that touches
 `.pre-commit-config.yaml`, stage that file first: pre-commit refuses to run
 with its own configuration modified and unstaged.
 
+Two gates read the refresh commit as what it is. `lane` says `governed diff
+has no live change`: a refresh is not a change, and the gate is not told
+otherwise, as on the onboarding commit; the commit message carries the
+reason. `stage towncrier` asks the diff for a fragment from beta on, and a
+refresh carries a misc fragment naming the release it brought in.
+
 ## The rule that governs every finding
 
 **The template owns its files; this repository owns everything else.** The

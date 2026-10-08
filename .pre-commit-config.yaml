@@ -53,4 +53,4 @@ repos:
         # changelog.d holds towncrier fragments: one sentence each, no h1.
         # Vendored skills belong to their upstream; pyproject declares them
         # under vendored-skills and we do not reformat someone else's docs.
-        exclude: ^(openspec/schemas/|\.agents/skills/openspec-|CLAUDE\.md$)
+        exclude: ^(openspec/(schemas|changes|specs)/|\.agents/skills/openspec-|CLAUDE\.md$)
