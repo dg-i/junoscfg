@@ -7,7 +7,7 @@ import tempfile
 import pytest
 
 from junoscfg.validate import SchemaLoadError
-from junoscfg.validate.set_validator import SetValidator, _strip_apply_groups
+from junoscfg.validate.set_validator import SetValidator
 
 # Minimal Lark grammar for testing
 MINIMAL_GRAMMAR = """\
@@ -76,10 +76,6 @@ class TestSetValidator:
         assert result.valid is False
         assert "does not start with" in result.errors[0].message
 
-    def test_apply_groups_stripped(self, validator):
-        result = validator.validate("set system host-name router1 apply-groups mygroup")
-        assert result.valid is True
-
     def test_quoted_value(self, validator):
         result = validator.validate('set interfaces description "my interface"')
         assert result.valid is True
@@ -87,41 +83,6 @@ class TestSetValidator:
     def test_load_error(self):
         with pytest.raises(SchemaLoadError):
             SetValidator("/nonexistent/grammar.lark")
-
-
-class TestStripApplyGroups:
-    def test_strip_simple(self, validator):
-        result = validator.validate("set system host-name r1 apply-groups foo")
-        assert result.valid is True
-
-    def test_strip_bracket(self, validator):
-        result = validator.validate("set system host-name r1 apply-groups [foo bar]")
-        assert result.valid is True
-
-    def test_strip_except(self, validator):
-        result = validator.validate("set system host-name r1 apply-groups-except foo")
-        assert result.valid is True
-
-
-class TestApplyGroupsStrippingStopsAtQuotes:
-    """A description that mentions apply-groups is not an apply-groups.
-
-    The stripper removes a trailing `apply-groups`/`apply-flags`/`apply-macro`
-    before parsing, because none of them is in the schema. It reached inside a
-    quoted value too, cutting the closing quote off
-    `description "uplink to apply-groups foo"` and leaving something that could
-    never parse. Found on a real device.
-    """
-
-    def test_a_description_mentioning_apply_groups_survives(self) -> None:
-        line = 'set interfaces ge-0/0/0 description "uplink to apply-groups foo"'
-        assert _strip_apply_groups(line) == line
-
-    def test_a_real_apply_groups_is_still_stripped(self) -> None:
-        assert (
-            _strip_apply_groups("set protocols bgp group G apply-groups foo")
-            == "set protocols bgp group G"
-        )
 
 
 class TestTheShippedGrammarKeepsRejecting:
@@ -168,47 +129,52 @@ class TestTheShippedGrammarKeepsRejecting:
         assert bundled_set_validator.validate("set system host-name foo bar baz").valid is False
 
 
-class TestTheApplyGroupsStripperIsStillLoadBearing:
-    """The bridge is still carrying weight, and that is recorded, not hidden.
+class TestTheShippedGrammarModelsTheApplyStatements:
+    """The four `apply-*` statements validate wherever Junos allows them.
 
-    `xsd_fixes._fix_apply_statements` models all four `apply-*` statements and
-    `TestUniversalStatementsAreSplicedEverywhere` pins the grammar it produces,
-    but the bundled artefacts are 24.4R0 and predate the fix. Until they are
-    regenerated the stripper is what makes these lines validate, so this class
-    asserts the compensation still works *and* that the shipped grammar still
-    needs it. Both flip together on the day the artefacts carry the four nodes,
-    and that is the signal to delete the stripper, `_inside_quotes` and the
-    `_validate_line` early return.
-
-    The second test asserts the *difference* stripping makes, not that the line
-    validates. It used to assert `valid is True`, which stays true after the
-    artefacts are regenerated -- so only the first test would have flipped, and
-    the surviving green one would have read as evidence the bridge was still
-    needed. The signal the paragraph above promises did not exist.
+    `xsd_fixes._fix_apply_statements` declares them on the root with the
+    `universal` flag and the grammar splices them into every rule. Until the
+    artifacts were regenerated the validator cut them off the line before
+    parsing -- a bridge with two tests that went red together on the day the
+    shipped tree carried the four nodes, which was 0.8.0. These replace them:
+    the statements at depth and at the top, the quoted value the bridge once
+    cut in half, and the one-line bracket form pinned as the documented
+    `brackets` limit the bridge used to hide.
     """
 
-    def test_the_shipped_grammar_does_not_yet_model_apply_groups(
-        self, bundled_set_validator
-    ) -> None:
-        import lark
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set protocols bgp group G apply-groups foo",
+            pytest.param(
+                "set system apply-groups [ foo bar ]",
+                marks=pytest.mark.xfail(
+                    strict=True,
+                    reason=(
+                        "brackets: a `[ a b ]` list is one token per VALUE, the "
+                        "documented limitation; the bridge took it by cutting it off"
+                    ),
+                ),
+            ),
+            "set system apply-groups-except foo",
+            "set protocols bgp group overlay apply-flags replace",
+            "set interfaces ge-0/0/0 apply-macro m1",
+            "set apply-groups foo",
+        ],
+    )
+    def test_an_apply_statement_validates(self, bundled_set_validator, line: str) -> None:
+        assert bundled_set_validator.validate(line).valid is True, line
 
-        with pytest.raises(lark.exceptions.UnexpectedInput):
-            bundled_set_validator._parser.parse(  # noqa: SLF001
-                "set protocols bgp group G apply-groups foo"
-            )
-
-    def test_the_stripper_is_what_rescues_it(self, bundled_set_validator) -> None:
-        import lark
-
-        line = "set protocols bgp group G apply-groups foo"
-        stripped = _strip_apply_groups(line)
-        assert stripped != line, "the stripper did not fire"
-
-        # The shipped grammar takes the stripped form and refuses the raw one.
-        # When the artefacts carry the four nodes this assertion fails, which
-        # is what makes it flip with its sibling.
-        with pytest.raises(lark.exceptions.UnexpectedInput):
-            bundled_set_validator._parser.parse(line)  # noqa: SLF001
-        bundled_set_validator._parser.parse(stripped)  # noqa: SLF001
-
+    def test_a_description_mentioning_apply_groups_survives(self, bundled_set_validator) -> None:
+        line = 'set interfaces ge-0/0/0 description "uplink to apply-groups foo"'
         assert bundled_set_validator.validate(line).valid is True
+
+    def test_a_deactivate_line_takes_them_too(self, bundled_set_validator) -> None:
+        """The bridge ran on deactivate lines as well; the grammar path does."""
+        line = "deactivate protocols bgp group G apply-groups foo"
+        assert bundled_set_validator.validate(line).valid is True
+
+    def test_an_apply_groups_needs_its_group(self, bundled_set_validator) -> None:
+        """Under a keyword container; after a list entry name a bare token is
+        taken as a value, which is the grammar's general looseness, not this."""
+        assert bundled_set_validator.validate("set system apply-groups").valid is False

@@ -171,14 +171,14 @@ xsd_fixes.py ─────── Apply structural corrections (Groups A-H)
 ### Bundled Artifacts
 
 The package ships with pre-generated artifacts in `src/junoscfg/validate/data/`,
-generated from the Junos 24.4R0 XSD. These are used by default when no custom
+generated from a Junos 25.2R2 XSD dump. These are used by default when no custom
 artifacts are specified.
 
 ### Rebuilding the grammar without a dump
 
-The 24.4R0 dump the bundled artifacts came from is not in the repository, so
-`junos-set.lark` is rebuilt from `junos-structure-tree.json` instead of from
-the XSD:
+The dump the bundled artifacts came from is operator data and not in the
+repository, so `junos-set.lark` is rebuilt from `junos-structure-tree.json`
+instead of from the XSD:
 
 ```python
 from junoscfg.validate.artifact_builder import read_structure_tree
@@ -220,7 +220,7 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `fd` | `true` | Flat dict element | Group H fix |
 | `fe` | `{"k":"..","p":".."}` | Flat entry config | Group H fix |
 | `frnk` | `true` | Freeform NK key | Group H fix |
-| `u` | `true` | Valid at every level (the `apply-*` statements); not in the bundled 24.4R0 artifacts, which predate the fix | Group D fix |
+| `u` | `true` | Valid at every level (the `apply-*` statements) | Group D fix |
 | `e` | `int` | Enum list index (into `_enums` table) | artifact_builder |
 | `r` | `int` | Regex pattern index (into `_patterns` table) | artifact_builder |
 | `m` | `true` | Mandatory field | xsd_parser |

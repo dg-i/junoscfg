@@ -55,7 +55,7 @@ _RESERVED_RULE_NAMES = {"start"}
 # measurement, not by construction: `_safe_rule_name` maps each non-alphanumeric
 # to one underscore and does not collapse runs, so `a--b` would give `a__b` --
 # but no element name carries two consecutive non-alphanumerics. Checked over
-# every name in the bundled 24.4R0 (10,958) and in the 23.2R2, 23.4R2 and
+# every name in the 24.4R0 set shipped until 0.8.0 (10,958) and the 23.2R2, 23.4R2 and
 # 25.2R2 dumps (10,840 / 10,105 / 10,455): zero produce a doubled underscore.
 _LIST_RULE_SUFFIX = "__list"
 # A oneliner list that takes its keyword on either side of the entry name gets

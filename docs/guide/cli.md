@@ -483,8 +483,8 @@ Example:
 
 ```bash
 junoscfg schema info
-# Schema version: 24.4R0
-# Generated at:   2026-02-13T12:00:00Z
+# Schema version: 25.2R0
+# Generated at:   2026-10-08T09:24:16.924958+00:00
 
 junoscfg schema info --artifacts ./my-artifacts/
 ```

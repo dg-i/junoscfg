@@ -2,30 +2,14 @@
 
 Validates Junos set commands against generated Lark grammar.
 
-`_strip_apply_groups` and `_inside_quotes` below are a **temporary bridge**,
-not a design. `apply-groups`, `apply-groups-except`, `apply-flags` and
-`apply-macro` are valid at every hierarchy level and appear in no NETCONF XSD,
-so the generated grammar had no rule for them and this module cut them off the
-line before parsing. The schema models them now --
-`xsd_fixes._fix_apply_statements` declares all four on the root with the
-`universal` flag and `grammar_generator` splices them into every rule -- but a
-fix in `xsd_fixes.py` reaches a user only through regenerated artifacts, and
-the bundled ones are 24.4R0 from a dump that is not in this repository.
-
-What retires this bridge: a 24.4R0-or-later dump to regenerate from, or a
-decision to move the bundled release. Regenerating from the 23.2R2-S7.5 dump
-that is to hand was measured and rejected -- it takes Juniper's Validated
-Designs corpus from 217 field warnings to 3,254, over the budget
-`tests/test_jvd_corpus.py` enforces. Delete both helpers and the
-`_validate_line` early return on the day the artifacts carry the four nodes;
-`TestUniversalStatementsAreSplicedEverywhere` already pins the grammar they
-produce, and `TestTheApplyGroupsStripperIsStillLoadBearing` is the pair of
-tests that go red together on that day.
-
-Only the *grammar* still needs this. The JSON and YAML schemas name the four
-from `display.UNIVERSAL_STATEMENTS` rather than from the flag, because
-junoscfg emitted `apply-groups` and then rejected its own output for all three
-real device configurations.
+The four `apply-*` meta-statements -- `apply-groups`, `apply-groups-except`,
+`apply-flags` and `apply-macro` -- are valid at every hierarchy level and
+appear in no NETCONF XSD. `xsd_fixes._fix_apply_statements` declares them on
+the root with the `universal` flag and `grammar_generator` splices them into
+every rule, so the shipped grammar takes them wherever Junos does. Until the
+artifacts were regenerated in 0.8.0 this module cut them off the line before
+parsing; that bridge is gone, and
+`TestTheShippedGrammarModelsTheApplyStatements` pins what replaced it.
 """
 
 from __future__ import annotations
@@ -82,7 +66,6 @@ class SetValidator:
             if line.startswith("deactivate "):
                 # Check that corresponding set path exists
                 set_path = "set " + line[len("deactivate ") :]
-                set_path = _strip_apply_groups(set_path)
                 # Just check syntax - deactivate is valid if the path is valid
                 err = self._validate_line(set_path, lineno)
                 if err:
@@ -90,7 +73,6 @@ class SetValidator:
                 continue
 
             if line.startswith("set "):
-                line = _strip_apply_groups(line)
                 set_lines.append(line)
                 err = self._validate_line(line, lineno)
                 if err:
@@ -109,12 +91,6 @@ class SetValidator:
 
     def _validate_line(self, line: str, lineno: int) -> ValidationError | None:
         """Validate a single set command line."""
-        if line.strip() in ("set", "deactivate"):
-            # Nothing left after `_strip_apply_groups`, so the whole statement
-            # was one: `set apply-groups global-vxlan` at the top level sets no
-            # path of its own. There is nothing to check against the schema.
-            # Part of the same temporary bridge; it goes with the stripper.
-            return None
         try:
             self._parser.parse(line)
             return None
@@ -123,43 +99,3 @@ class SetValidator:
                 message=f"Invalid syntax: {line[:80]}",
                 line=lineno,
             )
-
-
-def _strip_apply_groups(line: str) -> str:
-    """Strip a trailing apply-* meta-statement from a set command.
-
-    `apply-groups`, `apply-groups-except`, `apply-flags` and `apply-macro` may
-    be attached at any level and none of them appears in the schema, so the
-    grammar has no rule for them. Only `apply-groups` was stripped, which left
-    `set protocols bgp group overlay apply-flags replace` -- a line the
-    downstream Ansible collection renders -- reported as invalid syntax.
-
-    Temporary. The module docstring says what retires it.
-    """
-    # "set ... apply-groups foo"             → "set ..."
-    # "set ... apply-groups-except [foo bar]" → "set ..."
-    # "set ... apply-flags replace"          → "set ..."
-    # "set ... apply-macro m1 key1 val1"     → "set ..."
-    import re
-
-    for pattern in (
-        r"\s+apply-groups(-except)?\s+(\S+|\[.*?\])\s*$",
-        r"\s+apply-flags\s+(\S+|\[.*?\])\s*$",
-        r"\s+apply-macro\s+\S+(\s+\S+)*\s*$",
-    ):
-        match = re.search(pattern, line)
-        if match and not _inside_quotes(line, match.start()):
-            line = line[: match.start()]
-    return line
-
-
-def _inside_quotes(line: str, position: int) -> bool:
-    """True when *position* falls inside a quoted value.
-
-    `set interfaces ge-0/0/0 description "uplink to apply-groups foo"` is a
-    description that happens to contain the words, and stripping there cut the
-    closing quote off and left something that could never parse. An odd number
-    of quotes before the match means it is inside one — which also keeps
-    `apply-groups "foo"`, whose quote comes after, strippable.
-    """
-    return line.count('"', 0, position) % 2 == 1

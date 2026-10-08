@@ -32,10 +32,10 @@ _MAX_DEPTH = 12
 # does not say.
 #
 # `_fix_apply_statements` declares them on the root with the `universal` flag,
-# but a tree built before that fix carries no such node, and the shipped one
-# does not. The kernel list is the floor, so junoscfg does not reject its own
-# output for a configuration that carries `apply-groups` -- which all three
-# real device configurations do.
+# but a tree built before that fix carries no such node, as the bundled one did
+# not until 0.8.0. The kernel list is the floor, so junoscfg does not reject
+# its own output for a configuration that carries `apply-groups` -- which all
+# three real device configurations do -- whatever tree it runs on.
 _UNIVERSAL_FLAG = "universal"
 
 

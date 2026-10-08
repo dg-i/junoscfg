@@ -445,10 +445,10 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     - ``is_key``, which comes back ``False``.
     - ``is_presence`` on a node that has children. The writer stores ``p``
       only for a childless node, so such a node returns as a plain container.
-      In 24.4R0 that is ``groups``, and it is the one place a grammar rebuilt
-      from this tree differs from one built straight off the XSD —
-      ``ArtifactBuilder`` therefore builds the grammar through this function
-      so the two cannot drift.
+      In the 24.4R0 set shipped until 0.8.0 that was ``groups``, the one place
+      a grammar rebuilt from this tree differed from one built straight off the
+      XSD; 25.2R2 has no such node. ``ArtifactBuilder`` builds the grammar
+      through this function regardless, so the two cannot drift.
     - any flag the XSD carried verbatim that is not in the writer's tables
       (``oneliner-plus``, ``homogeneous``, …). The tables are
       ``_BOOL_FLAG_KEYS`` and ``_VALUE_FLAG_KEYS``, and both directions read

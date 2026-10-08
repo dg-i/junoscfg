@@ -14,7 +14,8 @@ describes everything a Junos release supports across the whole product line, so
 every dump names every platform — ACX, EX, MX, PTX, QFX, SRX and vMX all appear
 in all of ours, as enum values for hardware-specific configuration rather than
 as a statement of what the box is. Feature depth says the same: ``unified-edge``
-is 1,771 nodes in both a vMX's 23.2R2 dump and the bundled 24.4R0, and
+is 1,771 nodes in both a vMX's 23.2R2 dump and the 24.4R0 set shipped until
+0.8.0, and
 ``virtual-chassis`` is 63 in every one. What varies is the release.
 
 So the platform is not deduced and not asked for: a dump is promoted to

@@ -363,7 +363,7 @@ class TestListEntryTakesSiblingsOnOneLine:
     The repetition also let a bare `VALUE` absorb any run of unknown tokens,
     which is why `TestUnknownTokensInsideANamedList` passes now.
 
-    Measured on the bundled 24.4R0 tree at 61, 244 and 976 lines. Lark's
+    Measured on the 24.4R0 tree shipped until 0.8.0 at 61, 244 and 976 lines. Lark's
     `~0..n` range is not a middle way: it expands combinatorially and does not
     finish compiling.
     """
@@ -683,47 +683,34 @@ class TestUniversalStatementsAreSplicedEverywhere:
         assert not _parses(self._tree(), "set interfaces interfaces")
 
 
-class TestTheApplyFixReachesARealGrammar:
-    """End to end on the bundled tree, without shipping the result.
+class TestTheBundledTreeCarriesTheApplyStatements:
+    """The shipped artifacts are what `_fix_apply_statements` produces.
 
-    `_fix_apply_statements` lives in `xsd_fixes.py`, which is where a schema
-    correction belongs, and it reaches a user only through regenerated
-    artifacts. The bundled ones are 24.4R0 from a dump that is not in this
-    repository, and the 23.2R2-S7.5 dump that is to hand regresses Juniper's
-    Validated Designs corpus from 217 field warnings to 3,254 -- over the
-    budget `tests/test_jvd_corpus.py` enforces -- so nothing was regenerated.
-
-    Mutating `junos-structure-tree.json` to ship it anyway was considered and
-    rejected: `ARCHITECTURE.md` section 8 forbids hand-editing a generated
-    artefact, and a tree carrying nodes no XSD run produced would make the
-    shipped grammar and the shipped JSON schemas disagree about the same four
-    statements. This test is the substitute: it proves the fix produces the
-    grammar it claims to, on the real 427,978-node tree, so the next
-    regeneration ships a known quantity.
+    Until 0.8.0 the bundled tree predated the fix, and a substitute test
+    applied it to the tree in memory to prove the grammar it would produce.
+    The 25.2R2 artifacts carry the four nodes, so the proof is the artifact
+    itself: the nodes are there with their flag, the fix has nothing left to
+    add, and the shipped grammar takes and rejects what the substitute pinned.
     """
 
     @staticmethod
-    def _fixed_tree() -> SchemaNode:
+    def _tree() -> SchemaNode:
         from junoscfg.validate.artifact_builder import read_structure_tree
+
+        return read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
+
+    def test_the_four_nodes_carry_the_flag(self) -> None:
+        tree = self._tree()
+        for name in ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro"):
+            assert "universal" in tree.children[name].flags, name
+
+    def test_the_fix_has_nothing_left_to_add(self) -> None:
         from junoscfg.validate.xsd_fixes import ALL_FIXES
 
-        tree = read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
         fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
-        assert fix.apply(tree), "the bundled tree already carries them; retire the stripper"
-        return tree
+        assert not fix.apply(self._tree())
 
-    def test_the_bundled_tree_does_not_carry_them_yet(self) -> None:
-        from junoscfg.validate.artifact_builder import read_structure_tree
-
-        tree = read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
-        assert "apply-groups" not in tree.children
-
-    def test_the_fixed_tree_builds_a_grammar_that_takes_them(self) -> None:
-        import lark
-
-        grammar = generate_lark_grammar(self._fixed_tree())
-        assert "universal_statement:" in grammar
-        parser = lark.Lark(grammar, parser="earley")
+    def test_the_shipped_grammar_takes_them(self, bundled_set_validator) -> None:
         for command in (
             "set apply-groups global-vxlan",
             "set protocols bgp group G apply-groups foo",
@@ -733,13 +720,12 @@ class TestTheApplyFixReachesARealGrammar:
             "set policy-options policy-statement p1 apply-macro m1 key1 val1",
             'set interfaces ge-0/0/0 description "uplink to apply-groups foo"',
         ):
-            parser.parse(command)
+            bundled_set_validator._parser.parse(command)  # noqa: SLF001
 
-    def test_the_fixed_grammar_still_rejects_what_it_should(self) -> None:
+    def test_the_shipped_grammar_still_rejects_what_it_should(self, bundled_set_validator) -> None:
         """The splice is four names, not a hole."""
         import lark
 
-        parser = lark.Lark(generate_lark_grammar(self._fixed_tree()), parser="earley")
         for command in (
             "set system host-name (foo bar)",
             "set interfaces ge-0/0/0 bogus-thing 5",
@@ -747,4 +733,4 @@ class TestTheApplyFixReachesARealGrammar:
             "set system apply-nonsense foo",
         ):
             with pytest.raises(lark.exceptions.UnexpectedInput):
-                parser.parse(command)
+                bundled_set_validator._parser.parse(command)  # noqa: SLF001

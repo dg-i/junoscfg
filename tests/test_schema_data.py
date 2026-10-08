@@ -23,8 +23,8 @@ pytestmark = pytest.mark.schema
 class TestFixesApply:
     """Every registered XSD fix should do something on a real schema.
 
-    Both 23.2R2 and 24.4R0 report 38 of 41 applied, so the same three never
-    fire on either release. A fix that never fires is dead code or a matcher
+    23.2R2, 24.4R0 and 25.2R2 all report 38 of 41 applied, so the same three
+    never fire on any release. A fix that never fires is dead code or a matcher
     that stopped matching, and either way the bundled artifacts are missing a
     correction someone thought was needed.
     """
@@ -124,7 +124,7 @@ class TestConversionAgainstRealArtifacts:
     """Conversion driven by a real schema rather than the bundled one.
 
     The schema decides how set commands nest, so a conversion bug can hide
-    behind the bundled 24.4 artifacts and appear on another release.
+    behind the bundled artifacts and appear on another release.
     """
 
     @pytest.fixture(scope="class")

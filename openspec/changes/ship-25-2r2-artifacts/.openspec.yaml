@@ -1,0 +1,33 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: schema
+domains: [schema-pipeline, validation]
+skip_specs: true
+removes:
+  - "the bundled 24.4R0 artifacts, which cannot be rebuilt and lack statements every other release carries"
+  - "the apply-groups bridge in validate/set_validator.py: _strip_apply_groups, _inside_quotes and the _validate_line early return"
+declared-break:
+  api:
+    why: >-
+      The bundled artifacts move from 24.4R0 to 25.2R2, so validate_config and
+      convert_config answer differently where the releases differ: 20 of 21
+      rejected lines across three real devices were the old artifacts' defect,
+      and `hop-limit` now converts to a statement with a value rather than a
+      fused key. The set grammar models the four apply-* statements itself, so
+      the one-line bracket form of any of them, `apply-groups [ a b ]`, which
+      the retired bridge accepted by cutting it off, is rejected like every
+      other bracket list, and an apply-* statement trailing a leaf's value,
+      quoted or not, which is not Junos, is rejected rather than cut off.
+    migration: >-
+      JUNOSCFG_ARTIFACTS or JunosValidator(artifacts_dir=...) select another
+      set as before; a 24.4R0 set can be kept from a 0.7.x checkout or built
+      from a dump with `junoscfg schema generate`. Write bracket lists one
+      value per line, as `| display set` does.
+  cli:
+    why: >-
+      `validate` and `convert` read the same artifacts, so exit status and
+      output move in the same places; `schema info` reports 25.2R0, the
+      namespace the 25.2R2 dump declares.
+    migration: >-
+      `--artifacts` or JUNOSCFG_ARTIFACTS point at another set, as before.

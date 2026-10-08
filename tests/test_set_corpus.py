@@ -27,6 +27,14 @@ CORRECTLY_REJECTED = {
     "set interfaces ge-0/0/0 bogus-thing 5": "element does not exist",
     "set system host-name": "leaf with no value",
     "set system host-name foo bar baz": "leaf with three values",
+    # `apply-groups` after a leaf's value is not Junos. The validator used to
+    # cut the statement off the line before parsing, which hid these four
+    # behind the leaf they trailed; since 0.8.0 the grammar models the
+    # statement and sees them for what they are.
+    "set system host-name r1 apply-groups [foo bar]": "apply-groups after a leaf value",
+    "set system host-name r1 apply-groups foo": "apply-groups after a leaf value",
+    "set system host-name r1 apply-groups-except foo": "apply-groups after a leaf value",
+    "set system host-name router1 apply-groups mygroup": "apply-groups after a leaf value",
 }
 
 # Over-rejected — valid Junos the structural grammar cannot express. Each code

@@ -51,10 +51,10 @@ modules each worked around it separately — the set validator with three
 regexes that cut the statement off the line before parsing, a quote-aware
 guard so a `description` mentioning `apply-groups` survived that cut, and an
 early return for the line those regexes reduced to a bare `set`. The schema's
-*generator* models it now, the shipped artifacts do not yet carry it, so the
-three compensations remain -- labelled a temporary bridge in the module
-docstring, with two tests that go red together on the day they can go. That is
-what "or record why not" looks like when the answer is "not yet".
+*generator* modelled it before the shipped artifacts carried it, so the three
+compensations stayed -- labelled a temporary bridge, with two tests that went
+red together on the day they could go, which was 0.8.0. That is what "or
+record why not" looks like while the answer is "not yet".
 
 ## 4. Measure the blast radius before loosening
 

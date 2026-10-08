@@ -58,7 +58,7 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Against the 116 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    106 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    102 are accepted; `tests/test_set_corpus.py` lists every rejection and
     which are correct. The causes:
 
     - **One setting per list entry, per line.** `set system ntp server
@@ -263,7 +263,7 @@ Each `FieldError` has `path`, `message`, `value`, and `expected` fields.
 
 ## Custom Artifacts
 
-The bundled validation artifacts are generated from the Junos 24.4R0 XSD. To validate
+The bundled validation artifacts are generated from a Junos 25.2R2 XSD dump. To validate
 against a different Junos version, generate artifacts from your device's XSD dump.
 
 ### Obtaining the NETCONF XSD Dump

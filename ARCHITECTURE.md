@@ -48,9 +48,9 @@ than fetching or deriving them at run time.
   `xml` extra; `_ensure_xml_imports()` in `src/junoscfg/display/to_yaml.py`
   imports it lazily so that every non-XML conversion path works without it.
 - **The schema is pinned to one Junos release.** The bundled artifacts are
-  currently Junos 24.4R0 (commit 3b55b78). Structural corrections live in
-  `validate/xsd_fixes.py` as Python, not in the artifacts, so they survive any
-  regeneration.
+  currently Junos 25.2R2, from a dump kept in `private_test_data/schemas/` so
+  they can be rebuilt. Structural corrections live in `validate/xsd_fixes.py`
+  as Python, not in the artifacts, so they survive any regeneration.
 - **Real router configurations stay out of the public repository.** They go in
   `private_test_data/`, which is gitignored; tests use the synthetic ranges in
   AGENTS.md. No external regime stands behind this — the content is router
