@@ -83,8 +83,24 @@ class TestConversionHonoursIt:
         assert tree is not None
         assert "from-the-environment" in tree["c"]
 
-    def test_a_missing_directory_is_none_not_a_crash(self, tmp_path: Path) -> None:
-        assert load_schema_tree(tmp_path / "nothing-here") is None
+    def test_a_directory_the_caller_chose_reports_an_error(self, tmp_path: Path) -> None:
+        """A typo in `--artifacts` is a usage error, not a traceback.
+
+        This asserted `None`, and `None` is what conversion then dereferenced:
+        `set_input._merge_tokens` called `.get` on it and the user saw an
+        `AttributeError` traceback. The knob that made a wrong directory
+        reachable arrived in the same change, so the pin recorded the defect.
+        """
+        with pytest.raises(ValueError, match="junos-structure-tree.json"):
+            load_schema_tree(tmp_path / "nothing-here")
+
+    def test_only_the_bundled_directory_answers_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A package missing its own artifacts is not a path the user can fix."""
+        import junoscfg.display.constants as c
+
+        monkeypatch.setattr(c, "_BUNDLED_DIR", c._BUNDLED_DIR / "not-here")
+        monkeypatch.setattr(c, "_schema_trees", {})
+        assert c.load_schema_tree() is None
 
 
 class TestTwoSchemasCoexist:

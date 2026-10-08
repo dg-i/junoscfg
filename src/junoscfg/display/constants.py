@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
 # ── XML-compat constants ─────────────────────────────────────────────
 # These mirror schema flags for converters that walk XML trees instead
@@ -290,17 +290,158 @@ def open_artifact_write(path: str | Path) -> Iterator[Any]:
 
 
 def load_schema_tree(artifacts_dir: str | Path | None = None) -> dict[str, Any] | None:
-    """Load a structure tree, cached per directory. None if it cannot be read."""
+    """Load a structure tree, cached per directory. None if it cannot be read.
+
+    A directory the caller *chose* -- through the argument, the override or
+    `JUNOSCFG_ARTIFACTS` -- raises instead of returning None. Conversion reads
+    this and dereferences the result immediately, so a typo in `--artifacts`
+    produced a Python traceback rather than an error; the bundled directory is
+    the only one whose absence is reported as None, because a package missing
+    its own artifacts is not something the user can fix by fixing the path.
+    """
     directory = resolve_artifacts_dir(artifacts_dir)
     cached = _schema_trees.get(directory)
     if cached is not None:
         return cached
     path = find_artifact(directory, STRUCTURE_TREE_NAME)
+    chosen = directory != _BUNDLED_DIR
     if path is None:
+        if chosen:
+            raise ValueError(f"No {STRUCTURE_TREE_NAME} in artifacts directory: {directory}")
         return None
     try:
         tree = json.loads(read_artifact_text(path))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as exc:
+        if chosen:
+            raise ValueError(f"Unreadable {STRUCTURE_TREE_NAME} in {directory}: {exc}") from exc
         return None
     _schema_trees[directory] = tree
     return tree
+
+
+# --- XSD type names -------------------------------------------------------
+#
+# The structure tree stores a leaf's type as the XSD writes it, so an XSD
+# built-in arrives prefixed: `xsd:unsignedShort`, not `unsignedShort`. Two
+# packages need to ask what a type *is* -- `convert.field_validator` to check a
+# value, `validate.grammar_generator` to pick a terminal -- and a second copy
+# of the answer is how the two drift apart.
+
+_XSD_PREFIX = "xsd:"
+
+
+def strip_type_prefix(type_ref: str) -> str:
+    """The bare XSD type name: ``xsd:unsignedShort`` is ``unsignedShort``."""
+    return type_ref[len(_XSD_PREFIX) :] if type_ref.startswith(_XSD_PREFIX) else type_ref
+
+
+#: XSD integer types, by their bare names.
+INTEGER_TYPES = frozenset(
+    {
+        "int8",
+        "int16",
+        "int32",
+        "int64",
+        "uint8",
+        "uint16",
+        "uint32",
+        "uint64",
+        "integer",
+        "unsignedInt",
+        "unsignedShort",
+        "unsignedByte",
+        "unsignedLong",
+        "short",
+        "long",
+        "byte",
+        "positiveInteger",
+        "nonNegativeInteger",
+        "negativeInteger",
+        "nonPositiveInteger",
+    }
+)
+
+#: Types whose values cannot contain whitespace, so a quoted multi-word string
+#: is never one. A grammar slot typed like this takes `VALUE`, not
+#: `QUOTED_OR_VALUE`: `set interfaces ge-0/0/0 mtu "not a number at all"` and
+#: `set system host-name "r1 r2 r3"` both validated while every leaf was
+#: quotable, which put 11,695 slots where the pre-change grammar had 82.
+#:
+#: Interface names are deliberately absent: `interface-range` carries shell
+#: patterns that a configuration may legitimately quote.
+UNQUOTABLE_TYPES = frozenset(
+    INTEGER_TYPES
+    | {
+        "ipaddr",
+        "ipprefix",
+        "ipprefix-optional",
+        "ipv4addr",
+        "ipv6addr",
+        "ipv4prefix",
+        "ipv6prefix",
+        "mac-addr",
+        "mac-unicast",
+        "mac-multicast",
+        "boolean",
+    }
+)
+
+
+def statement_name_spellings(name: str, enums: Sequence[str]) -> tuple[str, ...]:
+    """The statement spellings a folded on/off switch writes, or ``()``.
+
+    The schema folds an on/off switch into one node whose name joins both
+    spellings -- ``enable-disable``, carrying the enum ``['disable']`` -- so the
+    token in a configuration *is* the statement, not a value beneath it. A
+    device renders it ``"disable": [null]``.
+
+    Two packages need this answer and must not each hold their own: the set
+    reader keys the dict on it, and the JSON/YAML schema generator has to name
+    the same spellings as properties. They did not agree, so junoscfg emitted
+    ``disable`` and then rejected its own output.
+
+    Returns every spelling, so ``enable`` is handled with ``disable``. The
+    guard is that each enum value is a word of the node's own name; in 24.4R0
+    that holds for 4,238 nodes and all of them are ``enable-disable``.
+    """
+    parts = tuple(name.split("-"))
+    if len(parts) < 2 or not enums:
+        return ()
+    return parts if all(value in parts for value in enums) else ()
+
+
+#: The statements a configuration may carry at any hierarchy level. They are
+#: valid everywhere and appear in no NETCONF XSD of 21.4R0, 23.2R2, 23.4R2 or
+#: 25.2R2, so every layer that reads a configuration has had to know them
+#: separately -- eight modules do. One source, so a ninth copy is not the way a
+#: new one is added.
+UNIVERSAL_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
+
+
+#: List nodes whose entry key is not ``name``. The set reader invents the key
+#: when the XSD models it positionally, so the readers and the schema generator
+#: have to agree on the spelling; `audit/walker.py` already carried a comment
+#: that ``community-name`` was "hardcoded in the set parser", which is the
+#: shape of a defect, not a note.
+ENTRY_KEY_OVERRIDES: dict[str, str] = {"community": "community-name"}
+
+
+def enum_is_fragment(name: str, enums: Sequence[str]) -> bool:
+    """Whether *enums* is a fragment of a wider union rather than the whole type.
+
+    A nokeyword leaf is positional: the value stands where the element name
+    would, and the XSD models it as a union of an enum with a freeform type, of
+    which extraction keeps only the enum. Enforcing those fragments produced
+    53,326 field warnings over Juniper's validated designs.
+
+    But not every nokeyword enum is a fragment. 26 of 24.4R0's 4,368 are closed
+    Junos enums -- ``autorp-mode``, ``dense-group-flags``, ``transport`` -- and
+    escaping those meant ``set protocols pim rp auto-rp frobnicate`` passed
+    ``--strict`` while a device rejected it. The signature is mechanical: a
+    fragment's values are words of the node's own name, or the single value
+    ``default`` on a ``*-name`` node.
+    """
+    parts = set(name.split("-"))
+    if all(value in parts or value == name for value in enums):
+        return True
+    return set(enums) == {"default"} and name.endswith("-name")

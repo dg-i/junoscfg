@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.6.32"
+version = "0.7.0"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -115,6 +115,10 @@ exclude = [
     "tests/",
     "uv.lock",
     "/data/",
+    # Real operator data: device XSD dumps and cloned corpora. Git ignores it
+    # through `private_test_data/.gitignore`, which hatchling does not read, so
+    # a local `uv build` packaged 2,627 files into a 98 MB sdist.
+    "private_test_data/",
 ]
 
 [tool.hatch.build.targets.wheel]

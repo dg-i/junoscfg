@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 
 import click
+import yaml
 
 from junoscfg import Format, __version__
 from junoscfg.audit.render import STYLE_CHOICES as _AUDIT_STYLE_CHOICES
@@ -369,6 +370,13 @@ def convert(
         )
     except NotImplementedError as e:
         click.echo(f"Error: {e}", err=True)
+        sys.exit(2)
+    except yaml.YAMLError as e:
+        # Malformed YAML is a usage error, like malformed JSON and XML. JSON
+        # reached the handler below only because `JSONDecodeError` happens to
+        # subclass `ValueError`; `yaml.YAMLError` does not, so a bad document
+        # printed a parser traceback where the other formats printed an error.
+        click.echo(f"Error: Invalid YAML: {e}", err=True)
         sys.exit(2)
     except ValueError as e:
         click.echo(f"Error: {e}", err=True)

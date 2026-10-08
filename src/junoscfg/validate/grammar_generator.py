@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 
-from junoscfg.display import open_artifact_write
+from junoscfg.display import UNQUOTABLE_TYPES, open_artifact_write, strip_type_prefix
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
 # Every leaf value may be quoted, so there is no list of which ones. Junos
@@ -58,6 +58,13 @@ _RESERVED_RULE_NAMES = {"start"}
 # every name in the bundled 24.4R0 (10,958) and in the 23.2R2, 23.4R2 and
 # 25.2R2 dumps (10,840 / 10,105 / 10,455): zero produce a doubled underscore.
 _LIST_RULE_SUFFIX = "__list"
+# A oneliner list that takes its keyword on either side of the entry name gets
+# its own rule, for the same reason `__list` exists: rules merge by name, and a
+# node that qualifies must not hand the either-order shape to one that does
+# not. `interface__list` is the case that bit -- 6 qualifying nodes deep under
+# `connectivity-fault-management` against 1,050 that do not, contributing 8,448
+# children, so `set interfaces mtu 9192 ge-0/0/0` validated.
+_EITHER_ORDER_SUFFIX = "__eo"
 
 # The XSD type whose value is a policy expression rather than a token:
 # `from policy (( A && ! B ) || ( ! C && D ))`. In 24.4R0 it is on 7,636 nodes,
@@ -115,13 +122,36 @@ def _value_token(node: SchemaNode) -> str:
     """
     if node.type_ref == _POLICY_ALGEBRA_TYPE:
         return "ALGEBRA_OR_VALUE"
+    if node.type_ref and strip_type_prefix(node.type_ref) in UNQUOTABLE_TYPES:
+        # An integer, an address or a MAC cannot hold whitespace, so a quoted
+        # multi-word string is never one of them. Leaving every leaf quotable
+        # put 11,695 slots where the pre-change grammar had 82, and
+        # `set interfaces ge-0/0/0 mtu "not a number at all"` validated.
+        return "VALUE"
     return "QUOTED_OR_VALUE"
+
+
+def _takes_either_order(node: SchemaNode) -> bool:
+    """Whether *node* writes its keyword on either side of the entry name.
+
+    A oneliner list whose children are all bare keywords: `community add
+    COMM-A` puts the keyword first, `flag all detail` puts it last, and nothing
+    in the schema says which.
+    """
+    return bool(
+        node.is_list
+        and "oneliner" in node.flags
+        and node.children
+        and all(c.is_presence and not c.children for c in node.children.values())
+    )
 
 
 def _rule_name_for(name: str, node: SchemaNode) -> str:
     """Return the rule name for a node, keeping named lists in their own rule."""
     base = _safe_rule_name(name)
     if node.is_list and node.children:
+        if _takes_either_order(node):
+            return f"{base}{_LIST_RULE_SUFFIX}{_EITHER_ORDER_SUFFIX}"
         return f"{base}{_LIST_RULE_SUFFIX}"
     return base
 
@@ -290,11 +320,7 @@ def _collect_rules(
         info.alts.update(child_alts)
         if node.is_list:
             info.is_named_list = True
-            if (
-                "oneliner" in node.flags
-                and node.children
-                and all(c.is_presence and not c.children for c in node.children.values())
-            ):
+            if _takes_either_order(node):
                 info.either_order = True
 
     # Recurse into children

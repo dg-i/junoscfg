@@ -71,9 +71,11 @@ class TestGenerateJsonSchema:
         schema = generate_json_schema(_make_tree())
         config = schema["properties"]["configuration"]
         interfaces = config["properties"]["interfaces"]
-        # List nodes should have oneOf with array option
-        assert "oneOf" in interfaces
-        array_option = next(o for o in interfaces["oneOf"] if o.get("type") == "array")
+        # `anyOf`, not `oneOf`: a container also accepts the bare-statement
+        # renderings, so an array satisfies both branches and `oneOf` -- which
+        # demands exactly one -- rejected every list junoscfg produced.
+        assert "anyOf" in interfaces
+        array_option = next(o for o in interfaces["anyOf"] if o.get("type") == "array")
         assert "items" in array_option
 
     def test_additional_properties_false(self):
@@ -103,10 +105,18 @@ class TestYamlVariant:
         assert "^_ansible_" in config["patternProperties"]
         assert "^_meta_" in config["patternProperties"]
 
-    def test_json_no_pattern_properties(self):
+    def test_json_has_no_ansible_patterns(self):
+        """The JSON variant carries the universal statements and nothing else.
+
+        It used to carry no `patternProperties` at all. The four `apply-*`
+        statements are legal at every level and junoscfg emits them, so the
+        generator names them from `UNIVERSAL_STATEMENTS` whether or not the
+        tree declares the flag -- see `TestUniversalStatementsReachEveryContainer`.
+        """
         schema = generate_json_schema(_make_tree(), variant="json")
         config = schema["properties"]["configuration"]
-        assert "patternProperties" not in config
+        assert "^_ansible_" not in config.get("patternProperties", {})
+        assert "^_meta_" not in config.get("patternProperties", {})
 
 
 class TestUniversalStatementsReachEveryContainer:
@@ -114,10 +124,15 @@ class TestUniversalStatementsReachEveryContainer:
 
     JSON and YAML validation rejected them at every level, including the top,
     because no NETCONF XSD models them and every container carries
-    `additionalProperties: false`. The schema declares the four once, on the
-    root with the `universal` flag, and this generator names them as one
-    `patternProperties` entry per container — 51,085 containers, so a property
+    `additionalProperties: false`. This generator names them as one
+    `patternProperties` entry per container — 123,769 containers, so a property
     per container would be four copies of each name in each of them.
+
+    The names come from `UNIVERSAL_STATEMENTS` in the kernel, with any the tree
+    declares through the `universal` flag added. The kernel list is the floor
+    because a tree built before `_fix_apply_statements` carries no such node —
+    the shipped one does not — and junoscfg emitted `apply-groups` and then
+    rejected its own output for all three real device configurations.
     """
 
     @staticmethod
@@ -128,7 +143,9 @@ class TestUniversalStatementsReachEveryContainer:
         tree.children["apply-groups"] = groups
         return tree
 
-    _PATTERN = "^(apply\\-groups)$"
+    # Every universal name the generator knows: the kernel's four, which the
+    # tree's own `apply-groups` is already one of.
+    _PATTERN = "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$"
 
     def test_the_root_names_them(self) -> None:
         schema = generate_json_schema(self._tree())
@@ -144,7 +161,13 @@ class TestUniversalStatementsReachEveryContainer:
         system = schema["properties"]["configuration"]["properties"]["system"]
         assert set(system["patternProperties"]) == {self._PATTERN, "^_ansible_", "^_meta_"}
 
-    def test_a_tree_without_the_flag_gains_no_pattern(self) -> None:
+    def test_a_tree_without_the_flag_still_names_the_kernel_four(self) -> None:
+        """The flag adds to the floor; it is not what puts the floor there.
+
+        This asserted the opposite -- that a tree without the flag gains no
+        pattern -- which pinned the state in which junoscfg's JSON output of
+        any configuration carrying `apply-groups` failed its own validation.
+        """
         schema = generate_json_schema(_make_tree())
         system = schema["properties"]["configuration"]["properties"]["system"]
-        assert "patternProperties" not in system
+        assert self._PATTERN in system["patternProperties"]

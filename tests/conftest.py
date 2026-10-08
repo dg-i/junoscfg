@@ -224,6 +224,26 @@ def bundled_set_validator() -> object:
     return SetValidator(find_artifact(ARTIFACT_DIR, "junos-set.lark"))
 
 
+@pytest.fixture(scope="session")
+def bundled_validator() -> object:
+    """The shipped JSON and YAML schemas, loaded once.
+
+    `tests/test_round_trip_validates.py` needs the same artifacts the CLI uses,
+    so it must resolve them the way everything else does rather than naming a
+    path -- the one place that named its own went red the day they shipped
+    gzipped.
+    """
+    from junoscfg.validate import JunosValidator
+
+    return JunosValidator(artifacts_dir=str(ARTIFACT_DIR))
+
+
+@pytest.fixture
+def project_root() -> Path:
+    """The repository root, for tests that read a committed example."""
+    return PROJECT_ROOT
+
+
 @pytest.fixture
 def examples_dir() -> Path:
     """Path to the examples directory with test data."""

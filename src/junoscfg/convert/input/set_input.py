@@ -8,7 +8,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from junoscfg.display import KEY_ALIASES, load_schema_tree
+from junoscfg.display import (
+    ENTRY_KEY_OVERRIDES,
+    KEY_ALIASES,
+    load_schema_tree,
+    statement_name_spellings,
+)
 from junoscfg.input import normalize
 
 
@@ -33,8 +38,11 @@ def _is_statement_name(cname: str, cnode: dict[str, Any], token: str) -> bool:
     if not isinstance(index, int) or index >= len(enums):
         return False
     allowed = enums[index]
-    parts = cname.split("-")
-    return token in allowed and all(value in parts for value in allowed)
+    # `token in parts`, not `token in allowed`: 4,152 of the 4,238 nodes carry
+    # the enum `['disable']` alone, so keying on the enum fixed `disable` and
+    # left `enable` -- the other half of the same switch -- still writing an
+    # `enable-disable` key no device accepts.
+    return token in statement_name_spellings(cname, allowed)
 
 
 def set_to_dict(source: str) -> dict[str, Any]:
@@ -298,7 +306,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     action_node = child["c"][action]
                     if i + 2 < len(tokens):
                         real_name = _parse_value(tokens[i + 2])
-                        entry_dict = {"community-name": real_name}
+                        entry_dict = {ENTRY_KEY_OVERRIDES["community"]: real_name}
                         entry_dict[action] = [None] if action_node.get("p") else True
                         lst.append(entry_dict)
                         i += 3

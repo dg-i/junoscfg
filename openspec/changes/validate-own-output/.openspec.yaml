@@ -1,0 +1,21 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: kernel
+domains: [conversion, validation]
+skip_specs: true
+removes:
+  - "renderings junoscfg produced and then rejected"
+  - "a type table the tree's own spelling never matched"
+declared-break:
+  cli:
+    why: >-
+      `convert --strict` exits 1 where it exited 0. Integer validation never
+      fired for an `xsd:`-prefixed type because the table held bare names, and
+      26 closed Junos enums were silenced by the nokeyword escape. Both now
+      report, so a configuration that converted quietly can fail --strict.
+    migration: >-
+      Drop --strict to keep the old exit status; the warnings go to stderr
+      either way. A value that now fails is one a device rejects: `set
+      protocols pim rp auto-rp frobnicate` and a non-numeric `maximum-entries`
+      are the shapes. Nothing in the api surface changes signature.

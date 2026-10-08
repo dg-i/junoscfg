@@ -11,6 +11,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from junoscfg.display import INTEGER_TYPES, enum_is_fragment, strip_type_prefix
+
 
 @dataclass(frozen=True, slots=True)
 class FieldError:
@@ -63,31 +65,6 @@ _IP_OR_NAME_TYPES = frozenset({"ipaddr-or-interface"})
 _IPV4_PATTERN_HINT = re.compile(r"\d.*\\d.*\\\.")
 _IPV6_PATTERN_HINT = re.compile(r"[0-9a-fA-F].*:")
 
-# XSD types mapped to Python validation
-_INTEGER_TYPES = frozenset(
-    {
-        "int8",
-        "int16",
-        "int32",
-        "int64",
-        "uint8",
-        "uint16",
-        "uint32",
-        "uint64",
-        "integer",
-        "unsignedInt",
-        "unsignedShort",
-        "unsignedByte",
-        "unsignedLong",
-        "short",
-        "long",
-        "byte",
-        "positiveInteger",
-        "nonNegativeInteger",
-        "negativeInteger",
-        "nonPositiveInteger",
-    }
-)
 _BOOLEAN_TYPES = frozenset({"boolean"})
 
 # Bounds for unsigned integer types
@@ -341,7 +318,7 @@ class FieldValidator:
                     return  # Accept numeric values — XSD union types often allow them
                 elif _has_enum_placeholder(allowed):
                     return  # XSD union with placeholder for arbitrary values
-                elif schema_node.get("nk"):
+                elif schema_node.get("nk") and enum_is_fragment(path[-1] if path else "", allowed):
                     # A nokeyword leaf is positional: the value stands where
                     # the element name would, and the XSD models it as a union
                     # of an enum with a freeform type, of which extraction keeps
@@ -423,6 +400,11 @@ class FieldValidator:
     ) -> None:
         """Validate value against its XSD type reference."""
         tr_lower = type_ref.lower()
+        # The tree stores XSD built-ins prefixed -- `xsd:unsignedShort`. The
+        # table holds bare names, so every integer leaf typed by an XSD
+        # built-in went unchecked: `set interfaces ge-0/0/0 mtu notanumber`
+        # converted without a warning.
+        bare = strip_type_prefix(type_ref)
 
         # IP address validation
         if tr_lower in _IP_OR_NAME_TYPES:
@@ -432,12 +414,12 @@ class FieldValidator:
             return
 
         # Integer validation
-        if type_ref in _INTEGER_TYPES:
-            self._validate_integer(str_value, dot_path, type_ref, result)
+        if bare in INTEGER_TYPES:
+            self._validate_integer(str_value, dot_path, bare, result)
             return
 
         # Boolean validation
-        if type_ref in _BOOLEAN_TYPES and str_value.lower() not in ("true", "false", "1", "0"):
+        if bare in _BOOLEAN_TYPES and str_value.lower() not in ("true", "false", "1", "0"):
             result.errors.append(
                 FieldError(
                     path=dot_path,

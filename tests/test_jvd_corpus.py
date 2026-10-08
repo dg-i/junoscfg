@@ -19,10 +19,13 @@ from __future__ import annotations
 import io
 import re
 from contextlib import redirect_stderr
-from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 from junoscfg import Format, convert_config
 
@@ -166,12 +169,16 @@ class TestShapesThatReachedARelease:
             convert_config(cfg, from_format=Format.STRUCTURED, to_format=Format.SET)
         assert "not a valid IP" not in captured.getvalue(), captured.getvalue()[:300]
 
-    def test_a_oneliner_list_takes_its_keyword_before_the_entry_name(self) -> None:
-        """`then community add COMM-A` was 343 of 507 rejections on real devices."""
-        import junoscfg.validate as validate_pkg
-        from junoscfg.validate.set_validator import SetValidator
+    def test_a_oneliner_list_takes_its_keyword_before_the_entry_name(
+        self, bundled_set_validator: Any
+    ) -> None:
+        """`then community add COMM-A` was 343 of 507 rejections on real devices.
 
-        v = SetValidator(Path(validate_pkg.__file__).parent / "data" / "junos-set.lark")
+        Takes the shared fixture rather than building the path by hand: the
+        hand-built one named `junos-set.lark`, which stopped existing when the
+        artifacts shipped gzipped, and this tier is opt-in so nothing noticed.
+        """
+        v = bundled_set_validator
         assert v.validate(
             "set policy-options policy-statement P term T then community add COMM-A"
         ).valid

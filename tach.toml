@@ -57,14 +57,17 @@ layer = "kernel"
 [[interfaces]]
 from = ["junoscfg.display"]
 expose = [
-    "ConfigStore", "KEY_ALIASES", "SetConverter", "artifacts_dir",
+    "ConfigStore", "ENTRY_KEY_OVERRIDES", "INTEGER_TYPES", "KEY_ALIASES", "SetConverter",
+    "UNIVERSAL_STATEMENTS", "UNQUOTABLE_TYPES",
+    "artifacts_dir",
     "filter_json_by_path", "filter_set_by_path", "filter_structured_by_path",
-    "filter_yaml_by_path", "find_artifact", "format_value",
+    "filter_yaml_by_path", "enum_is_fragment", "find_artifact",
+    "format_value",
     "get_flat_entry_config", "get_transparent_child", "is_display_set",
     "is_flat_dict", "is_freeform_nk", "is_positional_key",
     "is_transparent_list_key", "load_schema_tree", "open_artifact_write",
     "read_artifact_text", "resolve_artifacts_dir", "resolve_key_alias",
-    "xml_to_yaml",
+    "statement_name_spellings", "strip_type_prefix", "xml_to_yaml",
 ]
 
 [[interfaces]]

@@ -73,7 +73,8 @@ class JunosValidator:
             xsd_path = find_artifact(self._artifacts_dir, "junos-validated.xsd")
             if xsd_path is None:
                 raise SchemaLoadError(
-                    f"XSD not found: {xsd_path}. XML validation requires a cleaned XSD artifact."
+                    f"XSD not found in {self._artifacts_dir}. "
+                    "XML validation requires a cleaned XSD artifact."
                 )
             self._xml_validator = XmlValidator(xsd_path)
         return self._xml_validator.validate(source)
@@ -116,7 +117,7 @@ class JunosValidator:
 
             grammar_path = find_artifact(self._artifacts_dir, "junos-set.lark")
             if grammar_path is None:
-                raise SchemaLoadError(f"Lark grammar not found: {grammar_path}")
+                raise SchemaLoadError(f"Lark grammar not found in {self._artifacts_dir}")
             self._set_validator = SetValidator(grammar_path)
         return self._set_validator.validate(source)
 
@@ -140,7 +141,7 @@ class JunosValidator:
 
                 grammar_path = find_artifact(self._artifacts_dir, "junos-set.lark")
                 if grammar_path is None:
-                    raise SchemaLoadError(f"Lark grammar not found: {grammar_path}")
+                    raise SchemaLoadError(f"Lark grammar not found in {self._artifacts_dir}")
                 self._set_validator = SetValidator(grammar_path)
             self._structured_validator = StructuredValidator(self._set_validator)
         return self._structured_validator.validate(source)
