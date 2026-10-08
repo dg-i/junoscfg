@@ -1,0 +1,1 @@
+Project template refreshed from agent-ready v0.5.0 to v0.7.3 with agent-ready-checks 0.15.3: the gates read a stacked or fully archived branch by its last commit, the generated JSON Schema artefacts are reproducible byte for byte, and the hook tools run with `--locked`. No change to junoscfg's own behaviour.
