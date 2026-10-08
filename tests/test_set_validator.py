@@ -133,6 +133,18 @@ class TestSetBracketSyntaxRejection:
         )
         assert accepted.valid is True
 
+        after_comment = "/* ignored */ set system apply-groups [ foo bar ]"
+        result = bundled_set_validator.validate(after_comment)
+        assert result.errors == (
+            ValidationError(
+                message=(f"Unsupported bracket syntax in set input on line 1:\n{after_comment}"),
+                line=1,
+            ),
+        )
+
+        multiline_comment = "/* ignored\n[ still ignored ]\n*/\nset system host-name router1"
+        assert bundled_set_validator.validate(multiline_comment).valid is True
+
     def test_validation_collects_each_offending_line(
         self, bundled_set_validator: SetValidator
     ) -> None:

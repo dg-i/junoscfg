@@ -20,3 +20,6 @@ line-continuations so a parser sees clean text; deciding which parser runs is
 - `junoscfg.input.find_unsupported_set_brackets` — the shared lexical boundary
   for raw set conversion and validation; callers consume its line-numbered
   diagnostics instead of scanning independently.
+- `junoscfg.input.iter_visible_set_lines` — the shared physical-line view for
+  raw set consumers; it removes leading comments while preserving original
+  line numbers and any content following a closing block comment.

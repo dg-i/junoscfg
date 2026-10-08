@@ -6,10 +6,13 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
-__all__ = ["find_unsupported_set_brackets", "normalize"]
+__all__ = ["find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"]
 
 import re
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
@@ -20,32 +23,8 @@ def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
     comments are ignored exactly as they are by :func:`normalize`.
     """
     findings: list[tuple[int, str]] = []
-    in_block_comment = False
-
-    for lineno, original_line in enumerate(source.splitlines(), 1):
-        scan = original_line
-
-        while True:
-            if in_block_comment:
-                comment_end = scan.find("*/")
-                if comment_end < 0:
-                    scan = ""
-                    break
-                scan = scan[comment_end + 2 :]
-                in_block_comment = False
-
-            stripped = scan.lstrip()
-            if not stripped or stripped.startswith("#"):
-                scan = ""
-                break
-            if stripped.startswith("/*"):
-                in_block_comment = True
-                scan = stripped[2:]
-                continue
-            scan = stripped
-            break
-
-        if scan and _has_unquoted_square_bracket(scan):
+    for lineno, original_line, visible_line in iter_visible_set_lines(source):
+        if _has_unquoted_square_bracket(visible_line):
             findings.append(
                 (
                     lineno,
@@ -54,6 +33,43 @@ def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
             )
 
     return tuple(findings)
+
+
+def iter_visible_set_lines(source: str) -> Iterator[tuple[int, str, str]]:
+    """Yield line number, original text, and content outside leading comments.
+
+    Full-line ``#`` comments and leading ``/* ... */`` block comments are
+    omitted. Content following a closing block-comment marker remains visible
+    on its original physical line. Raw set consumers use this shared view so
+    conversion and validation classify comments consistently.
+    """
+    in_block_comment = False
+
+    for lineno, original_line in enumerate(source.splitlines(), 1):
+        visible_line = original_line
+
+        while True:
+            if in_block_comment:
+                comment_end = visible_line.find("*/")
+                if comment_end < 0:
+                    visible_line = ""
+                    break
+                visible_line = visible_line[comment_end + 2 :]
+                in_block_comment = False
+
+            stripped = visible_line.lstrip()
+            if not stripped or stripped.startswith("#"):
+                visible_line = ""
+                break
+            if stripped.startswith("/*"):
+                in_block_comment = True
+                visible_line = stripped[2:]
+                continue
+            visible_line = stripped
+            break
+
+        if visible_line:
+            yield lineno, original_line, visible_line
 
 
 def _has_unquoted_square_bracket(line: str) -> bool:
