@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: refactor
+zone: surface
+domains: [conversion, validation, anonymization, audit]
+skip_specs: true
+removes:
+  - "none; this change records a future simplification roadmap and changes no product behaviour"
