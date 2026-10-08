@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-08
+type: refactor
+zone: surface
+domains: [conversion, validation, anonymization, audit]
+skip_specs: true
+removes:
+  - "the non-blocking whole-repository `mypy src tests` CI report"
+  - "the policy recorded by decision 2026-10-06-adopt-mypy-strict"

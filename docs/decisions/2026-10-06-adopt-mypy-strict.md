@@ -1,8 +1,9 @@
 ---
-status: accepted
+status: superseded
 scope: ["src/**", "tool.mypy", ".pre-commit-config.yaml"]
 enforced-by: ci
 review-by: 2027-04-06
+superseded-by: 2026-10-08-enforce-interface-type-checking
 ---
 
 # Adopt mypy strict behind a CI report, not a commit hook

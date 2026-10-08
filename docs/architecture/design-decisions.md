@@ -98,7 +98,7 @@ Only `inactive:` survives the set-command roundtrip (via `deactivate`); `replace
 | Package | Rationale |
 |---------|-----------|
 | **ruff** | Single fast tool replaces flake8 + black + isort |
-| **mypy** | Strict mode type checking catches real bugs |
+| **mypy** | Blocking strict checks cover stable package interfaces and caller-visible models; dynamic configuration-tree semantics remain behavioral-test territory |
 | **pytest** | More pythonic than unittest, better fixtures and output |
 
 ## Value Quoting

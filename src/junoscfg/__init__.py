@@ -8,12 +8,15 @@ Junos XSD schema.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO, cast
 
 from junoscfg.convert import FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.11.1"
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+__version__ = "0.11.2"
 
 __all__ = [
     "Format",
@@ -120,7 +123,7 @@ def convert_config(
     if func_name is None:
         raise ValueError(f"Unsupported conversion: {from_format.value} -> {to_format.value}")
 
-    converter = globals()[func_name]
+    converter = cast("Callable[..., str]", globals()[func_name])
 
     # Pipeline-based converters accept validate/strict/anon_config kwargs
     if func_name in _PIPELINE_CONVERTERS:
@@ -159,7 +162,7 @@ def _filter_by_path(result: str, to_format: Format, path: str, relative: bool) -
 
 def _read_source(source: str | TextIO) -> str:
     """Read a string or file-like object into a string."""
-    return source.read() if hasattr(source, "read") else str(source)  # type: ignore[union-attr]
+    return source if isinstance(source, str) else source.read()
 
 
 def _pipeline_convert(

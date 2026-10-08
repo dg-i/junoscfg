@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.11.1"
+version = "0.11.2"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -134,6 +134,7 @@ dev = [
     "ruff>=0.4",
     "lxml>=4.9",
     "mypy>=2.4",
+    "types-PyYAML>=6.0",
     "deptry>=0.25.1",
     # Development tooling only. It needs 3.11+, and must not drag the
     # published package's floor up with it.
@@ -266,9 +267,15 @@ licence = "MIT"
 
 [[tool.template.toolbox.approved]]
 name = "mypy"
-purpose = "types, whole package; 102 errors in 25 of 68 files at adoption, so phase 4 installs it warn-mode against a baseline"
+purpose = "blocking strict checks for stable package interfaces and caller-visible result and configuration models"
 minimum-version = "2.4.0"
 licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "types-PyYAML"
+purpose = "development-only type information for the YAML-backed anonymization configuration interface"
+minimum-version = "6.0"
+licence = "Apache-2.0"
 
 [[tool.template.toolbox.approved]]
 name = "pytest"

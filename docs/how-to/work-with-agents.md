@@ -16,8 +16,7 @@ module is not for. Import through the package door — `tach check` and
 | Where | What runs |
 |---|---|
 | `pre-commit`, on commit | ruff format and check, deptry, document caps, markdownlint |
-| CI, on push and pull request | the suite on every interpreter the classifiers declare, derived from `pyproject.toml`; then `agent-ready check --set full --base origin/master` once |
-| CI, reported but never blocking | mypy — 102 errors at adoption, see `docs/decisions/2026-10-06-adopt-mypy-strict.md` |
+| CI, on push and pull request | the suite on every interpreter the classifiers declare, derived from `pyproject.toml`; then `agent-ready check --set full --base origin/master` and blocking mypy checks over the documented stable-interface files |
 
 The default branch is `master`, not `main`, which is why
 `[tool.template] base = "origin/master"` is set explicitly. Without it the

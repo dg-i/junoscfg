@@ -7,7 +7,8 @@ Generated from `[tool.template.toolbox]` in `pyproject.toml` by `agent-ready ren
 | Tool | Purpose | Minimum version | Licence |
 | --- | --- | --- | --- |
 | ruff | format and lint | 0.15.0 | MIT |
-| mypy | types, whole package; 102 errors in 25 of 68 files at adoption, so phase 4 installs it warn-mode against a baseline | 2.4.0 | MIT |
+| mypy | blocking strict checks for stable package interfaces and caller-visible result and configuration models | 2.4.0 | MIT |
+| types-PyYAML | development-only type information for the YAML-backed anonymization configuration interface | 6.0 | Apache-2.0 |
 | pytest | tests | 9.0.2 | MIT |
 | deptry | undeclared and unused dependencies | 0.25.1 | MIT |
 | tach | module boundaries and the public name surface | 0.35.1 | MIT |

@@ -84,8 +84,16 @@ jobs:
       # origin/main fallback would resolve to nothing.
       - run: uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
 
-      # Reported, never blocking: see docs/decisions/2026-10-06-adopt-mypy-strict.md
-      - name: mypy (reported, not enforced)
+      # Enforced at stable package doors and caller-visible models; dynamic
+      # Junos-tree internals remain under behavioral tests.
+      - name: mypy (stable interfaces)
         if: always()
-        continue-on-error: true
-        run: uv run --locked --group dev mypy src tests
+        run: >-
+          uv run --locked --group dev mypy --follow-imports=silent
+          src/junoscfg/__init__.py
+          src/junoscfg/convert/__init__.py
+          src/junoscfg/validate/__init__.py
+          src/junoscfg/anonymize/__init__.py
+          src/junoscfg/anonymize/config.py
+          src/junoscfg/audit/__init__.py
+          src/junoscfg/audit/model.py
