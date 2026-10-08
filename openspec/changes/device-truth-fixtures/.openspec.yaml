@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-08
+type: feature
+zone: conversion
+domains: [conversion]
+skip_specs: true
+removes:
+  - "the absence of any oracle in the suite that does not depend on a schema"

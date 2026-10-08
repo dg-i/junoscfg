@@ -1,0 +1,1 @@
+A device-truth test tier: a subtree captured beside the device's own `| display json` of it is converted and its JSON paths compared with the device's, with no schema in the judging. It runs wherever it finds a pair under `tests/data/captures/` or the gitignored `private_test_data/captures/`.

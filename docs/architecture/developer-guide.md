@@ -653,8 +653,9 @@ supplementary passes handle cases the schema walker cannot reach:
 
 ## Testing Architecture
 
-Tests are organized into tiers with increasing cost. The last two need data
-this repository cannot carry, so they are opt-in and skip by default:
+Tests are organized into tiers with increasing cost. Schema and Corpus need
+data this repository cannot carry, so they are opt-in and skip by default;
+Device truth runs wherever a capture pair is present:
 
 | Tier | Command | Duration | Purpose |
 |------|---------|----------|---------|
@@ -663,6 +664,7 @@ this repository cannot carry, so they are opt-in and skip by default:
 | **Regen** | Add `--regen-schema` | ~90s | Rebuilds the schema artifacts from a device XSD |
 | **Schema** | Add `--schema` | minutes | Runs against each NETCONF dump in `private_test_data/schemas/` |
 | **Corpus** | Add `--jvd` | ~3.5min | Runs against Juniper's published jvd corpus |
+| **Device truth** | Automatic | seconds | Runs against capture pairs under `tests/data/captures/` and `private_test_data/captures/`; skipped where there are none |
 
 ### The jvd corpus tier
 
@@ -684,6 +686,19 @@ JUNOSCFG_JVD_PATH=~/src/jvd uv run pytest -q --jvd   # reuse a clone you have
 the corpus is upstream and will change. It also carries one guard per defect
 the corpus found, each taking its example from the corpus itself.
 
+### The device-truth tier
+
+A capture pairs a subtree as `show configuration <path>` prints it with the
+same subtree as the device rendered it through `| display json`. The device
+is the oracle and no schema is involved in the judging, so a difference is
+junoscfg's or the artifacts', never a release gap read into the data. It is
+what showed the 24.4R0 artifacts to be defective: every `hop-limit` came back
+as a fused key. `tests/test_device_truth.py` re-roots the fragment along its
+path, converts it, and compares the set of JSON paths, `@` attributes aside.
+A pair is one operator's configuration: it sits under the gitignored
+`private_test_data/captures/` until its owner moves it to
+`tests/data/captures/`, and the test runs wherever it finds one.
+
 ### When to use each tier
 
 - **During development** — Run fast tests (no flags)
@@ -691,6 +706,9 @@ the corpus found, each taking its example from the corpus itself.
 - **After XSD/schema changes** — Always use `--regen-schema` to regenerate `junos-structure-tree.json`
 - **After a grammar or field-validator change** — Run `--jvd`; it is where
   false positives on real configuration show up
+- **After an artifact regeneration** — The device-truth tier runs on its own;
+  a missing or extra path there is the artifacts' or the converter's, never
+  the data's.
 
 For the full list of development commands, see the project CLAUDE.md.
 

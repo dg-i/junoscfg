@@ -39,6 +39,33 @@ bundled 24.4R0.
 `JUNOSCFG_XSD_SOURCE` overrides the location for `--regen-schema`. A legacy
 `*.xsd` directly in this directory is still found.
 
+## Device captures
+
+`captures/` holds pairs of files, `<name>.conf` beside `<name>.json`: a subtree
+as `show configuration <path>` prints it, headed by a line naming that path,
+and the same subtree as the device rendered it through `| display json`. The
+device is the oracle, with no schema in the judging; `tests/test_device_truth.py`
+converts the fragment and compares the set of JSON paths. Pairs here run on
+the machine that holds them and are skipped elsewhere; a pair the owner is
+content to publish moves to `tests/data/captures/` unchanged.
+
+Capture one with, on the device:
+
+```text
+show configuration groups <g> policy-options
+show configuration groups <g> policy-options | display json
+```
+
+Save the first as `<name>.conf` with this exact first line, the path as the
+device took it:
+
+```text
+## show configuration groups <g> policy-options
+```
+
+and the second as `<name>.json`. Strip any secret before saving. Only element
+paths are compared, and only element paths are printed on a failure.
+
 ## Running the schema-backed tests
 
 ```bash

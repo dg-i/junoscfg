@@ -1,0 +1,86 @@
+{
+ "configuration": {
+  "@": {
+   "junos:commit-seconds": "1759900000",
+   "junos:commit-localtime": "2026-10-08 09:00:00 UTC",
+   "junos:commit-user": "admin"
+  },
+  "groups": [
+   {
+    "name": "doc",
+    "policy-options": {
+     "prefix-list": [
+      {
+       "name": "PL-DOC",
+       "prefix-list-item": [
+        {
+         "name": "10.0.0.0/8"
+        },
+        {
+         "name": "192.168.0.0/16"
+        }
+       ]
+      }
+     ],
+     "policy-statement": [
+      {
+       "name": "PS-DOC",
+       "term": [
+        {
+         "name": "t1",
+         "from": {
+          "prefix-list": [
+           {
+            "name": "PL-DOC"
+           }
+          ],
+          "protocol": [
+           "bgp"
+          ],
+          "route-filter": [
+           {
+            "address": "198.51.100.0/24",
+            "exact": [
+             null
+            ]
+           }
+          ]
+         },
+         "then": {
+          "local-preference": {
+           "local-preference": "200"
+          },
+          "accept": [
+           null
+          ]
+         }
+        },
+        {
+         "name": "t2",
+         "from": {
+          "protocol": [
+           "static"
+          ]
+         },
+         "then": {
+          "reject": [
+           null
+          ]
+         }
+        }
+       ]
+      }
+     ],
+     "community": [
+      {
+       "name": "C-DOC",
+       "members": [
+        "64496:100"
+       ]
+      }
+     ]
+    }
+   }
+  ]
+ }
+}
