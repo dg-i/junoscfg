@@ -7,3 +7,11 @@ checks-tag = "checks-v0.15.2"
 # by `agent-ready init` and `agent-ready update`: a tag can move, and `uvx`
 # caches one build per ref, so a tool invocation names this commit.
 checks-commit = "dce2901ff6efe8d77c3dcc1789c35db81a0fe876"
+
+# The refresh's hook recommendation, decided: this repository's hook set
+# stands. What the seed's hooks would add is already covered elsewhere.
+[local-policy.hooks-f9f2c5b7e885af6cdb7ac73e98616183cbaa1114f93db62eb8a60bfdcd87775e]
+scope = "refresh.pre-commit.integration.v1"
+reason = "The local hooks (ruff-format, ruff-check, deptry, caps, markdownlint) stand: mypy runs in CI as reported-not-enforced under docs/decisions/2026-10-06-adopt-mypy-strict.md, `skills` runs inside `agent-ready check`, and `caps` is the document-budget check the seed's doc-budgets hook provides."
+upstream = "local-only: the hook set differs by design, per the decision record named in reason"
+review-by = "2027-04-08"
