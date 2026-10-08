@@ -69,6 +69,9 @@ jobs:
       - run: uv run --python ${{ matrix.python }} --with pytest --with lxml --no-dev pytest tests/ -q
 
   full:
+    # Keep this job id stable for branch protection. The matrix owns the full
+    # application suite; governance starts only after every interpreter passes.
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -82,7 +85,7 @@ jobs:
           enable-cache: true
       # This repository's default branch is master, so the template's
       # origin/main fallback would resolve to nothing.
-      - run: uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base origin/${{ github.base_ref || 'master' }}
+      - run: uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set fast --base origin/${{ github.base_ref || 'master' }}
 
       # Enforced at stable package doors and caller-visible models; dynamic
       # Junos-tree internals remain under behavioral tests.

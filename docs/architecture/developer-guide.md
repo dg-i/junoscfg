@@ -653,18 +653,32 @@ supplementary passes handle cases the schema walker cannot reach:
 
 ## Testing Architecture
 
-Tests are organized into tiers with increasing cost. Schema and Corpus need
-data this repository cannot carry, so they are opt-in and skip by default;
-Device truth runs wherever a capture pair is present:
+Use exact nodes or affected files as the implementation loop. Schema and Corpus
+need data this repository cannot carry, so they are opt-in and skip by default;
+Device truth runs wherever a capture pair is present. The committed-suite
+figures below were measured on 2026-10-08 with the commands shown:
 
 | Tier | Command | Duration | Purpose |
 |------|---------|----------|---------|
-| **Fast** | `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'` | ~17s | Unit tests, conversion tests, structural tests |
-| **Full** | `uv run pytest tests/ -q` | ~17s | Adds the slow example validation and roundtrip tests |
+| **Focused** | `uv run pytest <node-or-affected-file> -q` | Change-dependent | Preferred implementation loop; run only the behavior and immediate integration boundary being changed |
+| **Former broad selection** | `uv run pytest tests/ -q -k 'not ExampleValidation and not ExampleRoundtrip'` | 43.80s wall; 1,578 passed, 72 skipped, 9 deselected, 1 xfailed | Not a useful tier: deselecting nine tests was no faster than Full |
+| **Full** | `uv run pytest tests/ -q` | 43.77s wall; 1,587 passed, 72 skipped, 1 xfailed | Complete committed application suite; run through the full checkpoint rather than beside it |
 | **Regen** | Add `--regen-schema` | ~3min | Rebuilds the artifacts before collection from the one dump of the shipped release under `private_test_data/schemas/`, or the dump `JUNOSCFG_XSD_SOURCE` names; with none, two, or an unusable override it stops with exit code 7 |
 | **Schema** | Add `--schema` | minutes | Runs against each NETCONF dump in `private_test_data/schemas/` |
 | **Corpus** | Add `--jvd` | ~3.5min | Runs against Juniper's published jvd corpus |
 | **Device truth** | Automatic | seconds | Runs against capture pairs under `tests/data/captures/` and `private_test_data/captures/`; skipped where there are none |
+
+For a grammar change, run the affected generator nodes or
+`tests/test_grammar_generator.py`, the affected set-validator nodes or
+`tests/test_set_validator.py`, and these integration guards:
+
+```bash
+uv run pytest \
+  tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones \
+  tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_multiple_siblings \
+  tests/test_grammar_generator.py::TestBundledGrammarIsReproducible::test_bundled_grammar_matches_its_structure_tree \
+  -q
+```
 
 ### The jvd corpus tier
 

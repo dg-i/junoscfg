@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.12.0"
+version = "0.12.1"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -138,7 +138,7 @@ dev = [
     "deptry>=0.25.1",
     # Development tooling only. It needs 3.11+, and must not drag the
     # published package's floor up with it.
-    "agent-ready-checks>=0.15.3; python_version >= '3.11'",
+    "agent-ready-checks>=0.15.4; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -152,14 +152,13 @@ docs = [
 # coming back at the cap means coming back here next week.
 [tool.template]
 reorganise-to = 0.7
-# The ref the stage gates and the metrics compare with. This repository's
-# default branch is master, not main, so it is named explicitly: the fallback
-# would look for origin/main and find nothing.
-base = "origin/master"
+# The local fallback when the checks cannot derive a live change's own branch
+# point. CI passes the pull request's remote target explicitly.
+base = "master"
 
-# The native acceptance leaf. The full set runs it; the fast set defers it.
-# This is the complete suite including the example roundtrips, which the
-# project's own inner-loop command deselects.
+# The native acceptance leaf. The full set runs this complete committed suite;
+# the fast set is governance and pre-commit only. Focused pytest nodes or files
+# are the implementation loop.
 test-command = ["uv", "run", "pytest", "tests/", "-q"]
 
 # Budgets what is loaded at session start, not what the repository stores:
@@ -316,7 +315,7 @@ licence = "MIT"
 [[tool.template.toolbox.approved]]
 name = "agent-ready-checks"
 purpose = "the checks no tool covers, starting with document caps"
-minimum-version = "0.10.0"
+minimum-version = "0.15.4"
 licence = "see LICENCE"
 
 [[tool.template.toolbox.approved]]
@@ -451,7 +450,7 @@ reason = "it instruments future events but does not parse existing Codex exec an
 date = "2026-10-06"
 
 [tool.uv.sources]
-agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.3" }
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.4" }
 
 [tool.template.zones.kernel]
 paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]

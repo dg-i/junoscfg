@@ -42,15 +42,15 @@ request a whole configuration** — name a path. **Fix at the owning layer, or
 record why not.** **Measure the blast radius before loosening**: slots and a
 negative test. Examples: [settle a schema question](docs/how-to/settle-a-schema-question.md).
 
-## Pre-Commit Checklist
+## Verification
 
-`pre-commit` runs ruff, deptry, document caps and markdownlint; yours, in order:
-
-1. **Tests pass** — `uv run pytest tests/ -q` (the full suite; the fast inner
-   loop is the same with `-k 'not ExampleValidation and not ExampleRoundtrip'`).
-2. **After XSD or schema changes** — rerun with `--regen-schema`; it rebuilds
-   from the shipped release's dump only, `JUNOSCFG_XSD_SOURCE` names another.
-3. **Documentation check** and **version bump** — see below.
+Use exact test nodes or affected files during implementation; grammar changes use
+the focused list in [the developer guide](docs/architecture/developer-guide.md).
+Before review, run one `uv run --locked agent-ready check --set full`; it replaces
+pre-commit and full-pytest runs on the same tree.
+After review fixes, use focused tests plus the locked `agent-ready` fast set; repeat
+full only when runtime-relevant files changed after its previous result.
+After XSD/schema changes, use `--regen-schema` as the developer guide describes.
 
 ## Version Management
 
