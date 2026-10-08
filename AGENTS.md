@@ -31,6 +31,9 @@ the lever blocks of `pyproject.toml` carry what this stage renders.
    import from it, and a seventh copy of a formatter belongs there instead.
 3. Import through the package door, never a submodule path: `tach check` and
    `agent-ready interfaces` both refuse `junoscfg.display.constants.X`.
+4. A knowledge graph of this repository lives in `graphify-out/`;
+   `/graphify query "<question>"` answers architecture and "what touches X"
+   questions from it, alongside the codemap and the `CONTRACT.md` files.
 
 ## Before you change what junoscfg accepts
 
@@ -41,15 +44,13 @@ negative test. Examples: [settle a schema question](docs/how-to/settle-a-schema-
 
 ## Pre-Commit Checklist
 
-`pre-commit` runs ruff, deptry, document caps and markdownlint on commit, so
-those are not your job. Yours, in order:
+`pre-commit` runs ruff, deptry, document caps and markdownlint; yours, in order:
 
 1. **Tests pass** — `uv run pytest tests/ -q` (the full suite; the fast inner
    loop is the same with `-k 'not ExampleValidation and not ExampleRoundtrip'`).
 2. **After XSD or schema changes** — rerun with `--regen-schema`; it rebuilds
    from the shipped release's dump only, `JUNOSCFG_XSD_SOURCE` names another.
-3. **Documentation check** — see below.
-4. **Version bump** — see below.
+3. **Documentation check** and **version bump** — see below.
 
 ## Version Management
 
@@ -92,7 +93,6 @@ which is gitignored except its README.
 | Looking for | Read |
 |---|---|
 | Layering, the one-IR rule, error handling | `ARCHITECTURE.md` section 8 |
-| A module's invariants | its `CONTRACT.md` |
 | The three pipelines in detail | `docs/architecture/developer-guide.md` |
 | Why a conversion renders wrongly | `docs/architecture/conversion-bugfix-guide.md` |
 | Approved tools and versions | `docs/TOOLBOX.md` |
