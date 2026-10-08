@@ -27,7 +27,7 @@ Examples:
 ### Input Handling
 
 - **Ruby**: `io_or_string.respond_to?(:read)` duck typing
-- **Python**: `str | TextIO` type hints with `hasattr(io_or_string, 'read')` check
+- **Python**: `str | TextIO` type hints with an `isinstance(source, str)` branch
 
 All public conversion functions accept either a string or a file-like object (`TextIO`).
 

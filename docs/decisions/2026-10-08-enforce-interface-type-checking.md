@@ -17,9 +17,9 @@ dynamic configuration-tree and untyped-test noise.
 
 ## Decision
 
-CI runs strict mypy as a blocking check over seven explicit files: the
-top-level, conversion, validation, anonymization and audit package doors plus
-the anonymization configuration and audit result models. Imports are followed
+CI runs strict mypy as a blocking check over eight explicit files: the
+top-level, conversion, display, validation, anonymization and audit package
+doors plus the anonymization configuration and audit result models. Imports are followed
 silently so dependencies remain understood without recursively reporting the
 dynamic implementation backlog. Tests and CLI internals are outside this
 check until they can join without ignored errors.

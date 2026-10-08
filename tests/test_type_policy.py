@@ -12,6 +12,7 @@ ROOT = Path(__file__).parents[1]
 CHECKED_INTERFACES = {
     "src/junoscfg/__init__.py",
     "src/junoscfg/convert/__init__.py",
+    "src/junoscfg/display/__init__.py",
     "src/junoscfg/validate/__init__.py",
     "src/junoscfg/anonymize/__init__.py",
     "src/junoscfg/anonymize/config.py",
