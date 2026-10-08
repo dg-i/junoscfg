@@ -1,0 +1,159 @@
+{
+  "change": "optimize-agent-test-workflow",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "be882c9c75b0528b42c6910aca02953811ce9edaf3e9f3585e8192564d94e0f4",
+          "head": "c7307512427ad727e9ccc2961eb37f0796267ce8f2193aecc5312ccf7f1722cd"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".github/workflows/ci.yml",
+            "AGENTS.md",
+            "changelog.d/+optimize-agent-test-workflow.misc.md",
+            "docs/TOOLBOX.md",
+            "docs/architecture/developer-guide.md",
+            "docs/how-to/work-with-agents.md",
+            "pyproject.toml",
+            "src/junoscfg/__init__.py",
+            "tests/test_anonymize/test_config.py",
+            "tests/test_cli.py",
+            "uv.lock"
+          ],
+          "since": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf"
+        },
+        "selector": [
+          "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+          "c11a0d76ac8bc25f4c3a8114cd97de109f468e95"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 100,
+        "binary_files": 0,
+        "files": 11,
+        "removed": 49
+      }
+    },
+    "locked_packages": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "a3590dd018632d69e6ec7654ff96b3339028b07c24a007a032b71c17344dd2a4",
+          "head": "3ef778e4efc18dd759055ba33ac6aa7b23a4e6cdc09424ccc1bd08238d9f1629"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records"
+      },
+      "status": "measured",
+      "value": {
+        "base": 61,
+        "delta": 0,
+        "head": 61
+      }
+    },
+    "phase_span": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "ef407b310635e6b1c5fa77eb3dbf1afadddb0ddf",
+      "captured_at": "2026-10-08T22:01:00.567987Z",
+      "head_sha": "c11a0d76ac8bc25f4c3a8114cd97de109f468e95",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
