@@ -9,6 +9,30 @@ def struct_to_set(config: str) -> str:
     return SetConverter(config).to_set()
 
 
+class TestStructuredBracketLists:
+    def test_structured_bracket_list_emits_repeated_set_commands(self) -> None:
+        config = (
+            "interfaces {\n"
+            "    ge-0/0/0 {\n"
+            "        unit 0 {\n"
+            "            family ethernet-switching {\n"
+            "                vlan {\n"
+            "                    members [ v10 v20 ];\n"
+            "                }\n"
+            "            }\n"
+            "        }\n"
+            "    }\n"
+            "}\n"
+        )
+
+        result = struct_to_set(config)
+
+        assert result.splitlines() == [
+            "set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members v10",
+            "set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members v20",
+        ]
+
+
 class TestSetConverter:
     def test_simple_structured(self) -> None:
         config = "interfaces {\n    ge-0/0/0 {\n        description uplink;\n    }\n}"

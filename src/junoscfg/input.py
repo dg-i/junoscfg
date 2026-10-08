@@ -6,10 +6,73 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
-__all__ = ["normalize"]
+__all__ = ["find_unsupported_set_brackets", "normalize"]
 
 import re
 from typing import TextIO
+
+
+def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
+    """Return line-numbered diagnostics for unquoted square brackets.
+
+    Raw set input accepts canonical ``display set`` commands, not interactive
+    bracket-list shorthand. Full-line ``#`` comments and ``/* ... */`` block
+    comments are ignored exactly as they are by :func:`normalize`.
+    """
+    findings: list[tuple[int, str]] = []
+    in_block_comment = False
+
+    for lineno, original_line in enumerate(source.splitlines(), 1):
+        scan = original_line
+
+        while True:
+            if in_block_comment:
+                comment_end = scan.find("*/")
+                if comment_end < 0:
+                    scan = ""
+                    break
+                scan = scan[comment_end + 2 :]
+                in_block_comment = False
+
+            stripped = scan.lstrip()
+            if not stripped or stripped.startswith("#"):
+                scan = ""
+                break
+            if stripped.startswith("/*"):
+                in_block_comment = True
+                scan = stripped[2:]
+                continue
+            scan = stripped
+            break
+
+        if scan and _has_unquoted_square_bracket(scan):
+            findings.append(
+                (
+                    lineno,
+                    f"Unsupported bracket syntax in set input on line {lineno}:\n{original_line}",
+                )
+            )
+
+    return tuple(findings)
+
+
+def _has_unquoted_square_bracket(line: str) -> bool:
+    """Return whether *line* contains ``[`` or ``]`` outside double quotes."""
+    in_quote = False
+    preceding_backslashes = 0
+
+    for char in line:
+        if char == '"' and preceding_backslashes % 2 == 0:
+            in_quote = not in_quote
+        elif char in "[]" and not in_quote:
+            return True
+
+        if char == "\\":
+            preceding_backslashes += 1
+        else:
+            preceding_backslashes = 0
+
+    return False
 
 
 def normalize(io_or_string: str | TextIO) -> str:

@@ -3,10 +3,29 @@
 from __future__ import annotations
 
 import json
+import re
 
 import pytest
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
+from junoscfg.convert.input import to_dict
+
+
+class TestSetBracketSyntaxRejection:
+    def test_public_conversion_doors_reject_without_validation(self) -> None:
+        line = "set system apply-groups [ foo bar ]"
+        source = f"# ignored bracket [\n{line}"
+        expected = f"Unsupported bracket syntax in set input on line 2:\n{line}"
+
+        with pytest.raises(ValueError, match=re.escape(expected)):
+            to_dict(source, "set")
+        with pytest.raises(ValueError, match=re.escape(expected)):
+            convert_config(
+                source,
+                from_format=Format.SET,
+                to_format=Format.JSON,
+                validate=False,
+            )
 
 
 class TestFormatEnum:

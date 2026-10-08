@@ -85,3 +85,18 @@ class TestCliSchemaInfo:
         result = runner.invoke(main, ["schema", "info", "--artifacts", artifacts_dir])
         assert result.exit_code == 0
         assert "21.4R0" in result.output
+
+
+class TestSetBracketSyntaxRejection:
+    def test_validation_only_exits_one_with_complete_diagnostic(self, artifacts_dir: str) -> None:
+        runner = CliRunner()
+        line = "set system apply-groups [ foo bar ]"
+
+        result = runner.invoke(
+            main,
+            ["-v", "-i", "set", "--artifacts", artifacts_dir],
+            input=line,
+        )
+
+        assert result.exit_code == 1
+        assert f"Unsupported bracket syntax in set input on line 1:\n{line}" in result.output

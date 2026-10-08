@@ -92,6 +92,7 @@ set services ssh
 set services ssh port 830
 set snmp filter-interfaces interfaces
 set system apply-groups g2
+set system apply-groups [ foo bar ]
 set system apply-groups-except g3
 set system domain-name example.com
 set system host-name

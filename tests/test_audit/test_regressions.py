@@ -22,25 +22,27 @@ def strict_unused(set_text: str, **kwargs: Any) -> set[str]:
     return {f.name for f in find_unused(ir, **kwargs).findings if f.confidence == "unused"}
 
 
-class TestBracketLeafLists:
-    """Bracket-delimited leaf-list references must be recognized (set input)."""
+class TestLeafListReferences:
+    """Repeated canonical leaf-list references must all be recognized."""
 
-    def test_from_community_bracket(self) -> None:
+    def test_from_community_repeated(self) -> None:
         cfg = """
         set policy-options community C1 members 64496:1
         set policy-options community C2 members 64496:2
-        set policy-options policy-statement POL term t from community [ C1 C2 ]
+        set policy-options policy-statement POL term t from community C1
+        set policy-options policy-statement POL term t from community C2
         set policy-options policy-statement POL term t then accept
         set protocols bgp group g import POL
         """
         assert "C1" not in audit_names(cfg)
         assert "C2" not in audit_names(cfg)
 
-    def test_filter_input_list_bracket(self) -> None:
+    def test_filter_input_list_repeated(self) -> None:
         cfg = """
         set firewall family inet filter F1 term t then accept
         set firewall family inet filter F2 term t then accept
-        set interfaces ge-0/0/0 unit 0 family inet filter input-list [ F1 F2 ]
+        set interfaces ge-0/0/0 unit 0 family inet filter input-list F1
+        set interfaces ge-0/0/0 unit 0 family inet filter input-list F2
         """
         assert audit_names(cfg, types=["firewall-filter"]) == set()
 

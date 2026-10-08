@@ -9,3 +9,4 @@ Generated from the front-matter of every record in this directory by `agent-read
 | [Replace the mkdocs documentation stack](2026-10-06-replace-docs-generator.md) | proposed | none | 2027-04-06 |
 | [Enforce type checking at stable interfaces](2026-10-08-enforce-interface-type-checking.md) | accepted | ci | 2027-04-08 |
 | [Device figures recorded before the 25.2R2 artifacts are superseded](2026-10-08-superseded-device-measurements.md) | accepted | none | 2027-04-06 |
+| [Reject bracket shorthand in raw set input](2026-10-09-reject-raw-set-brackets.md) | accepted | tests | 2027-10-09 |
