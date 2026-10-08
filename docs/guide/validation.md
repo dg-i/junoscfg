@@ -58,24 +58,27 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Against the 116 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    102 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    105 are accepted; `tests/test_set_corpus.py` lists every rejection and
     which are correct. The causes:
 
-    - **One setting per list entry, per line.** `set system ntp server
-      198.51.100.1 version 4 prefer` is rejected; write one setting per line.
-      Accepting several would make a 5,000-line configuration take about 19
-      minutes to validate instead of about 18 seconds, so it is deliberate.
     - **A rule merged from several places offers one choice**, so
-      `set protocols bgp traceoptions file bgp-log size 10m` is rejected even
-      though only one setting follows the entry name.
+      `set system location dc-a` is rejected even though the hierarchy exists.
     - **Bracket value lists** — `[ tcp udp ]` — are not tokenised; `VALUE` is
       `/\S+/`, so `[` becomes a token of its own.
 
+    Flattened hierarchies marked by the schema accept both compact sibling
+    runs and repeated paths. For example, one NTP server line may carry
+    `version`, `prefer`, and `routing-instance`, while `maximum-prefixes` may
+    carry its positional limit followed by `threshold` and `log-interval`.
+    Only known keyworded siblings repeat; arbitrary trailing tokens remain
+    invalid. Repeating a known keyword is structural syntax and is left for
+    Junos to interpret.
+
     Artifacts ship gzipped and a set generated from your own device's XSD works
     the same way; `--artifacts DIR` and `JUNOSCFG_ARTIFACTS` select one, for
-    conversion as well as validation. Loading the grammar costs about 4 seconds, once per process, and then
-    about 4 ms per line. Conversion to and from set format does not use the
-    grammar and is unaffected by any of this.
+    conversion as well as validation. Loading the grammar costs about 4
+    seconds, once per process, and then about 4 ms per line. Conversion to and
+    from set format does not use the grammar and is unaffected by any of this.
 
 ```python
 from junoscfg import validate_set

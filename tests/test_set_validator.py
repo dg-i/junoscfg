@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import tempfile
+import time
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.validate import SchemaLoadError
+from junoscfg import validate_config, validate_set
+from junoscfg.validate import JunosValidator, SchemaLoadError
+from junoscfg.validate.grammar_generator import generate_lark_grammar
+from junoscfg.validate.schema_node import SchemaNode
 from junoscfg.validate.set_validator import SetValidator
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # Minimal Lark grammar for testing
 MINIMAL_GRAMMAR = """\
@@ -127,6 +135,99 @@ class TestTheShippedGrammarKeepsRejecting:
 
     def test_a_leaf_with_three_values_is_rejected(self, bundled_set_validator) -> None:
         assert bundled_set_validator.validate("set system host-name foo bar baz").valid is False
+
+
+class TestTheShippedGrammarAcceptsMultipleSiblings:
+    COMPACT = (
+        "set system ntp server 198.51.100.1 version 4 prefer routing-instance mgmt_junos",
+        "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5",
+    )
+    EXPANDED = (
+        "set system ntp server 198.51.100.1 version 4\n"
+        "set system ntp server 198.51.100.1 prefer\n"
+        "set system ntp server 198.51.100.1 routing-instance mgmt_junos",
+        "set routing-options maximum-prefixes 3000000\n"
+        "set routing-options maximum-prefixes threshold 50\n"
+        "set routing-options maximum-prefixes log-interval 5",
+    )
+    SHIPPED_ONLY = (
+        "set protocols bgp traceoptions file bgp-log size 10m files 10",
+        "set protocols bgp traceoptions file bgp-log\n"
+        "set protocols bgp traceoptions file size 10m\n"
+        "set protocols bgp traceoptions file files 10",
+    )
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        server = SchemaNode(
+            name="server",
+            is_list=True,
+            children={
+                "version": SchemaNode(name="version", is_leaf=True),
+                "prefer": SchemaNode(name="prefer", is_presence=True),
+                "routing-instance": SchemaNode(name="routing-instance", is_leaf=True),
+            },
+        )
+        server.flags.add("oneliner")
+        limit = SchemaNode(name="limit", is_leaf=True)
+        limit.flags.update({"nokeyword", "positional-key-flat"})
+        maximum_prefixes = SchemaNode(
+            name="maximum-prefixes",
+            children={
+                "limit": limit,
+                "threshold": SchemaNode(name="threshold", is_leaf=True),
+                "log-interval": SchemaNode(name="log-interval", is_leaf=True),
+            },
+        )
+        return SchemaNode(
+            name="configuration",
+            children={
+                "system": SchemaNode(
+                    name="system",
+                    children={"ntp": SchemaNode(name="ntp", children={"server": server})},
+                ),
+                "routing-options": SchemaNode(
+                    name="routing-options",
+                    children={"maximum-prefixes": maximum_prefixes},
+                ),
+            },
+        )
+
+    def test_compact_and_expanded_forms_validate(
+        self, bundled_set_validator: SetValidator, tmp_path: Path
+    ) -> None:
+        for source in (*self.COMPACT, *self.EXPANDED, *self.SHIPPED_ONLY):
+            assert bundled_set_validator.validate(source).valid is True, source
+
+        grammar_path = tmp_path / "junos-set.lark"
+        grammar_path.write_text(generate_lark_grammar(self._tree()), encoding="utf-8")
+        validators = (
+            SetValidator(grammar_path).validate,
+            JunosValidator(artifacts_dir=str(tmp_path)).validate_set,
+            lambda source: validate_set(source, artifacts_dir=str(tmp_path)),
+            lambda source: validate_config(source, format="set", artifacts_dir=str(tmp_path)),
+        )
+        for validate in validators:
+            for source in (*self.COMPACT, *self.EXPANDED):
+                assert validate(source).valid is True, source
+
+    def test_unknown_sibling_is_rejected(self, bundled_set_validator: SetValidator) -> None:
+        commands = (
+            "set system ntp server 198.51.100.1 bogus-option 5",
+            "set routing-options maximum-prefixes 3000000 bogus-option 5",
+        )
+        for command in commands:
+            assert bundled_set_validator.validate(command).valid is False, command
+
+    def test_compact_siblings_keep_practical_parse_time(
+        self, bundled_set_validator: SetValidator
+    ) -> None:
+        source = "\n".join(self.COMPACT * 50)
+        started = time.perf_counter()
+        result = bundled_set_validator.validate(source)
+        elapsed = time.perf_counter() - started
+        assert result.valid is True
+        assert elapsed < 5.0, f"100 compact sibling commands took {elapsed:.2f}s"
 
 
 class TestTheShippedGrammarModelsTheApplyStatements:

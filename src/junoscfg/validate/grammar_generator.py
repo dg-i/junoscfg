@@ -58,6 +58,11 @@ _RESERVED_RULE_NAMES = {"start"}
 # every name in the 24.4R0 set shipped until 0.8.0 (10,958) and the 23.2R2, 23.4R2 and
 # 25.2R2 dumps (10,840 / 10,105 / 10,455): zero produce a doubled underscore.
 _LIST_RULE_SUFFIX = "__list"
+
+# Oneliner named lists repeat known keyworded children after their entry name.
+# Keep their rules separate from ordinary same-named lists: rule definitions
+# merge globally, so sharing a name would widen every occurrence of that list.
+_ONELINER_SUFFIX = "__ol"
 # A oneliner list that takes its keyword on either side of the entry name gets
 # its own rule, for the same reason `__list` exists: rules merge by name, and a
 # node that qualifies must not hand the either-order shape to one that does
@@ -152,6 +157,8 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
     if node.is_list and node.children:
         if _takes_either_order(node):
             return f"{base}{_LIST_RULE_SUFFIX}{_EITHER_ORDER_SUFFIX}"
+        if "oneliner" in node.flags:
+            return f"{base}{_LIST_RULE_SUFFIX}{_ONELINER_SUFFIX}"
         return f"{base}{_LIST_RULE_SUFFIX}"
     return base
 
@@ -159,11 +166,21 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
 class _RuleInfo:
     """Accumulated info for a single Lark rule (may be merged from multiple nodes)."""
 
-    __slots__ = ("alts", "is_named_list", "either_order")
+    __slots__ = (
+        "alts",
+        "either_order",
+        "is_named_list",
+        "positional_alts",
+        "repeatable_alts",
+        "repeats_siblings",
+    )
 
     def __init__(self) -> None:
         self.alts: set[str] = set()
+        self.repeatable_alts: set[str] = set()
+        self.positional_alts: set[str] = set()
         self.is_named_list: bool = False
+        self.repeats_siblings: bool = False
         # A oneliner list whose children are all bare keywords may write them
         # before the entry name or after it; see `generate_lark_grammar`.
         self.either_order: bool = False
@@ -227,6 +244,17 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # took 7.1% rejected to 30.4%. Accepting both costs 1.4s of
             # grammar load and takes 7.1% to 2.3%.
             lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})? | ({body}) QUOTED_OR_VALUE")
+        elif info.is_named_list and info.repeats_siblings:
+            # An oneliner entry may carry several known keyworded settings:
+            # `server 198.51.100.1 version 4 prefer`. Repeat only alternatives
+            # that render their own keyword. Repeating a bare VALUE is both
+            # ambiguous and would accept an arbitrary run of unknown tokens.
+            repeatable = " | ".join(sorted(info.repeatable_alts))
+            non_repeatable = " | ".join(sorted(info.alts - info.repeatable_alts))
+            continuations = f"({repeatable})+"
+            if non_repeatable:
+                continuations = f"{non_repeatable} | {continuations}"
+            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({continuations})?")
         elif info.is_named_list:
             # Named list: VALUE captures the entry name. Only list nodes reach
             # this rule name, so the slot can no longer be merged away.
@@ -244,6 +272,15 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # of unknown tokens. Lark's `~0..n` range is not a middle way: it
             # expands combinatorially and does not finish compiling.
             lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})?")
+        elif info.positional_alts and info.repeatable_alts:
+            # A flat positional child is a standalone alternative in expanded
+            # display-set form, but may also lead a compact run of keyworded
+            # siblings: `maximum-prefixes 300000 threshold 50 log-interval 5`.
+            # The positional token is consumed once and only known keyworded
+            # alternatives repeat after it.
+            positional = " | ".join(sorted(info.positional_alts))
+            repeatable = " | ".join(sorted(info.repeatable_alts))
+            lines.append(f"{rule_name}: {body} | ({positional}) ({repeatable})+")
         else:
             lines.append(f"{rule_name}: {body}")
 
@@ -305,12 +342,21 @@ def _collect_rules(
 
     # Build child alternatives
     child_alts: list[str] = []
+    repeatable_alts: list[str] = []
+    positional_alts: list[str] = []
     for child_name, child_node in node.children.items():
         if skip and child_name in skip:
             continue
         spliced = f"transparent:{child_name}" in node.flags
         child_ref = _child_reference(child_name, child_node, spliced=spliced)
         child_alts.append(child_ref)
+        # Every written keyword reference begins with its quoted literal;
+        # bare VALUE and spliced sub-rules do not. Only the former are safe to
+        # repeat without widening the grammar to arbitrary unknown tokens.
+        if child_ref.startswith('"'):
+            repeatable_alts.append(child_ref)
+        if "positional-key-flat" in child_node.flags:
+            positional_alts.append(child_ref)
 
     if child_alts:
         # Merge into rule map
@@ -318,10 +364,14 @@ def _collect_rules(
             rule_map[rule_name] = _RuleInfo()
         info = rule_map[rule_name]
         info.alts.update(child_alts)
+        info.repeatable_alts.update(repeatable_alts)
+        info.positional_alts.update(positional_alts)
         if node.is_list:
             info.is_named_list = True
             if _takes_either_order(node):
                 info.either_order = True
+            elif "oneliner" in node.flags:
+                info.repeats_siblings = True
 
     # Recurse into children
     for child_node in node.children.values():

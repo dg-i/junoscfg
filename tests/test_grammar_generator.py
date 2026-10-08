@@ -351,22 +351,7 @@ class TestContainerMayBeSetBare:
 
 
 class TestListEntryTakesSiblingsOnOneLine:
-    """A list entry name may be followed by one setting, not several.
-
-    `set system ntp server 198.51.100.1 version 4 prefer` is a valid command
-    this grammar rejects. Accepting it needs `(alts)*` where the rule has
-    `(alts)?`, and that repetition makes the grammar ambiguous enough to cost
-    228 ms a line against 4 ms: a 5,000-line configuration would take 19
-    minutes to validate instead of 18 seconds. Rejecting a few valid lines
-    beats a validator nobody can run on a real config.
-
-    The repetition also let a bare `VALUE` absorb any run of unknown tokens,
-    which is why `TestUnknownTokensInsideANamedList` passes now.
-
-    Measured on the 24.4R0 tree shipped until 0.8.0 at 61, 244 and 976 lines. Lark's
-    `~0..n` range is not a middle way: it expands combinatorially and does not
-    finish compiling.
-    """
+    """A list marked oneliner may carry several keyworded siblings."""
 
     @staticmethod
     def _tree() -> SchemaNode:
@@ -378,26 +363,55 @@ class TestListEntryTakesSiblingsOnOneLine:
                 "prefer": SchemaNode(name="prefer", is_presence=True),
             },
         )
+        server.flags.add("oneliner")
         return SchemaNode(
             name="configuration",
             children={"ntp": SchemaNode(name="ntp", children={"server": server})},
         )
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "one continuation per list entry: the repetition that would accept "
-            "this costs 228 ms a line against 4 ms"
-        ),
-    )
     def test_two_siblings_after_the_entry_name(self) -> None:
         assert _parses(self._tree(), "set ntp server 198.51.100.1 version 4 prefer")
+
+    def test_unmarked_list_does_not_repeat_siblings(self) -> None:
+        tree = self._tree()
+        tree.children["ntp"].children["server"].flags.remove("oneliner")
+        assert not _parses(tree, "set ntp server 198.51.100.1 version 4 prefer")
 
     def test_one_setting_after_the_entry_name(self) -> None:
         assert _parses(self._tree(), "set ntp server 198.51.100.1 version 4")
 
     def test_entry_name_alone(self) -> None:
         assert _parses(self._tree(), "set ntp server 198.51.100.1")
+
+
+class TestFlatPositionalContainerTakesSiblingsOnOneLine:
+    """A flat positional value is consumed once before keyworded siblings."""
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        limit = SchemaNode(name="limit", is_leaf=True)
+        limit.flags.update({"nokeyword", "positional-key-flat"})
+        maximum_prefixes = SchemaNode(
+            name="maximum-prefixes",
+            children={
+                "limit": limit,
+                "threshold": SchemaNode(name="threshold", is_leaf=True),
+                "log-interval": SchemaNode(name="log-interval", is_leaf=True),
+            },
+        )
+        return SchemaNode(
+            name="configuration",
+            children={
+                "routing-options": SchemaNode(
+                    name="routing-options",
+                    children={"maximum-prefixes": maximum_prefixes},
+                )
+            },
+        )
+
+    def test_two_siblings_after_the_positional_value(self) -> None:
+        command = "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5"
+        assert _parses(self._tree(), command)
 
 
 class TestUnknownTokensInsideANamedList:

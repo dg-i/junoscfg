@@ -41,17 +41,13 @@ CORRECTLY_REJECTED = {
 # is a limitation listed in docs/guide/validation.md; shrinking this set is
 # progress. The codes:
 #
-#   siblings  more than one setting after a list entry name, on one line
 #   merged    a rule merged from several tree positions offers one choice
 #   brackets  a `[ a b ]` value list; VALUE is /\S+/, so `[` is its own token
 OVER_REJECTED = {
     "set groups foo snmp location": "merged",
     "set policy-options community FOO members": "brackets",
-    "set protocols bgp traceoptions file bgp-log size 10m files 10": "merged",
-    "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5": "siblings",
     "set system location dc-a": "merged",
     "set system name-server": "merged",
-    "set system ntp server 198.51.100.1 version 4 prefer routing-instance mgmt_junos": "siblings",
 }
 
 

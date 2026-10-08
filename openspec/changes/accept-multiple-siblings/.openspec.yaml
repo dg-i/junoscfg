@@ -1,0 +1,24 @@
+schema: agent-ready
+created: 2026-10-08
+type: bug
+zone: schema
+domains: [schema-pipeline, validation]
+removes:
+  - "the false rejection of valid compact set commands containing multiple sibling settings"
+declared-break:
+  api:
+    why: >-
+      Set-command validation will accept compact sibling forms that it
+      previously reported invalid, while retaining the expanded forms and
+      rejection of unknown trailing tokens.
+    migration: >-
+      No caller migration is required. Callers that split compact commands
+      solely to work around the false rejection may keep or remove that
+      workaround.
+  cli:
+    why: >-
+      `junoscfg -v -i set` will exit successfully for valid compact sibling
+      forms that previously exited with a validation error.
+    migration: >-
+      No configuration migration is required. CI that expected these valid
+      commands to fail validation should update that expectation.
