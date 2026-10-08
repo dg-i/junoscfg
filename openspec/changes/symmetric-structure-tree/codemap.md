@@ -54,6 +54,13 @@ zone schema · layer pipeline · contract none
 - `XSD_NS` attribute: `agent-ready codemap show junoscfg.validate.xsd_parser.XSD_NS`
 - `parse_xsd` function: `agent-ready codemap show junoscfg.validate.xsd_parser.parse_xsd`
 
+## junoscfg.display
+
+zone kernel · layer kernel · contract `src/junoscfg/display/CONTRACT.md`
+
+- `filter_set_by_path` function: `agent-ready codemap show junoscfg.display.filter_set_by_path`
+- `is_display_set` function: `agent-ready codemap show junoscfg.display.is_display_set`
+
 ## junoscfg.validate
 
 zone schema · layer pipeline · contract `src/junoscfg/validate/CONTRACT.md`
@@ -75,12 +82,10 @@ zone surface · layer surface · contract `src/junoscfg/CONTRACT.md`
 - `validate_xml` function: `agent-ready codemap show junoscfg.validate_xml`
 - `validate_yaml` function: `agent-ready codemap show junoscfg.validate_yaml`
 
-## junoscfg.anonymize.config
+## junoscfg.validate.set_validator
 
-zone anonymize · layer pipeline · contract none
+zone schema · layer pipeline · contract none
 
-- `AnonymizeConfig` class: `agent-ready codemap show junoscfg.anonymize.config.AnonymizeConfig`
-- `build_config_from_cli` function: `agent-ready codemap show junoscfg.anonymize.config.build_config_from_cli`
-- `load_config_file` function: `agent-ready codemap show junoscfg.anonymize.config.load_config_file`
+- `SetValidator` class: `agent-ready codemap show junoscfg.validate.set_validator.SetValidator`
 
-<!-- cut at 1,500 tokens; 58 modules below the cut -->
+<!-- cut at 1,500 tokens; 57 modules below the cut -->

@@ -6,3 +6,14 @@ domains: [schema-pipeline]
 skip_specs: true
 removes:
   - "a flag that could not ship and a fix that matched nothing"
+declared-break:
+  api:
+    why: >-
+      `validate.xsd_fixes.ALL_FIXES` loses its `policy-algebra-any` entry. The
+      fix searched for `policy-algebra` by element name through `find_all` and
+      matched nothing in 21.4R0, 23.2R2, 23.4R2 and 25.2R2 -- it exists only
+      as a type reference -- so it set its flag on no node in any release.
+    migration: >-
+      Nothing to migrate: the entry never changed a tree. A caller indexing
+      ALL_FIXES by position must re-read it by name; `get_fix_count()` and
+      lookup by `name` are unaffected.

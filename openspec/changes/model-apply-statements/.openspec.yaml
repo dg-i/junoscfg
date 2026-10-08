@@ -6,3 +6,13 @@ domains: [schema-pipeline, validation]
 skip_specs: true
 removes:
   - "six separate compensations for one absent statement"
+declared-break:
+  api:
+    why: >-
+      `validate.xsd_fixes.ALL_FIXES` gains an `apply-statements` entry
+      declaring the four `apply-*` statements on the root with the `universal`
+      flag. The list is public and its value is part of the compared surface.
+    migration: >-
+      Nothing to migrate; the fix changes no bundled artifact, as this
+      change's own three guards assert. A caller indexing ALL_FIXES by
+      position must re-read it by name.
