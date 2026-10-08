@@ -12,6 +12,11 @@
    import rather than a root means a new error there does not block CI. Add the
    clean package door to the CI roots and to `CHECKED_INTERFACES`.
 
+   **Resolved by `a4040dc`.** The CI command and `CHECKED_INTERFACES` both add
+   `src/junoscfg/display/__init__.py`, and the governing decision now names
+   eight explicit files. The committed eight-file command and focused policy
+   test pass.
+
 2. The change leaves a touched architecture claim false. The diff changes
    `_read_source` to dispatch with `isinstance(source, str)` at
    `src/junoscfg/__init__.py:163-165`, but
@@ -22,12 +27,16 @@
    the implemented `str`/`TextIO` branch; no public input promise needs to
    change.
 
+   **Resolved by `a4040dc`.** The architecture document now describes the
+   implemented `isinstance(source, str)` branch while retaining the declared
+   `str | TextIO` input promise.
+
 ## Already provided
 
 - Mypy strict mode and `--follow-imports=silent` provide the blocking static
   analysis; `types-PyYAML` provides the declared YAML stubs.
-- `tests/test_type_policy.py` already rejects a non-blocking, duplicate, broad,
-  or differently scoped mypy step once its expected root set is corrected.
+- `tests/test_type_policy.py` rejects a non-blocking, duplicate, broad, or
+  differently scoped mypy step, including omission of the display package door.
 - The repository's contracts, Ruff, pytest, OpenSpec validation, and
   `agent-ready check --set full` cover boundaries, behavior, formatting, and
   change-record validity; they do not cover the omitted clean root or stale
@@ -39,9 +48,10 @@ No specification challenge. The findings violate existing proposal and
 documentation-fidelity requirements rather than exposing an omitted correctness
 criterion. The reviewed trust boundary is the repository-controlled CI workflow;
 no attacker-controlled product input crosses a new runtime boundary. Strings and
-`TextIO` remain compatible valid inputs. The shared blind spot is the omitted
-display package door, recorded as finding 1. No resource override, fallback,
-parameter, or competing error path supplies a second answer in this diff.
+`TextIO` remain compatible valid inputs. The shared blind spot was the omitted
+display package door, recorded and now resolved in finding 1. No resource
+override, fallback, parameter, or competing error path supplies a second answer
+in this diff.
 
 The proposal's numeric premise is reproducible from repository state: the locked
 merge-base tree at `42b13e3` reports 374 errors in 63 of 143 files. At `HEAD`,
@@ -51,6 +61,7 @@ non-goals make no unsupported “cannot” claim.
 
 ## Verdict
 
-Do not merge until both findings are resolved and the eight-file command, policy
-test, full suite, Ruff, `agent-ready` full check, and strict OpenSpec validation
-are rerun.
+Merge. Both findings are resolved. Re-review confirms the eight-file mypy
+command, focused policy test, full suite, Ruff, and strict OpenSpec validation
+pass. The full `agent-ready check --set full --base 42b13e3` passes its review
+checks and reaches only the expected missing-metrics lane boundary for Phase 7.
