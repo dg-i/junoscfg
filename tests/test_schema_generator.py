@@ -82,7 +82,14 @@ class TestGenerateJsonSchema:
         schema = generate_json_schema(_make_tree())
         assert schema["additionalProperties"] is False
 
-    def test_mandatory_in_required(self):
+    def test_mandatory_is_a_warning_not_a_schema_requirement(self):
+        """`required` leaves the schema; mandatory stays a field-validator warning.
+
+        This asserted the opposite. The 8,782 `required` arrays were inert
+        behind the array escape; the moment entries were checked they rejected
+        every fragment -- `set system login user admin uid 2000` for want of
+        `class` -- which is what broke the first attempt at closing it.
+        """
         root = SchemaNode(
             name="configuration",
             children={
@@ -93,8 +100,46 @@ class TestGenerateJsonSchema:
         )
         schema = generate_json_schema(root)
         config = schema["properties"]["configuration"]
-        assert "required" in config
-        assert "required-field" in config["required"]
+        assert "required" not in config
+
+    def test_a_container_array_form_carries_an_items_constraint(self):
+        """The array form is for `[null]` and leaf-list strings, never objects.
+
+        `properties` and `additionalProperties` bind only objects, so a type
+        union admitting `array` with no `items` let every list entry go
+        unchecked: `{"configuration": "garbage"}` validated against the
+        shipped schema. A bare string is not a container rendering either.
+        """
+        schema = generate_json_schema(_make_tree())
+        system = schema["properties"]["configuration"]["properties"]["system"]
+        assert "items" in system
+        assert set(system["items"]["type"]) == {"null", "string"}
+        assert "string" not in system["type"]
+
+    def test_a_transparent_container_array_takes_its_child_entries(self):
+        """`groups` holds `group` entries directly, so its array form carries
+        objects -- bounded by that child's schema, not by nothing."""
+        group = SchemaNode(
+            name="group",
+            is_list=True,
+            children={"host-name": SchemaNode(name="host-name", is_leaf=True)},
+        )
+        groups = SchemaNode(name="groups", children={"group": group})
+        groups.flags.add("transparent:group")
+        root = SchemaNode(name="configuration", children={"groups": groups})
+        schema = generate_json_schema(root)
+        groups_schema = schema["properties"]["configuration"]["properties"]["groups"]
+        alternatives = groups_schema["items"]["anyOf"]
+        assert {"type": ["null", "string"]} in alternatives
+        assert groups_schema["properties"]["group"] in alternatives
+
+    def test_device_attribute_keys_are_named(self):
+        """`@` carries what `| display json` puts on an element and junoscfg
+        round-trips; `field_validator` skips the prefix, so the schema has to
+        name it or it rejects junoscfg's own output."""
+        schema = generate_json_schema(_make_tree())
+        config = schema["properties"]["configuration"]
+        assert "^@" in config["patternProperties"]
 
 
 class TestYamlVariant:
@@ -159,7 +204,14 @@ class TestUniversalStatementsReachEveryContainer:
     def test_the_yaml_variant_keeps_its_own_patterns(self) -> None:
         schema = generate_json_schema(self._tree(), variant="yaml")
         system = schema["properties"]["configuration"]["properties"]["system"]
-        assert set(system["patternProperties"]) == {self._PATTERN, "^_ansible_", "^_meta_"}
+        # `^@` is there in both variants: a device puts its attributes on an
+        # element and junoscfg round-trips them.
+        assert set(system["patternProperties"]) == {
+            self._PATTERN,
+            "^@",
+            "^_ansible_",
+            "^_meta_",
+        }
 
     def test_a_tree_without_the_flag_still_names_the_kernel_four(self) -> None:
         """The flag adds to the floor; it is not what puts the floor there.

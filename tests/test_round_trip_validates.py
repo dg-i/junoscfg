@@ -84,3 +84,84 @@ class TestTheConverterOutputValidates:
         entry = json.loads(rendered)["configuration"]["interfaces"]["interface"][0]
         assert entry["name"] == "ge-0/0/0"
         assert not bundled_validator.validate_json(rendered).errors
+
+
+class TestTheSchemaStillRejects:
+    """Accepting junoscfg's own output must not mean accepting anything.
+
+    `properties` and `additionalProperties` are object-only keywords, so the
+    moment a container's type union admitted `array` with no `items`, all
+    43,331 `additionalProperties: false` nodes stopped binding anything behind
+    an array wrapper -- `{"configuration": "garbage"}` validated, and so did a
+    misspelled leaf three lists deep. Every case here passed when the round
+    trip was first made to work, which is why the round-trip tests above could
+    not tell a correct schema from one that accepts everything.
+    """
+
+    @pytest.mark.parametrize(
+        ("label", "doc"),
+        [
+            ("configuration as a bare string", {"configuration": "garbage"}),
+            (
+                "an unknown statement behind an array wrapper",
+                {"configuration": {"system": ["garbage", {"no-such-stmt": 1}]}},
+            ),
+            (
+                "an unknown child inside a list entry",
+                {
+                    "configuration": {
+                        "interfaces": {"interface": [{"name": "ge-0/0/0", "no-such-child": "y"}]}
+                    }
+                },
+            ),
+            (
+                "a misspelled leaf inside a list entry",
+                {"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", "mtuu": 9}]}}},
+            ),
+            (
+                "a whole subtree wrapped in an array",
+                {"configuration": {"system": [{"host-name": "r1"}]}},
+            ),
+            (
+                "an unknown statement inside a transparent container",
+                {"configuration": {"groups": [{"name": "g", "no-such-stmt": 1}]}},
+            ),
+        ],
+    )
+    def test_the_bundled_schema_rejects(self, label: str, doc: Any, bundled_validator: Any) -> None:
+        assert bundled_validator.validate_json(json.dumps(doc)).errors, f"{label} was accepted"
+
+    def test_a_transparent_container_still_takes_its_child(self, bundled_validator: Any) -> None:
+        """`groups` holds `group` entries directly and is ~90% of a real
+        configuration. Constraining the array form must not cost that."""
+        doc = {"configuration": {"groups": [{"name": "g", "system": {"host-name": "r1"}}]}}
+        assert not bundled_validator.validate_json(json.dumps(doc)).errors
+
+    def test_device_attributes_are_accepted(self, bundled_validator: Any) -> None:
+        """`| display json` puts `@` on an element and junoscfg round-trips it;
+        `field_validator` skips the prefix, so the schema has to name it."""
+        doc = {"configuration": {"@": {"junos:commit-seconds": "1"}, "system": {"host-name": "r1"}}}
+        assert not bundled_validator.validate_json(json.dumps(doc)).errors
+
+
+class TestFragmentsWithoutMandatoryFieldsStayValid:
+    """The three lines that broke the first attempt at closing the escape.
+
+    Each is valid Junos and each omits a field the XSD marks mandatory (`class`
+    on a login user, `events` and `then` on an event policy). The schema's
+    `required` arrays were inert behind the escape and went live with it
+    closed, rejecting all three. They stay valid: mandatory is a field-validator
+    warning, not a structural requirement on a fragment.
+    """
+
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "set system login user admin uid 2000",
+            'set system login user admin authentication encrypted-password "$9$ExAmPlEhAsH.KEY"',
+            "set event-options policy test-policy",
+        ],
+    )
+    def test_the_fragment_validates(self, command: str, bundled_validator: Any) -> None:
+        rendered = convert_config(command + "\n", from_format=Format.SET, to_format=Format.JSON)
+        assert not bundled_validator.validate_json(rendered).errors, rendered[:200]

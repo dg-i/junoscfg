@@ -45,4 +45,5 @@ Examples: all three validate before and after. jvd, 150 of 1,535 sampled under
 an in-memory patch: 25 files invalid before, 42 after, `required` kept or
 dropped alike; every new rejection is an unmodelled statement field validation
 already reports. `validate/schema_generator.py`, both artifacts, two test
-files. Minor bump to 0.10.0; the Ansible collection calls `validate_config`.
+files. Minor bump to 0.11.0 (0.10.0 went to step 4); the Ansible collection calls
+`validate_config`.

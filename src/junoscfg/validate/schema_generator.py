@@ -210,7 +210,6 @@ def _container_schema(
 ) -> dict[str, Any]:
     """Generate schema for a container node with children."""
     properties: dict[str, Any] = {}
-    required: list[str] = []
 
     for child_name, child_node in node.children.items():
         # Skip groups children (recursive reference to configuration)
@@ -220,8 +219,6 @@ def _container_schema(
             properties[child_name] = _node_to_schema(
                 child_node, variant, depth + 1, defs, seen_refs, universal
             )
-        if child_node.is_mandatory:
-            required.append(child_name)
         # A folded on/off switch is written under its spelling, not under the
         # node name: the set reader emits `"disable": [null]`, so a container
         # that names only `enable-disable` rejects junoscfg's own output.
@@ -239,21 +236,47 @@ def _container_schema(
 
     # A container is also a statement: `set system services netconf ssh` and
     # `... interface lo0.0 passive` write the keyword alone, which every
-    # rendering carries as `[null]`. Modelling the object only rejected
-    # junoscfg's own output for each one. The extra types widen the *shape* a
-    # container may take, not its contents: `properties` and
-    # `additionalProperties` still bind every object, and a type union keeps
-    # the schema navigable where a `oneOf` wrapper would bury it.
+    # rendering carries as `[null]`, so the type admits `null` and `array`
+    # beside `object`. A type union keeps the schema navigable where a `oneOf`
+    # wrapper would bury it -- but `properties` and `additionalProperties` are
+    # object-only keywords, so an array form with no `items` bound nothing:
+    # 43,331 `additionalProperties: false` nodes enforced nothing behind an
+    # array wrapper and `{"configuration": "garbage"}` validated. The array
+    # form carries `[null]` and leaf-list strings, never objects: across three
+    # real device configurations every array of objects sits on a node the
+    # tree marks as a list, and a list gets its items from
+    # `_container_or_list_schema`. A bare string is not a container rendering.
+    #
+    # The exception is a transparent container. `groups` is written as its
+    # child's list -- `group` entries directly -- so its array form carries
+    # objects, bounded by that child's own schema rather than by nothing.
+    transparent = next(
+        (flag.split(":", 1)[1] for flag in node.flags if flag.startswith("transparent:")), None
+    )
+    items: dict[str, Any] = {"type": ["null", "string"]}
+    if transparent and transparent in properties:
+        items = {"anyOf": [{"type": ["null", "string"]}, properties[transparent]]}
+
+    # No `required`. The XSD marks fields mandatory for a whole configuration,
+    # and these 8,782 arrays were inert behind the array escape; live, they
+    # reject every fragment -- `set system login user admin uid 2000` for want
+    # of `class` -- which is what broke the first attempt at closing it.
+    # Mandatory stays a field-validator warning.
     schema: dict[str, Any] = {
-        "type": ["object", "null", "array", "string"],
+        "type": ["object", "null", "array"],
         "properties": properties,
         "additionalProperties": False,
+        "items": items,
     }
 
-    if required:
-        schema["required"] = sorted(required)
-
     pattern_properties: dict[str, Any] = dict(universal)
+
+    # `@` carries the attributes a device puts on an element -- the
+    # `junos:commit-seconds` and friends that `| display json` emits and that
+    # junoscfg's own converters round-trip. `field_validator` already skips
+    # them by prefix; the schema has to name them or it rejects its own
+    # output. Invisible until the array escape was closed.
+    pattern_properties["^@"] = {}
 
     # YAML variant allows Ansible/meta keys
     if variant == "yaml":

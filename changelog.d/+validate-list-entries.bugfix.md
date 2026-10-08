@@ -1,0 +1,1 @@
+The generated JSON and YAML schemas now check the entries of every named list and the contents of every array-wrapped container; they let both through before, so `-v` passed an interface entry holding `mtuu`. The schema no longer carries `required` — mandatory fields stay a field-validator warning — and names the `@` attribute keys a device emits.
