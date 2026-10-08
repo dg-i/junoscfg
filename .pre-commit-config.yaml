@@ -1,6 +1,6 @@
 # The fast set. Everything slower runs in CI. The hook repositories are pinned
 # and `pre-commit autoupdate` moves them; the checks that read the project's
-# own dependencies run through its environment with `uv run --group dev`, so
+# own dependencies run through its environment with `uv run --locked --group dev`, so
 # a new dependency never needs an edit here. The file is this repository's
 # from the first copy: `copier update` never touches it, and `agent-ready
 # phase 4 may write it where it is missing or merge the template's
@@ -23,7 +23,7 @@ repos:
       # processes, and parallel mypy processes contend on one cache.
       - id: deptry
         name: deptry
-        entry: uv run --group dev deptry src
+        entry: uv run --locked --group dev deptry src
         language: system
         pass_filenames: false
         always_run: true
@@ -32,7 +32,7 @@ repos:
       # own copy rather than installing a second one here.
       - id: caps
         name: document caps
-        entry: uv run --group dev agent-ready caps
+        entry: uv run --locked --group dev agent-ready caps
         language: system
         types_or: [markdown]
 
