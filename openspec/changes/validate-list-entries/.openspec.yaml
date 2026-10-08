@@ -18,13 +18,17 @@ declared-break:
       content all along.
     migration: >-
       Nothing to change for a configuration the schema places. For a key the
-      schema does not name, the error names the path; generate artifacts from
-      the device's own release with `junoscfg schema generate`, or validate
-      through convert_config(strict=False), which reports and continues.
+      schema does not name, the error names the path of the enclosing list,
+      not the entry or the key -- jsonschema reports a list that matches
+      neither `anyOf` branch as one error, so descend through the error's
+      context for the key. Generate artifacts from the device's own release
+      with `junoscfg schema generate`, or validate through
+      convert_config(strict=False), which reports and continues.
   cli:
     why: >-
       `junoscfg -v` on JSON or YAML exits 1 on a document it passed before,
       for the same three shapes.
     migration: >-
-      Same as api: the error names the path; `--artifacts` points at a
-      matching release.
+      Same as api: the error names the enclosing list's path and prints the
+      list, not the offending key; `--artifacts` points at a matching release.
+      Making the message name the key is a follow-up in json_yaml_validator.

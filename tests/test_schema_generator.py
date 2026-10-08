@@ -133,6 +133,27 @@ class TestGenerateJsonSchema:
         assert {"type": ["null", "string"]} in alternatives
         assert groups_schema["properties"]["group"] in alternatives
 
+    def test_a_set_transparent_container_keeps_the_scalar_array_form(self):
+        """`interfaces` is transparent in a set command, not in JSON.
+
+        187 nodes carry a `transparent:` flag and only `groups` drops its
+        wrapper when rendered as JSON; the others keep it --
+        `{"interfaces": {"interface": [...]}}`. Giving every one of them the
+        child-entry array form let `{"interfaces": [{...}]}` validate, a shape
+        no device and no converter emits.
+        """
+        interface = SchemaNode(
+            name="interface",
+            is_list=True,
+            children={"mtu": SchemaNode(name="mtu", is_leaf=True)},
+        )
+        interfaces = SchemaNode(name="interfaces", children={"interface": interface})
+        interfaces.flags.add("transparent:interface")
+        root = SchemaNode(name="configuration", children={"interfaces": interfaces})
+        schema = generate_json_schema(root)
+        node = schema["properties"]["configuration"]["properties"]["interfaces"]
+        assert node["items"] == {"type": ["null", "string"]}
+
     def test_device_attribute_keys_are_named(self):
         """`@` carries what `| display json` puts on an element and junoscfg
         round-trips; `field_validator` skips the prefix, so the schema has to

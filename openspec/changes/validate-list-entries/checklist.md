@@ -6,9 +6,9 @@
   report invalid where they reported valid for three shapes the schema always
   claimed to reject; the field validator and the set grammar rejected the same
   content all along. Minor bump to 0.11.0.
-- measured before loosening and before tightening: six probes must reject and
-  seven shapes must validate, all pinned; `required` dropped on the evidence of
-  the three fragments the first attempt broke, not by assumption.
+- measured before loosening and before tightening: seven probes must reject;
+  three shapes and three fragments must validate, all pinned; `required`
+  dropped on the evidence of the fragments the first attempt broke.
 - the first attempt's lesson applied: artifacts regenerated and hash-checked
   after every generator change, and every count re-taken after the design
   settled, before anything is recorded.

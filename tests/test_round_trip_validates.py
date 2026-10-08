@@ -90,12 +90,13 @@ class TestTheSchemaStillRejects:
     """Accepting junoscfg's own output must not mean accepting anything.
 
     `properties` and `additionalProperties` are object-only keywords, so the
-    moment a container's type union admitted `array` with no `items`, all
-    43,331 `additionalProperties: false` nodes stopped binding anything behind
-    an array wrapper -- `{"configuration": "garbage"}` validated, and so did a
-    misspelled leaf three lists deep. Every case here passed when the round
-    trip was first made to work, which is why the round-trip tests above could
-    not tell a correct schema from one that accepts everything.
+    moment a container's type union admitted `array` with no `items`, every
+    `additionalProperties: false` node -- 52,219 in the 25.2R2 artifact --
+    stopped binding anything behind an array wrapper: `{"configuration":
+    "garbage"}` validated, and so did a misspelled leaf three lists deep.
+    Every case here passed when the round trip was first made to work, which
+    is why the round-trip tests above could not tell a correct schema from one
+    that accepts everything.
     """
 
     @pytest.mark.parametrize(
@@ -125,6 +126,10 @@ class TestTheSchemaStillRejects:
             (
                 "an unknown statement inside a transparent container",
                 {"configuration": {"groups": [{"name": "g", "no-such-stmt": 1}]}},
+            ),
+            (
+                "a set-transparent container given as its child's list",
+                {"configuration": {"interfaces": [{"name": "ge-0/0/0", "mtu": 1500}]}},
             ),
         ],
     )

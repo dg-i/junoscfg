@@ -240,21 +240,29 @@ def _container_schema(
     # beside `object`. A type union keeps the schema navigable where a `oneOf`
     # wrapper would bury it -- but `properties` and `additionalProperties` are
     # object-only keywords, so an array form with no `items` bound nothing:
-    # 43,331 `additionalProperties: false` nodes enforced nothing behind an
-    # array wrapper and `{"configuration": "garbage"}` validated. The array
+    # every `additionalProperties: false` node -- 52,219 in the 25.2R2
+    # artifact -- enforced nothing behind an array wrapper and
+    # `{"configuration": "garbage"}` validated. The array
     # form carries `[null]` and leaf-list strings, never objects: across three
     # real device configurations every array of objects sits on a node the
     # tree marks as a list, and a list gets its items from
     # `_container_or_list_schema`. A bare string is not a container rendering.
     #
-    # The exception is a transparent container. `groups` is written as its
-    # child's list -- `group` entries directly -- so its array form carries
-    # objects, bounded by that child's own schema rather than by nothing.
+    # The one exception is `groups`. It is written as its child's list --
+    # `group` entries directly -- so its array form carries objects, bounded
+    # by that child's own schema rather than by nothing. It is the only
+    # container whose JSON rendering drops the wrapper: the other 186 nodes
+    # carrying a `transparent:` flag (`interfaces`, `vlans`,
+    # `routing-instances`, the UFD `group`, ...) are transparent in a *set*
+    # command and keep their wrapper in JSON -- `{"interfaces": {"interface":
+    # [...]}}` -- so an array under them is a shape no device and no converter
+    # emits. Applying the branch to all 187 let `{"interfaces": [{...}]}`
+    # validate; the fresh review of this change caught it.
     transparent = next(
         (flag.split(":", 1)[1] for flag in node.flags if flag.startswith("transparent:")), None
     )
     items: dict[str, Any] = {"type": ["null", "string"]}
-    if transparent and transparent in properties:
+    if node.name == "groups" and transparent and transparent in properties:
         items = {"anyOf": [{"type": ["null", "string"]}, properties[transparent]]}
 
     # No `required`. The XSD marks fields mandatory for a whole configuration,

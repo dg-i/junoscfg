@@ -25,11 +25,13 @@
   from the bundled 25.2R2 structure tree with `write_json_schema`; assert each
   artifact's hash changed before trusting any test result. Both changed; the
   grammar, tree and metadata did not; a second write is byte-identical.
-- [x] 2.3 Full suite green: 1,576 passed, 72 skipped, 2 xfailed; the twelve
-  phase-4 tests pass. Mutated in turn with the artifacts regenerated under
-  each and their hashes confirmed changed: `items` dropped → 7 failed;
-  transparent branch dropped → 2; `^@` dropped → 3; `string` back in the
-  container type → 2. Restored; both hashes back at the new base.
+- [x] 2.3 Full suite green: 1,578 passed, 72 skipped, 2 xfailed — eleven
+  new phase-4 tests plus one rewritten, and two more from the review (2.7).
+  Mutated in turn with the artifacts regenerated under each and their hashes
+  confirmed changed: `items` dropped → 9 failed; transparent branch dropped
+  → 2; the `groups`-only condition dropped → 2; `^@` dropped → 3; `string`
+  back in the container type → 2. Restored; both hashes back at the new base.
+  (First run, before 2.7: 1,576 passed and 7 / 2 / 3 / 2.)
 - [x] 2.4 Device-truth fixtures: 4 of 4 pairs pass, none skipped — the
   synthetic pair and the three real ones (both bordergw subtrees,
   uplink-failure-detection). Examples: all validate, via
@@ -43,3 +45,18 @@
   gate passes except `stage griffe` and `lane`, both structural and unchanged
   by this change — the branch carries eight live changes and griffe compares
   against `master`; both clear at the archive. Committed and tagged `v0.11.0`.
+
+## 3. Review (phase 6, fresh session) — applied
+
+- [x] 3.1 Finding 1: the transparent-items branch fired on all 187
+  `transparent:` nodes; only `groups` drops its wrapper in JSON. Conditioned
+  on `node.name == "groups"`; one generator test and one shipped-artifact
+  probe added; artifacts regenerated (JSON 983,770 → 960,792 bytes), hashes
+  verified, second write byte-identical.
+- [x] 3.2 Finding 2: `.openspec.yaml` migration text now says the error names
+  the enclosing list, not the key; the formatter fix is a recorded follow-up.
+- [x] 3.3 Findings 4, 5, 9: `retires.md` describes the `groups` escape's real
+  target; 43,331 (a 24.4R0 figure) replaced by the re-taken 52,219 → 83,825 in
+  source comment, test docstring and `retires.md`; checklist and test counts
+  made precise. Findings 3, 6, 7 recorded in `retires.md`; 8 owner-approved.
+- [x] 3.4 `review.md` written; patch bump to 0.11.1; commit; tag `v0.11.1`.
