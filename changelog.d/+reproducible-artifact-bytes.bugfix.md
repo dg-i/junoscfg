@@ -1,0 +1,1 @@
+Writing a compressed artifact no longer stamps the current time into the gzip header, so regenerating identical content produces identical bytes. Before this every regeneration was a diff in git, and a byte comparison of a rebuilt artifact could fail for reasons nothing in the schema explains.

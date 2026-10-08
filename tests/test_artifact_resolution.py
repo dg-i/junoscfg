@@ -191,6 +191,19 @@ class TestCompressedAndPlainBothWork:
             handle.write("payload")
         assert target.read_text() == "payload"
 
+    def test_the_writer_stamps_no_time_into_the_header(self, tmp_path: Path) -> None:
+        """Identical content to the same path gives identical bytes. gzip
+        stamps the current time by default, which made every regeneration a
+        diff in git and a byte comparison of a rebuilt artifact flaky. The
+        header check is what fails without the fix; comparing two writes would
+        not, since two writes in one second agree anyway. Reading back is what
+        tells a correct writer from one that lost the trailer."""
+        target = tmp_path / "out.json.gz"
+        with constants.open_artifact_write(target) as handle:
+            handle.write("payload")
+        assert target.read_bytes()[4:8] == b"\x00\x00\x00\x00", "MTIME is stamped"
+        assert constants.read_artifact_text(target) == "payload"
+
     def test_a_schema_tree_loads_from_either_form(self, tmp_path: Path) -> None:
         plain = tmp_path / "plain"
         plain.mkdir()

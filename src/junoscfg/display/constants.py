@@ -9,6 +9,7 @@ name-based constants.
 from __future__ import annotations
 
 import gzip
+import io
 import json
 import os
 from contextlib import contextmanager
@@ -282,7 +283,15 @@ def open_artifact_write(path: str | Path) -> Iterator[Any]:
     """
     path = Path(path)
     if path.suffix == ".gz":
-        with gzip.open(path, "wt", encoding="utf-8") as handle:
+        # `mtime=0`, so regenerating identical content produces identical
+        # bytes. gzip stamps the current time by default, which made every
+        # regeneration a diff in git and would have made any byte-for-byte
+        # comparison of a rebuilt artifact flaky for reasons nothing in the
+        # schema explains.
+        with (
+            gzip.GzipFile(path, "wb", mtime=0) as gz,
+            io.TextIOWrapper(gz, encoding="utf-8") as handle,
+        ):
             yield handle
     else:
         with open(path, "w", encoding="utf-8") as handle:
