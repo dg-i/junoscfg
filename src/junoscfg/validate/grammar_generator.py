@@ -19,7 +19,14 @@ from __future__ import annotations
 import hashlib
 import re
 
-from junoscfg.display import UNQUOTABLE_TYPES, open_artifact_write, strip_type_prefix
+from junoscfg.display import (
+    UNQUOTABLE_TYPES,
+    entry_key_names,
+    entry_keys,
+    enum_is_fragment,
+    open_artifact_write,
+    strip_type_prefix,
+)
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
 # Every leaf value may be quoted, so there is no list of which ones. Junos
@@ -69,13 +76,12 @@ _ONELINER_SUFFIX = "__ol"
 # from an ordinary same-named container. Isolate it before global rule merging,
 # just as oneliner lists are isolated above.
 _POSITIONAL_FLAT_SUFFIX = "__pkf"
-# A oneliner list that takes its keyword on either side of the entry name gets
-# its own rule, for the same reason `__list` exists: rules merge by name, and a
-# node that qualifies must not hand the either-order shape to one that does
-# not. `interface__list` is the case that bit -- 6 qualifying nodes deep under
-# `connectivity-fault-management` against 1,050 that do not, contributing 8,448
-# children, so `set interfaces mtu 9192 ge-0/0/0` validated.
-_EITHER_ORDER_SUFFIX = "__eo"
+# A list keyed by anything but a lone `name` takes its key values, one per
+# field, where a `name`-keyed list takes one token. Same-named lists with
+# different keys must not merge -- `then community` is keyed by an action and a
+# name, `policy-options community` by a name -- so a keyed list's rule carries
+# a digest of its key.
+_KEY_SUFFIX = "__k"
 
 # The XSD type whose value is a policy expression rather than a token:
 # `from policy (( A && ! B ) || ( ! C && D ))`. In 24.4R0 it is on 7,636 nodes,
@@ -142,27 +148,72 @@ def _value_token(node: SchemaNode) -> str:
     return "QUOTED_OR_VALUE"
 
 
-def _takes_either_order(node: SchemaNode) -> bool:
-    """Whether *node* writes its keyword on either side of the entry name.
+def _key_children(node: SchemaNode) -> frozenset[str]:
+    """The children *node* writes as its entries' key, not as statements."""
+    return entry_key_names(node) if node.is_list else frozenset()
 
-    A oneliner list whose children are all bare keywords: `community add
-    COMM-A` puts the keyword first, `flag all detail` puts it last, and nothing
-    in the schema says which.
+
+def _statement_children(node: SchemaNode) -> dict[str, SchemaNode]:
+    """The children a set command names inside *node*: all but its key."""
+    keys = _key_children(node)
+    return {name: child for name, child in node.children.items() if name not in keys}
+
+
+def _key_value(node: SchemaNode | None) -> str:
+    """The grammar for one key value: its leaf's type, an enum where it is closed.
+
+    `list-type` takes `as-list` or `as-list-group` and nothing else -- the
+    device rejects `as-path-neighbors 1 AS-LIST-A` -- while a nokeyword enum
+    that is a fragment of a wider union takes any value.
     """
-    return bool(
-        node.is_list
-        and "oneliner" in node.flags
-        and node.children
-        and all(c.is_presence and not c.children for c in node.children.values())
-    )
+    if node is None:
+        return "QUOTED_OR_VALUE"
+    if node.enums and not enum_is_fragment(node.name, node.enums):
+        return "(" + " | ".join(f'"{value}"' for value in node.enums) + ")"
+    value = _value_token(node)
+    if node.is_leaf and "nokeyword" not in node.flags:
+        return f'"{node.name}" {value}'
+    return value
+
+
+def _key_sequence(node: SchemaNode) -> str:
+    """The tokens an entry's key takes.
+
+    One value per field, and a choice of identifiers as one of its keywords,
+    with its value where the alternative is a leaf. A field given by its
+    keyword stands before or after the positional values, whatever the
+    declared order: the device accepts `then community SAMPLE-COMM add` and
+    `route-filter exact 198.51.100.0/24` (device probe, vMX 23.2R2-S7.5).
+    """
+    if not node.key_fields:
+        return "QUOTED_OR_VALUE"
+    choices: list[str] = []
+    values: list[str] = []
+    for field in entry_keys(node):
+        if isinstance(field, tuple):
+            alternatives = []
+            for name in field:
+                child = node.children.get(name)
+                keyword = f'"{_NAME_ESCAPES.get(name, name)}"'
+                if child is not None and child.is_leaf:
+                    keyword = f"{keyword} {_value_token(child)}"
+                alternatives.append(keyword)
+            choices.append("(" + " | ".join(alternatives) + ")")
+        else:
+            values.append(_key_value(node.children.get(field)))
+    if choices and values:
+        first, last = " ".join(choices), " ".join(values)
+        return f"({first} {last} | {last} {first})"
+    return " ".join(choices + values)
 
 
 def _rule_name_for(name: str, node: SchemaNode) -> str:
     """Return the rule name for a node, keeping named lists in their own rule."""
     base = _safe_rule_name(name)
     if node.is_list and node.children:
-        if _takes_either_order(node):
-            return f"{base}{_LIST_RULE_SUFFIX}{_EITHER_ORDER_SUFFIX}"
+        key = _key_sequence(node)
+        if key != "QUOTED_OR_VALUE":
+            base += f"{_KEY_SUFFIX}{hashlib.sha256(key.encode()).hexdigest()[:10]}"
         if "oneliner" in node.flags:
             return f"{base}{_LIST_RULE_SUFFIX}{_ONELINER_SUFFIX}"
         return f"{base}{_LIST_RULE_SUFFIX}"
@@ -176,7 +227,7 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
 def _has_direct_sibling_variant(node: SchemaNode) -> bool:
     """Whether *node* itself gains metadata-specific sibling repetition."""
     return bool(
-        (node.is_list and node.children and "oneliner" in node.flags)
+        (node.is_list and _statement_children(node) and "oneliner" in node.flags)
         or any("positional-key-flat" in child.flags for child in node.children.values())
     )
 
@@ -197,7 +248,9 @@ def _variant_rule_names(root: SchemaNode) -> dict[int, str]:
         if node_id in visited:
             return visited[node_id]
 
-        children = [(name, *visit(child)) for name, child in sorted(node.children.items())]
+        children = [
+            (name, *visit(child)) for name, child in sorted(_statement_children(node).items())
+        ]
         own_shape = (
             node.name,
             node.combinator.value,
@@ -211,6 +264,7 @@ def _variant_rule_names(root: SchemaNode) -> dict[int, str]:
             node.pattern_negated,
             node.type_ref,
             tuple(sorted(node.flags)),
+            *((_key_sequence(node),) if node.key_fields else ()),
         )
         full_payload = repr((own_shape, [(name, full) for name, full, _ in children]))
         full_digest = hashlib.sha256(full_payload.encode()).hexdigest()
@@ -243,8 +297,8 @@ class _RuleInfo:
 
     __slots__ = (
         "alts",
-        "either_order",
         "is_named_list",
+        "key",
         "positional_alts",
         "repeatable_alts",
         "repeats_siblings",
@@ -256,9 +310,8 @@ class _RuleInfo:
         self.positional_alts: set[str] = set()
         self.is_named_list: bool = False
         self.repeats_siblings: bool = False
-        # A oneliner list whose children are all bare keywords may write them
-        # before the entry name or after it; see `generate_lark_grammar`.
-        self.either_order: bool = False
+        # The tokens an entry's key takes; `QUOTED_OR_VALUE` for a lone name.
+        self.key: str = "QUOTED_OR_VALUE"
 
 
 def generate_lark_grammar(root: SchemaNode) -> str:
@@ -303,7 +356,10 @@ def generate_lark_grammar(root: SchemaNode) -> str:
         # `set apply-groups global-vxlan` at the top level parses as itself
         # rather than being stripped to a bare `set` before it reaches here.
         for info in rule_map.values():
-            info.alts.add(_UNIVERSAL_RULE)
+            # Not after an entry that is nothing but its key: the device
+            # rejects a further token there.
+            if info.alts or not info.is_named_list:
+                info.alts.add(_UNIVERSAL_RULE)
 
     # Pass 2: emit grammar
     lines: list[str] = []
@@ -329,17 +385,9 @@ def generate_lark_grammar(root: SchemaNode) -> str:
         alts = sorted(info.alts)
         body = " | ".join(alts)
 
-        if info.is_named_list and info.either_order:
-            # A oneliner list whose children are all bare keywords takes them
-            # on either side of the entry name, and nothing in the schema says
-            # which: `community add COMM-A` puts the keyword first, while
-            # `flag all detail` and `from source-address 10/8 except` put it
-            # last. Across three real device configurations the first form
-            # alone accounted for 343 of 507 rejected lines, and assuming it
-            # universally was worse than assuming it never happened -- that
-            # took 7.1% rejected to 30.4%. Accepting both costs 1.4s of
-            # grammar load and takes 7.1% to 2.3%.
-            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})? | ({body}) QUOTED_OR_VALUE")
+        if info.is_named_list and not info.alts:
+            # Nothing but a key: nothing may follow it.
+            lines.append(f"{rule_name}: {info.key}")
         elif info.is_named_list and info.repeats_siblings:
             # An oneliner entry may carry several known keyworded settings:
             # `server 198.51.100.1 version 4 prefer`. Repeat only alternatives
@@ -350,7 +398,7 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             continuations = f"({repeatable})+"
             if non_repeatable:
                 continuations = f"{non_repeatable} | {continuations}"
-            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({continuations})?")
+            lines.append(f"{rule_name}: {info.key} ({continuations})?")
         elif info.is_named_list:
             # Named list: VALUE captures the entry name. Only list nodes reach
             # this rule name, so the slot can no longer be merged away.
@@ -365,7 +413,7 @@ def generate_lark_grammar(root: SchemaNode) -> str:
             # oneliner rules take the narrow keyword-only path above instead.
             # Lark's `~0..n` range is not a middle way: it expands
             # combinatorially and does not finish compiling.
-            lines.append(f"{rule_name}: QUOTED_OR_VALUE ({body})?")
+            lines.append(f"{rule_name}: {info.key} ({body})?")
         elif info.positional_alts and info.repeatable_alts:
             # A flat positional child is a standalone alternative in expanded
             # display-set form, but may also lead a compact run of keyworded
@@ -434,6 +482,10 @@ def _collect_rules(
     if not node.children:
         # Leaf or presence — no rule needed (handled inline by parent)
         return
+    statements = _statement_children(node)
+    if node.is_list and not statements and not node.key_fields:
+        # A list of names alone, rendered inline by the parent.
+        return
 
     family = _rule_name_for(node.name, node)
     rule_name = variant_names.get(node_id, family)
@@ -443,7 +495,7 @@ def _collect_rules(
     ordinary_alts: list[str] = []
     repeatable_alts: list[str] = []
     positional_alts: list[str] = []
-    for child_name, child_node in node.children.items():
+    for child_name, child_node in statements.items():
         if skip and child_name in skip:
             continue
         spliced = f"transparent:{child_name}" in node.flags
@@ -464,7 +516,7 @@ def _collect_rules(
         if "positional-key-flat" in child_node.flags:
             positional_alts.append(child_ref)
 
-    if child_alts:
+    if child_alts or node.is_list:
         # Merge into rule map
         if rule_name not in rule_map:
             rule_map[rule_name] = _RuleInfo()
@@ -477,9 +529,8 @@ def _collect_rules(
         info.positional_alts.update(positional_alts)
         if node.is_list:
             info.is_named_list = True
-            if _takes_either_order(node):
-                info.either_order = True
-            elif "oneliner" in node.flags:
+            info.key = _key_sequence(node)
+            if "oneliner" in node.flags:
                 info.repeats_siblings = True
 
     # Recurse into children
@@ -517,19 +568,14 @@ def _child_reference(
     else:
         keyword = f'"{name}"'
 
-    # Flattened renderings. `flat-dict` and `flat-entry` mark the places where
-    # the schema's own shape is not what a set command writes:
-    # `trigger {"after": [null], "count": 1}` is written `trigger after 1`, and
-    # an `attributes-match` entry is written `<attribute> matches <regex>` with
-    # no key at all. Both put a run of tokens where the tree has structure, so
-    # there is nothing to descend into and the run itself is the value.
-    #
-    # 24.4R0 has 108 `flat-dict` and 46 `flat-entry` nodes. The generator read
-    # neither, which left every `attributes-match` line and
-    # `within 1800 trigger after 1` rejected on real devices.
+    # Flattened renderings. `flat-dict` marks a place where the schema's own
+    # shape is not what a set command writes: `trigger {"after": [null],
+    # "count": 1}` is written `trigger after 1`, a run of tokens where the tree
+    # has structure, so the run itself is the value. A keyed entry such as
+    # `attributes-match` is no longer one: its key fields are its values.
     value = _value_token(node)
 
-    if "flat-dict" in node.flags or any(f.startswith("flat-entry:") for f in node.flags):
+    if "flat-dict" in node.flags:
         return f"{keyword} {value}+"
 
     # Leaf nodes
@@ -543,6 +589,11 @@ def _child_reference(
         # 100`, which is every VLAN-bearing configuration. In 24.4R0 the flag
         # is on `vlan-id` and `vlan-name` only.
         return f"{keyword} {value}"
+
+    # A list of names alone was a childless presence list until the parser kept
+    # its `name`, and is written as one: the name is the whole content.
+    if node.is_list and node.children and not node.key_fields and not _statement_children(node):
+        node = SchemaNode(name=node.name, is_list=True, is_presence=True, flags=node.flags)
 
     # Presence containers (no value)
     if node.is_presence:

@@ -88,19 +88,24 @@ types:
       - policy-options as-list
     references:
       # policy-statement [term] from as-path-neighbors / as-path-origins /
-      # as-path-transits (named lists, entry key = name). These positions
-      # accept both as-list and as-list-group names.
-      schema-types:
-        - control-as-list-type
+      # as-path-transits (control-as-list-type, keyed `list-type` then
+      # `list-name`). The walker carries the enum `list-type` in the schema
+      # path of `list-name`, so `as-list X` names an as-list and
+      # `as-list-group X` an as-list-group.
+      paths:
+        - as-path-neighbors as-list list-name
+        - as-path-origins as-list list-name
+        - as-path-transits as-list list-name
   as-list-group:
     source: curated
     definition:
       - policy-options as-list-group
     references:
-      # Same match positions as as-list (shared namespace, anchored by the
-      # as-list-group-member entry below).
-      schema-types:
-        - control-as-list-type
+      # The same three positions as as-list, under `list-type as-list-group`.
+      paths:
+        - as-path-neighbors as-list-group list-name
+        - as-path-origins as-list-group list-name
+        - as-path-transits as-list-group list-name
   condition:
     source: curated
     definition:

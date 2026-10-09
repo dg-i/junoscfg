@@ -23,7 +23,7 @@ pytestmark = pytest.mark.schema
 class TestFixesApply:
     """Every registered XSD fix should do something on a real schema.
 
-    25.2R2 reports 39 of 42 applied and 23.2R2 38 of 42: the same three never
+    25.2R2 reports 38 of 41 applied and 23.2R2 37 of 41: the same three never
     fire on either, and `ufd-group-transparent` fires only where
     `uplink-failure-detection` exists, which 23.2R2 lacks. A fix that never
     fires on every release is dead code or a matcher
@@ -211,3 +211,54 @@ class TestEntryKeysOnTheDump:
         from junoscfg.display import entry_keys
 
         assert all(entry_keys(node) == ("list-type", "list-name") for node in slots)
+
+
+class TestIdentifierCounts:
+    """The sequences that declare identifiers, as the parser reads them.
+
+    Spec: identifier-key-fields, schema-pipeline/entry-key-fields. Counted
+    over every `xsd:sequence` of the dump with the parser's own rule: keyed
+    `name` alone, by one other identifier, or by two to four; and the
+    sequences keyed by a choice of identifiers. Measured before the change
+    (proposal). A release not pinned here is skipped, not guessed.
+    """
+
+    COUNTS = {"25.2": (2800, 171, 64, 38), "23.2": (2851, 163, 65)}
+
+    def test_the_counts_are_the_proposals(self, parsed_schema: object) -> None:
+        from lxml import etree
+
+        from junoscfg.validate import xsd_parser
+
+        train = next((t for t in self.COUNTS if parsed_schema.version.startswith(t)), None)
+        if train is None:
+            pytest.skip(f"no pinned count for {parsed_schema.version}")
+        root = etree.fromstring(parsed_schema.xsd_text.encode("utf-8"))
+        name_only = one_other = several = choice_keyed = 0
+        for seq in root.iter(xsd_parser._xsd("sequence")):  # noqa: SLF001
+            keys = xsd_parser._key_fields(seq)  # noqa: SLF001
+            values = [k for k in keys if isinstance(k, str)]
+            choice_keyed += any(isinstance(k, tuple) for k in keys)
+            if values == ["name"]:
+                name_only += 1
+            elif len(values) == 1:
+                one_other += 1
+            elif values:
+                several += 1
+        expected = self.COUNTS[train]
+        assert (name_only, one_other, several, choice_keyed)[: len(expected)] == expected
+
+    def test_no_name_keyed_list_carries_k(self, parsed_schema: object, tmp_path: Path) -> None:
+        from junoscfg.validate.artifact_builder import write_structure_tree
+
+        path = tmp_path / "tree.json"
+        write_structure_tree(parsed_schema.tree, str(path))
+        stack = [json.loads(path.read_text(encoding="utf-8"))]
+        keyed = 0
+        while stack:
+            node = stack.pop()
+            if "k" in node:
+                keyed += 1
+                assert node["k"] != ["name"], node
+            stack.extend((node.get("c") or {}).values())
+        assert keyed > 0

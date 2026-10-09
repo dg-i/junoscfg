@@ -41,7 +41,9 @@ def xml_to_dict(source: str | TextIO) -> dict[str, Any]:
     if config_el is None:
         return {}
 
-    return {"configuration": _xml_element_to_dict(config_el)}
+    from junoscfg.display.constants import load_schema_tree
+
+    return {"configuration": _xml_element_to_dict(config_el, load_schema_tree())}
 
 
 def xml_to_yaml(source: str | TextIO) -> str:
@@ -60,17 +62,16 @@ def xml_to_yaml(source: str | TextIO) -> str:
 _etree_mod: Any = None
 _local_name: Any = None
 _filtered_children: Any = None
-_FLAT_ENTRY_ELEMENTS: Any = None
 
 
 def _ensure_xml_imports() -> None:
     """Lazily import lxml and XML helpers on first use."""
-    global _etree_mod, _local_name, _filtered_children, _FLAT_ENTRY_ELEMENTS  # noqa: PLW0603
+    global _etree_mod, _local_name, _filtered_children  # noqa: PLW0603
     if _etree_mod is not None:
         return
     from lxml import etree as _etree
 
-    from junoscfg.display.constants import FLAT_ENTRY_ELEMENTS, resolve_key_alias
+    from junoscfg.display.constants import resolve_key_alias
     from junoscfg.display.xml_helpers import filtered_children, local_name
 
     def _aliased_local_name(element: object) -> str:
@@ -86,7 +87,6 @@ def _ensure_xml_imports() -> None:
     _etree_mod = _etree
     _local_name = _aliased_local_name
     _filtered_children = filtered_children
-    _FLAT_ENTRY_ELEMENTS = FLAT_ENTRY_ELEMENTS
 
 
 # ------------------------------------------------------------------
@@ -104,81 +104,62 @@ def _get_inactive_attrs(element: etree._Element) -> dict[str, Any] | None:
     return None
 
 
-def _xml_element_to_dict(element: etree._Element) -> dict[str, Any]:
+def _xml_element_to_dict(element: etree._Element, schema: dict[str, Any] | None) -> dict[str, Any]:
     """Convert an XML element and its children to a Junos JSON-equivalent dict."""
     children = _filtered_children(element)
     if not children:
         return {}
-
-    # Group children by tag name to detect lists
-    groups: dict[str, list[etree._Element]] = {}
-    order: list[str] = []
-    for child in children:
-        name = _local_name(child)
-        if name == "undocumented":
-            for undoc_child in child:
-                uname = _local_name(undoc_child)
-                if uname != "comment":
-                    if uname not in groups:
-                        groups[uname] = []
-                        order.append(uname)
-                    groups[uname].append(undoc_child)
-            continue
-        if name not in groups:
-            groups[name] = []
-            order.append(name)
-        groups[name].append(child)
-
-    result: dict[str, Any] = {}
-    for name in order:
-        elements = groups[name]
-        if len(elements) == 1:
-            if _should_be_array(elements[0]):
-                result[name] = _xml_single_as_array(elements[0])
-            else:
-                result[name] = _xml_single_element(elements[0])
-        else:
-            result[name] = _xml_multi_elements(name, elements)
-
-    return result
+    return _xml_children_to_dict(children, schema)
 
 
-def _should_be_array(element: etree._Element) -> bool:
+def _schema_of(element: etree._Element, schema: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The structure-tree node for *element* under *schema*; None outside the tree.
+
+    A transparent container the XML writes without its wrapper -- `groups`,
+    whose `<groups>` elements are the `group` entries themselves -- is read
+    as that wrapper's entries.
+    """
+    if schema is None:
+        return None
+    node: dict[str, Any] | None = schema.get("c", {}).get(_local_name(element))
+    wrapper = node.get("t") if node else None
+    if node is not None and wrapper:
+        held = {_local_name(c) for c in _filtered_children(element)}
+        if wrapper not in held:
+            return node.get("c", {}).get(wrapper)
+    return node
+
+
+def _should_be_array(element: etree._Element, node: dict[str, Any] | None) -> bool:
     """Check if a single XML element should be wrapped in a JSON array.
 
-    In Junos JSON, list-type elements are always arrays even with a single
-    entry. Without YANG schema, we detect these by heuristics:
-    - Has a ``name`` child → named entry (keyed list)
-    - Tag is a known flat entry element (route-filter, prefix-list-filter)
-    - Has a ``community-name`` child → community action entry
+    In Junos JSON a list element is an array even with a single entry. The
+    structure tree says which elements are lists -- `as-path-neighbors`,
+    keyed by `list-type` and `list-name`, holds no `name` child. Where the
+    tree does not reach, an element with a ``name`` child is taken as a list
+    entry.
     """
     children = _filtered_children(element)
-    tag = _local_name(element)
-
-    if tag in _FLAT_ENTRY_ELEMENTS:
-        return True
-
-    if children:
-        child_names = {_local_name(c) for c in children}
-        if "name" in child_names:
-            return True
-        if "community-name" in child_names:
-            return True
-
-    return False
+    if not children:
+        return False
+    if node is not None:
+        return bool(node.get("L"))
+    return "name" in {_local_name(c) for c in children}
 
 
-def _xml_single_as_array(element: etree._Element) -> list[dict[str, Any]]:
+def _xml_single_as_array(
+    element: etree._Element, schema: dict[str, Any] | None
+) -> list[dict[str, Any]]:
     """Convert a single XML element to a 1-element array of dicts."""
     children = _filtered_children(element)
     inactive_attrs = _get_inactive_attrs(element)
-    entry = _xml_children_to_dict(children) if children else {}
+    entry = _xml_children_to_dict(children, schema) if children else {}
     if inactive_attrs:
         entry["@"] = inactive_attrs
     return [entry]
 
 
-def _xml_single_element(element: etree._Element) -> Any:
+def _xml_single_element(element: etree._Element, schema: dict[str, Any] | None) -> Any:
     """Convert a single XML element to a Junos JSON-equivalent value."""
     children = _filtered_children(element)
     inactive_attrs = _get_inactive_attrs(element)
@@ -197,13 +178,15 @@ def _xml_single_element(element: etree._Element) -> Any:
         return [None]
 
     # Has sub-elements — it's a container or named entry
-    child_dict = _xml_children_to_dict(children)
+    child_dict = _xml_children_to_dict(children, schema)
     if inactive_attrs:
         child_dict["@"] = inactive_attrs
     return child_dict
 
 
-def _xml_multi_elements(tag_name: str, elements: list[etree._Element]) -> Any:
+def _xml_multi_elements(
+    tag_name: str, elements: list[etree._Element], schema: dict[str, Any] | None
+) -> Any:
     """Convert multiple same-tag XML elements to a Junos JSON-equivalent value.
 
     Multiple same-tag siblings become a JSON array. Each element becomes
@@ -236,14 +219,16 @@ def _xml_multi_elements(tag_name: str, elements: list[etree._Element]) -> Any:
     for el in elements:
         children = _filtered_children(el)
         inactive_attrs = _get_inactive_attrs(el)
-        entry = _xml_children_to_dict(children) if children else {}
+        entry = _xml_children_to_dict(children, schema) if children else {}
         if inactive_attrs:
             entry["@"] = inactive_attrs
         result.append(entry)
     return result
 
 
-def _xml_children_to_dict(children: list[etree._Element]) -> dict[str, Any]:
+def _xml_children_to_dict(
+    children: list[etree._Element], schema: dict[str, Any] | None
+) -> dict[str, Any]:
     """Convert a list of XML child elements to a dict."""
     groups: dict[str, list[etree._Element]] = {}
     order: list[str] = []
@@ -266,13 +251,14 @@ def _xml_children_to_dict(children: list[etree._Element]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for name in order:
         elements = groups[name]
+        node = _schema_of(elements[0], schema)
         if len(elements) == 1:
-            if _should_be_array(elements[0]):
-                result[name] = _xml_single_as_array(elements[0])
+            if _should_be_array(elements[0], node):
+                result[name] = _xml_single_as_array(elements[0], node)
             else:
-                result[name] = _xml_single_element(elements[0])
+                result[name] = _xml_single_element(elements[0], node)
         else:
-            result[name] = _xml_multi_elements(name, elements)
+            result[name] = _xml_multi_elements(name, elements, node)
     return result
 
 

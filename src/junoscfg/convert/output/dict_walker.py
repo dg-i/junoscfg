@@ -11,8 +11,9 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from junoscfg.display import (
+    entry_key_names,
+    entry_keys,
     format_value,
-    get_flat_entry_config,
     get_transparent_child,
     is_flat_dict,
     is_freeform_nk,
@@ -115,75 +116,6 @@ class DictWalker:
         self._output.emit(path + [" ".join(parts)])
 
     # ------------------------------------------------------------------
-    # Flat entry emission
-    # ------------------------------------------------------------------
-
-    def _emit_flat_entry(
-        self,
-        entry: dict[str, Any],
-        positional_key: str,
-        position: str,
-        path: list[str],
-        set_key: str,
-    ) -> None:
-        if position == "values-only":
-            flat_parts: list[str] = [set_key]
-            for k, v in entry.items():
-                if k.startswith("@"):
-                    continue
-                flat_parts.append(format_value(v))
-            self._output.emit(path + [" ".join(flat_parts)])
-            return
-
-        positional_part: str | None = None
-        if positional_key and positional_key in entry:
-            positional_part = format_value(entry[positional_key])
-
-        multi_key: str | None = None
-        multi_values: list[Any] | None = None
-        for k, v in entry.items():
-            if k == positional_key or k.startswith("@"):
-                continue
-            if isinstance(v, list) and len(v) > 1:
-                multi_key = k
-                multi_values = v
-                break
-
-        if multi_key and multi_values is not None:
-            for item in multi_values:
-                remaining_parts = self._collect_flat_parts(entry, positional_key, multi_key)
-                if item is None:
-                    remaining_parts.append(multi_key)
-                else:
-                    remaining_parts.append(multi_key)
-                    remaining_parts.append(format_value(item))
-
-                flat_parts = [set_key]
-                if position == "first":
-                    if positional_part:
-                        flat_parts.append(positional_part)
-                    flat_parts.extend(remaining_parts)
-                else:
-                    flat_parts.extend(remaining_parts)
-                    if positional_part:
-                        flat_parts.append(positional_part)
-
-                self._output.emit(path + [" ".join(flat_parts)])
-        else:
-            remaining_parts = self._collect_flat_parts(entry, positional_key)
-            flat_parts = [set_key]
-            if position == "first":
-                if positional_part:
-                    flat_parts.append(positional_part)
-                flat_parts.extend(remaining_parts)
-            else:
-                flat_parts.extend(remaining_parts)
-                if positional_part:
-                    flat_parts.append(positional_part)
-
-            self._output.emit(path + [" ".join(flat_parts)])
-
-    # ------------------------------------------------------------------
     # Oneliner emission
     # ------------------------------------------------------------------
 
@@ -243,34 +175,6 @@ class DictWalker:
                 elif line.startswith("delete "):
                     child_tokens = line[7:]
                     self._output.emit_delete(path + [f"{base} {child_tokens}"])
-
-    @staticmethod
-    def _collect_flat_parts(
-        entry: dict[str, Any],
-        positional_key: str,
-        skip_key: str | None = None,
-    ) -> list[str]:
-        parts: list[str] = []
-        for k, v in entry.items():
-            if k in (positional_key, skip_key) or k.startswith("@"):
-                continue
-
-            if isinstance(v, list):
-                if v == [None]:
-                    parts.append(k)
-                else:
-                    for item in v:
-                        parts.append(k)
-                        if item is not None:
-                            parts.append(format_value(item))
-            elif isinstance(v, bool):
-                parts.append(k)
-            elif isinstance(v, (str, int, float)):
-                parts.append(k)
-                parts.append(format_value(v))
-            elif v is None:
-                parts.append(k)
-        return parts
 
     # ------------------------------------------------------------------
     # Recursive walk
@@ -369,9 +273,13 @@ class DictWalker:
                     continue
 
                 if child_schema is None and value == [None]:
+                    keys = (
+                        entry_key_names(schema_node) if schema_node and schema_node.get("L") else ()
+                    )
                     has_nk_leaf = any(
                         isinstance(cs, dict) and cs.get("nk") and cs.get("l")
-                        for cs in children.values()
+                        for name, cs in children.items()
+                        if name not in keys
                     )
                     if has_nk_leaf:
                         if schema_node and schema_node.get("L"):
@@ -387,51 +295,34 @@ class DictWalker:
                     if tc_child is not None:
                         list_schema = tc_child
 
-                flat_config = get_flat_entry_config(child_schema, set_key)
-                if flat_config:
-                    flat_positional, flat_position = flat_config
-                    for entry in value:
-                        if isinstance(entry, dict):
-                            self._emit_flat_entry(
-                                entry, flat_positional, flat_position, path, set_key
+                is_tc = tc_child_name is not None
+                for entry in value:
+                    if isinstance(entry, dict):
+                        if is_transparent_list_key(child_schema, key):
+                            self._process_hash(
+                                set_key,
+                                entry,
+                                path,
+                                skip_key=True,
+                                schema_node=list_schema,
                             )
-                        elif entry is None:
-                            output.emit(path + [set_key])
                         else:
-                            output.emit(path + [f"{set_key} {format_value(entry)}"])
-                else:
-                    is_tc = tc_child_name is not None
-                    for entry in value:
-                        if isinstance(entry, dict):
-                            if "community-name" in entry:
-                                self._emit_flat_entry(
-                                    entry, "community-name", "last", path, set_key
-                                )
-                            elif is_transparent_list_key(child_schema, key):
-                                self._process_hash(
-                                    set_key,
-                                    entry,
-                                    path,
-                                    skip_key=True,
-                                    schema_node=list_schema,
-                                )
-                            else:
-                                self._process_hash(
-                                    set_key,
-                                    entry,
-                                    path,
-                                    split_key_name=is_tc,
-                                    schema_node=list_schema,
-                                )
-                        elif is_transparent_list_key(child_schema, key):
-                            if entry is not None:
-                                output.emit(path + [format_value(entry)])
-                            else:
-                                output.emit(path)
-                        elif entry is None:
-                            output.emit(path + [set_key])
+                            self._process_hash(
+                                set_key,
+                                entry,
+                                path,
+                                split_key_name=is_tc,
+                                schema_node=list_schema,
+                            )
+                    elif is_transparent_list_key(child_schema, key):
+                        if entry is not None:
+                            output.emit(path + [format_value(entry)])
                         else:
-                            output.emit(path + [f"{set_key} {format_value(entry)}"])
+                            output.emit(path)
+                    elif entry is None:
+                        output.emit(path + [set_key])
+                    else:
+                        output.emit(path + [f"{set_key} {format_value(entry)}"])
 
             elif isinstance(value, bool):
                 output.emit(path + [set_key])
@@ -476,14 +367,11 @@ class DictWalker:
     ) -> None:
         output = self._output
         attrs = self._read_attrs(hash_)
+        key_fields = self._entry_key(hash_, schema_node)
 
-        if "name" in hash_:
-            name_val = hash_["name"]
-            if isinstance(name_val, list):
-                name_val = name_val[0]
-            formatted_name = format_value(name_val)
-
-            remaining = {k: v for k, v in hash_.items() if k != "name"}
+        if key_fields is not None:
+            formatted_name, written = key_fields
+            remaining = {k: v for k, v in hash_.items() if k not in written}
             has_content = any(not k.startswith("@") for k in remaining)
 
             if skip_key:
@@ -531,6 +419,39 @@ class DictWalker:
                 )
 
             self._emit_attrs(new_path, attrs)
+
+    @staticmethod
+    def _entry_key(
+        hash_: dict[str, Any], schema_node: dict[str, Any] | None
+    ) -> tuple[str, set[str]] | None:
+        """An entry's key as written, and the IR keys it consumed; None if absent.
+
+        The key values in declared order, a choice of identifiers as its
+        keyword and, where the alternative carries one, its value. A hash
+        outside a known list is keyed `name`, as it always was.
+        """
+        fields = entry_keys(schema_node) if schema_node and schema_node.get("L") else ("name",)
+        parts: list[str] = []
+        written: set[str] = set()
+        for field in fields:
+            if isinstance(field, tuple):
+                chosen = next((k for k in hash_ if resolve_key_alias(k) in field), None)
+                if chosen is None:
+                    return None
+                written.add(chosen)
+                parts.append(resolve_key_alias(chosen))
+                value = hash_[chosen]
+                if not (value is None or value is True or value == [None]):
+                    parts.append(format_value(value[0] if isinstance(value, list) else value))
+                continue
+            if field not in hash_:
+                return None
+            value = hash_[field]
+            if isinstance(value, list):
+                value = value[0]
+            written.add(field)
+            parts.append(format_value(value))
+        return " ".join(parts), written
 
     def _is_structured_mode(self) -> bool:
         """Check if the output strategy is structured mode (for oneliner logic)."""

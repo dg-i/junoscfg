@@ -55,8 +55,8 @@ Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered
 ### Requirement: One kernel helper answers an entry's keys
 
 WHEN any site needs the fields that key a list's entries THEN it SHALL read
-them from `entry_keys()` through `junoscfg.display`, and whether a key choice
-precedes the other keys from that answer's order; no module under
+them from `entry_keys()` through `junoscfg.display`, which fields are key
+choices included; no module under
 `src/junoscfg/` SHALL read `fe`, `values-only`, a `_v<n>` key, a literal
 `community-name`, `FLAT_ENTRY_ELEMENTS`, `ENTRY_KEY_OVERRIDES` or
 `get_flat_entry_config`, and the last two SHALL be banned imports.
@@ -82,9 +82,9 @@ THEN `control-as-list-type` SHALL carry the keys `list-type`, `list-name`;
 `attributes-match` its three fields; route-filter, source-address-filter and
 prefix-list-filter their address or `list_name` then the match-type choice,
 actions as children; `then community` its action choice then `community-name`;
-and `o` SHALL be set exactly where it is today: where the dump flags
-`oneliner`, and on those three filter lists.
-Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_is_unchanged`, `tests/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
+and `o` SHALL stand where the dump flags `oneliner`, and on those three
+filter lists (owner decision, phase 5).
+Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_follows_the_dump`, `tests/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
 
 #### Scenario: The AS-list slots
 

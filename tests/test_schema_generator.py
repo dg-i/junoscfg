@@ -314,22 +314,32 @@ class TestEntryKeysAreTheTreesFields:
             assert entry["additionalProperties"] is False
 
     def test_name_keyed_lists_keep_name(self) -> None:
-        """Byte for byte what 0.14.0 generated, in both variants."""
-        import hashlib
+        """What 0.14.0 generated, compared as data, in both variants.
+
+        `tests/data/name-keyed-schema-*.json` is the 0.14.0 output. Dict
+        equality, not bytes (owner answer 4): `name` now arrives as the
+        entry's first child rather than appended last. The one entry removed
+        before comparing is `community-name` under `policy-options community`,
+        a list keyed `name`: 0.14.0 added it by the retired
+        `ENTRY_KEY_OVERRIDES` spelling, keyed on the node's name alone.
+        """
         import json
+        from pathlib import Path
 
         from junoscfg.validate.xsd_parser import parse_xsd
         from tests.keyed_entries import NAME_KEYED_XSD
 
-        pinned = {
-            "json": "f87396d7d7fe2d590b3be7e2ba244fe2bcd5057109f4599e928131be9be85ede",
-            "yaml": "17240da6627506ba94c94769176b6f8979bfbaf76ba06e1b8b9a244476feddc2",
-        }
-        for variant, digest in pinned.items():
+        data = Path(__file__).resolve().parent / "data"
+        for variant in ("json", "yaml"):
+            pinned = json.loads((data / f"name-keyed-schema-{variant}.json").read_text("utf-8"))
+            for top in (pinned["properties"]["configuration"], pinned):
+                community = top["properties"]["policy-options"]["properties"]["community"]
+                for shape in (community["anyOf"][0]["items"], community["anyOf"][1]):
+                    del shape["properties"]["community-name"]
             schema = generate_json_schema(parse_xsd(NAME_KEYED_XSD), variant=variant)
             assert "name" in _entry(schema, "policy-options", "policy-statement")["properties"]
             assert "name" in _entry(schema, "policy-options", "community")["properties"]
-            assert hashlib.sha256(json.dumps(schema).encode()).hexdigest() == digest, variant
+            assert json.loads(json.dumps(schema)) == pinned, variant
 
         keyed = _keyed_schema()
         for path in (("policy-options", "policy-statement"), ("event-options", "policy")):

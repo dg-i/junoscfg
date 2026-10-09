@@ -11,7 +11,7 @@ community__list__ol__v33f80b408c: QUOTED_OR_VALUE (universal_statement | ("inver
 
 configuration: "policy-options" policy_options__vdd28edd9a0? | universal_statement
 
-data__list: QUOTED_OR_VALUE ("name" QUOTED_OR_VALUE | "value" QUOTED_OR_VALUE | universal_statement)?
+data__list: QUOTED_OR_VALUE ("value" QUOTED_OR_VALUE | universal_statement)?
 
 policy_options__vdd28edd9a0: "community" community__list__ol__v33f80b408c | "policy-statement" policy_statement__list | universal_statement
 

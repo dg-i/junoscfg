@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.14.0"
+version = "0.15.0"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -103,6 +103,8 @@ filename = "CHANGELOG.md"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "junoscfg.convert.output.xml_output" = { msg = "retired by 2026-10-09-scope-compatibility-to-production-consumer.md; see docs/decisions/2026-10-09-scope-compatibility-to-production-consumer.md" }
+"junoscfg.display.ENTRY_KEY_OVERRIDES" = { msg = "retired by 2026-10-09-key-entries-by-declared-identifiers.md; see docs/decisions/2026-10-09-key-entries-by-declared-identifiers.md" }
+"junoscfg.display.get_flat_entry_config" = { msg = "retired by 2026-10-09-key-entries-by-declared-identifiers.md; see docs/decisions/2026-10-09-key-entries-by-declared-identifiers.md" }
 "junoscfg.display.to_yaml.json_to_yaml" = { msg = "retired by 2026-10-09-scope-compatibility-to-production-consumer.md; see docs/decisions/2026-10-09-scope-compatibility-to-production-consumer.md" }
 # agent-ready:stage-levers:tables:end
 

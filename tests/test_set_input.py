@@ -373,10 +373,13 @@ class TestParserBugFixes:
         assert len(am) == 1
         entry = am[0]
         assert isinstance(entry, dict)
-        assert entry["name"] == "ping_test_failed.test-owner"
-        # Remaining tokens stored as ordered values
-        assert entry["_v0"] == "matches"
-        assert entry["_v1"] == "^inet6-ping-uptime$"
+        # Keyed by its three identifiers (identifier-key-fields, owner answer
+        # 1), where `name`, `_v0` and `_v1` used to stand in for them.
+        assert entry == {
+            "from-event-attribute": "ping_test_failed.test-owner",
+            "condition": "matches",
+            "to-event-attribute-value": "^inet6-ping-uptime$",
+        }
 
     def test_ephemeral_instance_named_list(self) -> None:
         """Ephemeral instance preserves instance names as dict entries."""
@@ -898,8 +901,6 @@ class TestTokensTheReaderCannotPlaceAreKept:
             "as-path-origins as-list-group",
             "route-filter 198.51.100.0/24",
             "route-filter 198.51.100.0/24 next-policy",
-            # The match type before the address (device probe round 4 pending).
-            "route-filter exact 198.51.100.0/24",
             "source-address-filter 198.51.100.0/24",
         ],
     )
@@ -964,6 +965,18 @@ class TestTokensTheReaderCannotPlaceAreKept:
         assert _from(line) == {
             "route-filter": [{"address": "198.51.100.0/24", "exact": [None], "SAMPLE-EXTRA": KEPT}]
         }
+
+
+class TestAKeyKeywordBeforeTheValues:
+    """The device accepts `route-filter exact <address>` and stores it as
+    `route-filter <address> exact` (device probe round 4, vMX 23.2R2-S7.5)."""
+
+    def test_a_match_type_before_the_address(self) -> None:
+        line = f"{_TERM} from route-filter exact 198.51.100.0/24"
+        expected = {"route-filter": [{"address": "198.51.100.0/24", "exact": [None]}]}
+        assert _from(line) == expected
+        assert _from(f"{_TERM} from route-filter 198.51.100.0/24 exact") == expected
+        assert _round_trip(line) == [f"{_TERM} from route-filter 198.51.100.0/24 exact"]
 
 
 class TestKeyValuesOfEveryShape:

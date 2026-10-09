@@ -406,3 +406,17 @@ class TestTheShippedGrammarTakesKeyedEntries:
             assert not validator.validate_set(line).valid, line
         assert validate_config("\n".join(self.ACCEPTED), format=Format.SET).valid
         assert not validate_set(self.REJECTED[0]).valid
+
+    def test_a_numeric_list_type_is_rejected(self, bundled_set_validator) -> None:
+        """A key value takes its own leaf's type: `list-type` is `as-list` or
+        `as-list-group`. The XSD's union also names `xsd:unsignedLong`, but the
+        device rejected `as-path-neighbors 1 ...` at `set` with "syntax error,
+        expecting <flag-value> or <attribute-value>." (round-1 probe, vMX
+        23.2R2-S7.5). Owner answer 8, identifier-key-fields phase 4."""
+        import lark
+
+        with pytest.raises(lark.exceptions.UnexpectedInput):
+            bundled_set_validator._parser.parse(  # noqa: SLF001
+                f"{_PROBE_T} as-path-neighbors 1 SAMPLE-AS-LIST"
+            )
+        assert not validate_set(f"{_PROBE_T} as-path-neighbors 1 SAMPLE-AS-LIST").valid

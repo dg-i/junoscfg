@@ -606,30 +606,62 @@ class TestEntryKeysComeFromTheTree:
         assert len(definitions) == 4
         assert all(entry_keys(n) == ("name",) and "k" not in n for n in definitions)
 
-    def test_the_one_line_flag_is_unchanged(self) -> None:
-        """`o` stands exactly where it stood on the 0.14.0 tree.
+    def test_the_one_line_flag_follows_the_dump(self, tmp_path: Path) -> None:
+        """`o` stands where the dump flags `oneliner`, and on the filter lists.
 
-        3,520 nodes, pinned by the digest of their sorted paths, measured on
-        the bundled 25.2R2 tree before this change. A list that gains its key
-        children must not gain `o` with them: structured output keeps today's
-        one-line shapes (see the `attributes-match` challenge in review.md).
+        Owner decision on the review.md challenge (phase 5), replacing the
+        pin of the 3,520 paths that carried `o` on 0.14.0. The rule, on the
+        synthetic XSD: the element or type flags `oneliner` (`attributes-match`,
+        `then community`, NTP `server`), or the list is one the filter-list fix
+        names (`route-filter`); `oneliner-plus` alone (`as-path-neighbors`) is
+        not `oneliner`.
+
+        On the bundled tree, measured on regeneration: 4,736 nodes carry `o`,
+        1,216 more than on 0.14.0 and none fewer. Every one gained is a list
+        that was childless for want of its key fields; `o` joins an entry's
+        key to its other children, so on a list whose only children are key
+        fields it moves no rendering. The carriers that hold a child beyond
+        their key fields are 0.14.0's own, less 56 whose children turned out
+        to be their key: 24 flowspec `port-range`, 16 `tunnel-attribute` and
+        16 `then community` lists.
         """
-        carriers: list[str] = []
-        total = 0
+        from tests.keyed_entries import KEYED_XSD, artifact_json, build_artifacts, node
+
+        tree = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
+        term = ("policy-options", "policy-statement", "term")
+        carriers = {
+            (*term, "then", "community"): True,
+            ("system", "ntp", "server"): True,
+            ("event-options", "policy", "attributes-match"): True,
+            (*term, "from", "route-filter"): True,
+            (*term, "from", "as-path-neighbors"): False,
+            (*term, "from", "as-path-origins"): False,
+            ("policy-options", "policy-statement"): False,
+            ("policy-options", "community"): False,
+        }
+        for path, expected in carriers.items():
+            assert bool(node(tree, *path).get("o")) is expected, path
+
+        from junoscfg.display import entry_key_names
+
+        with_others: list[str] = []
+        keys_only = 0
         stack: list[tuple[str, dict[str, Any]]] = [("", self._bundled())]
         while stack:
-            path, node = stack.pop()
-            for name, child in (node.get("c") or {}).items():
-                total += 1
+            path, current = stack.pop()
+            for name, child in (current.get("c") or {}).items():
                 here = f"{path}/{name}" if path else name
                 if child.get("o"):
-                    carriers.append(here)
+                    assert child.get("c"), here
+                    if set(child["c"]) - entry_key_names(child):
+                        with_others.append(here)
+                    else:
+                        keys_only += 1
                 stack.append((here, child))
-        assert total > 400_000
-        carriers.sort()
-        assert len(carriers) == 3520
-        digest = hashlib.sha256("\n".join(carriers).encode()).hexdigest()
-        assert digest == "8b8fb0e1227838e632b63a909a0a43b9ddc6d100d7912042fd85ba6356789783"
+        with_others.sort()
+        assert (len(with_others), keys_only) == (3464, 1272)
+        digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
+        assert digest == "98610a68f9702e7536d01355a13bf70d75edf6efdeb6ebe08731aec800890350"
 
 
 class TestKeyedEntriesAgreeAcrossReaders:

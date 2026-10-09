@@ -783,30 +783,52 @@ class TestAnUnmodelledStatementIsReported:
         assert result.valid is True, result.errors
 
     def test_a_flat_entrys_key_and_values_are_not(self) -> None:
-        """`route-filter` keys on `address`; `attributes-match` on `_v0`, `_v1`."""
+        """`route-filter` keys on `address` and its match type; `attributes-match`
+        on its three fields. Rewritten to the keyed form (identifier-key-fields,
+        owner answer 1): the key fields are the tree's `k` and its children."""
+        match_fields = ["from-event-attribute", "condition", "to-event-attribute-value"]
         schema = self._system(
             **{
                 "route-filter": {
                     "L": True,
                     "o": True,
-                    "fe": {"k": "address", "p": "first"},
-                    "c": {"exact": {"p": True}},
+                    "k": ["address", ["exact"]],
+                    "c": {"address": {"l": True, "nk": True}, "exact": {"p": True}},
                 },
-                "attributes-match": {"L": True, "p": True, "fe": {"k": "", "p": "values-only"}},
+                "attributes-match": {
+                    "L": True,
+                    "k": match_fields,
+                    "c": {name: {"l": True, "nk": True} for name in match_fields},
+                },
             }
         )
         result = FieldValidator(schema=schema).validate(
             {
                 "system": {
                     "route-filter": [{"address": "10.0.0.0/8", "exact": [None]}],
-                    "attributes-match": [{"name": "a", "_v0": "equals", "_v1": "b"}],
+                    "attributes-match": [
+                        {
+                            "from-event-attribute": "a",
+                            "condition": "equals",
+                            "to-event-attribute-value": "b",
+                        }
+                    ],
                 }
             }
         )
         assert result.valid is True, result.errors
 
     def test_an_overridden_entry_key_is_not(self) -> None:
-        schema = self._system(community={"L": True, "o": True, "c": {"add": {"p": True}}})
+        """`then community` keys on its action and `community-name`, from the
+        tree's `k` where `ENTRY_KEY_OVERRIDES` used to name it."""
+        schema = self._system(
+            community={
+                "L": True,
+                "o": True,
+                "k": [["add"], "community-name"],
+                "c": {"add": {"p": True}, "community-name": {"l": True, "nk": True}},
+            }
+        )
         result = FieldValidator(schema=schema).validate(
             {"system": {"community": [{"community-name": "C", "add": [None]}]}}
         )

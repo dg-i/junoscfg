@@ -664,8 +664,18 @@ class TestFlattenedRenderingsTakeARunOfValues:
 
     @staticmethod
     def _flat_entry_tree() -> SchemaNode:
-        match = SchemaNode(name="attributes-match", is_presence=True, is_list=True)
-        match.flags.update({"oneliner", "flat-entry::values-only"})
+        # Keyed by its three identifiers (identifier-key-fields), which
+        # replaced the retired `flat-entry::values-only` flag.
+        fields = ("from-event-attribute", "condition", "to-event-attribute-value")
+        match = SchemaNode(
+            name="attributes-match",
+            is_list=True,
+            children={
+                name: SchemaNode(name=name, is_leaf=True, flags={"nokeyword"}) for name in fields
+            },
+            key_fields=fields,
+        )
+        match.flags.add("oneliner")
         policy = SchemaNode(name="policy", is_list=True, children={"attributes-match": match})
         return SchemaNode(name="configuration", children={"policy": policy})
 
@@ -880,20 +890,24 @@ class TestKeyedEntryTakesExactlyItsKeys:
         ):
             assert key not in grammar, key
 
-    def test_a_key_choice_declared_first_goes_either_side(self, keyed_parser) -> None:
+    def test_a_key_keyword_goes_either_side(self, keyed_parser) -> None:
+        """A key given by its keyword stands before or after the positional
+        values, whatever the declared order; children that are not keys come
+        only after them (device probe rounds 3 and 4, vMX 23.2R2-S7.5)."""
         for line in (
             f"{_T1} then community add SAMPLE-COMM",
             f"{_T1} then community SAMPLE-COMM add",
             f"{_T1} then community delete SAMPLE-COMM",
             f"{_T1} then community SAMPLE-COMM delete",
+            f"{_T1} from route-filter 198.51.100.0/24 exact",
+            f"{_T1} from route-filter exact 198.51.100.0/24",
+            f"{_T1} from route-filter exact 198.51.100.0/24 accept",
         ):
             assert _valid(keyed_parser, line), line
         for line in (
             f"{_T1} then community add SAMPLE-COMM delete",
             f"{_T1} then community add delete SAMPLE-COMM",
-            # A key choice declared after the address stays after it, and no
-            # child goes before the keys (device probe round 4 pending).
-            f"{_T1} from route-filter exact 198.51.100.0/24",
+            # An action before the keys (not probed; consistent with `flag`).
             f"{_T1} from route-filter accept 198.51.100.0/24 exact",
         ):
             assert not _valid(keyed_parser, line), line
@@ -906,6 +920,17 @@ class TestKeyedEntryTakesExactlyItsKeys:
             f'{_EVENT} ping.test-owner matches "^uptime$" bogus-thing 5',
         ):
             assert not _valid(keyed_parser, line), line
+
+    def test_a_numeric_list_type_is_rejected(self, keyed_parser, keyed_artifacts: Path) -> None:
+        """A key value takes its own leaf's type: `list-type`'s enum, though the
+        XSD's union also names `xsd:unsignedLong`. The device rejected
+        `as-path-neighbors 1 ...` at `set` (round-1 probe, vMX 23.2R2-S7.5).
+        Owner answer 8."""
+        from junoscfg import validate_set
+
+        line = f"{_T1} from as-path-neighbors 1 SAMPLE-AS-LIST"
+        assert not _valid(keyed_parser, line)
+        assert not validate_set(line, artifacts_dir=str(keyed_artifacts)).valid
 
     def test_name_keyed_grammar_is_byte_identical(self, tmp_path: Path) -> None:
         """What 0.14.0 generated for `name`-keyed lists, to the byte."""

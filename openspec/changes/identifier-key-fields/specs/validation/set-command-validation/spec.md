@@ -39,13 +39,13 @@ WHEN the generated grammar renders a list keyed by anything but the single
 `name` THEN it SHALL take one value per key field in key order, a key choice
 as one of its keywords with its value, then only the entry's declared
 children; SHALL reject a missing or further value; SHALL NOT offer a key
-element's name as a keyword; and SHALL take a key choice declared first on
-either side of the other keys and no child before them. `flat-dict` keeps
+element's name as a keyword; and SHALL take a key choice before or after
+the positional values and no child before the keys. `flat-dict` keeps
 `keyword value+`, and the grammar of `name`-keyed lists SHALL stay
 byte-identical. This holds through `SetValidator.validate`, the public
 `validate_set` and `validate_config`, and CLI `-v -i set`; phase 5 SHALL stop
 and report any corpus or `--jvd` line it newly rejects.
-Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_two_keys_are_taken_in_order`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_missing_or_further_value_is_rejected`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_name_is_not_a_keyword`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_choice_declared_first_goes_either_side`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_name_keyed_grammar_is_byte_identical`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_device_probe_lines`, `tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_an_as_list_reference`, `tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones`
+Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_two_keys_are_taken_in_order`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_missing_or_further_value_is_rejected`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_name_is_not_a_keyword`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_keyword_goes_either_side`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_name_keyed_grammar_is_byte_identical`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_device_probe_lines`, `tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_an_as_list_reference`, `tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_numeric_list_type_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_a_numeric_list_type_is_rejected`
 
 #### Scenario: The device probe's lines
 
@@ -70,5 +70,5 @@ Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test
 
 - **WHEN** the grammar is generated for a list keyed `(address, (exact,
   orlonger))` with `accept` as a child
-- **THEN** `exact` or `orlonger` is required after the address and before
-  `accept`, and no rule offers `"address"` as a keyword
+- **THEN** `exact` or `orlonger` is required on either side of the address
+  and before `accept`, and no rule offers `"address"` as a keyword

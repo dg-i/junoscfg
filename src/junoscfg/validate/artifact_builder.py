@@ -243,25 +243,9 @@ class _ValueFlag(NamedTuple):
     decode: Callable[[Any], str]
 
 
-def _encode_flat_entry(payload: str) -> dict[str, str]:
-    """``<key>:<position>`` to ``{"k": key, "p": position}``.
-
-    The key may be empty: `_fix_flat_entry_keys` writes
-    ``flat-entry::values-only`` where the entry has no key at all.
-    """
-    key, position = payload.split(":", 1)
-    return {"k": key, "p": position}
-
-
 _VALUE_FLAG_KEYS: dict[str, _ValueFlag] = {
     # `transparent:interface` -> "t": "interface"
     "t": _ValueFlag("transparent:", str, str),
-    # `flat-entry:<key>:<position>` -> "fe": {"k": key, "p": position}
-    "fe": _ValueFlag(
-        "flat-entry:",
-        _encode_flat_entry,
-        lambda value: f"{value['k']}:{value['p']}",
-    ),
 }
 
 
@@ -314,7 +298,8 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         pk: true if positional key (nesting)
         pkf: true if positional key (flat/non-nesting)
         fd: true if flat dict element
-        fe: {"k": key, "p": position} for flat entry config
+        k: the entry's key fields in declared order, a choice of identifiers
+           as a nested list; omitted where the one key is ``name``
         frnk: true if freeform nk key
         u: true if the statement is valid at every hierarchy level
         e: index into root _enums dedup table
@@ -362,6 +347,9 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
     if node.type_ref:
         d["tr"] = node.type_ref
 
+    if node.key_fields:
+        d["k"] = [list(f) if isinstance(f, tuple) else f for f in node.key_fields]
+
     if node.children:
         d["c"] = {name: _serialize_node(child, state) for name, child in node.children.items()}
 
@@ -406,6 +394,7 @@ def _deserialize_node(
     node.is_list = bool(d.get("L")) or bool(d.get("ll"))
     node.is_mandatory = bool(d.get("m"))
     node.type_ref = d.get("tr")
+    node.key_fields = tuple(tuple(f) if isinstance(f, list) else f for f in d.get("k", ()))
 
     if "e" in d:
         node.enums = list(enums[d["e"]])
@@ -459,8 +448,8 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
 
     None of these reaches ``generate_lark_grammar``, which reads only ``name``,
     ``children``, ``is_leaf``, ``is_list``, ``is_presence``, ``type_ref`` and
-    the ``nokeyword``, ``freeform-nk``, ``flat-dict`` and ``flat-entry`` flags —
-    all of which survive. ``type_ref`` is how a policy-algebra slot is told
+    the ``nokeyword``, ``freeform-nk`` and ``flat-dict`` flags, and
+    ``key_fields`` -- all of which survive. ``type_ref`` is how a policy-algebra slot is told
     apart from every other value slot.
 
     Args:

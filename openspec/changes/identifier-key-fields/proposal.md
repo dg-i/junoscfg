@@ -18,8 +18,8 @@ match type. `fe`, `values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the
 - One kernel helper, `entry_keys()`, answers the fields at every site. Identity
   is the key tuple. Set output writes the key values in declared order, then a
   line per other child: every device set shape, no flag. Structured output keeps
-  today's `o`. A key choice declared first goes either side of the other keys,
-  as on the device. XML input takes list shape from the tree, loaded lazily.
+  today's `o`. A key choice goes either side of the positional values, as on
+  the device. XML input takes list shape from the tree, loaded lazily.
 - One unplaced rule replaces the reader's silent branches: a statement the
   reader cannot complete (a partial key, a surplus after a terminal entry,
   `apply-groups` with a surplus) is kept whole, from its keyword, at its

@@ -328,17 +328,20 @@ def _build_from_complex_type(
     children: dict[str, SchemaNode] = {}
     combinator = Combinator.CHOICE
 
+    key_fields: tuple[str | tuple[str, ...], ...] = ()
     seq = ct.find(_xsd("sequence"))
     if seq is not None:
-        # Check if the sequence contains a single choice (dominant Junos pattern)
-        choice = seq.find(_xsd("choice"))
-        if choice is not None:
-            combinator = Combinator.CHOICE
-            _collect_children(choice, children, type_map, simple_type_map, seen_types)
-        else:
-            # Pure sequence
-            combinator = Combinator.SEQUENCE
-            _collect_children(seq, children, type_map, simple_type_map, seen_types)
+        # Every element the sequence declares, in declared order: the
+        # identifiers it opens with and every choice after them. Keeping only
+        # the first choice dropped the identifiers -- every list read as keyed
+        # `name`, and `control-as-list-type` was left childless -- and any
+        # second choice, route-filter's actions among them.
+        has_choice = seq.find(_xsd("choice")) is not None
+        combinator = Combinator.CHOICE if has_choice else Combinator.SEQUENCE
+        _collect_children(seq, children, type_map, simple_type_map, seen_types)
+        key_fields = _key_fields(seq)
+        if key_fields == ("name",):
+            key_fields = ()
 
     choice_direct = ct.find(_xsd("choice"))
     if choice_direct is not None and seq is None:
@@ -365,7 +368,41 @@ def _build_from_complex_type(
         is_mandatory=is_mandatory,
         flags=flags,
         type_ref=type_ref,
+        key_fields=key_fields,
     )
+
+
+def _is_identifier(element: etree._Element) -> bool:
+    """Whether the XSD marks *element* as an identifier of its entry."""
+    appinfo = element.find(f"{_xsd('annotation')}/{_xsd('appinfo')}")
+    if appinfo is None:
+        return False
+    if appinfo.find("identifier") is not None:
+        return True
+    return any((flag.text or "").strip() == "identifier" for flag in appinfo.iter("flag"))
+
+
+def _key_fields(seq: etree._Element) -> tuple[str | tuple[str, ...], ...]:
+    """The fields that key an entry of *seq*'s type, in declared order.
+
+    Each identifier element the sequence declares, and each choice whose every
+    element is an identifier as one field of alternatives -- route-filter's
+    match type, `then community`'s action.
+    """
+    fields: list[str | tuple[str, ...]] = []
+    for child in seq:
+        if not isinstance(child.tag, str):
+            continue
+        local = etree.QName(child.tag).localname
+        if local == "element" and child.get("name") and _is_identifier(child):
+            fields.append(child.get("name", ""))
+        elif local == "choice":
+            named = [el for el in child if isinstance(el.tag, str) and el.get("name")]
+            if named and all(
+                etree.QName(el.tag).localname == "element" and _is_identifier(el) for el in named
+            ):
+                fields.append(tuple(el.get("name", "") for el in named))
+    return tuple(fields)
 
 
 def _collect_children(

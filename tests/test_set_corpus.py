@@ -52,7 +52,6 @@ INTENTIONALLY_UNSUPPORTED = {
 #   merged    a rule merged from several tree positions offers one choice
 OVER_REJECTED = {
     "set groups foo snmp location": "merged",
-    "set system location dc-a": "merged",
     "set system name-server": "merged",
 }
 

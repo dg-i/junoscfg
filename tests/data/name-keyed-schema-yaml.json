@@ -1,0 +1,723 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "additionalProperties": false,
+ "description": "Validates Junos configuration hierarchy (structural only).",
+ "properties": {
+  "configuration": {
+   "additionalProperties": false,
+   "items": {
+    "type": [
+     "null",
+     "string"
+    ]
+   },
+   "patternProperties": {
+    "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+    "^@": {},
+    "^_ansible_": {},
+    "^_meta_": {}
+   },
+   "properties": {
+    "policy-options": {
+     "additionalProperties": false,
+     "items": {
+      "type": [
+       "null",
+       "string"
+      ]
+     },
+     "patternProperties": {
+      "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+      "^@": {},
+      "^_ansible_": {},
+      "^_meta_": {}
+     },
+     "properties": {
+      "community": {
+       "anyOf": [
+        {
+         "items": {
+          "additionalProperties": false,
+          "items": {
+           "type": [
+            "null",
+            "string"
+           ]
+          },
+          "patternProperties": {
+           "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+           "^@": {},
+           "^_ansible_": {},
+           "^_meta_": {}
+          },
+          "properties": {
+           "community-name": {},
+           "invert-match": {
+            "oneOf": [
+             {
+              "type": "null"
+             },
+             {
+              "type": "string"
+             },
+             {
+              "type": "array"
+             },
+             {
+              "additionalProperties": true,
+              "type": "object"
+             }
+            ]
+           },
+           "members": {},
+           "name": {}
+          },
+          "type": [
+           "object",
+           "null",
+           "array"
+          ]
+         },
+         "type": "array"
+        },
+        {
+         "additionalProperties": false,
+         "items": {
+          "type": [
+           "null",
+           "string"
+          ]
+         },
+         "patternProperties": {
+          "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+          "^@": {},
+          "^_ansible_": {},
+          "^_meta_": {}
+         },
+         "properties": {
+          "community-name": {},
+          "invert-match": {
+           "oneOf": [
+            {
+             "type": "null"
+            },
+            {
+             "type": "string"
+            },
+            {
+             "type": "array"
+            },
+            {
+             "additionalProperties": true,
+             "type": "object"
+            }
+           ]
+          },
+          "members": {},
+          "name": {}
+         },
+         "type": [
+          "object",
+          "null",
+          "array"
+         ]
+        }
+       ]
+      },
+      "policy-statement": {
+       "anyOf": [
+        {
+         "items": {
+          "additionalProperties": false,
+          "items": {
+           "type": [
+            "null",
+            "string"
+           ]
+          },
+          "patternProperties": {
+           "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+           "^@": {},
+           "^_ansible_": {},
+           "^_meta_": {}
+          },
+          "properties": {
+           "description": {},
+           "name": {},
+           "term": {
+            "anyOf": [
+             {
+              "items": {
+               "additionalProperties": false,
+               "items": {
+                "type": [
+                 "null",
+                 "string"
+                ]
+               },
+               "patternProperties": {
+                "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+                "^@": {},
+                "^_ansible_": {},
+                "^_meta_": {}
+               },
+               "properties": {
+                "accept": {
+                 "oneOf": [
+                  {
+                   "type": "null"
+                  },
+                  {
+                   "type": "string"
+                  },
+                  {
+                   "type": "array"
+                  },
+                  {
+                   "additionalProperties": true,
+                   "type": "object"
+                  }
+                 ]
+                },
+                "metric": {},
+                "name": {}
+               },
+               "type": [
+                "object",
+                "null",
+                "array"
+               ]
+              },
+              "type": "array"
+             },
+             {
+              "additionalProperties": false,
+              "items": {
+               "type": [
+                "null",
+                "string"
+               ]
+              },
+              "patternProperties": {
+               "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+               "^@": {},
+               "^_ansible_": {},
+               "^_meta_": {}
+              },
+              "properties": {
+               "accept": {
+                "oneOf": [
+                 {
+                  "type": "null"
+                 },
+                 {
+                  "type": "string"
+                 },
+                 {
+                  "type": "array"
+                 },
+                 {
+                  "additionalProperties": true,
+                  "type": "object"
+                 }
+                ]
+               },
+               "metric": {},
+               "name": {}
+              },
+              "type": [
+               "object",
+               "null",
+               "array"
+              ]
+             }
+            ]
+           }
+          },
+          "type": [
+           "object",
+           "null",
+           "array"
+          ]
+         },
+         "type": "array"
+        },
+        {
+         "additionalProperties": false,
+         "items": {
+          "type": [
+           "null",
+           "string"
+          ]
+         },
+         "patternProperties": {
+          "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+          "^@": {},
+          "^_ansible_": {},
+          "^_meta_": {}
+         },
+         "properties": {
+          "description": {},
+          "name": {},
+          "term": {
+           "anyOf": [
+            {
+             "items": {
+              "additionalProperties": false,
+              "items": {
+               "type": [
+                "null",
+                "string"
+               ]
+              },
+              "patternProperties": {
+               "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+               "^@": {},
+               "^_ansible_": {},
+               "^_meta_": {}
+              },
+              "properties": {
+               "accept": {
+                "oneOf": [
+                 {
+                  "type": "null"
+                 },
+                 {
+                  "type": "string"
+                 },
+                 {
+                  "type": "array"
+                 },
+                 {
+                  "additionalProperties": true,
+                  "type": "object"
+                 }
+                ]
+               },
+               "metric": {},
+               "name": {}
+              },
+              "type": [
+               "object",
+               "null",
+               "array"
+              ]
+             },
+             "type": "array"
+            },
+            {
+             "additionalProperties": false,
+             "items": {
+              "type": [
+               "null",
+               "string"
+              ]
+             },
+             "patternProperties": {
+              "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+              "^@": {},
+              "^_ansible_": {},
+              "^_meta_": {}
+             },
+             "properties": {
+              "accept": {
+               "oneOf": [
+                {
+                 "type": "null"
+                },
+                {
+                 "type": "string"
+                },
+                {
+                 "type": "array"
+                },
+                {
+                 "additionalProperties": true,
+                 "type": "object"
+                }
+               ]
+              },
+              "metric": {},
+              "name": {}
+             },
+             "type": [
+              "object",
+              "null",
+              "array"
+             ]
+            }
+           ]
+          }
+         },
+         "type": [
+          "object",
+          "null",
+          "array"
+         ]
+        }
+       ]
+      }
+     },
+     "type": [
+      "object",
+      "null",
+      "array"
+     ]
+    }
+   },
+   "type": [
+    "object",
+    "null",
+    "array"
+   ]
+  },
+  "policy-options": {
+   "additionalProperties": false,
+   "items": {
+    "type": [
+     "null",
+     "string"
+    ]
+   },
+   "patternProperties": {
+    "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+    "^@": {},
+    "^_ansible_": {},
+    "^_meta_": {}
+   },
+   "properties": {
+    "community": {
+     "anyOf": [
+      {
+       "items": {
+        "additionalProperties": false,
+        "items": {
+         "type": [
+          "null",
+          "string"
+         ]
+        },
+        "patternProperties": {
+         "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+         "^@": {},
+         "^_ansible_": {},
+         "^_meta_": {}
+        },
+        "properties": {
+         "community-name": {},
+         "invert-match": {
+          "oneOf": [
+           {
+            "type": "null"
+           },
+           {
+            "type": "string"
+           },
+           {
+            "type": "array"
+           },
+           {
+            "additionalProperties": true,
+            "type": "object"
+           }
+          ]
+         },
+         "members": {},
+         "name": {}
+        },
+        "type": [
+         "object",
+         "null",
+         "array"
+        ]
+       },
+       "type": "array"
+      },
+      {
+       "additionalProperties": false,
+       "items": {
+        "type": [
+         "null",
+         "string"
+        ]
+       },
+       "patternProperties": {
+        "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+        "^@": {},
+        "^_ansible_": {},
+        "^_meta_": {}
+       },
+       "properties": {
+        "community-name": {},
+        "invert-match": {
+         "oneOf": [
+          {
+           "type": "null"
+          },
+          {
+           "type": "string"
+          },
+          {
+           "type": "array"
+          },
+          {
+           "additionalProperties": true,
+           "type": "object"
+          }
+         ]
+        },
+        "members": {},
+        "name": {}
+       },
+       "type": [
+        "object",
+        "null",
+        "array"
+       ]
+      }
+     ]
+    },
+    "policy-statement": {
+     "anyOf": [
+      {
+       "items": {
+        "additionalProperties": false,
+        "items": {
+         "type": [
+          "null",
+          "string"
+         ]
+        },
+        "patternProperties": {
+         "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+         "^@": {},
+         "^_ansible_": {},
+         "^_meta_": {}
+        },
+        "properties": {
+         "description": {},
+         "name": {},
+         "term": {
+          "anyOf": [
+           {
+            "items": {
+             "additionalProperties": false,
+             "items": {
+              "type": [
+               "null",
+               "string"
+              ]
+             },
+             "patternProperties": {
+              "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+              "^@": {},
+              "^_ansible_": {},
+              "^_meta_": {}
+             },
+             "properties": {
+              "accept": {
+               "oneOf": [
+                {
+                 "type": "null"
+                },
+                {
+                 "type": "string"
+                },
+                {
+                 "type": "array"
+                },
+                {
+                 "additionalProperties": true,
+                 "type": "object"
+                }
+               ]
+              },
+              "metric": {},
+              "name": {}
+             },
+             "type": [
+              "object",
+              "null",
+              "array"
+             ]
+            },
+            "type": "array"
+           },
+           {
+            "additionalProperties": false,
+            "items": {
+             "type": [
+              "null",
+              "string"
+             ]
+            },
+            "patternProperties": {
+             "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+             "^@": {},
+             "^_ansible_": {},
+             "^_meta_": {}
+            },
+            "properties": {
+             "accept": {
+              "oneOf": [
+               {
+                "type": "null"
+               },
+               {
+                "type": "string"
+               },
+               {
+                "type": "array"
+               },
+               {
+                "additionalProperties": true,
+                "type": "object"
+               }
+              ]
+             },
+             "metric": {},
+             "name": {}
+            },
+            "type": [
+             "object",
+             "null",
+             "array"
+            ]
+           }
+          ]
+         }
+        },
+        "type": [
+         "object",
+         "null",
+         "array"
+        ]
+       },
+       "type": "array"
+      },
+      {
+       "additionalProperties": false,
+       "items": {
+        "type": [
+         "null",
+         "string"
+        ]
+       },
+       "patternProperties": {
+        "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+        "^@": {},
+        "^_ansible_": {},
+        "^_meta_": {}
+       },
+       "properties": {
+        "description": {},
+        "name": {},
+        "term": {
+         "anyOf": [
+          {
+           "items": {
+            "additionalProperties": false,
+            "items": {
+             "type": [
+              "null",
+              "string"
+             ]
+            },
+            "patternProperties": {
+             "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+             "^@": {},
+             "^_ansible_": {},
+             "^_meta_": {}
+            },
+            "properties": {
+             "accept": {
+              "oneOf": [
+               {
+                "type": "null"
+               },
+               {
+                "type": "string"
+               },
+               {
+                "type": "array"
+               },
+               {
+                "additionalProperties": true,
+                "type": "object"
+               }
+              ]
+             },
+             "metric": {},
+             "name": {}
+            },
+            "type": [
+             "object",
+             "null",
+             "array"
+            ]
+           },
+           "type": "array"
+          },
+          {
+           "additionalProperties": false,
+           "items": {
+            "type": [
+             "null",
+             "string"
+            ]
+           },
+           "patternProperties": {
+            "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$": {},
+            "^@": {},
+            "^_ansible_": {},
+            "^_meta_": {}
+           },
+           "properties": {
+            "accept": {
+             "oneOf": [
+              {
+               "type": "null"
+              },
+              {
+               "type": "string"
+              },
+              {
+               "type": "array"
+              },
+              {
+               "additionalProperties": true,
+               "type": "object"
+              }
+             ]
+            },
+            "metric": {},
+            "name": {}
+           },
+           "type": [
+            "object",
+            "null",
+            "array"
+           ]
+          }
+         ]
+        }
+       },
+       "type": [
+        "object",
+        "null",
+        "array"
+       ]
+      }
+     ]
+    }
+   },
+   "type": [
+    "object",
+    "null",
+    "array"
+   ]
+  }
+ },
+ "title": "Junos Configuration (YAML format)",
+ "type": "object"
+}

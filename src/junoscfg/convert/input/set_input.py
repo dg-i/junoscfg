@@ -9,8 +9,9 @@ from __future__ import annotations
 from typing import Any
 
 from junoscfg.display import (
-    ENTRY_KEY_OVERRIDES,
     KEY_ALIASES,
+    entry_key_names,
+    entry_keys,
     load_schema_tree,
     statement_name_spellings,
 )
@@ -151,14 +152,83 @@ def _parse_value(token: str) -> str:
 # ── Dict entry helpers ───────────────────────────────────────────────
 
 
-def _find_or_create_entry(lst: list[Any], name: str, key: str = "name") -> dict[str, Any]:
-    """Find existing list entry with matching key value, or create new one."""
+def _find_or_create_entry(lst: list[Any], key: dict[str, Any]) -> dict[str, Any]:
+    """The entry of *lst* whose key fields hold *key*, created if there is none.
+
+    An entry's identity is its whole key: `as-list X` and `as-list-group X`
+    are two entries, as `route-filter A exact` and `route-filter A orlonger`
+    are.
+    """
     for item in lst:
-        if isinstance(item, dict) and item.get(key) == name:
+        if isinstance(item, dict) and all(item.get(k) == v for k, v in key.items()):
             return item
-    entry: dict[str, Any] = {key: name}
+    entry: dict[str, Any] = dict(key)
     lst.append(entry)
     return entry
+
+
+def _statement_children(schema_node: dict[str, Any]) -> dict[str, Any]:
+    """The children a statement inside *schema_node* may name by keyword.
+
+    Inside a list entry its key fields are positional, never keywords:
+    `set system ntp server 198.51.100.10 address ...` names no `address`.
+    """
+    children: dict[str, Any] = schema_node.get("c", {})
+    if not schema_node.get("L"):
+        return children
+    keys = entry_key_names(schema_node)
+    return {name: node for name, node in children.items() if name not in keys}
+
+
+def _read_key(
+    list_node: dict[str, Any], tokens: list[str], j: int
+) -> tuple[dict[str, Any], int] | None:
+    """The key of an entry of *list_node* read from ``tokens[j:]``, and where it ends.
+
+    One token per value field; a choice of identifiers as one of its
+    keywords, with its value where the alternative is a leaf. A field given by
+    its keyword may stand before or after the positional values, whatever the
+    declared order: the device accepts `then community SAMPLE-COMM add` and
+    `route-filter exact 198.51.100.0/24` (device probe, vMX 23.2R2-S7.5). The
+    key comes back in declared order, the device's. None when the tokens run
+    out first, or a choice field meets a token that is none of its keywords:
+    a statement the device rejects.
+    """
+    children = list_node.get("c", {})
+    fields = list(entry_keys(list_node))
+    choices = [field for field in fields if isinstance(field, tuple)]
+    values = [field for field in fields if not isinstance(field, tuple)]
+    leads = j < len(tokens) and any(KEY_ALIASES.get(tokens[j], tokens[j]) in c for c in choices)
+    read_order = choices + values if leads else values + choices
+    found: dict[str | tuple[str, ...], tuple[str, Any]] = {}
+    for field in read_order:
+        if j >= len(tokens):
+            return None
+        token = tokens[j]
+        if not isinstance(field, tuple):
+            found[field] = (field, _parse_value(token))
+            j += 1
+            continue
+        if KEY_ALIASES.get(token, token) not in field:
+            return None
+        if children.get(KEY_ALIASES.get(token, token), {}).get("l"):
+            if j + 1 >= len(tokens):
+                return None
+            found[field] = (token, _parse_value(tokens[j + 1]))
+            j += 2
+        else:
+            found[field] = (token, [None])
+            j += 1
+    return dict(found[field] for field in fields), j
+
+
+def _keep_whole(current: dict[str, Any], tokens: list[str], i: int) -> None:
+    """Keep ``tokens[i:]`` as one statement the reader could not place.
+
+    Field validation reports it `UNPLACED` and every writer reproduces it, so
+    nothing of a line the reader cannot complete is applied or dropped.
+    """
+    current.setdefault(" ".join(_parse_value(t) for t in tokens[i:]), True)
 
 
 # ── Core token walking ──────────────────────────────────────────────
@@ -172,22 +242,25 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
 
     while i < len(tokens):
         token = tokens[i]
-        children = current_schema.get("c", {})
+        children = _statement_children(current_schema)
 
-        # Apply-groups (not in the schema, handled specially)
+        # Apply-groups (not in the schema, handled specially). It takes one
+        # group; `set apply-groups G1 G2` is a statement the device rejects.
         if token in ("apply-groups", "apply-groups-except"):
-            if i + 1 < len(tokens):
-                val = _parse_value(tokens[i + 1])
-                lst = current.setdefault(token, [])
-                if val not in lst:
-                    lst.append(val)
+            if i + 2 != len(tokens):
+                _keep_whole(current, tokens, i)
+                return
+            val = _parse_value(tokens[i + 1])
+            lst = current.setdefault(token, [])
+            if val not in lst:
+                lst.append(val)
             return
 
         # Apply-macro (not in the schema)
         if token == "apply-macro" and i + 1 < len(tokens):
             name = _parse_value(tokens[i + 1])
             lst = current.setdefault("apply-macro", [])
-            entry = _find_or_create_entry(lst, name)
+            entry = _find_or_create_entry(lst, {"name": name})
             i += 2
             while i < len(tokens):
                 k = _parse_value(tokens[i])
@@ -211,7 +284,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                 tc_child = children[transparent]
                 name = _parse_value(token)
                 lst = current.setdefault(transparent, [])
-                entry = _find_or_create_entry(lst, name)
+                entry = _find_or_create_entry(lst, {"name": name})
                 i += 1
                 current = entry
                 current_schema = tc_child
@@ -250,7 +323,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     continue
                 name = _parse_value(token)
                 lst = current.setdefault(cname, [])
-                entry = _find_or_create_entry(lst, name)
+                entry = _find_or_create_entry(lst, {"name": name})
                 i += 1
                 if i < len(tokens):
                     current = entry
@@ -279,13 +352,12 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                     tc_node = parent_node.get("c", {}).get(tc_name)
                     if not tc_node or not tc_node.get("L"):
                         continue
-                    tc_children = tc_node.get("c", {})
-                    if next_key in tc_children:
+                    if next_key in _statement_children(tc_node):
                         # Match — descend into parent → transparent list → entry
                         name = _parse_value(token)
                         parent = current.setdefault(parent_key, {})
                         lst = parent.setdefault(tc_name, [])
-                        entry = _find_or_create_entry(lst, name)
+                        entry = _find_or_create_entry(lst, {"name": name})
                         i += 1
                         current = entry
                         current_schema = tc_node
@@ -295,68 +367,43 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
                 continue
 
             # Unknown token — join remaining as a single key
-            remaining = " ".join(_parse_value(t) for t in tokens[i:])
-            current[remaining] = True
+            _keep_whole(current, tokens, i)
             return
 
         child = children[schema_key]
 
-        # Named list (check before leaf/presence — nodes with L+p must use L)
+        # Named list (check before leaf/presence — nodes with L+p must use L).
+        # The key fields come from the tree, one token each. A key the tokens
+        # cannot complete, or a token after an entry that has nothing but its
+        # key, is a statement the device rejects: kept whole, from here.
         if child.get("L"):
-            has_children = bool(child.get("c"))
-            if i + 1 < len(tokens):
-                name = _parse_value(tokens[i + 1])
-                lst = current.setdefault(token, [])
-                fe = child.get("fe")
-                entry_key = fe["k"] if fe and fe["k"] else "name"
-                if has_children and child.get("o") and name in child.get("c", {}):
-                    # Action-first pattern: "community add VALUE"
-                    # The next token is a schema child (action keyword), not the entry name.
-                    action = name
-                    action_node = child["c"][action]
-                    if i + 2 < len(tokens):
-                        real_name = _parse_value(tokens[i + 2])
-                        entry_dict = {ENTRY_KEY_OVERRIDES["community"]: real_name}
-                        entry_dict[action] = [None] if action_node.get("p") else True
-                        lst.append(entry_dict)
-                        i += 3
-                        if i < len(tokens):
-                            # More tokens after the value — continue walking
-                            current = entry_dict
-                            current_schema = child
-                            continue
-                    else:
-                        # Just "community add" with no value
-                        entry_dict = {action: [None] if action_node.get("p") else True}
-                        lst.append(entry_dict)
-                    return
-                elif has_children:
-                    entry = _find_or_create_entry(lst, name, entry_key)
-                    i += 2
-                    if i < len(tokens):
-                        current = entry
-                        current_schema = child
-                        continue
-                    # No more tokens — entry exists with just the key
-                    return
-                elif fe:
-                    # Flat entry without schema children (e.g. attributes-match).
-                    # Store all remaining tokens as ordered values so the
-                    # values-only output handler can reconstruct the line.
-                    entry_dict: dict[str, Any] = {entry_key: name}
-                    for vn, j in enumerate(range(i + 2, len(tokens))):
-                        entry_dict[f"_v{vn}"] = _parse_value(tokens[j])
-                    lst.append(entry_dict)
-                    return
-                else:
-                    _find_or_create_entry(lst, name, entry_key)
-                    return
-            else:
-                if child.get("p"):
-                    current[token] = [None]
-                else:
+            if i + 1 == len(tokens):
+                # A bare list keyword. A list of names alone stands bare, as
+                # the device brings it into being (`snmp filter-interfaces
+                # interfaces`); a list keyed otherwise does not, and the bare
+                # statement is kept as it was written.
+                if entry_keys(child) != ("name",):
+                    current[token] = None
+                elif _statement_children(child):
                     current.setdefault(token, [])
+                else:
+                    current[token] = [None]
                 return
+            read = _read_key(child, tokens, i + 1)
+            if read is None:
+                _keep_whole(current, tokens, i)
+                return
+            key, after = read
+            if after < len(tokens) and not _statement_children(child):
+                _keep_whole(current, tokens, i)
+                return
+            entry = _find_or_create_entry(current.setdefault(token, []), key)
+            if after == len(tokens):
+                return
+            current = entry
+            current_schema = child
+            i = after
+            continue
 
         # Leaf node (accumulate repeated values)
         if child.get("l"):
@@ -404,7 +451,7 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
 
         # A schema node of no type the reader knows: keep the line whole from
         # here, as the unknown-token path does, rather than one token of it.
-        current[" ".join(_parse_value(t) for t in tokens[i:])] = True
+        _keep_whole(current, tokens, i)
         return
 
 
@@ -429,7 +476,7 @@ def _apply_meta(
 
     while i < len(tokens):
         token = tokens[i]
-        children = current_schema.get("c", {})
+        children = _statement_children(current_schema)
 
         # Resolve key alias for schema lookup (e.g., ieee-802.3ad → 802.3ad)
         schema_key = KEY_ALIASES.get(token, token)
@@ -441,7 +488,7 @@ def _apply_meta(
                 tc_child = children[transparent]
                 name = _parse_value(token)
                 lst = current.setdefault(transparent, [])
-                entry = _find_or_create_entry(lst, name)
+                entry = _find_or_create_entry(lst, {"name": name})
                 i += 1
                 if i >= len(tokens):
                     entry.setdefault("@", {})[attr_key] = attr_value
@@ -457,7 +504,7 @@ def _apply_meta(
                     continue
                 name = _parse_value(token)
                 lst = current.setdefault(cname, [])
-                entry = _find_or_create_entry(lst, name)
+                entry = _find_or_create_entry(lst, {"name": name})
                 i += 1
                 if i >= len(tokens):
                     entry.setdefault("@", {})[attr_key] = attr_value
@@ -483,12 +530,11 @@ def _apply_meta(
                     tc_node = parent_node.get("c", {}).get(tc_name)
                     if not tc_node or not tc_node.get("L"):
                         continue
-                    tc_children = tc_node.get("c", {})
-                    if next_key in tc_children:
+                    if next_key in _statement_children(tc_node):
                         name = _parse_value(token)
                         parent = current.setdefault(parent_key, {})
                         lst = parent.setdefault(tc_name, [])
-                        entry = _find_or_create_entry(lst, name)
+                        entry = _find_or_create_entry(lst, {"name": name})
                         i += 1
                         if i >= len(tokens):
                             entry.setdefault("@", {})[attr_key] = attr_value
@@ -542,14 +588,11 @@ def _apply_meta(
                 sub.setdefault("@", {})[attr_key] = attr_value
             return
 
-        # Named list: descend into entry
-        if child.get("L") and i + 1 < len(tokens):
-            name = _parse_value(tokens[i + 1])
-            lst = current.setdefault(token, [])
-            fe = child.get("fe")
-            entry_key = fe["k"] if fe and fe["k"] else "name"
-            entry = _find_or_create_entry(lst, name, entry_key)
-            i += 2
+        # Named list: descend into the entry its whole key names
+        read = _read_key(child, tokens, i + 1) if child.get("L") else None
+        if read is not None:
+            key, i = read
+            entry = _find_or_create_entry(current.setdefault(token, []), key)
             if i >= len(tokens):
                 entry.setdefault("@", {})[attr_key] = attr_value
                 return

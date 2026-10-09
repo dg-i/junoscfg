@@ -10,15 +10,15 @@ from __future__ import annotations
 
 from junoscfg.display.config_store import ConfigStore, filter_structured_by_path
 from junoscfg.display.constants import (
-    ENTRY_KEY_OVERRIDES,
     INTEGER_TYPES,
     KEY_ALIASES,
     UNIVERSAL_STATEMENTS,
     UNQUOTABLE_TYPES,
     artifacts_dir,
+    entry_key_names,
+    entry_keys,
     enum_is_fragment,
     find_artifact,
-    get_flat_entry_config,
     get_transparent_child,
     is_flat_dict,
     is_freeform_nk,
@@ -46,7 +46,6 @@ from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_dict, xml_to_ya
 from junoscfg.display.value_format import format_value
 
 __all__ = [
-    "ENTRY_KEY_OVERRIDES",
     "INTEGER_TYPES",
     "KEY_ALIASES",
     "UNIVERSAL_STATEMENTS",
@@ -63,7 +62,6 @@ __all__ = [
     "filter_yaml_by_path",
     "detect_format",
     "format_value",
-    "get_flat_entry_config",
     "get_transparent_child",
     "is_display_set",
     "is_flat_dict",
@@ -74,6 +72,8 @@ __all__ = [
     "open_artifact_write",
     "read_artifact_text",
     "artifacts_dir",
+    "entry_key_names",
+    "entry_keys",
     "enum_is_fragment",
     "find_artifact",
     "resolve_artifacts_dir",

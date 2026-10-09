@@ -131,7 +131,6 @@ class TestArtifactBuilder:
 # arrives without one.
 _VALUE_FLAG_SAMPLES = {
     "t": "interface",
-    "fe": "k:last",
 }
 
 
@@ -157,8 +156,12 @@ def _rich_tree() -> SchemaNode:
         pattern="^[a-z]+$",
         type_ref="string-type",
     )
-    term = SchemaNode(name="term", is_list=True, children={"name": name_leaf})
-    term.flags.update({"oneliner", "positional-key", "flat-entry:k:0"})
+    # Keyed by an identifier and a choice of identifiers (identifier-key-fields:
+    # `k` replaced the retired `flat-entry:<key>:<position>` value flag).
+    term = SchemaNode(
+        name="term", is_list=True, children={"name": name_leaf}, key_fields=("k", ("a", "b"))
+    )
+    term.flags.update({"oneliner", "positional-key"})
 
     negated = SchemaNode(name="not-this", is_leaf=True, pattern="^bad$", pattern_negated=True)
     extras = SchemaNode(name="extras", children={"not-this": negated, "term": term})
@@ -201,7 +204,8 @@ class TestStructureTreeRoundTrip:
         assert vlan.flags == {"nokeyword", "freeform-nk"}
 
         term = back.children["extras"].children["term"]
-        assert term.flags == {"oneliner", "positional-key", "flat-entry:k:0"}
+        assert term.flags == {"oneliner", "positional-key"}
+        assert term.key_fields == ("k", ("a", "b"))
         name = term.children["name"]
         assert name.is_mandatory and name.pattern == "^[a-z]+$"
         assert name.type_ref == "string-type"

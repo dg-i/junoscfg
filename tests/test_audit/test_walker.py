@@ -341,6 +341,10 @@ class TestLogicalSystems:
 
 
 class TestFlatEntryKeys:
+    """Rewritten to the keyed form (identifier-key-fields, owner answer 1): the
+    key comes from the tree's key fields, and the entry's CLI path is its whole
+    key as written, the match type or action keyword included."""
+
     def test_prefix_list_filter_fe_key(self, make_ir: Any) -> None:
         ir = make_ir(
             "set policy-options policy-statement p1 term 1 from prefix-list-filter plf-a orlonger"
@@ -348,14 +352,14 @@ class TestFlatEntryKeys:
         occ = one(occs(ir), "plf-a")
         assert occ.kind == "entry-key"
         assert occ.schema_path[-2:] == ("from", "prefix-list-filter")
-        assert occ.path[-2:] == ("prefix-list-filter", "plf-a")
+        assert occ.path[-3:] == ("prefix-list-filter", "plf-a", "orlonger")
 
     def test_community_name_fallback_key(self, make_ir: Any) -> None:
         ir = make_ir("set policy-options policy-statement p1 term 1 then community add comm-a")
         occ = one(occs(ir), "comm-a")
         assert occ.kind == "entry-key"
         assert occ.schema_path[-2:] == ("then", "community")
-        assert occ.path[-2:] == ("community", "comm-a")
+        assert occ.path[-3:] == ("community", "add", "comm-a")
 
 
 class TestUnknownPositions:

@@ -41,7 +41,7 @@ def collect_occurrences(config: dict[str, Any], schema_root: dict[str, Any]) -> 
         All occurrences in tree order.
     """
     collector: list[Occurrence] = []
-    _walk_dict(config, schema_root, (), (), None, collector)
+    _walk_dict(config, schema_root, (), (), frozenset(), collector)
     return collector
 
 
@@ -86,16 +86,16 @@ def _walk_dict(
     schema_node: dict[str, Any],
     match_path: tuple[str, ...],
     cli_path: tuple[str, ...],
-    skip_key: str | None,
+    skip_keys: frozenset[str],
     collector: list[Occurrence],
 ) -> None:
-    """Walk one IR dict level against its schema node."""
+    """Walk one IR dict level against its schema node, past *skip_keys*."""
     from junoscfg.display import resolve_key_alias
 
     children = schema_node.get("c", {})
 
     for key, value in obj.items():
-        if key.startswith("@") or key == skip_key:
+        if key.startswith("@") or key in skip_keys:
             continue
 
         if key in _APPLY_GROUPS_KEYS:
@@ -143,7 +143,7 @@ def _walk_dict(
                         child_schema,
                         match_path + (key,),
                         cli_path + (key,),
-                        None,
+                        frozenset(),
                         collector,
                     )
             elif isinstance(value, list):
@@ -182,12 +182,19 @@ def _walk_dict(
 
         # Plain container
         if isinstance(value, dict):
-            _walk_dict(value, child_schema, match_path + (key,), cli_path + (key,), None, collector)
+            _walk_dict(
+                value, child_schema, match_path + (key,), cli_path + (key,), frozenset(), collector
+            )
         elif isinstance(value, list):
             for item in value:
                 if isinstance(item, dict):
                     _walk_dict(
-                        item, child_schema, match_path + (key,), cli_path + (key,), None, collector
+                        item,
+                        child_schema,
+                        match_path + (key,),
+                        cli_path + (key,),
+                        frozenset(),
+                        collector,
                     )
                 else:
                     _emit(collector, item, cli_path + (key,), match_path + (key,), "unknown")
@@ -218,9 +225,18 @@ def _walk_entries(
     cli_path: tuple[str, ...],
     collector: list[Occurrence],
 ) -> None:
-    """Walk the entries of a named list (or transparent container content)."""
+    """Walk the entries of a named list (or transparent container content).
+
+    The key fields come from the tree through `entry_keys`; no spelling
+    decides them.
+    """
+    from junoscfg.display import entry_key_names, entry_keys
+
     entries = value if isinstance(value, list) else [value]
     list_types = _schema_types(list_schema.get("tr"))
+    keys = entry_keys(list_schema)
+    value_fields = [field for field in keys if isinstance(field, str)]
+    children = list_schema.get("c", {})
 
     for entry in entries:
         if entry is None:
@@ -238,34 +254,46 @@ def _walk_entries(
             )
             continue
 
-        key_field = _entry_key_field(list_schema, entry)
-        entry_cli_path = cli_path
-        if key_field is not None:
-            name = entry.get(key_field)
+        entry_cli_path = cli_path + _key_tokens(keys, entry)
+        if len(value_fields) == 1:
+            # One value field, beside any key choice: it names the entry.
+            name = entry.get(value_fields[0])
             if isinstance(name, str | int | float):
-                name_str = str(name)
-                entry_cli_path = cli_path + (name_str,)
-                _emit(collector, name_str, entry_cli_path, match_path, "entry-key", list_types)
-        _walk_dict(entry, list_schema, match_path, entry_cli_path, key_field, collector)
+                _emit(collector, str(name), entry_cli_path, match_path, "entry-key", list_types)
+        else:
+            # Several value fields: each is a leaf under its own tree node. An
+            # enum field is a keyword, never a name -- `_walk_leaf` records
+            # nothing for it -- and its value selects the namespace of the
+            # others: `as-list` and `as-list-group` name two kinds of object.
+            namespace = tuple(
+                str(entry[f])
+                for f in value_fields
+                if f in entry and "e" in children.get(f, {}) and isinstance(entry[f], str)
+            )
+            for f in value_fields:
+                if f in entry and f in children:
+                    _walk_leaf(
+                        entry[f],
+                        children[f],
+                        list_schema,
+                        match_path + namespace + (f,),
+                        entry_cli_path + (f,),
+                        collector,
+                    )
+        _walk_dict(
+            entry, list_schema, match_path, entry_cli_path, entry_key_names(list_schema), collector
+        )
 
 
-def _entry_key_field(list_schema: dict[str, Any], entry: dict[str, Any]) -> str | None:
-    """Determine which entry field holds the object name.
-
-    Prefers the schema's flat-entry key (``fe.k``), then the implicit
-    ``name`` key, then ``community-name`` (hardcoded in the set parser and
-    dict walker because the schema node carries no ``fe`` flag there).
-    """
-    from junoscfg.display import get_flat_entry_config
-
-    fe = get_flat_entry_config(list_schema)
-    if fe is not None and fe[0] and fe[0] in entry:
-        return fe[0]
-    if "name" in entry:
-        return "name"
-    if "community-name" in entry:
-        return "community-name"
-    return None
+def _key_tokens(keys: tuple[str | tuple[str, ...], ...], entry: dict[str, Any]) -> tuple[str, ...]:
+    """The tokens an entry's key is written with: values, and a choice's keyword."""
+    tokens: list[str] = []
+    for field in keys:
+        if isinstance(field, tuple):
+            tokens.extend(alternative for alternative in field if alternative in entry)
+        elif isinstance(entry.get(field), str | int | float):
+            tokens.append(str(entry[field]))
+    return tuple(tokens)
 
 
 def _walk_leaf(

@@ -48,6 +48,14 @@ def _fix_parent_keys(node: SchemaNode, old_key: str, new_key: str) -> None:
     if old_key in node.children:
         child = node.children.pop(old_key)
         node.children[new_key] = child
+        # The key fields name children, so a renamed child is renamed there
+        # too: `then community`'s action choice holds `equal-literal`.
+        node.key_fields = tuple(
+            tuple(new_key if n == old_key else n for n in f)
+            if isinstance(f, tuple)
+            else (new_key if f == old_key else f)
+            for f in node.key_fields
+        )
     for child in list(node.children.values()):
         _fix_parent_keys(child, old_key, new_key)
 
@@ -137,11 +145,16 @@ def _fix_groups(root: SchemaNode) -> bool:
     )
 
     # Create "group" as a named list child (like interface under interfaces)
+    # Keyed `name`, as every list the XSD declares carries its key as a leaf
+    # child: the anonymizer offers a group's name to the rules through it.
     group_node = SchemaNode(
         name="group",
         is_list=True,
         combinator=Combinator.CHOICE,
-        children={"when": when_node},
+        children={
+            "name": SchemaNode(name="name", is_leaf=True, is_key=True, flags={"nokeyword"}),
+            "when": when_node,
+        },
     )
     # Copy top-level config children into group (not groups)
     for name, child in root.children.items():
@@ -150,19 +163,10 @@ def _fix_groups(root: SchemaNode) -> bool:
 
     # groups is a container, NOT a named list
     groups.is_list = False
+    groups.is_presence = False
     groups.is_key = False
     groups.combinator = Combinator.SEQUENCE
     groups.children = {"group": group_node}
-    return True
-
-
-# ── Fix Group B2: Missing Flags ───────────────────────────────────────
-
-
-def _fix_attributes_match_oneliner(root: SchemaNode) -> bool:
-    """Mark attributes-match as oneliner (flat entry)."""
-    for node in find_all(root, "attributes-match"):
-        node.flags.add("oneliner")
     return True
 
 
@@ -657,29 +661,19 @@ def _fix_flat_dict_elements(root: SchemaNode) -> bool:
 
 
 def _fix_flat_entry_keys(root: SchemaNode) -> bool:
-    """Set flat-entry and oneliner flags on named lists rendered as oneliners.
+    """Set the oneliner flag on the lists structured output writes on one line.
 
-    All flat entry elements get the "oneliner" flag (→ "o" in schema).
-    Elements with positional key config also get "flat-entry:{key}:{position}".
-    Positions: "first", "last", "values-only"
+    `route-filter 198.51.100.0/24 exact accept;`, not a block. The XSD flags
+    these `oneliner-plus`, which the structure tree does not carry, and
+    `attributes-match` `oneliner`. Their keys are the identifiers the XSD
+    declares, which the parser records; the `flat-entry:<key>:<position>`
+    flag that stood in for them is retired.
     """
-    # Elements with flat-entry config (positional key + position)
-    mapping = {
-        "attributes-match": ("", "values-only"),
-        "route-filter": ("address", "first"),
-        "prefix-list-filter": ("list_name", "first"),
-    }
-    # All flat entry elements get oneliner (includes source-address-filter
-    # which has no flat-entry config but still renders as a oneliner)
-    oneliner_names = list(mapping.keys()) + ["source-address-filter"]
     found = False
-    for name in oneliner_names:
+    for name in ("attributes-match", "route-filter", "prefix-list-filter", "source-address-filter"):
         for node in find_all(root, name):
             node.flags.add("oneliner")
             found = True
-    for elem_name, (key, position) in mapping.items():
-        for node in find_all(root, elem_name):
-            node.flags.add(f"flat-entry:{key}:{position}")
     return found
 
 
@@ -731,15 +725,6 @@ ALL_FIXES: list[XsdFix] = [
         _ALL_TARGETS,
         _fix_groups,
     ),
-    # Group B2: Missing flags
-    XsdFix(
-        "attributes-match-oneliner",
-        "missing-flag",
-        "Mark attributes-match as oneliner (flat entry)",
-        _ALL_TARGETS,
-        _fix_attributes_match_oneliner,
-    ),
-    # Group C: Literal symbol names
     XsdFix(
         "literal-equal",
         "wrong-name",
@@ -1003,7 +988,7 @@ ALL_FIXES: list[XsdFix] = [
     XsdFix(
         "flat-entry-keys",
         "conversion-hint",
-        "Set flat-entry flag on named lists rendered as oneliners",
+        "Set oneliner flag on the filter lists rendered as oneliners",
         _ALL_TARGETS,
         _fix_flat_entry_keys,
     ),

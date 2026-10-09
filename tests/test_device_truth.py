@@ -251,3 +251,50 @@ def test_unexplained_structured_shapes_are_pinned() -> None:
         )
         assert case["junoscfg"] in rendered, case["case"]
         assert case["device"] not in rendered, f"{case['case']}: no longer a difference"
+
+
+# ── identifier-key-fields, device round 4: route-filter identity ─────
+#
+# `keyed-entries-route-filter.*`: R, one address with two match types, is two
+# entries; S, `exact accept` then `exact metric 10` on one address, is one
+# entry. Input acceptance and IR only, not structured layout (owner ruling).
+# The device's JSON writes `metric` as a number, which the set and XML readers
+# hold as text: numeric JSON normalization is outside this change, so those
+# doors are compared with the device's numbers as text.
+
+
+def _as_text(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _as_text(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_as_text(v) for v in obj]
+    if isinstance(obj, (int, float)) and not isinstance(obj, bool):
+        return str(obj)
+    return obj
+
+
+def test_route_filter_entries_are_keyed_by_address_and_match_type() -> None:
+    device = _device("route-filter")
+    assert _ir(_door_source(KEYED_DIR / "keyed-entries-route-filter.json"), Format.JSON) == device
+    for suffix in (".set", ".xml"):
+        path = KEYED_DIR / f"keyed-entries-route-filter{suffix}"
+        assert _ir(path.read_text(encoding="utf-8"), _DOORS[suffix]) == _as_text(device), suffix
+    rendered = convert_config(
+        json.dumps({"configuration": device}),
+        from_format=Format.JSON,
+        to_format=Format.SET,
+        validate=False,
+    )
+    expected = (KEYED_DIR / "keyed-entries-route-filter.set").read_text(encoding="utf-8")
+    assert rendered.strip().splitlines() == expected.strip().splitlines()
+
+
+def test_a_match_type_before_the_address_is_accepted() -> None:
+    """T: the device accepts `route-filter exact <address>` and stores it as
+    `route-filter <address> exact` (round 4)."""
+    term = "set policy-options policy-statement SAMPLE-POLICY term T11 from route-filter"
+    before = f"{term} exact 198.51.100.0/24\n"
+    after = f"{term} 198.51.100.0/24 exact\n"
+    assert _ir(before, Format.SET) == _ir(after, Format.SET)
+    rendered = convert_config(before, from_format=Format.SET, to_format=Format.SET, validate=False)
+    assert rendered.strip().splitlines() == [after.strip()]

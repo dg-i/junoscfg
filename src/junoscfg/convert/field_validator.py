@@ -12,9 +12,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from junoscfg.display import (
-    ENTRY_KEY_OVERRIDES,
     INTEGER_TYPES,
     UNIVERSAL_STATEMENTS,
+    entry_key_names,
+    entry_keys,
     enum_is_fragment,
     statement_name_spellings,
     strip_type_prefix,
@@ -115,9 +116,6 @@ _POSIX_CLASSES: dict[str, str] = {
     "[:cntrl:]": r"\x00-\x1F\x7F",
     "[:ascii:]": r"\x00-\x7F",
 }
-
-
-_FLAT_VALUE_RE = re.compile(r"_v\d+")
 
 
 def _posix_to_python_re(pattern: str) -> str:
@@ -274,9 +272,8 @@ class FieldValidator:
                     # reader keeps such a statement whole as one key; it used
                     # to pass here without a word, which is how a defective
                     # artifact set went unnoticed for five months.
-                    if not self._is_structural_key(key, schema_node, path):
-                        entry_key = self._entry_key(schema_node, path)
-                        entry = obj.get(entry_key) if entry_key else None
+                    if not self._is_structural_key(key, schema_node):
+                        entry = self._entry_label(schema_node, obj)
                         where = f" under {path[-1]} {entry}" if entry and path else ""
                         message = (
                             f"'{key}'{where} could not be placed in the schema: "
@@ -306,7 +303,12 @@ class FieldValidator:
                 # Leaf node — validate the value
                 if child_schema.get("l"):
                     path.append(key)
-                    self._validate_leaf(value, path, child_schema, result)
+                    # A key value takes its own leaf's type, as the grammar
+                    # renders it: a closed enum is closed. The device rejects
+                    # `as-path-neighbors 1 ...` although the XSD's union for
+                    # `list-type` also names a number.
+                    is_key = "k" in schema_node and key in entry_key_names(schema_node)
+                    self._validate_leaf(value, path, child_schema, result, closed=is_key)
                     path.pop()
                 # Container — recurse
                 elif isinstance(value, dict):
@@ -318,20 +320,16 @@ class FieldValidator:
             for item in obj:
                 self._walk(item, schema_node, path, result)
 
-    def _is_structural_key(self, key: str, schema_node: dict[str, Any], path: list[str]) -> bool:
-        """Whether *key* is one the readers write by rule rather than from the tree.
+    def _is_structural_key(self, key: str, schema_node: dict[str, Any]) -> bool:
+        """Whether *key* is one the readers write by rule rather than as a child.
 
-        A list entry carries its key -- ``name``, the ``fe`` key such as
-        ``address``, or the override such as ``community-name`` -- and a flat
-        entry its ``_v0``, ``_v1`` values, the one ``_`` shape a reader
-        writes. The spelling of a folded on/off switch, ``disable`` for
-        ``enable-disable``, is written in place of the node, by
-        `statement_name_spellings`.
+        A list entry carries its key fields, which the tree keeps as children;
+        a list built by a fix, `groups`' `group` among them, has no `name`
+        child and is keyed `name` all the same. The spelling of a folded on/off
+        switch, ``disable`` for ``enable-disable``, is written in place of the
+        node, by `statement_name_spellings`.
         """
-        if _FLAT_VALUE_RE.fullmatch(key):
-            return True
-        entry_key = self._entry_key(schema_node, path)
-        if entry_key and key in (entry_key, "name"):
+        if schema_node.get("L") and key in entry_key_names(schema_node):
             return True
         for cname, cnode in schema_node.get("c", {}).items():
             if key in self._switch_spellings(cname, cnode):
@@ -339,14 +337,22 @@ class FieldValidator:
         return False
 
     @staticmethod
-    def _entry_key(schema_node: dict[str, Any], path: list[str]) -> str | None:
-        """The key a named list's entries carry, or None for a container."""
+    def _entry_label(schema_node: dict[str, Any], entry: dict[str, Any]) -> str:
+        """The key an entry is written with, for a message; empty for a container."""
         if not schema_node.get("L"):
-            return None
-        fe = schema_node.get("fe")
-        if fe and fe["k"]:
-            return str(fe["k"])
-        return ENTRY_KEY_OVERRIDES.get(path[-1] if path else "", "name")
+            return ""
+        parts: list[str] = []
+        for key_field in entry_keys(schema_node):
+            for name in key_field if isinstance(key_field, tuple) else (key_field,):
+                value = entry.get(name)
+                if value is None:
+                    continue
+                if isinstance(key_field, tuple):
+                    parts.append(name)
+                if not isinstance(value, list):
+                    parts.append(str(value))
+                break
+        return " ".join(parts)
 
     def _switch_spellings(self, name: str, node: Any) -> tuple[str, ...]:
         """The spellings a folded on/off switch node is written as, or ``()``."""
@@ -363,8 +369,14 @@ class FieldValidator:
         path: list[str],
         schema_node: dict[str, Any],
         result: FieldValidationResult,
+        *,
+        closed: bool = False,
     ) -> None:
-        """Validate a leaf value against enum, pattern, and type constraints."""
+        """Validate a leaf value against enum, pattern, and type constraints.
+
+        *closed* holds a key field to its enum where the enum is not a
+        fragment of a wider union.
+        """
         # Presence flags or empty values — skip
         if value is None or value is True or value == "":
             return
@@ -372,7 +384,7 @@ class FieldValidator:
         # List values: validate each element individually
         if isinstance(value, list):
             for item in value:
-                self._validate_leaf(item, path, schema_node, result)
+                self._validate_leaf(item, path, schema_node, result, closed=closed)
             return
 
         # Leaf-as-object form: annotation keys carry no value to validate
@@ -380,7 +392,7 @@ class FieldValidator:
         if isinstance(value, dict):
             for k, v in value.items():
                 if not k.startswith("@"):
-                    self._validate_leaf(v, path, schema_node, result)
+                    self._validate_leaf(v, path, schema_node, result, closed=closed)
             return
 
         str_value = str(value)
@@ -392,7 +404,10 @@ class FieldValidator:
         if enum_idx is not None and enum_idx < len(self._enums):
             allowed = self._enums[enum_idx]
             if str_value not in allowed:
-                if has_fallback:
+                closed = closed and not enum_is_fragment(path[-1] if path else "", allowed)
+                if closed:
+                    pass  # A key field's closed enum: the mismatch is reported below
+                elif has_fallback:
                     pass  # Fall through to pattern/type checks
                 elif _is_numeric_or_range(str_value):
                     return  # Accept numeric values — XSD union types often allow them
@@ -408,7 +423,7 @@ class FieldValidator:
                     # these produced 9,903 of the 10,021 field warnings raised
                     # over 200 of Juniper's own validated-design configurations.
                     return
-                else:
+                if closed or not has_fallback:
                     # Enum-only field, non-numeric — mismatch is definitive
                     shown = allowed[:5]
                     suffix = f" ... ({len(allowed)} total)" if len(allowed) > 5 else ""

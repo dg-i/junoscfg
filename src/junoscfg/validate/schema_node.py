@@ -35,6 +35,11 @@ class SchemaNode:
     pattern_negated: bool = False
     type_ref: str | None = None
     flags: set[str] = field(default_factory=set)
+    #: The fields that key a list's entries, in declared order: an identifier
+    #: element's name, or a tuple of names for a choice of identifiers. Empty
+    #: where the one key is `name`, as the structure tree omits it there;
+    #: `junoscfg.display.entry_keys` answers the tuple from either form.
+    key_fields: tuple[str | tuple[str, ...], ...] = ()
 
     def __repr__(self) -> str:
         """Render the node, its combinator and its children for debugging."""

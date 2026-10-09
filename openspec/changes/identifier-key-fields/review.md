@@ -52,6 +52,94 @@
   pins the first ("exactly where it is today": 3,520 nodes, by path digest);
   if the second is meant, the pin is re-measured on the regenerated tree and
   the list of nodes that gain `o` is recorded in the test.
-- Decision: Pending owner decision. Interim, safe and reversible: the test pins
-  today's 3,520 paths; phase 5 stops and reports if the regenerated tree moves
-  them.
+- Decision: Decided by the owner, 2026-10-09 (phase-4 answer 3): the rule
+  clause wins, `o` stands where the dump flags `oneliner` and on the filter
+  lists `_fix_flat_entry_keys` names. The delta now says so, and
+  `test_the_one_line_flag_is_unchanged` is replaced by
+  `test_the_one_line_flag_follows_the_dump`. Measured in phase 5 on the
+  regenerated 25.2R2 tree: 4,736 nodes carry `o`, 1,216 gained and none lost;
+  every one gained is a list whose only children are its key fields, where
+  `o` moves no rendering. The 3,464 carriers with a child beyond their keys
+  are all 0.14.0 carriers; the other 56 of 0.14.0's 3,520 now hold nothing but
+  their key (24 flowspec `port-range`, 16 `tunnel-attribute`, 16 `then
+  community`). No `name`-keyed list's output moves.
+
+### The bundled tree holds 48 community action lists, not 16
+
+- Artifact: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`,
+  `assert len(actions) == 16`.
+- Counterexample: Executed in phase 5 on the regenerated 25.2R2 tree. Lists
+  named `community` holding `add` are 48: 8 under `then`, and 8 each under
+  `route-filter`, `prefix-list-filter`, `source-address-filter` and
+  `route-filter-list`, 4 each under `rf_list` and `saf_list`. The filter lists'
+  second choice of actions holds a `community` action, which the parser kept
+  dropping until this change kept every declared choice
+  (`test_a_second_choice_is_kept`). Every other assertion of the test holds:
+  all 48 are keyed by the action choice then `community-name`, and the four
+  `policy-options community` definitions are keyed `name` with no `k`.
+- User impact: None; the count predates the second-choice requirement.
+- Proposed correction: pin 48, or count only lists whose parent is `then`
+  (8, the root, logical-system, group and grouped placements under term and
+  policy).
+- Decision: Pending owner decision. Interim: the test is left as written and
+  fails on this one assertion.
+
+### A leaf occurrence's path ends with its value, not its key
+
+- Artifact: `tests/test_audit/test_walker.py::TestEntryKeys::test_a_single_key_other_than_name`,
+  `assert one(found, "4").path[-1] == "version"`.
+- Counterexample: Executed. The walker records a leaf occurrence's CLI path as
+  the path to the leaf then the value, so `version 4` gives `(..., "version",
+  "4")`. `TestLeaves::test_leaf_occurrence` pins that convention
+  (`... "class", "operator-class"`), and the new
+  `TestKeyedEntries::test_list_name_is_the_reference` relies on it
+  (`path[-2:] == ("list-name", "AS-LIST-A")`). The assertion contradicts both.
+  Every other assertion of the test passes.
+- User impact: None; the walker's convention is unchanged by this change.
+- Proposed correction: `assert one(found, "4").path[-2:] == ("version", "4")`.
+- Decision: Pending owner decision. Interim: the test is left as written and
+  fails on this one assertion.
+
+### A bare `as-path-neighbors` parses through a split keyword
+
+- Artifact: `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_device_probe_lines`,
+  `REJECTED` entry `... from as-path-neighbors`.
+- Counterexample: Executed on the regenerated grammar. The grammar renders
+  `as-path-neighbors` as its keyword followed by both key values, required;
+  the line still parses because Lark's dynamic Earley lexer matches the merged
+  `from` rule's `"as" QUOTED_OR_VALUE` alternative on `as` + `-path-neighbors`:
+  terminals need no whitespace between them. The same split accepted the bare
+  line on 0.14.0. Every other probe line is accepted or rejected as the device
+  did, and the reader keeps the bare keyword as a non-list statement
+  (`test_a_bare_list_keyword_creates_no_entry`).
+- User impact: `-v -i set` accepts `... from as-path-neighbors` alone, which
+  the device rejects; an inherited looseness of the grammar's tokenization,
+  not of keyed entries.
+- Proposed correction: either a terminal-boundary change (`VALUE` and
+  `QUOTED` preceded by whitespace), in this change or a separate one -- it
+  alters the terminal lines `tests/data/name-keyed.lark` pins and every value
+  slot of the grammar -- or drop the bare line from the grammar-level
+  `REJECTED` list here.
+- Decision: Pending owner decision. Interim: no grammar change; the test is
+  left as written and fails on this line.
+
+### `apply-macro`'s `data` list is keyed `name`, so its rule loses `"name"`
+
+- Artifact: `tests/data/name-keyed.lark`, the line `data__list: QUOTED_OR_VALUE
+  ("name" QUOTED_OR_VALUE | "value" QUOTED_OR_VALUE | universal_statement)?`,
+  pinned by `test_name_keyed_grammar_is_byte_identical`.
+- Counterexample: Executed. The grammar writes a list's key fields as its
+  entries' values and never as a child keyword. `data`, which
+  `_apply_statement_nodes` builds, has no `k`, so it is keyed `name` like every
+  other list, and its rule becomes `data__list: QUOTED_OR_VALUE ("value"
+  QUOTED_OR_VALUE | universal_statement)?`. No information the structure tree
+  carries tells `data`'s `name` from the identifier `name` of every other list
+  (`is_key` does not survive the tree, by `test_the_three_fields_the_format_drops`).
+  The rule is unreachable: `apply-macro` renders as the flat-dict
+  `"apply-macro" QUOTED_OR_VALUE+`, so neither `apply_macro__list` nor
+  `data__list` is referenced from `start`. Every other line of the pin is
+  byte-identical.
+- User impact: None; no set line reaches the rule.
+- Proposed correction: accept the changed line, as done in the interim.
+- Decision: Pending owner decision. Interim, safe and reversible: the pinned
+  file's `data__list` line is updated to the generated one (one line).

@@ -14,8 +14,8 @@ import re
 from typing import Any
 
 from junoscfg.display import (
-    ENTRY_KEY_OVERRIDES,
     UNIVERSAL_STATEMENTS,
+    entry_key_names,
     open_artifact_write,
     statement_name_spellings,
 )
@@ -178,28 +178,6 @@ def _switch_spellings(name: str, node: SchemaNode) -> tuple[str, ...]:
     return statement_name_spellings(name, node.enums or ())
 
 
-_FLAT_ENTRY_PREFIX = "flat-entry:"
-
-
-def _entry_keys(node: SchemaNode) -> tuple[str, ...]:
-    """The properties a list entry may carry its key under.
-
-    `name` for most, but a flat-entry list names its own key -- `route-filter`
-    writes `address` -- and the set reader spells a few of them out, so a
-    schema expecting `name` alone rejected every prefix list junoscfg
-    produced. They are alternatives rather than a single answer: the same node
-    reaches the schema from readers that disagree.
-    """
-    keys = ["name"]
-    for flag in node.flags:
-        if flag.startswith(_FLAT_ENTRY_PREFIX):
-            keys.append(flag.split(":")[1])
-    override = ENTRY_KEY_OVERRIDES.get(node.name)
-    if override:
-        keys.append(override)
-    return tuple(dict.fromkeys(keys))
-
-
 def _container_schema(
     node: SchemaNode,
     variant: str,
@@ -225,13 +203,12 @@ def _container_schema(
         for spelling in _switch_spellings(child_name, child_node):
             properties.setdefault(spelling, {})
 
-    # A named list entry carries its key as `name`, which is how every
-    # rendering writes it and how `set_input` reads it back. The XSD models the
-    # key positionally, so only 4 of 24.4R0's 20,367 named lists have a `name`
-    # child and the rest rejected junoscfg's own output -- every configuration
-    # holding an interface, a policy or a BGP group.
+    # A list entry carries its key fields, which the parser keeps as children
+    # in declared order: `name` for most, `list-type` and `list-name` for an
+    # AS-list reference. A list the XSD declares no identifier for -- one a fix
+    # built, such as `groups`' `group` -- is keyed `name` all the same.
     if node.is_list and node.children:
-        for key in _entry_keys(node):
+        for key in sorted(entry_key_names(node)):
             properties.setdefault(key, {})
 
     # A container is also a statement: `set system services netconf ssh` and

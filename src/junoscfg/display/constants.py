@@ -58,29 +58,11 @@ NON_NESTING_POSITIONAL_KEYS: frozenset[str] = frozenset(
 # All positional keys (union of nesting and non-nesting).
 ALL_POSITIONAL_KEYS: frozenset[str] = POSITIONAL_KEY_ELEMENTS | NON_NESTING_POSITIONAL_KEYS
 
-# Elements whose children should be flattened into a single set line.
-# These named lists render as oneliners in Junos structured config:
-# e.g., "route-filter 0.0.0.0/0 exact;" NOT "route-filter 0.0.0.0/0 { exact; }"
-FLAT_ENTRY_ELEMENTS: frozenset[str] = frozenset(
-    [
-        "attributes-match",
-        "route-filter",
-        "source-address-filter",
-        "prefix-list-filter",
-    ]
-)
-
 # ── Private fallback constants ───────────────────────────────────────
 # Used internally by schema flag helpers as fallbacks when the schema
 # walk loses track. Not exported.
 
 _FLAT_DICT_ELEMENTS: frozenset[str] = frozenset(["trigger"])
-
-_FLAT_ENTRY_KEYS: dict[str, tuple[str, str]] = {
-    "attributes-match": ("", "values-only"),
-    "route-filter": ("address", "first"),
-    "prefix-list-filter": ("list_name", "first"),
-}
 
 # ── Key aliases ──────────────────────────────────────────────────────
 
@@ -153,20 +135,39 @@ def is_flat_dict(schema_node: dict[str, Any] | None, key: str | None = None) -> 
     return key is not None and key in _FLAT_DICT_ELEMENTS
 
 
-def get_flat_entry_config(
-    schema_node: dict[str, Any] | None, key: str | None = None
-) -> tuple[str, str] | None:
-    """Return (positional_key, position) for a flat entry node, or None.
+def entry_keys(schema_node: Any) -> tuple[str | tuple[str, ...], ...]:
+    """The fields that key a list's entries, in declared order.
 
-    Falls back to _FLAT_ENTRY_KEYS when schema_node is unavailable.
+    The one answer every reader, writer and validator asks. A field is an
+    identifier element's name, or a tuple of names where the XSD keys the
+    entry on a choice of identifiers -- route-filter's match type, `then
+    community`'s action. A node without key fields is keyed ``name``: the
+    structure tree omits ``k`` there, and that is 2,800 of the 3,035 keyed
+    types on 25.2R2.
+
+    Takes a structure-tree node, or a `SchemaNode` from the build-time
+    pipeline, which carries the same fields as ``key_fields``.
     """
-    if schema_node is not None:
-        fe = schema_node.get("fe")
-        if fe is not None:
-            return (fe["k"], fe["p"])
-    if key is not None:
-        return _FLAT_ENTRY_KEYS.get(key)
-    return None
+    if isinstance(schema_node, dict):
+        raw = schema_node.get("k") or ()
+    else:
+        raw = getattr(schema_node, "key_fields", ())
+    if not raw:
+        return ("name",)
+    return tuple(tuple(field) if isinstance(field, (list, tuple)) else field for field in raw)
+
+
+def entry_key_names(schema_node: Any) -> frozenset[str]:
+    """Every child name `entry_keys` names, each alternative of a choice included.
+
+    The children that are positional inside an entry, never keywords: what a
+    reader skips when it looks for a statement, and a writer when it writes
+    the entry's other children.
+    """
+    names: set[str] = set()
+    for field in entry_keys(schema_node):
+        names.update(field if isinstance(field, tuple) else (field,))
+    return frozenset(names)
 
 
 def is_freeform_nk(schema_node: dict[str, Any] | None) -> bool:
@@ -425,14 +426,6 @@ def statement_name_spellings(name: str, enums: Sequence[str]) -> tuple[str, ...]
 #: separately -- eight modules do. One source, so a ninth copy is not the way a
 #: new one is added.
 UNIVERSAL_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
-
-
-#: List nodes whose entry key is not ``name``. The set reader invents the key
-#: when the XSD models it positionally, so the readers and the schema generator
-#: have to agree on the spelling; `audit/walker.py` already carried a comment
-#: that ``community-name`` was "hardcoded in the set parser", which is the
-#: shape of a defect, not a note.
-ENTRY_KEY_OVERRIDES: dict[str, str] = {"community": "community-name"}
 
 
 def enum_is_fragment(name: str, enums: Sequence[str]) -> bool:
