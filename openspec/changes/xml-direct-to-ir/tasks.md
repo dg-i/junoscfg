@@ -18,7 +18,11 @@
   canonical IR SHA-256
   `0c8b63bb622e3722820c613f2d66c3a6051dd6c9621b524de12a575028098a89`;
   the collection's 33 tests passed against this checkout.
-- [ ] 2.4 Run the locked full repository check.
+- [x] 2.4 Run the locked full repository check.
+
+  Passed at `7973970` with
+  `uv run --locked --group dev --with griffe --with tach --with towncrier
+  --with vulture agent-ready check --set full`.
 
 ## 3. Review and evidence
 
