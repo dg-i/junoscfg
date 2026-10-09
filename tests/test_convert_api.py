@@ -8,6 +8,7 @@ import re
 import pytest
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
+from junoscfg.convert import pipeline
 from junoscfg.convert.input import to_dict
 
 
@@ -346,6 +347,54 @@ _PATH_FILTER_SOURCE = (
 
 class TestPathFiltering:
     """Tests for path and relative parameters on convert_config()."""
+
+    def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        rendered: list[dict] = []
+
+        def capture(config: dict, _format: str) -> str:
+            rendered.append(config)
+            return "rendered"
+
+        monkeypatch.setattr("junoscfg.convert.from_dict", capture)
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system",
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {
+            "system": {"host-name": "r1", "syslog": {"file": [{"name": "messages"}]}}
+        }
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system.syslog",
+                relative=True,
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {"file": [{"name": "messages"}]}
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="missing",
+            )
+            == ""
+        )
+        assert len(rendered) == 2
 
     def test_path_filter_set(self) -> None:
         result = convert_config(
