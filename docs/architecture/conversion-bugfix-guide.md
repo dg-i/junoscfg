@@ -161,13 +161,22 @@ name of its own.
 
 - An entry's identity is its whole key: `as-list X` and `as-list-group X` are
   two entries, as `route-filter A exact` and `route-filter A orlonger` are.
-- The set reader takes one token per value field, and a key choice as its
-  keyword. A statement it cannot complete -- a key that runs out, a token
-  after an entry that has nothing but its key -- is kept whole, from its
-  keyword, and field validation reports it `UNPLACED`.
-- Writers put the key values in declared order, then each other child.
+- The set reader takes one token per positional field, a field whose leaf is
+  not `nokeyword` as `keyword value` (`virtual-link neighbor-id ...
+  transit-area ...`, those fields in any order among themselves), and a key
+  choice as its keyword. A statement it cannot complete -- a key that runs
+  out, a key value without its keyword, a token after an entry that has
+  nothing but its key -- is kept whole, from its keyword, and field validation
+  reports it `UNPLACED`, as it reports an entry from JSON, YAML or XML that
+  lacks a key field.
+- Writers put the key values in declared order, a keyword field with its
+  keyword, then each other child.
 - The grammar takes exactly the key values; a key value takes its own leaf's
-  type, so a closed enum such as `list-type` is closed.
+  type, so a closed enum such as `list-type` is closed. A `name` key's enum is
+  a fragment and stays open.
+- Any `maxOccurs` but 1 is a list, as the XSD states; a node that is no list
+  never takes a second, different value for its nokeyword leaf -- that
+  statement is kept whole and reported.
 
 The XSD is the default model here, not the last word. Device output outranks it,
 and a disagreement is fixed in the schema model at the owning layer rather than
@@ -176,8 +185,10 @@ probes (vMX 23.2R2-S7.5): `list-type`'s XSD union also names a number, but the
 device rejected `as-path-neighbors 1 ...`, so a key value takes its enum alone;
 and the XSD declares route-filter's match type after the address, but the device
 accepted `route-filter exact 198.51.100.0/24`, so a key given by its keyword may
-stand before or after the positional values. Output always writes declared
-order.
+stand before or after the positional values. Round 5 settled the keyword
+fields the same way: the device took `virtual-link transit-area 0.0.0.3
+neighbor-id 10.255.255.2` and rejected the field left out or given without its
+keyword. Output always writes declared order.
 
 ### Oneliners
 

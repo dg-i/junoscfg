@@ -735,6 +735,18 @@ A pair is one operator's configuration: it sits under the gitignored
   a missing or extra path there is the artifacts' or the converter's, never
   the data's.
 
+Before review of a grammar or field-validator change, beside the one full
+checkpoint:
+
+1. `uv run pytest --jvd tests/test_jvd_corpus.py -q`, which includes
+   `TestFieldWarningBudget`: the full check does not run it, and a change that
+   floods valid configuration with field warnings fails only here.
+2. The corpus comparison against the frozen master baseline, when the change
+   carries one (for `identifier-key-fields`,
+   `private_test_data/identifier-key-fields-review-baseline/review_tools.py`
+   `corpus`, `grammar`, then `compare`): no file may gain unplaced statements
+   unexplained, and every set-output difference is explained.
+
 For the full list of development commands, see the project CLAUDE.md.
 
 ---

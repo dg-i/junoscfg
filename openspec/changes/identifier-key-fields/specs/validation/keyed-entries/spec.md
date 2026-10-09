@@ -11,11 +11,12 @@ the `name` spelling the readers used to put in their place.
 WHEN `validate_ir`, or a conversion that validates, checks an IR whose list
 entries carry the fields `entry_keys()` names THEN field validation SHALL
 validate each key value against its own leaf in the tree, a key choice's
-chosen element, enum and pattern included, SHALL report no unplaced error for
-a key field, and SHALL report
+chosen element, enum and pattern included, an enum closed for a field the tree
+names in `k` and open, as a fragment, for a `name` key (owner decision,
+challenge C); SHALL report no unplaced error for a key field, and SHALL report
 `name`, `_v0` or `_v1` under a list keyed otherwise as unplaced; no key SHALL
 be exempted by spelling.
-Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_list_reference_is_clean`, `tests/test_field_validator.py::TestKeyedEntries::test_a_key_value_is_checked_against_its_leaf`, `tests/test_field_validator.py::TestKeyedEntries::test_name_under_a_list_keyed_otherwise_is_unplaced`, `tests/test_field_validator.py::TestKeyedEntries::test_attributes_match_takes_its_three_fields`, `tests/test_field_validator.py::TestKeyedEntries::test_a_route_filter_action_is_clean`
+Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_list_reference_is_clean`, `tests/test_field_validator.py::TestANameKeyIsOpen::test_a_classifier_name_is_clean`, `tests/test_field_validator.py::TestANameKeyIsOpen::test_a_k_key_stays_closed`, `tests/test_field_validator.py::TestKeyedEntries::test_a_key_value_is_checked_against_its_leaf`, `tests/test_field_validator.py::TestKeyedEntries::test_name_under_a_list_keyed_otherwise_is_unplaced`, `tests/test_field_validator.py::TestKeyedEntries::test_attributes_match_takes_its_three_fields`, `tests/test_field_validator.py::TestKeyedEntries::test_a_route_filter_action_is_clean`
 
 #### Scenario: AS-list reference
 
@@ -29,6 +30,12 @@ Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_
   `as-path-neighbors 1 AS-LIST-A` (device probe, vMX 23.2R2-S7.5)
 - **THEN** field validation reports an error naming `list-type`
 
+#### Scenario: A name key outside its enum
+
+- **WHEN** `class-of-service interfaces ge-0/0/0 unit 0 classifiers dscp
+  SAMPLE-DSCP` is validated; `dscp` is keyed `name`, whose enum is `[default]`
+- **THEN** field validation reports no error
+
 #### Scenario: The retired spelling
 
 - **WHEN** the entry under `as-path-neighbors` is `{"name": "as-list"}`, or an
@@ -40,6 +47,22 @@ Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_
 - **WHEN** a `route-filter` entry holds its `address`, `"exact": [null]` and
   `"accept": [null]`
 - **THEN** field validation reports no error
+
+### Requirement: An entry without a key field is unplaced
+
+WHEN an entry from JSON, YAML or XML lacks one of the fields `entry_keys()`
+names THEN field validation SHALL report it with the unplaced message
+(`'<list>' entry without its key field '<field>' could not be placed in the
+schema: kept as written, not validated`), so `--strict` and anonymization
+refuse it, as they refuse a set statement the reader could not complete.
+Tests: `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_validation_reports_it`, `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it`, `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_a_complete_entry_is_clean`
+
+#### Scenario: An AS-list reference without its list-type
+
+- **WHEN** `{"as-path-neighbors": [{"list-name": "X"}]}` arrives as JSON, YAML
+  or XML, or a `route-filter` entry without its `address`
+- **THEN** field validation reports it unplaced, where it was written as a line
+  the device rejects with no diagnostic (phase-6 review, finding 5)
 
 ### Requirement: The JSON and YAML schemas name the key fields
 

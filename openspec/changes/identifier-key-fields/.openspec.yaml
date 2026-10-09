@@ -25,7 +25,14 @@ declared-break:
       of its key, so `exact` and `orlonger` on one address are two entries; a
       set statement the reader cannot complete, `apply-groups G1 G2` among
       them, is kept whole and unplaced where part of it was applied or
-      dropped. convert_config's JSON and
+      dropped. The 385 declarations the 25.2R2 dump bounds by a number
+      (`forwarding-classes class` 16, `commit peers` 3) are lists, as the XSD
+      states, where they were single nodes and a second entry replaced the
+      first; a key field whose leaf is not nokeyword is written with its
+      keyword (`virtual-link neighbor-id ... transit-area ...`); an entry from
+      JSON, YAML or XML missing a key field, a bare `apply-groups` and an
+      `apply-macro` with a fourth value are reported unplaced, so `--strict`
+      and anonymization refuse them. convert_config's JSON and
       YAML output changes for a configuration holding one of those statements,
       and validate_config accepts the device-backed shape it rejected.
       `ENTRY_KEY_OVERRIDES` and `get_flat_entry_config` leave the secondary
@@ -36,7 +43,11 @@ declared-break:
       the key fields the device's JSON names. The regenerated JSON schema lists
       the key fields as the entry's properties, with `name` only where `name`
       is the key; it adds no `required`, as the schema generator's "No
-      `required`" comment records. A document written with `name` there is
+      `required`" comment records. 31 `name`-keyed entry objects of the
+      0.14.0 schema changed their property set all the same: 7 `snmp
+      community` lost the `community-name` the retired override added, and 24
+      openconfig `acl-set`, `policer` and `protocol` gained a sequence element
+      (`type`, `identifier`) the parser used to drop. A document written with `name` there is
       rewritten to those fields. Lists the device keys `name` are unchanged.
       Nothing in junoscfg replaces the two removed kernel names; a caller reads
       `entry_keys()` instead. The production collection's test suite is the

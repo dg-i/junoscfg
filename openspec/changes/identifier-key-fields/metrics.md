@@ -65,5 +65,14 @@
 | Context expansion: tests/test_set_corpus.py, tests/test_jvd_corpus.py, tests/jvd_data.py, tests/test_device_truth.py | phase 6: the OVER_REJECTED edit, the field-warning budget, the corpus loader and the `.conf` rerooting used for the four-door check |
 | Context expansion: src/junoscfg/convert/__init__.py, src/junoscfg/__init__.py | phase 6: `convert_config_result`, the door that carries field diagnostics |
 | Context expansion: ~/src/ansible-collection-junos-config (read-only, symlinked into a scratchpad namespace) | phase 6: 33 passed against this checkout from a throwaway virtualenv; the collection tree untouched |
+| Context expansion: src/junoscfg/convert/__init__.py, tests/test_cli.py, tests/test_jvd_corpus.py | fix pass: the unplaced refusal path finding 5 feeds, the path-filter test an empty transparent container tripped, the warning budget |
+| Context expansion: private_test_data/identifier-key-fields-review-baseline (review_tools.py and frozen results) | fix pass: corpus, grammar sample and compare against the frozen master baseline; no value copied |
+| Context expansion: private_test_data/jvd ma4_mx204.conf; master and fc22c57 trees (git archive into the scratchpad) | fix pass: finding 4 timing, and new tests run against both trees to show they fail before |
+| Context expansion: private_test_data/identifier-key-fields-device-checks-5.out, -5-v2.out (not opened; relayed by the orchestrator) | fix pass: round-5 results for challenge B, finding 7 and `apply-macro`; synthetic values only |
+| Addition beyond the proposal: `statement_children()` in `junoscfg.display` | fix pass, owner decision on finding 8: one helper for the set reader and the grammar |
+| Addition beyond the proposal: the set reader's `_EntryIndex` argument | fix pass, owner decision on finding 4: the per-parse index of entries by key tuple is passed to `_merge_tokens`, `_apply_meta` and `_find_or_create_entry` |
+| Addition beyond the proposal: a full statement after a bare keyword kept whole under the same key is kept whole too | fix pass: the reader raised `TypeError`/`AttributeError` there (finding 6 input) |
+| Owner-directed addition: `apply-macro` one to three values in reader and grammar | relayed mid fix pass, device probe round 5 |
+| Owner-directed addition: device-truth captures `keyed-entries-virtual-link.*` and `keyed-entries-apply-macro.*` | relayed mid fix pass, round-5 synthetic values |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

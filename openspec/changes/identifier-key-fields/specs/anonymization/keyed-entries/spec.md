@@ -6,15 +6,17 @@ for it, and no rule depends on a key the walker invents.
 
 ## ADDED Requirements
 
-### Requirement: Key fields are the leaves the tree declares
+### Requirement: Key fields are leaves, and a leaf's own enum value is syntax
 
 WHEN the anonymize walker meets a list entry THEN it SHALL hand each key field
 `entry_keys()` names to the rules as the leaf the tree declares for it, with
 the type the tree records for that leaf, and SHALL synthesise no leaf for
-`name`; an enum key field such as `list-type`, and a key choice's keyword,
-SHALL pass unchanged. Recording a type the XSD gives only as a `simpleContent`
-extension base is not part of this change.
-Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`
+`name`; a key choice's keyword SHALL pass unchanged. For every leaf, key or
+not, a value from that leaf's own enum is configuration syntax and SHALL pass
+every anonymization rule unchanged (owner decision, phase-6 review). Recording
+a type the XSD gives only as a `simpleContent` extension base is not part of
+this change.
+Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_value_from_its_leafs_enum_passes_every_rule`
 
 #### Scenario: Two key fields
 
@@ -28,6 +30,19 @@ Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_
 - **WHEN** a `route-filter` entry holding `"exact": [null]` is walked with every
   rule on
 - **THEN** `exact` stays in the entry unchanged
+
+#### Scenario: An enum key under a sensitive word
+
+- **WHEN** `list-type as-list-group` is anonymized with
+  `--anonymize-sensitive-words as-list`
+- **THEN** `list-type` stays `as-list-group`
+
+#### Scenario: An enum leaf that is no key
+
+- **WHEN** `from protocol bgp` is anonymized with
+  `--anonymize-sensitive-words bgp`
+- **THEN** it stays `from protocol bgp`; 0.14.0 wrote `from protocol
+  word_<hash>`, which the device rejects
 
 #### Scenario: A list keyed name
 
@@ -58,9 +73,11 @@ Tests: `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_
 ### Requirement: No value anonymized before escapes
 
 WHEN the anonymization test configurations are anonymized with every rule on
-THEN every value the previous release replaced SHALL still be replaced, and the
-anonymized output of `name`-keyed lists SHALL be byte-identical; phase 5 SHALL
-stop and report any value whose treatment moves otherwise.
+THEN every value the previous release replaced SHALL still be replaced, but a
+value from its leaf's own enum, which the previous release turned into invalid
+configuration; the anonymized output of `name`-keyed lists SHALL be
+byte-identical; phase 5 SHALL stop and report any value whose treatment moves
+otherwise.
 Tests: `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_no_value_anonymized_before_escapes`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_name_keyed_output_is_unchanged`
 
 #### Scenario: An IP key keyed name

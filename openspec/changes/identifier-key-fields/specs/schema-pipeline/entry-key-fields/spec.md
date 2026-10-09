@@ -12,30 +12,34 @@ groups THEN the parser SHALL keep every element, `name` included, as a child
 of the node in declared order, and SHALL record as the node's key fields, in
 declared order, each identifier element and each choice whose every element is
 an identifier (`<flag>identifier</flag>` or `<identifier/>`), such a choice as
-one field whose alternatives are its elements.
-Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_one_identifier_other_than_name`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_name_is_a_key_child`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_second_choice_is_kept`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_an_identifier_choice_is_one_key_field`
+one field whose alternatives are its elements. Any `maxOccurs` but 1 is a list.
+Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_one_identifier_other_than_name`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_name_is_a_key_child`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_second_choice_is_kept`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_an_identifier_choice_is_one_key_field`
 
 #### Scenario: Two identifiers beside a choice of comments only
 
-- **WHEN** a type declares `list-type` and `list-name` as identifiers and its
-  choice holds only the undocumented and comment references
-- **THEN** the node has the children `list-type` and `list-name`, the keys
-  `(list-type, list-name)`, and is no longer a childless presence list
+- **WHEN** a type declares identifiers `list-type`, `list-name` and a choice of
+  comments only
+- **THEN** it has those children, the keys `(list-type, list-name)`, and is no
+  childless presence list
 
 #### Scenario: A key, an identifier choice, an action choice
 
-- **WHEN** a type declares `address`, a choice of `exact` and `orlonger` each
-  marked `<identifier/>`, then a choice holding `accept` and `reject`
-- **THEN** the keys are `(address, (exact, orlonger))` and the children are
-  `address`, `exact`, `orlonger`, `accept`, `reject` in that order
+- **WHEN** a type declares `address`, an `<identifier/>` choice of `exact` and
+  `orlonger`, then a choice holding `accept` and `reject`
+- **THEN** the keys are `(address, (exact, orlonger))`, the five children kept
+  in that order
 
 #### Scenario: An identifier choice first, and name
 
-- **WHEN** one type declares a choice of `add` and `delete` marked
-  `<identifier/>`, then the identifier `community-name`, and another the one
-  identifier `name`
-- **THEN** the first is keyed `((add, delete), community-name)`, and the
-  second has the child `name` and the keys `("name",)`
+- **WHEN** one type declares an `<identifier/>` choice of `add` and `delete`,
+  then `community-name`, and another the one identifier `name`
+- **THEN** the first is keyed `((add, delete), community-name)`, the second
+  `("name",)` with the child `name`
+
+#### Scenario: A list the XSD bounds by a number
+
+- **WHEN** `forwarding-classes class` declares `maxOccurs="16"`
+- **THEN** it is a list, keyed `name` (challenge A, owner decision)
 
 ### Requirement: The structure tree carries the keys and the declared order
 
@@ -48,19 +52,19 @@ Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered
 
 #### Scenario: Round trip
 
-- **WHEN** nodes keyed `(list-type, list-name)`, `(address, (exact,
-  orlonger))` and `("name",)` are written and read
+- **WHEN** nodes keyed `(list-type, list-name)`, `(address, (exact, orlonger))`
+  and `("name",)` are written and read
 - **THEN** each keeps keys and child order; only the first two carry `k`
 
 ### Requirement: One kernel helper answers an entry's keys
 
-WHEN any site needs the fields that key a list's entries THEN it SHALL read
-them from `entry_keys()` through `junoscfg.display`, which fields are key
-choices included; no module under
+WHEN any site needs the fields that key a list's entries, or the children a
+statement inside it names, THEN it SHALL read `entry_keys()` or
+`statement_children()` through `junoscfg.display`; no module under
 `src/junoscfg/` SHALL read `fe`, `values-only`, a `_v<n>` key, a literal
 `community-name`, `FLAT_ENTRY_ELEMENTS`, `ENTRY_KEY_OVERRIDES` or
 `get_flat_entry_config`, and the last two SHALL be banned imports.
-Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
+Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
 
 #### Scenario: The helper's answers
 
@@ -72,29 +76,25 @@ Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_h
 #### Scenario: The source holds no second answer
 
 - **WHEN** the source tree under `src/junoscfg/` is scanned
-- **THEN** no retired spelling is read, and `pyproject.toml` bans importing
-  `ENTRY_KEY_OVERRIDES` and `get_flat_entry_config` from `junoscfg.display`
+- **THEN** no retired spelling is read, and `pyproject.toml` bans the two names
 
 ### Requirement: The bundled tree carries the declared keys
 
 WHEN the bundled tree, regenerated from the shipped release's dump, is walked
 THEN `control-as-list-type` SHALL carry the keys `list-type`, `list-name`;
-`attributes-match` its three fields; route-filter, source-address-filter and
-prefix-list-filter their address or `list_name` then the match-type choice,
-actions as children; `then community` its action choice then `community-name`;
-and `o` SHALL stand where the dump flags `oneliner`, and on those three
-filter lists (owner decision, phase 5).
+`attributes-match` its three fields; the three filter lists their address or
+`list_name` then the match-type choice, actions as children; `then community`
+its action choice then `community-name`; and `o` SHALL stand where the dump
+flags `oneliner`, and on those filter lists (owner decision, phase 5).
 Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_follows_the_dump`, `tests/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
 
 #### Scenario: The AS-list slots
 
-- **WHEN** the tree is walked for `as-path-neighbors`, `as-path-origins` and
-  `as-path-transits`
+- **WHEN** the tree is walked for the three `as-path-*` lists
 - **THEN** all 24 slots, at the root, in logical systems, in groups and in
   grouped logical systems, with and without a `term`, carry both keys
 
 #### Scenario: Two lists named community
 
 - **WHEN** the tree is walked for `then community` and `policy-options community`
-- **THEN** the first is keyed by its action choice and `community-name`, the
-  second by `name`
+- **THEN** the first is keyed (action choice, `community-name`), the second `name`

@@ -429,7 +429,14 @@ the challenge decided above. The strict xfail is strict.
   a second with a different key value is kept whole; a scenario for each with
   the jvd shapes as tests. Recommendation: both, the first is the XSD's own
   statement.
-- Decision: Pending owner decision.
+- Decision: Decided by the owner, 2026-10-09, accepting both corrections. The
+  parser treats any `maxOccurs` but 1 as a list (`xsd_parser.py`), and the set
+  reader's nokeyword-leaf path never overwrites a present, different value: it
+  keeps the statement whole from its node's keyword and reports it. Pinned by
+  `TestCardinality::test_a_numeric_max_occurs_is_list` and
+  `TestANonListNodeNeverReplacesAnEntry` (three forwarding classes, two
+  `commit peers`, two `http servers server`, `access securid-server`), and the
+  spec scenario "Lists the XSD bounds by a number". Applied in the fix pass.
 
 ### B. "One token per value field" contradicts the tree for 380 key fields
 
@@ -446,7 +453,17 @@ the challenge decided above. The strict xfail is strict.
   written as `keyword value`, in declared order (the grammar's order); tests
   for `virtual-link`, `track route`, `address-range` in set, JSON and XML. The
   order the device accepts among keyworded fields needs a probe.
-- Decision: Pending owner decision.
+- Decision: Decided by the owner, 2026-10-09: a key field whose leaf is not
+  nokeyword is read and written as `keyword value`. Device probe round 5 (vMX
+  23.2R2-S7.5) then showed the keyword fields accepted in either order and
+  stored in declared order, and the field left out or given without its
+  keyword rejected; the owner replaced the interim "declared order only" with
+  that. Reader (`_read_key`), writer (`DictWalker._entry_key`) and grammar
+  (`_key_sequence`, permutations of the keyword fields; `_key_value` now writes
+  the keyword before a closed enum too, `drop-profile-map loss-priority low`)
+  agree. Pinned by `TestKeyFieldsGivenByKeyword`, the `virtual-link`
+  device-truth capture and `test_round_5_accepted_lines` /
+  `test_round_5_rejected_lines`. Applied in the fix pass.
 
 ### C. Validating `name` keys against an identifier's enum rejects valid configuration
 
@@ -463,4 +480,56 @@ the challenge decided above. The strict xfail is strict.
   identifier's enum as a fragment, or extend `enum_is_fragment` to identifier
   leaves with a corpus run under budget as the test. Recommendation: the first;
   it keeps the probed behaviour and the budget.
-- Decision: Pending owner decision.
+- Decision: Decided by the owner, 2026-10-09, accepting the first correction:
+  closed-enum enforcement applies to the key fields the tree names in `k`; a
+  `name` key's enum is a fragment and open, as on 0.14.0. Pinned by
+  `TestANameKeyIsOpen`. Corpus: other field warnings 329 against master's 521
+  (241 false `Missing mandatory field` on master gone, because the statements
+  they sat in are now placed; 49 new, every one on a `$TEMPLATE` or
+  `<placeholder>` value of a jvd snippet now placed and validated);
+  `TestFieldWarningBudget` passes. Applied in the fix pass.
+
+## Fix pass (owner decisions on the phase-6 review, 2026-10-09)
+
+Each finding above, as the owner decided it; evidence in `tasks.md` section 4.
+
+- Finding 1: challenge A, decided above.
+- Finding 2: challenge B, decided above.
+- Finding 3: challenge C, decided above.
+- Finding 4, decided by the owner: entries indexed by key tuple
+  (`_find_or_create_entry`). `ma4_mx204.conf`, 233,512 lines: 65.6 s at
+  fc22c57, 4.5 s after, 12.5 s on master's code, same machine.
+- Finding 5, decided by the owner: an entry from JSON, YAML or XML without a
+  key field is reported with the unplaced message; requirement "An entry
+  without a key field is unplaced" in `specs/validation/keyed-entries`,
+  `TestAnEntryWithoutItsKeyIsUnplaced`.
+- Finding 6, decided by the owner: a bare `apply-groups` is reported
+  unplaced (`TestABareApplyGroups`). A full statement after a bare keyword
+  kept whole under the same key raised `TypeError`/`AttributeError`; it is
+  now kept whole too.
+- Finding 7, decided by the owner after device probe round 5 (vMX
+  23.2R2-S7.5): the device rejects `set system location dc-a` and accepts
+  `location building <name>`. The grammar rejects the line again since the
+  challenge A fix; `tests/test_set_corpus.py` lists it as a correct
+  rejection, citing the probe.
+- Finding 8, decided by the owner: `entry_keys(node) != ("name",)` replaces
+  `"k" in node`; one `statement_children()` in `junoscfg.display` serves the
+  set reader and the grammar. `_fix_route_filter_arg` and
+  `_fix_source_address_filter_arg` stay: the proposal does not name them.
+- Finding 9, decided by the owner: behaviour accepted, the anonymization
+  delta states one rule for every leaf's own enum value, the "no value
+  anonymized before escapes" requirement exempts it, the `enums` and
+  `keywords` plumbing is gone (`_leaf_enum` resolves it in one place), and
+  the changelog names the fix. `test_a_value_from_its_leafs_enum_passes_every_rule`
+  fails on master's code. anonymizer-bugs rows 4 and 5 marked fixed.
+- Finding 10, decided by the owner: the consumer migration names the 31
+  `name`-keyed entry objects whose property set moved.
+- Question 7, decided by the owner: the developer guide's pre-review list for
+  grammar and field-validator changes names `--jvd`, `TestFieldWarningBudget`
+  and the corpus comparison.
+- `apply-macro`, decided by the owner after device probe round 5: a name,
+  optionally a keyword and its value, at most three values. The reader keeps a
+  fourth value whole and reports it; the grammar renders a `flat-dict` list
+  from the tree as its key, then optionally its child list's key and leaf
+  values. The guard tests for the one- to three-value forms pass before and
+  after the change.

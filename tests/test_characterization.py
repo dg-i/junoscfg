@@ -479,6 +479,29 @@ class TestEntryKeysComeFromTheTree:
         assert entry_keys({"L": True}) == ("name",)
         assert entry_keys({"L": True, "c": {"name": {"l": True}}}) == ("name",)
 
+    def test_statement_children_drop_the_key_fields(self) -> None:
+        """The set reader and the grammar ask one helper which children a
+        statement names (phase-6 review, finding 8): a list's key fields are
+        its entries' values, never statements; a container keeps them all."""
+        from junoscfg import display
+        from junoscfg.display import statement_children
+        from junoscfg.validate.schema_node import SchemaNode
+
+        assert "statement_children" in display.__all__
+        leaf = {"l": True}
+        children = {"address": leaf, "exact": {"p": True}, "accept": {"p": True}}
+        keyed = {"L": True, "k": ["address", ["exact", "orlonger"]], "c": children}
+        assert list(statement_children(keyed)) == ["accept"]
+        assert list(statement_children({"L": True, "c": {"name": leaf, "then": {}}})) == ["then"]
+        assert statement_children({"c": {"name": leaf}}) == {"name": leaf}
+        node = SchemaNode(
+            name="route-filter",
+            is_list=True,
+            key_fields=("address", ("exact", "orlonger")),
+            children={n: SchemaNode(name=n, is_leaf=True) for n in ("address", "exact", "accept")},
+        )
+        assert list(statement_children(node)) == ["accept"]
+
     def test_no_module_keeps_its_own_key(self) -> None:
         """No module under src/junoscfg reads a retired spelling, and two are banned.
 

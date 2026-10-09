@@ -36,16 +36,19 @@ Tests: `tests/test_grammar_generator.py::TestUnknownTokensInsideANamedList::test
 ### Requirement: A keyed entry takes exactly its key values
 
 WHEN the generated grammar renders a list keyed by anything but the single
-`name` THEN it SHALL take one value per key field in key order, a key choice
-as one of its keywords with its value, then only the entry's declared
-children; SHALL reject a missing or further value; SHALL NOT offer a key
-element's name as a keyword; and SHALL take a key choice before or after
-the positional values and no child before the keys. `flat-dict` keeps
-`keyword value+`, and the grammar of `name`-keyed lists SHALL stay
-byte-identical. This holds through `SetValidator.validate`, the public
+`name` THEN it SHALL take one value per key field in key order, a field whose
+leaf is not `nokeyword` as `keyword value` (such fields in any order among
+themselves), a key choice as one of its keywords with its value, then only the
+entry's declared children; SHALL reject a missing or further value; SHALL NOT
+offer a nokeyword key element's name as a keyword; and SHALL take a key choice
+before or after the other key values and no child before the keys. A
+`flat-dict` list (`apply-macro`) takes its key, then optionally its child
+list's key and that entry's leaf values, at most three values for
+`apply-macro`; another `flat-dict` keeps `keyword value+`; the grammar of
+`name`-keyed lists SHALL stay byte-identical but for `apply-macro`. This holds through `SetValidator.validate`, the public
 `validate_set` and `validate_config`, and CLI `-v -i set`; phase 5 SHALL stop
 and report any corpus or `--jvd` line it newly rejects.
-Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_two_keys_are_taken_in_order`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_missing_or_further_value_is_rejected`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_name_is_not_a_keyword`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_keyword_goes_either_side`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_name_keyed_grammar_is_byte_identical`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_device_probe_lines`, `tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_an_as_list_reference`, `tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_numeric_list_type_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_a_numeric_list_type_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_the_bare_keyed_list_keyword_is_rejected`
+Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_two_keys_are_taken_in_order`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_missing_or_further_value_is_rejected`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_name_is_not_a_keyword`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_key_keyword_goes_either_side`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_name_keyed_grammar_is_byte_identical`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_device_probe_lines`, `tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_an_as_list_reference`, `tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones`, `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test_a_numeric_list_type_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_a_numeric_list_type_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_the_bare_keyed_list_keyword_is_rejected`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_round_5_accepted_lines`, `tests/test_set_validator.py::TestTheShippedGrammarTakesKeyedEntries::test_round_5_rejected_lines`
 
 #### Scenario: The device probe's lines
 
@@ -54,7 +57,10 @@ Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test
   ASG-A`, `route-filter 198.51.100.0/24 exact accept`, `route-filter
   198.51.100.0/24 orlonger`, `source-address-filter 198.51.100.0/24 exact
   accept`, `then community add COMM-A`, `then community COMM-A add`, and
-  `attributes-match ping.test-owner matches "^uptime$"`
+  `attributes-match ping.test-owner matches "^uptime$"`; and from round 5
+  `virtual-link neighbor-id 10.255.255.1 transit-area 0.0.0.2`, the same
+  reversed, `apply-macro ABCDE`, `apply-macro ABCDE DEFGH` and `apply-macro
+  12345 "KADJBF KU!H" balks`
 - **THEN** each is valid (device probe, vMX 23.2R2-S7.5)
 
 #### Scenario: Lines the device rejected
@@ -62,8 +68,10 @@ Tests: `tests/test_grammar_generator.py::TestKeyedEntryTakesExactlyItsKeys::test
 - **WHEN** `as-path-neighbors as-list`, bare `as-path-neighbors`,
   `as-path-neighbors AS-LIST-A`, `as-path-neighbors as-list AS-LIST-A EXTRA`,
   `route-filter 198.51.100.0/24 next-policy`, `route-filter 198.51.100.0/24
-  exact EXTRA` and the `attributes-match` line with a trailing `EXTRA` are
-  validated
+  exact EXTRA`, the `attributes-match` line with a trailing `EXTRA`,
+  `virtual-link neighbor-id 10.255.255.3`, `virtual-link 10.255.255.4
+  0.0.0.2`, `apply-macro 12345 "KADJBF KU!H" balks XXXXX`, `apply-macro 12345
+  XXX XXXX XXX` and `system location dc-a` are validated
 - **THEN** each is invalid, as on the device
 
 #### Scenario: A key choice after the first key

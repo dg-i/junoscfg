@@ -70,7 +70,8 @@ number of times." This maps to a JSON object with all-optional properties.
 
 Identifying marks:
 
-- Parent has `maxOccurs="unbounded"`
+- The element has a `maxOccurs` other than 1 (`unbounded`, or a number such as
+  `16` for `forwarding-classes class`)
 - First child is `<xsd:element name="name">` (or another key element)
 - Key element has `<flag>identifier</flag>`, `<identifier/>`, and `key` attribute
 - Key element has `<flag>nokeyword</flag>` (value is freeform, not a keyword)
