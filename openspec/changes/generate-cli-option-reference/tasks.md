@@ -9,7 +9,8 @@
 - [x] 2.2 Separate authored CLI guidance from the generated option reference.
 - [x] 2.3 Remove internal-module API pages from publication and correct package-door examples.
 - [x] 2.4 Update repository documentation rules and changelog.
-- [ ] 2.5 Run focused tests and the locked full repository check.
+- [x] 2.5 Run focused tests and the locked full repository check.
+  Checkpoint: `9c6590b` — 1,625 passed, 18 skipped; every check passed.
 
 ## 3. Review and evidence
 
