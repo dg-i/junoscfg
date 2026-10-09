@@ -120,10 +120,11 @@ a schema-flag table, not display logic.
 
 **One interchange format.** Every conversion is `format -> dict IR -> format`;
 there is no direct format-to-format path and adding one is the "second way to
-do the same thing" that section 1 calls a defect. XML input bridges through
-`xml_to_yaml()` rather than getting its own parser. One configuration has one
-IR whatever format it arrived in: leaf values are strings, as Junos JSON holds
-them, and `KEY_ALIASES` is applied on every input path.
+do the same thing" that section 1 calls a defect. XML input and XML-to-YAML
+share the display kernel's `xml_to_dict()` walker; conversion input normalizes
+its result directly without a serialization round trip. One configuration has
+one IR whatever format it arrived in: leaf values are strings, leaf-lists are
+arrays, and `KEY_ALIASES` is applied on every input path.
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in

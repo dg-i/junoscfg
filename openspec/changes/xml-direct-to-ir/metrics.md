@@ -16,5 +16,9 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: private_test_data/anaon.conf | Owner-supplied device representation; inspected only through non-content parity probes. |
+| Context expansion: private_test_data/anaon.xml | Owner-supplied XML oracle for direct-path normalization and byte-stable IR hashing. |
+| Context expansion: private_test_data/anaon.json | Owner-supplied device JSON representation; inspected only through non-content parity probes. |
+| Context expansion: https://github.com/dg-i/ansible-collection-junos-config | Owner-declared compatibility boundary; current imports verified in a temporary read-only clone. |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

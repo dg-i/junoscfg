@@ -44,6 +44,9 @@ def to_dict(source: str, fmt: str) -> dict[str, Any]:
     else:
         raise ValueError(f"Unknown input format: {fmt}")
 
+    from junoscfg.convert.input.normalization import normalize_leaf_lists
+
+    normalize_leaf_lists(ir)
     _normalize_annotations(ir)
     return ir
 

@@ -26,8 +26,8 @@ def json_to_yaml(source: str | TextIO) -> str:
     return yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
-def xml_to_yaml(source: str | TextIO) -> str:
-    """Convert Junos XML configuration to standard YAML format.
+def xml_to_dict(source: str | TextIO) -> dict[str, Any]:
+    """Parse Junos XML into its JSON-equivalent configuration mapping.
 
     Requires the ``lxml`` package (install via ``pip install junoscfg[xml]``).
     """
@@ -50,9 +50,17 @@ def xml_to_yaml(source: str | TextIO) -> str:
         raise ValueError(f"Invalid XML: {exc}") from exc
     config_el = find_xml_configuration(root)
     if config_el is None:
+        return {}
+
+    return {"configuration": _xml_element_to_dict(config_el)}
+
+
+def xml_to_yaml(source: str | TextIO) -> str:
+    """Convert Junos XML configuration to standard YAML format."""
+    result = xml_to_dict(source)
+    if not result:
         return ""
 
-    result = {"configuration": _xml_element_to_dict(config_el)}
     return yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 

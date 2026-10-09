@@ -7,6 +7,7 @@ import json
 import pytest
 import yaml
 
+from junoscfg.display import xml_to_dict
 from junoscfg.display.to_yaml import json_to_yaml, xml_to_yaml
 
 
@@ -236,6 +237,10 @@ class TestJsonToYamlRoundtrip:
 
 class TestXmlToYamlBasic:
     """XML → YAML transformations (produces Junos JSON-equivalent structure)."""
+
+    def test_package_door_dict_matches_yaml_mapping(self) -> None:
+        xml = "<configuration><system><host-name>router1</host-name></system></configuration>"
+        assert xml_to_dict(xml) == yaml.safe_load(xml_to_yaml(xml))
 
     def test_simple_elements(self) -> None:
         xml = "<configuration><system><host-name>test</host-name></system></configuration>"

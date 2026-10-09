@@ -5,7 +5,15 @@
 zone conversion · layer pipeline · contract `src/junoscfg/convert/CONTRACT.md`
 
 - `pipeline` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.pipeline`
+- `pipeline_result` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.pipeline_result`
 - `validate_ir` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.validate_ir`
+
+## junoscfg.convert.diagnostics
+
+zone conversion · layer pipeline · contract none
+
+- `ConversionResult` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.diagnostics.ConversionResult`
+- `Diagnostic` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.diagnostics.Diagnostic`
 
 ## junoscfg.convert.field_validator
 
@@ -28,6 +36,12 @@ zone conversion · layer pipeline · contract none
 zone conversion · layer pipeline · contract none
 
 - `json_to_dict` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.input.json_input.json_to_dict`
+
+## junoscfg.convert.input.normalization
+
+zone conversion · layer pipeline · contract none
+
+- `normalize_leaf_lists` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.input.normalization.normalize_leaf_lists`
 
 ## junoscfg.convert.input.set_input
 
@@ -73,17 +87,4 @@ zone conversion · layer pipeline · contract none
 - `DictWalker` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.dict_walker.DictWalker`
 - `WalkOutput` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.dict_walker.WalkOutput`
 
-## junoscfg.convert.output.json_output
-
-zone conversion · layer pipeline · contract none
-
-- `dict_to_json` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.json_output.dict_to_json`
-
-## junoscfg.convert.output.set_output
-
-zone conversion · layer pipeline · contract none
-
-- `SetWalkOutput` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.set_output.SetWalkOutput`
-- `dict_to_set` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.set_output.dict_to_set`
-
-<!-- cut at 1,500 tokens; 55 modules below the cut -->
+<!-- cut at 1,500 tokens; 58 modules below the cut -->

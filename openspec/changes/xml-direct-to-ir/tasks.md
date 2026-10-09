@@ -7,11 +7,17 @@
 
 ## 2. Change
 
-- [ ] 2.1 Extract the existing XML walker result into a private helper exposed
+- [x] 2.1 Extract the existing XML walker result into a supported helper exposed
   through the display package door.
-- [ ] 2.2 Make XML input consume that dict directly and update its contract and
-  architecture documentation.
-- [ ] 2.3 Add the changelog fragment and run focused tests.
+- [x] 2.2 Make XML input consume that dict directly, normalize leaf-lists at the
+  common input boundary, and update its contract and architecture documentation.
+- [x] 2.3 Add the changelog fragment and run focused tests, including the
+  device-derived private XML capture and the production consumer contract.
+
+  Evidence: 128 focused repository tests passed; the private XML capture kept
+  canonical IR SHA-256
+  `0c8b63bb622e3722820c613f2d66c3a6051dd6c9621b524de12a575028098a89`;
+  the collection's 33 tests passed against this checkout.
 - [ ] 2.4 Run the locked full repository check.
 
 ## 3. Review and evidence
