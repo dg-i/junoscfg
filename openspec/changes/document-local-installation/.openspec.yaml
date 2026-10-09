@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-09
+type: refactor
+zone: surface
+domains: []
+removes: none, because this change only adds checkout installation guidance
+skip_specs: true

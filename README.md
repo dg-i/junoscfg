@@ -6,8 +6,16 @@ Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser
 
 ## Installation
 
+From PyPI:
+
 ```bash
 pip install junoscfg
+```
+
+From a checked-out repository, run this in the repository root:
+
+```bash
+pip install .
 ```
 
 ## Usage
