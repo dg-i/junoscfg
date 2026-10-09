@@ -17,7 +17,8 @@ When two of these conflict, the order is:
 
 1. **Correctness** — a converted configuration must mean what the input meant.
 2. **Simplicity** — a second way to do the same conversion is a defect.
-3. **Cost / size** — accepted: ~36 MB of schema artifacts ship in the wheel.
+3. **Cost / size** — accepted: generated schema artifacts ship compressed in
+   the wheel.
 4. **Latency** — last; a multi-megabyte schema load on start-up is tolerated.
 
 The ranking is visible in the record. `tests/test_convert_consistency.py`
@@ -26,8 +27,8 @@ asserts every format pair agrees and every round trip preserves content.
 and a Lark grammar for set-to-structured conversion because each got
 context-dependent elements wrong, in favour of a slower schema tree walk. XML
 output raises `NotImplementedError` rather than emit something approximate.
-And `src/junoscfg/validate/data/` bundles ~36 MB of generated artifacts rather
-than fetching or deriving them at run time.
+And `src/junoscfg/validate/data/` bundles the generated artifacts in compressed
+form rather than fetching or deriving them at run time.
 
 ## 2. Constraints
 
@@ -101,12 +102,11 @@ than fetching or deriving them at run time.
 
 ## 8. Cross-cutting concepts
 
-**Layering.** The package import graph is a DAG with no cycles — measured, 51
-runtime edges, 1 of them `TYPE_CHECKING`-guarded (`convert` -> `anonymize`) and
-none in a `__main__` block. Dependencies run one way:
+**Layering.** The package import graph is a DAG with no cycles, enforced by
+`tach check`. Dependencies run one way:
 
 ```text
-display + input.py        shared kernel, imported by 6 of 7 packages
+display + input.py        shared kernel
   <- validate, anonymize  schema and rules
   <- convert              the pipeline; also imports anonymize
   <- audit                reads the pipeline's output
@@ -115,9 +115,8 @@ edityaml                  standalone: imports nothing else in the package
 ```
 
 A new edge that points up this list is a defect. `display` is the kernel by
-use, not by name: 1337 lines of which `config_store.py` (416) and
-`constants.py` (194) are a data structure and a schema-flag table, not display
-logic.
+use, not by name: `config_store.py` and `constants.py` are a data structure and
+a schema-flag table, not display logic.
 
 **One interchange format.** Every conversion is `format -> dict IR -> format`;
 there is no direct format-to-format path and adding one is the "second way to
