@@ -1,0 +1,36 @@
+schema: agent-ready
+created: 2026-10-09
+type: bug
+zone: kernel
+domains: [schema-pipeline, conversion, validation, audit, anonymization]
+removes:
+  - "the parser's drop of every identifier element beside a sequence's trailing choice, which left `control-as-list-type` childless and every other list keyed `name` whatever the dump declares"
+  - "`fe.k`, the hand-kept key of the three flat-entry lists; the key now comes from the identifier"
+  - "`values-only` and the `_v0`, `_v1` keys that stood in for `attributes-match`'s three identifiers"
+  - "the hard-coded `community-name` branches of the set reader, the set writer and the audit walker, and the parent-scoped entry-key fix of `change/entry-keys-from-the-tree`, superseded"
+  - "the childless-list and `apply-groups` branches of the set reader that returned with tokens still unread"
+declared-break:
+  consumer:
+    why: >-
+      The IR keys a list entry by the element the dump declares. 171 types on
+      the 25.2R2 dump are keyed `ip`, `index`, `interface-id`, `address`, `id`
+      or 66 other names where every reader wrote `name`, and
+      `attributes-match` carries its three fields where it carried `name`,
+      `_v0` and `_v1`; convert_config's JSON and YAML output changes for a
+      configuration holding one of those statements, and validate_json and
+      validate_yaml accept the device-backed shape they rejected.
+    migration: >-
+      A consumer that reads an entry's `name` under one of those lists reads
+      the key the device's JSON names, which the regenerated JSON schema
+      lists as the entry's required property; a document written with `name`
+      there is rewritten to that key. Lists the device keys `name` are
+      unchanged.
+  cli:
+    why: >-
+      `convert -e json` and `-e yaml` write the device's key for the same
+      statements, `-e set` writes one line for a device-shaped JSON or XML
+      input where it wrote two, and `-v` accepts that input where it rejected
+      it.
+    migration: >-
+      A pipeline comparing junoscfg's JSON or YAML against an earlier run
+      re-baselines those statements; set output needs nothing.
