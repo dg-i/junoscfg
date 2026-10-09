@@ -1,7 +1,7 @@
 ## 1. Verification
 
-- [ ] 1.1 Add failing tests for deterministic CLI reference generation and complete command coverage.
-- [ ] 1.2 Confirm the current hand-maintained page cannot satisfy the generated reference contract.
+- [x] 1.1 Add failing tests for deterministic CLI reference generation and complete command coverage.
+- [x] 1.2 Confirm the current hand-maintained page cannot satisfy the generated reference contract.
 
 ## 2. Change
 
