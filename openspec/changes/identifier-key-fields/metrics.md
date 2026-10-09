@@ -1,5 +1,3 @@
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -7,17 +5,17 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 6742, "binary_files": 5, "files": 87, "removed": 705} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | `agent-ready reconcile` exit 0, no output, run at c297bd8 with the six deltas live |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 61, "delta": 0, "head": 61} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
 | Context expansion: src/junoscfg/validate/xsd_parser.py | owns the root cause, `_build_from_complex_type`; below the slice's cut |
 | Context expansion: src/junoscfg/display/constants.py | `ENTRY_KEY_OVERRIDES`, `get_flat_entry_config`, `_FLAT_ENTRY_KEYS`: the kernel the helper joins |
 | Context expansion: src/junoscfg/validate/xsd_fixes.py | `_fix_flat_entry_keys` mapping the retired `fe.k` and `values-only` |

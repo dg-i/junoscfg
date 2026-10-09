@@ -26,7 +26,7 @@
 
 - [x] 3.1 Complete the fresh-session review and write `review.md`.
   - Re-review of the fix pass `fc22c57..HEAD` at d8717de, fresh session: see `review.md` "Phase-6 re-review"; every decision probed, one Low finding (11), no challenge open.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 
 ## 4. Fix pass on the phase-6 review (owner decisions)
 

@@ -1,0 +1,235 @@
+{
+  "change": "identifier-key-fields",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "b9c3bf0730bc3b28c34d6addafc3174504e8c6fe84894eb797789e78c0ae1814",
+          "head": "1b04d9a3b33b6275dfc8744596ba8114a2b29150204de96cb54b9db8d01ff3fa"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "AGENTS.md",
+            "ARCHITECTURE.md",
+            "changelog.d/+identifier-key-fields.bugfix.md",
+            "docs/architecture/conversion-bugfix-guide.md",
+            "docs/architecture/developer-guide.md",
+            "docs/architecture/schema-internals.md",
+            "docs/decisions/2026-10-09-key-entries-by-declared-identifiers.md",
+            "docs/decisions/index.md",
+            "docs/guide/validation.md",
+            "pyproject.toml",
+            "src/junoscfg/__init__.py",
+            "src/junoscfg/anonymize/walker.py",
+            "src/junoscfg/audit/data/unused-types.yaml",
+            "src/junoscfg/audit/walker.py",
+            "src/junoscfg/convert/field_validator.py",
+            "src/junoscfg/convert/input/set_input.py",
+            "src/junoscfg/convert/output/dict_walker.py",
+            "src/junoscfg/display/__init__.py",
+            "src/junoscfg/display/constants.py",
+            "src/junoscfg/display/to_yaml.py",
+            "src/junoscfg/validate/artifact_builder.py",
+            "src/junoscfg/validate/data/junos-json-schema.json.gz",
+            "src/junoscfg/validate/data/junos-schema-meta.json.gz",
+            "src/junoscfg/validate/data/junos-set.lark.gz",
+            "src/junoscfg/validate/data/junos-structure-tree.json.gz",
+            "src/junoscfg/validate/data/junos-yaml-schema.json.gz",
+            "src/junoscfg/validate/grammar_generator.py",
+            "src/junoscfg/validate/schema_generator.py",
+            "src/junoscfg/validate/schema_node.py",
+            "src/junoscfg/validate/xsd_fixes.py",
+            "src/junoscfg/validate/xsd_parser.py",
+            "tach.toml",
+            "tests/data/captures/keyed-entries-apply-macro.json",
+            "tests/data/captures/keyed-entries-apply-macro.set",
+            "tests/data/captures/keyed-entries-apply-macro.xml",
+            "tests/data/captures/keyed-entries-as-lists.conf",
+            "tests/data/captures/keyed-entries-as-lists.json",
+            "tests/data/captures/keyed-entries-as-lists.set",
+            "tests/data/captures/keyed-entries-as-lists.xml",
+            "tests/data/captures/keyed-entries-attributes-match.conf",
+            "tests/data/captures/keyed-entries-attributes-match.json",
+            "tests/data/captures/keyed-entries-attributes-match.set",
+            "tests/data/captures/keyed-entries-attributes-match.xml",
+            "tests/data/captures/keyed-entries-community.conf",
+            "tests/data/captures/keyed-entries-community.json",
+            "tests/data/captures/keyed-entries-community.set",
+            "tests/data/captures/keyed-entries-community.xml",
+            "tests/data/captures/keyed-entries-filters.conf",
+            "tests/data/captures/keyed-entries-filters.json",
+            "tests/data/captures/keyed-entries-filters.set",
+            "tests/data/captures/keyed-entries-identity.json",
+            "tests/data/captures/keyed-entries-identity.set",
+            "tests/data/captures/keyed-entries-known-differences.json",
+            "tests/data/captures/keyed-entries-name-keyed.json",
+            "tests/data/captures/keyed-entries-name-keyed.set",
+            "tests/data/captures/keyed-entries-route-filter.json",
+            "tests/data/captures/keyed-entries-route-filter.set",
+            "tests/data/captures/keyed-entries-route-filter.xml",
+            "tests/data/captures/keyed-entries-virtual-link.json",
+            "tests/data/captures/keyed-entries-virtual-link.set",
+            "tests/data/captures/keyed-entries-virtual-link.xml",
+            "tests/data/keyed-entries.xsd",
+            "tests/data/name-keyed-schema-json.json",
+            "tests/data/name-keyed-schema-yaml.json",
+            "tests/data/name-keyed.lark",
+            "tests/keyed_entries.py",
+            "tests/test_anonymize/test_integration.py",
+            "tests/test_anonymize/test_walker.py",
+            "tests/test_artifact_builder.py",
+            "tests/test_audit/test_regressions.py",
+            "tests/test_audit/test_types.py",
+            "tests/test_audit/test_walker.py",
+            "tests/test_characterization.py",
+            "tests/test_cli.py",
+            "tests/test_cli_validate.py",
+            "tests/test_device_truth.py",
+            "tests/test_field_validator.py",
+            "tests/test_grammar_generator.py",
+            "tests/test_json_yaml_validator.py",
+            "tests/test_schema_data.py",
+            "tests/test_schema_generator.py",
+            "tests/test_set_corpus.py",
+            "tests/test_set_input.py",
+            "tests/test_set_validator.py",
+            "tests/test_to_yaml.py",
+            "tests/test_xsd_parser.py",
+            "uv.lock"
+          ],
+          "since": "588d16a90700d60ba385e0a786070eb4eb2de1b4"
+        },
+        "selector": [
+          "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+          "e6b7886e27a1fd5d8af14892f37e9e6063ece214"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 6742,
+        "binary_files": 5,
+        "files": 87,
+        "removed": 705
+      }
+    },
+    "locked_packages": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "92cbef486b62f566111fb2aabd77595024e2bbbb1dd0e37b78a1e4703678519c",
+          "head": "c1324723171e67c6ae27c61ef3237d13871384833edf51fd69a9d8fb1cbb5491"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records"
+      },
+      "status": "measured",
+      "value": {
+        "base": 61,
+        "delta": 0,
+        "head": 61
+      }
+    },
+    "phase_span": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-09T21:01:32.567431Z",
+      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
