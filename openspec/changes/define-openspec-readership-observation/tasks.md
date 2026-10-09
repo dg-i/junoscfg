@@ -30,5 +30,5 @@
 ## 4. Review and evidence
 
 - [x] 4.1 Complete the documentation review and write `review.md`.
-- [ ] 4.2 Capture `metrics.md` and `metrics.json` for the reviewed documentation
+- [x] 4.2 Capture `metrics.md` and `metrics.json` for the reviewed documentation
   commit.
