@@ -10,7 +10,7 @@ import yaml
 if TYPE_CHECKING:
     import pytest
 
-from junoscfg import Format, convert_config
+from junoscfg import Format, convert_config, convert_config_result
 from junoscfg.display import filter_set_by_path, is_display_set
 from junoscfg.display.config_store import filter_structured_by_path
 from junoscfg.display.set_converter import SetConverter
@@ -63,12 +63,14 @@ class TestJsonDeleteToStructured:
                 }
             }
         }
-        result = convert_config(
+        converted = convert_config_result(
             json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
         )
+        result = converted.output
         assert "delete:" not in result
         assert "ssh" in result  # content still renders
-        assert "delete annotation(s) dropped" in capsys.readouterr().err
+        assert capsys.readouterr().err == ""
+        assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
 
     def test_delete_leaf_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Leaf-level delete annotations are dropped from structured output."""
@@ -80,12 +82,14 @@ class TestJsonDeleteToStructured:
                 }
             }
         }
-        result = convert_config(
+        converted = convert_config_result(
             json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
         )
+        result = converted.output
         assert "delete:" not in result
         assert "host-name" in result
-        assert "delete annotation(s) dropped" in capsys.readouterr().err
+        assert capsys.readouterr().err == ""
+        assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
 
 
 class TestSetToStructuredDelete:
@@ -94,9 +98,13 @@ class TestSetToStructuredDelete:
     def test_delete_command_to_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
         """A delete-only node is omitted from structured output with a note."""
         input_text = "set system services ssh\ndelete system services ssh"
-        result = convert_config(input_text, from_format=Format.SET, to_format=Format.STRUCTURED)
+        converted = convert_config_result(
+            input_text, from_format=Format.SET, to_format=Format.STRUCTURED
+        )
+        result = converted.output
         assert result.strip() == ""
-        assert "delete annotation(s) dropped" in capsys.readouterr().err
+        assert capsys.readouterr().err == ""
+        assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
 
 
 class TestStructuredToSetDelete:

@@ -5,10 +5,10 @@
 
 ## 2. Change
 
-- [ ] 2.1 Add immutable diagnostic/result values and opt-in package-door APIs.
-- [ ] 2.2 Thread diagnostic sinks through validation, anonymization, and structured rendering.
-- [ ] 2.3 Make the CLI the sole renderer and update existing stderr assertions.
-- [ ] 2.4 Update contracts, docs, interfaces, and changelog.
+- [x] 2.1 Add immutable diagnostic/result values and opt-in package-door APIs.
+- [x] 2.2 Thread diagnostic sinks through validation, anonymization, and structured rendering.
+- [x] 2.3 Make the CLI the sole renderer and update existing stderr assertions.
+- [x] 2.4 Update contracts, docs, interfaces, and changelog.
 - [ ] 2.5 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence

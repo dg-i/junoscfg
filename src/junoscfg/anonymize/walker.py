@@ -7,12 +7,13 @@ to leaf values.
 
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING, Any
 
 from junoscfg.anonymize.path_filter import PathFilter
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from junoscfg.anonymize.config import AnonymizeConfig
     from junoscfg.anonymize.rules import Rule
 
@@ -21,6 +22,8 @@ def walk(
     ir: dict[str, Any],
     rules: list[Rule],
     config: AnonymizeConfig,
+    *,
+    diagnostic_sink: Callable[[str], None] | None = None,
 ) -> None:
     """Walk the IR in-place, applying anonymization rules to matching leaves.
 
@@ -45,9 +48,9 @@ def walk(
     cfg = ir.get("configuration")
     if cfg is None:
         # Try walking IR directly if it's not wrapped
-        _walk_node(ir, schema_root, [], rules, path_filter, log_debug)
+        _walk_node(ir, schema_root, [], rules, path_filter, log_debug, diagnostic_sink)
     else:
-        _walk_node(cfg, schema_root, [], rules, path_filter, log_debug)
+        _walk_node(cfg, schema_root, [], rules, path_filter, log_debug, diagnostic_sink)
 
 
 def _walk_node(
@@ -57,6 +60,7 @@ def _walk_node(
     rules: list[Rule],
     path_filter: PathFilter,
     log_debug: bool,
+    diagnostic_sink: Callable[[str], None] | None,
 ) -> None:
     """Recursively walk the IR dict, applying rules to leaves."""
     if obj is None or schema_node is None:
@@ -83,12 +87,16 @@ def _walk_node(
                 if isinstance(value, list) and inner_schema:
                     for item in value:
                         path.append(key)
-                        _walk_node(item, inner_schema, path, rules, path_filter, log_debug)
+                        _walk_node(
+                            item, inner_schema, path, rules, path_filter, log_debug, diagnostic_sink
+                        )
                         path.pop()
                     continue
                 elif isinstance(value, dict) and inner_schema:
                     path.append(key)
-                    _walk_node(value, inner_schema, path, rules, path_filter, log_debug)
+                    _walk_node(
+                        value, inner_schema, path, rules, path_filter, log_debug, diagnostic_sink
+                    )
                     path.pop()
                     continue
 
@@ -103,7 +111,16 @@ def _walk_node(
                     parent_tr = schema_node.get("tr")
                     if parent_tr:
                         synthetic_schema["tr"] = parent_tr
-                    _anonymize_leaf(obj, key, value, synthetic_schema, path, rules, log_debug)
+                    _anonymize_leaf(
+                        obj,
+                        key,
+                        value,
+                        synthetic_schema,
+                        path,
+                        rules,
+                        log_debug,
+                        diagnostic_sink,
+                    )
                 path.pop()
                 continue
 
@@ -115,12 +132,16 @@ def _walk_node(
                 if isinstance(value, list):
                     for item in value:
                         path.append(key)
-                        _walk_node(item, child_schema, path, rules, path_filter, log_debug)
+                        _walk_node(
+                            item, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
+                        )
                         path.pop()
                     continue
                 elif isinstance(value, dict):
                     path.append(key)
-                    _walk_node(value, child_schema, path, rules, path_filter, log_debug)
+                    _walk_node(
+                        value, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
+                    )
                     path.pop()
                     continue
 
@@ -128,17 +149,28 @@ def _walk_node(
             if child_schema.get("l"):
                 path.append(key)
                 if path_filter.matches(path):
-                    _anonymize_leaf(obj, key, value, child_schema, path, rules, log_debug)
+                    _anonymize_leaf(
+                        obj,
+                        key,
+                        value,
+                        child_schema,
+                        path,
+                        rules,
+                        log_debug,
+                        diagnostic_sink,
+                    )
                 path.pop()
             # Container — recurse
             elif isinstance(value, dict):
                 path.append(key)
-                _walk_node(value, child_schema, path, rules, path_filter, log_debug)
+                _walk_node(
+                    value, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
+                )
                 path.pop()
 
     elif isinstance(obj, list):
         for item in obj:
-            _walk_node(item, schema_node, path, rules, path_filter, log_debug)
+            _walk_node(item, schema_node, path, rules, path_filter, log_debug, diagnostic_sink)
 
 
 def _anonymize_leaf(
@@ -149,6 +181,7 @@ def _anonymize_leaf(
     path: list[str],
     rules: list[Rule],
     log_debug: bool,
+    diagnostic_sink: Callable[[str], None] | None,
 ) -> None:
     """Try each rule against a leaf value; first match wins."""
     if value is None or value is True or value == "":
@@ -157,12 +190,12 @@ def _anonymize_leaf(
     if isinstance(value, list):
         new_list = []
         for item in value:
-            replaced = _try_rules(item, schema_node, path, rules, log_debug)
+            replaced = _try_rules(item, schema_node, path, rules, log_debug, diagnostic_sink)
             new_list.append(replaced)
         parent[key] = new_list
         return
 
-    replaced = _try_rules(value, schema_node, path, rules, log_debug)
+    replaced = _try_rules(value, schema_node, path, rules, log_debug, diagnostic_sink)
     if replaced is not value:
         parent[key] = replaced
 
@@ -173,17 +206,15 @@ def _try_rules(
     path: list[str],
     rules: list[Rule],
     log_debug: bool,
+    diagnostic_sink: Callable[[str], None] | None,
 ) -> Any:
     """Apply the first matching rule to *value* and return the result."""
     str_value = str(value)
     for rule in rules:
         if rule.matches(str_value, schema_node, path):
             result = rule.transform(str_value)
-            if log_debug:
+            if log_debug and diagnostic_sink is not None:
                 dot_path = ".".join(path)
-                print(
-                    f"anonymize: [{rule.name}] {dot_path}: {str_value!r} -> {result!r}",
-                    file=sys.stderr,
-                )
+                diagnostic_sink(f"[{rule.name}] {dot_path}: {str_value!r} -> {result!r}")
             return result
     return value

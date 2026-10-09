@@ -130,17 +130,13 @@ them, and `KEY_ALIASES` is applied on every input path.
 `xsd_fixes.py` as Python so that it survives the next regeneration; editing the
 JSON is a change that the next `--regen-schema` silently reverts.
 
-**Errors leave by three different doors, and that is a defect, not a design.**
-Schema validation returns a `ValidationResult`; a structural failure raises
+**Errors and diagnostics leave through separate deliberate doors.** Schema
+validation returns a `ValidationResult`; a structural failure raises
 (`SchemaLoadError`, `AuditLoadError`, `FieldValidationError`, `ValueError`);
-and field warnings are `print(..., file=sys.stderr)` from inside the library —
-`convert/__init__.py:127`, `anonymize/walker.py:186`,
-`convert/output/structured_output.py`. `cli.py` contains no `sys.stderr` call
-at all, so the inversion is complete: the library writes to the terminal and
-the CLI does not. For an in-process consumer such as the Ansible collection
-those lines are unaddressable output. The rule is that the library returns
-diagnostics and the caller decides where they go; the three sites above are the
-known exceptions.
+and non-fatal conversion events are immutable `Diagnostic` values on a
+`ConversionResult`. Library calls never write those events to a terminal. The
+CLI renders their stable text to stderr, while in-process consumers decide how
+to route or suppress them.
 
 **Not applicable here.** No money, no wall-clock time, no user identity or
 authorization: junoscfg is a pure text-to-text transformation with no session

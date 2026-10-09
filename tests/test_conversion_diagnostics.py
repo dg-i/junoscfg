@@ -7,6 +7,7 @@ import json
 from click.testing import CliRunner
 
 from junoscfg import Format, convert_config, convert_config_result
+from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.convert import pipeline, pipeline_result
 
@@ -84,3 +85,13 @@ class TestDiagnosticRouting:
         cli = CliRunner().invoke(main, ["-i", "json", "-e", "structured"], input=source)
         assert cli.exit_code == 0
         assert "delete annotation(s) dropped" in cli.stderr
+
+        anonymize_result = convert_config_result(
+            '{"configuration":{"system":{"name-server":[{"name":"8.8.8.8"}]}}}',
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(ips=True, salt="diagnostic-test", log_level="debug"),
+        )
+        assert capsys.readouterr().err == ""
+        assert any(item.source == "anonymize" for item in anonymize_result.diagnostics)

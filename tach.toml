@@ -92,6 +92,6 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.convert"]
 expose = [
-    "FieldValidationError", "find_configuration", "from_dict", "pipeline",
+    "ConversionResult", "Diagnostic", "FieldValidationError", "find_configuration", "from_dict", "pipeline", "pipeline_result",
     "to_dict", "validate_ir",
 ]

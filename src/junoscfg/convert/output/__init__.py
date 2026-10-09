@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
-def from_dict(config: Any, fmt: str, *, wrap: bool = True) -> str:
+def from_dict(
+    config: Any,
+    fmt: str,
+    *,
+    wrap: bool = True,
+    diagnostic_sink: Callable[[str], None] | None = None,
+) -> str:
     """Dispatch to the appropriate output converter.
 
     Args:
@@ -38,6 +47,6 @@ def from_dict(config: Any, fmt: str, *, wrap: bool = True) -> str:
     elif fmt == "structured":
         from junoscfg.convert.output.structured_output import dict_to_structured
 
-        return dict_to_structured(config)
+        return dict_to_structured(config, diagnostic_sink=diagnostic_sink)
     else:
         raise ValueError(f"Unknown output format: {fmt}")

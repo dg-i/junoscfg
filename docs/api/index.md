@@ -14,7 +14,7 @@ from junoscfg import convert_config, validate_json
 ## Convert Module
 
 The [`junoscfg.convert`](internals/convert.md) module implements the unified conversion
-pipeline. It provides `pipeline()`, `to_dict()`, `from_dict()`, and `validate_ir()` for
+pipeline. It provides `pipeline()`, `pipeline_result()`, `to_dict()`, `from_dict()`, and `validate_ir()` for
 converting between any format pair through a JSON dict intermediate representation (IR).
 
 The [`junoscfg.convert.field_validator`](internals/field_validator.md) submodule validates
