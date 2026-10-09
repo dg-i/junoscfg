@@ -18,6 +18,8 @@
 
 - `ARCHITECTURE.md`: the authoritative home for system-wide trade-offs,
   layering, generated-artifact policy, and dependency direction.
+- `changelog.d/+refresh-architecture-measurements.misc.md`: the beta-stage
+  release note required for a user-visible documentation correction.
 
 ## Documentation QA
 
@@ -32,7 +34,8 @@
   `tach.toml`, and `src/junoscfg/display/CONTRACT.md`; expect “shared kernel,”
   zone names, and dependency direction to agree.
 - Diátaxis placement: inspect the diff; expect explanatory architectural
-  rationale to remain in `ARCHITECTURE.md`, not move into a how-to or contract.
+  rationale to remain in `ARCHITECTURE.md`, with only its release summary in
+  the news fragment rather than a how-to or contract.
 - Rendered output: run the repository Markdown hook through the full
   `agent-ready` checkpoint and inspect the edited sections as rendered
   Markdown; expect intact lists, code fences, links, and headings.

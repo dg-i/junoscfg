@@ -25,5 +25,5 @@ therefore skips delta specs.
 
 The reader is a contributor deciding where code belongs. `ARCHITECTURE.md` is
 the documentation home; the committed compressed artifacts, fresh code map,
-source tree, and `tach check` are authoritative. Only that document and this
-change record are affected.
+source tree, and `tach check` are authoritative. That document, its required
+news fragment, and this change record are affected.
