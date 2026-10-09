@@ -16,5 +16,6 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: `src/junoscfg/CONTRACT.md` | Required module contract; updates the dispatch-table precedent after the rename. |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

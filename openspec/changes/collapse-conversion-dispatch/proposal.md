@@ -30,5 +30,6 @@ unified pipeline's dispatch surface and makes adding or auditing formats harder.
 
 ## Impact
 
-The change is confined to `src/junoscfg/__init__.py` and focused conversion
-tests. It removes no public API and adds no dependency or configuration reader.
+The change is confined to `src/junoscfg/__init__.py`, its contract, and focused
+conversion tests. It removes no public API and adds no dependency or
+configuration reader.

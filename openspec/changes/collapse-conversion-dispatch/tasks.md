@@ -7,11 +7,11 @@
 
 ## 2. Change
 
-- [ ] 2.1 Replace `_CONVERTERS` with an explicit supported-pair set and dispatch
+- [x] 2.1 Replace `_CONVERTERS` with an explicit supported-pair set and dispatch
   accepted pairs directly to `_pipeline_convert()`.
-- [ ] 2.2 Remove the twenty private format-pair wrapper functions without
+- [x] 2.2 Remove the twenty private format-pair wrapper functions without
   changing the public signature or supported-pair matrix.
-- [ ] 2.3 Run the focused conversion API and integration tests after the edit.
+- [x] 2.3 Run the focused conversion API and integration tests after the edit.
 - [ ] 2.4 Run the locked full repository check.
 
 ## 3. Review and evidence

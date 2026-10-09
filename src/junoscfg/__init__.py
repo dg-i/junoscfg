@@ -8,13 +8,10 @@ Junos XSD schema.
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, TextIO, cast
+from typing import TextIO
 
 from junoscfg.convert import FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 __version__ = "0.13.0"
 
@@ -41,33 +38,33 @@ class Format(Enum):
     XML = "xml"
 
 
-# Supported (from_format, to_format) conversion pairs.
-_CONVERTERS: dict[tuple[Format, Format], str] = {
-    (Format.JSON, Format.SET): "_convert_json_to_set",
-    (Format.JSON, Format.STRUCTURED): "_convert_json_to_structured",
-    (Format.JSON, Format.YAML): "_convert_json_to_yaml",
-    (Format.XML, Format.SET): "_convert_xml_to_set",
-    (Format.XML, Format.STRUCTURED): "_convert_xml_to_structured",
-    (Format.XML, Format.YAML): "_convert_xml_to_yaml",
-    (Format.YAML, Format.SET): "_convert_yaml_to_set",
-    (Format.YAML, Format.STRUCTURED): "_convert_yaml_to_structured",
-    (Format.YAML, Format.JSON): "_convert_yaml_to_json",
-    (Format.XML, Format.JSON): "_convert_xml_to_json",
-    (Format.SET, Format.STRUCTURED): "_convert_set_to_structured",
-    (Format.SET, Format.JSON): "_convert_set_to_json",
-    (Format.SET, Format.YAML): "_convert_set_to_yaml",
-    (Format.STRUCTURED, Format.SET): "_convert_structured_to_set",
-    (Format.STRUCTURED, Format.JSON): "_convert_structured_to_json",
-    (Format.STRUCTURED, Format.YAML): "_convert_structured_to_yaml",
-    # Identity conversions (parse and re-render for normalization)
-    (Format.JSON, Format.JSON): "_convert_json_to_json",
-    (Format.SET, Format.SET): "_convert_set_to_set",
-    (Format.YAML, Format.YAML): "_convert_yaml_to_yaml",
-    (Format.STRUCTURED, Format.STRUCTURED): "_convert_structured_to_structured",
-}
-
-# All converters go through the pipeline and support validate/strict kwargs.
-_PIPELINE_CONVERTERS: frozenset[str] = frozenset(_CONVERTERS.values())
+# Supported (from_format, to_format) conversion pairs. XML output is rejected
+# separately so callers retain its documented NotImplementedError.
+_SUPPORTED_CONVERSIONS: frozenset[tuple[Format, Format]] = frozenset(
+    {
+        (Format.JSON, Format.SET),
+        (Format.JSON, Format.STRUCTURED),
+        (Format.JSON, Format.YAML),
+        (Format.XML, Format.SET),
+        (Format.XML, Format.STRUCTURED),
+        (Format.XML, Format.YAML),
+        (Format.YAML, Format.SET),
+        (Format.YAML, Format.STRUCTURED),
+        (Format.YAML, Format.JSON),
+        (Format.XML, Format.JSON),
+        (Format.SET, Format.STRUCTURED),
+        (Format.SET, Format.JSON),
+        (Format.SET, Format.YAML),
+        (Format.STRUCTURED, Format.SET),
+        (Format.STRUCTURED, Format.JSON),
+        (Format.STRUCTURED, Format.YAML),
+        # Identity conversions (parse and re-render for normalization)
+        (Format.JSON, Format.JSON),
+        (Format.SET, Format.SET),
+        (Format.YAML, Format.YAML),
+        (Format.STRUCTURED, Format.STRUCTURED),
+    }
+)
 
 
 def convert_config(
@@ -119,17 +116,17 @@ def convert_config(
     if to_format is Format.XML:
         raise NotImplementedError("XML output is not yet supported.")
 
-    func_name = _CONVERTERS.get((from_format, to_format))
-    if func_name is None:
+    if (from_format, to_format) not in _SUPPORTED_CONVERSIONS:
         raise ValueError(f"Unsupported conversion: {from_format.value} -> {to_format.value}")
 
-    converter = cast("Callable[..., str]", globals()[func_name])
-
-    # Pipeline-based converters accept validate/strict/anon_config kwargs
-    if func_name in _PIPELINE_CONVERTERS:
-        result = converter(source, validate=validate, strict=strict, anon_config=anon_config)
-    else:
-        result = converter(source)
+    result = _pipeline_convert(
+        source,
+        from_format.value,
+        to_format.value,
+        validate=validate,
+        strict=strict,
+        anon_config=anon_config,
+    )
 
     if path and result:
         result = _filter_by_path(result, to_format, path, relative)
@@ -180,251 +177,6 @@ def _pipeline_convert(
         _read_source(source),
         from_format=from_fmt,
         to_format=to_fmt,
-        validate=validate,
-        strict=strict,
-        anon_config=anon_config,
-    )
-
-
-def _convert_json_to_set(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "json", "set", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_json_to_structured(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "json", "structured", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_json_to_yaml(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "json", "yaml", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_xml_to_set(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "xml", "set", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_xml_to_structured(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "xml", "structured", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_xml_to_yaml(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "xml", "yaml", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_yaml_to_set(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "yaml", "set", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_yaml_to_structured(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "yaml", "structured", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_yaml_to_json(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "yaml", "json", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_xml_to_json(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "xml", "json", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_set_to_structured(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "set", "structured", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_set_to_json(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "set", "json", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_set_to_yaml(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "set", "yaml", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_structured_to_json(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "structured", "json", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_structured_to_yaml(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "structured", "yaml", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_structured_to_set(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "structured", "set", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_json_to_json(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "json", "json", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_set_to_set(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "set", "set", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_yaml_to_yaml(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source, "yaml", "yaml", validate=validate, strict=strict, anon_config=anon_config
-    )
-
-
-def _convert_structured_to_structured(
-    source: str | TextIO,
-    *,
-    validate: bool = True,
-    strict: bool = False,
-    anon_config: object | None = None,
-) -> str:
-    return _pipeline_convert(
-        source,
-        "structured",
-        "structured",
         validate=validate,
         strict=strict,
         anon_config=anon_config,

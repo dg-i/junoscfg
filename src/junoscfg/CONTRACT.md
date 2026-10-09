@@ -21,5 +21,5 @@ except through this one function signature.
 
 ## Precedent
 
-- `junoscfg.convert_config` — the one entry point; a new format pair is a row in
-  `_CONVERTERS`, never a new public function.
+- `junoscfg.convert_config` — the one entry point; a new format pair is a member
+  of `_SUPPORTED_CONVERSIONS`, never a new public function.
