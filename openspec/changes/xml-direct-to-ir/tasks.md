@@ -14,15 +14,18 @@
 - [x] 2.3 Add the changelog fragment and run focused tests, including the
   device-derived private XML capture and the production consumer contract.
 
-  Evidence: 128 focused repository tests passed; the private XML capture kept
+  Evidence after review correction: 186 focused repository tests passed; the
+  JSON regression proves schema loading is bypassed and scalar shapes are
+  retained, while the private XML capture kept
   canonical IR SHA-256
   `0c8b63bb622e3722820c613f2d66c3a6051dd6c9621b524de12a575028098a89`;
   the collection's 33 tests passed against this checkout.
 - [x] 2.4 Run the locked full repository check.
 
-  Passed at `7973970` with
+  Passed at `23bae69` with 1,631 tests passed and 72 skipped using
   `uv run --locked --group dev --with griffe --with tach --with towncrier
-  --with vulture agent-ready check --set full`.
+  --with vulture agent-ready check --set full --base
+  codex/implement-simplification-roadmap`.
 
 ## 3. Review and evidence
 
