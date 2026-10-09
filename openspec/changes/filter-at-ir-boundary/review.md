@@ -36,5 +36,6 @@ None. Both corrections preserve the approved path-filtering behavior.
 
 ## Verdict
 
-Ready after correction, subject to the focused and locked full gates being
-rerun because runtime code and tests changed after the previous checkpoint.
+The focused regression suite and locked fast gate pass after correction. Ready
+subject to the locked full gate being rerun because runtime code and tests
+changed after the previous checkpoint.
