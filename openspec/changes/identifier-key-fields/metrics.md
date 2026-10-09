@@ -58,5 +58,6 @@
 | Addition beyond the proposal: `entry_key_names()` in `junoscfg.display` | phase 5, accepted by the owner: the flattened key-name set eight sites need; derived only from `entry_keys()` |
 | Addition beyond the proposal: `_fix_groups` gives `group` a `name` key child and clears `is_presence` | phase 5, accepted by the owner as required by the regeneration: the anonymizer offers group names through the tree's `name` leaf, and master's generator makes `groups` a presence node, which the shipped schema was not |
 | Addition beyond the proposal: anonymize walker passes enum values unchanged | phase 5: required by `test_an_enum_key_passes_unchanged`; anonymizer-bugs row 4 |
+| Owner-directed addition: "Junos correctness" defined in ARCHITECTURE.md §1, "Evidence hierarchy" in §8 (with §3 aligned), pointer in AGENTS.md | written by the orchestrator at the owner's direct request before phase 6; AGENTS.md kept at its 100-line cap |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

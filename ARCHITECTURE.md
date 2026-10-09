@@ -16,6 +16,10 @@ only parses arguments and formats output.
 When two of these conflict, the order is:
 
 1. **Correctness** — a converted configuration must mean what the input meant.
+   For Junos this is *Junos correctness*: junoscfg reads every statement the
+   device accepts, and what it writes loads on a device as the same
+   configuration. Copying the device's display layout (where it splits lines,
+   whether it shows a block or a one-liner) is not a goal.
 2. **Simplicity** — a second way to do the same conversion is a defect.
 3. **Cost / size** — accepted: generated schema artifacts ship compressed in
    the wheel.
@@ -98,8 +102,10 @@ form rather than fetching or deriving them at run time.
   deployment are the operator's.
 - It does not emit XML: `convert_config()` raises `NotImplementedError` for
   `Format.XML` output.
-- It does not own the schema's truth. Juniper's XSD is upstream; junoscfg
-  corrects known structural defects in `xsd_fixes.py` and says so.
+- It does not own the schema's truth. Juniper's XSD is upstream and is the
+  default structural model, not an infallible one. junoscfg corrects known
+  structural defects in `xsd_fixes.py` and says so, and device output
+  overrides both (section 8).
 - The Ruby Junoser gem is ancestry, not a dependency or an interface.
 
 ## 8. Cross-cutting concepts
@@ -132,6 +138,23 @@ arrays, and `KEY_ALIASES` is applied on every input path.
 `validate/data/` comes from the XSD pipeline. A correction goes in
 `xsd_fixes.py` as Python so that it survives the next regeneration; editing the
 JSON is a change that the next `--regen-schema` silently reverts.
+
+**Evidence hierarchy.** Evidence for what junoscfg accepts and writes ranks,
+strongest first:
+
+1. device output;
+2. the corrected schema model: the NETCONF XSD plus `validate/xsd_fixes.py`;
+3. the generated artifacts under `validate/data/`;
+4. a documented fallback.
+
+The XSD is the default structural model, not an infallible source. Where a
+device probe disagrees with it, the device wins, and the correction goes into
+the schema model, never into a runtime workaround. A fallback that is not
+documented is a defect. Two examples: the XSD admits a numeric `list-type`
+that the device rejects, and the XSD declares a route-filter's match type after
+the address, but the device accepts it on either side.
+`docs/how-to/settle-a-schema-question.md` describes how to ask for device
+evidence.
 
 **Errors and diagnostics leave through separate deliberate doors.** Schema
 validation returns a `ValidationResult`; a structural failure raises
