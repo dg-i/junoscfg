@@ -49,5 +49,14 @@
 | Context expansion: tests/test_schema_data.py, tests/schema_data.py, tests/test_round_trip_validates.py, tests/test_xsd_parser.py, tests/test_schema_generator.py, tests/test_json_yaml_validator.py, tests/test_cli_validate.py, tests/test_audit/test_types.py, tests/test_audit/test_regressions.py, tests/test_anonymize/test_walker.py | phase 4: existing classes and fixtures the new tests extend |
 | Context expansion: examples/router1.*, tests/data/set_corpus.txt | phase 4: the `name`-keyed byte-identity pins |
 | Context expansion: .venv agent_ready_checks/lane.py | phase 4: whether the merge-base check applies to the standard lane (it is the fix lane's) |
+| Context expansion: src/junoscfg/audit/engine.py, src/junoscfg/audit/registry.py, src/junoscfg/audit/data/unused-types.yaml | phase 5: how a reference is matched, to tell `as-list X` from `as-list-group X` |
+| Context expansion: src/junoscfg/anonymize/rules/sensitive_word.py, src/junoscfg/anonymize/rules/__init__.py | phase 5: why an enum key reached a substring rule |
+| Context expansion: tests/test_set_corpus.py, tests/test_jvd_corpus.py, tests/conftest.py | phase 5: corpus and dump tiers run against the change |
+| Context expansion: master's src and artifacts (git archive into the scratchpad) | phase 5: measured that master's own generator does not reproduce the shipped JSON and YAML schemas |
+| Owner-directed addition: evidence hierarchy in docs/architecture/developer-guide.md and conversion-bugfix-guide.md | relayed mid phase 5; ARCHITECTURE.md and settle-a-schema-question.md checked, no contradicting sentence |
+| Owner-directed addition: device round 4 (R, S, T) captures and tests, key keyword on either side | relayed mid phase 5 |
+| Addition beyond the proposal: `entry_key_names()` in `junoscfg.display` | phase 5: the flattened key-name set eight sites need; derived from `entry_keys()` |
+| Addition beyond the proposal: `_fix_groups` gives `group` a `name` key child and clears `is_presence` | phase 5: the anonymizer offers group names through the tree's `name` leaf; master's generator makes `groups` a presence node, which the shipped schema was not |
+| Addition beyond the proposal: anonymize walker passes enum values unchanged | phase 5: required by `test_an_enum_key_passes_unchanged`; anonymizer-bugs row 4 |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
