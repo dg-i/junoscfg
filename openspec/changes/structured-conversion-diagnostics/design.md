@@ -22,7 +22,8 @@ CLI output must remain stable while ownership of those messages moves outward.
   rendering so lower layers never import the conversion package or globalize
   capture state.
 - Store source, severity, message, and optional path, with one renderer method
-  that reproduces the existing terminal text.
+  that reproduces the existing terminal text; reject unknown runtime severity
+  strings at construction.
 - Have the CLI render returned diagnostics before converted stdout.
 
 ## Risks

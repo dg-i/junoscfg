@@ -15,6 +15,11 @@ class Diagnostic:
     severity: Literal["debug", "warning", "note"] = "warning"
     path: str | None = None
 
+    def __post_init__(self) -> None:
+        """Reject untyped runtime callers that supply an unknown severity."""
+        if self.severity not in {"debug", "warning", "note"}:
+            raise ValueError(f"Unknown diagnostic severity: {self.severity}")
+
     def render(self) -> str:
         """Render the stable CLI text for this diagnostic."""
         if self.path:
