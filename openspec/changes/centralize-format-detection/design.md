@@ -26,6 +26,8 @@ doors as well as successful classifications.
 - Preserve the old parser door for malformed brace-prefixed and angle-prefixed
   input: return JSON or XML respectively so the owning parser still reports
   the syntax failure.
+- Declare the improved YAML inference as a CLI behavior change and raise the
+  minor version to 0.14.0; an explicit input format is the compatibility path.
 - Accept YAML auto-detection only for parsed mappings or lists. Scalar YAML is
   left to the structured parser, matching the previous default.
 
