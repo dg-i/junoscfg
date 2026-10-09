@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-09
+type: refactor
+zone: internal
+domains: [conversion]
+skip_specs: true
+removes:
+  - "the XML-to-YAML-to-dict serialization round trip in XML input"
