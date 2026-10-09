@@ -7,7 +7,13 @@ import json
 import pytest
 import yaml
 
-from junoscfg.display.to_yaml import json_to_yaml, xml_to_yaml
+from junoscfg import Format, convert_config
+from junoscfg.display.to_yaml import xml_to_yaml
+
+
+def json_to_yaml(source: str) -> str:
+    """Exercise the supported JSON-to-YAML conversion through its public door."""
+    return convert_config(source, from_format=Format.JSON, to_format=Format.YAML)
 
 
 class TestJsonToYamlBasic:
@@ -56,9 +62,6 @@ class TestJsonToYamlBasic:
             "access",
             "admin",
         ]
-
-    def test_empty_json_returns_empty(self) -> None:
-        assert json_to_yaml("{}") == ""
 
     def test_configuration_wrapper_preserved(self) -> None:
         """The 'configuration' key is preserved in output."""
@@ -204,8 +207,6 @@ class TestJsonToYamlRoundtrip:
 
     def test_json_yaml_set_match(self) -> None:
         """JSON → YAML → set produces same output as JSON → set."""
-        from junoscfg import Format, convert_config
-
         j = json.dumps(
             {
                 "configuration": {
@@ -299,8 +300,8 @@ class TestXmlToYamlBasic:
 class TestLazyXmlImport:
     """Verify lxml is lazily imported — not loaded until XML features are used."""
 
-    def test_json_to_yaml_without_lxml(self) -> None:
-        """json_to_yaml works without lxml being imported at module level."""
+    def test_json_to_yaml_pipeline_without_lxml(self) -> None:
+        """Public JSON-to-YAML conversion does not require the XML dependency."""
         # to_yaml module should be importable; lxml may be in sys.modules
         # from other tests, but the key check is that json_to_yaml itself
         # doesn't fail

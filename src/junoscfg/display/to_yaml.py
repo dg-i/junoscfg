@@ -1,4 +1,4 @@
-"""Convert Junos JSON/XML configurations to standard YAML format.
+"""Convert Junos XML configurations to standard YAML format.
 
 The output is a 1:1 structural mapping of Junos JSON — arrays with ``name``
 fields, ``@`` attribute keys, and ``[null]`` presence markers are all preserved
@@ -7,23 +7,12 @@ exactly as they appear in the JSON representation.
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, TextIO
 
 import yaml
 
 if TYPE_CHECKING:
     from lxml import etree
-
-
-def json_to_yaml(source: str | TextIO) -> str:
-    """Convert Junos JSON configuration to standard YAML format."""
-    text = source.read() if hasattr(source, "read") else str(source)  # type: ignore[union-attr]
-
-    data = json.loads(text)
-    if not data:
-        return ""
-    return yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 
 def xml_to_yaml(source: str | TextIO) -> str:

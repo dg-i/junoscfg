@@ -86,4 +86,4 @@ zone conversion · layer pipeline · contract none
 - `SetWalkOutput` class: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.set_output.SetWalkOutput`
 - `dict_to_set` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.output.set_output.dict_to_set`
 
-<!-- cut at 1,500 tokens; 55 modules below the cut -->
+<!-- cut at 1,500 tokens; 54 modules below the cut -->
