@@ -25,7 +25,7 @@
   how-to renders under Working with Agents without warnings or broken links.
 - [x] 3.4 Run the locked documentation-lane full checkpoint and record its
   checked commit and result.
-  Checkpoint: `9ba6073` — every documentation-lane check passed.
+  Checkpoint: `444fb77` — every documentation-lane check passed.
 
 ## 4. Review and evidence
 
