@@ -9,7 +9,8 @@
 - [x] 2.2 Thread diagnostic sinks through validation, anonymization, and structured rendering.
 - [x] 2.3 Make the CLI the sole renderer and update existing stderr assertions.
 - [x] 2.4 Update contracts, docs, interfaces, and changelog.
-- [ ] 2.5 Run focused tests and the locked full repository check.
+- [x] 2.5 Run focused tests and the locked full repository check.
+  Checkpoint: `be2fe23` — 1,622 passed, 18 skipped; every check passed.
 
 ## 3. Review and evidence
 
