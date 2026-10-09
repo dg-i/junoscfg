@@ -43,6 +43,8 @@ def pipeline(
     validate: bool = True,
     strict: bool = False,
     anon_config: object | None = None,
+    path: str | None = None,
+    relative: bool = False,
 ) -> str:
     """Convert a configuration between any two supported formats.
 
@@ -71,6 +73,9 @@ def pipeline(
         FieldValidationError: When *strict* is True and validation errors
             are found.
     """
+    if relative and not path:
+        raise ValueError("relative=True requires path to be set.")
+
     ir = to_dict(source, from_format)
 
     if anon_config is not None:
@@ -109,6 +114,16 @@ def pipeline(
             else:
                 _report_warnings(result)
 
+    if path:
+        from junoscfg.display import filter_dict_by_path
+
+        filtered = filter_dict_by_path(ir, path.split("."), relative=relative)
+        if filtered is None:
+            return ""
+        ir = filtered
+
+    if relative and to_format in {"json", "yaml"}:
+        return from_dict(ir, to_format, wrap=False)
     return from_dict(ir, to_format)
 
 

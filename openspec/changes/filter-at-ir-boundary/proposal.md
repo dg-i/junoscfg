@@ -28,5 +28,6 @@ contains the subtree and is the one conversion boundary.
 
 ## Impact
 
-The public pipeline gains optional keyword arguments; existing calls and
+The public pipeline gains optional keyword arguments and the existing dict
+filter becomes available through the display package door; existing calls and
 `convert_config()` output remain compatible.

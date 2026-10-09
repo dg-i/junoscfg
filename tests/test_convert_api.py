@@ -351,7 +351,7 @@ class TestPathFiltering:
     def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
         rendered: list[dict] = []
 
-        def capture(config: dict, _format: str) -> str:
+        def capture(config: dict, _format: str, *, wrap: bool = True) -> str:
             rendered.append(config)
             return "rendered"
 

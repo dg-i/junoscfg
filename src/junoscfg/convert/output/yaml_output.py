@@ -9,14 +9,14 @@ import yaml
 from junoscfg.convert.ir import wrap_configuration
 
 
-def dict_to_yaml(config: dict[str, Any]) -> str:
+def dict_to_yaml(config: dict[str, Any], *, wrap: bool = True) -> str:
     """Render the IR dict as a YAML string.
 
     Wraps the config in ``{"configuration": ...}`` and serializes
     with default flow style disabled for readable block output.
     """
     return yaml.dump(
-        wrap_configuration(config),
+        wrap_configuration(config) if wrap else config,
         default_flow_style=False,
         allow_unicode=True,
         sort_keys=False,

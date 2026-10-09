@@ -9,7 +9,7 @@ from junoscfg.convert.ir import wrap_configuration
 from junoscfg.display import load_schema_tree
 
 
-def dict_to_json(config: dict[str, Any]) -> str:
+def dict_to_json(config: dict[str, Any], *, wrap: bool = True) -> str:
     """Render the IR dict as a Junos JSON string.
 
     Wraps the config in ``{"configuration": ...}`` and serializes
@@ -20,7 +20,8 @@ def dict_to_json(config: dict[str, Any]) -> str:
     _normalize_presence_flags(config)
     _coerce_scalar_leaves(config, load_schema_tree())
     config = _ensure_name_first(config)
-    return json.dumps(wrap_configuration(config), indent=4, ensure_ascii=False) + "\n"
+    output = wrap_configuration(config) if wrap else config
+    return json.dumps(output, indent=4, ensure_ascii=False) + "\n"
 
 
 def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:

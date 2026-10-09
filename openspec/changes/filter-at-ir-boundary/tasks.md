@@ -7,10 +7,10 @@
 
 ## 2. Change
 
-- [ ] 2.1 Filter the IR inside `pipeline()` before `from_dict()`.
-- [ ] 2.2 Pass `convert_config()` path options into the pipeline and remove its
+- [x] 2.1 Filter the IR inside `pipeline()` before `from_dict()`.
+- [x] 2.2 Pass `convert_config()` path options into the pipeline and remove its
   rendered-output filter dispatcher.
-- [ ] 2.3 Update contracts, API documentation, and changelog.
+- [x] 2.3 Update contracts, API documentation, and changelog.
 - [ ] 2.4 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence
