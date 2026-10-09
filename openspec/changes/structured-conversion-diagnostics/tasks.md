@@ -1,0 +1,17 @@
+## 1. Verification
+
+- [x] 1.1 Add acceptance tests for structured results and caller-owned diagnostic rendering.
+- [x] 1.2 Run them before implementation and confirm the new package doors are missing.
+
+## 2. Change
+
+- [ ] 2.1 Add immutable diagnostic/result values and opt-in package-door APIs.
+- [ ] 2.2 Thread diagnostic sinks through validation, anonymization, and structured rendering.
+- [ ] 2.3 Make the CLI the sole renderer and update existing stderr assertions.
+- [ ] 2.4 Update contracts, docs, interfaces, and changelog.
+- [ ] 2.5 Run focused tests and the locked full repository check.
+
+## 3. Review and evidence
+
+- [ ] 3.1 Complete the fresh-session review and write `review.md`.
+- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
