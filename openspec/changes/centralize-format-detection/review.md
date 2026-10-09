@@ -40,6 +40,6 @@ requirement rather than extending it.
 
 ## Verdict
 
-The focused regression suite passes after correction. Ready subject to the
-locked full gate being rerun because runtime code and tests changed after the
-recorded checkpoint.
+Ready to merge. The focused regression suite and locked full gate pass after
+correction; the final checkpoint at `d8216bc` completed with 1,620 passed and
+18 skipped.

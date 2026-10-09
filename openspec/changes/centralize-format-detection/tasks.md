@@ -9,9 +9,9 @@
 - [x] 2.2 Route conversion, audit, and validation auto-detection through their declared policies.
 - [x] 2.3 Update contracts, API documentation, interface declarations, and changelog.
 - [x] 2.4 Run focused tests and the locked full repository check.
-  Checkpoint: `e5ce043` — 1,618 passed, 18 skipped; every check passed.
+  Checkpoint: `d8216bc` — 1,620 passed, 18 skipped; every check passed.
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Complete the fresh-session review and write `review.md`.
+- [x] 3.1 Complete the fresh-session review and write `review.md`.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
