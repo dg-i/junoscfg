@@ -95,8 +95,17 @@
 
 ## Verdict
 
-Not ready to merge. The direct XML path is behaviorally faithful, but the
-normalization placement broadens the change to unrelated input formats and
-adds a schema-artifact dependency to JSON conversion. Resolve finding 1, run
-its focused regressions and the locked fast check, then return the correction
-to review.
+Ready to archive after correction. Finding 1 is resolved: the common dispatcher
+invokes schema-backed leaf-list normalization only for YAML and XML, while JSON
+retains its supplied shapes without loading schema artifacts. The contract and
+module description now state that boundary.
+
+The fresh correction review independently passed 12 leaf-list and JSON
+round-trip tests. The private device capture still gives identical direct and
+former-bridge IR with canonical SHA-256
+`0c8b63bb622e3722820c613f2d66c3a6051dd6c9621b524de12a575028098a89`, and
+all 33 production collection tests pass. No correctness, contract,
+trust-boundary, second-answer, or documentation finding remains. The separate
+`control-as-list-type` defect described in `private_test_data/bugreport.txt` is
+not introduced or masked by this leaf-list correction and remains outside this
+behavior-preserving refactor.
