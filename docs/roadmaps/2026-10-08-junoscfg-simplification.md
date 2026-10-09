@@ -13,7 +13,8 @@ roadmap item as an independently testable change.
 
 **Tech Stack:** Python 3.10+, Click, PyYAML, pytest, OpenSpec, agent-ready.
 
-**Spec:** `openspec/changes/save-simplification-plan/proposal.md`
+**Spec:**
+`openspec/changes/archive/2026-10-08-save-simplification-plan/proposal.md`
 
 ## Global Constraints
 

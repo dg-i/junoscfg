@@ -13,6 +13,8 @@
   towncrier --with vulture agent-ready check --set full` at
   `dbffde1d39dcbb9a907680fa6238716574cf22d5`; all checks passed, with 1,607
   tests passed and 72 skipped.
+- [x] 2.5 Correct the roadmap's provenance pointer after the fresh review found
+  that archiving had moved its source proposal.
 
 ## 3. Review and evidence
 
