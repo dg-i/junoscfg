@@ -12,7 +12,10 @@
 - [x] 2.2 Remove the twenty private format-pair wrapper functions without
   changing the public signature or supported-pair matrix.
 - [x] 2.3 Run the focused conversion API and integration tests after the edit.
-- [ ] 2.4 Run the locked full repository check.
+- [x] 2.4 Run `uv run --locked --group dev --with griffe --with tach --with
+  towncrier --with vulture agent-ready check --set full` at
+  `2d3731d727e2be793624d531f750de06176e76a4` (all checks passed; 1,604 tests
+  passed and 18 skipped).
 
 ## 3. Review and evidence
 
