@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
+from junoscfg.display import format_value
 
 
 class SetWalkOutput(WalkOutput):
@@ -47,8 +48,13 @@ class SetWalkOutput(WalkOutput):
         self.lines.append(f"delete {' '.join(hierarchy)}")
 
 
-def dict_to_set(config: dict[str, Any]) -> str:
+def dict_to_set(config: Any) -> str:
     """Render the IR dict as display set commands."""
+    if not isinstance(config, dict):
+        if config is None or config is True:
+            return "set\n"
+        return f"set {format_value(config)}\n"
+
     output = SetWalkOutput()
     walker = DictWalker(output)
     walker.walk(config)

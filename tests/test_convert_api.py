@@ -439,6 +439,26 @@ class TestPathFiltering:
         assert "system" not in result
         assert "host-name r1" in result
 
+    @pytest.mark.parametrize(
+        ("to_format", "expected"),
+        [
+            (Format.JSON, '"r1"\n'),
+            (Format.YAML, "r1\n...\n"),
+            (Format.SET, "set r1\n"),
+            (Format.STRUCTURED, ""),
+        ],
+    )
+    def test_relative_leaf_preserves_output(self, to_format: Format, expected: str) -> None:
+        result = convert_config(
+            _PATH_FILTER_SOURCE,
+            from_format=Format.JSON,
+            to_format=to_format,
+            path="system.host-name",
+            relative=True,
+            validate=False,
+        )
+        assert result == expected
+
     def test_path_filter_not_found(self) -> None:
         result = convert_config(
             _PATH_FILTER_SOURCE,

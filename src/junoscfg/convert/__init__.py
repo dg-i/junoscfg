@@ -52,7 +52,8 @@ def pipeline(
     1. Parses *source* into the JSON dict IR via the appropriate input converter
     2. Optionally anonymizes the IR according to *anon_config*
     3. Optionally validates leaf values against schema constraints
-    4. Renders the IR into the target format via the appropriate output converter
+    4. Optionally selects a path from the IR
+    5. Renders the IR into the target format via the appropriate output converter
 
     Args:
         source: Configuration text.
@@ -65,6 +66,9 @@ def pipeline(
                 errors instead of just warning.
         anon_config: An :class:`~junoscfg.anonymize.config.AnonymizeConfig`
                      instance, or None to skip anonymization.
+        path: Dot-separated path to select before rendering.
+        relative: If True, render only the selected subtree rather than
+                  rebuilding its parent hierarchy. Requires *path*.
 
     Returns:
         The converted configuration as a string.
@@ -72,6 +76,7 @@ def pipeline(
     Raises:
         FieldValidationError: When *strict* is True and validation errors
             are found.
+        ValueError: When *relative* is True without *path*.
     """
     if relative and not path:
         raise ValueError("relative=True requires path to be set.")

@@ -9,17 +9,22 @@ from junoscfg.convert.ir import wrap_configuration
 from junoscfg.display import load_schema_tree
 
 
-def dict_to_json(config: dict[str, Any], *, wrap: bool = True) -> str:
+def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     """Render the IR dict as a Junos JSON string.
 
-    Wraps the config in ``{"configuration": ...}`` and serializes
-    with 4-space indentation.  Applies native-format normalization
-    so the output can be loaded on a Junos device.
+    When *wrap* is true, wraps the config in ``{"configuration": ...}``.
+    Dict input receives native-format normalization so the output can be
+    loaded on a Junos device. Relative path filtering may pass a scalar.
     """
-    config = _native_groups(config)
-    _normalize_presence_flags(config)
-    _coerce_scalar_leaves(config, load_schema_tree())
-    config = _ensure_name_first(config)
+    if isinstance(config, dict):
+        config = _native_groups(config)
+        _normalize_presence_flags(config)
+        _coerce_scalar_leaves(config, load_schema_tree())
+        config = _ensure_name_first(config)
+    elif config is True:
+        # A selected presence flag is rendered the same way it was when the
+        # parent dict was normalized before the old output-text filter ran.
+        config = [None]
     output = wrap_configuration(config) if wrap else config
     return json.dumps(output, indent=4, ensure_ascii=False) + "\n"
 

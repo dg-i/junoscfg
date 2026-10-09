@@ -7,7 +7,7 @@ from typing import Any
 
 def filter_dict_by_path(
     data: dict[str, Any], path_tokens: list[str], *, relative: bool = False
-) -> dict[str, Any] | None:
+) -> Any | None:
     """Navigate a dict to the subtree at *path_tokens*, optionally stripping the path prefix.
 
     Args:
@@ -17,7 +17,8 @@ def filter_dict_by_path(
             If False, rebuild the full hierarchy around it.
 
     Returns:
-        Filtered dict, or ``None`` if the path is not found.
+        Filtered subtree value, or ``None`` if the path is not found. A
+        relative path may select a scalar or list as well as a dict.
     """
     # Navigate through "configuration" wrapper if present
     if "configuration" in data:
