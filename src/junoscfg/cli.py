@@ -306,7 +306,9 @@ def convert(
 
     # Auto-detect import format if not specified
     if not import_format:
-        import_format = _detect_format(source)
+        from junoscfg.display import CONVERSION_FORMATS, detect_format
+
+        import_format = detect_format(source, accepted_formats=CONVERSION_FORMATS)
 
     # Validate if requested
     if validate or validate_only:
@@ -837,7 +839,12 @@ def unused(
     if not source.strip():
         return
 
-    fmt = (import_format or _detect_format(source)).lower()
+    if import_format:
+        fmt = import_format.lower()
+    else:
+        from junoscfg.display import AUDIT_FORMATS, detect_format
+
+        fmt = detect_format(source, accepted_formats=AUDIT_FORMATS)
     if fmt == "conf":
         fmt = "structured"
 
@@ -919,20 +926,6 @@ def _read_input(file: str | None) -> str:
         with open(file) as f:
             return f.read()
     return sys.stdin.read()
-
-
-def _detect_format(source: str) -> str:
-    """Auto-detect input format from content."""
-    stripped = source.strip()
-    if stripped.startswith("{") or stripped.startswith("["):
-        return "json"
-    if stripped.startswith("<"):
-        return "xml"
-    from junoscfg.display import is_display_set
-
-    if is_display_set(stripped):
-        return "set"
-    return "structured"
 
 
 def _run_validation(source: str, input_format: str | None, artifacts_dir: str | None) -> None:

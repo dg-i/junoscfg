@@ -13,7 +13,7 @@ from typing import TextIO
 from junoscfg.convert import FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = [
     "Format",
@@ -285,9 +285,11 @@ def validate_config(
     elif fmt == "structured":
         return validate_structured(source, artifacts_dir=artifacts_dir)
     else:
-        # Auto-detect set vs structured
-        from junoscfg.display import is_display_set
+        from junoscfg.display import VALIDATION_FORMATS, detect_format
 
-        if is_display_set(source):
+        if not source.strip():
+            return validate_structured(source, artifacts_dir=artifacts_dir)
+        detected = detect_format(source, accepted_formats=VALIDATION_FORMATS)
+        if detected == "set":
             return validate_set(source, artifacts_dir=artifacts_dir)
         return validate_structured(source, artifacts_dir=artifacts_dir)
