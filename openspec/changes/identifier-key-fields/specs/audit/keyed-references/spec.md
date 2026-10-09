@@ -31,8 +31,8 @@ Tests: `tests/test_audit/test_walker.py::TestKeyedEntries::test_list_name_is_the
 
 WHEN the audit walker meets an entry keyed by one field THEN it SHALL read
 that field from `entry_keys()` as the entry key, with no fallback to `name`
-or `community-name`.
-Tests: `tests/test_audit/test_walker.py::TestFlatEntryKeys::test_prefix_list_filter_fe_key`, `tests/test_audit/test_walker.py::TestFlatEntryKeys::test_community_name_fallback_key`, `tests/test_audit/test_walker.py::TestEntryKeys::test_named_list_entry_key`
+or `community-name` and no read of `fe`.
+Tests: `tests/test_audit/test_walker.py::TestEntryKeys::test_a_single_key_other_than_name`, `tests/test_audit/test_walker.py::TestEntryKeys::test_a_community_action_is_keyed_community_name`, `tests/test_audit/test_walker.py::TestEntryKeys::test_named_list_entry_key`
 
 #### Scenario: Keys other than name
 

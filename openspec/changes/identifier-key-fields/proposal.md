@@ -1,46 +1,46 @@
 ## Why
 
 `from as-path-neighbors as-list AS_LIST_NAME` loses `AS_LIST_NAME` on set and
-structured input, before anonymization: the set reader takes `as-list` as the
-entry's `name` and drops the rest of the line in silence (bug report
-`private_test_data/bugreport.txt`, device 23.2R2-S7.5). The node is childless
-because `_build_from_complex_type` collects only a sequence's trailing
-`xsd:choice` and drops the sequence's own elements, the identifiers: right by
-accident for 2,800 types keyed `name`, wrong for `control-as-list-type` with
-`list-type` and `list-name`, 64 more types with two to four keys, and 171 keyed
-by one element that is not `name`. Every hand-kept answer to "what keys this
-entry" re-supplies what the parser dropped: `ENTRY_KEY_OVERRIDES`, `fe.k`,
-`values-only` with `_v0` and `_v1` for `attributes-match`, five sites alone.
+structured input, before anonymization (`private_test_data/bugreport.txt`).
+`_build_from_complex_type` keeps a sequence's first `xsd:choice` and drops the
+rest: identifiers (2,800 types keyed `name`, right by accident; 171 by one
+other element; 64 by two to four, `list-type` and `list-name` among them) and a
+second choice (seven types, route-filter's `accept` among them). `fe`,
+`values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the `community-name` branches and
+`_takes_either_order` each re-supply part of what the parser dropped.
 
 ## What Changes
 
-- The parser keeps a list's identifier elements as children in declared order
-  and records them on the node as `k`, omitted where the one key is `name`.
-  One kernel helper, `entry_keys()`, answers the tuple at every site: set
-  reader, set and structured writer, field validator, schema and grammar
-  generators, audit walker, anonymize walker, XML reader. An entry's identity
-  is its key tuple; the set reader takes one token per key and keeps a line
-  whole as unplaced when tokens remain, so the childless-list and `apply-groups`
-  branches that dropped a token go; output writes the keys in order.
-- Retired: `fe.k`, `values-only` and its `_v*` keys, the hard-coded
-  `community-name` branches, the parent-scoped fix of
-  `change/entry-keys-from-the-tree`, superseded, its helper's shape kept.
-  `ENTRY_KEY_OVERRIDES` stays exported, unread. Artifacts regenerated, docs follow.
-- **BREAKING** on `consumer` and `cli`, under decision
-  2026-10-09-scope-compatibility-to-production-consumer: the IR keys an entry
-  by the element the dump declares, so JSON and YAML output change for the 171
-  lists keyed `ip`, `index`, `interface-id`, `address`, `id` or 66 other names
-  and for `attributes-match`; device JSON and XML of them give one line, not two.
-- No override, fallback, parameter or environment read is added.
+- The parser keeps every element a sequence declares, in declared order:
+  identifiers, `name` included, and every choice. Every list node carries its
+  key tuple (`k`, omitted for `("name",)`); `c`'s order places the keys.
+- One kernel helper, `entry_keys()`, answers the tuple at every site. Identity
+  is the key tuple; key children are positional, never keywords. Writers put
+  pre-key children, the keys in order, then the rest; reader and grammar take
+  pre-key keywords on either side, as the device does, and exactly the key
+  values. XML input takes list shape from the tree; one-line rendering follows
+  `oneliner` and `oneliner-plus`; anonymization treats keys as leaves.
+- One unplaced rule replaces the reader's silent branches: an entry exists once
+  all its key values are read; tokens from the first unplaceable one on are kept
+  at the deepest node fully placed, and validation reports them `UNPLACED`.
+- Retired: `fe`, `values-only`, `_v<n>`, `_takes_either_order`, the fixes
+  `_fix_flat_entry_keys` and `_fix_attributes_match_oneliner`, `FLAT_ENTRY_ELEMENTS`,
+  the `community-name` branches; `ENTRY_KEY_OVERRIDES` and
+  `get_flat_entry_config` are removed and banned in a decision record.
+- **BREAKING** on `consumer` and `cli` under decision 2026-10-09: the IR keys
+  the 171 + 64 lists by their declared fields and holds route-filter actions as
+  the device does. The collection's four imports keep their signatures; its
+  test suite, run in phase 5, is the proof. No override or fallback is added.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `schema-pipeline/entry-key-fields`: the tree keeps identifiers as ordered keys.
-- `conversion/entry-keys`: keys from the tree; one IR from four inputs, one line.
+- `schema-pipeline/entry-key-fields`: the tree keeps every declared child and the keys.
+- `conversion/entry-keys`: keys from the tree; one IR from every input; nothing lost.
 - `validation/keyed-entries`: field and schema validation accept device-keyed entries.
 - `audit/keyed-references`: the named key field is the reference, not `list-type`.
+- `anonymization/keyed-entries`: key fields are leaves of their declared type.
 
 ### Modified Capabilities
 
@@ -48,13 +48,13 @@ entry" re-supplies what the parser dropped: `ENTRY_KEY_OVERRIDES`, `fe.k`,
 
 ## Non-goals
 
-- Lists keyed `name` (2,800); `fe.p`; numeric JSON normalization; lost values; captures.
+- IR, grammar and output of `name`-keyed lists stay byte-identical, pinned by a
+  test and the corpus; numeric JSON normalization; lost values elsewhere.
 
 ## Impact
 
-Counted over `private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd` through
-`extract_xsd`, complexTypes whose sequence holds a trailing choice: keyed
-`name` 2,800, one other key 171, two or more 64; the 23.2R2-S7.5 dump gives
-2,851, 163, 65. The token-dropping branches fire 0 times on 1,072,944 jvd lines
-and three captures, by an instrumented reader; phase 4 pins both in tests.
-Fourteen source files in five zones, five artifacts, tests, three docs; minor bump.
+Over `private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd` via `extract_xsd`,
+3,035 sequences hold identifiers; 3,011 declare them first, 4 types (24 slots)
+a choice first; 23.2R2-S7.5: 3,079, 3,059, 3 types (20 slots). Device probe,
+vMX 23.2R2-S7.5, backs every shape. Five domains and the kernel, five
+artifacts, tests, one fixture, three docs, one decision record; minor bump.

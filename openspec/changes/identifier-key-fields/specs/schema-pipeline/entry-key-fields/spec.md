@@ -1,18 +1,18 @@
 ## Purpose
 
-The structure tree names the fields that key a list entry, in the order the
-dump declares them, so no reader, writer or validator keeps its own answer to
-what keys an entry.
+The structure tree keeps every child a list declares, in order, and names the
+fields that key its entries, so no site keeps its own answer to either.
 
 ## ADDED Requirements
 
-### Requirement: The parser keeps a list's identifier elements
+### Requirement: The parser keeps every element a sequence declares
 
-WHEN a complexType's sequence holds elements flagged `identifier` beside a
-trailing `xsd:choice` THEN the parser SHALL keep each identifier as a child of
-the node, in declared order ahead of the choice's children, and SHALL record
-the identifier names on the node, in that order, as its entry keys.
-Tests: `tests/test_xsd_parser.py::TestIdentifierElementsAreKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/test_xsd_parser.py::TestIdentifierElementsAreKept::test_one_identifier_other_than_name`, `tests/test_xsd_parser.py::TestIdentifierElementsAreKept::test_a_name_identifier_records_no_keys`
+WHEN a complexType's sequence declares identifier elements and one or more
+`xsd:choice` groups THEN the parser SHALL keep every identifier, `name`
+included, and the children of every choice as children of the node, in
+declared order, and SHALL record the identifier names, in that order, as the
+node's entry keys.
+Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_one_identifier_other_than_name`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_name_is_a_key_child`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_second_choice_is_kept`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_choice_declared_before_the_key_comes_first`
 
 #### Scenario: Two identifiers beside a choice of comments only
 
@@ -21,41 +21,44 @@ Tests: `tests/test_xsd_parser.py::TestIdentifierElementsAreKept::test_two_identi
 - **THEN** the node has the children `list-type` and `list-name`, the keys
   `(list-type, list-name)`, and is no longer a childless presence list
 
-#### Scenario: One identifier other than name
+#### Scenario: One key, two choices
 
-- **WHEN** a type declares `address` as its identifier beside a choice of
-  `exact` and `orlonger`
-- **THEN** the node keys on `(address,)` and keeps `exact` and `orlonger`
+- **WHEN** a type declares `address`, a choice of `exact` and `orlonger`, then
+  a choice holding `accept` and `reject`
+- **THEN** the node keys on `(address,)` and its children are `address`,
+  `exact`, `orlonger`, `accept`, `reject` in that order
 
-#### Scenario: The identifier is name
+#### Scenario: A choice before the key, and name
 
-- **WHEN** the one identifier is `name`
-- **THEN** the node records no entry keys, and its entries stay keyed `name`
+- **WHEN** one type declares a choice of `add` and `delete`, then the
+  identifier `community-name`, and another the one identifier `name`
+- **THEN** `add` and `delete` precede `community-name` among the first's
+  children, and the second has the child `name` and the keys `("name",)`
 
-### Requirement: The structure tree carries the keys as k
+### Requirement: The structure tree carries the keys and the declared order
 
-WHEN a node keyed by anything but the single field `name` is written to the
-structure tree and read back THEN the tree SHALL carry its keys as an ordered
-list under `k` and SHALL restore the same keys on read; `k` SHALL be omitted
-where the one key is `name`, and `fe` SHALL carry only the position `p`.
-Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered_entry_keys_survive`, `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_a_flat_entry_carries_only_its_position`
+WHEN a list node is written to the structure tree and read back THEN the tree
+SHALL keep its children in declared order and carry its keys as an ordered
+list under `k`, omitted only where the keys are `("name",)`, and SHALL restore
+both on read; no node SHALL carry `fe`.
+Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered_entry_keys_survive`, `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_declared_child_order_survives`, `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_no_node_carries_fe`
 
 #### Scenario: Round trip
 
-- **WHEN** a node keyed `(list-type, list-name)` and a `route-filter` keyed
-  `(address,)` at position `first` are written and read back
-- **THEN** both keep their keys in order, the second keeps position `first`,
-  and neither tree entry holds `fe.k`
+- **WHEN** nodes keyed `(list-type, list-name)`, `(address,)` and `("name",)`,
+  and a node with `add` declared before `community-name`, are written and read
+- **THEN** each keeps its keys and child order, only the first two carry `k`,
+  and none carries `fe`
 
 ### Requirement: One kernel helper answers an entry's keys
 
-WHEN any site needs the fields that key a list's entries THEN it SHALL call
-`entry_keys()` from `junoscfg.display` on the list's tree node, which SHALL
-answer the node's `k` as a tuple, else `("name",)`; no module under
-`src/junoscfg/` SHALL read `fe.k`, a `values-only` position, a `_v<n>` entry
-key, a literal `community-name`, or `ENTRY_KEY_OVERRIDES`, which stays
-exported, read by no module, until a later minor release removes it.
-Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_k_then_name`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
+WHEN any site needs the fields that key a list's entries, or whether the node
+declares a child before them THEN it SHALL read them from `entry_keys()` and
+the tree node's child order through `junoscfg.display`; no module under
+`src/junoscfg/` SHALL read `fe`, `values-only`, a `_v<n>` key, a literal
+`community-name`, `FLAT_ENTRY_ELEMENTS`, `ENTRY_KEY_OVERRIDES` or
+`get_flat_entry_config`, and the last two SHALL be banned imports.
+Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
 
 #### Scenario: The helper's answers
 
@@ -67,18 +70,20 @@ Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_h
 #### Scenario: The source holds no second answer
 
 - **WHEN** the source tree under `src/junoscfg/` is scanned
-- **THEN** only the definition and the export of `ENTRY_KEY_OVERRIDES` name
-  it, and none of the other retired spellings is read
+- **THEN** none of the retired spellings is read, and `pyproject.toml` bans
+  `junoscfg.display.ENTRY_KEY_OVERRIDES` and
+  `junoscfg.display.get_flat_entry_config`
 
 ### Requirement: The bundled tree carries the declared keys
 
 WHEN the bundled structure tree, regenerated from the shipped release's dump,
-is walked THEN every `control-as-list-type` slot SHALL carry the children and
-keys `list-type`, `list-name`; every `attributes-match` SHALL be keyed
+is walked THEN every `control-as-list-type` slot SHALL carry the keys
+`list-type`, `list-name`; every `attributes-match` the keys
 `from-event-attribute`, `condition`, `to-event-attribute-value`; every
-`route-filter` SHALL be keyed `address` and every `prefix-list-filter`
-`list_name`, both at position `first`; the community action list under `then`
-SHALL be keyed `community-name`; and no node SHALL carry `values-only`.
+`control-route-filter-type` `address`, every `control-prefix-list-filter-type`
+`list_name`, each with its actions; `then community` `community-name` after
+its actions; `policy-options community` `("name",)`; and `o` SHALL be set on a
+list with children exactly where the dump flags `oneliner` or `oneliner-plus`.
 Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`
 
 #### Scenario: The AS-list slots
@@ -88,7 +93,8 @@ Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_b
 - **THEN** all 24 slots, at the root, in logical systems, in groups and in
   grouped logical systems, with and without a `term`, carry both keys
 
-#### Scenario: The flat-entry lists
+#### Scenario: Two lists named community
 
-- **WHEN** the tree is walked for the lists `_fix_flat_entry_keys` marks
-- **THEN** each carries the keys its dump declares and `fe` holds only `p`
+- **WHEN** the tree is walked for `then community` and `policy-options community`
+- **THEN** the first is keyed `community-name`, declared after `add`, and the
+  second is keyed `name`

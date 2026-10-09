@@ -20,6 +20,9 @@
   property", or add a requirement that the key fields, and only they, are
   `required` in an entry object, with a negative test that an entry without
   its key fails and a corpus run showing no fragment newly rejected.
-- Decision: Pending owner decision. Interim action: the delta specifies the
-  key fields as properties only, which is the existing architecture and is
-  reversible by adding one requirement.
+- Decision: Decided by the owner, 2026-10-09, accepting the first correction:
+  the migration in `.openspec.yaml` now reads that the regenerated JSON schema
+  lists the key fields as the entry's properties, with `name` only where `name`
+  is the key, and adds no `required`, citing the schema generator's "No
+  `required`" comment. `specs/validation/keyed-entries/spec.md` pins it with
+  `test_no_required_is_added`. No requirement for `required` is added.

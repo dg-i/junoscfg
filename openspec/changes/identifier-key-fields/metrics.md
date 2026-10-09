@@ -29,5 +29,15 @@
 | Context expansion: tests/test_set_input.py, tests/test_audit/test_walker.py, tests/test_grammar_generator.py, tests/test_device_truth.py | existing test classes the delta's test ids extend |
 | Context expansion: openspec/specs/validation/set-command-validation/spec.md | the MODIFIED requirement repeats it whole |
 | Context expansion: private_test_data/bugreport.txt | required behaviour and acceptance list; not committed, no value copied |
+| Context expansion: src/junoscfg/convert/output/dict_walker.py | `_emit_flat_entry`, `_emit_oneliner` and the `community-name` branch: today's one-line set rendering the writer requirement pins |
+| Context expansion: src/junoscfg/display/to_yaml.py, src/junoscfg/convert/input/xml_input.py, src/junoscfg/convert/input/__init__.py, src/junoscfg/convert/input/normalization.py, src/junoscfg/convert/input/structured_input.py | the XML reader's array heuristics and the schema-backed normalization boundary the lone-entry wrap can use |
+| Context expansion: src/junoscfg/display/CONTRACT.md, src/junoscfg/convert/CONTRACT.md, src/junoscfg/display/__init__.py | invariants for the XML walker and the exports the change removes |
+| Context expansion: src/junoscfg/validate/xsd_extractor.py, private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd, private_test_data/schemas/23.2R2-S7.5_vmx.xsd | reproducing the declared-order, second-choice and `oneliner-plus` measurements; no value copied |
+| Context expansion: src/junoscfg/anonymize/rules/ip.py, src/junoscfg/anonymize/rules/community.py | rules keyed on the synthesised `name` path and type the anonymization delta replaces |
+| Context expansion: docs/decisions/2026-10-09-scope-compatibility-to-production-consumer.md | the bans precedent and the secondary-door exemption for the two removed names |
+| Context expansion: openspec/specs/conversion/raw-set-input/spec.md, openspec/specs/validation/raw-set-input/spec.md | checked for requirements the delta contradicts; none |
+| Context expansion: tests/test_device_truth.py, tests/test_to_yaml.py, tests/test_anonymize/test_integration.py, tests/test_set_validator.py, tests/test_cli.py | capture-pair convention and existing classes the new test ids extend |
+| Context expansion: change/entry-keys-from-the-tree openspec deltas (git show) | superseded requirements folded in: the two `community` lists |
+| Context expansion: private_test_data/identifier-key-fields-device-checks.md, .out, .out2 | device probe results; prompts, hostnames and timestamps not copied |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
