@@ -909,12 +909,24 @@ class TestTokensTheReaderCannotPlaceAreKept:
         assert _from(line) == {statement: KEPT}
         assert _round_trip(line) == [line]
 
-    def test_a_bare_list_keyword_creates_no_entry(self) -> None:
-        line = f"{_TERM} from as-path-neighbors"
-        got = _from(line)
-        assert list(got) == ["as-path-neighbors"]
-        assert not isinstance(got["as-path-neighbors"], list), "an entry or a presence list"
+    @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
+    def test_a_bare_list_keyword_creates_no_entry(self, slot: str) -> None:
+        """A keyed list's keyword with no key value is a statement the reader
+        cannot complete: kept whole, as written, and reported like a partial
+        key (owner decision, phase 5; the device rejects the bare line)."""
+        from junoscfg import Format, convert_config_result
+
+        line = f"{_TERM} from {slot}"
+        assert _from(line) == {slot: KEPT}
         assert _round_trip(line) == [line]
+        result = convert_config_result(
+            line + "\n", from_format=Format.SET, to_format=Format.SET, validate=True
+        )
+        assert result.output.strip() == line
+        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
+        assert messages == [
+            f"'{slot}' could not be placed in the schema: kept as written, not validated"
+        ]
 
     def test_a_partial_attributes_match_creates_no_entry(self) -> None:
         from tests.keyed_entries import set_ir

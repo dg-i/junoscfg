@@ -94,7 +94,7 @@ class TestEntryKeys:
         key = one(found, "198.51.100.10")
         assert key.kind == "entry-key"
         assert key.path == ("system", "server", "198.51.100.10")
-        assert one(found, "4").path[-1] == "version"
+        assert one(found, "4").path[-2:] == ("version", "4")
 
     def test_a_community_action_is_keyed_community_name(self, make_ir: Any) -> None:
         for line in (

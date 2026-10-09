@@ -378,7 +378,6 @@ class TestTheShippedGrammarTakesKeyedEntries:
     )
     REJECTED = (
         f"{_PROBE_T} as-path-neighbors as-list",
-        f"{_PROBE_T} as-path-neighbors",
         f"{_PROBE_T} as-path-neighbors SAMPLE-AS-LIST",
         f"{_PROBE_T} as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA",
         f"{_PROBE_T} route-filter 198.51.100.0/24 next-policy",
@@ -406,6 +405,24 @@ class TestTheShippedGrammarTakesKeyedEntries:
             assert not validator.validate_set(line).valid, line
         assert validate_config("\n".join(self.ACCEPTED), format=Format.SET).valid
         assert not validate_set(self.REJECTED[0]).valid
+
+    #: Rejected by the device, accepted by the grammar: the `from` rule's
+    #: `"as" QUOTED_OR_VALUE` takes `as` + `-path-neighbors`, because a keyword
+    #: terminal may end inside a word. Pre-existing on 0.14.0, about 380
+    #: keyword pairs; owner decision: a separate change.
+    REJECTED_PENDING_KEYWORD_BOUNDARIES = (f"{_PROBE_T} as-path-neighbors",)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="follow-up change 'grammar keyword boundaries': a keyword terminal "
+        "ends inside a word, so `as` takes `-path-neighbors` as its value",
+    )
+    def test_the_bare_keyed_list_keyword_is_rejected(self, bundled_set_validator) -> None:
+        import lark
+
+        for line in self.REJECTED_PENDING_KEYWORD_BOUNDARIES:
+            with pytest.raises(lark.exceptions.UnexpectedInput):
+                bundled_set_validator._parser.parse(line)  # noqa: SLF001
 
     def test_a_numeric_list_type_is_rejected(self, bundled_set_validator) -> None:
         """A key value takes its own leaf's type: `list-type` is `as-list` or

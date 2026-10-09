@@ -380,10 +380,10 @@ def _merge_tokens(config: dict[str, Any], tokens: list[str], schema: dict[str, A
             if i + 1 == len(tokens):
                 # A bare list keyword. A list of names alone stands bare, as
                 # the device brings it into being (`snmp filter-interfaces
-                # interfaces`); a list keyed otherwise does not, and the bare
-                # statement is kept as it was written.
+                # interfaces`); a list keyed otherwise has no key value, a
+                # statement the reader cannot complete, kept whole.
                 if entry_keys(child) != ("name",):
-                    current[token] = None
+                    _keep_whole(current, tokens, i)
                 elif _statement_children(child):
                     current.setdefault(token, [])
                 else:

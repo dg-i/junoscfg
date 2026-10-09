@@ -595,13 +595,24 @@ class TestEntryKeysComeFromTheTree:
             if type_ref != "control-prefix-list-filter-type":
                 assert all("accept" in n["c"] for _, n in found), type_ref
 
-        actions = [(p, n) for p, n in lists if p[-1] == "community" and "add" in n.get("c", {})]
-        assert len(actions) == 16
+        # Every list declaring an all-identifier action choice before
+        # `community-name` is keyed by that choice, then the name: `then
+        # community` and the `community` action of the filter lists' second
+        # choice. 48 on 25.2R2, measured in phase 5 (owner decision): 8 under
+        # `then`, 8 each under route-filter, prefix-list-filter,
+        # source-address-filter and route-filter-list, 4 each under rf_list
+        # and saf_list.
+        actions = [
+            (p, n)
+            for p, n in lists
+            if "community-name" in n.get("c", {}) and {"add", "delete", "set"} <= set(n["c"])
+        ]
+        assert len(actions) == 48
         for path, node in actions:
             keys = entry_keys(node)
-            assert keys[-1] == "community-name", path
-            assert {"add", "delete", "set"} <= set(keys[0]), path
-            assert "community-name" in node["c"]
+            assert len(keys) == 2 and keys[-1] == "community-name", path
+            # The key order is the declared order: the choice precedes the name.
+            assert isinstance(keys[0], tuple) and {"add", "delete", "set"} <= set(keys[0]), path
         definitions = [n for p, n in lists if p[-2:] == ("policy-options", "community")]
         assert len(definitions) == 4
         assert all(entry_keys(n) == ("name",) and "k" not in n for n in definitions)

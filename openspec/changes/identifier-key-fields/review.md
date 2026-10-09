@@ -81,8 +81,11 @@
 - Proposed correction: pin 48, or count only lists whose parent is `then`
   (8, the root, logical-system, group and grouped placements under term and
   policy).
-- Decision: Pending owner decision. Interim: the test is left as written and
-  fails on this one assertion.
+- Decision: Decided by the owner, 2026-10-09: 48 is right. The test now
+  checks the rule -- every list whose all-identifier action choice precedes
+  `community-name` is keyed (action choice, `community-name`) -- pins 48, and
+  keeps the check that the four `policy-options community` lists are keyed
+  `name` with no `k`.
 
 ### A leaf occurrence's path ends with its value, not its key
 
@@ -97,8 +100,9 @@
   Every other assertion of the test passes.
 - User impact: None; the walker's convention is unchanged by this change.
 - Proposed correction: `assert one(found, "4").path[-2:] == ("version", "4")`.
-- Decision: Pending owner decision. Interim: the test is left as written and
-  fails on this one assertion.
+- Decision: Decided by the owner, 2026-10-09: accepted. The assertion reads
+  `one(found, "4").path[-2:] == ("version", "4")`, the walker's existing
+  leaf-path convention.
 
 ### A bare `as-path-neighbors` parses through a split keyword
 
@@ -120,8 +124,15 @@
   alters the terminal lines `tests/data/name-keyed.lark` pins and every value
   slot of the grammar -- or drop the bare line from the grammar-level
   `REJECTED` list here.
-- Decision: Pending owner decision. Interim: no grammar change; the test is
-  left as written and fails on this line.
+- Decision: Decided by the owner, 2026-10-09, in two parts. In this change, a
+  keyed-list keyword with no key value is an incomplete statement under the
+  one unplaced rule: the reader keeps it whole as written, field validation
+  reports it ("... could not be placed in the schema: kept as written, not
+  validated"), the set writer reproduces it; the phase-4 test that accepted
+  "not a list" is tightened to require this, and was seen failing first. The
+  grammar's keyword boundaries (about 380 keyword pairs, pre-existing) are a
+  separate later change: the bare line stays in `test_set_validator.py`,
+  pinned as a strict expected failure naming that follow-up.
 
 ### `apply-macro`'s `data` list is keyed `name`, so its rule loses `"name"`
 
@@ -141,5 +152,15 @@
   byte-identical.
 - User impact: None; no set line reaches the rule.
 - Proposed correction: accept the changed line, as done in the interim.
-- Decision: Pending owner decision. Interim, safe and reversible: the pinned
-  file's `data__list` line is updated to the generated one (one line).
+- Decision: Decided by the owner, 2026-10-09: accepted. The `data__list` line
+  of `tests/data/name-keyed.lark` stays as generated; the rule is unreachable
+  from `start` on master and on the branch, and every `apply-macro` line goes
+  through `universal_statement`.
+
+### Interim items decided with the challenges
+
+- `entry_key_names()` in `junoscfg.display`: accepted by the owner, 2026-10-09,
+  as long as it derives only from `entry_keys()`; it does.
+- `_fix_groups` giving `group` a `name` key child and clearing `is_presence`:
+  accepted by the owner, 2026-10-09, as a fix the regeneration requires;
+  recorded in metrics.md as an addition beyond the proposal.

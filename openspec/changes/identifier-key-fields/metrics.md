@@ -55,8 +55,8 @@
 | Context expansion: master's src and artifacts (git archive into the scratchpad) | phase 5: measured that master's own generator does not reproduce the shipped JSON and YAML schemas |
 | Owner-directed addition: evidence hierarchy in docs/architecture/developer-guide.md and conversion-bugfix-guide.md | relayed mid phase 5; ARCHITECTURE.md and settle-a-schema-question.md checked, no contradicting sentence |
 | Owner-directed addition: device round 4 (R, S, T) captures and tests, key keyword on either side | relayed mid phase 5 |
-| Addition beyond the proposal: `entry_key_names()` in `junoscfg.display` | phase 5: the flattened key-name set eight sites need; derived from `entry_keys()` |
-| Addition beyond the proposal: `_fix_groups` gives `group` a `name` key child and clears `is_presence` | phase 5: the anonymizer offers group names through the tree's `name` leaf; master's generator makes `groups` a presence node, which the shipped schema was not |
+| Addition beyond the proposal: `entry_key_names()` in `junoscfg.display` | phase 5, accepted by the owner: the flattened key-name set eight sites need; derived only from `entry_keys()` |
+| Addition beyond the proposal: `_fix_groups` gives `group` a `name` key child and clears `is_presence` | phase 5, accepted by the owner as required by the regeneration: the anonymizer offers group names through the tree's `name` leaf, and master's generator makes `groups` a presence node, which the shipped schema was not |
 | Addition beyond the proposal: anonymize walker passes enum values unchanged | phase 5: required by `test_an_enum_key_passes_unchanged`; anonymizer-bugs row 4 |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

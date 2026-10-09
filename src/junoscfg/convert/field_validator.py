@@ -266,7 +266,16 @@ class FieldValidator:
                         path.pop()
                         continue
 
-                if child_schema is None:
+                # A keyed list holding something other than entries: its
+                # keyword was written with no key value, a statement the set
+                # reader keeps whole (`true`, or `[null]` once through JSON).
+                items = value if isinstance(value, list) else [value]
+                incomplete = (
+                    child_schema is not None
+                    and "k" in child_schema
+                    and not all(isinstance(item, dict) for item in items)
+                )
+                if child_schema is None or incomplete:
                     # A key the schema does not name and no reader writes by
                     # rule is configuration junoscfg could not model. The set
                     # reader keeps such a statement whole as one key; it used
