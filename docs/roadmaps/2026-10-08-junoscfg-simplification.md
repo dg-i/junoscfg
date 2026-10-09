@@ -18,7 +18,8 @@ roadmap item as an independently testable change.
 ## Global Constraints
 
 - Preserve `convert_config`, `validate_config`, `Format`, and
-  `FieldValidationError` for the production Ansible consumer.
+  `FieldValidationError` for the production Ansible consumer at
+  [https://github.com/dg-i/ansible-collection-junos-config](https://github.com/dg-i/ansible-collection-junos-config).
 - Respect the beta API and CLI deprecation rules before removing exports.
 - Ask for a named device artifact before changing accepted Junos syntax.
 - Keep the package offline and retain the dict IR as the sole interchange form.

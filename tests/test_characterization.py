@@ -261,8 +261,9 @@ class TestNetworksAutoNeedsSourceText:
 class TestEdityamlSurfaceTheCollectionDrives:
     """``rename-root`` and ``ansibilize`` are driven by the Ansible collection.
 
-    ``dg-i/ansible-collection-junos-config`` documents both in its group_vars
-    pipelines, so their output shape is part of the declared ``cli`` surface.
+    ``https://github.com/dg-i/ansible-collection-junos-config`` documents both
+    in its group_vars pipelines, so their output shape is part of the declared
+    ``cli`` surface.
     """
 
     @staticmethod

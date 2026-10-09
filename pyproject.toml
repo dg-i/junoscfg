@@ -211,7 +211,8 @@ review-by = "2027-04-06"
 owners = ["manon.goo@dg-i.net"]
 solo = true                     # one maintainer; drop it when a second owner arrives
 surfaces = ["api", "cli"]
-# `dg-i/ansible-collection-junos-config` is in production against both: its
+# https://github.com/dg-i/ansible-collection-junos-config is in production
+# against both: its
 # render filter imports convert_config, validate_config, Format and
 # FieldValidationError, and its pipelines drive `convert`, `edityaml
 # rename-root` and `edityaml ansibilize`. See ARCHITECTURE.md section 3.
