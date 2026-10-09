@@ -17,5 +17,6 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Context expansion: `src/junoscfg/CONTRACT.md` | Required module contract; updates the dispatch-table precedent after the rename. |
+| Context expansion: `docs/architecture/developer-guide.md` | Graph query found the architecture guide's stale `_CONVERTERS` description. |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

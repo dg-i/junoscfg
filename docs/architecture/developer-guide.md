@@ -124,9 +124,9 @@ flowchart TD
 
 ### Routing logic
 
-`convert_config()` uses `_CONVERTERS` — a dict mapping `(Format, Format)` tuples to
-converter function names (20 pairs total, including 4 identity conversions). All
-converters go through the pipeline and support `validate`/`strict` kwargs for
+`convert_config()` checks `_SUPPORTED_CONVERSIONS` — a set of 20
+`(Format, Format)` pairs, including 4 identity conversions — then calls the
+unified pipeline directly. Every pair supports `validate` and `strict` for
 field-level validation.
 
 ### Dispatch table
