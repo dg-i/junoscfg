@@ -16,7 +16,7 @@ from junoscfg.validate import ValidationResult  # noqa: TC001
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-__version__ = "0.12.1"
+__version__ = "0.13.0"
 
 __all__ = [
     "Format",

@@ -1,0 +1,26 @@
+schema: agent-ready
+created: 2026-10-09
+type: bug
+zone: kernel
+domains: [conversion, validation]
+removes:
+  - >-
+    raw Junos set bracket shorthand from accepted API and CLI input, because
+    the current reader can turn it into an incorrect IR instead of preserving
+    its device meaning
+declared-break:
+  api:
+    why: >-
+      Raw set input containing an unquoted square bracket now raises ValueError
+      instead of being accepted or mis-converted, including when validation is
+      disabled or non-strict.
+    migration: >-
+      Supply canonical display-set input with one command per leaf-list value,
+      or use structured input when bracket-list syntax must be retained.
+  cli:
+    why: >-
+      Raw set conversion/import containing an unquoted square bracket now exits
+      2, while validation-only reports the line as invalid and exits 1.
+    migration: >-
+      Expand bracket lists to the repeated commands emitted by display set, or
+      provide the configuration in a supported structured format.

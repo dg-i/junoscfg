@@ -14,7 +14,7 @@ from junoscfg.display import (
     load_schema_tree,
     statement_name_spellings,
 )
-from junoscfg.input import normalize
+from junoscfg.input import find_unsupported_set_brackets, normalize
 
 
 def _is_statement_name(cname: str, cnode: dict[str, Any], token: str) -> bool:
@@ -51,6 +51,10 @@ def set_to_dict(source: str) -> dict[str, Any]:
     Handles ``set``, ``deactivate``, ``protect``, ``delete``, and
     ``activate`` commands.
     """
+    bracket_findings = find_unsupported_set_brackets(source)
+    if bracket_findings:
+        raise ValueError(bracket_findings[0][1])
+
     content = normalize(source)
     lines = [line.strip() for line in content.split("\n") if line.strip()]
 

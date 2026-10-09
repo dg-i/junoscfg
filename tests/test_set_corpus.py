@@ -25,6 +25,7 @@ CORPUS = Path(__file__).parent / "data" / "set_corpus.txt"
 # they were harvested from:
 CORRECTLY_REJECTED = {
     "set interfaces ge-0/0/0 bogus-thing 5": "element does not exist",
+    "set policy-options community FOO members": "leaf-list with no value",
     "set system host-name": "leaf with no value",
     "set system host-name foo bar baz": "leaf with three values",
     # `apply-groups` after a leaf's value is not Junos. The validator used to
@@ -37,15 +38,20 @@ CORRECTLY_REJECTED = {
     "set system host-name router1 apply-groups mygroup": "apply-groups after a leaf value",
 }
 
+# Intentionally unsupported — device-valid syntax that raw junoscfg set input
+# deliberately excludes. This is neither malformed Junos nor an accidental
+# validator over-rejection.
+INTENTIONALLY_UNSUPPORTED = {
+    "set system apply-groups [ foo bar ]": "interactive bracket-list shorthand",
+}
+
 # Over-rejected — valid Junos the structural grammar cannot express. Each code
 # is a limitation listed in docs/guide/validation.md; shrinking this set is
-# progress. The codes:
+# progress. The code:
 #
 #   merged    a rule merged from several tree positions offers one choice
-#   brackets  a `[ a b ]` value list; VALUE is /\S+/, so `[` is its own token
 OVER_REJECTED = {
     "set groups foo snmp location": "merged",
-    "set policy-options community FOO members": "brackets",
     "set system location dc-a": "merged",
     "set system name-server": "merged",
 }
@@ -71,14 +77,21 @@ class TestShippedGrammarAgainstTheCorpus:
 
     def test_rejections_are_exactly_the_recorded_ones(self, validator: SetValidator) -> None:
         rejected = {c for c in _corpus() if not validator.validate(c).valid}
-        expected = set(CORRECTLY_REJECTED) | set(OVER_REJECTED)
+        expected = set(CORRECTLY_REJECTED) | set(INTENTIONALLY_UNSUPPORTED) | set(OVER_REJECTED)
         assert rejected == expected, (
             f"newly rejected: {sorted(rejected - expected)}\n"
             f"no longer rejected: {sorted(expected - rejected)}"
         )
+        for line in INTENTIONALLY_UNSUPPORTED:
+            result = validator.validate(line)
+            assert result.errors[0].message == (
+                f"Unsupported bracket syntax in set input on line 1:\n{line}"
+            )
 
     def test_the_recorded_rejections_are_still_in_the_corpus(self) -> None:
         """A command dropped from the corpus must not linger in the lists above."""
         corpus = set(_corpus())
-        stale = (set(CORRECTLY_REJECTED) | set(OVER_REJECTED)) - corpus
+        stale = (
+            set(CORRECTLY_REJECTED) | set(INTENTIONALLY_UNSUPPORTED) | set(OVER_REJECTED)
+        ) - corpus
         assert not stale, f"recorded but absent from the corpus: {sorted(stale)}"

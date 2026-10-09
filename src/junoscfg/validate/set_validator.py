@@ -21,6 +21,7 @@ from lark import Lark
 from lark.exceptions import UnexpectedInput
 
 from junoscfg.display import read_artifact_text
+from junoscfg.input import find_unsupported_set_brackets, iter_visible_set_lines
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
 if TYPE_CHECKING:
@@ -54,15 +55,16 @@ class SetValidator:
         Returns:
             ValidationResult with per-line errors.
         """
-        lines = source.strip().splitlines()
         errors: list[ValidationError] = []
         set_lines: list[str] = []
+        bracket_errors = dict(find_unsupported_set_brackets(source))
 
-        for lineno, raw_line in enumerate(lines, 1):
-            line = raw_line.strip()
-            if not line or line.startswith("#") or line.startswith("/*"):
+        for lineno, _original_line, visible_line in iter_visible_set_lines(source):
+            if message := bracket_errors.get(lineno):
+                errors.append(ValidationError(message=message, line=lineno))
                 continue
 
+            line = visible_line.strip()
             if line.startswith("deactivate "):
                 # Check that corresponding set path exists
                 set_path = "set " + line[len("deactivate ") :]

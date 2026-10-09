@@ -56,15 +56,26 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 !!! warning "Structural only, and it rejects some valid configuration"
     Set validation checks *shape*, not values: every leaf accepts any token.
-    It also over-rejects. Against the 116 commands in
+    It also over-rejects. Against the 117 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
     105 are accepted; `tests/test_set_corpus.py` lists every rejection and
-    which are correct. The causes:
+    distinguishes malformed input, intentional exclusions, and accidental
+    over-rejection. The remaining accidental cause is:
 
     - **A rule merged from several places offers one choice**, so
       `set system location dc-a` is rejected even though the hierarchy exists.
-    - **Bracket value lists** — `[ tcp udp ]` — are not tokenised; `VALUE` is
-      `/\S+/`, so `[` becomes a token of its own.
+
+    Raw set input **intentionally rejects every unquoted `[` or `]`**. It
+    accepts canonical device-produced `| display set` syntax, not interactive
+    bracket-list shorthand. The rejection happens before conversion builds an
+    IR, even with `validate=False` or without `strict=True`; validation returns
+    a normal line-specific error instead of throwing. Brackets inside quoted
+    values and ignored comments remain ordinary content.
+
+    Migrate a bracket list to the repeated commands Junos itself emits. For
+    example, replace `members [ v10 v20 ]` with one `members v10` command and
+    one `members v20` command. Structured curly-brace input still accepts
+    bracket lists and structured-to-set conversion performs that expansion.
 
     Flattened hierarchies marked by the schema accept both compact sibling
     runs and repeated paths. For example, one NTP server line may carry
@@ -78,7 +89,8 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     the same way; `--artifacts DIR` and `JUNOSCFG_ARTIFACTS` select one, for
     conversion as well as validation. The committed performance guard checks
     100 compact sibling commands in under five seconds. Conversion to and from
-    set format does not use the grammar and is unaffected by any of this.
+    set format does not use the grammar, but raw set conversion applies the
+    same intentional bracket boundary before it constructs the IR.
 
 ```python
 from junoscfg import validate_set

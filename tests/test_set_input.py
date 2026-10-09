@@ -6,10 +6,49 @@ the JSON dict IR.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from junoscfg.convert.input.set_input import set_to_dict
 from junoscfg.convert.output.set_output import dict_to_set
+
+
+class TestSetBracketSyntaxRejection:
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set system apply-groups [ foo bar ]",
+            "delete system apply-groups [ foo bar ]",
+            "deactivate system apply-groups [ foo bar ]",
+            "activate system apply-groups [ foo bar ]",
+            "protect system apply-groups [ foo bar ]",
+            "replace system apply-groups [ foo bar ]",
+            "set system apply-groups [foo bar]",
+            "set system apply-groups []",
+            "set system apply-groups [ ]",
+            "set system apply-groups [",
+            "set system apply-groups ]",
+            "set system host-name [router1]",
+            "  set system apply-groups [ foo bar ]  ",
+        ],
+    )
+    def test_every_command_and_bracket_form_is_rejected(self, line: str) -> None:
+        expected = f"Unsupported bracket syntax in set input on line 1:\n{line}"
+        with pytest.raises(ValueError, match=re.escape(expected)):
+            set_to_dict(line)
+
+    def test_quoted_brackets_and_comments_remain_ordinary_content(self) -> None:
+        source = (
+            "# ignored unmatched bracket [\n"
+            'set policy-options community FOO members "64498:[2-6]....$"\n'
+            "/* ignored closing bracket ] */"
+        )
+
+        result = set_to_dict(source)
+
+        assert result["policy-options"]["community"][0]["members"] == ["64498:[2-6]....$"]
+
 
 # ── Simple leaves ────────────────────────────────────────────────────
 

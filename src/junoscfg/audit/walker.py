@@ -307,11 +307,10 @@ def _walk_leaf(
 def _leaf_names(item: Any) -> list[str]:
     """Yield the reference name(s) carried by one leaf-list item.
 
-    The set parser stores Junos bracket lists (``filter input-list [ a b ]``)
-    as a single opaque string ``"[ a b ]"``; split those back into the
-    individual names so multi-value references are recognized. Structured
-    and native-JSON input already deliver real lists and reach this with
-    plain scalar items.
+    Pre-built IR or native JSON may carry a bracket list as one opaque string
+    ``"[ a b ]"``; split it so multi-value references are recognized. Raw set
+    input rejects that interactive shorthand, while structured input expands
+    it to real list values before the audit walker sees it.
     """
     if isinstance(item, str):
         stripped = item.strip()

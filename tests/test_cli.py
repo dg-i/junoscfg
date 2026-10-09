@@ -18,7 +18,7 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.12.1" in result.output
+        assert "0.13.0" in result.output
 
     def test_no_mode_shows_help(self) -> None:
         runner = CliRunner()
@@ -940,3 +940,14 @@ class TestAnonymizeNetworksAuto:
         assert addrs[0].endswith(".1/24")
         assert addrs[1].endswith(".254/24")
         assert addrs[0].rsplit(".", 1)[0] == addrs[1].rsplit(".", 1)[0]
+
+
+class TestSetBracketSyntaxRejection:
+    def test_conversion_exits_two_with_complete_diagnostic(self) -> None:
+        runner = CliRunner()
+        line = "set system host-name " + "r" * 120 + " [broken]"
+
+        result = runner.invoke(main, ["-i", "set", "-e", "json"], input=line)
+
+        assert result.exit_code == 2
+        assert f"Unsupported bracket syntax in set input on line 1:\n{line}" in result.output

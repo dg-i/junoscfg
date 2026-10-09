@@ -22,3 +22,5 @@ duplicate `ARCHITECTURE.md` section 1 calls a defect.
 
 - `junoscfg.convert.output.dict_walker.WalkOutput` — the strategy every new
   output format implements instead of walking the IR again.
+- `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical
+  boundary raw set readers apply before constructing the IR.

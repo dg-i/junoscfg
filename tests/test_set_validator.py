@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg import validate_config, validate_set
-from junoscfg.validate import JunosValidator, SchemaLoadError
+from junoscfg import Format, validate_config, validate_set
+from junoscfg.validate import JunosValidator, SchemaLoadError, ValidationError
 from junoscfg.validate.grammar_generator import generate_lark_grammar
 from junoscfg.validate.schema_node import SchemaNode
 from junoscfg.validate.set_validator import SetValidator
@@ -91,6 +91,77 @@ class TestSetValidator:
     def test_load_error(self):
         with pytest.raises(SchemaLoadError):
             SetValidator("/nonexistent/grammar.lark")
+
+
+class TestSetBracketSyntaxRejection:
+    _COMMANDS = (
+        "set system apply-groups [ foo bar ]",
+        "delete system apply-groups [ foo bar ]",
+        "deactivate system apply-groups [ foo bar ]",
+        "activate system apply-groups [ foo bar ]",
+        "protect system apply-groups [ foo bar ]",
+        "replace system apply-groups [ foo bar ]",
+    )
+
+    def test_validation_doors_return_line_errors_without_throwing(
+        self, bundled_set_validator: SetValidator, artifacts_dir: str
+    ) -> None:
+        line = self._COMMANDS[0]
+        results = (
+            bundled_set_validator.validate(line),
+            validate_set(line, artifacts_dir=artifacts_dir),
+            validate_config(line, format=Format.SET, artifacts_dir=artifacts_dir),
+        )
+
+        for result in results:
+            assert result.valid is False
+            assert result.errors == (
+                ValidationError(
+                    message=f"Unsupported bracket syntax in set input on line 1:\n{line}",
+                    line=1,
+                ),
+            )
+
+        for command in self._COMMANDS:
+            result = bundled_set_validator.validate(command)
+            assert result.errors[0].message == (
+                f"Unsupported bracket syntax in set input on line 1:\n{command}"
+            )
+
+        accepted = bundled_set_validator.validate(
+            '# ignored bracket [\nset policy-options community FOO members "64498:[2-6]....$"'
+        )
+        assert accepted.valid is True
+
+        after_comment = "/* ignored */ set system apply-groups [ foo bar ]"
+        result = bundled_set_validator.validate(after_comment)
+        assert result.errors == (
+            ValidationError(
+                message=(f"Unsupported bracket syntax in set input on line 1:\n{after_comment}"),
+                line=1,
+            ),
+        )
+
+        multiline_comment = "/* ignored\n[ still ignored ]\n*/\nset system host-name router1"
+        assert bundled_set_validator.validate(multiline_comment).valid is True
+
+    def test_validation_collects_each_offending_line(
+        self, bundled_set_validator: SetValidator
+    ) -> None:
+        lines = [
+            "# ignored bracket [",
+            "set system apply-groups [ foo bar ]",
+            "set system host-name router1",
+            "delete system apply-groups ]",
+        ]
+
+        result = bundled_set_validator.validate("\n".join(lines))
+
+        assert result.valid is False
+        assert [(error.line, error.message) for error in result.errors] == [
+            (2, f"Unsupported bracket syntax in set input on line 2:\n{lines[1]}"),
+            (4, f"Unsupported bracket syntax in set input on line 4:\n{lines[3]}"),
+        ]
 
 
 class TestTheShippedGrammarKeepsRejecting:
@@ -239,25 +310,14 @@ class TestTheShippedGrammarModelsTheApplyStatements:
     artifacts were regenerated the validator cut them off the line before
     parsing -- a bridge with two tests that went red together on the day the
     shipped tree carried the four nodes, which was 0.8.0. These replace them:
-    the statements at depth and at the top, the quoted value the bridge once
-    cut in half, and the one-line bracket form pinned as the documented
-    `brackets` limit the bridge used to hide.
+    the statements at depth and at the top, and quoted values the bridge once
+    cut in half. Raw bracket shorthand has its own negative contract tests.
     """
 
     @pytest.mark.parametrize(
         "line",
         [
             "set protocols bgp group G apply-groups foo",
-            pytest.param(
-                "set system apply-groups [ foo bar ]",
-                marks=pytest.mark.xfail(
-                    strict=True,
-                    reason=(
-                        "brackets: a `[ a b ]` list is one token per VALUE, the "
-                        "documented limitation; the bridge took it by cutting it off"
-                    ),
-                ),
-            ),
             "set system apply-groups-except foo",
             "set protocols bgp group overlay apply-flags replace",
             "set interfaces ge-0/0/0 apply-macro m1",

@@ -6,10 +6,89 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
-__all__ = ["normalize"]
+__all__ = ["find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"]
 
 import re
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
+    """Return line-numbered diagnostics for unquoted square brackets.
+
+    Raw set input accepts canonical ``display set`` commands, not interactive
+    bracket-list shorthand. Full-line ``#`` comments and ``/* ... */`` block
+    comments are ignored exactly as they are by :func:`normalize`.
+    """
+    findings: list[tuple[int, str]] = []
+    for lineno, original_line, visible_line in iter_visible_set_lines(source):
+        if _has_unquoted_square_bracket(visible_line):
+            findings.append(
+                (
+                    lineno,
+                    f"Unsupported bracket syntax in set input on line {lineno}:\n{original_line}",
+                )
+            )
+
+    return tuple(findings)
+
+
+def iter_visible_set_lines(source: str) -> Iterator[tuple[int, str, str]]:
+    """Yield line number, original text, and content outside leading comments.
+
+    Full-line ``#`` comments and leading ``/* ... */`` block comments are
+    omitted. Content following a closing block-comment marker remains visible
+    on its original physical line. Raw set consumers use this shared view so
+    conversion and validation classify comments consistently.
+    """
+    in_block_comment = False
+
+    for lineno, original_line in enumerate(source.splitlines(), 1):
+        visible_line = original_line
+
+        while True:
+            if in_block_comment:
+                comment_end = visible_line.find("*/")
+                if comment_end < 0:
+                    visible_line = ""
+                    break
+                visible_line = visible_line[comment_end + 2 :]
+                in_block_comment = False
+
+            stripped = visible_line.lstrip()
+            if not stripped or stripped.startswith("#"):
+                visible_line = ""
+                break
+            if stripped.startswith("/*"):
+                in_block_comment = True
+                visible_line = stripped[2:]
+                continue
+            visible_line = stripped
+            break
+
+        if visible_line:
+            yield lineno, original_line, visible_line
+
+
+def _has_unquoted_square_bracket(line: str) -> bool:
+    """Return whether *line* contains ``[`` or ``]`` outside double quotes."""
+    in_quote = False
+    preceding_backslashes = 0
+
+    for char in line:
+        if char == '"' and preceding_backslashes % 2 == 0:
+            in_quote = not in_quote
+        elif char in "[]" and not in_quote:
+            return True
+
+        if char == "\\":
+            preceding_backslashes += 1
+        else:
+            preceding_backslashes = 0
+
+    return False
 
 
 def normalize(io_or_string: str | TextIO) -> str:

@@ -20,3 +20,5 @@ validator import an `xsd_*` module.
 
 - `junoscfg.validate.xsd_fixes` — the registry shape, one `XsdFix` per
   correction with its category, description and applies_to.
+- `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical
+  boundary set validation reports through normal `ValidationError` results.
