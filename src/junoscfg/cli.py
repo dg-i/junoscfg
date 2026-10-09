@@ -352,7 +352,7 @@ def convert(
         anon_config.source_text = source
 
     # Convert using the unified API
-    from junoscfg import convert_config
+    from junoscfg import convert_config_result
 
     from_fmt = Format(import_format)
     to_fmt = Format(export_format)
@@ -360,7 +360,7 @@ def convert(
     field_validate = not no_field_validate
 
     try:
-        result = convert_config(
+        result = convert_config_result(
             source,
             from_format=from_fmt,
             to_format=to_fmt,
@@ -395,8 +395,10 @@ def convert(
             sys.exit(1)
         raise
 
-    if result:
-        click.echo(result, nl=False)
+    for diagnostic in result.diagnostics:
+        click.echo(diagnostic.render(), err=True)
+    if result.output:
+        click.echo(result.output, nl=False)
 
 
 @main.group()

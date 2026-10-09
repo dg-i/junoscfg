@@ -20,6 +20,8 @@ duplicate `ARCHITECTURE.md` section 1 calls a defect.
 
 ## Precedent
 
+- `junoscfg.convert.pipeline_result` — the implementation door for conversion;
+  string-only `pipeline()` delegates to it and discards diagnostics.
 - `junoscfg.convert.output.dict_walker.WalkOutput` — the strategy every new
   output format implements instead of walking the IR again.
 - `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical
