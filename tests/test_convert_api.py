@@ -639,7 +639,21 @@ class TestUserClassSingle:
 
 
 class TestLeafListPromotion:
-    """Scalar leaf-list values must be promoted at the shared IR boundary."""
+    """Scalar leaf-list values are promoted only for adapters that require it."""
+
+    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(self, monkeypatch) -> None:
+        """JSON retains its supplied shape and has no schema-artifact dependency."""
+        import junoscfg.convert.input.normalization as normalization
+
+        def fail_if_called():
+            raise AssertionError("JSON input must not load the schema tree")
+
+        monkeypatch.setattr(normalization, "load_schema_tree", fail_if_called)
+        source = '{"configuration":{"protocols":{"evpn":{"extended-vni-list":"3001000-3001100"}}}}'
+
+        assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
+            "3001000-3001100"
+        )
 
     def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
         """YAML scalar extended-vni-list must become a single-element JSON array."""

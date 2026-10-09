@@ -1,4 +1,4 @@
-"""Canonical normalization shared by every input adapter."""
+"""Canonical normalization for input adapters that require schema guidance."""
 
 from __future__ import annotations
 

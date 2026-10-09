@@ -13,9 +13,10 @@ duplicate `ARCHITECTURE.md` section 1 calls a defect.
 - Every supported pair round-trips through the IR without losing content —
   enforced by
   `tests/test_convert_consistency.py::TestJsonRoundTripConsistency::test_roundtrip_preserves_content`.
-- XML input reuses the display kernel's `xml_to_dict()` walker and every input
-  adapter applies schema-backed leaf-list normalization at the common boundary —
-  enforced by `tests/test_integration.py::TestExampleRoundtrip::test_xml_to_set_high_match`.
+- XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML
+  apply schema-backed leaf-list normalization at the common boundary, while
+  JSON retains its supplied value shapes without loading schema artifacts —
+  enforced by `tests/test_convert_api.py::TestLeafListPromotion`.
 - One configuration yields one IR whatever format it arrived in — enforced by
   `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr`.
 
