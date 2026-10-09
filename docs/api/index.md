@@ -3,6 +3,11 @@
 The published Python API follows package doors. Import the documented names
 from these modules, not from their implementation submodules.
 
+During beta, compatibility is guaranteed for the four top-level names used by
+the production Ansible collection: `convert_config`, `validate_config`,
+`Format`, and `FieldValidationError`. Other documented package-door APIs may
+change in a minor release.
+
 ## Top-Level Functions
 
 The [`junoscfg`](conversion.md) module provides convenience functions for all conversions

@@ -39,9 +39,7 @@ def from_dict(
 
         return dict_to_yaml(config, wrap=wrap)
     elif fmt == "xml":
-        from junoscfg.convert.output.xml_output import dict_to_xml
-
-        return dict_to_xml(config)
+        raise NotImplementedError("XML output conversion is not yet implemented.")
     elif fmt == "set":
         from junoscfg.convert.output.set_output import dict_to_set
 

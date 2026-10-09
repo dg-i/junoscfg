@@ -16,5 +16,6 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: https://github.com/dg-i/ansible-collection-junos-config | Owner-declared compatibility boundary; current imports and 33 tests verified in a temporary read-only clone. |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

@@ -7,11 +7,17 @@
 
 ## 2. Change
 
-- [ ] 2.1 Remove `json_to_yaml()` and route its useful characterization tests
+- [x] 2.1 Remove `json_to_yaml()` and route its useful characterization tests
   through `convert_config()`.
-- [ ] 2.2 Remove `xml_output.py` and preserve the package-door exception in
+- [x] 2.2 Remove `xml_output.py` and preserve the package-door exception in
   `convert.output.from_dict()`.
-- [ ] 2.3 Remove stale module documentation and add the changelog fragment.
+- [x] 2.3 Remove stale module documentation, record the owner-approved
+  production-consumer compatibility boundary, ban the retired imports, and add
+  the changelog fragment.
+
+  Evidence: 142 focused conversion tests passed. The production collection's
+  33 tests passed against the roadmap integration checkout whose four
+  top-level imports this change preserves.
 - [ ] 2.4 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence
