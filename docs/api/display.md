@@ -1,5 +1,5 @@
 # junoscfg.display
 
-Display format detection and path filtering utilities.
+Display format detection, XML parsing, and path filtering utilities.
 
 ::: junoscfg.display

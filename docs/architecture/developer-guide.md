@@ -101,7 +101,7 @@ flowchart LR
 | Subsystem | Location | Purpose |
 |-----------|----------|---------|
 | **convert/** | `src/junoscfg/convert/` | Unified pipeline: any format → dict IR → any format, with field validation |
-| **display/** | `src/junoscfg/display/` | Shared utilities: constants, config store, value formatting, set converter, XML→YAML bridge |
+| **display/** | `src/junoscfg/display/` | Shared utilities: constants, config store, value formatting, set converter, XML walker |
 | **validate/** | `src/junoscfg/validate/` | Schema validation against XSD, JSON Schema, Lark grammar; artifact generation |
 
 The `__init__.py` at package root provides the unified public API (`convert_config()`,
@@ -194,7 +194,7 @@ Each input module parses a format into the unwrapped dict IR (the content inside
 |--------|----------|-------|
 | `json_input.py` | `json_to_dict()` | Parses JSON, uses `find_configuration()` to unwrap |
 | `yaml_input.py` | `yaml_to_dict()` | Parses YAML, uses `find_configuration()` |
-| `xml_input.py` | `xml_to_dict()` | XML→YAML bridge via `xml_to_yaml()` + `yaml_to_dict()` |
+| `xml_input.py` | `xml_to_dict()` | Reuses `display.xml_to_dict()` and returns its configuration mapping directly |
 | `set_input.py` | `set_to_dict()` | Tokenizes set commands, walks schema tree to build dict |
 | `structured_input.py` | `structured_to_dict()` | Two-hop: structured → set → dict |
 

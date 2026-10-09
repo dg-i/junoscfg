@@ -21,7 +21,7 @@ converting between any format pair through a JSON dict intermediate representati
 ## Display Module
 
 The [`junoscfg.display`](display.md) module contains shared conversion utilities
-such as `detect_format()`, `is_display_set()`, and `filter_set_by_path()`. The actual format
+such as `detect_format()`, `is_display_set()`, `xml_to_dict()`, and `filter_set_by_path()`. The actual format
 converters live in `junoscfg.convert.input/` and `junoscfg.convert.output/`,
 but those implementation modules are not published. Access conversion through
 `junoscfg.convert.pipeline()` or the top-level `convert_config()`.

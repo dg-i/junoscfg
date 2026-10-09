@@ -1,0 +1,164 @@
+{
+  "change": "xml-direct-to-ir",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "3507464da1d0d38911b597f1aba47509abeaeb7fac89ffa272e11360db23ffbe",
+          "head": "3507464da1d0d38911b597f1aba47509abeaeb7fac89ffa272e11360db23ffbe"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "ARCHITECTURE.md",
+            "changelog.d/+xml-direct-to-ir.feature.md",
+            "docs/api/display.md",
+            "docs/api/index.md",
+            "docs/architecture/developer-guide.md",
+            "src/junoscfg/convert/CONTRACT.md",
+            "src/junoscfg/convert/input/__init__.py",
+            "src/junoscfg/convert/input/normalization.py",
+            "src/junoscfg/convert/input/xml_input.py",
+            "src/junoscfg/convert/input/yaml_input.py",
+            "src/junoscfg/display/CONTRACT.md",
+            "src/junoscfg/display/__init__.py",
+            "src/junoscfg/display/to_yaml.py",
+            "tach.toml",
+            "tests/test_convert_api.py",
+            "tests/test_to_yaml.py"
+          ],
+          "since": "b5324ccb56a498e38a0d284a51aa431e36d28583"
+        },
+        "selector": [
+          "b5324ccb56a498e38a0d284a51aa431e36d28583",
+          "23bae69c7c4a1c9471db70ce639d7e5bdeb65270"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 115,
+        "binary_files": 0,
+        "files": 16,
+        "removed": 54
+      }
+    },
+    "locked_packages": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "92cbef486b62f566111fb2aabd77595024e2bbbb1dd0e37b78a1e4703678519c",
+          "head": "92cbef486b62f566111fb2aabd77595024e2bbbb1dd0e37b78a1e4703678519c"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 61,
+        "delta": 0,
+        "head": 61
+      }
+    },
+    "phase_span": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "b5324ccb56a498e38a0d284a51aa431e36d28583",
+      "captured_at": "2026-10-09T11:54:35.251545Z",
+      "head_sha": "23bae69c7c4a1c9471db70ce639d7e5bdeb65270",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

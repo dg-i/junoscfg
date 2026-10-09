@@ -639,7 +639,21 @@ class TestUserClassSingle:
 
 
 class TestLeafListPromotion:
-    """YAML scalar values for leaf-list fields must be promoted to arrays."""
+    """Scalar leaf-list values are promoted only for adapters that require it."""
+
+    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(self, monkeypatch) -> None:
+        """JSON retains its supplied shape and has no schema-artifact dependency."""
+        import junoscfg.convert.input.normalization as normalization
+
+        def fail_if_called():
+            raise AssertionError("JSON input must not load the schema tree")
+
+        monkeypatch.setattr(normalization, "load_schema_tree", fail_if_called)
+        source = '{"configuration":{"protocols":{"evpn":{"extended-vni-list":"3001000-3001100"}}}}'
+
+        assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
+            "3001000-3001100"
+        )
 
     def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
         """YAML scalar extended-vni-list must become a single-element JSON array."""
@@ -669,3 +683,22 @@ class TestLeafListPromotion:
         parsed = json.loads(result)
         vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
         assert vni == ["3001000-3001100", "3002000-3002100"]
+
+    def test_xml_scalar_leaf_list_promoted_without_yaml_bridge(self, monkeypatch) -> None:
+        """XML reaches the normalized IR without serializing through YAML."""
+        import junoscfg.display
+
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("XML input must not call xml_to_yaml()")
+
+        monkeypatch.setattr(junoscfg.display, "xml_to_yaml", fail_if_called)
+        source = (
+            "<configuration><protocols><evpn>"
+            "<extended-vni-list>3001000-3001100</extended-vni-list>"
+            "</evpn></protocols></configuration>"
+        )
+        result = convert_config(source, from_format=Format.XML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        assert parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"] == [
+            "3001000-3001100"
+        ]

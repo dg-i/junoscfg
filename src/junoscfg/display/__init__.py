@@ -42,7 +42,7 @@ from junoscfg.display.format_detection import (
 from junoscfg.display.path_filter import filter_dict_by_path
 from junoscfg.display.set_converter import SetConverter
 from junoscfg.display.to_json import filter_json_by_path
-from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_yaml
+from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_dict, xml_to_yaml
 from junoscfg.display.value_format import format_value
 
 __all__ = [
@@ -80,6 +80,7 @@ __all__ = [
     "resolve_key_alias",
     "statement_name_spellings",
     "strip_type_prefix",
+    "xml_to_dict",
     "xml_to_yaml",
 ]
 
