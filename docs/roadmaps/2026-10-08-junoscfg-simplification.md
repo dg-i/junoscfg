@@ -53,22 +53,24 @@ roadmap item as an independently testable change.
 
 ### 3. Remove redundant conversion shims
 
-- [ ] Delete the unused JSON-to-YAML helper.
-- [ ] Remove the XML-output module stub while preserving the documented
+- [x] Delete the unused JSON-to-YAML helper.
+- [x] Remove the XML-output module stub while preserving the documented
   `NotImplementedError` through both `convert_config(..., to_format=XML)` and
   the exported `junoscfg.convert.from_dict(ir, "xml")` package door.
 
-Blocked: both helpers remain on the beta public API surface and need a
-deprecation release before removal.
+Completed under the owner-approved production-consumer compatibility boundary;
+the removed secondary imports and their migrations are recorded in
+[the decision](../decisions/2026-10-09-scope-compatibility-to-production-consumer.md).
 
 ### 4. Convert XML directly to the IR
 
-- [ ] Make the existing XML walker return the dict IR directly.
-- [ ] Remove the XML-to-YAML-to-dict serialization round trip after parity
+- [x] Make the existing XML walker return the dict IR directly.
+- [x] Remove the XML-to-YAML-to-dict serialization round trip after parity
   tests pass.
 
-Blocked: the direct walker does not yet preserve schema-backed normalization;
-changing accepted XML also requires named device artifacts.
+Completed with schema-backed XML/YAML normalization at the shared input
+boundary and parity evidence from the owner-supplied device captures. The
+separate `control-as-list-type` defect remains outside this refactor.
 
 ### 5. Filter once at the IR boundary
 
