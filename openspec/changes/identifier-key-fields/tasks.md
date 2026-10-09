@@ -73,3 +73,6 @@ grammar sample: newly rejected 0, newly accepted 2
     `<placeholder>` value now placed and validated.
   - `pytest --jvd tests/test_jvd_corpus.py`: 8 passed, `TestFieldWarningBudget` included.
 
+- [x] 4.14 Full check at 8d623a1: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` exit 0, "every check passed" (1892 passed, 45 skipped, 1 xfailed).
+  - Declared break re-measured on the regenerated JSON schema: 2,560 of 11,547 list-entry objects carry no `name` property (fc22c57: 2,558 of 10,792; 0.14.0: 0 of 8,394); the 755 more are the declarations the dump bounds by a number.
+  - Collection 347715a against this checkout, throwaway virtualenv, clone unmodified: 33 passed.
