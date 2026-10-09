@@ -8,3 +8,6 @@ declared-break:
   api:
     why: Library conversion calls stop writing unaddressable diagnostics to process stderr.
     migration: Use convert_config_result() or pipeline_result() and render the returned diagnostics where appropriate.
+  cli:
+    why: The CLI moves to the structured-result package door so it remains the sole diagnostic renderer.
+    migration: No command-line migration; wording, stdout, and exit codes remain stable.

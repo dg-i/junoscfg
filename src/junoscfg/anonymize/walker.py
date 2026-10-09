@@ -60,7 +60,7 @@ def _walk_node(
     rules: list[Rule],
     path_filter: PathFilter,
     log_debug: bool,
-    diagnostic_sink: Callable[[str], None] | None,
+    diagnostic_sink: Callable[[str], None] | None = None,
 ) -> None:
     """Recursively walk the IR dict, applying rules to leaves."""
     if obj is None or schema_node is None:
@@ -181,7 +181,7 @@ def _anonymize_leaf(
     path: list[str],
     rules: list[Rule],
     log_debug: bool,
-    diagnostic_sink: Callable[[str], None] | None,
+    diagnostic_sink: Callable[[str], None] | None = None,
 ) -> None:
     """Try each rule against a leaf value; first match wins."""
     if value is None or value is True or value == "":
@@ -206,7 +206,7 @@ def _try_rules(
     path: list[str],
     rules: list[Rule],
     log_debug: bool,
-    diagnostic_sink: Callable[[str], None] | None,
+    diagnostic_sink: Callable[[str], None] | None = None,
 ) -> Any:
     """Apply the first matching rule to *value* and return the result."""
     str_value = str(value)

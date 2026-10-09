@@ -69,6 +69,7 @@ class TestDiagnosticRouting:
         assert capsys.readouterr().err == ""
         assert len(result.diagnostics) == 1
         assert result.diagnostics[0].source == "structured-output"
+        assert result.diagnostics[0].severity == "note"
         assert "delete annotation(s) dropped" in result.diagnostics[0].render()
 
         assert isinstance(
