@@ -23,12 +23,12 @@ Public API::
 
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from junoscfg.anonymize import AnonymizeConfig
 
+from junoscfg.convert.diagnostics import ConversionResult, Diagnostic
 from junoscfg.convert.field_validator import FieldValidationError
 from junoscfg.convert.input import to_dict
 from junoscfg.convert.ir import find_configuration
@@ -43,34 +43,70 @@ def pipeline(
     validate: bool = True,
     strict: bool = False,
     anon_config: object | None = None,
+    path: str | None = None,
+    relative: bool = False,
 ) -> str:
-    """Convert a configuration between any two supported formats.
+    """Convert a configuration and return only its rendered output."""
+    return pipeline_result(
+        source,
+        from_format=from_format,
+        to_format=to_format,
+        validate=validate,
+        strict=strict,
+        anon_config=anon_config,
+        path=path,
+        relative=relative,
+    ).output
+
+
+def pipeline_result(
+    source: str,
+    *,
+    from_format: str,
+    to_format: str,
+    validate: bool = True,
+    strict: bool = False,
+    anon_config: object | None = None,
+    path: str | None = None,
+    relative: bool = False,
+) -> ConversionResult:
+    """Convert a configuration and return output plus diagnostics.
 
     This is the core conversion function. It:
     1. Parses *source* into the JSON dict IR via the appropriate input converter
     2. Optionally anonymizes the IR according to *anon_config*
     3. Optionally validates leaf values against schema constraints
-    4. Renders the IR into the target format via the appropriate output converter
+    4. Optionally selects a path from the IR
+    5. Renders the IR into the target format via the appropriate output converter
 
     Args:
         source: Configuration text.
         from_format: Input format name (``"json"``, ``"yaml"``, ``"xml"``,
                      ``"set"``, ``"structured"``).
         to_format: Output format name (same choices).
-        validate: If True (default), run field-level validation. Warnings
-                  are printed to stderr.
+        validate: If True (default), run field-level validation. Non-fatal
+                  findings are returned as diagnostics.
         strict: If True, raise :class:`FieldValidationError` on validation
                 errors instead of just warning.
         anon_config: An :class:`~junoscfg.anonymize.config.AnonymizeConfig`
                      instance, or None to skip anonymization.
+        path: Dot-separated path to select before rendering.
+        relative: If True, render only the selected subtree rather than
+                  rebuilding its parent hierarchy. Requires *path*.
 
     Returns:
-        The converted configuration as a string.
+        The converted output and immutable diagnostics.
 
     Raises:
         FieldValidationError: When *strict* is True and validation errors
             are found.
+        ValueError: When *relative* is True without *path*.
     """
+    diagnostics: list[Diagnostic] = []
+
+    if relative and not path:
+        raise ValueError("relative=True requires path to be set.")
+
     ir = to_dict(source, from_format)
 
     if anon_config is not None:
@@ -90,7 +126,13 @@ def pipeline(
         if cfg.any_enabled:
             from junoscfg.anonymize import anonymize
 
-            anon_result = anonymize(ir, cfg)
+            anon_result = anonymize(
+                ir,
+                cfg,
+                diagnostic_sink=lambda message: diagnostics.append(
+                    Diagnostic(source="anonymize", message=message, severity="debug")
+                ),
+            )
             ir = anon_result.ir
 
             # Dump the revert mapping if requested
@@ -107,9 +149,41 @@ def pipeline(
             if strict:
                 raise FieldValidationError(result)
             else:
-                _report_warnings(result)
+                diagnostics.extend(
+                    Diagnostic(
+                        source="field-validate",
+                        path=item.path,
+                        message=item.message,
+                    )
+                    for item in (*result.errors, *result.warnings)
+                )
 
-    return from_dict(ir, to_format)
+    if path:
+        from junoscfg.display import filter_dict_by_path
+
+        filtered = filter_dict_by_path(ir, path.split("."), relative=relative)
+        if filtered is None:
+            return ConversionResult(output="", diagnostics=tuple(diagnostics))
+        ir = filtered
+
+    if relative and to_format in {"json", "yaml"}:
+        output = from_dict(
+            ir,
+            to_format,
+            wrap=False,
+            diagnostic_sink=lambda message: diagnostics.append(
+                Diagnostic(source="structured-output", message=message, severity="note")
+            ),
+        )
+    else:
+        output = from_dict(
+            ir,
+            to_format,
+            diagnostic_sink=lambda message: diagnostics.append(
+                Diagnostic(source="structured-output", message=message, severity="note")
+            ),
+        )
+    return ConversionResult(output=output, diagnostics=tuple(diagnostics))
 
 
 def validate_ir(config: dict[str, Any]) -> Any:
@@ -152,19 +226,14 @@ def _refuse_unplaced(ir: dict[str, Any]) -> None:
         raise FieldValidationError(FieldValidationResult(errors=unplaced))
 
 
-def _report_warnings(result: Any) -> None:
-    """Print field validation errors/warnings to stderr."""
-    for err in result.errors:
-        print(f"field-validate: {err.path}: {err.message}", file=sys.stderr)
-    for warn in result.warnings:
-        print(f"field-validate: {warn.path}: {warn.message}", file=sys.stderr)
-
-
 __all__ = [
+    "ConversionResult",
+    "Diagnostic",
     "FieldValidationError",
     "find_configuration",
     "from_dict",
     "pipeline",
+    "pipeline_result",
     "to_dict",
     "validate_ir",
 ]

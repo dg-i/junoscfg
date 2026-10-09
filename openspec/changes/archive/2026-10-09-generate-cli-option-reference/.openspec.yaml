@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-09
+type: refactor
+zone: surface
+domains: [conversion, validation, anonymization, audit, ansible-vars]
+skip_specs: true
+removes: hand-maintained CLI option tables and published internal-module API pages

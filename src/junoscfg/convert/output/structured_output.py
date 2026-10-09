@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
 from junoscfg.display import ConfigStore, format_value, load_schema_tree
@@ -12,11 +14,12 @@ from junoscfg.display import ConfigStore, format_value, load_schema_tree
 class StructuredWalkOutput(WalkOutput):
     """Pushes hierarchy paths into a ConfigStore for curly-brace rendering."""
 
-    def __init__(self) -> None:
+    def __init__(self, diagnostic_sink: Callable[[str], None] | None = None) -> None:
         """Start with an empty store and no deferred operations."""
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
+        self._diagnostic_sink = diagnostic_sink
 
     def emit(self, hierarchy: list[str]) -> None:
         """Push *hierarchy* into the store as one path."""
@@ -60,17 +63,21 @@ class StructuredWalkOutput(WalkOutput):
                 self.config.mark_replaced(path_str)
             elif op == "protect":
                 self.config.mark_protected(path_str)
-        if self._dropped_deletes:
-            print(
+        if self._dropped_deletes and self._diagnostic_sink is not None:
+            self._diagnostic_sink(
                 f"note: {len(self._dropped_deletes)} delete annotation(s) dropped: "
-                "structured output cannot represent delete operations",
-                file=sys.stderr,
+                "structured output cannot represent delete operations"
             )
 
 
-def dict_to_structured(config: dict[str, Any]) -> str:
+def dict_to_structured(config: Any, *, diagnostic_sink: Callable[[str], None] | None = None) -> str:
     """Render the IR dict as structured (curly-brace) configuration."""
-    output = StructuredWalkOutput()
+    if not isinstance(config, dict):
+        # The legacy rendered-text filter produced no structured statement
+        # when a relative path selected a leaf rather than a hierarchy.
+        return ""
+
+    output = StructuredWalkOutput(diagnostic_sink)
     walker = DictWalker(output)
 
     # Emit top-level apply-groups first (matches Structure.py ordering)

@@ -306,7 +306,9 @@ def convert(
 
     # Auto-detect import format if not specified
     if not import_format:
-        import_format = _detect_format(source)
+        from junoscfg.display import CONVERSION_FORMATS, detect_format
+
+        import_format = detect_format(source, accepted_formats=CONVERSION_FORMATS)
 
     # Validate if requested
     if validate or validate_only:
@@ -350,7 +352,7 @@ def convert(
         anon_config.source_text = source
 
     # Convert using the unified API
-    from junoscfg import convert_config
+    from junoscfg import convert_config_result
 
     from_fmt = Format(import_format)
     to_fmt = Format(export_format)
@@ -358,7 +360,7 @@ def convert(
     field_validate = not no_field_validate
 
     try:
-        result = convert_config(
+        result = convert_config_result(
             source,
             from_format=from_fmt,
             to_format=to_fmt,
@@ -393,8 +395,10 @@ def convert(
             sys.exit(1)
         raise
 
-    if result:
-        click.echo(result, nl=False)
+    for diagnostic in result.diagnostics:
+        click.echo(diagnostic.render(), err=True)
+    if result.output:
+        click.echo(result.output, nl=False)
 
 
 @main.group()
@@ -837,7 +841,12 @@ def unused(
     if not source.strip():
         return
 
-    fmt = (import_format or _detect_format(source)).lower()
+    if import_format:
+        fmt = import_format.lower()
+    else:
+        from junoscfg.display import AUDIT_FORMATS, detect_format
+
+        fmt = detect_format(source, accepted_formats=AUDIT_FORMATS)
     if fmt == "conf":
         fmt = "structured"
 
@@ -919,20 +928,6 @@ def _read_input(file: str | None) -> str:
         with open(file) as f:
             return f.read()
     return sys.stdin.read()
-
-
-def _detect_format(source: str) -> str:
-    """Auto-detect input format from content."""
-    stripped = source.strip()
-    if stripped.startswith("{") or stripped.startswith("["):
-        return "json"
-    if stripped.startswith("<"):
-        return "xml"
-    from junoscfg.display import is_display_set
-
-    if is_display_set(stripped):
-        return "set"
-    return "structured"
 
 
 def _run_validation(source: str, input_format: str | None, artifacts_dir: str | None) -> None:

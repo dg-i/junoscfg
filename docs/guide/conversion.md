@@ -83,6 +83,22 @@ result = convert_config(source, from_format=Format.SET, to_format=Format.JSON, v
 result = convert_config(source, from_format=Format.SET, to_format=Format.JSON, strict=True)
 ```
 
+In-process callers that need non-fatal validation messages, anonymization debug
+traces, or rendering notes can opt into a structured result. Library calls do
+not write these messages to process stderr:
+
+```python
+from junoscfg import Format, convert_config_result
+
+result = convert_config_result(source, from_format=Format.SET, to_format=Format.JSON)
+for diagnostic in result.diagnostics:
+    logger.warning(diagnostic.render())
+json_output = result.output
+```
+
+The CLI uses this API and remains responsible for rendering diagnostics to its
+stderr stream.
+
 ## Identity Conversions
 
 Identity conversions (same format in and out) parse the input and re-render it through the
@@ -114,10 +130,13 @@ For advanced use cases, the `junoscfg.convert` module exposes the internal pipel
 functions:
 
 ```python
-from junoscfg.convert import pipeline, to_dict, from_dict, validate_ir
+from junoscfg.convert import pipeline, pipeline_result, to_dict, from_dict, validate_ir
 
 # Full pipeline (equivalent to convert_config for pipeline-based conversions)
 result = pipeline("set system host-name r1", from_format="set", to_format="json")
+
+# Full pipeline with structured diagnostics
+result = pipeline_result("set system host-name r1", from_format="set", to_format="json")
 
 # Input stage: parse any format into the JSON dict IR
 ir = to_dict('{"configuration": {"system": {"host-name": "r1"}}}', "json")

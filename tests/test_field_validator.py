@@ -926,12 +926,14 @@ class TestPipelineIntegration:
     def test_an_unmodelled_statement_warns_and_fails_strict(
         self, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """What was silently discarded is kept, named on stderr, fatal under strict."""
-        from junoscfg.convert import pipeline
+        """What was silently discarded is kept, diagnosed, and fatal under strict."""
+        from junoscfg.convert import pipeline, pipeline_result
 
         source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
-        assert pipeline(source, from_format="set", to_format="set").strip() == source
-        err = capsys.readouterr().err
+        result = pipeline_result(source, from_format="set", to_format="set")
+        assert result.output.strip() == source
+        assert capsys.readouterr().err == ""
+        err = "\n".join(item.render() for item in result.diagnostics)
         assert "field-validate: interfaces: " in err
         # `interfaces` is transparent, so the path names it as Junos does
         assert "'nonsense alpha beta gamma' under interfaces ge-0/0/0 could not be placed" in err

@@ -49,7 +49,8 @@ See the [Getting Started](getting-started.md) guide for installation and usage e
   - [Conversion](guide/conversion.md) — Format conversion with examples
   - [Operational Attributes](guide/annotations.md) — Junos `@` annotations (inactive, replace, protect, delete) and `junos:*` metadata
   - [Validation](guide/validation.md) — Configuration validation
-  - [CLI Reference](guide/cli.md) — Command-line interface (including anonymization)
+  - [CLI Guide](guide/cli.md) — workflows and examples (including anonymization)
+  - [CLI Command Reference](guide/cli-reference.md) — generated commands and options
   - [edityaml](edityaml.md) — Transform YAML for Ansible (addvars + ansibilize)
 - [API Reference](api/index.md) — Python API documentation
 - **Architecture**

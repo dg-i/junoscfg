@@ -59,8 +59,7 @@ junoscfg -i json -e json --anonymize-revert-map revert.json anon.json
 Python API:
 
 ```python
-from junoscfg.anonymize import anonymize, AnonymizeResult
-from junoscfg.anonymize.config import AnonymizeConfig
+from junoscfg.anonymize import AnonymizeConfig, AnonymizeResult, anonymize
 
 config = AnonymizeConfig(ips=True, passwords=True, salt="my-salt")
 config.expand_all()
@@ -71,7 +70,7 @@ print(result.ir)      # anonymized IR
 print(result.mapping)  # revert dictionary
 ```
 
-See the [CLI Reference anonymization section](guide/cli.md#anonymization) for the full
+See the [CLI guide anonymization section](guide/cli.md#anonymization) for the full
 list of options.
 
 ## Quick Start: Python API
