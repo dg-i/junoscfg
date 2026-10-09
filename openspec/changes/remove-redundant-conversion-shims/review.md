@@ -66,3 +66,29 @@
   collection commit and the 33-test figure was rerun successfully. XML-output
   exception messages and JSON/YAML rendering remain pinned by the focused
   repository suite.
+
+## Correction review
+
+All three findings are resolved.
+
+1. The characterization helper is now `_convert_json_to_yaml()`, explicitly
+   named for the supported `convert_config()` door. No test or production
+   identifier reintroduces the retired `json_to_yaml()` helper.
+2. The changelog names both removed secondary APIs and gives their respective
+   `convert_config()` and `junoscfg.convert.from_dict()` migrations.
+3. Decision `2026-10-09-scope-compatibility-to-production-consumer` now names
+   repository API tests and the lane as local enforcement, and describes the
+   downstream suite separately as release evidence. Its generated index row is
+   current.
+
+Independent correction probes passed: 15 supported-door characterization
+tests, and all 33 tests in the production collection at commit
+`347715a071e44a2cb78b8f87bea79262da63aa5f`. The recorded locked full
+checkpoint remains valid because the correction checkpoint includes the test
+rename and regenerated decision index.
+
+## Verdict
+
+Ready to archive. The accepted compatibility boundary is accurately described,
+the retired implementations have no second answer in tests, and no correctness,
+contract, trust-boundary, or documentation finding remains.
