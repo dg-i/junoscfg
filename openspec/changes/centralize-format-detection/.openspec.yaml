@@ -7,3 +7,7 @@ domains:
   - validation
   - audit
 removes: duplicated format-detection branches in the CLI and top-level validation dispatcher
+declared-break:
+  cli:
+    why: Auto-detection now recognizes valid flow-style and block YAML instead of sending it to the JSON or structured parser.
+    migration: Pass an explicit -i/--import-format value when lexical legacy classification is required.

@@ -78,3 +78,4 @@ class TestDetectionPolicies:
             )
             == "structured"
         )
+        assert junoscfg.validate_config("", format=None) is marker

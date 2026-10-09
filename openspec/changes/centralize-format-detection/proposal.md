@@ -8,7 +8,7 @@ those differences explicit without widening any caller's accepted inputs.
 
 - Add one parse-confirming classifier for JSON, XML, YAML, display set, and
   structured input, with an explicit accepted-format policy per caller.
-- Make conversion and audit use the five-format policy while validation keeps
+- **BREAKING CLI BEHAVIOR:** Make conversion and audit use the five-format policy while validation keeps
   its existing set-versus-structured auto-detection contract.
 - Characterize empty input, JSON, XML, block and flow YAML, set, structured,
   and brace-prefixed ambiguity before replacing the existing branches.
