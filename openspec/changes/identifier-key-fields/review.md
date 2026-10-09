@@ -164,3 +164,303 @@
 - `_fix_groups` giving `group` a `name` key child and clearing `is_presence`:
   accepted by the owner, 2026-10-09, as a fix the regeneration requires;
   recorded in metrics.md as an addition beyond the proposal.
+
+## Phase-6 review (fresh session, 2026-10-09)
+
+Reviewed `master...HEAD` (588d16a..fc22c57) against the approved folder. Every
+figure below was rerun in this session; master was run from `git archive
+master` in the scratchpad with the same virtualenv. Device probes are cited as
+"device probe, vMX 23.2R2-S7.5"; nothing from the probe files is copied here.
+Synthetic values only.
+
+### Verified
+
+1. **The reference survives.** The bug report's synthetic fixture converted
+   `-i conf -e set` with `--anonymize-all` and with `--anonymize-as-numbers
+   64496`: each output carries `as-path-neighbors as-list SAMPLE-AS-LIST` exactly
+   once; the group name is anonymized under `--anonymize-all`.
+2. **Every `return` in `_merge_tokens`** (`src/junoscfg/convert/input/set_input.py`
+   lines 237-455) either consumes every token or calls `_keep_whole`, except the
+   two pre-existing leaf returns (lines 435, 443) that join the rest of the line
+   into the value, as on master. Probed with a surplus after a keyed entry, after
+   a childless list, after `apply-groups`, after a nokeyword leaf and after
+   `attributes-match`: each is kept whole from its keyword and reported
+   `UNPLACED`. The exceptions are findings 1, 2 and 5 below.
+3. **The four doors agree** on every `tests/data/captures/keyed-entries-*` group
+   (IR equal across set, rerooted structured, JSON and XML; set output equal
+   across doors and equal to the capture), `attributes-match` and `then
+   community add` included.
+4. **The declared break matches the recorded figure.** Regenerated JSON schema:
+   10,792 list-entry objects, 2,558 without `name` (0.14.0: 8,394, 0), exactly
+   the phase-5 figures. Of the 8,394 entry objects present in both, 2,426 lost
+   `name` (keyed otherwise) and 31 `name`-keyed ones changed property set: 7
+   `snmp community` lost the spurious `community-name` the retired override
+   added, 24 openconfig `acl-set`/`policer`/`protocol` gained a non-identifier
+   sequence element (`type`, `identifier`). 2,266 `name`-keyed lists that were
+   childless (`items` absent on master) now carry an object `items` with `name`;
+   `[null]`, `["x"]` and `[{"name": "x"}]` all still validate. No `required`
+   anywhere on either side. The YAML schema shows the same counts.
+5. **Corpus, set reader.** 1,538 structured files (4,947,067 lines) under
+   `private_test_data/jvd` and `private_test_data/captures`, structured to set
+   through `convert_config_result`: unplaced statements 69,768 on master,
+   68,227 on the branch; 161 files have fewer, none has more. Other field
+   diagnostics: 521 on master, **11,984 on the branch** (finding 3). Set output
+   differs in 124 of 1,538 files (findings 1 and 4 and the branch's correct
+   `deactivate` line for an inactive route-filter entry that master dropped).
+6. **Grammar.** Shipped grammars compared rule by rule: 4,849 rules on master,
+   4,884 on the branch; 65 new `__k` rules, 67 `__eo` rules gone; 280 common
+   rules changed body, 114 of them only by gaining a bare `QUOTED_OR_VALUE`
+   alternative (finding 1). Sample of 11,000 unique corpus set lines (6,000
+   from keyed lists, 5,000 random) through `validate_set` on both grammars:
+   10,968 accepted and 32 rejected on both, no line newly rejected or newly
+   accepted. The branch grammar rejects `as-path-neighbors as-list AS-LIST-A
+   EXTRA`, `as-path-neighbors as-list`, `as-path-neighbors 1 AS-LIST-A`,
+   `route-filter 198.51.100.0/24 exact EXTRA`, `route-filter 198.51.100.0/24
+   next-policy` and the `attributes-match` line with a trailing `EXTRA`, and
+   accepts `as-path-neighbors as-list AS-LIST-A` (executed through
+   `SetValidator` on the bundled grammar). `set system location dc-a` is
+   accepted (finding 7).
+7. **Regeneration.** `pytest --regen-schema tests/test_schema_data.py` from the
+   shipped 25.2R2 dump: the structure tree, JSON schema, YAML schema and
+   grammar reproduce byte-identically; only `junos-schema-meta.json.gz`
+   differs, in its `generated_at` timestamp (same version, 38 of 41 fixes
+   applied, same node counts). That file was restored to HEAD after the
+   check. The artifacts were regenerated, not hand-edited.
+8. **Additions beyond the proposal.** Changed files the proposal and codemap do
+   not name are all recorded as context expansions or additions in
+   `metrics.md`, with these exceptions: `tests/test_set_corpus.py` (finding 7),
+   `tests/test_audit/test_types.py` (the two `as-path-*` reference lines
+   rewritten to the device's `as-list <name>` form, covered by the audit
+   delta's test list), and the anonymize walker's `keywords` parameter
+   (finding 9). Behaviour changes no spec covers: findings 1, 3, 4, 7.
+9. **Full check** at fc22c57: exit 0, "every check passed", 1838 passed, 45
+   skipped, 1 xfailed (the strict xfail named in the record). `openspec
+   validate identifier-key-fields --strict`: valid. Production collection
+   347715a against this checkout from a throwaway virtualenv: 33 passed.
+10. **Stated figures.** 24 `control-as-list-type` slots carry `(list-type,
+    list-name)`; 48 community action lists keyed `(action, community-name)`
+    and 4 `policy-options community` keyed `name`; `o` on 3,520 nodes on
+    master and 4,736 on the branch; `fe` on no node; the dump counts
+    (2,800 / 171 / 64 / 38) pass in
+    `tests/test_schema_data.py::TestEntryKeysOnTheDump` with `--schema`.
+    Owner corrections all hold: `fe` gone, the two names removed and banned,
+    identifier choices are key fields, a key keyword reads on either side, a
+    bare keyed-list keyword is incomplete.
+
+### Findings, by severity
+
+**1. High. Non-list nodes with an identifier child: a second statement silently
+replaces the first, and the corpus shows it.**
+`src/junoscfg/validate/xsd_parser.py` line 342 records key fields and keeps
+identifier children for every complexType, while line 120 counts only
+`maxOccurs="unbounded"` as a list. The 25.2R2 dump has 385 element
+declarations with a numeric `maxOccurs` above 1 (`peers` 3, `class` 16, ...).
+Measured on the regenerated tree: 1,774 non-list nodes (144 element names)
+gained a nokeyword `name` leaf, 26 non-list nodes carry `k`. For such a node
+the reader takes the nokeyword-leaf path (`set_input.py` line 308,
+`current[cname] = _parse_value(token)`), which overwrites.
+Failing input (structured, from the corpus shape):
+`forwarding-classes { class fc0 queue-num 0; class fc1 queue-num 1; class
+mcast-fc queue-num 2; }` gives IR `{"class": {"name": "mcast-fc",
+"queue-num": ["0", "1", "2"]}}`, no diagnostic, and set output `class mcast-fc
+queue-num 0 / 1 / 2`; master kept all three lines, unplaced and loud. Same with
+`set system commit peers 10.0.0.1` then `peers 10.0.0.2` (IR `{"peers":
+{"name": "10.0.0.2"}}`, validates clean, first peer gone) and `system services
+http servers server S1 port 80` / `S2 port 81` (S1 vanishes, S2 gets both
+ports). In the jvd corpus this rewrites 164 `class SIG-OAM`, 96 `mcast-fc`, 84
+`FC-SIGNALING` and further `queue-num` lines.
+Invariant broken: ARCHITECTURE.md section 1 (what is written loads as the same
+configuration) and the conversion delta's purpose "no token is dropped"; the
+bug report's requirement 9 (never turn a loud failure into a quiet wrong
+answer). The same class adds the bare `QUOTED_OR_VALUE` alternative to 114
+merged grammar rules (`location`, `location_pool`, ...), which is why `set
+system location dc-a` left `OVER_REJECTED` (finding 7).
+Recommendation: in the parser, an element with any `maxOccurs` other than 1 is
+a list (the XSD says so; the device's `forwarding-classes class` and `commit
+peers` are lists); and the nokeyword-leaf path refuses to overwrite a present
+different value, keeping the statement whole instead, which also covers a true
+single container such as `then logical-system LS`. Raised as challenge A below.
+
+**2. High. Key fields the tree marks as keyword leaves are read positionally.**
+`_read_key` (`set_input.py` line 209) takes one bare token for every value
+field, but 380 of the 1,214 positional key fields on keyed lists are leaves
+without the `nk` flag: 218 list slots under 16 names (`virtual-link`
+(`neighbor-id`, `transit-area`), vrrp `track route` (`routing-instance`),
+`bfd-liveness-detection`, NAT `address-range` (`low`, `high`), evpn `mac`
+(`remote-vtep`), `drop-profile-map`, `dlv`, ...). The grammar already honours
+the flag: `grammar_generator.py` line 175 renders such a field `"keyword"
+VALUE`, so reader and grammar disagree.
+Failing input: `set protocols ospf area 0.0.0.1 virtual-link neighbor-id
+10.0.0.1 transit-area 0.0.0.2` gives IR `{"neighbor-id": "neighbor-id",
+"transit-area": "10.0.0.1", "transit-area 0.0.0.2": true}`: a wrong key value
+in JSON/YAML output beside the unplaced report; master kept the line whole.
+`track route 10.0.0.0/8 routing-instance default priority-cost 10` likewise
+(`"routing-instance": "routing-instance"`). From device-shaped JSON the writer
+(`dict_walker.py` line 453) drops the keyword: `track route 10.0.0.0/8 default
+priority-cost 10`. The reader also accepts the positional form the grammar and
+the device reject (`dlv example.net abc` reads clean).
+Invariant: conversion delta "each input gives the device's IR"; "one token per
+value field" is the spec's own sentence, so this is challenge B below.
+Recommendation: a key field whose leaf is not nokeyword is read and written as
+`keyword value`; the grammar's `_key_value` is the model.
+
+**3. High. Validating `name` keys against their leaf floods valid
+configuration with enum errors.**
+Master never validated a `name` key (it was not a tree child). On the branch
+every key leaf is validated (`field_validator.py` lines 312-320), and 3,684
+`name`-keyed list slots carry an enum on their `name` leaf, of which
+`enum_is_fragment` recognises 8. Example: `class-of-service interfaces <if>
+unit <u> classifiers dscp DSCP` is keyed `name` with the enum `["default"]`,
+no pattern; the device takes any classifier name there; the branch reports
+"Invalid value 'DSCP': must be one of [default]". Over the corpus: 11,310 such
+errors, 202 for `unit` (`[$junos-underlying-interface-unit, ...]`), 16 for
+`[*]`, 57 for `drop-profile-map loss-priority`; other field diagnostics go from
+521 to 11,984, 2.4 per 1,000 lines against the repository's own budget of 0.5
+(`tests/test_jvd_corpus.py::TestFieldWarningBudget`, which the full check does
+not run; a `--jvd` run would fail). This is the class
+`test_a_nokeyword_leaf_takes_a_value_outside_its_enum` was written for,
+recurring on identifiers. `-v --strict` now refuses valid device
+configuration. Not covered by the non-goal (it names IR, output and grammar,
+not validation). Challenge C below.
+
+**4. Medium. Conversion is 2 to 6 times slower on large configurations.**
+`_find_or_create_entry` (`set_input.py` line 163) compares a dict per entry
+per lookup; profile of a 23,447-line file: 2.4 s of 3.6 s in that function,
+4.1 M generator calls. `ma4_mx204.conf` (233,512 lines): 12.8 s on master,
+72.8 s on the branch. The corpus pass takes about twice master's time.
+Recommendation: index entries by key tuple, or compare a tuple of key values.
+
+**5. Medium. An entry that arrives through JSON, YAML or XML without one of
+its key fields is written as a line the device rejects, with no diagnostic.**
+`{"as-path-neighbors": [{"list-name": "X"}]}` writes `as-path-neighbors X`;
+`{"route-filter": [{"exact": [null], "accept": [null]}]}` writes two lines
+`route-filter exact` and `route-filter accept` (master wrote one, also wrong);
+`attributes-match` missing `condition` writes two lines. Field validation
+reports nothing (`_entry_label` only labels), and the JSON schema adds no
+`required` by owner decision. Master was wrong in kind as well, so the
+severity is for the spec gap: "A statement the reader cannot complete is kept
+whole" has no counterpart for the structured doors. Recommendation: field
+validation reports a missing key field as it reports an unplaced statement, so
+the pipeline refuses to anonymize it and `-v` flags it.
+
+**6. Low. Bare `set apply-groups` validates clean.** It is kept whole as
+`{"apply-groups": true}` and written back, which is better than master (the
+line vanished), but `field_validator.py` line 245 exempts the exact spelling,
+so an incomplete statement the device rejects passes `-v`. The conversion
+delta names only the surplus case.
+
+**7. Low. `tests/test_set_corpus.py` line 53: `set system location dc-a` left
+`OVER_REJECTED`** because the merged `location` rule gained the bare value
+alternative of finding 1, not because the grammar now models the line. No spec
+covers that acceptance; whether the device takes a bare value under `system
+location` is unprobed. The owner should decide whether the line goes back once
+finding 1 is fixed.
+
+**8. Low, simplification.** `field_validator.py` lines 275 and 319 read `"k" in
+schema_node` directly where `entry_keys(node) != ("name",)` is the kernel's
+answer, a second spelling of the same question. `_statement_children` exists
+twice with one meaning (`set_input.py` line 170, `grammar_generator.py` line
+156); the kernel next to `entry_key_names` is where it belongs. Pre-existing
+residue noticed on the way: `_fix_route_filter_arg` and
+`_fix_source_address_filter_arg` (`xsd_fixes.py` lines 240-253) are no-ops of
+the same class as the retired `_fix_attributes_match_oneliner`; not this
+change's, for the carry-forward list.
+
+**9. Low, record.** The anonymize walker's `keywords` parameter
+(`anonymize/walker.py` lines 207, 235, 245) is the one new parameter in the
+change; it is generic over every enum leaf and required by the anonymization
+delta, and `metrics.md` records it, but the owner-decided list above does not.
+Named here so the acceptance is explicit under the simplification criterion.
+
+**10. Low, record.** The declared break says "Lists the device keys `name` are
+unchanged"; for the JSON and YAML schema that holds for 8,363 of 8,394 entry
+objects (item 4 above). Both accept the IR as before; a sentence in the
+migration would make the record exact. No action beyond the owner's say.
+
+Tests: no owner-unapproved weakening found. Every removed assertion in the
+diff is either an owner-approved rewrite recorded above, the version bump, or
+the two audit path assertions that now include the choice keyword in the
+entry's CLI path (`test_walker.py`, `("prefix-list-filter", "plf-a",
+"orlonger")`), which follows the walker's `_key_tokens` and is consistent with
+the challenge decided above. The strict xfail is strict.
+
+### Review prompts
+
+- Trust boundary: structured input from a device is the attacker-controlled
+  side; finding 1 shows valid input rewritten into a different configuration
+  with no diagnostic. Findings 2 and 5 are the same boundary.
+- Incompatible but valid: findings 1, 2 and 3 are device-valid statements the
+  implementation's assumptions ("unbounded means list", "a key value is
+  bare", "an identifier's enum is closed") do not cover.
+- Shared blind spot: the acceptance tests and the implementation share the
+  assumption that identifier children only matter on lists and that key fields
+  are positional; the jvd corpus (not run by the full check) is the independent
+  evidence, and it fails the field-warning budget.
+- Second answer: none added in the runtime beyond the enum pass-through
+  (finding 9); the `"k" in node` reads (finding 8) are the only second spelling.
+- Figures: all rerun (item 10); the `cannot` in the non-goals ("lost values
+  elsewhere") is not a claim and has no counterexample here.
+
+### Carry-forward (could not check)
+
+- The grammar's keyword-boundary looseness (owner-deferred) was not re-measured.
+- Device validity of `set system location <value>` (finding 7) and of the
+  positional form of keyworded keys (finding 2) was not probed; both need a
+  device probe before the fix lands.
+- The `--jvd` and `--schema` tiers are not in `check --set full`; finding 3
+  would have been caught by the first.
+
+## Specification challenges (phase 6)
+
+### A. Identifier children on non-list nodes are unspecified and lose statements
+
+- Artifact: `specs/schema-pipeline/entry-key-fields/spec.md`, "The parser
+  keeps every element a sequence declares" (every complexType), against
+  `proposal.md` "Every list node carries its key fields"; `xsd_parser.py`
+  line 120.
+- Counterexample: executed. Finding 1: `forwarding-classes class` (XSD
+  `maxOccurs="16"`), `commit peers` (`maxOccurs="3"`); 1,774 non-list nodes
+  gained `name`, 26 carry `k`; the jvd corpus loses 344 `class ... queue-num`
+  identities with no diagnostic.
+- User impact: a converted configuration that loads differently from its
+  input; the anonymize path (`--anonymize-*`) passes it through silently.
+- Proposed correction: the parser treats every `maxOccurs` other than 1 as a
+  list; a non-list node with identifier children is read as one statement and
+  a second with a different key value is kept whole; a scenario for each with
+  the jvd shapes as tests. Recommendation: both, the first is the XSD's own
+  statement.
+- Decision: Pending owner decision.
+
+### B. "One token per value field" contradicts the tree for 380 key fields
+
+- Artifact: `specs/conversion/entry-keys/spec.md`, "the set reader SHALL take
+  one value per field in order"; `docs/architecture/conversion-bugfix-guide.md`
+  "The set reader takes one token per value field".
+- Counterexample: executed. Finding 2: `virtual-link neighbor-id 10.0.0.1
+  transit-area 0.0.0.2`, `track route 10.0.0.0/8 routing-instance default`;
+  the tree marks 380 key fields as keyword leaves and the grammar renders them
+  `"keyword" VALUE`.
+- User impact: wrong key values in JSON and YAML output, keyword dropped on the
+  way back from device JSON, device-rejected positional form accepted.
+- Proposed correction: a key field whose leaf is not nokeyword is read and
+  written as `keyword value`, in declared order (the grammar's order); tests
+  for `virtual-link`, `track route`, `address-range` in set, JSON and XML. The
+  order the device accepts among keyworded fields needs a probe.
+- Decision: Pending owner decision.
+
+### C. Validating `name` keys against an identifier's enum rejects valid configuration
+
+- Artifact: `specs/validation/keyed-entries/spec.md`, "SHALL validate each key
+  value against its own leaf in the tree, ... enum and pattern included", as
+  implemented for `name` keys.
+- Counterexample: executed. Finding 3: 11,310 `must be one of [default]`
+  errors over the jvd corpus, `classifiers dscp DSCP` the shape; 3,684
+  `name`-keyed slots carry an enum, 8 of which `enum_is_fragment` sees.
+- User impact: `-v` and `--strict` refuse valid device configuration;
+  `TestFieldWarningBudget` fails at 2.4 per 1,000 lines.
+- Proposed correction: either restrict closed-enum enforcement to key fields
+  the tree marks `k` (the device-probed `list-type` case) and treat a `name`
+  identifier's enum as a fragment, or extend `enum_is_fragment` to identifier
+  leaves with a corpus run under budget as the test. Recommendation: the first;
+  it keeps the probed behaviour and the budget.
+- Decision: Pending owner decision.

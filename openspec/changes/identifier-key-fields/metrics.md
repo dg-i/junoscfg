@@ -59,5 +59,11 @@
 | Addition beyond the proposal: `_fix_groups` gives `group` a `name` key child and clears `is_presence` | phase 5, accepted by the owner as required by the regeneration: the anonymizer offers group names through the tree's `name` leaf, and master's generator makes `groups` a presence node, which the shipped schema was not |
 | Addition beyond the proposal: anonymize walker passes enum values unchanged | phase 5: required by `test_an_enum_key_passes_unchanged`; anonymizer-bugs row 4 |
 | Owner-directed addition: "Junos correctness" defined in ARCHITECTURE.md §1, "Evidence hierarchy" in §8 (with §3 aligned), pointer in AGENTS.md | written by the orchestrator at the owner's direct request before phase 6; AGENTS.md kept at its 100-line cap |
+| Context expansion: master's src and artifacts (git archive 588d16a into the scratchpad) | phase 6: before/after runs of the reader, writer, validators, schemas and grammar |
+| Context expansion: private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd | phase 6: `maxOccurs` census (385 numeric declarations above 1) behind finding 1; no value copied |
+| Context expansion: private_test_data/jvd, private_test_data/captures | phase 6: structured-to-set corpus pass on both trees (unplaced 69,768 to 68,227; other field diagnostics 521 to 11,984); set-output diff of 124 files |
+| Context expansion: tests/test_set_corpus.py, tests/test_jvd_corpus.py, tests/jvd_data.py, tests/test_device_truth.py | phase 6: the OVER_REJECTED edit, the field-warning budget, the corpus loader and the `.conf` rerooting used for the four-door check |
+| Context expansion: src/junoscfg/convert/__init__.py, src/junoscfg/__init__.py | phase 6: `convert_config_result`, the door that carries field diagnostics |
+| Context expansion: ~/src/ansible-collection-junos-config (read-only, symlinked into a scratchpad namespace) | phase 6: 33 passed against this checkout from a throwaway virtualenv; the collection tree untouched |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
