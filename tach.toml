@@ -60,7 +60,7 @@ expose = [
     "ConfigStore", "ENTRY_KEY_OVERRIDES", "INTEGER_TYPES", "KEY_ALIASES", "SetConverter",
     "UNIVERSAL_STATEMENTS", "UNQUOTABLE_TYPES",
     "artifacts_dir",
-    "filter_json_by_path", "filter_set_by_path", "filter_structured_by_path",
+    "filter_dict_by_path", "filter_json_by_path", "filter_set_by_path", "filter_structured_by_path",
     "filter_yaml_by_path", "enum_is_fragment", "find_artifact",
     "format_value",
     "get_flat_entry_config", "get_transparent_child", "is_display_set",

@@ -5,14 +5,16 @@ from __future__ import annotations
 from typing import Any
 
 
-def from_dict(config: dict[str, Any], fmt: str) -> str:
+def from_dict(config: Any, fmt: str, *, wrap: bool = True) -> str:
     """Dispatch to the appropriate output converter.
 
     Args:
-        config: The configuration content dict (without the
-                ``"configuration"`` wrapper).
+        config: The configuration content (without the ``"configuration"``
+                wrapper). Relative path filtering may supply a scalar.
         fmt: Format name (``"json"``, ``"yaml"``, ``"xml"``, ``"set"``,
              ``"structured"``).
+        wrap: Wrap JSON and YAML output in a top-level ``"configuration"``
+              mapping. Ignored by the other renderers.
 
     Returns:
         The rendered configuration as a string.
@@ -20,11 +22,11 @@ def from_dict(config: dict[str, Any], fmt: str) -> str:
     if fmt == "json":
         from junoscfg.convert.output.json_output import dict_to_json
 
-        return dict_to_json(config)
+        return dict_to_json(config, wrap=wrap)
     elif fmt == "yaml":
         from junoscfg.convert.output.yaml_output import dict_to_yaml
 
-        return dict_to_yaml(config)
+        return dict_to_yaml(config, wrap=wrap)
     elif fmt == "xml":
         from junoscfg.convert.output.xml_output import dict_to_xml
 

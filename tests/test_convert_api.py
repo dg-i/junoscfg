@@ -8,6 +8,7 @@ import re
 import pytest
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
+from junoscfg.convert import pipeline
 from junoscfg.convert.input import to_dict
 
 
@@ -347,6 +348,54 @@ _PATH_FILTER_SOURCE = (
 class TestPathFiltering:
     """Tests for path and relative parameters on convert_config()."""
 
+    def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        rendered: list[dict] = []
+
+        def capture(config: dict, _format: str, *, wrap: bool = True) -> str:
+            rendered.append(config)
+            return "rendered"
+
+        monkeypatch.setattr("junoscfg.convert.from_dict", capture)
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system",
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {
+            "system": {"host-name": "r1", "syslog": {"file": [{"name": "messages"}]}}
+        }
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system.syslog",
+                relative=True,
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {"file": [{"name": "messages"}]}
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="missing",
+            )
+            == ""
+        )
+        assert len(rendered) == 2
+
     def test_path_filter_set(self) -> None:
         result = convert_config(
             _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=Format.SET, path="system"
@@ -389,6 +438,26 @@ class TestPathFiltering:
         )
         assert "system" not in result
         assert "host-name r1" in result
+
+    @pytest.mark.parametrize(
+        ("to_format", "expected"),
+        [
+            (Format.JSON, '"r1"\n'),
+            (Format.YAML, "r1\n...\n"),
+            (Format.SET, "set r1\n"),
+            (Format.STRUCTURED, ""),
+        ],
+    )
+    def test_relative_leaf_preserves_output(self, to_format: Format, expected: str) -> None:
+        result = convert_config(
+            _PATH_FILTER_SOURCE,
+            from_format=Format.JSON,
+            to_format=to_format,
+            path="system.host-name",
+            relative=True,
+            validate=False,
+        )
+        assert result == expected
 
     def test_path_filter_not_found(self) -> None:
         result = convert_config(

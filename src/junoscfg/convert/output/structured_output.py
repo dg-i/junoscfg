@@ -68,8 +68,13 @@ class StructuredWalkOutput(WalkOutput):
             )
 
 
-def dict_to_structured(config: dict[str, Any]) -> str:
+def dict_to_structured(config: Any) -> str:
     """Render the IR dict as structured (curly-brace) configuration."""
+    if not isinstance(config, dict):
+        # The legacy rendered-text filter produced no structured statement
+        # when a relative path selected a leaf rather than a hierarchy.
+        return ""
+
     output = StructuredWalkOutput()
     walker = DictWalker(output)
 

@@ -579,8 +579,9 @@ junoscfg convert -i json -e set config.json
 
 ### Path filtering
 
-Path filtering (`--path`) is applied **after** conversion. Each output format has
-its own filter implementation:
+Path filtering (`--path`) is applied to the dict IR **before** rendering. The
+exported format-specific filters remain available for direct callers during
+beta:
 
 - **set** — `filter_set_by_path()` in `display/__init__.py`
 - **structured** — `filter_structured_by_path()` in `display/config_store.py`

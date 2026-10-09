@@ -126,34 +126,10 @@ def convert_config(
         validate=validate,
         strict=strict,
         anon_config=anon_config,
+        path=path,
+        relative=relative,
     )
 
-    if path and result:
-        result = _filter_by_path(result, to_format, path, relative)
-
-    return result
-
-
-def _filter_by_path(result: str, to_format: Format, path: str, relative: bool) -> str:
-    """Dispatch path filtering to the appropriate format-specific filter."""
-    path_tokens = path.split(".")
-
-    if to_format is Format.SET:
-        from junoscfg.display import filter_set_by_path
-
-        return filter_set_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.STRUCTURED:
-        from junoscfg.display import filter_structured_by_path
-
-        return filter_structured_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.YAML:
-        from junoscfg.display import filter_yaml_by_path
-
-        return filter_yaml_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.JSON:
-        from junoscfg.display import filter_json_by_path
-
-        return filter_json_by_path(result, path_tokens, relative=relative)
     return result
 
 
@@ -170,6 +146,8 @@ def _pipeline_convert(
     validate: bool = True,
     strict: bool = False,
     anon_config: object | None = None,
+    path: str | None = None,
+    relative: bool = False,
 ) -> str:
     from junoscfg.convert import pipeline
 
@@ -180,6 +158,8 @@ def _pipeline_convert(
         validate=validate,
         strict=strict,
         anon_config=anon_config,
+        path=path,
+        relative=relative,
     )
 
 

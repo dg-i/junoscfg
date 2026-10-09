@@ -34,6 +34,7 @@ from junoscfg.display.constants import (
     statement_name_spellings,
     strip_type_prefix,
 )
+from junoscfg.display.path_filter import filter_dict_by_path
 from junoscfg.display.set_converter import SetConverter
 from junoscfg.display.to_json import filter_json_by_path
 from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_yaml
@@ -48,6 +49,7 @@ __all__ = [
     "ConfigStore",
     "SetConverter",
     "filter_json_by_path",
+    "filter_dict_by_path",
     "filter_set_by_path",
     "filter_structured_by_path",
     "filter_yaml_by_path",
