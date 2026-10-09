@@ -9,7 +9,10 @@
 - [x] 2.2 Correct the MkDocs repository URL.
 - [x] 2.3 Move the public simplification roadmap to `docs/roadmaps/` and update
   its navigation exclusion.
-- [ ] 2.4 Run the required repository checks.
+- [x] 2.4 Run `uv run --locked --group dev --with griffe --with tach --with
+  towncrier --with vulture agent-ready check --set full` at
+  `dbffde1d39dcbb9a907680fa6238716574cf22d5`; all checks passed, with 1,607
+  tests passed and 72 skipped.
 
 ## 3. Review and evidence
 
