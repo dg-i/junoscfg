@@ -32,7 +32,8 @@ here is cheaper than rounds later.
    one key per surface. It takes the red approval column whatever the zone.
    A proposal that touches what a decision record governs cites the record's
    id, so a superseded or expiring decision is met here and not in the index.
-6. A refactor, a stage-up or a bootstrap that changes no behaviour sets
+6. A refactor, a stage-up, a bootstrap, or a docs change that changes no
+   behaviour sets
    `skip_specs: true` in `.openspec.yaml`; never invent a requirement to
    satisfy validation. A bug, a feature or a pivot never sets it; `uv run
    --locked --group dev agent-ready lane` refuses the flag on those types. Type
@@ -76,6 +77,8 @@ deprecation requirement first, and every break is declared here.
    What Changes. In alpha the list reads "none", because a change there adds
    one choice and no option; an override wanted in alpha is a stage question
    for the human, not a search skipped.
+5. For type `docs`, who is the reader, what task must the document let them
+   complete, and which existing source is authoritative for every claim?
 
 ## Approval
 

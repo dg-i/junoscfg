@@ -10,21 +10,22 @@ One change is one branch, one pull request, one change folder under
 this file and the one phase file you are running. Do not read the others; they
 cost tokens you will not use.
 
-The standard lane follows these phases. The fix lane follows the shorter route
+The standard and docs lanes follow these phases. The docs lane takes each
+phase's **Documentation-only route**. The fix lane follows the shorter route
 under **Lanes** and does not run the phase files.
 
 | Phase | File | Ends with |
 |---|---|---|
 | 1 Intent | `phases/1-intent.md` | the proposal, approved |
-| 2 Spec | `phases/2-spec.md` | the code-map slice and the delta, approved |
+| 2 Spec | `phases/2-spec.md` | the code-map and delta, or docs plan, approved |
 | 3 Design | `phases/3-design.md` | the design and the reuse verdict, approved; `feature` and `new-dependency` only |
-| 4 Tests | `phases/4-tests.md` | the acceptance tests, reviewed |
-| 5 Implement | `phases/5-implement.md` | every task ticked, the checks green |
+| 4 Tests | `phases/4-tests.md` | acceptance tests or documentation QA, reviewed |
+| 5 Implement | `phases/5-implement.md` | code or documents complete, the checks green |
 | 6 Review | `phases/6-review.md` | the review report, from a fresh session |
 | 7 Archive | `phases/7-archive.md` | metrics filled, the change archived |
 
-Three types carry a body of their own, read beside the phase from intent on:
-`types/stage-up.md`, `types/pivot.md`, `types/spike.md`.
+Four types carry a body of their own, read beside the phase from intent on:
+`types/stage-up.md`, `types/pivot.md`, `types/spike.md`, `types/docs.md`.
 
 ## Lanes
 
@@ -56,6 +57,16 @@ the caps never ask. A fix that exceeds those caps is retyped `bug` and takes the
 standard lane. A spike is a branch that never merges; its outputs reach main on
 one standard-lane change.
 
+The docs lane, type `docs`, is for a change whose product edits are documents,
+not runtime code, tests, executable configuration, or behaviour specs. It sets
+`skip_specs: true`, records the reader, authoritative sources, affected pages,
+and QA in `docs-plan.md`, and uses the documentation-only route in phases 2–7.
+The lane gate accepts Markdown, reStructuredText, plain text, and document image
+assets outside the change folder and rejects other suffixes. Documentation that
+accompanies a behaviour change stays in that behaviour change. The full check
+retains repository integrity and document hooks but skips the application test
+adapter; the reviewed QA plan supplies the evidence application tests cannot.
+
 ## Sessions
 
 Consecutive phases with no human approval between them may share a session.
@@ -78,6 +89,24 @@ applies reviewed main-spec edits while the live folder remains; after merge,
 `scaffold decision`, `decisions`, `render levers`, `stage`, `reconcile`, `lane`,
 `retired`, and `codemap`, each named in the phase that uses it. A gap is reported, never
 scripted around.
+
+## Specification challenges
+
+Approved proposals, specs, tests, and contracts remain the baseline. Concrete
+counterevidence goes in `review.md` under `## Specification challenges`, one
+entry per challenge with `Artifact`, `Counterexample`, `User impact`, `Proposed
+correction`, and `Decision`. State the input, observed or logically demonstrated
+result, violated invariant, and whether the evidence was executed or is a
+proposed probe. Stay within the declared promise; trust-boundary validation is
+correctness, but do not invent compatibility or robustness requirements.
+
+Stop affected work and continue unaffected work. Set `Decision` to `Pending
+owner decision`; agents cannot approve their own proposals. The owner records
+accept, reject, or clarify with rationale and evidence/reference, and rejected
+challenges remain. While pending, take only a safe reversible action fixed by
+existing architecture and record that evidence and interim action in
+`Decision`. Otherwise report the blocker. Never merge with an unresolved
+correctness challenge; accepted corrections return through spec/test approval.
 
 ## Asking
 

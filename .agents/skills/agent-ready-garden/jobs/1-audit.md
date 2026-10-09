@@ -6,7 +6,8 @@ Every document is at or under its cap, and free of duplicates, dead pointers,
 contradictions between a spec and a contract, unused helpers, and contract
 prose outside its permitted kinds of line; every spec passes OpenSpec's
 validation with a Purpose someone wrote; every `stage-up` checklist is
-answered.
+answered. The generated symbol index contains exactly the current packages,
+and every live code-map slice and the contract paths it names are sound.
 
 ## Size
 
@@ -61,6 +62,34 @@ each of:
   A stage declared with no `stage-up` change has no checklist, which is itself
   the finding; an unanswered item is a finding; an answer the repository
   contradicts is a question for the human, not a fix.
+
+## Code-map and contract freshness
+
+Run `uv run --locked --group dev agent-ready codemap build` before auditing
+contracts or slices. The build is successful only when it replaces the index as
+one unit and its package dump names exactly match the top-level packages the
+build discovers under `src/`; a dump for a removed or renamed
+package is a finding, never evidence that the old package still exists. A
+failed build leaves the last complete index intact. Before any standalone
+`codemap slice`, rebuild the index rather than trusting files left by an earlier
+session.
+
+Run `uv run --locked --group dev agent-ready codemap check`, then inspect every
+live `codemap.md` contract path as well as its module and symbol pointers. Repair
+a dead module, symbol, or contract pointer by correcting the source declaration
+when it is wrong, then rebuild and rerender that change's slice. Rerender a
+slice after its proposal domains change; a referenced module or symbol moves or
+is renamed; zone, layer, or contract placement changes; or implementation
+expands beyond the slice. A new symbol, changed churn ranking, or an unrelated
+module is not by itself a refresh trigger: the slice remains the spec phase's
+bounded picture.
+
+Never regenerate an existing contract. Restore or move an orphaned contract
+when the module still owns it; scaffold one only for a new or first-touched
+module that has no contract, then leave its underivable invariants and precedent
+choices for human approval. Update approved contract prose only when repository
+evidence makes a line false or a pointer dead. Each repair reruns the build,
+slice check, `tach check`, and `agent-ready interfaces` as applicable.
 
 ## PRs
 

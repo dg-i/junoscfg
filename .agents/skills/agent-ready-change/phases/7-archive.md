@@ -1,5 +1,10 @@
 # Phase 7 — Archive
 
+## Documentation-only route
+
+Type `docs` follows phase 7 in `types/docs.md` and stops before the code route
+below.
+
 ## Outcome
 
 The change folder under `openspec/changes/archive/`, reviewed requirements in

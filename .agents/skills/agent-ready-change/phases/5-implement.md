@@ -1,5 +1,10 @@
 # Phase 5 — Implement
 
+## Documentation-only route
+
+Type `docs` follows phase 5 in `types/docs.md` and stops before the code route
+below.
+
 ## Outcome
 
 Every test and implementation task in `tasks.md` ticked, its review and metrics
@@ -55,27 +60,14 @@ not a runtime-enforced retry counter.
 
 ## Specification challenges
 
-Create or update `openspec/changes/<slug>/review.md` under
-`## Specification challenges` for a challenge to an approved proposal, spec,
-test, or contract. Each subsection has `Artifact`, `Counterexample`, `User impact`, `Proposed correction`, and `Decision`. State the input, observed or
-logically demonstrated result, violated invariant, and whether evidence was
-executed or is a proposed probe. Include user impact within the declared promise
-and corrected criteria/tests without inventing compatibility or robustness
-requirements. Stop affected implementation, preserve approved intent and tests,
-and continue unaffected work. Agents cannot approve their own proposals; the
-owner records accept/reject/clarify, rationale, and evidence/reference, and
-rejected challenges remain. While pending, use only the safest reversible
-interpretation fixed by existing architecture and record its evidence and
-interim action in `Decision`, not as approval. If none exists, behavior would
-change, or effects are irreversible, report the blocker and wait. Do not merge
-with an unresolved correctness challenge. Accepted corrections return through
-existing spec/test approval points. See the review template.
-
+A challenge goes in `openspec/changes/<slug>/review.md` with `Artifact`,
+`Counterexample`, `User impact`, `Proposed correction`, and `Decision`; the
+owner decides, and only a safe reversible action may proceed while pending.
 A concrete counterexample may justify minimal reads outside `codemap.md`'s
 slice. Record each extra path as its own row in the existing Field/Value table
 in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
-preserves these rows. Refresh the slice when appropriate and keep
+preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep
 `uv run --locked --group dev agent-ready codemap check`.
 
 ## Stage

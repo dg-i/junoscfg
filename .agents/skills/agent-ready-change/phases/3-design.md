@@ -6,6 +6,9 @@
 reuse ladder walked to its verdict, and the risks. Other types skip this
 phase; lines added never trigger it, because they are unknowable here.
 
+Type `docs` skips this phase unless it is retyped `new-dependency` because it
+changes the documentation toolchain.
+
 Create it from `openspec/schemas/agent-ready/templates/design.md`. OpenSpec's
 artifact graph cannot express per-type artifacts, so design stays out of that
 common graph and `uv run --locked --group dev agent-ready lane` enforces it for

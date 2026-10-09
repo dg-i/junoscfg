@@ -20,7 +20,9 @@ artifacts:
       per named surface the change touches with its `why` and `migration`,
       shaped `declared-break: {api: {why: ..., migration: ...}}`. A
       change with no spec-level behaviour change sets `skip_specs: true` there
-      rather than inventing a requirement.
+      rather than inventing a requirement. Type `docs` also creates
+      `docs-plan.md` from its conditional template and does not treat the
+      type-blind codemap and specs graph entries as obligations.
     requires: []
 
   - id: codemap
@@ -50,9 +52,11 @@ artifacts:
     description: Implementation checklist the implement phase ticks
     template: tasks.md
     instruction: |
-      Tests first, then the implementation against them. Keep the shipped
-      review and metrics lifecycle tasks open until those phases complete, so
-      the pre-review lane check does not demand artifacts that do not exist yet.
+      Verification first, then the change against it. Code changes use reviewed
+      acceptance tests and implementation tasks. Type `docs` uses the approved
+      checks from docs-plan.md and documentation tasks. Keep the shipped review
+      and metrics lifecycle tasks open until those phases complete, so the
+      pre-review lane check does not demand artifacts that do not exist yet.
     requires: [specs]
 
   # Conditional files are not artifacts here: the graph has no per-type

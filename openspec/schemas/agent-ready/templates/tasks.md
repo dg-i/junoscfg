@@ -1,10 +1,10 @@
-## 1. Tests
+## 1. Verification
 
-- [ ] 1.1 <!-- the acceptance tests the delta names, and any contract test changes -->
+- [ ] 1.1 <!-- code: acceptance and contract tests; docs: each approved docs-plan QA check -->
 
-## 2. Implementation
+## 2. Change
 
-- [ ] 2.1 <!-- against the reviewed tests; read the contract and the slice first -->
+- [ ] 2.1 <!-- code: implementation against reviewed tests; docs: documents in docs-plan.md -->
 
 ## 3. Review and evidence
 

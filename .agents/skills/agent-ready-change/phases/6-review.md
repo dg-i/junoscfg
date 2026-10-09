@@ -1,15 +1,15 @@
 # Phase 6 — Review
 
+Type `docs` follows phase 6 in `types/docs.md` and stops before the code route below.
+
 ## Outcome
 
-`review.md`: ranked correctness or contract findings, and anything the toolbox,
-standard library, a declared dependency, or this repository already provides.
-The reviewer writes only the report and evidence rows and edits no code, spec, or test.
+`review.md`: ranked correctness or contract findings and existing providers the change duplicates. The reviewer writes only the report and evidence.
 
 ## A fresh session
 
-The review never shares a session with the implementation. On Claude Code a
-read-only subagent; on Codex a new session opened on the branch. Either reads
+The review never shares a session with implementation. On Claude Code use a
+read-only subagent; on Codex use a new session on the branch. Either reads
 the delta, the contracts of the modules touched, the tests, and the diff, in
 that order of leverage, and nothing the implementer wrote about its own work.
 The reviewer model is at least as capable as the implementer's.
@@ -40,23 +40,15 @@ recorded checkpoint; it replaces standalone pre-commit and full tests.
 
 ## Specification challenges
 
-Create or update `openspec/changes/<slug>/review.md` under
-`## Specification challenges`; preserve existing entries. Repeat a subsection
-for each challenge with `Artifact`, `Counterexample`, `User impact`, `Proposed correction`, and `Decision`. State concrete input, result, invariant, and
-whether evidence was executed or is a proposed probe. Include observable impact
-within the declared promise; trust-boundary validation is correctness even if
-criteria omit it. Propose corrected criteria and affected tests/specs without
-inventing compatibility or robustness requirements. The reviewer proposes
-entries but edits no code, spec, or test. The owner resolves each challenge;
-agents cannot approve their own proposals, and rejected challenges remain.
-While pending, use only the safest reversible interpretation already fixed by
-the architecture, recording its evidence and interim action in `Decision`, not
-as approval. If unavailable, report the blocker. Do not merge with unresolved
-correctness challenges. Continue unaffected work. Minimal reads outside the
-slice are allowed for a concrete counterexample; record each extra path as its
-own row in the existing Field/Value table in `metrics.md`:
+Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`,
+`Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
+reviewer edits no code, spec, or test; agents cannot approve their own proposals.
+The owner decides, and only a safe reversible
+action may proceed while pending; preserve existing entries. Minimal reads
+outside the slice are allowed for a concrete counterexample; record each extra
+path as its own row in the existing Field/Value table in `metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
-preserves these rows. Refresh the slice when appropriate.
+preserves these rows. Apply phase 2's explicit slice-refresh triggers.
 When complete, tick the review lifecycle task in `tasks.md`; leave the metrics task open.
 
 Before concluding, answer these prompts:
