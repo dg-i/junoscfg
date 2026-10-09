@@ -36,6 +36,6 @@ None. Both corrections preserve the approved path-filtering behavior.
 
 ## Verdict
 
-The focused regression suite and locked fast gate pass after correction. Ready
-subject to the locked full gate being rerun because runtime code and tests
-changed after the previous checkpoint.
+Ready to merge. The focused regression suite and locked full gate pass after
+correction; the full checkpoint at `a4324d6` completed with 1,609 passed and
+18 skipped.

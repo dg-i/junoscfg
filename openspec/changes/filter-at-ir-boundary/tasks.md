@@ -11,9 +11,10 @@
 - [x] 2.2 Pass `convert_config()` path options into the pipeline and remove its
   rendered-output filter dispatcher.
 - [x] 2.3 Update contracts, API documentation, and changelog.
-- [ ] 2.4 Run focused tests and the locked full repository check.
+- [x] 2.4 Run focused tests and the locked full repository check.
+  Checkpoint: `a4324d6` — 1,609 passed, 18 skipped; every check passed.
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Complete the fresh-session review and write `review.md`.
+- [x] 3.1 Complete the fresh-session review and write `review.md`.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
