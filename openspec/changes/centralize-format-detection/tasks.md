@@ -5,9 +5,9 @@
 
 ## 2. Change
 
-- [ ] 2.1 Add the shared parse-confirming classifier and explicit policy constants to the display package door.
-- [ ] 2.2 Route conversion, audit, and validation auto-detection through their declared policies.
-- [ ] 2.3 Update contracts, API documentation, interface declarations, and changelog.
+- [x] 2.1 Add the shared parse-confirming classifier and explicit policy constants to the display package door.
+- [x] 2.2 Route conversion, audit, and validation auto-detection through their declared policies.
+- [x] 2.3 Update contracts, API documentation, interface declarations, and changelog.
 - [ ] 2.4 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence

@@ -285,9 +285,9 @@ def validate_config(
     elif fmt == "structured":
         return validate_structured(source, artifacts_dir=artifacts_dir)
     else:
-        # Auto-detect set vs structured
-        from junoscfg.display import is_display_set
+        from junoscfg.display import VALIDATION_FORMATS, detect_format
 
-        if is_display_set(source):
+        detected = detect_format(source, accepted_formats=VALIDATION_FORMATS)
+        if detected == "set":
             return validate_set(source, artifacts_dir=artifacts_dir)
         return validate_structured(source, artifacts_dir=artifacts_dir)

@@ -37,8 +37,10 @@ junoscfg schema -?         # Schema group help
 
 `conf` is a CLI alias for `structured` — they are interchangeable in `-i` and `-e` options.
 
-Auto-detection examines the input content: JSON objects/arrays, XML tags, `set`/`deactivate`
-keywords, or structured curly-brace blocks.
+Auto-detection examines parsed input content: JSON objects/arrays, YAML mappings
+or lists, XML tags, `set`/`deactivate` keywords, or structured curly-brace blocks.
+JSON is tried before YAML because JSON is also valid YAML; flow-style YAML that
+starts with `{` is recognized when JSON parsing fails.
 
 ### Schema Validation
 
