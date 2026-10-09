@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-09
+type: refactor
+zone: surface
+domains: []
+removes: the stale upstream documentation URL and the internal-looking roadmap path
+skip_specs: true
