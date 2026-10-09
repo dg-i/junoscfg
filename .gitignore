@@ -32,3 +32,4 @@ scratchpad/
 # caps and markdownlint globs. Keep them out of the tree.
 .agents/skills/source-command-*/
 tmp/
+local-test-data/

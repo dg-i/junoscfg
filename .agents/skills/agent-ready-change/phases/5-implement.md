@@ -2,26 +2,39 @@
 
 ## Outcome
 
-Every task in `tasks.md` ticked, the tests of phase 4 green, the fast set and
-the slow set green, and nothing in the diff the proposal did not ask for.
+Every test and implementation task in `tasks.md` ticked, its review and metrics
+tasks still open for phases 6 and 7, the phase-4 tests and recorded full
+checkpoint green, and nothing in the diff the proposal did not ask for.
 
 ## Process
 
-1. `openspec instructions tasks --change <slug>`, then write `tasks.md`: tests
-   first, then implementation, in steps an interrupted session can resume.
+1. `npx --yes @fission-ai/openspec@1.13.0 instructions tasks --change <slug>`,
+   then write `tasks.md`: tests first, implementation second, and the shipped
+   review and metrics lifecycle tasks last. An interrupted session resumes
+   here; phase 5 never ticks the lifecycle tasks.
 2. Before touching a module, read its contract and its block in the slice.
-   Read a named symbol alone with `agent-ready codemap show <pkg.mod.symbol>`,
+   Read a named symbol alone with `uv run --locked --group dev agent-ready
+   codemap show <pkg.mod.symbol>`,
    which prints the span the index records, rather than the file around it.
 3. Prefer an existing helper over a new one. The slice names them. A
    layering block is a move to the first answerer's layer or one below,
    never a copy, and the importing module's contract gains a precedent
    pointer to the home.
-4. Run the fast set with `pre-commit run --all-files`, then the slow set in
-   one command, `agent-ready check`, which reads the change's own base and
-   runs every gate the pull request will meet, the lane gate among them, and
-   `openspec validate <slug> --strict`.
-5. Tick each task as it lands. `openspec status --change <slug>` shows what
-   remains.
+4. While editing, run the named phase-4 acceptance tests or the affected test
+   files. Tick the test and implementation tasks, commit code, tests, and the
+   live change folder, and require `git status --short` to be empty. At the
+   pre-review checkpoint run `uv run --locked --group dev --with griffe --with
+   tach --with towncrier --with vulture agent-ready check --set full` once.
+   It reads the local change base and includes pre-commit, the application test
+   adapter, every pull-request gate, the lane gate, and strict OpenSpec
+   validation. Do not run standalone pre-commit or the full application suite
+   beside it on an unchanged tree. Record the command and checked `HEAD` in
+   `tasks.md`, then commit that evidence-only edit. The checkpoint remains valid
+   across review, metrics, and evidence-only edits; runtime code, tests,
+   generated artifacts, or their configuration invalidate it.
+5. Tick each test and implementation task as it lands. `npx --yes
+   @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
+   graph; `tasks.md` is the lifecycle authority.
 6. A function that is the inverse of one that exists is written beside it:
    one table is the only source of field names for both sides, and the
    round-trip of phase 4 is what proves the pair. A second table or a
@@ -63,7 +76,7 @@ slice. Record each extra path as its own row in the existing Field/Value table
 in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Refresh the slice when appropriate and keep
-`agent-ready codemap check`.
+`uv run --locked --group dev agent-ready codemap check`.
 
 ## Stage
 

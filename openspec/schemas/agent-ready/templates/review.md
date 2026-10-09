@@ -23,4 +23,4 @@
 
 ## Verdict
 
-<!-- Merge, or what has to change first. Unresolved correctness challenges block completion. The reviewer edits nothing. -->
+<!-- Merge, or what has to change first. Unresolved correctness challenges block completion. The reviewer edits no code, specification, or test. -->

@@ -8,7 +8,7 @@ underneath it, and it is the template's to correct as the platforms change.
 
 ## What the generated CODEOWNERS does
 
-`agent-ready render codeowners` writes the file from `[tool.template.zones]`,
+`uv run --locked --group dev agent-ready render codeowners` writes the file from `[tool.template.zones]`,
 `[tool.template.domains]` and `[tool.template.stage]`. Exact paths union their
 owners; nested paths run broad to specific and keep the broader owners;
 complex wildcard and basename rules may route extra owners, and the generated

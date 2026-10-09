@@ -10,6 +10,9 @@ One change is one branch, one pull request, one change folder under
 this file and the one phase file you are running. Do not read the others; they
 cost tokens you will not use.
 
+The standard lane follows these phases. The fix lane follows the shorter route
+under **Lanes** and does not run the phase files.
+
 | Phase | File | Ends with |
 |---|---|---|
 | 1 Intent | `phases/1-intent.md` | the proposal, approved |
@@ -28,32 +31,50 @@ Three types carry a body of their own, read beside the phase from intent on:
 The change's `.openspec.yaml` declares `type` and zone, and the lane follows.
 The fix lane, type `fix`, is a ten-line proposal, one regression test, and
 code: two files, thirty lines, no delta, and `skip_specs: true`, in any zone.
-Write the test first and watch it fail; `agent-ready lane` runs it against the
-merge base and fails the pull request when it passes there. The zone's tier
-picks the reviewer, not the route. A fix proposal names the failure mode that
-remains after the fix: a repair that turns a loud failure into a quiet wrong
-answer is worse than the failure, and the caps never ask. A fix that exceeds
-those caps is retyped `bug` and takes the standard lane, which every other type
-takes and which runs every phase its type needs. A spike is a branch that never
-merges; its outputs reach main on one standard-lane change.
+Its complete route is:
+
+1. Create or switch to its dedicated branch. Run `git status --short`; do not
+   begin with governed changes outside `HEAD`.
+2. Run `npx --yes @fission-ai/openspec@1.13.0 new change <slug>`, then write a
+   proposal of at most ten lines and set `type: fix`, the zone, and
+   `skip_specs: true` in `.openspec.yaml`. Commit that approved intent before
+   code or tests. The common OpenSpec graph is type-blind: its other status
+   entries are not fix-lane obligations.
+3. Write the one regression test and watch it fail, implement the repair, and
+   commit the test and code. `uv run --locked --group dev agent-ready lane`
+   also runs the added test against the merge base and rejects one that passed
+   there.
+4. Run `uv run --locked --group dev --with griffe --with tach --with
+   towncrier --with vulture agent-ready check --set full`. The zone's tier
+   decides who reviews the test and diff. After approval, merge, then archive
+   with `npx --yes @fission-ai/openspec@1.13.0 archive <slug> --yes
+   --skip-specs` in a separate archive-only commit or pull request.
+
+A fix proposal names the failure mode that remains after the fix: a repair that
+turns a loud failure into a quiet wrong answer is worse than the failure, and
+the caps never ask. A fix that exceeds those caps is retyped `bug` and takes the
+standard lane. A spike is a branch that never merges; its outputs reach main on
+one standard-lane change.
 
 ## Sessions
 
 Consecutive phases with no human approval between them may share a session.
-Implement to review never does: the review starts fresh, because a review
-anchored on the code it just wrote finds what it expects. Only the change
-folder crosses a session boundary; there is no handoff file, and nothing
-relies on compaction.
+Human approval ends the session: start the next phase fresh and carry only the
+change folder. Implement to review is also fresh, because a review anchored on
+the code it just wrote finds what it expects. There is no handoff file, and
+nothing relies on compaction.
 
 ## The tools
 
-OpenSpec owns the change folder: `openspec new change <slug>` creates it under
-the `agent-ready` schema, `openspec status --change <slug>` shows which
-artefacts are done and which are blocked, `openspec instructions <artifact>
---change <slug>` prints the instruction and template for one artefact,
-`openspec validate <slug> --strict` checks it. Phase 7 applies reviewed
-main-spec edits while the live folder remains; after merge, `openspec archive
-<slug> --yes --skip-specs` moves the folder. `agent-ready` adds `metrics`,
+OpenSpec owns the change folder. Invoke it only as `npx --yes
+@fission-ai/openspec@1.13.0 ...`; invoke the check package only as `uv run
+--locked --group dev agent-ready ...`. The longer full-check command in the
+lane route supplies its four runtime tools explicitly. OpenSpec `new change
+<slug>` creates the folder under the `agent-ready` schema, `status --change
+<slug>` shows the common artifact graph, `instructions <artifact> --change
+<slug>` prints one template, and `validate <slug> --strict` checks it. Phase 7
+applies reviewed main-spec edits while the live folder remains; after merge,
+`archive <slug> --yes --skip-specs` moves the folder. `agent-ready` adds `metrics`,
 `scaffold decision`, `decisions`, `render levers`, `stage`, `reconcile`, `lane`,
 `retired`, and `codemap`, each named in the phase that uses it. A gap is reported, never
 scripted around.

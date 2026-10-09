@@ -11,7 +11,7 @@ folder: it is a pivot's artefact alone, which OpenSpec's schema cannot say, so
 `status` never lists it. List what retires: the concept's terms in the
 delimited block, its symbols, its dependencies, the requirements it satisfied,
 its tests and fixtures, its docs.
-`agent-ready retired` prints each term's occurrence count at the merge base
+`uv run --locked --group dev agent-ready retired` prints each term's occurrence count at the merge base
 beside it, so a term too common to ban is visible to the human approving the
 proposal. A term whose shape needs a regex goes under `Patterns:` in the
 Decision section of the pivot's decision record, which cites this file by
@@ -26,7 +26,7 @@ the terms block. You draft the list; the human approves it with the proposal.
 - Every test on the list is deleted, never rewritten to assert the absence of
   the retired surface. No fixture stays that no test reads.
 - The retired import is banned from then on: list it under `bans` in the
-  decision record's front-matter and run `agent-ready render levers`, which
+  decision record's front-matter and run `uv run --locked --group dev agent-ready render levers`, which
   renders the entry into the banned-api table with a message naming the
   record. A later pivot over the same import adds its own record; a pivot
   that reinstates the concept supersedes the record, which lifts the ban.
@@ -43,7 +43,7 @@ changelog, the banned-api entries, and the change folder. vulture, the
 unused-argument rules, deptry, and jscpd are clean. The gate derives the
 removed symbols from griffe at the merge base and fails when the change
 removes a symbol the list does not name or names one still there; run it as
-`agent-ready retired` before the pull request, and read its hits as the list
+`uv run --locked --group dev agent-ready retired` before the pull request, and read its hits as the list
 of what the pivot has not yet finished.
 
 ## Stage

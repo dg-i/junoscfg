@@ -2,9 +2,9 @@
 
 ## Outcome
 
-`review.md`: the findings that affect correctness or violate a contract,
-ranked, and anything the toolbox, the standard library, a declared
-dependency, or this repository already provides. The reviewer edits nothing.
+`review.md`: ranked correctness or contract findings, and anything the toolbox,
+standard library, a declared dependency, or this repository already provides.
+The reviewer writes only the report and evidence rows and edits no code, spec, or test.
 
 ## A fresh session
 
@@ -14,6 +14,12 @@ the delta, the contracts of the modules touched, the tests, and the diff, in
 that order of leverage, and nothing the implementer wrote about its own work.
 The reviewer model is at least as capable as the implementer's.
 
+An accepted correction runs its regression and `uv run --locked --group dev
+agent-ready check --set fast`,
+then returns to the reviewer. After approval, rerun the full set only if runtime
+code, tests, generated artifacts, or their configuration changed since the
+recorded checkpoint; it replaces standalone pre-commit and full tests.
+
 ## Findings
 
 - A finding names the requirement or contract line it violates and the diff
@@ -22,8 +28,6 @@ The reviewer model is at least as capable as the implementer's.
   do not suppress a correctness finding for lack of a requirement citation.
 - A finding about something the toolbox, the standard library, a declared
   dependency, or this repository already provides names the provider.
-- The classes follow the stage, below. A finding outside them is not written.
-- Rank by consequence. The human reads findings, not prose.
 - No gate sees fidelity, nor whether a documented claim still holds: caps,
   interfaces, the lane and the tests all pass on output the thing produced
   for would reject. The reviewer's job is the part no gate covers.
@@ -53,6 +57,7 @@ slice are allowed for a concrete counterexample; record each extra path as its
 own row in the existing Field/Value table in `metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Refresh the slice when appropriate.
+When complete, tick the review lifecycle task in `tasks.md`; leave the metrics task open.
 
 Before concluding, answer these prompts:
 
@@ -92,5 +97,4 @@ missing deprecation, a missing fragment, an undeclared surface change.
 
 ## Approval
 
-The human reads the report before the diff. Findings that survive the human's
-review are counted at archive.
+The human reads the report before the diff; surviving findings count at archive.

@@ -4,22 +4,25 @@
 
 `codemap.md`, the slice of the symbol index the change reads, and one delta
 per capability the proposal names at `specs/<domain>/<capability>/spec.md`,
-valid under `openspec validate <slug> --strict` and approved by the domain's
+valid under `npx --yes @fission-ai/openspec@1.13.0 validate <slug> --strict`
+and approved by the domain's
 owners.
 
 ## The code-map slice
 
-`agent-ready codemap build`, then `agent-ready codemap slice --change <slug>`,
+`uv run --locked --group dev agent-ready codemap build`, then `uv run --locked
+--group dev agent-ready codemap slice --change <slug>`,
 which writes `codemap.md` from the symbol index: modules ranked by the paths
 the proposal's domains name, each domain in turn, then their neighbours in the
-import map, then by churn, cut at 1,500 tokens, each with its zone, layer, and contract path and,
-beside every public symbol, the `agent-ready codemap show` command that prints
+import map, then by churn, cut at 1,500 tokens, each with its zone, layer, and
+contract path and, beside every public symbol, the `uv run --locked --group dev
+agent-ready codemap show` command that prints
 it alone. Later phases stay within the slice unless a concrete counterexample
 requires a minimal read outside it. Record each extra path as its own row in
 the existing Field/Value table in `metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Refresh the slice when appropriate, and keep
-`agent-ready codemap check`.
+`uv run --locked --group dev agent-ready codemap check`.
 
 ## Specification challenges
 
@@ -46,13 +49,15 @@ through the existing spec/test approval points. See the review template.
 
 ## The delta
 
-1. `openspec instructions specs --change <slug>` prints the template.
+1. `npx --yes @fission-ai/openspec@1.13.0 instructions specs --change <slug>`
+   prints the template.
 2. One file per capability, at the exact path. Sections are ADDED, MODIFIED,
    REMOVED, and RENAMED Requirements, nothing else.
 3. Every requirement in EARS form, WHEN a condition THEN the system SHALL a
    behaviour, with at least one scenario and the id of an acceptance test:
    `Tests: tests/<file>.py::<test>`. A test that does not exist yet is written
-   in phase 4; a requirement that names none fails `agent-ready reconcile`.
+   in phase 4; a requirement that names none fails `uv run --locked --group dev
+   agent-ready reconcile`.
    A requirement about a capability several entry points expose names each
    door in its scenarios, the readers the intent search found and never the
    stage's surface list, and its test drives every door.

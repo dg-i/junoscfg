@@ -6,6 +6,11 @@
 reuse ladder walked to its verdict, and the risks. Other types skip this
 phase; lines added never trigger it, because they are unknowable here.
 
+Create it from `openspec/schemas/agent-ready/templates/design.md`. OpenSpec's
+artifact graph cannot express per-type artifacts, so design stays out of that
+common graph and `uv run --locked --group dev agent-ready lane` enforces it for
+the two types that need it.
+
 ## The reuse ladder
 
 Walk it in order and stop at the first rung that holds:
@@ -31,9 +36,10 @@ presence check.
 ## Decisions
 
 Alpha hard-codes the one choice and names it in a decision record:
-`agent-ready scaffold decision <slug>` writes the record with its fields as
-sentinels, `agent-ready decisions` fails until they are answered, and
-`agent-ready render decisions` refreshes the index. A new dependency in alpha
+`uv run --locked --group dev agent-ready scaffold decision <slug>` writes the
+record with its fields as sentinels, `uv run --locked --group dev agent-ready
+decisions` fails until they are answered, and `uv run --locked --group dev
+agent-ready render decisions` refreshes the index. A new dependency in alpha
 is a trial entry in `[tool.template.toolbox.trial]` with a `review-by` date,
 confirmed into the approved list or removed at the beta transition; in beta
 and release it is this type with this design, and the approved entry carries

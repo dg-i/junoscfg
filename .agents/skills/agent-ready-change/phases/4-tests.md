@@ -8,7 +8,8 @@ in one pass with no implementation, and reviewed by the human.
 ## Process
 
 1. For each requirement in the delta, the test its `Tests:` line names, in
-   that file and under that name: `agent-ready reconcile` reads the id phase 2
+   that file and under that name: `uv run --locked --group dev agent-ready
+   reconcile` reads the id phase 2
    wrote and fails while the test does not exist. A requirement with several
    doors has one test that drives each door with the input only the richer
    side accepts, the override set and unset.
@@ -51,7 +52,7 @@ slice. Record each extra path as its own row in the existing Field/Value table
 in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Refresh the slice when appropriate and keep
-`agent-ready codemap check`.
+`uv run --locked --group dev agent-ready codemap check`.
 
 ## Stage
 

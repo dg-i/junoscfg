@@ -1,7 +1,7 @@
 # Capture change metrics
 
-Run `agent-ready metrics <change> --base-sha <full-commit-id> --head-sha
-<full-code-commit-id>` after committing the code and before merging or
+Run `uv run --locked --group dev agent-ready metrics <change> --base-sha
+<full-commit-id> --head-sha <full-code-commit-id>` after committing the code and before merging or
 archiving the live change. The two IDs identify Git commit objects, including
 after a later squash. The command reads their committed trees, not the worktree.
 Commit `metrics.md` and `metrics.json` with the change. OpenSpec moves both
