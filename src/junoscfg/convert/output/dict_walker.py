@@ -17,6 +17,7 @@ from junoscfg.display import (
     get_transparent_child,
     is_flat_dict,
     is_freeform_nk,
+    is_keyword_field,
     is_positional_key,
     is_transparent_list_key,
     load_schema_tree,
@@ -452,7 +453,7 @@ class DictWalker:
                 value = value[0]
             written.add(field)
             leaf = (schema_node or {}).get("c", {}).get(field)
-            if isinstance(leaf, dict) and leaf.get("l") and not leaf.get("nk"):
+            if is_keyword_field(leaf):
                 # A key field whose leaf is not `nokeyword` is written with its
                 # keyword: `virtual-link neighbor-id 10.255.255.1 transit-area
                 # 0.0.0.2` (device probe, vMX 23.2R2-S7.5).

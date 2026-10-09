@@ -24,6 +24,7 @@ from junoscfg.display import (
     UNQUOTABLE_TYPES,
     entry_keys,
     enum_is_fragment,
+    is_keyword_field,
     open_artifact_write,
     statement_children,
     strip_type_prefix,
@@ -149,11 +150,6 @@ def _value_token(node: SchemaNode) -> str:
     return "QUOTED_OR_VALUE"
 
 
-def _is_keyword_field(node: SchemaNode | None) -> bool:
-    """Whether a key field is written `keyword value`: a leaf not `nokeyword`."""
-    return node is not None and node.is_leaf and "nokeyword" not in node.flags
-
-
 def _key_value(node: SchemaNode | None) -> str:
     """The grammar for one key value: its leaf's type, an enum where it is closed.
 
@@ -169,7 +165,7 @@ def _key_value(node: SchemaNode | None) -> str:
         value = "(" + " | ".join(f'"{value}"' for value in node.enums) + ")"
     else:
         value = _value_token(node)
-    if _is_keyword_field(node):
+    if is_keyword_field(node):
         return f'"{node.name}" {value}'
     return value
 
@@ -201,7 +197,7 @@ def _key_sequence(node: SchemaNode) -> str:
             choices.append("(" + " | ".join(alternatives) + ")")
         else:
             child = node.children.get(field)
-            (keyworded if _is_keyword_field(child) else positional).append(_key_value(child))
+            (keyworded if is_keyword_field(child) else positional).append(_key_value(child))
     values = positional[:]
     if len(keyworded) > 1:
         orders = (" ".join(order) for order in itertools.permutations(keyworded))

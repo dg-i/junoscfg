@@ -712,3 +712,18 @@ Mergeable from this review: every owner decision is implemented and probed,
 the corpus and grammar move only as decided, the break figure is the recorded
 one, and the full check passes. Finding 11 is a simplification the owner may
 take now or carry forward; no specification challenge is open.
+
+### Owner decisions on the re-review
+
+- Finding 11, decided by the owner: fold now. One `is_keyword_field()` in
+  `junoscfg.display`, beside `statement_children` and like it taking a
+  structure-tree node or a `SchemaNode`, answers whether a key field is
+  written with its keyword; the set reader (`_read_key`), the set writer
+  (`_entry_key`) and the grammar (`_key_value`, `_key_sequence`)
+  call it, and no local copy remains. Behaviour unchanged: see
+  `tasks.md` 4.15.
+- Question 2, decided by the owner: carried to the keyword-boundary
+  follow-up, not this change. This section numbers no questions; the
+  owner's wording names the keyword-boundary follow-up, which is where the
+  first carry-forward item above (a surplus token after a complete key
+  landing in a nokeyword enum leaf) points.

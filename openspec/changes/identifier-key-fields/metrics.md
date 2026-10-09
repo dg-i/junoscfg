@@ -79,5 +79,6 @@
 | Context expansion: master and fc22c57 `junos-json-schema.json.gz` (git show into the scratchpad) | phase-6 re-review: declared break re-measured, 8,394 / 0, 10,792 / 2,558, 11,547 / 2,560 |
 | Context expansion: private_test_data/jvd ma4_mx204.conf | phase-6 re-review: finding 4 timing, 4.2 s structured to set |
 | Context expansion: private_test_data/bugreport.txt | phase-6 re-review: the synthetic fixture for the reference probe |
+| Addition beyond the proposal: `is_keyword_field()` in `junoscfg.display` | owner decision on re-review finding 11, "fold now": one predicate for the set reader, the set writer and the grammar, replacing three local spellings |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

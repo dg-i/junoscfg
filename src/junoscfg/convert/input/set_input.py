@@ -11,6 +11,7 @@ from typing import Any
 from junoscfg.display import (
     KEY_ALIASES,
     entry_keys,
+    is_keyword_field,
     load_schema_tree,
     statement_children,
     statement_name_spellings,
@@ -179,11 +180,6 @@ def _find_or_create_entry(
     return entry
 
 
-def _is_keyword_field(leaf: Any) -> bool:
-    """Whether a key field is written `keyword value`: a leaf not `nokeyword`."""
-    return isinstance(leaf, dict) and bool(leaf.get("l")) and not leaf.get("nk")
-
-
 def _read_key(
     list_node: dict[str, Any], tokens: list[str], j: int
 ) -> tuple[dict[str, Any], int] | None:
@@ -207,7 +203,7 @@ def _read_key(
     keyworded = [
         field
         for field in fields
-        if not isinstance(field, tuple) and _is_keyword_field(children.get(field))
+        if not isinstance(field, tuple) and is_keyword_field(children.get(field))
     ]
     positional = [f for f in fields if not isinstance(f, tuple) and f not in keyworded]
     found: dict[str | tuple[str, ...], tuple[str, Any]] = {}
