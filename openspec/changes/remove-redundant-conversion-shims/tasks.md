@@ -18,7 +18,10 @@
   Evidence: 142 focused conversion tests passed. The production collection's
   33 tests passed against the roadmap integration checkout whose four
   top-level imports this change preserves.
-- [ ] 2.4 Run focused tests and the locked full repository check.
+- [x] 2.4 Run focused tests and the locked full repository check.
+
+  Passed at `f437768`: 142 focused conversion tests, all 33 production
+  collection tests, the lane gate, and the locked full repository check.
 
 ## 3. Review and evidence
 
