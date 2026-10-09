@@ -65,7 +65,8 @@ than fetching or deriving them at run time.
 
 - Network operators, through the `junoscfg` CLI: `convert` (the default
   subcommand), `edityaml`, `schema`, `audit`.
-- **`dg-i/ansible-collection-junos-config`, in production.** It pins
+- **[https://github.com/dg-i/ansible-collection-junos-config](https://github.com/dg-i/ansible-collection-junos-config),
+  in production.** It pins
   `junoscfg>=0.5.8` and its `render` filter
   (`plugins/filter/junos_config.py`) imports exactly four names from the
   top-level package: `convert_config`, `validate_config`, `Format` and

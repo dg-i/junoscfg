@@ -1,6 +1,6 @@
 site_name: Junoscfg
 site_description: Convert and validate Junos configurations between formats
-repo_url: https://github.com/codeout/junoser-python
+repo_url: https://github.com/dg-i/junoscfg
 
 theme:
   name: material
@@ -12,7 +12,7 @@ theme:
 
 not_in_nav: |
   /decisions/20*.md
-  /superpowers/plans/*.md
+  /roadmaps/*.md
 
 plugins:
   - search
