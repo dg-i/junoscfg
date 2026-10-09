@@ -8,6 +8,7 @@ import re
 import pytest
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
+from junoscfg.convert import pipeline
 from junoscfg.convert.input import to_dict
 
 
@@ -347,6 +348,60 @@ _PATH_FILTER_SOURCE = (
 class TestPathFiltering:
     """Tests for path and relative parameters on convert_config()."""
 
+    def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        rendered: list[dict] = []
+
+        def capture(
+            config: dict,
+            _format: str,
+            *,
+            wrap: bool = True,
+            diagnostic_sink: object | None = None,
+        ) -> str:
+            rendered.append(config)
+            return "rendered"
+
+        monkeypatch.setattr("junoscfg.convert.from_dict", capture)
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system",
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {
+            "system": {"host-name": "r1", "syslog": {"file": [{"name": "messages"}]}}
+        }
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="system.syslog",
+                relative=True,
+            )
+            == "rendered"
+        )
+        assert rendered[-1] == {"file": [{"name": "messages"}]}
+
+        assert (
+            pipeline(
+                _PATH_FILTER_SOURCE,
+                from_format="json",
+                to_format="json",
+                validate=False,
+                path="missing",
+            )
+            == ""
+        )
+        assert len(rendered) == 2
+
     def test_path_filter_set(self) -> None:
         result = convert_config(
             _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=Format.SET, path="system"
@@ -389,6 +444,26 @@ class TestPathFiltering:
         )
         assert "system" not in result
         assert "host-name r1" in result
+
+    @pytest.mark.parametrize(
+        ("to_format", "expected"),
+        [
+            (Format.JSON, '"r1"\n'),
+            (Format.YAML, "r1\n...\n"),
+            (Format.SET, "set r1\n"),
+            (Format.STRUCTURED, ""),
+        ],
+    )
+    def test_relative_leaf_preserves_output(self, to_format: Format, expected: str) -> None:
+        result = convert_config(
+            _PATH_FILTER_SOURCE,
+            from_format=Format.JSON,
+            to_format=to_format,
+            path="system.host-name",
+            relative=True,
+            validate=False,
+        )
+        assert result == expected
 
     def test_path_filter_not_found(self) -> None:
         result = convert_config(
@@ -564,7 +639,21 @@ class TestUserClassSingle:
 
 
 class TestLeafListPromotion:
-    """YAML scalar values for leaf-list fields must be promoted to arrays."""
+    """Scalar leaf-list values are promoted only for adapters that require it."""
+
+    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(self, monkeypatch) -> None:
+        """JSON retains its supplied shape and has no schema-artifact dependency."""
+        import junoscfg.convert.input.normalization as normalization
+
+        def fail_if_called():
+            raise AssertionError("JSON input must not load the schema tree")
+
+        monkeypatch.setattr(normalization, "load_schema_tree", fail_if_called)
+        source = '{"configuration":{"protocols":{"evpn":{"extended-vni-list":"3001000-3001100"}}}}'
+
+        assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
+            "3001000-3001100"
+        )
 
     def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
         """YAML scalar extended-vni-list must become a single-element JSON array."""
@@ -594,3 +683,22 @@ class TestLeafListPromotion:
         parsed = json.loads(result)
         vni = parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"]
         assert vni == ["3001000-3001100", "3002000-3002100"]
+
+    def test_xml_scalar_leaf_list_promoted_without_yaml_bridge(self, monkeypatch) -> None:
+        """XML reaches the normalized IR without serializing through YAML."""
+        import junoscfg.display
+
+        def fail_if_called(*args, **kwargs):
+            raise AssertionError("XML input must not call xml_to_yaml()")
+
+        monkeypatch.setattr(junoscfg.display, "xml_to_yaml", fail_if_called)
+        source = (
+            "<configuration><protocols><evpn>"
+            "<extended-vni-list>3001000-3001100</extended-vni-list>"
+            "</evpn></protocols></configuration>"
+        )
+        result = convert_config(source, from_format=Format.XML, to_format=Format.JSON)
+        parsed = json.loads(result)
+        assert parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"] == [
+            "3001000-3001100"
+        ]

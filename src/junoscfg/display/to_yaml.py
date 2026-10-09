@@ -1,4 +1,4 @@
-"""Convert Junos JSON/XML configurations to standard YAML format.
+"""Convert Junos XML configurations to standard YAML format.
 
 The output is a 1:1 structural mapping of Junos JSON — arrays with ``name``
 fields, ``@`` attribute keys, and ``[null]`` presence markers are all preserved
@@ -7,7 +7,6 @@ exactly as they appear in the JSON representation.
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, TextIO
 
 import yaml
@@ -16,18 +15,8 @@ if TYPE_CHECKING:
     from lxml import etree
 
 
-def json_to_yaml(source: str | TextIO) -> str:
-    """Convert Junos JSON configuration to standard YAML format."""
-    text = source.read() if hasattr(source, "read") else str(source)  # type: ignore[union-attr]
-
-    data = json.loads(text)
-    if not data:
-        return ""
-    return yaml.dump(data, default_flow_style=False, allow_unicode=True, sort_keys=False)
-
-
-def xml_to_yaml(source: str | TextIO) -> str:
-    """Convert Junos XML configuration to standard YAML format.
+def xml_to_dict(source: str | TextIO) -> dict[str, Any]:
+    """Parse Junos XML into its JSON-equivalent configuration mapping.
 
     Requires the ``lxml`` package (install via ``pip install junoscfg[xml]``).
     """
@@ -50,9 +39,17 @@ def xml_to_yaml(source: str | TextIO) -> str:
         raise ValueError(f"Invalid XML: {exc}") from exc
     config_el = find_xml_configuration(root)
     if config_el is None:
+        return {}
+
+    return {"configuration": _xml_element_to_dict(config_el)}
+
+
+def xml_to_yaml(source: str | TextIO) -> str:
+    """Convert Junos XML configuration to standard YAML format."""
+    result = xml_to_dict(source)
+    if not result:
         return ""
 
-    result = {"configuration": _xml_element_to_dict(config_el)}
     return yaml.dump(result, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
 

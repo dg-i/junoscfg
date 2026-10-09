@@ -1,6 +1,12 @@
 # API Reference
 
-The Junoscfg Python API is organized into three layers:
+The published Python API follows package doors. Import the documented names
+from these modules, not from their implementation submodules.
+
+During beta, compatibility is guaranteed for the four top-level names used by
+the production Ansible collection: `convert_config`, `validate_config`,
+`Format`, and `FieldValidationError`. Other documented package-door APIs may
+change in a minor release.
 
 ## Top-Level Functions
 
@@ -13,19 +19,17 @@ from junoscfg import convert_config, validate_json
 
 ## Convert Module
 
-The [`junoscfg.convert`](internals/convert.md) module implements the unified conversion
-pipeline. It provides `pipeline()`, `to_dict()`, `from_dict()`, and `validate_ir()` for
+The [`junoscfg.convert`](convert.md) module implements the unified conversion
+pipeline. It provides `pipeline()`, `pipeline_result()`, `to_dict()`, `from_dict()`, and `validate_ir()` for
 converting between any format pair through a JSON dict intermediate representation (IR).
-
-The [`junoscfg.convert.field_validator`](internals/field_validator.md) submodule validates
-leaf values against schema constraints (enums, patterns, IP addresses, integer bounds).
 
 ## Display Module
 
 The [`junoscfg.display`](display.md) module contains shared conversion utilities
-such as `is_display_set()` and `filter_set_by_path()`. The actual format
+such as `detect_format()`, `is_display_set()`, `xml_to_dict()`, and `filter_set_by_path()`. The actual format
 converters live in `junoscfg.convert.input/` and `junoscfg.convert.output/`,
-accessed via `junoscfg.convert.pipeline()` or the top-level `convert_config()`.
+but those implementation modules are not published. Access conversion through
+`junoscfg.convert.pipeline()` or the top-level `convert_config()`.
 
 ## Validate Module
 
@@ -40,11 +44,5 @@ replacing sensitive data with deterministic pseudonyms. It includes `anonymize()
 `AnonymizeConfig`, `AnonymizeResult`, and revert dictionary utilities.
 
 ```python
-from junoscfg.anonymize import anonymize, AnonymizeResult
-from junoscfg.anonymize.config import AnonymizeConfig
+from junoscfg.anonymize import AnonymizeConfig, AnonymizeResult, anonymize
 ```
-
-## Internals
-
-Internal modules are documented under Internals in the sidebar navigation for reference.
-These implement the conversion and validation logic and are not part of the public API.

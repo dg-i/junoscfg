@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "junoscfg"
-version = "0.13.0"
+version = "0.14.0"
 description = "Convert Junos configurations between XML, JSON, structured, and display set formats"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -102,6 +102,8 @@ directory = "changelog.d"
 filename = "CHANGELOG.md"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
+"junoscfg.convert.output.xml_output" = { msg = "retired by 2026-10-09-scope-compatibility-to-production-consumer.md; see docs/decisions/2026-10-09-scope-compatibility-to-production-consumer.md" }
+"junoscfg.display.to_yaml.json_to_yaml" = { msg = "retired by 2026-10-09-scope-compatibility-to-production-consumer.md; see docs/decisions/2026-10-09-scope-compatibility-to-production-consumer.md" }
 # agent-ready:stage-levers:tables:end
 
 [tool.mypy]
@@ -211,17 +213,17 @@ name = "beta"
 review-by = "2027-04-06"
 owners = ["manon.goo@dg-i.net"]
 solo = true                     # one maintainer; drop it when a second owner arrives
-surfaces = ["api", "cli"]
+surfaces = ["consumer", "cli"]
 # https://github.com/dg-i/ansible-collection-junos-config is in production
 # against both: its
 # render filter imports convert_config, validate_config, Format and
 # FieldValidationError, and its pipelines drive `convert`, `edityaml
 # rename-root` and `edityaml ansibilize`. See ARCHITECTURE.md section 3.
-surface-paths = { cli = ["src/junoscfg/cli.py"] }
+surface-paths = { consumer = ["src/junoscfg/__init__.py"], cli = ["src/junoscfg/cli.py"] }
 # Semver-shaped, pre-1.0. A break on either surface raises the minor, which
 # replaces the current patch-bump-for-everything rule in AGENTS.md.
 components = ["major", "minor", "patch"]
-break-bumps = { api = "minor", cli = "minor" }
+break-bumps = { consumer = "minor", cli = "minor" }
 
 # Gates enforce by default. A gate installed on an existing codebase that
 # cannot pass it starts in warn mode against a committed baseline, which is how

@@ -2,8 +2,7 @@
 
 Public API::
 
-    from junoscfg.anonymize import anonymize
-    from junoscfg.anonymize.config import AnonymizeConfig
+    from junoscfg.anonymize import AnonymizeConfig, anonymize
 
     config = AnonymizeConfig(ips=True, salt="my-salt")
     result = anonymize(ir_dict, config)
@@ -15,7 +14,10 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli
 from junoscfg.anonymize.revert import apply_revert, export_mapping, load_mapping
@@ -34,12 +36,18 @@ class AnonymizeResult:
     mapping: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
-def anonymize(ir: dict[str, Any], config: AnonymizeConfig) -> AnonymizeResult:
+def anonymize(
+    ir: dict[str, Any],
+    config: AnonymizeConfig,
+    *,
+    diagnostic_sink: Callable[[str], None] | None = None,
+) -> AnonymizeResult:
     """Anonymize an IR dict according to *config*.
 
     Args:
         ir: The full IR dict (``{"configuration": {...}}``).
         config: Anonymization configuration specifying which rules to apply.
+        diagnostic_sink: Optional receiver for debug diagnostics.
 
     Returns:
         An :class:`AnonymizeResult` with the modified IR and the revert mapping.
@@ -59,7 +67,7 @@ def anonymize(ir: dict[str, Any], config: AnonymizeConfig) -> AnonymizeResult:
     if not rules:
         return AnonymizeResult(ir=ir)
 
-    walk(ir, rules, config)
+    walk(ir, rules, config, diagnostic_sink=diagnostic_sink)
 
     # Second pass: replace IPs embedded in larger strings (URLs, host+IP, etc.)
     if config.ips_in_strings:

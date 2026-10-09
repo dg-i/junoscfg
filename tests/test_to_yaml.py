@@ -7,7 +7,14 @@ import json
 import pytest
 import yaml
 
-from junoscfg.display.to_yaml import json_to_yaml, xml_to_yaml
+from junoscfg import Format, convert_config
+from junoscfg.display import xml_to_dict
+from junoscfg.display.to_yaml import xml_to_yaml
+
+
+def _convert_json_to_yaml(source: str) -> str:
+    """Exercise the supported JSON-to-YAML conversion through its public door."""
+    return convert_config(source, from_format=Format.JSON, to_format=Format.YAML)
 
 
 class TestJsonToYamlBasic:
@@ -15,7 +22,7 @@ class TestJsonToYamlBasic:
 
     def test_simple_container(self) -> None:
         j = json.dumps({"configuration": {"system": {"host-name": "test"}}})
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result == {"configuration": {"system": {"host-name": "test"}}}
 
     def test_named_entries_preserved_as_arrays(self) -> None:
@@ -23,7 +30,7 @@ class TestJsonToYamlBasic:
         j = json.dumps(
             {"configuration": {"interfaces": {"interface": [{"name": "ae0", "mtu": 9216}]}}}
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result == {
             "configuration": {"interfaces": {"interface": [{"name": "ae0", "mtu": 9216}]}}
         }
@@ -31,13 +38,13 @@ class TestJsonToYamlBasic:
     def test_null_presence_preserved(self) -> None:
         """[null] stays as [null] (not converted to true)."""
         j = json.dumps({"configuration": {"system": {"management-instance": [None]}}})
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result == {"configuration": {"system": {"management-instance": [None]}}}
 
     def test_single_element_array_preserved(self) -> None:
         """Single-element arrays stay as arrays (not unwrapped)."""
         j = json.dumps({"configuration": {"system": {"name-server": ["8.8.8.8"]}}})
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["name-server"] == ["8.8.8.8"]
 
     def test_multi_element_array_preserved(self) -> None:
@@ -51,19 +58,16 @@ class TestJsonToYamlBasic:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["login"]["class"][0]["permissions"] == [
             "access",
             "admin",
         ]
 
-    def test_empty_json_returns_empty(self) -> None:
-        assert json_to_yaml("{}") == ""
-
     def test_configuration_wrapper_preserved(self) -> None:
         """The 'configuration' key is preserved in output."""
         j = json.dumps({"configuration": {"system": {"host-name": "test"}}})
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert "configuration" in result
 
 
@@ -80,7 +84,7 @@ class TestJsonToYamlAttributes:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["@"] == {"junos:changed-seconds": "12345"}
 
     def test_inactive_attribute_preserved(self) -> None:
@@ -95,7 +99,7 @@ class TestJsonToYamlAttributes:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["@"] == {"inactive": True}
         assert result["configuration"]["system"]["host-name"] == "test"
 
@@ -111,7 +115,7 @@ class TestJsonToYamlAttributes:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["@host-name"] == {"inactive": True}
 
 
@@ -142,7 +146,7 @@ class TestJsonToYamlFlatEntries:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         rf = result["configuration"]["policy-options"]["policy-statement"][0]["term"][0]["from"][
             "route-filter"
         ]
@@ -167,7 +171,7 @@ class TestJsonToYamlFlatEntries:
                 }
             }
         )
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["login"]["class"][0]["permissions"] == [
             "access",
             "admin",
@@ -198,14 +202,12 @@ class TestJsonToYamlRoundtrip:
             }
         }
         j = json.dumps(original)
-        yaml_output = json_to_yaml(j)
+        yaml_output = _convert_json_to_yaml(j)
         roundtrip = yaml.safe_load(yaml_output)
         assert roundtrip == original
 
     def test_json_yaml_set_match(self) -> None:
         """JSON → YAML → set produces same output as JSON → set."""
-        from junoscfg import Format, convert_config
-
         j = json.dumps(
             {
                 "configuration": {
@@ -227,7 +229,7 @@ class TestJsonToYamlRoundtrip:
                 }
             }
         )
-        yaml_output = json_to_yaml(j)
+        yaml_output = _convert_json_to_yaml(j)
         yaml_set = convert_config(yaml_output, from_format=Format.YAML, to_format=Format.SET)
         json_set = convert_config(j, from_format=Format.JSON, to_format=Format.SET)
 
@@ -236,6 +238,10 @@ class TestJsonToYamlRoundtrip:
 
 class TestXmlToYamlBasic:
     """XML → YAML transformations (produces Junos JSON-equivalent structure)."""
+
+    def test_package_door_dict_matches_yaml_mapping(self) -> None:
+        xml = "<configuration><system><host-name>router1</host-name></system></configuration>"
+        assert xml_to_dict(xml) == yaml.safe_load(xml_to_yaml(xml))
 
     def test_simple_elements(self) -> None:
         xml = "<configuration><system><host-name>test</host-name></system></configuration>"
@@ -299,13 +305,13 @@ class TestXmlToYamlBasic:
 class TestLazyXmlImport:
     """Verify lxml is lazily imported — not loaded until XML features are used."""
 
-    def test_json_to_yaml_without_lxml(self) -> None:
-        """json_to_yaml works without lxml being imported at module level."""
+    def test_json_to_yaml_pipeline_without_lxml(self) -> None:
+        """Public JSON-to-YAML conversion does not require the XML dependency."""
         # to_yaml module should be importable; lxml may be in sys.modules
-        # from other tests, but the key check is that json_to_yaml itself
-        # doesn't fail
+        # from other tests, but the key check is that the public conversion
+        # pipeline itself doesn't fail
         j = json.dumps({"configuration": {"system": {"host-name": "test"}}})
-        result = yaml.safe_load(json_to_yaml(j))
+        result = yaml.safe_load(_convert_json_to_yaml(j))
         assert result["configuration"]["system"]["host-name"] == "test"
 
     def test_filter_yaml_by_path_without_lxml(self) -> None:

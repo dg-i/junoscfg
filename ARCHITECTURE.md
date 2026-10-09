@@ -73,8 +73,10 @@ form rather than fetching or deriving them at run time.
   top-level package: `convert_config`, `validate_config`, `Format` and
   `FieldValidationError`. Its documented pipelines also drive the CLI:
   `convert -e yaml`, `edityaml rename-root`, `edityaml ansibilize --root`.
-  This consumer must keep working; it is why `api` and `cli` are the declared
-  surfaces in `[tool.template.stage]`.
+  This consumer must keep working; it is why `consumer` and `cli` are the
+  declared surfaces in `[tool.template.stage]`. The consumer surface is the
+  top-level package file that carries those four imports; secondary package
+  doors remain available but are not compatibility promises during beta.
 
 ### What it consumes
 
@@ -120,27 +122,24 @@ a schema-flag table, not display logic.
 
 **One interchange format.** Every conversion is `format -> dict IR -> format`;
 there is no direct format-to-format path and adding one is the "second way to
-do the same thing" that section 1 calls a defect. XML input bridges through
-`xml_to_yaml()` rather than getting its own parser. One configuration has one
-IR whatever format it arrived in: leaf values are strings, as Junos JSON holds
-them, and `KEY_ALIASES` is applied on every input path.
+do the same thing" that section 1 calls a defect. XML input and XML-to-YAML
+share the display kernel's `xml_to_dict()` walker; conversion input normalizes
+its result directly without a serialization round trip. One configuration has
+one IR whatever format it arrived in: leaf values are strings, leaf-lists are
+arrays, and `KEY_ALIASES` is applied on every input path.
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in
 `xsd_fixes.py` as Python so that it survives the next regeneration; editing the
 JSON is a change that the next `--regen-schema` silently reverts.
 
-**Errors leave by three different doors, and that is a defect, not a design.**
-Schema validation returns a `ValidationResult`; a structural failure raises
+**Errors and diagnostics leave through separate deliberate doors.** Schema
+validation returns a `ValidationResult`; a structural failure raises
 (`SchemaLoadError`, `AuditLoadError`, `FieldValidationError`, `ValueError`);
-and field warnings are `print(..., file=sys.stderr)` from inside the library —
-`convert/__init__.py:127`, `anonymize/walker.py:186`,
-`convert/output/structured_output.py`. `cli.py` contains no `sys.stderr` call
-at all, so the inversion is complete: the library writes to the terminal and
-the CLI does not. For an in-process consumer such as the Ansible collection
-those lines are unaddressable output. The rule is that the library returns
-diagnostics and the caller decides where they go; the three sites above are the
-known exceptions.
+and non-fatal conversion events are immutable `Diagnostic` values on a
+`ConversionResult`. Library calls never write those events to a terminal. The
+CLI renders their stable text to stderr, while in-process consumers decide how
+to route or suppress them.
 
 **Not applicable here.** No money, no wall-clock time, no user identity or
 authorization: junoscfg is a pure text-to-text transformation with no session

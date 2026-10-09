@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-09
+type: refactor
+zone: surface
+domains: [conversion]
+skip_specs: true
+removes:
+  - "twenty private format-pair wrappers and their string-based dispatch table"

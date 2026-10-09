@@ -1,6 +1,8 @@
-# CLI Reference
+# CLI Guide
 
-The `junoscfg` CLI converts and validates Junos configurations.
+The `junoscfg` CLI converts and validates Junos configurations. Exact command,
+argument, option, default, and choice details are in the generated
+[command and option reference](cli-reference.md).
 
 ## Usage
 
@@ -30,31 +32,20 @@ junoscfg schema -?         # Schema group help
 
 ### Format Options
 
-| Option | Description |
-|--------|-------------|
-| `-i`, `--import-format` | Input format: `set`, `structured`, `json`, `yaml`, `conf`. Auto-detected if omitted. |
-| `-e`, `--export-format` | Output format: `set`, `structured`, `json`, `yaml`, `conf`. Required unless `-v` is used alone. |
-
 `conf` is a CLI alias for `structured` — they are interchangeable in `-i` and `-e` options.
 
-Auto-detection examines the input content: JSON objects/arrays, XML tags, `set`/`deactivate`
-keywords, or structured curly-brace blocks.
+Auto-detection examines parsed input content: JSON objects/arrays, YAML mappings
+or lists, XML tags, display-set commands (`set`, `deactivate`, `protect`,
+`activate`, or `delete`), or structured curly-brace blocks.
+JSON is tried before YAML because JSON is also valid YAML; flow-style YAML that
+starts with `{` is recognized when JSON parsing fails.
 
 ### Schema Validation
 
-| Option | Description |
-|--------|-------------|
-| `-v`, `--validate` | Validate configuration before converting |
-| `--artifacts PATH` | Schema artifacts directory, for conversion and validation alike |
-
-Use `-v` alone (without `-e`) to validate without converting.
+Use `-v` alone (without `-e`) to validate without converting. `--artifacts`
+selects the schema artifacts directory for conversion and validation alike.
 
 ### Field Validation
-
-| Option | Description |
-|--------|-------------|
-| `--strict` | Fail on field-level validation errors (exit code 1) |
-| `--no-field-validate` | Skip field-level value validation entirely |
 
 Field-level validation checks leaf values against schema constraints (enums, patterns,
 IP addresses, integer bounds, mandatory fields). It runs by default during conversion,
@@ -63,10 +54,8 @@ printing warnings to stderr. Use `--strict` to make validation errors fatal, or
 
 ### Path Filtering
 
-| Option | Description |
-|--------|-------------|
-| `--path PATH` | Show only config under this path (dot-separated, e.g. `"system.syslog"`) |
-| `--relative` | Show relative paths (omit `--path` prefix from output). Requires `--path`. |
+Use `--path` to select a dot-separated subtree such as `system.syslog`. Add
+`--relative` to omit that prefix from rendered output.
 
 ### Examples — Conversion
 
@@ -144,34 +133,6 @@ junoscfg -i set -e json config.set 2>validation.log
 ### Anonymization
 
 Replace sensitive data with deterministic pseudonyms.
-
-| Option | Description |
-|--------|-------------|
-| `--anonymize-all` | Enable all boolean anonymization rules |
-| `--anonymize-ips` | Anonymize IP addresses |
-| `--anonymize-passwords` | Anonymize passwords and secrets |
-| `--anonymize-communities` | Anonymize SNMP community strings |
-| `--anonymize-ssh-keys` | Anonymize SSH public keys |
-| `--anonymize-identities` | Anonymize usernames and identities |
-| `--anonymize-groups` | Anonymize group and view names |
-| `--anonymize-descriptions` | Anonymize description fields |
-| `--anonymize-as-numbers` | Comma-separated AS numbers to anonymize; supports explicit mapping with `original:replacement` (e.g., `1234:100,5678:101`) |
-| `--anonymize-sensitive-words` | Comma-separated literal strings to anonymize (case-insensitive) |
-| `--anonymize-sensitive-patterns` | Regex pattern for sensitive data (repeatable) |
-| `--anonymize-salt` | Shared salt for deterministic output |
-| `--anonymize-dump-map` | Write revert dictionary to file |
-| `--anonymize-revert-map` | Apply revert dictionary (restore originals) |
-| `--anonymize-include` | Only anonymize paths matching this glob (repeatable) |
-| `--anonymize-exclude` | Skip paths matching this glob (repeatable) |
-| `--anonymize-preserve-prefixes` | IP prefixes to preserve unchanged (repeatable) |
-| `--anonymize-networks` | Subnet specs for host-bit locking (CIDR, range, or `auto`). Repeatable |
-| `--anonymize-network-file` | File with one subnet spec per line (for host-bit locking) |
-| `--anonymize-ignore-subnets` | Treat sub-/8 private ranges as public (anonymize them fully instead of preserving the range) |
-| `--anonymize-ignore-reserved` | Remove all reserved range handling (no ranges are preserved) |
-| `--anonymize-ips-in-strings` | Also replace IPs embedded in larger strings |
-| `--anonymize-as-numbers-in-strings` | Also replace AS numbers embedded in strings |
-| `--anonymize-log-level` | Logging verbosity: `quiet`, `normal` (default), or `debug` |
-| `--anonymize-config` | YAML config file with all anonymization options |
 
 Anonymization refuses a configuration with a statement the schema cannot place, exiting
 1 with the statement named, since it cannot rewrite what the schema does not name and
@@ -459,11 +420,6 @@ works.
 junoscfg schema generate XSD_SOURCE -o OUTPUT_DIR
 ```
 
-| Argument/Option | Description |
-|-----------------|-------------|
-| `XSD_SOURCE` | Path to NETCONF XSD dump file |
-| `-o`, `--output-dir` | Output directory for generated artifacts (required) |
-
 Example:
 
 ```bash
@@ -478,10 +434,6 @@ Display schema artifact information.
 ```text
 junoscfg schema info [--artifacts PATH]
 ```
-
-| Option | Description |
-|--------|-------------|
-| `--artifacts PATH` | Path to artifacts directory (defaults to bundled artifacts) |
 
 Example:
 
@@ -505,12 +457,6 @@ Add derived keys to YAML using transform rules.
 junoscfg edityaml addvars [OPTIONS] [FILE]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-r`, `--rules` | YAML file containing transform rules |
-| `--path` | Path expression for inline `--set` transforms |
-| `--set` | Inline transform expression (repeatable). Requires `--path`. |
-
 Examples:
 
 ```bash
@@ -525,13 +471,6 @@ Extract leaf values into Ansible `host_vars` and templatize `group_vars`.
 ```text
 junoscfg edityaml ansibilize [OPTIONS] [FILE]
 ```
-
-| Option | Description |
-|--------|-------------|
-| `-p`, `--prefix_path` | `prefix:path` pair for literal extraction (repeatable). Split on first `:`. |
-| `-P`, `--offset-prefix-path` | `prefix:path` pair for offset-mode extraction (repeatable). Split on first `:`. |
-| `--offset-var NAME` | Name of the per-host offset variable (default: `base_address_offset`). |
-| `--root PATTERN` | Top-level key glob to descend into (repeatable). Overrides auto-descend. |
 
 At least one of `-p` or `-P` is required. With `-p` only, outputs 2 YAML documents. With `-P`, outputs 3 YAML documents (host_vars, offset expressions, template).
 
@@ -564,16 +503,6 @@ human review.
 ```bash
 junoscfg audit unused [OPTIONS] [FILE]
 ```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --import-format FORMAT` | Input format: `set`, `structured`, `json`, `yaml`, `xml`, or `conf` (default: auto-detect) |
-| `--types TYPES` | Comma-separated registry types to audit, or `all` (default: `all`) |
-| `--match REGEX` | Only check definitions whose name matches this regex (`re.search`); the reference corpus is always the whole config |
-| `-o, --output STYLE` | Output style (see below; default: `pathname`) |
-| `--include-probably-unused` | Include probably-unused findings in `delete-script`/`deactivate-script` output |
-| `--registry FILE` | Path to a custom type-registry YAML file (default: bundled registry) |
-| `--fail-on LEVEL` | Exit with code 1 when findings at or above this confidence exist: `unused`, `probably-unused`, or `never` (default: `never`) |
 
 Output styles — each also available as `<style>-verbose`:
 

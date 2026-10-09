@@ -101,7 +101,7 @@ flowchart LR
 | Subsystem | Location | Purpose |
 |-----------|----------|---------|
 | **convert/** | `src/junoscfg/convert/` | Unified pipeline: any format → dict IR → any format, with field validation |
-| **display/** | `src/junoscfg/display/` | Shared utilities: constants, config store, value formatting, set converter, XML→YAML bridge |
+| **display/** | `src/junoscfg/display/` | Shared utilities: constants, config store, value formatting, set converter, XML walker |
 | **validate/** | `src/junoscfg/validate/` | Schema validation against XSD, JSON Schema, Lark grammar; artifact generation |
 
 The `__init__.py` at package root provides the unified public API (`convert_config()`,
@@ -124,9 +124,9 @@ flowchart TD
 
 ### Routing logic
 
-`convert_config()` uses `_CONVERTERS` — a dict mapping `(Format, Format)` tuples to
-converter function names (20 pairs total, including 4 identity conversions). All
-converters go through the pipeline and support `validate`/`strict` kwargs for
+`convert_config()` checks `_SUPPORTED_CONVERSIONS` — a set of 20
+`(Format, Format)` pairs, including 4 identity conversions — then calls the
+unified pipeline directly. Every pair supports `validate` and `strict` for
 field-level validation.
 
 ### Dispatch table
@@ -194,7 +194,7 @@ Each input module parses a format into the unwrapped dict IR (the content inside
 |--------|----------|-------|
 | `json_input.py` | `json_to_dict()` | Parses JSON, uses `find_configuration()` to unwrap |
 | `yaml_input.py` | `yaml_to_dict()` | Parses YAML, uses `find_configuration()` |
-| `xml_input.py` | `xml_to_dict()` | XML→YAML bridge via `xml_to_yaml()` + `yaml_to_dict()` |
+| `xml_input.py` | `xml_to_dict()` | Reuses `display.xml_to_dict()` and returns its configuration mapping directly |
 | `set_input.py` | `set_to_dict()` | Tokenizes set commands, walks schema tree to build dict |
 | `structured_input.py` | `structured_to_dict()` | Two-hop: structured → set → dict |
 
@@ -208,7 +208,7 @@ Each output module renders the dict IR to a target format:
 | `yaml_output.py` | `dict_to_yaml()` | Wraps and dumps YAML |
 | `set_output.py` | `dict_to_set()` | Uses `DictWalker` + `SetWalkOutput` |
 | `structured_output.py` | `dict_to_structured()` | Uses `DictWalker` + `StructuredWalkOutput` |
-| `xml_output.py` | `dict_to_xml()` | Not yet implemented |
+| `output/__init__.py` | rejects unsupported XML output | `convert_config()` |
 
 ### Strategy pattern: DictWalker and WalkOutput
 
@@ -555,11 +555,18 @@ flowchart TD
     SCHEMA_CMD --> INFO["info\nshow artifact metadata"]
 
     CONV_CMD --> DETECT{"Auto-detect\ninput format"}
-    DETECT -->|starts with '{' or '['| FMT_JSON[json]
+    DETECT -->|JSON parse succeeds| FMT_JSON[json]
+    DETECT -->|mapping/list parses only as YAML| FMT_YAML[yaml]
     DETECT -->|starts with '<'| FMT_XML[xml]
-    DETECT -->|all lines start with set/deactivate/delete| FMT_SET[set]
+    DETECT -->|all lines use a set-mode command| FMT_SET[set]
     DETECT -->|otherwise| FMT_STRUCT[structured]
 ```
+
+Conversion and audit pass all five formats to the shared classifier. Top-level
+validation deliberately passes only set and structured, preserving its narrower
+auto-detection contract. JSON is tried before YAML because JSON is a YAML subset;
+this also lets flow-style YAML beginning with `{` be recognized after JSON parsing
+fails.
 
 ### DefaultGroup
 
@@ -579,8 +586,9 @@ junoscfg convert -i json -e set config.json
 
 ### Path filtering
 
-Path filtering (`--path`) is applied **after** conversion. Each output format has
-its own filter implementation:
+Path filtering (`--path`) is applied to the dict IR **before** rendering. The
+exported format-specific filters remain available for direct callers during
+beta:
 
 - **set** — `filter_set_by_path()` in `display/__init__.py`
 - **structured** — `filter_structured_by_path()` in `display/config_store.py`

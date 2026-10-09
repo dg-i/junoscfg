@@ -8,6 +8,8 @@ Top-level conversion and validation functions.
         - __version__
         - Format
         - convert_config
+        - convert_config_result
+        - ConversionResult
         - validate_config
         - validate_xml
         - validate_json

@@ -22,5 +22,7 @@ across calls.
 
 ## Precedent
 
+- `junoscfg.anonymize.anonymize(..., diagnostic_sink=...)` — debug events leave
+  through a caller-owned sink and never write to a terminal.
 - `junoscfg.anonymize.rules.ip.IpRule` — the rule shape: `matches()` then
   `transform()`, both taking the shared signature.

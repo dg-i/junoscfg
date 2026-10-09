@@ -1,3 +1,0 @@
-# junoscfg.cli
-
-::: junoscfg.cli
