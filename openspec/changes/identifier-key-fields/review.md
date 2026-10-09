@@ -533,3 +533,182 @@ Each finding above, as the owner decided it; evidence in `tasks.md` section 4.
   from the tree as its key, then optionally its child list's key and leaf
   values. The guard tests for the one- to three-value forms pass before and
   after the change.
+
+## Phase-6 re-review (fresh session, 2026-10-09)
+
+Reviewed the fix pass `fc22c57..HEAD` (d0b892d, 8dc8629, d274595, 7f998e9,
+8d623a1, d8717de) in full against the owner decisions above, the revised
+deltas and the tests; the rest of `master...HEAD` rests on the first review
+and was re-opened only where the fix pass touched it. Every figure below was
+rerun in this session on the branch; master's figures are the frozen baseline
+in `private_test_data/identifier-key-fields-review-baseline` and were not
+rerun. Device facts are cited as "device probe, vMX 23.2R2-S7.5"; nothing from
+the probe files is copied here. Synthetic values only.
+
+### Verified
+
+1. **The reference survives.** The bug report's synthetic fixture converted
+   `-i conf -e set` with `--anonymize-all` and with `--anonymize-as-numbers
+   64496`: each output carries `as-path-neighbors as-list SAMPLE-AS-LIST`
+   exactly once; `--anonymize-all` anonymizes the group name only.
+2. **Every `return` in `_merge_tokens`** (`src/junoscfg/convert/input/set_input.py`
+   lines 262-507) consumes every token or calls `_keep_whole`: the two
+   `apply-groups` returns (surplus, bare, or a full statement after a bare one
+   kept whole; one group consumed), the two `apply-macro` returns (more than
+   four tokens or a kept-whole key; else one to three values consumed), the
+   nokeyword-leaf return only at end of tokens, the new overwrite guard
+   (`_keep_whole(owner, tokens, owner_i)`), the `tk` return at end of tokens,
+   the unknown-token keep-whole, the bare-keyword return, the `_read_key`
+   None keep-whole, the surplus-or-kept-key keep-whole, the entry-complete
+   return at end of tokens, the presence return at end of tokens, the
+   unknown-node keep-whole, and the two pre-existing leaf returns that join
+   the rest into the value. Probed: a surplus after a keyed entry
+   (`as-list SAMPLE-AS-LIST EXTRA`), after a childless list of names
+   (`snmp filter-interfaces interfaces IF1 EXTRA`), after `apply-groups`
+   (`G1 G2`), after a nokeyword leaf (`autonomous-system 64496 EXTRA`), after
+   `then community add COMM-A` and after `attributes-match`: each kept whole
+   and reported `UNPLACED`.
+3. **The four doors agree:** `tests/test_device_truth.py` and
+   `TestKeyedEntriesAgreeAcrossReaders` (76 tests, the `virtual-link` and
+   `apply-macro` captures included) pass; the probed `virtual-link` line in
+   reversed order gives the declared-order IR and set line.
+4. **The declared break matches the record.** Counting, on each JSON schema,
+   every `array` whose `items` is an object with `properties`, and those
+   without `name`: 0.14.0 8,394 / 0; fc22c57 10,792 / 2,558; HEAD
+   11,547 / 2,560, the figures `tasks.md` 4.14 records, the 755 more being
+   the numerically bounded declarations.
+5. **Corpus** (`review_tools.py corpus rr`, branch only, 1,538 files,
+   4,947,067 lines): unplaced 68,172 against master's 69,768, other field
+   warnings 329 against 521, 35 files failing on both. Two files have one
+   more unplaced statement than master, both the jvd `cpe-attachment.conf`
+   template with `esi { $ESI_BYTES; $ESI_MODE; }`: master wrote `esi
+   "$ESI_MODE"` alone, the branch writes `esi "$ESI_BYTES"` and keeps
+   `esi $ESI_MODE` whole and reported (the challenge A guard; with a real
+   mode, `esi <bytes>` then `esi single-active` reads clean). 161 files have
+   fewer. Set output differs from master in 75 files, as `tasks.md` 4.13
+   explains them.
+6. **Grammar** (`review_tools.py grammar rr`, 11,000 sampled lines): 10,970
+   accepted, 30 rejected; newly rejected 0, newly accepted 2, both decided:
+   `drop-profile-map loss-priority any protocol any drop-profile dp0`
+   (challenge B, keyword key fields) and `forwarding-classes class LOW
+   queue-num 1` (challenge A, a bounded list). The bundled grammar rejects
+   `as-list SAMPLE-AS-LIST EXTRA`, `virtual-link 10.255.255.4 0.0.0.2`,
+   `drop-profile-map any any drop-profile dp0`, `apply-macro 12345 "KADJBF
+   KU!H" balks XXXXX` and `set system location dc-a`, and accepts
+   `virtual-link transit-area 0.0.0.2 neighbor-id 10.255.255.1`, the three
+   `apply-macro` forms and `location building SAMPLE-BUILDING`, as the device
+   did (device probe, vMX 23.2R2-S7.5).
+7. **Regeneration, by inspection (owner's replacement for `--regen-schema`).**
+   8dc8629 touches only the five files under `src/junoscfg/validate/data/`
+   and follows d0b892d, the parser's `maxOccurs` change; 7f998e9 touches only
+   `junos-set.lark.gz` and `junos-schema-meta.json.gz` and follows d274595,
+   whose runtime changes reach only the grammar among the artifacts
+   (`grammar_generator.py`, `statement_children`). 8d623a1 and d8717de touch
+   no file under `data/`. No commit edits an artifact by hand.
+8. **Additions beyond the proposal** in the fix pass are recorded in
+   `metrics.md` (`statement_children`, `_EntryIndex`, the kept-whole
+   statement after a bare keyword, `apply-macro`, the two captures) but one:
+   finding 11 below. Behaviour the specs do not cover: none found; each fix
+   has its requirement, scenario and test list.
+9. **Full check** at d8717de: exit 0, "every check passed", 1892 passed, 45
+   skipped, 1 xfailed (the strict keyword-boundary xfail).
+10. **Stated figures.** `ma4_mx204.conf` (233,512 lines) structured to set:
+    4.2 s (record: 4.5 s, fc22c57 65.6 s). The `o` pins (3,552 with other
+    children, 1,286 keys only) and the 48 / 24 counts pass inside the full
+    check. No `"k" in` read survives under `src/junoscfg/`; one
+    `statement_children` definition exists, in the kernel. No runtime line
+    special-cases `control-as-list-type`, `attributes-match` or `community`
+    (comments only).
+
+### Decisions, one probe each
+
+- **Challenge A:** three structured `forwarding-classes class` lines give
+  three entries and three set lines, no diagnostic; two `commit peers` stay
+  two; `access securid-server SAMPLE-SERVER ...` then `SAMPLE-SERVER-2 ...`
+  keeps the first and keeps the second whole from `securid-server`, reported.
+  Implemented.
+- **Challenge B:** `virtual-link transit-area 0.0.0.3 neighbor-id
+  10.255.255.2` reads to `{"neighbor-id": ..., "transit-area": ...}` and
+  writes declared order; `virtual-link 10.255.255.4 0.0.0.2` is kept whole and
+  reported; `track route 10.0.0.0/8 routing-instance default priority-cost 10`
+  round-trips with its keyword. Implemented.
+- **Challenge C:** `classifiers dscp SAMPLE-DSCP` validates clean;
+  `as-path-neighbors 1 SAMPLE-AS-LIST` still reports "must be one of
+  [as-list, as-list-group]" from set and from `validate_ir`. Implemented.
+- **Finding 4:** 4.2 s, item 10. Implemented.
+- **Finding 5:** JSON `{"as-path-neighbors": [{"list-name": ...}]}` reports
+  "'as-path-neighbors' entry without its key field 'list-type' could not be
+  placed in the schema: kept as written, not validated" and `strict=True`
+  raises `FieldValidationError`. Implemented.
+- **Finding 6:** `set system apply-groups` reads `{"apply-groups": true}`,
+  writes back, reports unplaced. Implemented.
+- **Finding 7:** the bundled grammar rejects `set system location dc-a` and
+  accepts `location building SAMPLE-BUILDING`; `test_set_corpus.py` lists the
+  line as correctly rejected, citing the probe. Implemented.
+- **Finding 8:** item 10. Implemented.
+- **Finding 9:** `from protocol bgp` under `sensitive_words=["bgp"]` and
+  `as-list-group SAMPLE-NAMES` under `["as-list"]` come back unchanged; the
+  `enums`/`keywords` plumbing is gone and `_leaf_enum` reads the same bundled
+  tree `walk()` loads, through the cached `load_schema_tree()`, so there is no
+  second source. Implemented.
+- **Finding 10:** the migration names the 31 `name`-keyed entry objects, 7
+  `snmp community` and 24 openconfig. Implemented.
+- **`apply-macro`:** one, two and three values read, write and validate as
+  the device stores them; a fourth is kept whole, reported, and rejected by
+  the grammar. Implemented.
+
+### Findings, by severity
+
+**11. Low, simplification.** "A key field written with its keyword" is
+spelled three times: `set_input.py` lines 183-185 (`_is_keyword_field`, on a
+tree dict), `grammar_generator.py` lines 152-154 (`_is_keyword_field`, on a
+`SchemaNode`) and `dict_walker.py` lines 454-455 (inline, `leaf.get("l") and
+not leaf.get("nk")`). The fix pass moved `statement_children` into the kernel
+for exactly this reason, and that helper already takes either node type; the
+predicate belongs beside it, so reader, writer and grammar cannot drift.
+Correctness is unaffected today (the three agree, and the device-truth
+captures pin them). Not recorded in `metrics.md`.
+
+Tests: no owner-unapproved weakening, skip or deletion in `fc22c57..HEAD`.
+The two re-measured pins are explained in their docstrings
+(`test_the_one_line_flag_follows_the_dump`: 102 nodes gained `o`, none lost,
+all newly lists; `test_name_keyed_grammar_is_byte_identical`: the
+`universal_statement` line, by the `apply-macro` decision). The strict xfail
+stays strict.
+
+### Review prompts
+
+- Trust boundary: structured and set input from a device. The challenge A
+  guard turns the silent overwrite into a kept, reported statement (the
+  corpus `esi` template shows it); finding 5 closes the structured doors.
+- Incompatible but valid: a hand-written set script that sets a nokeyword
+  leaf twice to different values is now reported rather than last-wins; a
+  device's own display never does so, and keyword leaves already accumulated
+  (`host-name r1` then `r2` gives both). Loud over quiet, as decided.
+- Shared blind spot: the corpus and the field-warning budget were the
+  independent evidence the first review called for; both now run and pass,
+  and the developer guide names them before review.
+- Second answer: `_leaf_enum` and `walk()` read one tree; `_is_keyword_field`
+  is the one remaining second (third) spelling, finding 11.
+- Figures: all rerun (item 10); the corpus and break figures match the record
+  to the unit.
+
+### Carry-forward (not this change's; not worse than master)
+
+- A surplus token after a complete key of an entry whose other children
+  include a nokeyword enum leaf lands in that leaf and nothing reports it:
+  `virtual-link neighbor-id 10.255.255.1 transit-area 0.0.0.2 EXTRA` reads
+  `"enable-disable": "EXTRA"` (enum `[disable]`, taken as a fragment) with no
+  diagnostic, and the grammar accepts the line; the `name`-keyed `interface
+  ge-0/0/0.0 EXTRA` does the same on the untouched path. The keyword-boundary
+  follow-up is the place for it, or a rule that a one-value nokeyword enum is
+  closed.
+- The grammar's keyword boundaries (strict xfail) and the other owner-deferred
+  items were not re-measured.
+
+### Verdict
+
+Mergeable from this review: every owner decision is implemented and probed,
+the corpus and grammar move only as decided, the break figure is the recorded
+one, and the full check passes. Finding 11 is a simplification the owner may
+take now or carry forward; no specification challenge is open.

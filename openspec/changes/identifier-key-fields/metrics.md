@@ -74,5 +74,10 @@
 | Addition beyond the proposal: a full statement after a bare keyword kept whole under the same key is kept whole too | fix pass: the reader raised `TypeError`/`AttributeError` there (finding 6 input) |
 | Owner-directed addition: `apply-macro` one to three values in reader and grammar | relayed mid fix pass, device probe round 5 |
 | Owner-directed addition: device-truth captures `keyed-entries-virtual-link.*` and `keyed-entries-apply-macro.*` | relayed mid fix pass, round-5 synthetic values |
+| Context expansion: private_test_data/jvd, private_test_data/captures (through `review_tools.py corpus`, `grammar`, `compare`, branch only) | phase-6 re-review: unplaced 68,172, other field warnings 329, 35 failing files on both sides; grammar sample 10,970 / 30, newly accepted 2 (both decided) |
+| Context expansion: private_test_data/identifier-key-fields-device-checks-5.out, -5-v2.out (opened; cited as device probe, vMX 23.2R2-S7.5; nothing copied) | phase-6 re-review: the round-5 facts behind challenge B, finding 7 and `apply-macro` |
+| Context expansion: master and fc22c57 `junos-json-schema.json.gz` (git show into the scratchpad) | phase-6 re-review: declared break re-measured, 8,394 / 0, 10,792 / 2,558, 11,547 / 2,560 |
+| Context expansion: private_test_data/jvd ma4_mx204.conf | phase-6 re-review: finding 4 timing, 4.2 s structured to set |
+| Context expansion: private_test_data/bugreport.txt | phase-6 re-review: the synthetic fixture for the reference probe |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
