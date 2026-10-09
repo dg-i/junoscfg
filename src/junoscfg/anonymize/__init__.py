@@ -2,8 +2,7 @@
 
 Public API::
 
-    from junoscfg.anonymize import anonymize
-    from junoscfg.anonymize.config import AnonymizeConfig
+    from junoscfg.anonymize import AnonymizeConfig, anonymize
 
     config = AnonymizeConfig(ips=True, salt="my-salt")
     result = anonymize(ir_dict, config)

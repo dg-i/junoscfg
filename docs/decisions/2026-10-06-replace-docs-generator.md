@@ -25,10 +25,10 @@ Replace the generator. Until a replacement is chosen all three entries stay
 approved in `[tool.template.toolbox]`, because the site builds today:
 `mkdocs build --strict` is clean.
 
-The binding constraint on any replacement is the API reference, not the theme.
-`mkdocs.yml` carries over thirty nav entries under `api/internals/` that
-mkdocstrings generates from docstrings; a generator that cannot reproduce those
-from the same source makes this a documentation rewrite rather than a swap.
+The binding constraint on any replacement is the package-door API reference,
+not the theme. Internal-module pages were removed when the documentation
+surface was narrowed; a replacement must still generate the supported package
+doors from docstrings rather than introducing a second authored API contract.
 
 ## Consequences
 

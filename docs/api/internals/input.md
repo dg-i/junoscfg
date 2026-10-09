@@ -1,3 +1,0 @@
-# junoscfg.input
-
-::: junoscfg.input

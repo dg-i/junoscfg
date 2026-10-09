@@ -63,7 +63,7 @@ Version lives in three places that move together: `pyproject.toml`,
 
 ## Documentation Checklist
 
-1. Every `@click.option` in `cli.py` has a row in `docs/guide/cli.md`.
+1. Every `@click.option` in `cli.py` is in generated `docs/guide/cli-reference.md`.
 2. Every name in a module's `__all__` appears in its `docs/api/` page.
 3. Python snippets use real names from `__all__`.
 4. Any `src/junoscfg/...` path in `docs/architecture/` points at a real file.

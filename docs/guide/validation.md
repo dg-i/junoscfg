@@ -146,7 +146,7 @@ if not result.valid:
 For repeated validation, use `JunosValidator` to avoid reloading artifacts:
 
 ```python
-from junoscfg.validate.validator import JunosValidator
+from junoscfg.validate import JunosValidator
 
 validator = JunosValidator()
 
@@ -260,19 +260,14 @@ Skip field-level validation entirely:
 
 ### Python API
 
-Use `FieldValidator` directly for standalone validation:
+Use the conversion package door for standalone validation:
 
 ```python
-from junoscfg.convert import validate_ir, to_dict
-from junoscfg.convert.field_validator import FieldValidator, FieldValidationResult
+from junoscfg.convert import to_dict, validate_ir
 
 # Validate via the convenience function
 ir = to_dict('{"configuration":{"system":{"host-name":"router1"}}}', "json")
 result = validate_ir(ir)
-
-# Or use FieldValidator directly
-validator = FieldValidator()
-result = validator.validate(ir)
 
 if not result.valid:
     for error in result.errors:
@@ -318,7 +313,7 @@ junoscfg schema generate netconf.xml -o ./my-artifacts/
 From Python:
 
 ```python
-from junoscfg.validate.artifact_builder import ArtifactBuilder
+from junoscfg.validate import ArtifactBuilder
 
 builder = ArtifactBuilder()
 artifacts = builder.build("output.xml", "./my-artifacts/")
@@ -337,7 +332,7 @@ result = validate_json(config, artifacts_dir="./my-artifacts/")
 Or use `JunosValidator`:
 
 ```python
-from junoscfg.validate.validator import JunosValidator
+from junoscfg.validate import JunosValidator
 
 validator = JunosValidator(artifacts_dir="./my-artifacts/")
 result = validator.validate_json(config)

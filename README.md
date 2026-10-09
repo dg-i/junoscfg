@@ -77,8 +77,7 @@ print(result.valid)  # True
 result = convert_config(source, from_format=Format.JSON, to_format=Format.SET, strict=True)
 
 # Anonymize a configuration
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
+from junoscfg.anonymize import AnonymizeConfig, anonymize
 
 config = AnonymizeConfig(ips=True, passwords=True, salt="my-salt")
 config.expand_all()

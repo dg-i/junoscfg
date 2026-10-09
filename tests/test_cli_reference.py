@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
-from tools.generate_cli_reference import render_cli_reference
 
 from junoscfg.cli import main
+from tools.generate_cli_reference import render_cli_reference
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -44,4 +44,12 @@ def test_generated_reference_covers_every_command_and_declared_option() -> None:
 
 
 def test_generated_reference_is_deterministic() -> None:
-    assert render_cli_reference() == render_cli_reference()
+    expected = render_cli_reference()
+
+    # Click caches its synthesized help option on each command. Prime that
+    # cache with a conflicting standalone context to prove generation reads
+    # the nested command context instead of process history.
+    for _, command in _walk_commands(main):
+        command.get_help_option(click.Context(command, help_option_names=["--help"]))
+
+    assert render_cli_reference() == expected

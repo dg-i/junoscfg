@@ -5,10 +5,10 @@
 
 ## 2. Change
 
-- [ ] 2.1 Add the Click-tree reference renderer and generated documentation page.
-- [ ] 2.2 Separate authored CLI guidance from the generated option reference.
-- [ ] 2.3 Remove internal-module API pages from publication and correct package-door examples.
-- [ ] 2.4 Update repository documentation rules and changelog.
+- [x] 2.1 Add the Click-tree reference renderer and generated documentation page.
+- [x] 2.2 Separate authored CLI guidance from the generated option reference.
+- [x] 2.3 Remove internal-module API pages from publication and correct package-door examples.
+- [x] 2.4 Update repository documentation rules and changelog.
 - [ ] 2.5 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence
