@@ -116,8 +116,11 @@ def _build_node(
                     pattern_negated = True
                     pattern = pattern[1:]
 
-    # Determine cardinality
-    is_list = element.get("maxOccurs") == "unbounded"
+    # Determine cardinality: any `maxOccurs` but 1 is a list, as the XSD
+    # states. Counting only `unbounded` left 385 declarations on 25.2R2 --
+    # `forwarding-classes class` (16), `commit peers` (3) -- single nodes, so a
+    # second entry replaced the first.
+    is_list = element.get("maxOccurs", "1") != "1"
 
     # Determine type
     type_attr = element.get("type", "")

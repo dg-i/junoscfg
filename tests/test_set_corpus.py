@@ -36,6 +36,11 @@ CORRECTLY_REJECTED = {
     "set system host-name r1 apply-groups foo": "apply-groups after a leaf value",
     "set system host-name r1 apply-groups-except foo": "apply-groups after a leaf value",
     "set system host-name router1 apply-groups mygroup": "apply-groups after a leaf value",
+    # The device rejects a bare value under `system location` and takes
+    # `location building <name>` (device probe, vMX 23.2R2-S7.5). Listed as
+    # an over-rejection until that probe; the grammar rejects it again since
+    # any `maxOccurs` but 1 is a list (phase-6 review, challenge A).
+    "set system location dc-a": "location takes keyworded children, not a value",
 }
 
 # Intentionally unsupported — device-valid syntax that raw junoscfg set input

@@ -635,6 +635,11 @@ class TestEntryKeysComeFromTheTree:
         their key fields are 0.14.0's own, less 56 whose children turned out
         to be their key: 24 flowspec `port-range`, 16 `tunnel-attribute` and
         16 `then community` lists.
+
+        Owner decision on challenge A (phase-6 review): any `maxOccurs` but 1
+        is a list. Re-measured then: 102 nodes more carry `o`, none fewer,
+        every one a node that became a list by it (48 `algorithm`, 16
+        `host-discovery`, ...); 88 hold a child beyond their key fields.
         """
         from tests.keyed_entries import KEYED_XSD, artifact_json, build_artifacts, node
 
@@ -670,9 +675,9 @@ class TestEntryKeysComeFromTheTree:
                         keys_only += 1
                 stack.append((here, child))
         with_others.sort()
-        assert (len(with_others), keys_only) == (3464, 1272)
+        assert (len(with_others), keys_only) == (3552, 1286)
         digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
-        assert digest == "98610a68f9702e7536d01355a13bf70d75edf6efdeb6ebe08731aec800890350"
+        assert digest == "b6e5fa4ba01787cdc0396e170b5a14884a423056017d4db7d8a9f644f1b17807"
 
 
 class TestKeyedEntriesAgreeAcrossReaders:

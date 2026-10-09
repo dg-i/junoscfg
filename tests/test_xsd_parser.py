@@ -321,6 +321,44 @@ class TestCardinality:
         assert system is not None
         assert system.is_list is False
 
+    def test_a_numeric_max_occurs_is_list(self):
+        """Any `maxOccurs` but 1 is a list, as the XSD states.
+
+        `forwarding-classes class` is `maxOccurs="16"` and `commit peers`
+        `maxOccurs="3"`; read as single containers, a second entry replaced
+        the first without a word (phase-6 review, challenge A).
+        """
+        xsd = _minimal_xsd("""
+        <xsd:element name="configuration">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="class" minOccurs="0" maxOccurs="16">
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="name" type="xsd:string">
+                        <xsd:annotation><xsd:appinfo>
+                          <flag>identifier</flag><flag>nokeyword</flag>
+                        </xsd:appinfo></xsd:annotation>
+                      </xsd:element>
+                      <xsd:element name="queue-num" type="xsd:string" minOccurs="0"/>
+                    </xsd:sequence>
+                  </xsd:complexType>
+                </xsd:element>
+                <xsd:element name="source-port" minOccurs="0" maxOccurs="32"
+                             type="xsd:string"/>
+                <xsd:element name="host-name" minOccurs="0" maxOccurs="1"
+                             type="xsd:string"/>
+              </xsd:choice>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        """)
+        root = parse_xsd(xsd)
+        assert root.children["class"].is_list is True
+        assert root.children["source-port"].is_list is True
+        assert root.children["host-name"].is_list is False
+
 
 class TestSkipElements:
     def test_skips_undocumented_ref(self):
