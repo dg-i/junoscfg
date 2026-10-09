@@ -7,11 +7,11 @@
 
 ## 2. Change
 
-- [x] 2.1 Remove `json_to_yaml()` and route its useful characterization tests
+- [ ] 2.1 Remove `json_to_yaml()` and route its useful characterization tests
   through `convert_config()`.
-- [x] 2.2 Remove `xml_output.py` and preserve the package-door exception in
+- [ ] 2.2 Remove `xml_output.py` and preserve the package-door exception in
   `convert.output.from_dict()`.
-- [x] 2.3 Remove stale module documentation and add the changelog fragment.
+- [ ] 2.3 Remove stale module documentation and add the changelog fragment.
 - [ ] 2.4 Run focused tests and the locked full repository check.
 
 ## 3. Review and evidence

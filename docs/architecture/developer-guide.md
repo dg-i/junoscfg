@@ -208,7 +208,7 @@ Each output module renders the dict IR to a target format:
 | `yaml_output.py` | `dict_to_yaml()` | Wraps and dumps YAML |
 | `set_output.py` | `dict_to_set()` | Uses `DictWalker` + `SetWalkOutput` |
 | `structured_output.py` | `dict_to_structured()` | Uses `DictWalker` + `StructuredWalkOutput` |
-| `output/__init__.py` | rejects unsupported XML output | `convert_config()` |
+| `xml_output.py` | `dict_to_xml()` | Not yet implemented |
 
 ### Strategy pattern: DictWalker and WalkOutput
 
