@@ -1,0 +1,33 @@
+// Junos set command grammar (auto-generated, structural only)
+// Validates: set <path> [value]
+
+start: SET configuration
+
+universal_statement: "apply-flags" QUOTED_OR_VALUE | "apply-groups" QUOTED_OR_VALUE | "apply-groups-except" QUOTED_OR_VALUE | "apply-macro" QUOTED_OR_VALUE+
+
+apply_macro__list: QUOTED_OR_VALUE ("data" data__list | universal_statement)?
+
+community__list__ol__v33f80b408c: QUOTED_OR_VALUE (universal_statement | ("invert-match" | "members" QUOTED_OR_VALUE)+)?
+
+configuration: "policy-options" policy_options__vdd28edd9a0? | universal_statement
+
+data__list: QUOTED_OR_VALUE ("name" QUOTED_OR_VALUE | "value" QUOTED_OR_VALUE | universal_statement)?
+
+policy_options__vdd28edd9a0: "community" community__list__ol__v33f80b408c | "policy-statement" policy_statement__list | universal_statement
+
+policy_statement__list: QUOTED_OR_VALUE ("description" QUOTED_OR_VALUE | "term" term__list | universal_statement)?
+
+term__list: QUOTED_OR_VALUE ("accept" | "metric" QUOTED_OR_VALUE | universal_statement)?
+
+// Terminals
+SET: "set"
+DEACTIVATE: "deactivate"
+VALUE: /\S+/
+QUOTED: /"[^"]*"/
+EXPRESSION: /\([^\n]*\)/
+QUOTED_OR_VALUE: QUOTED | VALUE
+ALGEBRA_OR_VALUE: QUOTED | EXPRESSION | VALUE
+
+// Whitespace handling
+%import common.WS
+%ignore WS

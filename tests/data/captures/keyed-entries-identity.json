@@ -1,0 +1,35 @@
+{
+    "configuration" : {
+        "policy-options" : {
+            "policy-statement" : [
+            {
+                "name" : "SAMPLE-POLICY",
+                "term" : [
+                {
+                    "name" : "T2",
+                    "from" : {
+                        "as-path-neighbors" : [
+                        {
+                            "list-type" : "as-list",
+                            "list-name" : "SAMPLE-AS-LIST"
+                        },
+                        {
+                            "list-type" : "as-list-group",
+                            "list-name" : "SAMPLE-AS-LIST"
+                        },
+                        {
+                            "list-type" : "as-list",
+                            "list-name" : "SAMPLE-AS-LIST-2"
+                        }
+                        ]
+                    },
+                    "then" : {
+                        "accept" : [null]
+                    }
+                }
+                ]
+            }
+            ]
+        }
+    }
+}

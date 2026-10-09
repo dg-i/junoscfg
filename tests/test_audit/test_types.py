@@ -93,14 +93,18 @@ TYPE_SCENARIOS: list[TypeScenario] = [
         type_name="as-list",
         def_lines=(f"set policy-options as-list {TARGET} members 64496",),
         ref_lines=(
-            f"set policy-options policy-statement p1 term 1 from as-path-neighbors {TARGET}",
+            f"set policy-options policy-statement p1 term 1 from as-path-neighbors as-list "
+            f"{TARGET}",
         ),
         expected_def_path=("policy-options", "as-list", TARGET),
     ),
     TypeScenario(
         type_name="as-list-group",
         def_lines=(f"set policy-options as-list-group {TARGET} as-list a1 members 64498",),
-        ref_lines=(f"set policy-options policy-statement p1 term 1 from as-path-origins {TARGET}",),
+        ref_lines=(
+            f"set policy-options policy-statement p1 term 1 from as-path-origins as-list-group "
+            f"{TARGET}",
+        ),
         expected_def_path=("policy-options", "as-list-group", TARGET),
     ),
     TypeScenario(

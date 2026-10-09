@@ -1,0 +1,18 @@
+<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2-S7.5/junos">
+    <configuration>
+            <policy-options>
+                <policy-statement>
+                    <name>SAMPLE-POLICY</name>
+                    <term>
+                        <name>T3</name>
+                        <then>
+                            <community>
+                                <add/>
+                                <community-name>SAMPLE-COMM</community-name>
+                            </community>
+                        </then>
+                    </term>
+                </policy-statement>
+            </policy-options>
+    </configuration>
+</rpc-reply>

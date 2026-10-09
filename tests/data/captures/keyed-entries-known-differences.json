@@ -1,0 +1,17 @@
+{
+    "about": "Structured shapes the device displays and junoscfg does not reproduce. Structured output keeps today's one-line flag (identifier-key-fields, conversion/entry-keys); each case pins both shapes so a change to either is seen. Values are synthetic; shapes from a vMX on 23.2R2-S7.5.",
+    "cases": [
+        {
+            "case": "static route with one leaf child",
+            "input": {"configuration": {"routing-options": {"static": {"route": [{"name": "198.51.100.0/24", "next-hop": ["10.255.255.1"]}]}}}},
+            "device": "route 198.51.100.0/24 next-hop 10.255.255.1;",
+            "junoscfg": "route 198.51.100.0/24 {\n            next-hop 10.255.255.1;\n        }"
+        },
+        {
+            "case": "attributes-match",
+            "input": {"configuration": {"event-options": {"policy": [{"name": "SAMPLE-EVENT-POLICY", "attributes-match": [{"from-event-attribute": "snmp_trap_link_down.interface-name", "condition": "matches", "to-event-attribute-value": "^xe-"}]}]}}},
+            "device": "attributes-match {\n            snmp_trap_link_down.interface-name matches \"^xe-\";\n        }",
+            "junoscfg": "attributes-match snmp_trap_link_down.interface-name matches \"^xe-\";"
+        }
+    ]
+}

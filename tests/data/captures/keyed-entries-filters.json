@@ -1,0 +1,48 @@
+{
+    "configuration" : {
+        "policy-options" : {
+            "policy-statement" : [
+            {
+                "name" : "SAMPLE-POLICY",
+                "term" : [
+                {
+                    "name" : "T7",
+                    "from" : {
+                        "source-address-filter" : [
+                        {
+                            "address" : "198.51.100.0/24",
+                            "exact" : [null],
+                            "accept" : [null]
+                        }
+                        ]
+                    }
+                },
+                {
+                    "name" : "T6",
+                    "from" : {
+                        "route-filter" : [
+                        {
+                            "address" : "198.51.100.0/24",
+                            "exact" : [null],
+                            "accept" : [null]
+                        }
+                        ]
+                    }
+                },
+                {
+                    "name" : "T8",
+                    "from" : {
+                        "route-filter" : [
+                        {
+                            "address" : "198.51.100.0/24",
+                            "orlonger" : [null]
+                        }
+                        ]
+                    }
+                }
+                ]
+            }
+            ]
+        }
+    }
+}

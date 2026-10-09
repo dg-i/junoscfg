@@ -78,6 +78,54 @@ class TestCliValidation:
         )
         assert result.exit_code == 0, result.output
 
+    def test_validate_json_with_an_as_list_reference(self):
+        """Spec: identifier-key-fields, validation/keyed-entries. Bundled artefacts."""
+        import json
+
+        def document(entry: dict) -> str:
+            return json.dumps(
+                {
+                    "configuration": {
+                        "policy-options": {
+                            "policy-statement": [
+                                {
+                                    "name": "SAMPLE-POLICY",
+                                    "term": [
+                                        {"name": "T1", "from": {"as-path-neighbors": [entry]}}
+                                    ],
+                                }
+                            ]
+                        }
+                    }
+                }
+            )
+
+        runner = CliRunner()
+        good = document({"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"})
+        result = runner.invoke(main, ["-v", "-i", "json"], input=good)
+        assert result.exit_code == 0, result.output
+        bad = document({"name": "as-list"})
+        result = runner.invoke(main, ["-v", "-i", "json"], input=bad)
+        assert result.exit_code != 0, result.output
+
+    def test_validate_set_with_an_as_list_reference(self):
+        """Spec: identifier-key-fields, set-command-validation. Bundled grammar."""
+        term = "set policy-options policy-statement SAMPLE-POLICY term T1 from"
+        runner = CliRunner()
+        for line in (
+            f"{term} as-path-neighbors as-list SAMPLE-AS-LIST",
+            f"{term} as-path-origins as-list-group SAMPLE-ASG",
+            f"{term} route-filter 198.51.100.0/24 exact accept",
+        ):
+            result = runner.invoke(main, ["-v", "-i", "set"], input=line + "\n")
+            assert result.exit_code == 0, (line, result.output)
+        for line in (
+            f"{term} as-path-neighbors as-list",
+            f"{term} as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA",
+        ):
+            result = runner.invoke(main, ["-v", "-i", "set"], input=line + "\n")
+            assert result.exit_code != 0, (line, result.output)
+
 
 class TestCliSchemaInfo:
     def test_schema_info(self, artifacts_dir):
@@ -100,3 +148,41 @@ class TestSetBracketSyntaxRejection:
 
         assert result.exit_code == 1
         assert f"Unsupported bracket syntax in set input on line 1:\n{line}" in result.output
+
+
+# ── identifier-key-fields: CLI `-v` on keyed entries (bundled artefacts) ──
+
+
+def _validate(fmt: str, text: str):
+    return CliRunner().invoke(main, ["-v", "-i", fmt], input=text)
+
+
+class TestCliValidationOfKeyedEntries:
+    """Spec: identifier-key-fields, validation/keyed-entries and
+    set-command-validation. The delta's two test ids live in
+    `TestCliValidation`; these extend them to the other keyed lists."""
+
+    def test_validate_yaml_with_an_as_list_reference(self) -> None:
+        import yaml
+
+        document = {
+            "configuration": {
+                "policy-options": {
+                    "policy-statement": [
+                        {
+                            "name": "SAMPLE-POLICY",
+                            "from": {
+                                "as-path-origins": [
+                                    {"list-type": "as-list-group", "list-name": "SAMPLE-ASG"}
+                                ]
+                            },
+                        }
+                    ]
+                }
+            }
+        }
+        assert _validate("yaml", yaml.safe_dump(document)).exit_code == 0
+        document["configuration"]["policy-options"]["policy-statement"][0]["from"][
+            "as-path-origins"
+        ] = [{"name": "as-list-group"}]
+        assert _validate("yaml", yaml.safe_dump(document)).exit_code != 0

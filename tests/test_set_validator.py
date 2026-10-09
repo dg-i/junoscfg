@@ -340,3 +340,69 @@ class TestTheShippedGrammarModelsTheApplyStatements:
         """Under a keyword container; after a list entry name a bare token is
         taken as a value, which is the grammar's general looseness, not this."""
         assert bundled_set_validator.validate("set system apply-groups").valid is False
+
+
+# ── identifier-key-fields: the shipped grammar and keyed entries ─────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/validation/
+# set-command-validation, "A keyed entry takes exactly its key values". The
+# lines are those a vMX on 23.2R2-S7.5 accepted and rejected, with the
+# probe's synthetic names.
+
+_PROBE_T = "set policy-options policy-statement SAMPLE-POLICY term T1 from"
+_PROBE_THEN = "set policy-options policy-statement SAMPLE-POLICY term T1 then"
+_PROBE_EVENT = "set event-options policy SAMPLE-EVENT-POLICY attributes-match"
+
+
+class TestTheShippedGrammarTakesKeyedEntries:
+    ACCEPTED = (
+        f"{_PROBE_T} as-path-neighbors as-list SAMPLE-AS-LIST",
+        "set policy-options policy-statement SAMPLE-POLICY from as-path-neighbors as-list "
+        "SAMPLE-AS-LIST",
+        f"{_PROBE_T} as-path-origins as-list-group SAMPLE-AS-LIST-GROUP",
+        f"{_PROBE_T} as-path-transits as-list SAMPLE-AS-LIST-2",
+        f"{_PROBE_T} as-path-neighbors as-list-group SAMPLE-AS-LIST",
+        f"{_PROBE_T} route-filter 198.51.100.0/24 exact accept",
+        f"{_PROBE_T} route-filter 198.51.100.0/24 orlonger",
+        f"{_PROBE_T} source-address-filter 198.51.100.0/24 exact accept",
+        f"{_PROBE_THEN} community add SAMPLE-COMM",
+        f"{_PROBE_THEN} community delete SAMPLE-COMM",
+        f"{_PROBE_THEN} community set SAMPLE-COMM",
+        f"{_PROBE_THEN} community SAMPLE-COMM add",
+        f'{_PROBE_EVENT} snmp_trap_link_down.interface-name matches "^xe-"',
+        f'{_PROBE_EVENT} ping.test-owner matches "^uptime$"',
+        "set groups SAMPLE-GROUP policy-options policy-statement <*> term T1 from "
+        "as-path-neighbors as-list SAMPLE-AS-LIST",
+        "set logical-systems SAMPLE-LS policy-options policy-statement SAMPLE-POLICY term T1 "
+        "from as-path-neighbors as-list SAMPLE-AS-LIST",
+    )
+    REJECTED = (
+        f"{_PROBE_T} as-path-neighbors as-list",
+        f"{_PROBE_T} as-path-neighbors",
+        f"{_PROBE_T} as-path-neighbors SAMPLE-AS-LIST",
+        f"{_PROBE_T} as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA",
+        f"{_PROBE_T} route-filter 198.51.100.0/24 next-policy",
+        f"{_PROBE_T} route-filter 198.51.100.0/24 exact SAMPLE-EXTRA",
+        f'{_PROBE_EVENT} snmp_trap_link_down.interface-name matches "^xe-" SAMPLE-EXTRA',
+        "set apply-groups SAMPLE-GROUP SAMPLE-GROUP-2",
+    )
+
+    def test_device_probe_lines(self, bundled_set_validator) -> None:
+        import lark
+
+        for line in self.ACCEPTED:
+            bundled_set_validator._parser.parse(line)  # noqa: SLF001
+        rejected_by_parser = []
+        for line in self.REJECTED:
+            try:
+                bundled_set_validator._parser.parse(line)  # noqa: SLF001
+            except lark.exceptions.UnexpectedInput:
+                rejected_by_parser.append(line)
+        assert rejected_by_parser == list(self.REJECTED)
+
+        validator = JunosValidator()
+        assert validator.validate_set("\n".join(self.ACCEPTED)).valid
+        for line in self.REJECTED:
+            assert not validator.validate_set(line).valid, line
+        assert validate_config("\n".join(self.ACCEPTED), format=Format.SET).valid
+        assert not validate_set(self.REJECTED[0]).valid

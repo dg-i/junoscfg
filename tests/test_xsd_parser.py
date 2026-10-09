@@ -382,3 +382,99 @@ class TestDollarPrefix:
         node = root.children.get("$junos-interface-ifd-name")
         assert node is not None
         assert node.is_leaf is True
+
+
+def _entry_keys(found: dict) -> tuple:
+    """The kernel's answer, imported late so a missing helper fails one assertion."""
+    from junoscfg.display import entry_keys
+
+    return entry_keys(found)
+
+
+class TestEveryDeclaredChildIsKept:
+    """The parser keeps every element a sequence declares, in declared order.
+
+    `_build_from_complex_type` kept a sequence's first choice and dropped the
+    rest: the identifier elements -- `list-type` and `list-name` among them,
+    which left `as-path-neighbors` a childless presence list -- and any second
+    choice, route-filter's actions among them. Spec:
+    `openspec/changes/identifier-key-fields/specs/schema-pipeline/entry-key-fields`.
+    Observed through the structure tree the parsed XSD is written as, so the
+    tests hold whatever the parser stores the keys in.
+    """
+
+    @staticmethod
+    def _tree(tmp_path) -> dict:
+        from tests.keyed_entries import KEYED_XSD, structure_tree
+
+        return structure_tree(KEYED_XSD, tmp_path)
+
+    def test_two_identifiers_beside_a_comment_only_choice(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        tree = self._tree(tmp_path)
+        for slot in ("as-path-neighbors", "as-path-origins"):
+            for parent in (("from",), ("term", "from")):
+                found = node(tree, "policy-options", "policy-statement", *parent, slot)
+                assert list(found["c"]) == ["list-type", "list-name"], (parent, slot)
+                assert found["k"] == ["list-type", "list-name"]
+                assert found.get("L") is True
+                assert "p" not in found, "still a childless presence list"
+                assert _entry_keys(found) == ("list-type", "list-name")
+                list_type = found["c"]["list-type"]
+                assert tree["_enums"][list_type["e"]] == ["as-list", "as-list-group"]
+
+    def test_one_identifier_other_than_name(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        server = node(self._tree(tmp_path), "system", "ntp", "server")
+        assert list(server["c"]) == ["address", "version", "prefer"]
+        assert server["k"] == ["address"]
+        assert "name" not in server["c"]
+        assert _entry_keys(server) == ("address",)
+
+    def test_name_is_a_key_child(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        tree = self._tree(tmp_path)
+        for path in (
+            ("policy-options", "policy-statement"),
+            ("policy-options", "policy-statement", "term"),
+            ("policy-options", "community"),
+            ("event-options", "policy"),
+        ):
+            found = node(tree, *path)
+            assert next(iter(found["c"])) == "name", path
+            assert found["c"]["name"].get("l") is True
+            assert "k" not in found, f"{path}: `k` is omitted where the key is name"
+            assert _entry_keys(found) == ("name",)
+
+    def test_a_second_choice_is_kept(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        tree = self._tree(tmp_path)
+        route_filter = node(
+            tree, "policy-options", "policy-statement", "term", "from", "route-filter"
+        )
+        assert list(route_filter["c"]) == ["address", "exact", "orlonger", "accept", "reject"]
+        for action in ("accept", "reject"):
+            assert route_filter["c"][action].get("p") is True
+
+    def test_an_identifier_choice_is_one_key_field(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        tree = self._tree(tmp_path)
+        term = ("policy-options", "policy-statement", "term")
+        route_filter = node(tree, *term, "from", "route-filter")
+        assert route_filter["k"] == ["address", ["exact", "orlonger"]]
+        assert _entry_keys(route_filter) == ("address", ("exact", "orlonger"))
+
+        community = node(tree, *term, "then", "community")
+        assert list(community["c"]) == ["add", "delete", "community-name"]
+        assert community["k"] == [["add", "delete"], "community-name"]
+        assert _entry_keys(community) == (("add", "delete"), "community-name")
+
+        match = node(tree, "event-options", "policy", "attributes-match")
+        assert list(match["c"]) == ["from-event-attribute", "condition", "to-event-attribute-value"]
+        assert match["k"] == ["from-event-attribute", "condition", "to-event-attribute-value"]
+        assert tree["_enums"][match["c"]["condition"]["e"]] == ["equals", "starts-with", "matches"]

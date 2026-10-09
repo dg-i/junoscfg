@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from junoscfg.convert.field_validator import (
+    UNPLACED,
     FieldError,
     FieldValidationError,
     FieldValidationResult,
@@ -811,6 +812,22 @@ class TestAnUnmodelledStatementIsReported:
         )
         assert result.valid is True, result.errors
 
+    def test_an_incomplete_statement_is_unplaced(self) -> None:
+        """A partial key reaches validation whole and is reported `UNPLACED`.
+
+        Spec: identifier-key-fields, conversion/entry-keys, "A statement the
+        reader cannot complete is kept whole". The reader used to make
+        `{"name": "as-list"}` of it, which validated."""
+        from junoscfg.convert import validate_ir
+        from tests.keyed_entries import TERM, set_ir
+
+        ir = set_ir(f"{TERM} from as-path-neighbors as-list")
+        result = validate_ir({"configuration": ir})
+        assert [e.value for e in result.errors] == ["as-path-neighbors as-list"]
+        assert result.errors[0].path.endswith("term.from")
+        assert result.errors[0].message.startswith("'as-path-neighbors as-list'")
+        assert result.errors[0].expected == UNPLACED
+
     def test_a_universal_statement_is_not(self) -> None:
         result = FieldValidator(schema=self._system(name=_leaf())).validate(
             {
@@ -993,3 +1010,137 @@ class TestFullConfigValidation:
         assert isinstance(result.valid, bool)
         assert isinstance(result.errors, list)
         assert isinstance(result.warnings, list)
+
+
+# ── identifier-key-fields: keyed entries against the bundled tree ────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/validation/keyed-entries,
+# "Field validation checks each key field as a leaf". Through `validate_ir`,
+# the door `convert_config(validate=True)` uses.
+
+
+def _policy(where: str, entries: dict, *, term: bool = True) -> dict:
+    body = {where: entries}
+    statement: dict = {"name": "SAMPLE-POLICY"}
+    if term:
+        statement["term"] = [{"name": "T1", **body}]
+    else:
+        statement.update(body)
+    return {"policy-options": {"policy-statement": [statement]}}
+
+
+def _event(*matches: dict) -> dict:
+    return {
+        "event-options": {
+            "policy": [{"name": "SAMPLE-EVENT-POLICY", "attributes-match": list(matches)}]
+        }
+    }
+
+
+_MATCH = {
+    "from-event-attribute": "ping.test-owner",
+    "condition": "matches",
+    "to-event-attribute-value": "^uptime$",
+}
+
+
+class TestKeyedEntries:
+    @staticmethod
+    def _errors(ir: dict) -> list:
+        from junoscfg.convert import validate_ir
+
+        return validate_ir({"configuration": ir}).errors
+
+    @pytest.mark.parametrize("term", [True, False])
+    @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
+    def test_a_device_keyed_as_list_reference_is_clean(self, slot: str, term: bool) -> None:
+        for list_type in ("as-list", "as-list-group"):
+            entry = {"list-type": list_type, "list-name": "SAMPLE-AS-LIST"}
+            assert self._errors(_policy("from", {slot: [entry]}, term=term)) == []
+        grouped = {"groups": [{"name": "SAMPLE-GROUP", **_policy("from", {slot: [entry]})}]}
+        assert self._errors(grouped) == []
+
+    def test_a_key_value_is_checked_against_its_leaf(self) -> None:
+        """`1` is outside `list-type`'s enum; the device rejects it at `set`."""
+        bad = {"list-type": "1", "list-name": "SAMPLE-AS-LIST"}
+        errors = self._errors(_policy("from", {"as-path-neighbors": [bad]}))
+        assert len(errors) == 1
+        assert errors[0].path.endswith("as-path-neighbors.list-type")
+        assert errors[0].value == "1"
+        assert errors[0].expected != UNPLACED
+
+        errors = self._errors(_event(dict(_MATCH, condition="resembles")))
+        assert [e.path.rsplit(".", 1)[-1] for e in errors] == ["condition"]
+
+    @pytest.mark.parametrize(
+        ("ir", "key"),
+        [
+            (_policy("from", {"as-path-neighbors": [{"name": "as-list"}]}), "name"),
+            (
+                _policy(
+                    "from",
+                    {
+                        "as-path-neighbors": [
+                            {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST", "name": "x"}
+                        ]
+                    },
+                ),
+                "name",
+            ),
+            (_event({"name": "ping.test-owner", "_v0": "matches", "_v1": "^uptime$"}), "_v0"),
+            (_event({"name": "ping.test-owner", "_v0": "matches", "_v1": "^uptime$"}), "_v1"),
+            (
+                _policy("from", {"source-address-filter": [{"name": "198.51.100.0/24"}]}),
+                "name",
+            ),
+        ],
+    )
+    def test_name_under_a_list_keyed_otherwise_is_unplaced(self, ir: dict, key: str) -> None:
+        errors = self._errors(ir)
+        assert key in [e.value for e in errors]
+        placed = next(e for e in errors if e.value == key)
+        assert placed.expected == UNPLACED
+
+    def test_attributes_match_takes_its_three_fields(self) -> None:
+        spaced = dict(_MATCH, **{"to-event-attribute-value": "^up time$"})
+        for condition in ("equals", "starts-with", "matches"):
+            assert self._errors(_event(dict(_MATCH, condition=condition), spaced)) == []
+
+    def test_a_route_filter_action_is_clean(self) -> None:
+        for slot in ("route-filter", "source-address-filter"):
+            for match in ("exact", "orlonger", "longer"):
+                entry = {"address": "198.51.100.0/24", match: [None], "accept": [None]}
+                assert self._errors(_policy("from", {slot: [entry]})) == [], (slot, match)
+        plf = {"list_name": "SAMPLE-PL", "orlonger": [None], "accept": [None]}
+        assert self._errors(_policy("from", {"prefix-list-filter": [plf]})) == []
+        for action in ("add", "delete", "set"):
+            community = {action: [None], "community-name": "SAMPLE-COMM"}
+            assert self._errors(_policy("then", {"community": [community]})) == [], action
+
+
+class TestAnIncompleteStatementIsUnplaced:
+    """Kept whole by the reader, reported by validation; spec: entry-keys."""
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set policy-options policy-statement SAMPLE-POLICY term T1 from as-path-neighbors "
+            "as-list",
+            "set policy-options policy-statement SAMPLE-POLICY term T1 from as-path-neighbors "
+            "as-list SAMPLE-AS-LIST SAMPLE-EXTRA",
+            "set policy-options policy-statement SAMPLE-POLICY term T1 from route-filter "
+            "198.51.100.0/24 next-policy",
+            "set apply-groups SAMPLE-GROUP SAMPLE-GROUP-2",
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner matches",
+        ],
+    )
+    def test_each_door_reports_it(self, line: str) -> None:
+        from junoscfg import Format, convert_config
+        from junoscfg.convert import validate_ir
+        from tests.keyed_entries import set_ir
+
+        result = validate_ir({"configuration": set_ir(line)})
+        assert not result.valid
+        assert any(e.expected == UNPLACED for e in result.errors), result.errors
+        with pytest.raises(FieldValidationError):
+            convert_config(line, from_format=Format.SET, to_format=Format.JSON, strict=True)

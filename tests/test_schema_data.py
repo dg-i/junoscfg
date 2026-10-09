@@ -171,3 +171,43 @@ class TestConversionAgainstRealArtifacts:
         )
         direct = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.SET)
         assert via_json == direct
+
+
+class TestEntryKeysOnTheDump:
+    """Every AS-list slot carries both keys, on each release's dump.
+
+    Spec: identifier-key-fields, schema-pipeline/entry-key-fields. 24 slots,
+    measured on 25.2R2-S1.5 and 23.2R2-S7.5 before the change (the three
+    lists, at the root, in logical systems, in groups and in grouped logical
+    systems, with and without a term), when every one of them was a childless
+    presence list. A release not pinned here is skipped, not guessed.
+    """
+
+    SLOTS = {"25.2": 24, "23.2": 24}
+
+    def test_the_as_list_slots_carry_both_keys(self, parsed_schema: object, tmp_path: Path) -> None:
+        from junoscfg.validate.artifact_builder import write_structure_tree
+
+        train = next((t for t in self.SLOTS if parsed_schema.version.startswith(t)), None)
+        if train is None:
+            pytest.skip(f"no pinned count for {parsed_schema.version}")
+        path = tmp_path / "tree.json"
+        write_structure_tree(parsed_schema.tree, str(path))
+        tree = json.loads(path.read_text(encoding="utf-8"))
+
+        slots = []
+        stack = [tree]
+        while stack:
+            node = stack.pop()
+            for child in (node.get("c") or {}).values():
+                if child.get("L") and child.get("tr") == "control-as-list-type":
+                    slots.append(child)
+                stack.append(child)
+        assert len(slots) == self.SLOTS[train]
+        for node in slots:
+            assert node["k"] == ["list-type", "list-name"]
+            assert list(node["c"])[:2] == ["list-type", "list-name"]
+            assert "p" not in node
+        from junoscfg.display import entry_keys
+
+        assert all(entry_keys(node) == ("list-type", "list-name") for node in slots)

@@ -1,0 +1,28 @@
+{
+    "configuration" : {
+        "routing-options" : {
+            "static" : {
+                "route" : [
+                {
+                    "name" : "198.51.100.0/24",
+                    "next-hop" : ["10.255.255.1"],
+                    "preference" : {
+                        "metric-value" : 7
+                    }
+                }
+                ]
+            }
+        },
+        "system" : {
+            "ntp" : {
+                "server" : [
+                {
+                    "name" : "198.51.100.10",
+                    "version" : 4,
+                    "prefer" : [null]
+                }
+                ]
+            }
+        }
+    }
+}

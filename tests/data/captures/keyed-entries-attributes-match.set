@@ -1,0 +1,3 @@
+set event-options policy SAMPLE-EVENT-POLICY events snmp_trap_link_down
+set event-options policy SAMPLE-EVENT-POLICY attributes-match snmp_trap_link_down.interface-name matches "^xe-"
+set event-options policy SAMPLE-EVENT-POLICY then raise-trap

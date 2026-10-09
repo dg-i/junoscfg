@@ -1,0 +1,4 @@
+set policy-options policy-statement SAMPLE-POLICY term T2 from as-path-neighbors as-list SAMPLE-AS-LIST
+set policy-options policy-statement SAMPLE-POLICY term T2 from as-path-neighbors as-list-group SAMPLE-AS-LIST
+set policy-options policy-statement SAMPLE-POLICY term T2 from as-path-neighbors as-list SAMPLE-AS-LIST-2
+set policy-options policy-statement SAMPLE-POLICY term T2 then accept

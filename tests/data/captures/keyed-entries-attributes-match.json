@@ -1,0 +1,22 @@
+{
+    "configuration" : {
+        "event-options" : {
+            "policy" : [
+            {
+                "name" : "SAMPLE-EVENT-POLICY",
+                "events" : ["snmp_trap_link_down"],
+                "attributes-match" : [
+                {
+                    "from-event-attribute" : "snmp_trap_link_down.interface-name",
+                    "condition" : "matches",
+                    "to-event-attribute-value" : "^xe-"
+                }
+                ],
+                "then" : {
+                    "raise-trap" : [null]
+                }
+            }
+            ]
+        }
+    }
+}

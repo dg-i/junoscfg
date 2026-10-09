@@ -1,0 +1,18 @@
+<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2-S7.5/junos">
+    <configuration>
+            <event-options>
+                <policy>
+                    <name>SAMPLE-EVENT-POLICY</name>
+                    <events>snmp_trap_link_down</events>
+                    <attributes-match>
+                        <from-event-attribute>snmp_trap_link_down.interface-name</from-event-attribute>
+                        <condition>matches</condition>
+                        <to-event-attribute-value>^xe-</to-event-attribute-value>
+                    </attributes-match>
+                    <then>
+                        <raise-trap/>
+                    </then>
+                </policy>
+            </event-options>
+    </configuration>
+</rpc-reply>

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from junoscfg.validate.schema_generator import generate_json_schema
 from junoscfg.validate.schema_node import SchemaNode
 
@@ -244,3 +246,100 @@ class TestUniversalStatementsReachEveryContainer:
         schema = generate_json_schema(_make_tree())
         system = schema["properties"]["configuration"]["properties"]["system"]
         assert self._PATTERN in system["patternProperties"]
+
+
+# ── identifier-key-fields ────────────────────────────────────────────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/validation/keyed-entries,
+# "The JSON and YAML schemas name the key fields". Generated from an XSD, so
+# the keys reach the generator however the tree carries them.
+
+
+def _keyed_schema(variant: str = "json") -> dict:
+    from junoscfg.validate.xsd_parser import parse_xsd
+    from tests.keyed_entries import KEYED_XSD
+
+    return generate_json_schema(parse_xsd(KEYED_XSD), variant=variant)
+
+
+def _resolve(schema: dict, node: dict) -> dict:
+    """Follow a `$ref`, then a list's array form to its entry schema."""
+    while True:
+        if "$ref" in node:
+            node = schema["$defs"][node["$ref"].rsplit("/", 1)[-1]]
+        elif "anyOf" in node and node["anyOf"][0].get("type") == "array":
+            node = node["anyOf"][0]["items"]
+        else:
+            return node
+
+
+def _entry(schema: dict, *path: str) -> dict:
+    node = _resolve(schema, schema["properties"]["configuration"])
+    for name in path:
+        node = _resolve(schema, node["properties"][name])
+    return node
+
+
+def _walk(obj: object) -> list[dict]:
+    found = []
+    if isinstance(obj, dict):
+        found.append(obj)
+        for value in obj.values():
+            found.extend(_walk(value))
+    elif isinstance(obj, list):
+        for value in obj:
+            found.extend(_walk(value))
+    return found
+
+
+class TestEntryKeysAreTheTreesFields:
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_entry_properties_are_the_key_fields(self, variant: str) -> None:
+        schema = _keyed_schema(variant)
+        term = ("policy-options", "policy-statement", "term")
+        expected = {
+            (*term, "from", "as-path-neighbors"): {"list-type", "list-name"},
+            (*term, "from", "route-filter"): {"address", "exact", "orlonger", "accept", "reject"},
+            (*term, "then", "community"): {"add", "delete", "community-name"},
+            ("system", "ntp", "server"): {"address", "version", "prefer"},
+            ("event-options", "policy", "attributes-match"): {
+                "from-event-attribute",
+                "condition",
+                "to-event-attribute-value",
+            },
+        }
+        for path, keys in expected.items():
+            entry = _entry(schema, *path)
+            assert set(entry["properties"]) == keys, path
+            assert entry["additionalProperties"] is False
+
+    def test_name_keyed_lists_keep_name(self) -> None:
+        """Byte for byte what 0.14.0 generated, in both variants."""
+        import hashlib
+        import json
+
+        from junoscfg.validate.xsd_parser import parse_xsd
+        from tests.keyed_entries import NAME_KEYED_XSD
+
+        pinned = {
+            "json": "f87396d7d7fe2d590b3be7e2ba244fe2bcd5057109f4599e928131be9be85ede",
+            "yaml": "17240da6627506ba94c94769176b6f8979bfbaf76ba06e1b8b9a244476feddc2",
+        }
+        for variant, digest in pinned.items():
+            schema = generate_json_schema(parse_xsd(NAME_KEYED_XSD), variant=variant)
+            assert "name" in _entry(schema, "policy-options", "policy-statement")["properties"]
+            assert "name" in _entry(schema, "policy-options", "community")["properties"]
+            assert hashlib.sha256(json.dumps(schema).encode()).hexdigest() == digest, variant
+
+        keyed = _keyed_schema()
+        for path in (("policy-options", "policy-statement"), ("event-options", "policy")):
+            assert "name" in _entry(keyed, *path)["properties"], path
+
+    def test_no_required_is_added(self) -> None:
+        schema = _keyed_schema()
+        nodes = _walk(schema)
+        assert len(nodes) > 50
+        assert [n for n in nodes if "required" in n] == []
+        entry = _entry(schema, "policy-options", "policy-statement", "from", "as-path-neighbors")
+        assert set(entry["properties"]) == {"list-type", "list-name"}
+        assert "required" not in entry

@@ -48,7 +48,7 @@ SHALL hold its key fields from `entry_keys()`, and `name` only where `name` is
 the key, with no `required` added; `validate_json`, `validate_yaml`,
 `validate_config` and CLI `-v` on JSON or YAML SHALL accept the device-shaped
 entry and reject one keyed `name` under a list keyed otherwise.
-Tests: `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_entry_properties_are_the_key_fields`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_name_keyed_lists_keep_name`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_no_required_is_added`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_the_device_shaped_as_list_reference_validates`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_name_under_an_as_list_reference_is_rejected`, `tests/test_cli_validate.py::TestCliValidation::test_validate_json_with_an_as_list_reference`
+Tests: `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_entry_properties_are_the_key_fields`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_name_keyed_lists_keep_name`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_no_required_is_added`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_the_device_shaped_as_list_reference_validates`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_name_under_an_as_list_reference_is_rejected`, `tests/test_cli_validate.py::TestCliValidation::test_validate_json_with_an_as_list_reference`, `tests/test_cli_validate.py::TestCliValidationOfKeyedEntries::test_validate_yaml_with_an_as_list_reference`
 
 #### Scenario: Device-shaped JSON
 

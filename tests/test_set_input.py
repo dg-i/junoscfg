@@ -217,6 +217,15 @@ class TestApplyGroups:
         result = set_to_dict(source)
         assert result["system"]["apply-groups"] == ["FOO"]
 
+    def test_a_second_group_token_keeps_the_line_whole(self) -> None:
+        """The device rejects `set apply-groups G1 G2` (vMX 23.2R2-S7.5); the
+        reader applied G1 and dropped G2. Spec: identifier-key-fields,
+        "A statement the reader cannot complete is kept whole"."""
+        source = "set apply-groups SAMPLE-GROUP SAMPLE-GROUP-2\n"
+        result = set_to_dict(source)
+        assert result == {"apply-groups SAMPLE-GROUP SAMPLE-GROUP-2": True}
+        assert dict_to_set(result) == source
+
 
 # ── Parser bug fixes ────────────────────────────────────────────────
 
@@ -850,3 +859,192 @@ class TestUplinkFailureDetectionGroupIsAList:
         """Under the fused key, `deactivate ... group G` lost its `G`."""
         source = self.SOURCE + "deactivate protocols uplink-failure-detection group G\n"
         assert dict_to_set(set_to_dict(source)).strip() == source.strip()
+
+
+# ── identifier-key-fields: a statement the reader cannot complete ────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys,
+# "A statement the reader cannot complete is kept whole". Read through
+# `convert_config`, the door the collection drives.
+
+_TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
+
+
+#: How `convert_config` renders a statement kept whole in JSON: the line as
+#: one key, the value a bare statement's.
+KEPT = [None]
+
+
+def _from(line: str) -> dict:
+    from tests.keyed_entries import set_ir, term_from
+
+    return term_from(set_ir(line))
+
+
+def _round_trip(source: str) -> list[str]:
+    from junoscfg import Format
+    from tests.keyed_entries import to_set
+
+    return to_set(source + "\n", Format.SET)
+
+
+class TestTokensTheReaderCannotPlaceAreKept:
+    """No entry, no group and no dropped token from a line the device rejects."""
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "as-path-neighbors as-list",
+            "as-path-origins as-list-group",
+            "route-filter 198.51.100.0/24",
+            "route-filter 198.51.100.0/24 next-policy",
+            # The match type before the address (device probe round 4 pending).
+            "route-filter exact 198.51.100.0/24",
+            "source-address-filter 198.51.100.0/24",
+        ],
+    )
+    def test_a_partial_key_creates_no_entry(self, statement: str) -> None:
+        line = f"{_TERM} from {statement}"
+        assert _from(line) == {statement: KEPT}
+        assert _round_trip(line) == [line]
+
+    def test_a_bare_list_keyword_creates_no_entry(self) -> None:
+        line = f"{_TERM} from as-path-neighbors"
+        got = _from(line)
+        assert list(got) == ["as-path-neighbors"]
+        assert not isinstance(got["as-path-neighbors"], list), "an entry or a presence list"
+        assert _round_trip(line) == [line]
+
+    def test_a_partial_attributes_match_creates_no_entry(self) -> None:
+        from tests.keyed_entries import set_ir
+
+        line = (
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner matches"
+        )
+        policy = set_ir(line)["event-options"]["policy"][0]
+        assert policy == {
+            "name": "SAMPLE-EVENT-POLICY",
+            "attributes-match ping.test-owner matches": KEPT,
+        }
+        assert _round_trip(line) == [line]
+
+    @pytest.mark.parametrize(
+        ("where", "statement"),
+        [
+            ("from", "as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA"),
+            ("from", "as-path-transits as-list-group SAMPLE-AS-LIST SAMPLE-EXTRA"),
+            ("then", "community add SAMPLE-COMM SAMPLE-EXTRA"),
+        ],
+    )
+    def test_a_surplus_after_a_terminal_entry_keeps_the_line_whole(
+        self, where: str, statement: str
+    ) -> None:
+        from tests.keyed_entries import set_ir
+
+        line = f"{_TERM} {where} {statement}"
+        term = set_ir(line)["policy-options"]["policy-statement"][0]["term"][0]
+        assert term[where] == {statement: KEPT}
+        assert _round_trip(line) == [line]
+
+    def test_a_surplus_after_attributes_match_keeps_the_line_whole(self) -> None:
+        from tests.keyed_entries import set_ir
+
+        statement = 'attributes-match ping.test-owner matches "^uptime$" SAMPLE-EXTRA'
+        line = f"set event-options policy SAMPLE-EVENT-POLICY {statement}"
+        policy = set_ir(line)["event-options"]["policy"][0]
+        assert "attributes-match" not in policy
+        assert [k for k in policy if k != "name"] == [
+            "attributes-match ping.test-owner matches ^uptime$ SAMPLE-EXTRA"
+        ]
+
+    def test_an_unknown_token_in_an_entry_with_children_is_unchanged(self) -> None:
+        """Pinned as it is: after a complete key the entry is open, and an
+        unknown token stays in it, as `set interfaces ge-0/0/0 nonsense` does."""
+        line = f"{_TERM} from route-filter 198.51.100.0/24 exact SAMPLE-EXTRA"
+        assert _from(line) == {
+            "route-filter": [{"address": "198.51.100.0/24", "exact": [None], "SAMPLE-EXTRA": KEPT}]
+        }
+
+
+class TestKeyValuesOfEveryShape:
+    """A key value is one token, whatever it spells."""
+
+    @pytest.mark.parametrize(
+        ("tokens", "entry"),
+        [
+            ("as-list as-list", {"list-type": "as-list", "list-name": "as-list"}),
+            ("as-list-group as-list", {"list-type": "as-list-group", "list-name": "as-list"}),
+            ('as-list "SAMPLE AS LIST"', {"list-type": "as-list", "list-name": "SAMPLE AS LIST"}),
+            ("as-list 64496", {"list-type": "as-list", "list-name": "64496"}),
+            # Out of the enum: read by position, reported by validation.
+            ("1 SAMPLE-AS-LIST", {"list-type": "1", "list-name": "SAMPLE-AS-LIST"}),
+        ],
+    )
+    def test_each_key_value_is_one_token(self, tokens: str, entry: dict) -> None:
+        line = f"{_TERM} from as-path-neighbors {tokens}"
+        assert _from(line) == {"as-path-neighbors": [entry]}
+        assert _round_trip(line) == [line]
+
+
+class TestMetaCommandsOnAKeyedEntry:
+    """`deactivate`, `delete` and `protect` address an entry by its whole key."""
+
+    @pytest.mark.parametrize(
+        ("command", "attribute"),
+        [
+            ("deactivate", {"inactive": True}),
+            ("delete", {"operation": "delete"}),
+            ("protect", {"protect": "protect"}),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("where", "statement", "entry"),
+        [
+            (
+                "from",
+                "as-path-neighbors as-list SAMPLE-AS-LIST",
+                {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"},
+            ),
+            (
+                "from",
+                "route-filter 198.51.100.0/24 exact",
+                {"address": "198.51.100.0/24", "exact": [None]},
+            ),
+            ("then", "community add SAMPLE-COMM", {"add": [None], "community-name": "SAMPLE-COMM"}),
+        ],
+    )
+    def test_the_attribute_lands_on_the_entry(
+        self, command: str, attribute: dict, where: str, statement: str, entry: dict
+    ) -> None:
+        from tests.keyed_entries import set_ir
+
+        set_line = f"{_TERM} {where} {statement}"
+        meta_line = f"{command} {set_line[len('set ') :]}"
+        term = set_ir(set_line, meta_line)["policy-options"]["policy-statement"][0]["term"][0]
+        slot = statement.split()[0]
+        assert term[where][slot] == [{"@": attribute, **entry}]
+        if command != "delete":
+            assert _round_trip(f"{set_line}\n{meta_line}") == [set_line, meta_line]
+
+
+class TestApplyGroupsAndKeyedEntries:
+    """`apply-groups` takes one name; a second token is a statement kept whole."""
+
+    def test_one_name_inside_a_policy(self) -> None:
+        from tests.keyed_entries import set_ir
+
+        line = "set policy-options policy-statement SAMPLE-POLICY apply-groups SAMPLE-GROUP"
+        policy = set_ir(line)["policy-options"]["policy-statement"][0]
+        assert policy["apply-groups"] == ["SAMPLE-GROUP"]
+
+    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
+    @pytest.mark.parametrize("prefix", ["set", "set policy-options policy-statement SAMPLE-POLICY"])
+    def test_two_names_apply_no_group(self, keyword: str, prefix: str) -> None:
+        from tests.keyed_entries import set_ir
+
+        line = f"{prefix} {keyword} SAMPLE-GROUP SAMPLE-GROUP-2"
+        got = set_ir(line)
+        parent = got if prefix == "set" else got["policy-options"]["policy-statement"][0]
+        assert keyword not in parent
+        assert parent[f"{keyword} SAMPLE-GROUP SAMPLE-GROUP-2"] == KEPT
+        assert _round_trip(line) == [line]

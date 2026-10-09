@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from junoscfg.anonymize import anonymize
 from junoscfg.anonymize.config import AnonymizeConfig
 
@@ -449,3 +451,207 @@ class TestAsNumbersInStringsIntegration:
         }
         result = anonymize(ir, cfg)
         assert result.ir["configuration"]["system"]["host-name"] == "router1"
+
+
+# ── identifier-key-fields: keyed entries survive anonymization ───────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/anonymization/
+# keyed-entries, "An AS-list reference survives anonymization" and "No value
+# anonymized before escapes".
+
+_GROUPED = """\
+groups {
+    SAMPLE-GROUP {
+        policy-options {
+            as-list SAMPLE-AS-LIST members 64496;
+            policy-statement SAMPLE-POLICY {
+                term T1 {
+                    from {
+                        as-path-neighbors as-list SAMPLE-AS-LIST;
+                    }
+                    then accept;
+                }
+            }
+        }
+    }
+}
+apply-groups SAMPLE-GROUP;
+"""
+
+_GROUPED_SET = (
+    "set groups SAMPLE-GROUP policy-options as-list SAMPLE-AS-LIST members 64496\n"
+    "set groups SAMPLE-GROUP policy-options policy-statement SAMPLE-POLICY term T1 from "
+    "as-path-neighbors as-list SAMPLE-AS-LIST\n"
+    "set groups SAMPLE-GROUP policy-options policy-statement SAMPLE-POLICY term T1 then accept\n"
+    "set apply-groups SAMPLE-GROUP\n"
+)
+
+_EVERY_FLAG = {
+    "ips": {"ips": True},
+    "passwords": {"passwords": True},
+    "communities": {"communities": True},
+    "ssh-keys": {"ssh_keys": True},
+    "identities": {"identities": True},
+    "groups": {"groups": True},
+    "descriptions": {"descriptions": True},
+    "as-numbers": {"as_numbers": [64496]},
+    "sensitive-words": {"sensitive_words": ["SAMPLE-GROUP"]},
+    "sensitive-patterns": {"sensitive_patterns": [r"SAMPLE-G\w+"]},
+}
+
+
+def _neighbor_lines(output: str) -> list[list[str]]:
+    """The tokens after `as-path-neighbors` on every line that holds it."""
+    return [
+        line.split(" as-path-neighbors ", 1)[1].split()
+        for line in output.splitlines()
+        if " as-path-neighbors " in line
+    ]
+
+
+class TestKeyedEntriesSurvive:
+    def test_an_as_list_reference_survives_anonymize_all(self) -> None:
+        from junoscfg import Format, convert_config
+        from junoscfg.anonymize.config import build_config_from_cli
+
+        for source, fmt in ((_GROUPED, Format.STRUCTURED), (_GROUPED_SET, Format.SET)):
+            cfg = build_config_from_cli(anonymize_all=True, anonymize_salt="keyed")
+            out = convert_config(source, from_format=fmt, to_format=Format.SET, anon_config=cfg)
+            found = _neighbor_lines(out)
+            assert len(found) == 1, out
+            list_type, list_name = found[0]
+            assert list_type == "as-list"
+            assert list_name, "the list name was lost"
+            assert "SAMPLE-GROUP" not in out, "the group was not anonymized"
+
+    def test_as_numbers_leave_the_as_list_reference_whole(self) -> None:
+        from junoscfg import Format, convert_config
+        from tests.keyed_entries import as_json, ir
+
+        device = as_json(ir(_GROUPED_SET, Format.SET))
+        for source, fmt in (
+            (_GROUPED, Format.STRUCTURED),
+            (_GROUPED_SET, Format.SET),
+            (device, Format.JSON),
+        ):
+            cfg = AnonymizeConfig(as_numbers=[64496], salt="keyed")
+            out = convert_config(source, from_format=fmt, to_format=Format.SET, anon_config=cfg)
+            assert _neighbor_lines(out) == [["as-list", "SAMPLE-AS-LIST"]], (fmt, out)
+            assert "members 64496" not in out
+
+    @pytest.mark.parametrize("flag", list(_EVERY_FLAG))
+    def test_every_rule_keeps_the_key_whole(self, flag: str) -> None:
+        """Each `--anonymize-*` rule on its own keeps both key values."""
+        from junoscfg import Format, convert_config
+
+        cfg = AnonymizeConfig(salt="keyed", **_EVERY_FLAG[flag])
+        out = convert_config(
+            _GROUPED_SET, from_format=Format.SET, to_format=Format.SET, anon_config=cfg
+        )
+        found = _neighbor_lines(out)
+        assert len(found) == 1 and len(found[0]) == 2, out
+        assert found[0][0] == "as-list"
+
+    def test_the_other_keyed_lists_keep_their_keys(self) -> None:
+        from junoscfg import Format, convert_config
+        from junoscfg.anonymize.config import build_config_from_cli
+
+        term = "set policy-options policy-statement SAMPLE-POLICY term T1"
+        source = (
+            f"{term} from route-filter 198.51.100.0/24 exact accept\n"
+            f"{term} from source-address-filter 198.51.100.0/24 orlonger\n"
+            f"{term} then community add SAMPLE-COMM\n"
+            "set policy-options community SAMPLE-COMM members 64496:100\n"
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^uptime$"\n'
+        )
+        cfg = build_config_from_cli(anonymize_all=True, anonymize_salt="keyed")
+        out = convert_config(source, from_format=Format.SET, to_format=Format.SET, anon_config=cfg)
+        lines = out.splitlines()
+        assert any(" route-filter 198.51.100.0/24 exact accept" in line for line in lines), out
+        assert any(" source-address-filter 198.51.100.0/24 orlonger" in line for line in lines)
+        community = [line for line in lines if " then community " in line]
+        assert len(community) == 1 and community[0].split(" then community ")[1].startswith("add ")
+        match = [line for line in lines if " attributes-match " in line]
+        assert len(match) == 1
+        assert match[0].split(" attributes-match ")[1].split()[1] == "matches"
+
+    #: Every value 0.14.0 replaced in examples/router1.json with every rule
+    #: on, by rule. Measured before the change.
+    BEFORE = {
+        "password": ["$9$ExAmPlEhAsH.KEY"],
+        "ip": [
+            "0.0.0.0",
+            "0.0.0.0/0",
+            "10.0.0.0/8",
+            "10.0.100.1/24",
+            "10.0.200.1/24",
+            "10.255.255.1",
+            "10.255.255.1/32",
+            "10.255.255.2",
+            "192.168.0.10",
+            "192.168.0.123",
+            "192.168.0.53",
+            "192.168.0.54",
+            "198.51.100.1/30",
+            "198.51.100.2",
+            "2001:db8:100::1/126",
+        ],
+        "identity": ["admin", "operator"],
+        "group": ["ebgp-peers", "ibgp-peers"],
+        "description": [
+            "bundled customer handoff",
+            "core router",
+            "customer handoff",
+            "customer handoff backup",
+            "downlink to access",
+            "transit provider",
+            "uplink to core",
+        ],
+        "as_number": ["64496", "64497"],
+        "sensitive_word": ["customer-routes", "customers", "export-customers"],
+    }
+
+    @staticmethod
+    def _every_rule() -> AnonymizeConfig:
+        return AnonymizeConfig(
+            ips=True,
+            passwords=True,
+            communities=True,
+            ssh_keys=True,
+            identities=True,
+            groups=True,
+            descriptions=True,
+            as_numbers=[64496, 64497],
+            sensitive_words=["customer"],
+            salt="pinned-salt",
+        )
+
+    def test_no_value_anonymized_before_escapes(self) -> None:
+        from pathlib import Path
+
+        source = json.loads(Path("examples/router1.json").read_text(encoding="utf-8"))
+        mapping = anonymize(source, self._every_rule()).mapping
+        for rule, values in self.BEFORE.items():
+            missing = set(values) - set(mapping.get(rule, {}))
+            assert not missing, f"{rule} no longer replaces {sorted(missing)}"
+
+    def test_name_keyed_output_is_unchanged(self) -> None:
+        """Pinned before the change; expected to hold across it."""
+        import hashlib
+        from pathlib import Path
+
+        from junoscfg import Format, convert_config
+
+        source = Path("examples/router1.json").read_text(encoding="utf-8")
+        out = convert_config(
+            source,
+            from_format=Format.JSON,
+            to_format=Format.SET,
+            validate=False,
+            anon_config=self._every_rule(),
+        )
+        assert (
+            hashlib.sha256(out.encode()).hexdigest()
+            == "8cd6b3d38f7d82a2fdbb9dc1990dad6d9e880a4b2f76701afc47351409b000ad"
+        )

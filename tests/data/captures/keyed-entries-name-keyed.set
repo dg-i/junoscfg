@@ -1,0 +1,4 @@
+set routing-options static route 198.51.100.0/24 next-hop 10.255.255.1
+set routing-options static route 198.51.100.0/24 preference 7
+set system ntp server 198.51.100.10 version 4
+set system ntp server 198.51.100.10 prefer

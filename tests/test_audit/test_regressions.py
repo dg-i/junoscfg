@@ -144,3 +144,48 @@ class TestRibGroup:
         set routing-options interface-routes rib-group inet RG-IR
         """
         assert "RG-IR" not in audit_names(cfg)
+
+
+class TestKeyedReferences:
+    """An AS list referenced by its key field is used.
+
+    The set reader kept `as-list` as the entry's `name` and dropped the list
+    name, so every AS list a policy referenced was reported unused. Spec:
+    identifier-key-fields, audit/keyed-references.
+    """
+
+    DEFINITIONS = """
+        set policy-options as-list AS-LIST-A members 64496
+        set policy-options as-list AS-LIST-B members 64497
+        set policy-options as-list-group ASG-A as-list A1 members 64498
+        set policy-options as-list-group ASG-B as-list B1 members 64499
+    """
+
+    def test_an_as_list_used_by_as_path_neighbors_is_not_unused(self) -> None:
+        cfg = (
+            self.DEFINITIONS
+            + """
+        set policy-options policy-statement POL term t from as-path-neighbors as-list AS-LIST-A
+        set policy-options policy-statement POL term t from as-path-origins as-list-group ASG-A
+        set policy-options policy-statement POL term t then accept
+        set protocols bgp group g import POL
+        """
+        )
+        names = audit_names(cfg)
+        assert "AS-LIST-A" not in names
+        assert "ASG-A" not in names
+        assert {"AS-LIST-B", "ASG-B"} <= names
+        assert "as-list" not in names and "as-list-group" not in names
+
+    def test_a_name_used_by_one_list_type_does_not_use_the_other(self) -> None:
+        """`as-list X` and `as-list-group X` are two entries and two objects."""
+        cfg = """
+        set policy-options as-list SAMPLE-X members 64496
+        set policy-options as-list-group SAMPLE-X as-list A1 members 64498
+        set policy-options policy-statement POL from as-path-transits as-list SAMPLE-X
+        set protocols bgp group g import POL
+        """
+        result = find_unused(to_dict(cfg.strip(), "set"))
+        unused = {(f.type_name, f.name) for f in result.findings}
+        assert ("as-list", "SAMPLE-X") not in unused
+        assert ("as-list-group", "SAMPLE-X") in unused

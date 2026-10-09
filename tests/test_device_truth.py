@@ -131,3 +131,123 @@ def test_junoscfg_renders_what_the_device_renders(conf: Path) -> None:
         f"{len(missing)} missing from junoscfg: {missing[:6]}\n"
         f"{len(extra)} extra in junoscfg: {extra[:6]}"
     )
+
+
+# ── identifier-key-fields: every door against the device's keyed entries ──
+#
+# `tests/data/captures/keyed-entries-*` are the shapes a vMX on 23.2R2-S7.5
+# displayed for the probe's statements, rebuilt with the probe's synthetic
+# values and with prompts, hostnames and `junos:changed-*` attributes left
+# out. A group is one `.json` (the oracle) beside the `.set`, `.conf` and
+# `.xml` the device displayed for the same statements; the device showed no
+# structured or XML display for some, so those groups hold fewer doors.
+# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys.
+
+KEYED_DIR = PROJECT_ROOT / "tests" / "data" / "captures"
+KEYED_GROUPS = ("as-lists", "identity", "community", "filters", "attributes-match")
+_DOORS = {".set": Format.SET, ".conf": Format.STRUCTURED, ".xml": Format.XML, ".json": Format.JSON}
+_CHANGED = {
+    "junos:changed-seconds": "1759900000",
+    "junos:changed-localtime": "2026-10-08 09:00:00 UTC",
+}
+
+
+def _strip_attributes(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _strip_attributes(v) for k, v in obj.items() if not k.startswith("@")}
+    if isinstance(obj, list):
+        return [_strip_attributes(v) for v in obj]
+    return obj
+
+
+def _door_source(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    if path.suffix != ".conf":
+        return text
+    first, _, body = text.partition("\n")
+    assert first.startswith(HEADER), f"{path.name} does not name its subtree"
+    return _reroot(shlex.split(first[len(HEADER) :]), body)
+
+
+def _ir(source: str, fmt: Format) -> dict[str, Any]:
+    rendered = convert_config(source, from_format=fmt, to_format=Format.JSON, validate=False)
+    return json.loads(rendered)["configuration"]
+
+
+def _device(group: str) -> dict[str, Any]:
+    path = KEYED_DIR / f"keyed-entries-{group}.json"
+    return json.loads(path.read_text(encoding="utf-8"))["configuration"]
+
+
+@pytest.mark.parametrize("group", KEYED_GROUPS)
+def test_every_door_gives_the_device_ir(group: str) -> None:
+    device = _device(group)
+    doors = [
+        KEYED_DIR / f"keyed-entries-{group}{suffix}"
+        for suffix in _DOORS
+        if (KEYED_DIR / f"keyed-entries-{group}{suffix}").is_file()
+    ]
+    assert len(doors) >= 2, f"{group}: the oracle and at least one door"
+    for path in doors:
+        assert _ir(_door_source(path), _DOORS[path.suffix]) == device, path.name
+    set_lines = (KEYED_DIR / f"keyed-entries-{group}.set").read_text(encoding="utf-8")
+    rendered = convert_config(
+        json.dumps({"configuration": device}),
+        from_format=Format.JSON,
+        to_format=Format.SET,
+        validate=False,
+    )
+    assert rendered.strip().splitlines() == set_lines.strip().splitlines(), group
+
+
+def _with_changed(obj: Any) -> Any:
+    """*obj* with `junos:changed-*` on every element, as a device marks edits."""
+    if isinstance(obj, dict):
+        marked = {k: _with_changed(v) for k, v in obj.items()}
+        marked["@"] = dict(_CHANGED)
+        return marked
+    if isinstance(obj, list):
+        return [_with_changed(v) for v in obj]
+    return obj
+
+
+@pytest.mark.parametrize("group", KEYED_GROUPS)
+def test_device_attributes_leave_the_keys_alone(group: str) -> None:
+    """JSON and XML carrying `junos:changed-*` give the same keyed entries."""
+    import re
+
+    device = _device(group)
+    marked = json.dumps({"configuration": _with_changed(device)})
+    assert _strip_attributes(_ir(marked, Format.JSON)) == device
+
+    xml_path = KEYED_DIR / f"keyed-entries-{group}.xml"
+    if xml_path.is_file():
+        attributes = " ".join(f'{k}="{v}"' for k, v in _CHANGED.items())
+        xml = re.sub(r"<([a-z][\w-]*)>", rf"<\1 {attributes}>", xml_path.read_text("utf-8"))
+        assert _strip_attributes(_ir(xml, Format.XML)) == device
+
+
+def test_name_keyed_set_lines_match_the_device() -> None:
+    """A `name`-keyed entry with two children is one line per child, as the
+    device's `display set` wrote it. Pinned as it is; it must stay so."""
+    device = (KEYED_DIR / "keyed-entries-name-keyed.json").read_text(encoding="utf-8")
+    expected = (KEYED_DIR / "keyed-entries-name-keyed.set").read_text(encoding="utf-8")
+    rendered = convert_config(device, from_format=Format.JSON, to_format=Format.SET, validate=False)
+    assert rendered.strip().splitlines() == expected.strip().splitlines()
+    back = convert_config(expected, from_format=Format.SET, to_format=Format.SET, validate=False)
+    assert back.strip().splitlines() == expected.strip().splitlines()
+
+
+def test_unexplained_structured_shapes_are_pinned() -> None:
+    """The device's structured shapes junoscfg does not write, beside its own."""
+    known = json.loads((KEYED_DIR / "keyed-entries-known-differences.json").read_text("utf-8"))
+    assert len(known["cases"]) == 2
+    for case in known["cases"]:
+        rendered = convert_config(
+            json.dumps(case["input"]),
+            from_format=Format.JSON,
+            to_format=Format.STRUCTURED,
+            validate=False,
+        )
+        assert case["junoscfg"] in rendered, case["case"]
+        assert case["device"] not in rendered, f"{case['case']}: no longer a difference"

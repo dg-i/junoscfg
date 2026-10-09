@@ -1,0 +1,24 @@
+{
+    "configuration" : {
+        "policy-options" : {
+            "policy-statement" : [
+            {
+                "name" : "SAMPLE-POLICY",
+                "term" : [
+                {
+                    "name" : "T3",
+                    "then" : {
+                        "community" : [
+                        {
+                            "add" : [null],
+                            "community-name" : "SAMPLE-COMM"
+                        }
+                        ]
+                    }
+                }
+                ]
+            }
+            ]
+        }
+    }
+}

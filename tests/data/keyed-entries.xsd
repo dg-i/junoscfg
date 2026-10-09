@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Synthetic XSD for the identifier-key-fields change. Every type copies the
+  shape of its namesake in a Junos NETCONF dump (25.2R2 and 23.2R2 agree):
+  identifier elements declared in the sequence beside its choices, an
+  identifier choice marked <identifier/>, a second choice of actions, and the
+  undocumented/comment references. No value in it comes from a device.
+-->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:junos="http://xml.juniper.net/junos/25.2R0/junos"
+            elementFormDefault="qualified">
+  <xsd:element name="configuration">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+          <xsd:element name="policy-options" minOccurs="0">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                  <xsd:element name="policy-statement" minOccurs="0" maxOccurs="unbounded" type="policy-type"/>
+                  <xsd:element name="community" minOccurs="0" maxOccurs="unbounded" type="community-type"/>
+                </xsd:choice>
+              </xsd:sequence>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="event-options" minOccurs="0">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                  <xsd:element name="policy" minOccurs="0" maxOccurs="unbounded" type="event-policy-type"/>
+                </xsd:choice>
+              </xsd:sequence>
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="system" minOccurs="0">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                  <xsd:element name="ntp" minOccurs="0">
+                    <xsd:complexType>
+                      <xsd:sequence>
+                        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                          <xsd:element name="server" minOccurs="0" maxOccurs="unbounded" type="ntp-server-type"/>
+                        </xsd:choice>
+                      </xsd:sequence>
+                    </xsd:complexType>
+                  </xsd:element>
+                </xsd:choice>
+              </xsd:sequence>
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:complexType name="policy-type">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string">
+        <xsd:annotation><xsd:appinfo><flag>identifier</flag><identifier/></xsd:appinfo></xsd:annotation>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="term" minOccurs="0" maxOccurs="unbounded" type="term-type"/>
+        <xsd:element name="from" minOccurs="0" type="from-type"/>
+        <xsd:element name="then" minOccurs="0" type="then-type"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="term-type">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string">
+        <xsd:annotation><xsd:appinfo><flag>identifier</flag><identifier/></xsd:appinfo></xsd:annotation>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="from" minOccurs="0" type="from-type"/>
+        <xsd:element name="then" minOccurs="0" type="then-type"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="from-type">
+    <xsd:sequence>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="as-path-neighbors" minOccurs="0" maxOccurs="unbounded" type="control-as-list-type"/>
+        <xsd:element name="as-path-origins" minOccurs="0" maxOccurs="unbounded" type="control-as-list-type"/>
+        <xsd:element name="route-filter" minOccurs="0" maxOccurs="unbounded" type="control-route-filter-type"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="then-type">
+    <xsd:sequence>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="community" minOccurs="0" maxOccurs="unbounded" type="control-community-type"/>
+        <xsd:element name="accept" minOccurs="0"><xsd:complexType/></xsd:element>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <!-- Two identifiers beside a choice holding only undocumented and comment. -->
+  <xsd:complexType name="control-as-list-type">
+    <xsd:annotation><xsd:appinfo><flag>oneliner-plus</flag></xsd:appinfo></xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="list-type">
+        <xsd:annotation>
+          <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:restriction base="xsd:anyType">
+              <xsd:simpleType>
+                <xsd:union memberTypes="xsd:unsignedLong">
+                  <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                      <xsd:enumeration value="as-list"/>
+                      <xsd:enumeration value="as-list-group"/>
+                    </xsd:restriction>
+                  </xsd:simpleType>
+                </xsd:union>
+              </xsd:simpleType>
+            </xsd:restriction>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="list-name">
+        <xsd:annotation>
+          <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="xsd:string"/>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <!-- A key, an identifier choice, then a choice of actions. -->
+  <xsd:complexType name="control-route-filter-type">
+    <xsd:annotation><xsd:appinfo><flag>oneliner-plus</flag></xsd:appinfo></xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="address">
+        <xsd:annotation>
+          <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="ipprefix"/>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:choice>
+        <xsd:element name="exact" minOccurs="0">
+          <xsd:annotation><xsd:appinfo><identifier/></xsd:appinfo></xsd:annotation>
+          <xsd:complexType/>
+        </xsd:element>
+        <xsd:element name="orlonger" minOccurs="0">
+          <xsd:annotation><xsd:appinfo><identifier/></xsd:appinfo></xsd:annotation>
+          <xsd:complexType/>
+        </xsd:element>
+      </xsd:choice>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="accept" minOccurs="0"><xsd:complexType/></xsd:element>
+        <xsd:element name="reject" minOccurs="0"><xsd:complexType/></xsd:element>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <!-- An identifier choice declared first, then the identifier. -->
+  <xsd:complexType name="control-community-type">
+    <xsd:annotation><xsd:appinfo><flag>oneliner</flag></xsd:appinfo></xsd:annotation>
+    <xsd:sequence>
+      <xsd:choice>
+        <xsd:element name="add" minOccurs="0">
+          <xsd:annotation><xsd:appinfo><identifier/></xsd:appinfo></xsd:annotation>
+          <xsd:complexType/>
+        </xsd:element>
+        <xsd:element name="delete" minOccurs="0">
+          <xsd:annotation><xsd:appinfo><identifier/></xsd:appinfo></xsd:annotation>
+          <xsd:complexType/>
+        </xsd:element>
+      </xsd:choice>
+      <xsd:element name="community-name">
+        <xsd:annotation>
+          <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="xsd:string"/>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="community-type">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string">
+        <xsd:annotation><xsd:appinfo><flag>identifier</flag><identifier/></xsd:appinfo></xsd:annotation>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="members" minOccurs="0" maxOccurs="unbounded" type="xsd:string"/>
+        <xsd:element name="invert-match" minOccurs="0"><xsd:complexType/></xsd:element>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <!-- Three identifiers, the middle one an enum. -->
+  <xsd:complexType name="event-policy-type">
+    <xsd:sequence>
+      <xsd:element name="name" type="xsd:string">
+        <xsd:annotation><xsd:appinfo><flag>identifier</flag><identifier/></xsd:appinfo></xsd:annotation>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="events" minOccurs="0" maxOccurs="unbounded" type="xsd:string"/>
+        <xsd:element name="attributes-match" minOccurs="0" maxOccurs="unbounded">
+          <xsd:annotation><xsd:appinfo><flag>oneliner</flag><flag>homogeneous</flag></xsd:appinfo></xsd:annotation>
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="from-event-attribute">
+                <xsd:annotation>
+                  <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+                </xsd:annotation>
+                <xsd:complexType>
+                  <xsd:simpleContent><xsd:extension base="xsd:string"/></xsd:simpleContent>
+                </xsd:complexType>
+              </xsd:element>
+              <xsd:element name="condition">
+                <xsd:annotation>
+                  <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+                </xsd:annotation>
+                <xsd:complexType>
+                  <xsd:simpleContent>
+                    <xsd:restriction base="xsd:anyType">
+                      <xsd:simpleType>
+                        <xsd:union memberTypes="xsd:unsignedLong">
+                          <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                              <xsd:enumeration value="equals"/>
+                              <xsd:enumeration value="starts-with"/>
+                              <xsd:enumeration value="matches"/>
+                            </xsd:restriction>
+                          </xsd:simpleType>
+                        </xsd:union>
+                      </xsd:simpleType>
+                    </xsd:restriction>
+                  </xsd:simpleContent>
+                </xsd:complexType>
+              </xsd:element>
+              <xsd:element name="to-event-attribute-value">
+                <xsd:annotation>
+                  <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+                </xsd:annotation>
+                <xsd:complexType>
+                  <xsd:simpleContent><xsd:extension base="xsd:string"/></xsd:simpleContent>
+                </xsd:complexType>
+              </xsd:element>
+              <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element ref="undocumented" minOccurs="0"/>
+                <xsd:element ref="junos:comment" minOccurs="0"/>
+              </xsd:choice>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <!-- One identifier other than name. -->
+  <xsd:complexType name="ntp-server-type">
+    <xsd:annotation><xsd:appinfo><flag>oneliner</flag></xsd:appinfo></xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="address">
+        <xsd:annotation>
+          <xsd:appinfo><flag>identifier</flag><flag>nokeyword</flag><identifier/></xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:simpleContent><xsd:extension base="ipaddr"/></xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element ref="undocumented" minOccurs="0"/>
+        <xsd:element ref="junos:comment" minOccurs="0"/>
+        <xsd:element name="version" minOccurs="0" type="xsd:string"/>
+        <xsd:element name="prefer" minOccurs="0"><xsd:complexType/></xsd:element>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,47 @@
+{
+    "configuration" : {
+        "policy-options" : {
+            "policy-statement" : [
+            {
+                "name" : "SAMPLE-POLICY",
+                "term" : [
+                {
+                    "name" : "T1",
+                    "from" : {
+                        "as-path-neighbors" : [
+                        {
+                            "list-type" : "as-list",
+                            "list-name" : "SAMPLE-AS-LIST"
+                        }
+                        ],
+                        "as-path-origins" : [
+                        {
+                            "list-type" : "as-list-group",
+                            "list-name" : "SAMPLE-AS-LIST-GROUP"
+                        }
+                        ],
+                        "as-path-transits" : [
+                        {
+                            "list-type" : "as-list",
+                            "list-name" : "SAMPLE-AS-LIST-2"
+                        }
+                        ]
+                    },
+                    "then" : {
+                        "accept" : [null]
+                    }
+                }
+                ],
+                "from" : {
+                    "as-path-neighbors" : [
+                    {
+                        "list-type" : "as-list",
+                        "list-name" : "SAMPLE-AS-LIST"
+                    }
+                    ]
+                }
+            }
+            ]
+        }
+    }
+}

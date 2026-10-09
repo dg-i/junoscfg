@@ -345,6 +345,63 @@ class TestCliAnonymize:
         assert "8.8.8.8" not in result.output
         assert "name-server" in result.output
 
+    def test_anonymize_all_keeps_the_as_list_reference(self, tmp_path) -> None:
+        """Spec: identifier-key-fields, anonymization/keyed-entries.
+
+        The reported defect: `--anonymize-all` on structured input wrote
+        `as-path-neighbors as-list` with the list name gone."""
+        source = tmp_path / "grouped.conf"
+        source.write_text(
+            "groups {\n"
+            "    SAMPLE-GROUP {\n"
+            "        policy-options {\n"
+            "            as-list SAMPLE-AS-LIST members 64496;\n"
+            "            policy-statement SAMPLE-POLICY {\n"
+            "                term T1 {\n"
+            "                    from {\n"
+            "                        as-path-neighbors as-list SAMPLE-AS-LIST;\n"
+            "                    }\n"
+            "                    then accept;\n"
+            "                }\n"
+            "            }\n"
+            "        }\n"
+            "    }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        runner = CliRunner()
+        for flags in (
+            ["--anonymize-all"],
+            ["--anonymize-as-numbers", "64496"],
+            ["--anonymize-all", "--anonymize-as-numbers", "64496"],
+        ):
+            result = runner.invoke(
+                main,
+                [
+                    "convert",
+                    "-i",
+                    "structured",
+                    "-e",
+                    "set",
+                    *flags,
+                    "--anonymize-salt",
+                    "keyed",
+                    str(source),
+                ],
+            )
+            assert result.exit_code == 0, result.output
+            found = [
+                line.split(" as-path-neighbors ", 1)[1].split()
+                for line in result.output.splitlines()
+                if " as-path-neighbors " in line
+            ]
+            assert len(found) == 1 and len(found[0]) == 2, result.output
+            assert found[0][0] == "as-list"
+            if flags == ["--anonymize-as-numbers", "64496"]:
+                assert found[0][1] == "SAMPLE-AS-LIST"
+            if "--anonymize-all" in flags:
+                assert "SAMPLE-GROUP" not in result.output
+
     def test_anonymize_ips_with_set_output(self) -> None:
         runner = CliRunner()
         json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'

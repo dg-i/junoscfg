@@ -1,0 +1,1 @@
+set policy-options policy-statement SAMPLE-POLICY term T3 then community add SAMPLE-COMM

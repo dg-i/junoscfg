@@ -44,5 +44,10 @@
 | Context expansion: src/junoscfg/validate/data/junos-structure-tree.json.gz | measured that no list node's own `tr` is an IP or `unreadable` type, so the synthesised `name` leaf's inherited type carried nothing |
 | Context expansion: src/junoscfg/anonymize/rules/password.py, src/junoscfg/anonymize/rules/community.py, src/junoscfg/anonymize/rules/group.py, src/junoscfg/validate/schema_node.py | which rules read `tr` or match on a `name` path; grep only |
 | Context expansion: tests/test_grammar_generator.py | `TestFlattenedRenderingsTakeARunOfValues` builds `flat-entry::values-only` and retires with `fe` |
+| Context expansion: private_test_data/identifier-key-fields-device-checks-3.out, -4.md (filtered, prompts and pre-existing device lines masked) | phase 4: shapes for the device-truth fixture and the three unprobed round-4 predictions; no device value copied |
+| Context expansion: src/junoscfg/__init__.py, src/junoscfg/anonymize/rules/__init__.py, src/junoscfg/anonymize/config.py | phase 4: the public doors the acceptance tests drive (`convert_config`, `validate_*`, `Rule`, `AnonymizeConfig`) |
+| Context expansion: tests/test_schema_data.py, tests/schema_data.py, tests/test_round_trip_validates.py, tests/test_xsd_parser.py, tests/test_schema_generator.py, tests/test_json_yaml_validator.py, tests/test_cli_validate.py, tests/test_audit/test_types.py, tests/test_audit/test_regressions.py, tests/test_anonymize/test_walker.py | phase 4: existing classes and fixtures the new tests extend |
+| Context expansion: examples/router1.*, tests/data/set_corpus.txt | phase 4: the `name`-keyed byte-identity pins |
+| Context expansion: .venv agent_ready_checks/lane.py | phase 4: whether the merge-base check applies to the standard lane (it is the fix lane's) |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

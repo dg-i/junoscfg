@@ -63,6 +63,133 @@ class TestEntryKeys:
         assert occ.schema_path == ("policy-options", "policy-statement")
         assert occ.path == ("policy-options", "policy-statement", "FOO")
 
+    # Spec: identifier-key-fields, audit/keyed-references, "A single value
+    # key field is the entry key". The bundled tree for the device's lists,
+    # and small trees for keys no hard-coded spelling could have answered.
+
+    def test_a_single_key_other_than_name(self, make_ir: Any) -> None:
+        ir = make_ir(
+            "set policy-options policy-statement p1 term 1 from prefix-list-filter plf-a orlonger"
+        )
+        occurrences = occs(ir)
+        assert one(occurrences, "plf-a").kind == "entry-key"
+        assert not by_value(occurrences, "orlonger")
+
+        tree = {
+            "c": {
+                "system": {
+                    "c": {
+                        "server": {
+                            "L": True,
+                            "k": ["address"],
+                            "c": {"address": {"l": True}, "version": {"l": True}},
+                        }
+                    }
+                }
+            }
+        }
+        found = collect_occurrences(
+            {"system": {"server": [{"address": "198.51.100.10", "version": "4"}]}}, tree
+        )
+        key = one(found, "198.51.100.10")
+        assert key.kind == "entry-key"
+        assert key.path == ("system", "server", "198.51.100.10")
+        assert one(found, "4").path[-1] == "version"
+
+    def test_a_community_action_is_keyed_community_name(self, make_ir: Any) -> None:
+        for line in (
+            "set policy-options policy-statement p1 term 1 then community add comm-a",
+            "set policy-options policy-statement p1 term 1 then community comm-a add",
+        ):
+            occurrences = occs(make_ir(line))
+            occ = one(occurrences, "comm-a")
+            assert occ.kind == "entry-key"
+            assert occ.schema_path[-2:] == ("then", "community")
+            assert not by_value(occurrences, "add")
+
+        # The same shape under any name: no spelling decides the key.
+        tree = {
+            "c": {
+                "then": {
+                    "c": {
+                        "tag-action": {
+                            "L": True,
+                            "k": [["add", "delete"], "tag-name"],
+                            "c": {
+                                "add": {"p": True},
+                                "delete": {"p": True},
+                                "tag-name": {"l": True},
+                            },
+                        }
+                    }
+                }
+            }
+        }
+        found = collect_occurrences(
+            {"then": {"tag-action": [{"add": [None], "tag-name": "SAMPLE-TAG"}]}}, tree
+        )
+        key = one(found, "SAMPLE-TAG")
+        assert key.kind == "entry-key"
+        assert not by_value(found, "add")
+
+
+class TestKeyedEntries:
+    """Spec: identifier-key-fields, audit/keyed-references, "A key field
+    that names an object is the reference"."""
+
+    LINES = {
+        "set": (
+            "set policy-options policy-statement p1 term 1 from as-path-neighbors as-list AS-LIST-A"
+        ),
+        "policy-level": (
+            "set policy-options policy-statement p1 from as-path-origins as-list-group AS-LIST-A"
+        ),
+        "group": (
+            "set groups SAMPLE-GROUP policy-options policy-statement p1 term 1 from "
+            "as-path-transits as-list AS-LIST-A"
+        ),
+    }
+
+    @pytest.mark.parametrize("where", list(LINES))
+    def test_list_name_is_the_reference(self, make_ir: Any, where: str) -> None:
+        occ = one(occs(make_ir(self.LINES[where])), "AS-LIST-A")
+        assert occ.kind == "leaf"
+        assert occ.schema_path[-1] == "list-name"
+        assert occ.path[-2:] == ("list-name", "AS-LIST-A")
+
+    def test_the_device_json_gives_the_same_reference(self) -> None:
+        ir = json_ir(
+            {
+                "policy-options": {
+                    "policy-statement": [
+                        {
+                            "name": "p1",
+                            "term": [
+                                {
+                                    "name": "1",
+                                    "from": {
+                                        "as-path-neighbors": [
+                                            {"list-type": "as-list", "list-name": "AS-LIST-A"}
+                                        ]
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        )
+        occ = one(occs(ir), "AS-LIST-A")
+        assert occ.kind == "leaf"
+        assert occ.schema_path[-1] == "list-name"
+
+    @pytest.mark.parametrize("where", list(LINES))
+    def test_list_type_is_no_reference(self, make_ir: Any, where: str) -> None:
+        occurrences = occs(make_ir(self.LINES[where]))
+        assert not by_value(occurrences, "as-list")
+        assert not by_value(occurrences, "as-list-group")
+        assert all(o.schema_path[-1:] != ("list-type",) for o in occurrences)
+
 
 class TestLeaves:
     def test_leaf_occurrence(self, make_ir: Any) -> None:

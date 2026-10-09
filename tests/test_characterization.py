@@ -367,3 +367,669 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
         assert convert_config(
             conf, from_format=Format.STRUCTURED, to_format=Format.SET
         ) == convert_config(xml, from_format=Format.XML, to_format=Format.SET)
+
+
+# ── identifier-key-fields ────────────────────────────────────────────
+#
+# Spec: openspec/changes/identifier-key-fields/specs/. A list entry is keyed
+# by the fields the XSD declares, in order: `as-path-neighbors` by
+# `list-type` and `list-name`, route-filter by its address and match type,
+# `then community` by its action and `community-name`. The shapes are the
+# ones a vMX on 23.2R2-S7.5 displayed for the same statements; the values
+# are synthetic.
+
+import hashlib  # noqa: E402
+import re  # noqa: E402
+from typing import Any  # noqa: E402
+
+from junoscfg import Format, convert_config  # noqa: E402
+from tests.keyed_entries import as_json, ir, set_ir, term_from, term_then, to_set  # noqa: E402
+
+_LIST = "SAMPLE-AS-LIST"
+_AS_LIST = {"list-type": "as-list", "list-name": _LIST}
+
+#: Where a policy statement may stand: (set prefix, structured crumbs, wrap).
+_PLACEMENTS: dict[str, tuple[str, list[str], Any]] = {
+    "root": ("set", [], lambda po: {"policy-options": po}),
+    "logical-system": (
+        "set logical-systems SAMPLE-LS",
+        ["logical-systems SAMPLE-LS"],
+        lambda po: {"logical-systems": [{"name": "SAMPLE-LS", "policy-options": po}]},
+    ),
+    "group": (
+        "set groups SAMPLE-GROUP",
+        ["groups", "SAMPLE-GROUP"],
+        lambda po: {"groups": [{"name": "SAMPLE-GROUP", "policy-options": po}]},
+    ),
+    "grouped-logical-system": (
+        "set groups SAMPLE-GROUP logical-systems SAMPLE-LS",
+        ["groups", "SAMPLE-GROUP", "logical-systems SAMPLE-LS"],
+        lambda po: {
+            "groups": [
+                {
+                    "name": "SAMPLE-GROUP",
+                    "logical-systems": [{"name": "SAMPLE-LS", "policy-options": po}],
+                }
+            ]
+        },
+    ),
+}
+
+
+def _structured(crumbs: list[str], statement: str) -> str:
+    """*statement* nested inside *crumbs*, one brace level each."""
+    text = statement
+    for crumb in reversed(crumbs):
+        inner = "\n".join("    " + line for line in text.splitlines())
+        text = f"{crumb} {{\n{inner}\n}}"
+    return text + "\n"
+
+
+def _xml(config: dict[str, Any]) -> str:
+    """The device's XML for an IR: a list repeats its element, `[null]` is empty."""
+
+    def element(name: str, value: Any) -> str:
+        if isinstance(value, list):
+            return "".join(f"<{name}/>" if item is None else element(name, item) for item in value)
+        if isinstance(value, dict):
+            inner = "".join(element(k, v) for k, v in value.items() if not k.startswith("@"))
+            return f"<{name}>{inner}</{name}>"
+        text = str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return f"<{name}>{text}</{name}>"
+
+    return element("configuration", config)
+
+
+def _every_reader(set_text: str, structured: str, config: dict[str, Any]) -> dict[str, dict]:
+    """The IR each door gives for one configuration."""
+    return {
+        "set": ir(set_text, Format.SET),
+        "structured": ir(structured, Format.STRUCTURED),
+        "json": ir(as_json(config), Format.JSON),
+        "yaml": ir(
+            convert_config(
+                as_json(config), from_format=Format.JSON, to_format=Format.YAML, validate=False
+            ),
+            Format.YAML,
+        ),
+        "xml": ir(_xml(config), Format.XML),
+    }
+
+
+class TestEntryKeysComeFromTheTree:
+    """One kernel helper answers an entry's keys; the tree carries them."""
+
+    def test_the_helper_answers_the_key_tuple(self) -> None:
+        from junoscfg import display
+        from junoscfg.display import entry_keys
+
+        assert "entry_keys" in display.__all__
+        assert entry_keys({"L": True, "k": ["list-type", "list-name"]}) == (
+            "list-type",
+            "list-name",
+        )
+        assert entry_keys({"L": True, "k": ["address", ["exact", "orlonger"]]}) == (
+            "address",
+            ("exact", "orlonger"),
+        )
+        assert entry_keys({"L": True, "k": [["add", "delete"], "community-name"]}) == (
+            ("add", "delete"),
+            "community-name",
+        )
+        assert entry_keys({"L": True}) == ("name",)
+        assert entry_keys({"L": True, "c": {"name": {"l": True}}}) == ("name",)
+
+    def test_no_module_keeps_its_own_key(self) -> None:
+        """No module under src/junoscfg reads a retired spelling, and two are banned.
+
+        Read from the syntax tree, so a comment or a docstring that names a
+        spelling to explain its retirement is not a reading of it.
+        """
+        import ast
+
+        import tomllib
+
+        retired_strings = {"fe", "values-only", "community-name"}
+        retired_names = {"FLAT_ENTRY_ELEMENTS", "ENTRY_KEY_OVERRIDES", "get_flat_entry_config"}
+        positional = re.compile(r"^_v\d+$")
+        src = Path(__file__).resolve().parent.parent / "src" / "junoscfg"
+        files = sorted(src.rglob("*.py"))
+        assert len(files) > 60, "the scan found too little source to mean anything"
+
+        found: list[str] = []
+        for path in files:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            docstrings = {
+                id(node.body[0].value)
+                for node in ast.walk(tree)
+                if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef))
+                and node.body
+                and isinstance(node.body[0], ast.Expr)
+                and isinstance(node.body[0].value, ast.Constant)
+            }
+            where = path.relative_to(src)
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    if id(node) in docstrings:
+                        continue
+                    if node.value in retired_strings or positional.match(node.value):
+                        found.append(f"{where}:{node.lineno} {node.value!r}")
+                elif isinstance(node, ast.JoinedStr):
+                    head = node.values[0] if node.values else None
+                    if isinstance(head, ast.Constant) and head.value == "_v":
+                        found.append(f"{where}:{node.lineno} f'_v{{...}}'")
+                elif isinstance(node, ast.Name) and node.id in retired_names:
+                    found.append(f"{where}:{node.lineno} {node.id}")
+                elif isinstance(node, ast.Attribute) and node.attr in retired_names:
+                    found.append(f"{where}:{node.lineno} {node.attr}")
+                elif isinstance(node, ast.alias) and node.name in retired_names:
+                    found.append(f"{where}:{node.name}")
+        assert found == [], found
+
+        pyproject = tomllib.loads(
+            (src.parent.parent / "pyproject.toml").read_text(encoding="utf-8")
+        )
+        banned = pyproject["tool"]["ruff"]["lint"]["flake8-tidy-imports"]["banned-api"]
+        assert "junoscfg.display.ENTRY_KEY_OVERRIDES" in banned
+        assert "junoscfg.display.get_flat_entry_config" in banned
+
+    @staticmethod
+    def _bundled() -> dict[str, Any]:
+        from junoscfg.display import load_schema_tree
+
+        tree = load_schema_tree()
+        assert tree is not None
+        return tree
+
+    @staticmethod
+    def _lists(tree: dict[str, Any]) -> list[tuple[tuple[str, ...], dict[str, Any]]]:
+        found: list[tuple[tuple[str, ...], dict[str, Any]]] = []
+        stack: list[tuple[tuple[str, ...], dict[str, Any]]] = [((), tree)]
+        while stack:
+            path, node = stack.pop()
+            for name, child in (node.get("c") or {}).items():
+                here = (*path, name)
+                if child.get("L"):
+                    found.append((here, child))
+                stack.append((here, child))
+        return found
+
+    def test_the_bundled_tree_carries_the_declared_keys(self) -> None:
+        lists = self._lists(self._bundled())
+        assert len(lists) > 15_000, "the walk reached too few lists to mean anything"
+
+        as_lists = [(p, n) for p, n in lists if n.get("tr") == "control-as-list-type"]
+        assert len(as_lists) == 24
+        where = set()
+        for path, node in as_lists:
+            assert node.get("k") == ["list-type", "list-name"], path
+            assert list(node["c"])[:2] == ["list-type", "list-name"], path
+            assert "p" not in node, path
+            where.add((path[-1], "groups" in path, "logical-systems" in path, "term" in path))
+        # root, logical systems, groups and grouped logical systems, with and
+        # without a term, for each of the three lists: 3 x 8.
+        assert len(where) == 24
+
+        from junoscfg.display import entry_keys
+
+        assert all(entry_keys(n) == ("list-type", "list-name") for _, n in as_lists)
+
+        matches = [n for p, n in lists if p[-1] == "attributes-match"]
+        assert len(matches) == 2
+        for node in matches:
+            assert node["k"] == ["from-event-attribute", "condition", "to-event-attribute-value"]
+
+        filters = {
+            "control-route-filter-type": "address",
+            "control-source-address-filter-type": "address",
+            "control-prefix-list-filter-type": "list_name",
+        }
+        for type_ref, first in filters.items():
+            found = [(p, n) for p, n in lists if n.get("tr") == type_ref]
+            assert len(found) == 8, type_ref
+            for path, node in found:
+                keys = entry_keys(node)
+                assert len(keys) == 2 and keys[0] == first, path
+                assert isinstance(keys[1], tuple) and {"exact", "orlonger"} <= set(keys[1])
+                assert list(node["c"])[0] == first
+            if type_ref != "control-prefix-list-filter-type":
+                assert all("accept" in n["c"] for _, n in found), type_ref
+
+        actions = [(p, n) for p, n in lists if p[-1] == "community" and "add" in n.get("c", {})]
+        assert len(actions) == 16
+        for path, node in actions:
+            keys = entry_keys(node)
+            assert keys[-1] == "community-name", path
+            assert {"add", "delete", "set"} <= set(keys[0]), path
+            assert "community-name" in node["c"]
+        definitions = [n for p, n in lists if p[-2:] == ("policy-options", "community")]
+        assert len(definitions) == 4
+        assert all(entry_keys(n) == ("name",) and "k" not in n for n in definitions)
+
+    def test_the_one_line_flag_is_unchanged(self) -> None:
+        """`o` stands exactly where it stood on the 0.14.0 tree.
+
+        3,520 nodes, pinned by the digest of their sorted paths, measured on
+        the bundled 25.2R2 tree before this change. A list that gains its key
+        children must not gain `o` with them: structured output keeps today's
+        one-line shapes (see the `attributes-match` challenge in review.md).
+        """
+        carriers: list[str] = []
+        total = 0
+        stack: list[tuple[str, dict[str, Any]]] = [("", self._bundled())]
+        while stack:
+            path, node = stack.pop()
+            for name, child in (node.get("c") or {}).items():
+                total += 1
+                here = f"{path}/{name}" if path else name
+                if child.get("o"):
+                    carriers.append(here)
+                stack.append((here, child))
+        assert total > 400_000
+        carriers.sort()
+        assert len(carriers) == 3520
+        digest = hashlib.sha256("\n".join(carriers).encode()).hexdigest()
+        assert digest == "8b8fb0e1227838e632b63a909a0a43b9ddc6d100d7912042fd85ba6356789783"
+
+
+class TestKeyedEntriesAgreeAcrossReaders:
+    """Every reader gives the device's IR for a keyed entry; writers follow it."""
+
+    @pytest.mark.parametrize("placement", list(_PLACEMENTS))
+    @pytest.mark.parametrize("level", ["term", "policy"])
+    @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
+    def test_as_list_references_give_one_ir(self, slot: str, level: str, placement: str) -> None:
+        prefix, crumbs, wrap = _PLACEMENTS[placement]
+        # A wildcard name where a group may hold one.
+        policy = "<*>" if placement == "group" else "SAMPLE-POLICY"
+        where = ["policy-options", f"policy-statement {policy}"]
+        set_where = f"policy-options policy-statement {policy}"
+        if level == "term":
+            where.append("term T1")
+            set_where += " term T1"
+        statement = f"{slot} as-list {_LIST}"
+        entry = {"name": policy}
+        body = {"from": {slot: [dict(_AS_LIST)]}}
+        if level == "term":
+            entry["term"] = [{"name": "T1", **body}]
+        else:
+            entry.update(body)
+        config = wrap({"policy-options": {"policy-statement": [entry]}}["policy-options"])
+
+        irs = _every_reader(
+            f"{prefix} {set_where} from {statement}\n",
+            _structured([*crumbs, *where, "from"], statement + ";"),
+            config,
+        )
+        for door, got in irs.items():
+            assert got == config, door
+        assert to_set(as_json(config), Format.JSON) == [f"{prefix} {set_where} from {statement}"]
+
+    def test_attributes_match_gives_its_three_fields(self) -> None:
+        match = {
+            "from-event-attribute": "ping.test-owner",
+            "condition": "matches",
+            "to-event-attribute-value": "^uptime$",
+        }
+        spaced = dict(match, **{"to-event-attribute-value": "^up time$"})
+        config = {
+            "event-options": {
+                "policy": [{"name": "SAMPLE-EVENT-POLICY", "attributes-match": [match, spaced]}]
+            }
+        }
+        lines = [
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^uptime$"',
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^up time$"',
+        ]
+        structured = _structured(
+            ["event-options", "policy SAMPLE-EVENT-POLICY"],
+            'attributes-match ping.test-owner matches "^uptime$";\n'
+            'attributes-match ping.test-owner matches "^up time$";',
+        )
+        for door, got in _every_reader("\n".join(lines) + "\n", structured, config).items():
+            entries = got["event-options"]["policy"][0]["attributes-match"]
+            assert entries == [match, spaced], door
+            for item in entries:
+                assert not {"name", "_v0", "_v1"} & set(item), door
+        assert to_set(as_json(config), Format.JSON) == lines
+
+    def test_route_filter_holds_its_action(self) -> None:
+        for slot in ("route-filter", "source-address-filter"):
+            entry = {"address": "198.51.100.0/24", "exact": [None], "accept": [None]}
+            config = {
+                "policy-options": {
+                    "policy-statement": [
+                        {"name": "SAMPLE-POLICY", "term": [{"name": "T1", "from": {slot: [entry]}}]}
+                    ]
+                }
+            }
+            line = f"{_TERM} from {slot} 198.51.100.0/24 exact accept"
+            structured = _structured(
+                ["policy-options", "policy-statement SAMPLE-POLICY", "term T1", "from"],
+                f"{slot} 198.51.100.0/24 exact accept;",
+            )
+            for door, got in _every_reader(line + "\n", structured, config).items():
+                assert term_from(got)[slot] == [entry], (slot, door)
+                assert list(term_from(got)[slot][0]) == ["address", "exact", "accept"], door
+
+    @pytest.mark.parametrize("action", ["add", "delete"])
+    def test_a_community_action_reads_in_either_order(self, action: str) -> None:
+        expected = [{action: [None], "community-name": "SAMPLE-COMM"}]
+        config = {
+            "policy-options": {
+                "policy-statement": [
+                    {
+                        "name": "SAMPLE-POLICY",
+                        "term": [{"name": "T1", "then": {"community": expected}}],
+                    }
+                ]
+            }
+        }
+        doors = {
+            "action first": set_ir(f"{_TERM} then community {action} SAMPLE-COMM"),
+            "key first": set_ir(f"{_TERM} then community SAMPLE-COMM {action}"),
+            **_every_reader(
+                f"{_TERM} then community {action} SAMPLE-COMM\n",
+                _structured(
+                    ["policy-options", "policy-statement SAMPLE-POLICY", "term T1", "then"],
+                    f"community {action} SAMPLE-COMM;",
+                ),
+                config,
+            ),
+        }
+        for door, got in doors.items():
+            community = term_then(got)["community"]
+            assert community == expected, door
+            assert list(community[0]) == [action, "community-name"], door
+        assert to_set(as_json(config), Format.JSON) == [
+            f"{_TERM} then community {action} SAMPLE-COMM"
+        ]
+
+    def test_identity_is_the_key_tuple(self) -> None:
+        got = term_from(
+            set_ir(
+                f"{_TERM} from as-path-neighbors as-list {_LIST}",
+                f"{_TERM} from as-path-neighbors as-list {_LIST}",
+                f"{_TERM} from as-path-neighbors as-list-group {_LIST}",
+                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST-2",
+            )
+        )
+        assert got["as-path-neighbors"] == [
+            {"list-type": "as-list", "list-name": _LIST},
+            {"list-type": "as-list-group", "list-name": _LIST},
+            {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST-2"},
+        ]
+        # Device probe round 4 pending: one address, two match types.
+        got = term_from(
+            set_ir(
+                f"{_TERM} from route-filter 198.51.100.0/24 exact",
+                f"{_TERM} from route-filter 198.51.100.0/24 orlonger",
+                f"{_TERM} from route-filter 198.51.100.0/24 exact accept",
+            )
+        )
+        assert got["route-filter"] == [
+            {"address": "198.51.100.0/24", "exact": [None], "accept": [None]},
+            {"address": "198.51.100.0/24", "orlonger": [None]},
+        ]
+
+    @pytest.mark.parametrize("list_type", ["as-list", "as-list-group"])
+    @pytest.mark.parametrize(
+        "list_name",
+        ["SAMPLE-AS-LIST", "as-list", "as-list-group", "64496", "SAMPLE AS LIST", "S_1.2-x"],
+    )
+    def test_device_ir_round_trips_through_set(self, list_type: str, list_name: str) -> None:
+        """Device IR to set to IR, over both enum values and names of every
+        shape a `list-name` takes: one spelling a keyword, one numeric, one
+        quoted with spaces."""
+        entry = {"list-type": list_type, "list-name": list_name}
+        config = {
+            "policy-options": {
+                "policy-statement": [
+                    {
+                        "name": "SAMPLE-POLICY",
+                        "term": [{"name": "T1", "from": {"as-path-neighbors": [entry]}}],
+                    }
+                ]
+            }
+        }
+        lines = to_set(as_json(config), Format.JSON)
+        assert len(lines) == 1
+        assert ir("\n".join(lines) + "\n", Format.SET) == config
+
+    @pytest.mark.parametrize("writer", [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML])
+    def test_every_writer_reads_back_the_device_ir(self, writer: Format) -> None:
+        """set -> IR -> each writer -> its reader, with order kept across entries."""
+        lines = [
+            f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST-2",
+            f"{_TERM} from as-path-neighbors as-list-group {_LIST}",
+            f"{_TERM} from as-path-neighbors as-list {_LIST}",
+            f"{_TERM} from route-filter 198.51.100.128/25 orlonger",
+            f"{_TERM} from route-filter 198.51.100.0/24 exact accept",
+            f"{_TERM} then community delete SAMPLE-COMM-2",
+            f"{_TERM} then community add SAMPLE-COMM",
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^up time$"',
+        ]
+        source = "\n".join(lines) + "\n"
+        first = ir(source, Format.SET)
+        written = convert_config(source, from_format=Format.SET, to_format=writer, validate=False)
+        assert ir(written, writer) == first
+        neighbors = term_from(first)["as-path-neighbors"]
+        assert [e["list-name"] for e in neighbors] == ["SAMPLE-AS-LIST-2", _LIST, _LIST]
+        assert to_set(written, writer) == lines
+
+    def test_json_and_xml_write_the_device_set_lines(self) -> None:
+        config = {
+            "policy-options": {
+                "policy-statement": [
+                    {
+                        "name": "SAMPLE-POLICY",
+                        "term": [
+                            {
+                                "name": "T1",
+                                "from": {
+                                    "as-path-neighbors": [dict(_AS_LIST)],
+                                    "route-filter": [
+                                        {
+                                            "address": "198.51.100.0/24",
+                                            "exact": [None],
+                                            "accept": [None],
+                                        }
+                                    ],
+                                    "source-address-filter": [
+                                        {
+                                            "address": "198.51.100.0/24",
+                                            "exact": [None],
+                                            "accept": [None],
+                                        }
+                                    ],
+                                },
+                                "then": {
+                                    "community": [{"add": [None], "community-name": "SAMPLE-COMM"}]
+                                },
+                            }
+                        ],
+                    }
+                ]
+            },
+            "event-options": {
+                "policy": [
+                    {
+                        "name": "SAMPLE-EVENT-POLICY",
+                        "attributes-match": [
+                            {
+                                "from-event-attribute": "ping.test-owner",
+                                "condition": "matches",
+                                "to-event-attribute-value": "^uptime$",
+                            }
+                        ],
+                    }
+                ]
+            },
+        }
+        expected = [
+            f"{_TERM} from as-path-neighbors as-list {_LIST}",
+            f"{_TERM} from route-filter 198.51.100.0/24 exact accept",
+            f"{_TERM} from source-address-filter 198.51.100.0/24 exact accept",
+            f"{_TERM} then community add SAMPLE-COMM",
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^uptime$"',
+        ]
+        assert to_set(as_json(config), Format.JSON) == expected
+        assert to_set(_xml(config), Format.XML) == expected
+
+    def test_structured_output_writes_the_keys_in_order(self) -> None:
+        source = "\n".join(
+            [
+                f"{_TERM} from as-path-neighbors as-list {_LIST}",
+                f"{_TERM} from as-path-origins as-list-group SAMPLE-AS-LIST-GROUP",
+                f"{_TERM} from route-filter 198.51.100.0/24 exact accept",
+                f"{_TERM} from source-address-filter 198.51.100.0/24 exact accept",
+                f"{_TERM} then community add SAMPLE-COMM",
+                "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+                'matches "^uptime$"',
+            ]
+        )
+        out = convert_config(
+            source, from_format=Format.SET, to_format=Format.STRUCTURED, validate=False
+        )
+        for text in (
+            f"as-path-neighbors as-list {_LIST};",
+            "as-path-origins as-list-group SAMPLE-AS-LIST-GROUP;",
+            "route-filter 198.51.100.0/24 exact accept;",
+            "source-address-filter 198.51.100.0/24 exact accept;",
+            "community add SAMPLE-COMM;",
+            'attributes-match ping.test-owner matches "^uptime$";',
+        ):
+            assert text in out, f"{text!r} missing from\n{out}"
+        assert "list-type" not in out and "list-name" not in out
+
+    @pytest.mark.parametrize(
+        ("attribute", "word", "xml_attribute", "meta"),
+        [
+            ({"inactive": True}, "inactive:", 'inactive="inactive"', "deactivate"),
+            ({"protect": "protect"}, "protect:", 'protect="protect"', "protect"),
+        ],
+    )
+    def test_an_attribute_on_a_keyed_entry_agrees_across_readers(
+        self, attribute: dict, word: str, xml_attribute: str, meta: str
+    ) -> None:
+        entry = {"@": attribute, **_AS_LIST}
+        config = {
+            "policy-options": {
+                "policy-statement": [
+                    {
+                        "name": "SAMPLE-POLICY",
+                        "term": [{"name": "T1", "from": {"as-path-neighbors": [entry]}}],
+                    }
+                ]
+            }
+        }
+        line = f"{_TERM} from as-path-neighbors as-list {_LIST}"
+        meta_line = f"{meta} {line[len('set ') :]}"
+        structured = _structured(
+            ["policy-options", "policy-statement SAMPLE-POLICY", "term T1", "from"],
+            f"{word} as-path-neighbors as-list {_LIST};",
+        )
+        xml = _xml(config).replace("<as-path-neighbors>", f"<as-path-neighbors {xml_attribute}>")
+        doors = {
+            "set": ir(f"{line}\n{meta_line}\n", Format.SET),
+            "structured": ir(structured, Format.STRUCTURED),
+            "json": ir(as_json(config), Format.JSON),
+        }
+        # The XML reader drops `protect="protect"` on every element, keyed or
+        # not: a separate gap, outside this change (see the phase-4 report).
+        if meta != "protect":
+            doors["xml"] = ir(xml, Format.XML)
+        for door, got in doors.items():
+            assert term_from(got)["as-path-neighbors"] == [entry], door
+        assert to_set(as_json(config), Format.JSON) == [line, meta_line]
+
+    def test_an_empty_list_writes_nothing(self) -> None:
+        """Pinned as it is: no device writes it, and no output invents an entry."""
+        config = {
+            "policy-options": {
+                "policy-statement": [
+                    {
+                        "name": "SAMPLE-POLICY",
+                        "term": [
+                            {
+                                "name": "T1",
+                                "from": {"as-path-neighbors": []},
+                                "then": {"accept": [None]},
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        lines = to_set(as_json(config), Format.JSON)
+        assert lines == [f"{_TERM} then accept"]
+
+
+_TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
+
+
+class TestNameKeyedListsAreUnchanged:
+    """`name`-keyed lists render byte for byte as they did on 0.14.0.
+
+    Pinned before the change and expected to pass on both sides of it: the
+    guard against the change moving what it does not name. Digests of every
+    output format from every input format of `examples/router1.*`, and of the
+    committed set corpus less the lines the change rekeys.
+    """
+
+    _OUTPUTS = (Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML)
+    _REKEYED = (
+        "route-filter",
+        "prefix-list-filter",
+        "source-address-filter",
+        "attributes-match",
+        "as-path-neighbors",
+        "as-path-origins",
+        "as-path-transits",
+        " then community ",
+        "apply-groups",
+    )
+
+    def _render(self, source: str, fmt: Format) -> str:
+        parts = []
+        for out in self._OUTPUTS:
+            try:
+                parts.append(convert_config(source, from_format=fmt, to_format=out, validate=False))
+            except Exception as exc:  # noqa: BLE001 -- the failure itself is pinned
+                parts.append(f"ERROR {type(exc).__name__}")
+        return "\x00".join(parts)
+
+    def test_corpus_output_is_byte_identical(self) -> None:
+        examples = {
+            "set": (Format.SET, "d09d9e47f09a48acf36e61ea48942e09a3d206d21aa32d763bfb9c1510e4de3a"),
+            "conf": (
+                Format.STRUCTURED,
+                "d09d9e47f09a48acf36e61ea48942e09a3d206d21aa32d763bfb9c1510e4de3a",
+            ),
+            "json": (
+                Format.JSON,
+                "da3e1e578f8ec992f13d10a657745078d36f110e12639828b2f24bc435d30097",
+            ),
+            "xml": (Format.XML, "da3e1e578f8ec992f13d10a657745078d36f110e12639828b2f24bc435d30097"),
+        }
+        for suffix, (fmt, digest) in examples.items():
+            source = Path(f"examples/router1.{suffix}").read_text(encoding="utf-8")
+            rendered = self._render(source, fmt)
+            assert hashlib.sha256(rendered.encode()).hexdigest() == digest, suffix
+
+        lines = [
+            line.strip()
+            for line in Path("tests/data/set_corpus.txt").read_text().splitlines()
+            if line.startswith("set ")
+        ]
+        kept = [line for line in lines if not any(k in line + " " for k in self._REKEYED)]
+        assert (len(lines), len(kept)) == (117, 105)
+        rendered = "\x01".join(self._render(line, Format.SET) for line in kept)
+        assert (
+            hashlib.sha256(rendered.encode()).hexdigest()
+            == "dcbaa53f5b228b48f2855dcc4b1b8b0c94a09289ba48df59c26c812988e22c2c"
+        )

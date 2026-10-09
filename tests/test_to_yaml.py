@@ -401,3 +401,94 @@ class TestInvalidXmlIsReported:
             "</configuration></rpc-reply>"
         )
         assert "dump-on-panic" in xml_to_yaml(full)
+
+
+# ── identifier-key-fields: a lone XML entry takes its shape from the tree ──
+#
+# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys.
+# One `<as-path-neighbors>` has no `<name>` child, so the walker's heuristic
+# made it a dict where the device's JSON holds a one-entry list.
+
+_XML_TERM = (
+    '<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2/junos">'
+    '<configuration junos:changed-seconds="1759900000" '
+    'junos:changed-localtime="2026-10-08 09:00:00 UTC">'
+    "<policy-options><policy-statement><name>SAMPLE-POLICY</name>"
+    "<term><name>T1</name>{body}</term>"
+    "</policy-statement></policy-options></configuration></rpc-reply>"
+)
+
+
+class TestLoneEntryFollowsTheTree:
+    LONE = {
+        "as-path-neighbors": (
+            '<from><as-path-neighbors junos:changed-seconds="1759900000">'
+            "<list-type>as-list</list-type><list-name>SAMPLE-AS-LIST</list-name>"
+            "</as-path-neighbors></from>",
+            ("from", "as-path-neighbors"),
+            {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"},
+        ),
+        "as-path-transits": (
+            "<from><as-path-transits>"
+            "<list-type>as-list-group</list-type><list-name>SAMPLE-ASG</list-name>"
+            "</as-path-transits></from>",
+            ("from", "as-path-transits"),
+            {"list-type": "as-list-group", "list-name": "SAMPLE-ASG"},
+        ),
+        "route-filter": (
+            "<from><route-filter><address>198.51.100.0/24</address><exact/><accept/>"
+            "</route-filter></from>",
+            ("from", "route-filter"),
+            {"address": "198.51.100.0/24", "exact": [None], "accept": [None]},
+        ),
+        "community": (
+            "<then><community><add/><community-name>SAMPLE-COMM</community-name>"
+            "</community></then>",
+            ("then", "community"),
+            {"add": [None], "community-name": "SAMPLE-COMM"},
+        ),
+    }
+
+    @pytest.mark.parametrize("slot", list(LONE))
+    def test_a_lone_keyed_entry_is_a_list(self, slot: str) -> None:
+        body, (where, key), entry = self.LONE[slot]
+        xml = _XML_TERM.format(body=body)
+        for got in (
+            xml_to_dict(xml)["configuration"],
+            json.loads(
+                convert_config(xml, from_format=Format.XML, to_format=Format.JSON, validate=False)
+            )["configuration"],
+        ):
+            term = got["policy-options"]["policy-statement"][0]["term"][0]
+            assert term[where][key] == [entry], slot
+
+    def test_a_lone_attributes_match_is_a_list(self) -> None:
+        xml = (
+            "<configuration><event-options><policy><name>SAMPLE-EVENT-POLICY</name>"
+            "<attributes-match><from-event-attribute>ping.test-owner</from-event-attribute>"
+            "<condition>matches</condition>"
+            "<to-event-attribute-value>^uptime$</to-event-attribute-value>"
+            "</attributes-match></policy></event-options></configuration>"
+        )
+        got = xml_to_dict(xml)["configuration"]["event-options"]["policy"][0]
+        assert got["attributes-match"] == [
+            {
+                "from-event-attribute": "ping.test-owner",
+                "condition": "matches",
+                "to-event-attribute-value": "^uptime$",
+            }
+        ]
+
+    def test_an_element_outside_the_tree_keeps_the_name_heuristic(self) -> None:
+        """Pinned as it is: where the tree does not reach, a `<name>` child
+        still makes a list and its absence a container."""
+        got = xml_to_dict(
+            "<configuration><unknown-thing><name>x</name><v>1</v></unknown-thing>"
+            "<other-thing><v>1</v></other-thing><system><host-name>r1</host-name></system>"
+            "</configuration>"
+        )["configuration"]
+        assert got == {
+            "unknown-thing": [{"name": "x", "v": "1"}],
+            "other-thing": {"v": "1"},
+            "system": {"host-name": "r1"},
+        }

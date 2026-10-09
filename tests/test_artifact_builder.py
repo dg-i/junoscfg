@@ -290,3 +290,98 @@ class TestStructureTreeRoundTrip:
         assert back.children["seq"].combinator is Combinator.CHOICE
         assert back.children["keyed"].is_key is False
         assert back.children["groups"].is_presence is False
+
+    # ── identifier-key-fields: the keys and the declared order ──────────
+    # Spec: openspec/changes/identifier-key-fields/specs/schema-pipeline/
+    # entry-key-fields, "The structure tree carries the keys and the declared
+    # order". Driven from an XSD, so the keys reach the tree however the
+    # parser holds them.
+
+    @staticmethod
+    def _keyed_tree_files(tmp: Path) -> tuple[dict, dict]:
+        """The tree the keyed XSD writes, and the tree read back and rewritten."""
+        from junoscfg.validate.xsd_parser import parse_xsd
+        from tests.keyed_entries import KEYED_XSD
+
+        first = tmp / "first.json"
+        second = tmp / "second.json"
+        write_structure_tree(parse_xsd(KEYED_XSD), str(first))
+        write_structure_tree(read_structure_tree(first), str(second))
+        return (
+            json.loads(first.read_text(encoding="utf-8")),
+            json.loads(second.read_text(encoding="utf-8")),
+        )
+
+    def test_ordered_entry_keys_survive(self, tmp_path: Path) -> None:
+        from tests.keyed_entries import node
+
+        written, rebuilt = self._keyed_tree_files(tmp_path)
+        term = ("policy-options", "policy-statement", "term")
+        expected = {
+            (*term, "from", "as-path-neighbors"): ["list-type", "list-name"],
+            (*term, "from", "route-filter"): ["address", ["exact", "orlonger"]],
+            (*term, "then", "community"): [["add", "delete"], "community-name"],
+            ("system", "ntp", "server"): ["address"],
+            ("event-options", "policy", "attributes-match"): [
+                "from-event-attribute",
+                "condition",
+                "to-event-attribute-value",
+            ],
+        }
+        for path, keys in expected.items():
+            assert node(written, *path).get("k") == keys, path
+            assert node(rebuilt, *path).get("k") == keys, path
+        for path in (term[:2], term, ("policy-options", "community")):
+            assert "k" not in node(written, *path), f"{path}: keyed `name`, so no `k`"
+            assert "k" not in node(rebuilt, *path), path
+        assert rebuilt == written
+
+    def test_declared_child_order_survives(self, tmp_path: Path) -> None:
+        from tests.keyed_entries import node
+
+        written, rebuilt = self._keyed_tree_files(tmp_path)
+        term = ("policy-options", "policy-statement", "term")
+        expected = {
+            (*term, "from", "as-path-neighbors"): ["list-type", "list-name"],
+            (*term, "from", "route-filter"): ["address", "exact", "orlonger", "accept", "reject"],
+            (*term, "then", "community"): ["add", "delete", "community-name"],
+            ("system", "ntp", "server"): ["address", "version", "prefer"],
+            term[:2]: ["name", "term", "from", "then"],
+        }
+        for path, children in expected.items():
+            assert list(node(written, *path)["c"]) == children, path
+            assert list(node(rebuilt, *path)["c"]) == children, path
+
+    def test_no_node_carries_fe(self, tmp_path: Path) -> None:
+        """Neither a freshly built tree nor the bundled one holds `fe`.
+
+        The scan counts what it walked, so an empty or unreadable tree fails
+        rather than passing for want of nodes.
+        """
+        import junoscfg.validate as validate_pkg
+        from tests.keyed_entries import KEYED_XSD, artifact_json, build_artifacts
+
+        def carriers(tree: dict) -> tuple[int, list[str]]:
+            seen = 0
+            found: list[str] = []
+            stack: list[tuple[str, dict]] = [("", tree)]
+            while stack:
+                path, current = stack.pop()
+                seen += 1
+                if "fe" in current:
+                    found.append(path)
+                for name, child in (current.get("c") or {}).items():
+                    stack.append((f"{path}/{name}", child))
+            return seen, found
+
+        built = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
+        seen, found = carriers(built)
+        assert seen > 30
+        assert found == []
+
+        bundled = Path(validate_pkg.__file__).parent / "data"
+        seen, found = carriers(
+            json.loads(read_artifact_text(find_artifact(bundled, "junos-structure-tree.json")))
+        )
+        assert seen > 400_000
+        assert found == [], f"{len(found)} nodes carry fe, e.g. {found[:3]}"
