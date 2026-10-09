@@ -18,6 +18,9 @@
 - [x] 2.6 Docs: keyed-entries convention, validation guide, API page.
 - [x] 2.7 Version 0.15.0 and the towncrier fragment.
 - [ ] 2.8 Full check, declared-break measurement, collection test suite.
+  - Full check at e6b3d5c: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` exit 1, "failing: application tests" (3 failed, 1833 passed, 93 skipped); the three are the pending challenges in review.md. Not ticked until the owner decides them.
+  - Declared break: 2,558 of 10,792 list-entry objects in the regenerated JSON schema carry no `name` property (0.14.0: 0 of 8,394).
+  - Collection 347715a against this checkout: 33 passed.
 
 ## 3. Review and evidence
 
