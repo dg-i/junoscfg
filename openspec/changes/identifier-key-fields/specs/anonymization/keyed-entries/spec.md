@@ -1,25 +1,33 @@
 ## Purpose
 
 Anonymization reads a list entry's key fields as the leaves the structure tree
-declares, so every rule sees a key value with its own type and path, and no
-rule depends on a key the walker invents.
+declares, so every rule sees a key value at its own path with the tree's type
+for it, and no rule depends on a key the walker invents.
 
 ## ADDED Requirements
 
-### Requirement: Key fields are leaves of their declared type
+### Requirement: Key fields are the leaves the tree declares
 
 WHEN the anonymize walker meets a list entry THEN it SHALL hand each key field
 `entry_keys()` names to the rules as the leaf the tree declares for it, with
-that leaf's own type, and SHALL synthesise no leaf for `name`; an enum key
-field such as `list-type` SHALL pass unchanged.
-Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_its_declared_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`
+the type the tree records for that leaf, and SHALL synthesise no leaf for
+`name`; an enum key field such as `list-type`, and a key choice's keyword,
+SHALL pass unchanged. Recording a type the XSD gives only as a `simpleContent`
+extension base is not part of this change.
+Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`
 
 #### Scenario: Two key fields
 
 - **WHEN** the entry `{"list-type": "as-list", "list-name": "AS-LIST-A"}` is
   walked with every rule on
-- **THEN** each rule sees `list-type` and `list-name` with their declared leaf
-  types, and `list-type` stays `as-list`
+- **THEN** each rule sees `list-type` and `list-name` as the tree's leaves,
+  and `list-type` stays `as-list`
+
+#### Scenario: A key choice
+
+- **WHEN** a `route-filter` entry holding `"exact": [null]` is walked with every
+  rule on
+- **THEN** `exact` stays in the entry unchanged
 
 #### Scenario: A list keyed name
 

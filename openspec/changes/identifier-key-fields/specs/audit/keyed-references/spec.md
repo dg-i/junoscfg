@@ -27,18 +27,20 @@ Tests: `tests/test_audit/test_walker.py::TestKeyedEntries::test_list_name_is_the
   only `AS-LIST-A` is referenced through `as-path-neighbors`
 - **THEN** `find_unused` reports `AS-LIST-B` and not `AS-LIST-A`
 
-### Requirement: A single key field is the entry key
+### Requirement: A single value key field is the entry key
 
-WHEN the audit walker meets an entry keyed by one field THEN it SHALL read
-that field from `entry_keys()` as the entry key, with no fallback to `name`
-or `community-name` and no read of `fe`.
+WHEN the audit walker meets an entry keyed by one value field, beside any key
+choice THEN it SHALL read that field from `entry_keys()` as the entry key,
+record nothing for the key choice's keyword, and fall back to neither `name`
+nor `community-name` nor `fe`.
 Tests: `tests/test_audit/test_walker.py::TestEntryKeys::test_a_single_key_other_than_name`, `tests/test_audit/test_walker.py::TestEntryKeys::test_a_community_action_is_keyed_community_name`, `tests/test_audit/test_walker.py::TestEntryKeys::test_named_list_entry_key`
 
 #### Scenario: Keys other than name
 
 - **WHEN** the IR holds `from prefix-list-filter plf-a orlonger` and
   `then community add comm-a`
-- **THEN** `plf-a` and `comm-a` are each recorded once as entry keys
+- **THEN** `plf-a` and `comm-a` are each recorded once as entry keys, and
+  `orlonger` and `add` not at all
 
 #### Scenario: A list keyed name
 

@@ -10,8 +10,9 @@ the `name` spelling the readers used to put in their place.
 
 WHEN `validate_ir`, or a conversion that validates, checks an IR whose list
 entries carry the fields `entry_keys()` names THEN field validation SHALL
-validate each key value against its own leaf in the tree, enum and pattern
-included, SHALL report no unplaced error for a key field, and SHALL report
+validate each key value against its own leaf in the tree, a key choice's
+chosen element, enum and pattern included, SHALL report no unplaced error for
+a key field, and SHALL report
 `name`, `_v0` or `_v1` under a list keyed otherwise as unplaced; no key SHALL
 be exempted by spelling.
 Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_list_reference_is_clean`, `tests/test_field_validator.py::TestKeyedEntries::test_a_key_value_is_checked_against_its_leaf`, `tests/test_field_validator.py::TestKeyedEntries::test_name_under_a_list_keyed_otherwise_is_unplaced`, `tests/test_field_validator.py::TestKeyedEntries::test_attributes_match_takes_its_three_fields`, `tests/test_field_validator.py::TestKeyedEntries::test_a_route_filter_action_is_clean`
@@ -36,7 +37,8 @@ Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_
 
 #### Scenario: A route-filter action
 
-- **WHEN** a `route-filter` entry holds `"exact": [null]` and `"accept": [null]`
+- **WHEN** a `route-filter` entry holds its `address`, `"exact": [null]` and
+  `"accept": [null]`
 - **THEN** field validation reports no error
 
 ### Requirement: The JSON and YAML schemas name the key fields

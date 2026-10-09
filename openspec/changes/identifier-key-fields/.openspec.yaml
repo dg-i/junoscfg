@@ -6,10 +6,10 @@ domains: [schema-pipeline, conversion, validation, audit, anonymization]
 removes:
   - "the parser's drop of every element a sequence declares beside its first choice: the identifiers, which left `control-as-list-type` childless and every list keyed `name` whatever the dump declares, and the second choice of seven types, route-filter's actions among them"
   - "`fe` in the structure tree, `flat-entry:<key>:<position>`, `values-only` and the `_v<n>` keys that stood in for `attributes-match`'s three identifiers"
-  - "`_fix_flat_entry_keys` and `_fix_attributes_match_oneliner`; one-line rendering follows the XSD's `oneliner` and `oneliner-plus`"
+  - "`_fix_attributes_match_oneliner`, a no-op on both probed dumps, and the `flat-entry` half of `_fix_flat_entry_keys`; set output writes the key fields the XSD marks, route-filter's match type and `then community`'s action included, and structured output keeps today's `o`"
   - "the hard-coded `community-name` branches of the set reader, the set writer, the audit walker and the XML reader, `FLAT_ENTRY_ELEMENTS`, and the parent-scoped entry-key fix of `change/entry-keys-from-the-tree`, superseded"
-  - "`_takes_either_order`, replaced by whether the node declares a child before its keys"
-  - "the childless-list, `apply-groups` and `values-only` branches of the set reader that returned with tokens unread; one unplaced rule replaces them"
+  - "`_takes_either_order`, replaced by whether the node declares a key choice before its other keys"
+  - "the childless-list, `apply-groups` and `values-only` branches of the set reader that returned with tokens unread; a statement the reader cannot complete is kept whole, from its keyword, at its parent"
   - "`ENTRY_KEY_OVERRIDES` and `get_flat_entry_config` from `junoscfg.display`, removed without prior deprecation as decision 2026-10-09 permits for a secondary door, and banned"
 declared-break:
   consumer:
@@ -21,7 +21,11 @@ declared-break:
       and `list-name`, `attributes-match` by its three fields where it carried
       `name`, `_v0` and `_v1`; a route-filter, prefix-list-filter or
       source-address-filter action such as `accept` is a declared child,
-      `[null]`, where it was kept unplaced as `true`. convert_config's JSON and
+      `[null]`, where it was kept unplaced as `true`, and the match type is part
+      of its key, so `exact` and `orlonger` on one address are two entries; a
+      set statement the reader cannot complete, `apply-groups G1 G2` among
+      them, is kept whole and unplaced where part of it was applied or
+      dropped. convert_config's JSON and
       YAML output changes for a configuration holding one of those statements,
       and validate_config accepts the device-backed shape it rejected.
       `ENTRY_KEY_OVERRIDES` and `get_flat_entry_config` leave the secondary

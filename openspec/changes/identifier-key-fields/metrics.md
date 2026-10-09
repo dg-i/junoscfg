@@ -39,5 +39,10 @@
 | Context expansion: tests/test_device_truth.py, tests/test_to_yaml.py, tests/test_anonymize/test_integration.py, tests/test_set_validator.py, tests/test_cli.py | capture-pair convention and existing classes the new test ids extend |
 | Context expansion: change/entry-keys-from-the-tree openspec deltas (git show) | superseded requirements folded in: the two `community` lists |
 | Context expansion: private_test_data/identifier-key-fields-device-checks.md, .out, .out2 | device probe results; prompts, hostnames and timestamps not copied |
+| Context expansion: private_test_data/identifier-key-fields-device-checks-2.md, -3.md, -2.out (filtered, prompts masked) | round 2 and 3 probe plans and the rejected `route-filter ... next-policy` line; prompts, hostnames, timestamps and pre-existing device lines not copied |
+| Context expansion: private_test_data/anonymizer-bugs.md | the owner's row 1 to decide; rows added; gitignored, not committed |
+| Context expansion: src/junoscfg/validate/data/junos-structure-tree.json.gz | measured that no list node's own `tr` is an IP or `unreadable` type, so the synthesised `name` leaf's inherited type carried nothing |
+| Context expansion: src/junoscfg/anonymize/rules/password.py, src/junoscfg/anonymize/rules/community.py, src/junoscfg/anonymize/rules/group.py, src/junoscfg/validate/schema_node.py | which rules read `tr` or match on a `name` path; grep only |
+| Context expansion: tests/test_grammar_generator.py | `TestFlattenedRenderingsTakeARunOfValues` builds `flat-entry::values-only` and retires with `fe` |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
