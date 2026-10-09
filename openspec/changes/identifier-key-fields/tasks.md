@@ -78,3 +78,7 @@ grammar sample: newly rejected 0, newly accepted 2
   - Declared break re-measured on the regenerated JSON schema: 2,560 of 11,547 list-entry objects carry no `name` property (fc22c57: 2,558 of 10,792; 0.14.0: 0 of 8,394); the 755 more are the declarations the dump bounds by a number.
   - Collection 347715a against this checkout, throwaway virtualenv, clone unmodified: 33 passed.
 - [x] 4.15 Re-review finding 11, owner decision "fold now": `is_keyword_field()` in `junoscfg.display` replaces the three local spellings in the set reader, the set writer and the grammar generator; behaviour unchanged.
+  - Focused: `tests/test_set_input.py`, `test_grammar_generator.py`, `test_convert_api.py`, `test_convert_consistency.py`, `test_convert_roundtrip.py`, `test_device_truth.py`, `test_characterization.py::TestKeyedEntriesAgreeAcrossReaders`: 417 passed.
+  - Full check at e6b7886: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` exit 0, "every check passed" (1892 passed, 45 skipped, 1 xfailed).
+  - `review_tools.py corpus`, `grammar`, `compare` (tag r11, branch only): unplaced 68,172, other field warnings 329, 35 failing files on both sides; grammar 10,970 / 30, newly rejected 0, newly accepted 2; 2 files with more unplaced than master, 161 fewer; set output differs from master in 75 files. Equal to the re-review.
+  - No `--regen-schema`; `git diff --stat ad9a625..HEAD -- src/junoscfg/validate/data` is empty.
