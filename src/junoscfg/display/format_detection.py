@@ -22,7 +22,7 @@ def is_display_set(text: str) -> bool:
         stripped = line.strip()
         if not stripped:
             continue
-        if not re.match(r"^(set|deactivate|delete)\s", stripped):
+        if not re.match(r"^(set|deactivate|protect|activate|delete)\s", stripped):
             return False
     return True
 

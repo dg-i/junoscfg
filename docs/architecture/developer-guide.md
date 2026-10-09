@@ -558,7 +558,7 @@ flowchart TD
     DETECT -->|JSON parse succeeds| FMT_JSON[json]
     DETECT -->|mapping/list parses only as YAML| FMT_YAML[yaml]
     DETECT -->|starts with '<'| FMT_XML[xml]
-    DETECT -->|all lines start with set/deactivate/delete| FMT_SET[set]
+    DETECT -->|all lines use a set-mode command| FMT_SET[set]
     DETECT -->|otherwise| FMT_STRUCT[structured]
 ```
 

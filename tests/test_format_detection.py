@@ -30,6 +30,8 @@ class TestFormatDetection:
             ("configuration:\n  system:\n    host-name: r1\n", "yaml"),
             ("{configuration: {system: {host-name: r1}}}", "yaml"),
             ("set system host-name r1\n", "set"),
+            ("protect system\n", "set"),
+            ("activate system\n", "set"),
             ("system {\n    host-name r1;\n}\n", "structured"),
         ],
     )
