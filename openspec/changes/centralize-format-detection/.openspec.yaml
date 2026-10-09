@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-09
+type: feature
+zone: surface
+domains:
+  - conversion
+  - validation
+  - audit
+removes: duplicated format-detection branches in the CLI and top-level validation dispatcher
