@@ -2,3 +2,4 @@ Add opt-in structured conversion results and make the CLI the sole renderer of
 field-validation, anonymization-debug, and structured-output diagnostics while
 preserving its existing text and exit behavior.
 Diagnostics carry a validated `debug`, `warning`, or `note` severity.
+Lower-layer diagnostic sinks are optional and caller-owned.

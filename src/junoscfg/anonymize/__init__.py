@@ -48,6 +48,7 @@ def anonymize(
     Args:
         ir: The full IR dict (``{"configuration": {...}}``).
         config: Anonymization configuration specifying which rules to apply.
+        diagnostic_sink: Optional receiver for debug diagnostics.
 
     Returns:
         An :class:`AnonymizeResult` with the modified IR and the revert mapping.

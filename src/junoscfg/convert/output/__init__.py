@@ -24,6 +24,8 @@ def from_dict(
              ``"structured"``).
         wrap: Wrap JSON and YAML output in a top-level ``"configuration"``
               mapping. Ignored by the other renderers.
+        diagnostic_sink: Optional receiver for renderer diagnostics. The
+            caller owns any terminal or log rendering.
 
     Returns:
         The rendered configuration as a string.
