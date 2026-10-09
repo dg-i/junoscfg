@@ -1166,3 +1166,89 @@ class TestAnIncompleteStatementIsUnplaced:
         assert any(e.expected == UNPLACED for e in result.errors), result.errors
         with pytest.raises(FieldValidationError):
             convert_config(line, from_format=Format.SET, to_format=Format.JSON, strict=True)
+
+
+class TestANameKeyIsOpen:
+    """Challenge C, owner decision (phase-6 review): closed-enum enforcement
+    applies to the key fields the tree names in `k` only. A `name` key's enum
+    is a fragment, open as it was before `name` became a tree child; holding
+    it closed reported 11,310 valid jvd lines."""
+
+    def test_a_classifier_name_is_clean(self) -> None:
+        from junoscfg.convert import validate_ir
+        from tests.keyed_entries import set_ir
+
+        line = "set class-of-service interfaces ge-0/0/0 unit 0 classifiers dscp SAMPLE-DSCP"
+        assert validate_ir({"configuration": set_ir(line)}).errors == []
+
+    def test_a_k_key_stays_closed(self) -> None:
+        from junoscfg.convert import validate_ir
+
+        bad = {"list-type": "1", "list-name": "SAMPLE-AS-LIST"}
+        errors = validate_ir({"configuration": _policy("from", {"as-path-neighbors": [bad]})})
+        assert [e.value for e in errors.errors] == ["1"]
+
+
+class TestAnEntryWithoutItsKeyIsUnplaced:
+    """Finding 5 (phase-6 review): an entry from JSON, YAML or XML that lacks a
+    key field was written as a line the device rejects, with no diagnostic.
+    It is the statement the set reader cannot complete, reported the same way."""
+
+    _CASES = [
+        (_policy("from", {"as-path-neighbors": [{"list-name": "SAMPLE-AS-LIST"}]}), "list-type"),
+        (_policy("from", {"route-filter": [{"exact": [None], "accept": [None]}]}), "address"),
+        (_policy("from", {"route-filter": [{"address": "198.51.100.0/24"}]}), "exact"),
+        (_event({k: v for k, v in _MATCH.items() if k != "condition"}), "condition"),
+        ({"policy-options": {"policy-statement": [{"then": {"accept": [None]}}]}}, "name"),
+    ]
+
+    @pytest.mark.parametrize(("ir", "field"), _CASES)
+    def test_validation_reports_it(self, ir: dict, field: str) -> None:
+        from junoscfg.convert import validate_ir
+
+        errors = validate_ir({"configuration": ir}).errors
+        unplaced = [e for e in errors if e.expected == UNPLACED]
+        assert len(unplaced) == 1, errors
+        assert f"without its key field '{field}" in unplaced[0].message
+        assert unplaced[0].message.endswith(
+            "could not be placed in the schema: kept as written, not validated"
+        )
+
+    @pytest.mark.parametrize("fmt", ["json", "yaml", "xml"])
+    def test_each_structured_door_reports_it(self, fmt: str) -> None:
+        import json
+
+        import yaml
+
+        from junoscfg import Format, convert_config_result
+
+        ir = _policy("from", {"as-path-neighbors": [{"list-name": "SAMPLE-AS-LIST"}]})
+        if fmt == "json":
+            source = json.dumps({"configuration": ir})
+        elif fmt == "yaml":
+            source = yaml.safe_dump({"configuration": ir})
+        else:
+            source = (
+                "<configuration><policy-options><policy-statement><name>SAMPLE-POLICY</name>"
+                "<term><name>T1</name><from><as-path-neighbors>"
+                "<list-name>SAMPLE-AS-LIST</list-name>"
+                "</as-path-neighbors></from></term></policy-statement></policy-options>"
+                "</configuration>"
+            )
+        result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
+        assert messages == [
+            "'as-path-neighbors' entry without its key field 'list-type' could not be placed "
+            "in the schema: kept as written, not validated"
+        ]
+        with pytest.raises(FieldValidationError):
+            convert_config_result(
+                source, from_format=Format(fmt), to_format=Format.SET, strict=True
+            )
+
+    def test_a_complete_entry_is_clean(self) -> None:
+        from junoscfg.convert import validate_ir
+
+        entry = {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}
+        ir = _policy("from", {"as-path-neighbors": [entry]})
+        assert validate_ir({"configuration": ir}).errors == []

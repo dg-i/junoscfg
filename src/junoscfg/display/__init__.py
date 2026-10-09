@@ -29,6 +29,7 @@ from junoscfg.display.constants import (
     read_artifact_text,
     resolve_artifacts_dir,
     resolve_key_alias,
+    statement_children,
     statement_name_spellings,
     strip_type_prefix,
 )
@@ -78,6 +79,7 @@ __all__ = [
     "find_artifact",
     "resolve_artifacts_dir",
     "resolve_key_alias",
+    "statement_children",
     "statement_name_spellings",
     "strip_type_prefix",
     "xml_to_dict",

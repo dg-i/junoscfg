@@ -933,7 +933,12 @@ class TestKeyedEntryTakesExactlyItsKeys:
         assert not validate_set(line, artifacts_dir=str(keyed_artifacts)).valid
 
     def test_name_keyed_grammar_is_byte_identical(self, tmp_path: Path) -> None:
-        """What 0.14.0 generated for `name`-keyed lists, to the byte."""
+        """What 0.14.0 generated for `name`-keyed lists, to the byte.
+
+        Two lines differ by owner decision: `data__list` (phase 5) and
+        `universal_statement`, where `apply-macro` takes one to three values,
+        as the device does (phase-6 fix pass, device probe, vMX 23.2R2-S7.5).
+        """
         from tests.keyed_entries import NAME_KEYED_XSD, build_artifacts
 
         directory = build_artifacts(NAME_KEYED_XSD, tmp_path)

@@ -1,0 +1,46 @@
+{
+    "configuration" : {
+        "groups" : [
+        {
+            "name" : "SAMPLE-GROUP",
+            "apply-macro" : [
+            {
+                "name" : "ABCDE",
+                "data" : [
+                {
+                    "name" : "DEFGH"
+                }
+                ]
+            },
+            {
+                "name" : "12345",
+                "data" : [
+                {
+                    "name" : "KADJBF KU!H",
+                    "value" : "balks"
+                }
+                ]
+            }
+            ]
+        }
+        ],
+        "apply-macro" : [
+        {
+            "name" : "ABCDE",
+            "data" : [
+            {
+                "name" : "DEFGH"
+            }
+            ]
+        },
+        {
+            "name" : "12345",
+            "data" : [
+            {
+                "name" : "KADJBF KU!H"
+            }
+            ]
+        }
+        ]
+    }
+}

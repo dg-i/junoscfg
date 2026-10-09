@@ -142,9 +142,21 @@ def test_junoscfg_renders_what_the_device_renders(conf: Path) -> None:
 # `.xml` the device displayed for the same statements; the device showed no
 # structured or XML display for some, so those groups hold fewer doors.
 # Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys.
+# Round 5 added `virtual-link`, keyed by two fields given by keyword, which
+# the device stores in declared order whatever order they were set in, and
+# `apply-macro`, a name with at most a keyword and its value, a quoted value
+# with a space among them; the latter guards behaviour 0.14.0 already had.
 
 KEYED_DIR = PROJECT_ROOT / "tests" / "data" / "captures"
-KEYED_GROUPS = ("as-lists", "identity", "community", "filters", "attributes-match")
+KEYED_GROUPS = (
+    "as-lists",
+    "identity",
+    "community",
+    "filters",
+    "attributes-match",
+    "virtual-link",
+    "apply-macro",
+)
 _DOORS = {".set": Format.SET, ".conf": Format.STRUCTURED, ".xml": Format.XML, ".json": Format.JSON}
 _CHANGED = {
     "junos:changed-seconds": "1759900000",

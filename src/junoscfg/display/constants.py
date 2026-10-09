@@ -170,6 +170,26 @@ def entry_key_names(schema_node: Any) -> frozenset[str]:
     return frozenset(names)
 
 
+def statement_children(schema_node: Any) -> dict[str, Any]:
+    """The children a set statement inside *schema_node* names by keyword.
+
+    All of them, but a list's key fields: inside an entry those are its key,
+    never statements -- `set system ntp server 198.51.100.10 address ...`
+    names no `address`. The set reader and the grammar ask the same question,
+    so they share this answer. Takes a structure-tree node or a `SchemaNode`.
+    """
+    if isinstance(schema_node, dict):
+        children: dict[str, Any] = schema_node.get("c", {})
+        is_list = bool(schema_node.get("L"))
+    else:
+        children = schema_node.children
+        is_list = schema_node.is_list
+    if not is_list:
+        return children
+    keys = entry_key_names(schema_node)
+    return {name: node for name, node in children.items() if name not in keys}
+
+
 def is_freeform_nk(schema_node: dict[str, Any] | None) -> bool:
     """Check if a schema node is a freeform nk key (not keyword-suppressed).
 

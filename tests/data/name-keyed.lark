@@ -3,7 +3,7 @@
 
 start: SET configuration
 
-universal_statement: "apply-flags" QUOTED_OR_VALUE | "apply-groups" QUOTED_OR_VALUE | "apply-groups-except" QUOTED_OR_VALUE | "apply-macro" QUOTED_OR_VALUE+
+universal_statement: "apply-flags" QUOTED_OR_VALUE | "apply-groups" QUOTED_OR_VALUE | "apply-groups-except" QUOTED_OR_VALUE | "apply-macro" QUOTED_OR_VALUE (QUOTED_OR_VALUE QUOTED_OR_VALUE?)?
 
 apply_macro__list: QUOTED_OR_VALUE ("data" data__list | universal_statement)?
 

@@ -576,6 +576,29 @@ class TestKeyedEntriesSurvive:
         assert len(match) == 1
         assert match[0].split(" attributes-match ")[1].split()[1] == "matches"
 
+    @pytest.mark.parametrize(
+        ("line", "word"),
+        [
+            (
+                "set policy-options policy-statement SAMPLE-POLICY term T1 from as-path-neighbors"
+                " as-list-group SAMPLE-NAMES",
+                "as-list",
+            ),
+            ("set policy-options policy-statement SAMPLE-POLICY term T1 from protocol bgp", "bgp"),
+        ],
+    )
+    def test_a_value_from_its_leafs_enum_passes_every_rule(self, line: str, word: str) -> None:
+        """A leaf's own enum value is configuration syntax: no rule rewrites it.
+        0.14.0 wrote `from protocol word_<hash>`, which the device rejects
+        (anonymizer-bugs rows 4 and 5)."""
+        from junoscfg import Format, convert_config
+
+        cfg = AnonymizeConfig(sensitive_words=[word], salt="keyed")
+        out = convert_config(
+            line + "\n", from_format=Format.SET, to_format=Format.SET, anon_config=cfg
+        )
+        assert out.strip() == line
+
     #: Every value 0.14.0 replaced in examples/router1.json with every rule
     #: on, by rule. Measured before the change.
     BEFORE = {

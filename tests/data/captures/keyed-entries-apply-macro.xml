@@ -1,0 +1,32 @@
+<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2-S7.5/junos">
+    <configuration>
+            <groups>
+                <name>SAMPLE-GROUP</name>
+                <apply-macro>
+                    <name>ABCDE</name>
+                    <data>
+                        <name>DEFGH</name>
+                    </data>
+                </apply-macro>
+                <apply-macro>
+                    <name>12345</name>
+                    <data>
+                        <name>KADJBF KU!H</name>
+                        <value>balks</value>
+                    </data>
+                </apply-macro>
+            </groups>
+            <apply-macro>
+                <name>ABCDE</name>
+                <data>
+                    <name>DEFGH</name>
+                </data>
+            </apply-macro>
+            <apply-macro>
+                <name>12345</name>
+                <data>
+                    <name>KADJBF KU!H</name>
+                </data>
+            </apply-macro>
+    </configuration>
+</rpc-reply>

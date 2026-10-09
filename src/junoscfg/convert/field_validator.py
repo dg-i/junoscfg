@@ -242,7 +242,9 @@ class FieldValidator:
                     continue
 
                 # Valid at every level; the reader shapes them, not the tree.
-                if key in UNIVERSAL_STATEMENTS:
+                # Bare, as `true` or `[null]`, one is a statement the set
+                # reader kept whole: `set apply-groups` names no group.
+                if key in UNIVERSAL_STATEMENTS and value not in (True, None, [None]):
                     continue
 
                 child_schema = children.get(key)
@@ -257,6 +259,7 @@ class FieldValidator:
                     if isinstance(value, list) and inner_schema:
                         for item in value:
                             path.append(key)
+                            self._check_key_fields(item, inner_schema, path, result)
                             self._walk(item, inner_schema, path, result)
                             path.pop()
                         continue
@@ -272,9 +275,9 @@ class FieldValidator:
                 items = value if isinstance(value, list) else [value]
                 incomplete = (
                     child_schema is not None
-                    and "k" in child_schema
+                    and entry_keys(child_schema) != ("name",)
                     and not all(isinstance(item, dict) for item in items)
-                )
+                ) or key in UNIVERSAL_STATEMENTS
                 if child_schema is None or incomplete:
                     # A key the schema does not name and no reader writes by
                     # rule is configuration junoscfg could not model. The set
@@ -300,11 +303,13 @@ class FieldValidator:
                     if isinstance(value, list):
                         for item in value:
                             path.append(key)
+                            self._check_key_fields(item, child_schema, path, result)
                             self._walk(item, child_schema, path, result)
                             path.pop()
                         continue
                     elif isinstance(value, dict):
                         path.append(key)
+                        self._check_key_fields(value, child_schema, path, result)
                         self._walk(value, child_schema, path, result)
                         path.pop()
                         continue
@@ -312,12 +317,17 @@ class FieldValidator:
                 # Leaf node — validate the value
                 if child_schema.get("l"):
                     path.append(key)
-                    # A key value takes its own leaf's type, as the grammar
-                    # renders it: a closed enum is closed. The device rejects
-                    # `as-path-neighbors 1 ...` although the XSD's union for
-                    # `list-type` also names a number.
-                    is_key = "k" in schema_node and key in entry_key_names(schema_node)
-                    self._validate_leaf(value, path, child_schema, result, closed=is_key)
+                    # A key value takes its own leaf's type. A key field the
+                    # tree names in `k` is closed to its enum, as the grammar
+                    # renders it: the device rejects `as-path-neighbors 1 ...`
+                    # although the XSD's union for `list-type` also names a
+                    # number. A `name` key's enum is a fragment and open, as
+                    # it was before `name` became a tree child: `classifiers
+                    # dscp SAMPLE-DSCP` carries `['default']` and is valid.
+                    closed: bool | None = None
+                    if schema_node.get("L") and key in entry_key_names(schema_node):
+                        closed = entry_keys(schema_node) != ("name",)
+                    self._validate_leaf(value, path, child_schema, result, closed=closed)
                     path.pop()
                 # Container — recurse
                 elif isinstance(value, dict):
@@ -328,6 +338,35 @@ class FieldValidator:
         elif isinstance(obj, list):
             for item in obj:
                 self._walk(item, schema_node, path, result)
+
+    @staticmethod
+    def _check_key_fields(
+        entry: Any, list_schema: dict[str, Any], path: list[str], result: FieldValidationResult
+    ) -> None:
+        """Report an entry that lacks one of its key fields.
+
+        JSON, YAML and XML can hold one; written out it is a line the device
+        rejects -- `{"list-name": "X"}` as `as-path-neighbors X`. It is the
+        statement a set reader cannot complete, reported the same way.
+        """
+        if not (isinstance(entry, dict) and list_schema.get("L")):
+            return
+        for key_field in entry_keys(list_schema):
+            names = key_field if isinstance(key_field, tuple) else (key_field,)
+            if not any(name in entry for name in names):
+                missing = " or ".join(names)
+                result.errors.append(
+                    FieldError(
+                        path=".".join(path),
+                        message=(
+                            f"'{path[-1]}' entry without its key field '{missing}' could not "
+                            "be placed in the schema: kept as written, not validated"
+                        ),
+                        value=path[-1],
+                        expected=UNPLACED,
+                    )
+                )
+                return
 
     def _is_structural_key(self, key: str, schema_node: dict[str, Any]) -> bool:
         """Whether *key* is one the readers write by rule rather than as a child.
@@ -379,12 +418,14 @@ class FieldValidator:
         schema_node: dict[str, Any],
         result: FieldValidationResult,
         *,
-        closed: bool = False,
+        closed: bool | None = None,
     ) -> None:
         """Validate a leaf value against enum, pattern, and type constraints.
 
-        *closed* holds a key field to its enum where the enum is not a
-        fragment of a wider union.
+        *closed* is None for a leaf that is no key field. True holds a key
+        field the tree names in `k` to its enum where the enum is not a
+        fragment of a wider union; False takes a `name` key's enum as a
+        fragment, so a value outside it passes the enum check.
         """
         # Presence flags or empty values — skip
         if value is None or value is True or value == "":
@@ -413,6 +454,8 @@ class FieldValidator:
         if enum_idx is not None and enum_idx < len(self._enums):
             allowed = self._enums[enum_idx]
             if str_value not in allowed:
+                if closed is False:
+                    return  # A `name` key: its enum is a fragment
                 closed = closed and not enum_is_fragment(path[-1] if path else "", allowed)
                 if closed:
                     pass  # A key field's closed enum: the mismatch is reported below

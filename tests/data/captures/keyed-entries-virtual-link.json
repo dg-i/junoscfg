@@ -1,0 +1,23 @@
+{
+    "configuration" : {
+        "protocols" : {
+            "ospf" : {
+                "area" : [
+                {
+                    "name" : "0.0.0.0",
+                    "virtual-link" : [
+                    {
+                        "neighbor-id" : "10.255.255.1",
+                        "transit-area" : "0.0.0.2"
+                    },
+                    {
+                        "neighbor-id" : "10.255.255.2",
+                        "transit-area" : "0.0.0.3"
+                    }
+                    ]
+                }
+                ]
+            }
+        }
+    }
+}

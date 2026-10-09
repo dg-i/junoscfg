@@ -1,0 +1,19 @@
+<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2-S7.5/junos">
+    <configuration>
+            <protocols>
+                <ospf>
+                    <area>
+                        <name>0.0.0.0</name>
+                        <virtual-link>
+                            <neighbor-id>10.255.255.1</neighbor-id>
+                            <transit-area>0.0.0.2</transit-area>
+                        </virtual-link>
+                        <virtual-link>
+                            <neighbor-id>10.255.255.2</neighbor-id>
+                            <transit-area>0.0.0.3</transit-area>
+                        </virtual-link>
+                    </area>
+                </ospf>
+            </protocols>
+    </configuration>
+</rpc-reply>

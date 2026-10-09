@@ -826,7 +826,7 @@ class TestAnUnmodelledStatementIsKeptWhole:
 
         tree = {"c": {"system": {"c": {"odd": {}}}}}
         config: dict = {}
-        _merge_tokens(config, ["system", "odd", "a", "b"], tree)
+        _merge_tokens(config, ["system", "odd", "a", "b"], tree, {})
         assert config == {"system": {"odd a b": True}}
 
 
@@ -1073,3 +1073,215 @@ class TestApplyGroupsAndKeyedEntries:
         assert keyword not in parent
         assert parent[f"{keyword} SAMPLE-GROUP SAMPLE-GROUP-2"] == KEPT
         assert _round_trip(line) == [line]
+
+
+def _unplaced(source: str, fmt: str = "set") -> list[str]:
+    """The `field-validate` unplaced messages a conversion reports."""
+    from junoscfg import Format, convert_config_result
+
+    result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+    return [
+        d.message
+        for d in result.diagnostics
+        if d.source == "field-validate" and "could not be placed" in d.message
+    ]
+
+
+class TestANonListNodeNeverReplacesAnEntry:
+    """Challenge A, owner decision (phase-6 review): any `maxOccurs` but 1 is a
+    list, and a nokeyword leaf never overwrites a present, different value.
+    `forwarding-classes class` collapsed into its last class, without a word."""
+
+    def test_three_forwarding_classes_stay_three(self) -> None:
+        from junoscfg import Format
+        from tests.keyed_entries import ir, to_set
+
+        source = (
+            "class-of-service {\n    forwarding-classes {\n"
+            "        class fc0 queue-num 0;\n        class fc1 queue-num 1;\n"
+            "        class mcast-fc queue-num 2;\n    }\n}\n"
+        )
+        classes = ir(source, Format.STRUCTURED)["class-of-service"]["forwarding-classes"]["class"]
+        assert classes == [
+            {"name": "fc0", "queue-num": "0"},
+            {"name": "fc1", "queue-num": "1"},
+            {"name": "mcast-fc", "queue-num": "2"},
+        ]
+        assert to_set(source, Format.STRUCTURED) == [
+            f"set class-of-service forwarding-classes class {name} queue-num {n}"
+            for n, name in enumerate(("fc0", "fc1", "mcast-fc"))
+        ]
+        assert _unplaced(source, "structured") == []
+
+    @pytest.mark.parametrize(
+        "lines",
+        [
+            ["set system commit peers 10.0.0.1", "set system commit peers 10.0.0.2"],
+            [
+                "set system services http servers server S1 port 80",
+                "set system services http servers server S2 port 81",
+            ],
+        ],
+    )
+    def test_two_entries_stay_two(self, lines: list[str]) -> None:
+        source = "\n".join(lines) + "\n"
+        assert _round_trip(source.strip()) == lines
+        assert _unplaced(source) == []
+
+    def test_a_second_value_of_a_nokeyword_leaf_is_kept_whole(self) -> None:
+        """`access securid-server` is a single node keyed by a nokeyword `name`:
+        a second, different name is kept whole from the node's keyword and
+        reported, never written over the first."""
+        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
+        second = "set access securid-server SAMPLE-SERVER-2 configuration-file sample-2"
+        got = set_to_dict(f"{first}\n{second}\n")["access"]
+        assert got["securid-server"] == {"name": "SAMPLE-SERVER", "configuration-file": "sample-1"}
+        assert got["securid-server SAMPLE-SERVER-2 configuration-file sample-2"] is True
+        assert _round_trip(f"{first}\n{second}") == [first, second]
+        assert len(_unplaced(f"{first}\n{second}\n")) == 1
+
+    def test_the_same_value_again_is_one_statement(self) -> None:
+        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
+        again = "set access securid-server SAMPLE-SERVER"
+        assert set_to_dict(f"{first}\n{again}\n") == set_to_dict(first)
+
+
+_AREA = "set protocols ospf area 0.0.0.0 virtual-link"
+
+
+class TestKeyFieldsGivenByKeyword:
+    """Challenge B, owner decision, device probe round 5 (vMX 23.2R2-S7.5): a
+    key field whose leaf is not `nokeyword` is read as `keyword value`, those
+    fields in any order among themselves, and written in declared order; a
+    missing field, or a value without its keyword, is rejected."""
+
+    _ENTRY = {"neighbor-id": "10.255.255.2", "transit-area": "0.0.0.3"}
+
+    def test_declared_order(self) -> None:
+        line = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        area = set_to_dict(line)["protocols"]["ospf"]["area"][0]
+        assert area["virtual-link"] == [self._ENTRY]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+    def test_the_reversed_order_gives_the_same_ir(self) -> None:
+        reversed_line = f"{_AREA} transit-area 0.0.0.3 neighbor-id 10.255.255.2"
+        declared = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        assert set_to_dict(reversed_line) == set_to_dict(declared)
+        assert _round_trip(reversed_line) == [declared]
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "virtual-link neighbor-id 10.255.255.3",
+            "virtual-link 10.255.255.4 0.0.0.2",
+            "virtual-link neighbor-id 10.255.255.4 0.0.0.2",
+            "virtual-link neighbor-id 10.255.255.4 neighbor-id 10.255.255.5",
+        ],
+    )
+    def test_an_incomplete_key_is_kept_whole_and_reported(self, statement: str) -> None:
+        line = f"set protocols ospf area 0.0.0.0 {statement}"
+        area = set_to_dict(line)["protocols"]["ospf"]["area"][0]
+        assert "virtual-link" not in area
+        assert area[statement] is True
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+
+    def test_device_json_keeps_the_keywords(self) -> None:
+        from junoscfg import Format
+        from tests.keyed_entries import as_json, to_set
+
+        config = {
+            "protocols": {"ospf": {"area": [{"name": "0.0.0.0", "virtual-link": [self._ENTRY]}]}}
+        }
+        assert to_set(as_json(config), Format.JSON) == [
+            f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        ]
+
+    @pytest.mark.parametrize(
+        ("line", "entry"),
+        [
+            (
+                "set services nat pool SAMPLE-POOL address-range low 198.51.100.1"
+                " high 198.51.100.9",
+                {"low": "198.51.100.1", "high": "198.51.100.9"},
+            ),
+            (
+                "set class-of-service schedulers SAMPLE-SCHED drop-profile-map loss-priority low"
+                " protocol any drop-profile SAMPLE-DP",
+                {"loss-priority": "low", "protocol": "any", "drop-profile": "SAMPLE-DP"},
+            ),
+        ],
+    )
+    def test_other_keyword_keys(self, line: str, entry: dict) -> None:
+        got = set_to_dict(line)
+        parent = (
+            got["services"]["nat"]["pool"][0]
+            if "services" in got
+            else (got["class-of-service"]["schedulers"][0])
+        )
+        slot = "address-range" if "services" in got else "drop-profile-map"
+        assert parent[slot] == [entry]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+
+class TestApplyMacroTakesAtMostThreeValues:
+    """`apply-macro` takes a name, then optionally a keyword and its value; the
+    device rejects a fourth value (device probe round 5, vMX 23.2R2-S7.5),
+    which the reader turned into a second data entry without a word."""
+
+    @pytest.mark.parametrize(
+        ("line", "entry"),
+        [
+            ("set apply-macro ABCDE", {"name": "ABCDE"}),
+            ("set apply-macro ABCDE DEFGH", {"name": "ABCDE", "data": [{"name": "DEFGH"}]}),
+            (
+                'set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks',
+                {"name": "12345", "data": [{"name": "KADJBF KU!H", "value": "balks"}]},
+            ),
+        ],
+    )
+    def test_one_to_three_values(self, line: str, entry: dict) -> None:
+        got = set_to_dict(line)
+        parent = got["groups"]["group"][0] if "groups" in got else got
+        assert parent["apply-macro"] == [entry]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+    @pytest.mark.parametrize(
+        "statement",
+        ['apply-macro 12345 "KADJBF KU!H" balks XXXXX', "apply-macro 12345 XXX XXXX XXX"],
+    )
+    def test_a_fourth_value_is_kept_whole_and_reported(self, statement: str) -> None:
+        line = f"set groups SAMPLE-GROUP {statement}"
+        group = set_to_dict(line)["groups"]["group"][0]
+        assert "apply-macro" not in group
+        assert [k for k in group if k != "name"] == [statement.replace('"', "")]
+        assert len(_unplaced(line + "\n")) == 1
+
+
+class TestABareApplyGroups:
+    """Finding 6 (phase-6 review): a bare `set apply-groups` names no group, a
+    statement the device rejects: kept whole and reported."""
+
+    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
+    def test_it_is_reported(self, keyword: str) -> None:
+        line = f"set system {keyword}"
+        assert set_to_dict(line) == {"system": {keyword: True}}
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+
+    def test_a_group_after_a_bare_one_is_kept_too(self) -> None:
+        """Both statements survive; the reader used to raise on the second."""
+        source = "set apply-groups\nset apply-groups SAMPLE-GROUP"
+        assert set_to_dict(source) == {"apply-groups": True, "apply-groups SAMPLE-GROUP": True}
+        assert _round_trip(source) == source.splitlines()
+
+    def test_a_keyed_entry_after_a_bare_keyword_is_kept_too(self) -> None:
+        bare = f"{_TERM} from as-path-neighbors"
+        full = f"{bare} as-list SAMPLE-AS-LIST"
+        assert _from(f"{bare}\n{full}") == {
+            "as-path-neighbors": KEPT,
+            "as-path-neighbors as-list SAMPLE-AS-LIST": KEPT,
+        }

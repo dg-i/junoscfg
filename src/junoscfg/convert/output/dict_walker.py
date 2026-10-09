@@ -426,7 +426,8 @@ class DictWalker:
     ) -> tuple[str, set[str]] | None:
         """An entry's key as written, and the IR keys it consumed; None if absent.
 
-        The key values in declared order, a choice of identifiers as its
+        The key values in declared order, a field whose leaf is not
+        `nokeyword` as its keyword and value, a choice of identifiers as its
         keyword and, where the alternative carries one, its value. A hash
         outside a known list is keyed `name`, as it always was.
         """
@@ -450,6 +451,12 @@ class DictWalker:
             if isinstance(value, list):
                 value = value[0]
             written.add(field)
+            leaf = (schema_node or {}).get("c", {}).get(field)
+            if isinstance(leaf, dict) and leaf.get("l") and not leaf.get("nk"):
+                # A key field whose leaf is not `nokeyword` is written with its
+                # keyword: `virtual-link neighbor-id 10.255.255.1 transit-area
+                # 0.0.0.2` (device probe, vMX 23.2R2-S7.5).
+                parts.append(field)
             parts.append(format_value(value))
         return " ".join(parts), written
 

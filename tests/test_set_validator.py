@@ -354,6 +354,9 @@ _PROBE_THEN = "set policy-options policy-statement SAMPLE-POLICY term T1 then"
 _PROBE_EVENT = "set event-options policy SAMPLE-EVENT-POLICY attributes-match"
 
 
+_VIRTUAL_LINK = "set protocols ospf area 0.0.0.0 virtual-link"
+
+
 class TestTheShippedGrammarTakesKeyedEntries:
     ACCEPTED = (
         f"{_PROBE_T} as-path-neighbors as-list SAMPLE-AS-LIST",
@@ -405,6 +408,33 @@ class TestTheShippedGrammarTakesKeyedEntries:
             assert not validator.validate_set(line).valid, line
         assert validate_config("\n".join(self.ACCEPTED), format=Format.SET).valid
         assert not validate_set(self.REJECTED[0]).valid
+
+    #: Device probe round 5 (vMX 23.2R2-S7.5): key fields given by keyword
+    #: in either order, and `apply-macro` with one to three values.
+    ROUND_5_ACCEPTED = (
+        f"{_VIRTUAL_LINK} neighbor-id 10.255.255.1 transit-area 0.0.0.2",
+        f"{_VIRTUAL_LINK} transit-area 0.0.0.3 neighbor-id 10.255.255.2",
+        "set apply-macro ABCDE",
+        "set apply-macro ABCDE DEFGH",
+        'set apply-macro 12345 "KADJBF KU!H"',
+        'set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks',
+        "set system location building SAMPLE-BUILDING",
+    )
+    ROUND_5_REJECTED = (
+        f"{_VIRTUAL_LINK} neighbor-id 10.255.255.3",
+        f"{_VIRTUAL_LINK} 10.255.255.4 0.0.0.2",
+        'set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks XXXXX',
+        "set groups SAMPLE-GROUP apply-macro 12345 XXX XXXX XXX",
+        "set system location dc-a",
+    )
+
+    @pytest.mark.parametrize("line", ROUND_5_ACCEPTED)
+    def test_round_5_accepted_lines(self, bundled_set_validator, line: str) -> None:
+        assert bundled_set_validator.validate(line).valid, line
+
+    @pytest.mark.parametrize("line", ROUND_5_REJECTED)
+    def test_round_5_rejected_lines(self, bundled_set_validator, line: str) -> None:
+        assert not bundled_set_validator.validate(line).valid, line
 
     #: Rejected by the device, accepted by the grammar: the `from` rule's
     #: `"as" QUOTED_OR_VALUE` takes `as` + `-path-neighbors`, because a keyword

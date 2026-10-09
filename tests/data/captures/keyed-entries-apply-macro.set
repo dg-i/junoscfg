@@ -1,0 +1,4 @@
+set groups SAMPLE-GROUP apply-macro ABCDE DEFGH
+set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks
+set apply-macro ABCDE DEFGH
+set apply-macro 12345 "KADJBF KU!H"

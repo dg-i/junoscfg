@@ -43,15 +43,14 @@ def walk(
 
     # Navigate to configuration node in schema
     schema_root = schema.get("c", {}).get("configuration", schema)
-    enums = schema.get("_enums", [])
 
     # The IR is {"configuration": {...}} — walk inside it
     cfg = ir.get("configuration")
     if cfg is None:
         # Try walking IR directly if it's not wrapped
-        _walk_node(ir, schema_root, [], rules, path_filter, log_debug, diagnostic_sink, enums)
+        _walk_node(ir, schema_root, [], rules, path_filter, log_debug, diagnostic_sink)
     else:
-        _walk_node(cfg, schema_root, [], rules, path_filter, log_debug, diagnostic_sink, enums)
+        _walk_node(cfg, schema_root, [], rules, path_filter, log_debug, diagnostic_sink)
 
 
 def _walk_node(
@@ -62,14 +61,12 @@ def _walk_node(
     path_filter: PathFilter,
     log_debug: bool,
     diagnostic_sink: Callable[[str], None] | None = None,
-    enums: list[list[str]] | None = None,
 ) -> None:
     """Recursively walk the IR dict, applying rules to leaves.
 
     A list entry's key fields are the leaves the tree declares for them, so
     rules see `name`, `list-name` or `address` with the tree's type; a key
-    choice's keyword is a presence node and no leaf. *enums* is the tree's
-    enum table: a value a leaf's enum declares is a keyword, never data.
+    choice's keyword is a presence node and no leaf.
     """
     if obj is None or schema_node is None:
         return
@@ -95,28 +92,14 @@ def _walk_node(
                     for item in value:
                         path.append(key)
                         _walk_node(
-                            item,
-                            inner_schema,
-                            path,
-                            rules,
-                            path_filter,
-                            log_debug,
-                            diagnostic_sink,
-                            enums,
+                            item, inner_schema, path, rules, path_filter, log_debug, diagnostic_sink
                         )
                         path.pop()
                     continue
                 elif isinstance(value, dict) and inner_schema:
                     path.append(key)
                     _walk_node(
-                        value,
-                        inner_schema,
-                        path,
-                        rules,
-                        path_filter,
-                        log_debug,
-                        diagnostic_sink,
-                        enums,
+                        value, inner_schema, path, rules, path_filter, log_debug, diagnostic_sink
                     )
                     path.pop()
                     continue
@@ -130,28 +113,14 @@ def _walk_node(
                     for item in value:
                         path.append(key)
                         _walk_node(
-                            item,
-                            child_schema,
-                            path,
-                            rules,
-                            path_filter,
-                            log_debug,
-                            diagnostic_sink,
-                            enums,
+                            item, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
                         )
                         path.pop()
                     continue
                 elif isinstance(value, dict):
                     path.append(key)
                     _walk_node(
-                        value,
-                        child_schema,
-                        path,
-                        rules,
-                        path_filter,
-                        log_debug,
-                        diagnostic_sink,
-                        enums,
+                        value, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
                     )
                     path.pop()
                     continue
@@ -160,7 +129,6 @@ def _walk_node(
             if child_schema.get("l"):
                 path.append(key)
                 if path_filter.matches(path):
-                    keywords = enums[child_schema["e"]] if enums and "e" in child_schema else ()
                     _anonymize_leaf(
                         obj,
                         key,
@@ -170,29 +138,19 @@ def _walk_node(
                         rules,
                         log_debug,
                         diagnostic_sink,
-                        keywords,
                     )
                 path.pop()
             # Container — recurse
             elif isinstance(value, dict):
                 path.append(key)
                 _walk_node(
-                    value,
-                    child_schema,
-                    path,
-                    rules,
-                    path_filter,
-                    log_debug,
-                    diagnostic_sink,
-                    enums,
+                    value, child_schema, path, rules, path_filter, log_debug, diagnostic_sink
                 )
                 path.pop()
 
     elif isinstance(obj, list):
         for item in obj:
-            _walk_node(
-                item, schema_node, path, rules, path_filter, log_debug, diagnostic_sink, enums
-            )
+            _walk_node(item, schema_node, path, rules, path_filter, log_debug, diagnostic_sink)
 
 
 def _anonymize_leaf(
@@ -204,7 +162,6 @@ def _anonymize_leaf(
     rules: list[Rule],
     log_debug: bool,
     diagnostic_sink: Callable[[str], None] | None = None,
-    keywords: Sequence[str] = (),
 ) -> None:
     """Try each rule against a leaf value; first match wins."""
     if value is None or value is True or value == "":
@@ -213,14 +170,12 @@ def _anonymize_leaf(
     if isinstance(value, list):
         new_list = []
         for item in value:
-            replaced = _try_rules(
-                item, schema_node, path, rules, log_debug, diagnostic_sink, keywords
-            )
+            replaced = _try_rules(item, schema_node, path, rules, log_debug, diagnostic_sink)
             new_list.append(replaced)
         parent[key] = new_list
         return
 
-    replaced = _try_rules(value, schema_node, path, rules, log_debug, diagnostic_sink, keywords)
+    replaced = _try_rules(value, schema_node, path, rules, log_debug, diagnostic_sink)
     if replaced is not value:
         parent[key] = replaced
 
@@ -232,17 +187,17 @@ def _try_rules(
     rules: list[Rule],
     log_debug: bool,
     diagnostic_sink: Callable[[str], None] | None = None,
-    keywords: Sequence[str] = (),
 ) -> Any:
     """Apply the first matching rule to *value* and return the result.
 
-    A value among the leaf's *keywords* -- `as-list-group` for `list-type` --
-    is configuration syntax: a matching rule leaves it as it is.
+    A value from the leaf's own enum -- `as-list-group` for `list-type`, `bgp`
+    for `from protocol` -- is configuration syntax, not data: a matching rule
+    leaves it as it is. Replaced, it is a value the device rejects.
     """
     str_value = str(value)
     for rule in rules:
         if rule.matches(str_value, schema_node, path):
-            if str_value in keywords:
+            if str_value in _leaf_enum(schema_node):
                 return value
             result = rule.transform(str_value)
             if log_debug and diagnostic_sink is not None:
@@ -250,3 +205,14 @@ def _try_rules(
                 diagnostic_sink(f"[{rule.name}] {dot_path}: {str_value!r} -> {result!r}")
             return result
     return value
+
+
+def _leaf_enum(schema_node: dict[str, Any]) -> Sequence[str]:
+    """The values a leaf's own enum declares, from the tree's enum table."""
+    from junoscfg.display import load_schema_tree
+
+    index = schema_node.get("e")
+    enums = (load_schema_tree() or {}).get("_enums", [])
+    if not isinstance(index, int) or index >= len(enums):
+        return ()
+    return enums[index]

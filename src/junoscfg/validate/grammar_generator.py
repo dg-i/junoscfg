@@ -17,14 +17,15 @@ tree cannot merge the entry name away.
 from __future__ import annotations
 
 import hashlib
+import itertools
 import re
 
 from junoscfg.display import (
     UNQUOTABLE_TYPES,
-    entry_key_names,
     entry_keys,
     enum_is_fragment,
     open_artifact_write,
+    statement_children,
     strip_type_prefix,
 )
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
@@ -148,15 +149,9 @@ def _value_token(node: SchemaNode) -> str:
     return "QUOTED_OR_VALUE"
 
 
-def _key_children(node: SchemaNode) -> frozenset[str]:
-    """The children *node* writes as its entries' key, not as statements."""
-    return entry_key_names(node) if node.is_list else frozenset()
-
-
-def _statement_children(node: SchemaNode) -> dict[str, SchemaNode]:
-    """The children a set command names inside *node*: all but its key."""
-    keys = _key_children(node)
-    return {name: child for name, child in node.children.items() if name not in keys}
+def _is_keyword_field(node: SchemaNode | None) -> bool:
+    """Whether a key field is written `keyword value`: a leaf not `nokeyword`."""
+    return node is not None and node.is_leaf and "nokeyword" not in node.flags
 
 
 def _key_value(node: SchemaNode | None) -> str:
@@ -164,14 +159,17 @@ def _key_value(node: SchemaNode | None) -> str:
 
     `list-type` takes `as-list` or `as-list-group` and nothing else -- the
     device rejects `as-path-neighbors 1 AS-LIST-A` -- while a nokeyword enum
-    that is a fragment of a wider union takes any value.
+    that is a fragment of a wider union takes any value. A field whose leaf is
+    not `nokeyword` is preceded by its keyword, an enum or not:
+    `drop-profile-map loss-priority low protocol any`.
     """
     if node is None:
         return "QUOTED_OR_VALUE"
     if node.enums and not enum_is_fragment(node.name, node.enums):
-        return "(" + " | ".join(f'"{value}"' for value in node.enums) + ")"
-    value = _value_token(node)
-    if node.is_leaf and "nokeyword" not in node.flags:
+        value = "(" + " | ".join(f'"{value}"' for value in node.enums) + ")"
+    else:
+        value = _value_token(node)
+    if _is_keyword_field(node):
         return f'"{node.name}" {value}'
     return value
 
@@ -179,16 +177,18 @@ def _key_value(node: SchemaNode | None) -> str:
 def _key_sequence(node: SchemaNode) -> str:
     """The tokens an entry's key takes.
 
-    One value per field, and a choice of identifiers as one of its keywords,
-    with its value where the alternative is a leaf. A field given by its
-    keyword stands before or after the positional values, whatever the
-    declared order: the device accepts `then community SAMPLE-COMM add` and
-    `route-filter exact 198.51.100.0/24` (device probe, vMX 23.2R2-S7.5).
+    The positional values in declared order, then the fields given by keyword
+    in any order among themselves, and a choice of identifiers as one of its
+    keywords, with its value where the alternative is a leaf, before or after
+    all of them. The device accepts `then community SAMPLE-COMM add`,
+    `route-filter exact 198.51.100.0/24` and `virtual-link transit-area
+    0.0.0.3 neighbor-id 10.255.255.2` (device probe, vMX 23.2R2-S7.5).
     """
     if not node.key_fields:
         return "QUOTED_OR_VALUE"
     choices: list[str] = []
-    values: list[str] = []
+    positional: list[str] = []
+    keyworded: list[str] = []
     for field in entry_keys(node):
         if isinstance(field, tuple):
             alternatives = []
@@ -200,7 +200,14 @@ def _key_sequence(node: SchemaNode) -> str:
                 alternatives.append(keyword)
             choices.append("(" + " | ".join(alternatives) + ")")
         else:
-            values.append(_key_value(node.children.get(field)))
+            child = node.children.get(field)
+            (keyworded if _is_keyword_field(child) else positional).append(_key_value(child))
+    values = positional[:]
+    if len(keyworded) > 1:
+        orders = (" ".join(order) for order in itertools.permutations(keyworded))
+        values.append("(" + " | ".join(orders) + ")")
+    else:
+        values.extend(keyworded)
     if choices and values:
         first, last = " ".join(choices), " ".join(values)
         return f"({first} {last} | {last} {first})"
@@ -227,7 +234,7 @@ def _rule_name_for(name: str, node: SchemaNode) -> str:
 def _has_direct_sibling_variant(node: SchemaNode) -> bool:
     """Whether *node* itself gains metadata-specific sibling repetition."""
     return bool(
-        (node.is_list and _statement_children(node) and "oneliner" in node.flags)
+        (node.is_list and statement_children(node) and "oneliner" in node.flags)
         or any("positional-key-flat" in child.flags for child in node.children.values())
     )
 
@@ -249,7 +256,7 @@ def _variant_rule_names(root: SchemaNode) -> dict[int, str]:
             return visited[node_id]
 
         children = [
-            (name, *visit(child)) for name, child in sorted(_statement_children(node).items())
+            (name, *visit(child)) for name, child in sorted(statement_children(node).items())
         ]
         own_shape = (
             node.name,
@@ -482,7 +489,7 @@ def _collect_rules(
     if not node.children:
         # Leaf or presence — no rule needed (handled inline by parent)
         return
-    statements = _statement_children(node)
+    statements = statement_children(node)
     if node.is_list and not statements and not node.key_fields:
         # A list of names alone, rendered inline by the parent.
         return
@@ -545,6 +552,23 @@ def _collect_rules(
         )
 
 
+def _flat_entry(node: SchemaNode) -> str:
+    """The run of tokens one entry of a list written flat takes.
+
+    Its key, then optionally one entry of each child list in the same form,
+    then optionally each leaf's value: `apply-macro` takes its name, a
+    keyword and that keyword's value, at most, and the device rejects a
+    fourth (device probe, vMX 23.2R2-S7.5). `keyword value+` accepted any run.
+    """
+    parts = [_key_sequence(node)]
+    for child in statement_children(node).values():
+        if child.is_list and child.children:
+            parts.append(f"({_flat_entry(child)})?")
+        elif child.is_leaf:
+            parts.append(f"{_value_token(child)}?")
+    return " ".join(parts)
+
+
 def _child_reference(
     name: str,
     node: SchemaNode,
@@ -576,6 +600,8 @@ def _child_reference(
     value = _value_token(node)
 
     if "flat-dict" in node.flags:
+        if node.is_list:
+            return f"{keyword} {_flat_entry(node)}"
         return f"{keyword} {value}+"
 
     # Leaf nodes
@@ -592,7 +618,7 @@ def _child_reference(
 
     # A list of names alone was a childless presence list until the parser kept
     # its `name`, and is written as one: the name is the whole content.
-    if node.is_list and node.children and not node.key_fields and not _statement_children(node):
+    if node.is_list and node.children and not node.key_fields and not statement_children(node):
         node = SchemaNode(name=node.name, is_list=True, is_presence=True, flags=node.flags)
 
     # Presence containers (no value)
