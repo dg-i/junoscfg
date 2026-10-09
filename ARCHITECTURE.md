@@ -73,8 +73,10 @@ form rather than fetching or deriving them at run time.
   top-level package: `convert_config`, `validate_config`, `Format` and
   `FieldValidationError`. Its documented pipelines also drive the CLI:
   `convert -e yaml`, `edityaml rename-root`, `edityaml ansibilize --root`.
-  This consumer must keep working; it is why `api` and `cli` are the declared
-  surfaces in `[tool.template.stage]`.
+  This consumer must keep working; it is why `consumer` and `cli` are the
+  declared surfaces in `[tool.template.stage]`. The consumer surface is the
+  top-level package file that carries those four imports; secondary package
+  doors remain available but are not compatibility promises during beta.
 
 ### What it consumes
 

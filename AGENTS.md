@@ -16,11 +16,12 @@ Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser
 beta: what the named surfaces do today holds until the next minor release under
 this repository's versioning scheme. A change to one of them is declared in the
 change's `.openspec.yaml` with its migration, and a removal is deprecated first.
-Named surfaces: api, cli. The change that retires an import bans it: list the
-import under `bans` in the decision record that retires it and run `agent-ready
-render levers`, which renders the ban into `pyproject.toml`. What each stage
-flips is in the `## Stage` section of every phase of `agent-ready-change`, and
-the lever blocks of `pyproject.toml` carry what this stage renders.
+Named surfaces: consumer, cli. The change that retires an import bans it: list
+the import under `bans` in the decision record that retires it and run
+`agent-ready render levers`, which renders the ban into `pyproject.toml`. What
+each stage flips is in the `## Stage` section of every phase of
+`agent-ready-change`, and the lever blocks of `pyproject.toml` carry what this
+stage renders.
 <!-- agent-ready:stage:end -->
 
 ## Before you edit a module
@@ -57,7 +58,7 @@ After XSD/schema changes, use `--regen-schema` as the developer guide describes.
 Version lives in three places that move together: `pyproject.toml`,
 `src/junoscfg/__init__.py`, and the assertion in `tests/test_cli.py`.
 
-- A break on a named surface (`api`, `cli`) raises the **minor**, as
+- A break on a named surface (`consumer`, `cli`) raises the **minor**, as
   `[tool.template.stage] break-bumps` declares. Everything else is a patch.
 - Bump in the same commit as the code; tag `v{version}` after committing.
 
@@ -71,8 +72,7 @@ Version lives in three places that move together: `pyproject.toml`,
 6. Adding or removing an XSD fix updates the counts in
    `docs/architecture/developer-guide.md` and `schema-internals.md`.
 7. `README.md` mentions every major feature and imports only real names.
-8. Lines citing the `[Ruby Junoser gem]` or `github.com/codeout/junoser)` name
-   the upstream Ruby project — never rename them.
+8. `[Ruby Junoser gem]` citations name the upstream Ruby project; never rename them.
 
 ## Test Data Conventions
 
