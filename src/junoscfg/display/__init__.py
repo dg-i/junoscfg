@@ -8,8 +8,6 @@ Everything other packages may use is re-exported below and listed in
 
 from __future__ import annotations
 
-import re
-
 from junoscfg.display.config_store import ConfigStore, filter_structured_by_path
 from junoscfg.display.constants import (
     ENTRY_KEY_OVERRIDES,
@@ -34,6 +32,14 @@ from junoscfg.display.constants import (
     statement_name_spellings,
     strip_type_prefix,
 )
+from junoscfg.display.format_detection import (
+    AUDIT_FORMATS,
+    CONVERSION_FORMATS,
+    VALIDATION_FORMATS,
+    detect_format,
+    is_display_set,
+)
+from junoscfg.display.path_filter import filter_dict_by_path
 from junoscfg.display.set_converter import SetConverter
 from junoscfg.display.to_json import filter_json_by_path
 from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_yaml
@@ -45,12 +51,17 @@ __all__ = [
     "KEY_ALIASES",
     "UNIVERSAL_STATEMENTS",
     "UNQUOTABLE_TYPES",
+    "AUDIT_FORMATS",
+    "CONVERSION_FORMATS",
+    "VALIDATION_FORMATS",
     "ConfigStore",
     "SetConverter",
     "filter_json_by_path",
+    "filter_dict_by_path",
     "filter_set_by_path",
     "filter_structured_by_path",
     "filter_yaml_by_path",
+    "detect_format",
     "format_value",
     "get_flat_entry_config",
     "get_transparent_child",
@@ -73,17 +84,6 @@ __all__ = [
 ]
 
 _SET_PREFIXES = ("set", "deactivate", "protect", "activate", "delete")
-
-
-def is_display_set(text: str) -> bool:
-    """Check if text is in 'display set' format (set/deactivate commands)."""
-    for line in text.strip().splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if not re.match(r"^(set|deactivate|delete)\s", stripped):
-            return False
-    return True
 
 
 def filter_set_by_path(text: str, path_tokens: list[str], *, relative: bool = False) -> str:

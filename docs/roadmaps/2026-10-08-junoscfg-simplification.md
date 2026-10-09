@@ -38,16 +38,16 @@ roadmap item as an independently testable change.
 
 ### 1. Collapse conversion dispatch
 
-- [ ] Replace the 20 private format-pair wrappers in `junoscfg.__init__` with
+- [x] Replace the 20 private format-pair wrappers in `junoscfg.__init__` with
   direct, table-driven dispatch to the unified pipeline.
-- [ ] Preserve every supported pair and the current public signature.
+- [x] Preserve every supported pair and the current public signature.
 
 ### 2. Centralize format detection
 
-- [ ] Add one classifier with explicit per-caller accepted-format policies for
+- [x] Add one classifier with explicit per-caller accepted-format policies for
   conversion, validation, and audit; do not widen an existing public contract
   merely because the shared classifier recognizes more formats.
-- [ ] Pin JSON, XML, YAML, set, structured, empty, and ambiguous inputs with
+- [x] Pin JSON, XML, YAML, set, structured, empty, and ambiguous inputs with
   characterization tests, including flow-style YAML beginning with ``{`` and
   an explicit parse-confirmed classification or ambiguity error.
 
@@ -58,33 +58,44 @@ roadmap item as an independently testable change.
   `NotImplementedError` through both `convert_config(..., to_format=XML)` and
   the exported `junoscfg.convert.from_dict(ir, "xml")` package door.
 
+Blocked: both helpers remain on the beta public API surface and need a
+deprecation release before removal.
+
 ### 4. Convert XML directly to the IR
 
 - [ ] Make the existing XML walker return the dict IR directly.
 - [ ] Remove the XML-to-YAML-to-dict serialization round trip after parity
   tests pass.
 
+Blocked: the direct walker does not yet preserve schema-backed normalization;
+changing accepted XML also requires named device artifacts.
+
 ### 5. Filter once at the IR boundary
 
-- [ ] Select `--path` subtrees before rendering instead of reparsing each
+- [x] Select `--path` subtrees before rendering instead of reparsing each
   output format.
-- [ ] Deprecate exported format-specific filters before their permitted
+- [x] Deprecate exported format-specific filters before their permitted
   removal.
 
 ### 6. Return structured diagnostics
 
-- [ ] Add an opt-in structured-result API alongside the existing
+- [x] Add an opt-in structured-result API alongside the existing
   string-returning `convert_config` and `junoscfg.convert.pipeline` APIs, then
   replace library-side `stderr` writes with diagnostics carried by that result.
-- [ ] Keep both existing package-door return contracts, CLI wording, and exit
+- [x] Keep both existing package-door return contracts, CLI wording, and exit
   codes stable while the CLI becomes the sole renderer of warnings.
 
 ### 7. Reduce documentation and workflow surface
 
-- [ ] Generate CLI option reference from Click and publish only supported
+- [x] Generate CLI option reference from Click and publish only supported
   package-door APIs.
 - [ ] Measure OpenSpec artifact readership for one release, then propose
   deleting only artifact types with no recorded readers.
+
+Observation protocol: [capture change metrics](../how-to/capture-change-metrics.md#observe-openspec-artifact-readership-for-one-release).
+The baseline is `v0.14.0`; the observation cannot begin until that release is
+tagged and cannot conclude until the following release is tagged. Existing
+archives remain `UNMEASURED` and are not evidence of zero readers.
 
 ## Verification for Every Change
 

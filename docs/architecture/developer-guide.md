@@ -555,11 +555,18 @@ flowchart TD
     SCHEMA_CMD --> INFO["info\nshow artifact metadata"]
 
     CONV_CMD --> DETECT{"Auto-detect\ninput format"}
-    DETECT -->|starts with '{' or '['| FMT_JSON[json]
+    DETECT -->|JSON parse succeeds| FMT_JSON[json]
+    DETECT -->|mapping/list parses only as YAML| FMT_YAML[yaml]
     DETECT -->|starts with '<'| FMT_XML[xml]
-    DETECT -->|all lines start with set/deactivate/delete| FMT_SET[set]
+    DETECT -->|all lines use a set-mode command| FMT_SET[set]
     DETECT -->|otherwise| FMT_STRUCT[structured]
 ```
+
+Conversion and audit pass all five formats to the shared classifier. Top-level
+validation deliberately passes only set and structured, preserving its narrower
+auto-detection contract. JSON is tried before YAML because JSON is a YAML subset;
+this also lets flow-style YAML beginning with `{` be recognized after JSON parsing
+fails.
 
 ### DefaultGroup
 
@@ -579,8 +586,9 @@ junoscfg convert -i json -e set config.json
 
 ### Path filtering
 
-Path filtering (`--path`) is applied **after** conversion. Each output format has
-its own filter implementation:
+Path filtering (`--path`) is applied to the dict IR **before** rendering. The
+exported format-specific filters remain available for direct callers during
+beta:
 
 - **set** — `filter_set_by_path()` in `display/__init__.py`
 - **structured** — `filter_structured_by_path()` in `display/config_store.py`

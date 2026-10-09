@@ -10,14 +10,16 @@ from __future__ import annotations
 from enum import Enum
 from typing import TextIO
 
-from junoscfg.convert import FieldValidationError  # noqa: TC001
+from junoscfg.convert import ConversionResult, FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.13.0"
+__version__ = "0.14.0"
 
 __all__ = [
     "Format",
     "convert_config",
+    "convert_config_result",
+    "ConversionResult",
     "validate_config",
     "validate_xml",
     "validate_json",
@@ -78,15 +80,39 @@ def convert_config(
     relative: bool = False,
     anon_config: object | None = None,
 ) -> str:
-    """Convert a Junos configuration between formats.
+    """Convert a Junos configuration and return only rendered output."""
+    return convert_config_result(
+        source,
+        from_format=from_format,
+        to_format=to_format,
+        validate=validate,
+        strict=strict,
+        path=path,
+        relative=relative,
+        anon_config=anon_config,
+    ).output
+
+
+def convert_config_result(
+    source: str | TextIO,
+    *,
+    from_format: Format,
+    to_format: Format,
+    validate: bool = True,
+    strict: bool = False,
+    path: str | None = None,
+    relative: bool = False,
+    anon_config: object | None = None,
+) -> ConversionResult:
+    """Convert a Junos configuration and return output plus diagnostics.
 
     Args:
         source: Configuration text as a string or file-like object.
         from_format: The input format.
         to_format: The desired output format.
         validate: If True (default), run field-level validation on
-            conversion paths that use the dict IR.  Warnings are printed
-            to stderr.
+            conversion paths that use the dict IR. Non-fatal findings are
+            returned as diagnostics.
         strict: If True, raise on field validation errors instead of
             warning.
         path: Dot-separated path to filter output (e.g. ``"system.syslog"``).
@@ -96,7 +122,7 @@ def convert_config(
             instance, or None to skip anonymization.
 
     Returns:
-        The converted configuration as a string.
+        The converted output and immutable diagnostics.
 
     Raises:
         NotImplementedError: If the target format is XML (not yet supported).
@@ -119,41 +145,17 @@ def convert_config(
     if (from_format, to_format) not in _SUPPORTED_CONVERSIONS:
         raise ValueError(f"Unsupported conversion: {from_format.value} -> {to_format.value}")
 
-    result = _pipeline_convert(
+    result = _pipeline_convert_result(
         source,
         from_format.value,
         to_format.value,
         validate=validate,
         strict=strict,
         anon_config=anon_config,
+        path=path,
+        relative=relative,
     )
 
-    if path and result:
-        result = _filter_by_path(result, to_format, path, relative)
-
-    return result
-
-
-def _filter_by_path(result: str, to_format: Format, path: str, relative: bool) -> str:
-    """Dispatch path filtering to the appropriate format-specific filter."""
-    path_tokens = path.split(".")
-
-    if to_format is Format.SET:
-        from junoscfg.display import filter_set_by_path
-
-        return filter_set_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.STRUCTURED:
-        from junoscfg.display import filter_structured_by_path
-
-        return filter_structured_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.YAML:
-        from junoscfg.display import filter_yaml_by_path
-
-        return filter_yaml_by_path(result, path_tokens, relative=relative)
-    elif to_format is Format.JSON:
-        from junoscfg.display import filter_json_by_path
-
-        return filter_json_by_path(result, path_tokens, relative=relative)
     return result
 
 
@@ -162,7 +164,7 @@ def _read_source(source: str | TextIO) -> str:
     return source if isinstance(source, str) else source.read()
 
 
-def _pipeline_convert(
+def _pipeline_convert_result(
     source: str | TextIO,
     from_fmt: str,
     to_fmt: str,
@@ -170,16 +172,20 @@ def _pipeline_convert(
     validate: bool = True,
     strict: bool = False,
     anon_config: object | None = None,
-) -> str:
-    from junoscfg.convert import pipeline
+    path: str | None = None,
+    relative: bool = False,
+) -> ConversionResult:
+    from junoscfg.convert import pipeline_result
 
-    return pipeline(
+    return pipeline_result(
         _read_source(source),
         from_format=from_fmt,
         to_format=to_fmt,
         validate=validate,
         strict=strict,
         anon_config=anon_config,
+        path=path,
+        relative=relative,
     )
 
 
@@ -305,9 +311,11 @@ def validate_config(
     elif fmt == "structured":
         return validate_structured(source, artifacts_dir=artifacts_dir)
     else:
-        # Auto-detect set vs structured
-        from junoscfg.display import is_display_set
+        from junoscfg.display import VALIDATION_FORMATS, detect_format
 
-        if is_display_set(source):
+        if not source.strip():
+            return validate_structured(source, artifacts_dir=artifacts_dir)
+        detected = detect_format(source, accepted_formats=VALIDATION_FORMATS)
+        if detected == "set":
             return validate_set(source, artifacts_dir=artifacts_dir)
         return validate_structured(source, artifacts_dir=artifacts_dir)
