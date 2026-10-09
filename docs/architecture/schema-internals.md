@@ -135,6 +135,7 @@ class SchemaNode:
     pattern_negated: bool = False
     type_ref: str | None = None
     flags: set[str] = field(default_factory=set)
+    key_fields: tuple[str | tuple[str, ...], ...] = ()  # empty: keyed `name`
 ```
 
 ## Artifact Pipeline
@@ -212,19 +213,19 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `L` | `true` | Named list | xsd_parser |
 | `ll` | `true` | Leaf-list (repeated leaf, always array in JSON) | artifact_builder |
 | `nk` | `true` | Nokeyword | Group F fixes |
-| `o` | `true` | Oneliner (flat entry) | Group B2/H fixes |
+| `o` | `true` | Oneliner: an entry's key and children on one line | xsd_parser (`oneliner`), Group H fix |
 | `t` | `"child"` | Transparent container | Group H fix |
 | `tk` | `true` | Transparent list key | Group H fix |
 | `pk` | `true` | Positional key (nesting) | Group H fix |
 | `pkf` | `true` | Positional key (flat) | Group H fix |
 | `fd` | `true` | Flat dict element | Group H fix |
-| `fe` | `{"k":"..","p":".."}` | Flat entry config | Group H fix |
 | `frnk` | `true` | Freeform NK key | Group H fix |
 | `u` | `true` | Valid at every level (the `apply-*` statements) | Group D fix |
 | `e` | `int` | Enum list index (into `_enums` table) | artifact_builder |
 | `r` | `int` | Regex pattern index (into `_patterns` table) | artifact_builder |
 | `m` | `true` | Mandatory field | xsd_parser |
 | `tr` | `"type"` | XSD type reference (e.g. `"ipaddr"`, `"uint32"`) | xsd_parser |
+| `k` | `[...]` | A list's key fields in declared order, a choice of identifiers as a nested list; omitted where the key is `name` | xsd_parser |
 
 ### Deduplication Tables
 
@@ -280,13 +281,12 @@ after parsing. Fixes are organized into groups:
 |-------|-------------|-------|
 | A | Variable placeholders (`$junos-*`) | — (handled in parser) |
 | B | Complete structure replacement (`groups`) | 1 |
-| B2 | Missing flags (oneliner) | 1 |
 | C | Literal symbol names (`=`, `+`, `-`) | 3 |
 | D | Missing elements | 14 |
 | E | Wrong element names | 5 |
 | F | Nokeyword / generic name fixes | 4 |
 | G | Structure/combinator fixes | 6 |
-| H | Conversion hints (transparent, flat entry, etc.) | 8 |
+| H | Conversion hints (transparent, oneliner, etc.) | 8 |
 
 Groups A-G fix genuine XSD deficiencies. Group H encodes conversion-hint flags
 that tell the runtime converters how to handle specific elements. All fixes persist

@@ -205,10 +205,13 @@ line carries two, is kept whole in the output and reported as an *error*: printe
 default, fatal under `--strict`. Before 0.9.0 the set reader kept one token of such a
 line and dropped the rest without a word. Anonymization refuses such a configuration
 outright, since it cannot rewrite what the schema does not name and the statement would
-otherwise leave verbatim. The keys junoscfg writes by rule are not reported: a list
-entry's key (`name`, `address`, `community-name`), a flat entry's `_v0` values, `@`
-attributes, the `apply-*` statements, and `enable` or `disable` written for a folded
-switch.
+otherwise leave verbatim. A set statement the reader cannot complete is kept and reported
+the same way: a list entry whose key values run out (`as-path-neighbors as-list`), a
+further token after an entry that is nothing but its key, or `apply-groups` with two
+names. A list entry's key fields are the ones the schema declares (`name` for most,
+`list-type` and `list-name` for an AS-list reference) and are validated as the leaves
+they are; a key field's closed enum is enforced. Not reported: `@` attributes, the
+`apply-*` statements, and `enable` or `disable` written for a folded switch.
 
 ### Default Behavior
 

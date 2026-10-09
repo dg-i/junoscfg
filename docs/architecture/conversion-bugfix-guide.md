@@ -78,11 +78,12 @@ For each bug, apply fixes in this order:
    | Transparent container | `transparent:{child}` | `_fix_transparent_containers()` |
    | Transparent list key | `transparent-list-key` | `_fix_transparent_list_keys()` |
    | Flat dict | `flat-dict` | `_fix_flat_dict_elements()` |
-   | Flat entry | `flat-entry:{key}:{position}` + `oneliner` | `_fix_flat_entry_keys()` |
    | Positional key (nesting) | `positional-key` | `_fix_positional_keys()` |
    | Positional key (flat) | `positional-key-flat` | `_fix_positional_keys()` |
    | Freeform NK key | `freeform-nk` | `_fix_freeform_nk_keys()` |
    | Oneliner rendering | `oneliner` | (add directly or via `_fix_flat_entry_keys()`) |
+
+   A list keyed by anything but `name` needs no flag: see "Keyed entries" below.
 
 2. **Regenerate schema** — `uv run pytest tests/ -q --regen-schema` to rebuild `junos-structure-tree.json` with new flags. It rebuilds from the shipped release's dump under `private_test_data/schemas/` and stops, exit code 7, without it.
 
@@ -125,13 +126,13 @@ The `junos-structure-tree.json` uses compact keys on each node:
 | `p` | `true` | Presence (flag-only, no value) | xsd_parser |
 | `L` | `true` | Named list | xsd_parser |
 | `nk` | `true` | Nokeyword | Group F fixes |
-| `o` | `true` | Oneliner/flat entry | Group B2/H fixes |
+| `o` | `true` | Oneliner: an entry's key and children on one line | xsd_parser (`oneliner`), Group H fix |
 | `t` | `"child"` | Transparent container child name | Group H fix |
 | `tk` | `true` | Transparent list key | Group H fix |
 | `pk` | `true` | Positional key (nesting) | Group H fix |
 | `pkf` | `true` | Positional key (flat) | Group H fix |
 | `fd` | `true` | Flat dict element | Group H fix |
-| `fe` | `{"k":"..","p":".."}` | Flat entry config (key + position) | Group H fix |
+| `k` | `[...]` | Key fields in declared order; omitted where the key is `name` | xsd_parser |
 | `frnk` | `true` | Freeform NK key | Group H fix |
 
 ## 5. Architectural Patterns
@@ -146,20 +147,45 @@ Encoded as schema flag `t: "interface"` on the `interfaces` node.
 
 **For set→structured:** `_schema_walk()` reads `node.get("t")` to detect when a token should be treated as a named list entry name. Transparent named lists are emitted as separate hierarchy levels.
 
-### Flat Entries (Oneliners)
+### Keyed entries
 
-Some named lists render everything on a single line rather than as a container block. Example: `route-filter 0.0.0.0/0 exact;`
+A list entry is keyed by the fields the XSD declares as its identifiers, in
+declared order: each identifier element, and each choice whose every element is
+an identifier as one field of alternatives. `as-path-neighbors` is keyed by
+`list-type` and `list-name`, `route-filter` by `address` and its match type,
+`then community` by its action and `community-name`; most lists by `name`. The
+parser records the fields on the list node, the structure tree carries them as
+`k` (omitted for `name`), and `entry_keys()` in `display/constants.py` is the one
+answer every reader, writer and validator asks. No site keeps a table, flag or
+name of its own.
 
-Two mechanisms work together:
+- An entry's identity is its whole key: `as-list X` and `as-list-group X` are
+  two entries, as `route-filter A exact` and `route-filter A orlonger` are.
+- The set reader takes one token per value field, and a key choice as its
+  keyword. A statement it cannot complete -- a key that runs out, a token
+  after an entry that has nothing but its key -- is kept whole, from its
+  keyword, and field validation reports it `UNPLACED`.
+- Writers put the key values in declared order, then each other child.
+- The grammar takes exactly the key values; a key value takes its own leaf's
+  type, so a closed enum such as `list-type` is closed.
 
-1. **Schema flag `o: true`** — Tells `structured_output.py` to emit all tokens on one line
-2. **Schema flag `fe: {"k": key, "p": position}`** — Tells `dict_walker.py` how to flatten the dict (read via `get_flat_entry_config()` helper)
+The XSD is the default model here, not the last word. Device output outranks it,
+and a disagreement is fixed in the schema model at the owning layer rather than
+worked around at runtime. This convention was settled that way twice by device
+probes (vMX 23.2R2-S7.5): `list-type`'s XSD union also names a number, but the
+device rejected `as-path-neighbors 1 ...`, so a key value takes its enum alone;
+and the XSD declares route-filter's match type after the address, but the device
+accepted `route-filter exact 198.51.100.0/24`, so a key given by its keyword may
+stand before or after the positional values. Output always writes declared
+order.
 
-Positions:
+### Oneliners
 
-- `"first"` — positional key value appears before remaining keys
-- `"last"` — positional key value appears after remaining keys
-- `"values-only"` — all dict values emitted without key names
+Some named lists render an entry's key and children on a single line in
+structured output rather than as a block. Example: `route-filter
+198.51.100.0/24 exact accept;`. The schema flag `o: true`, from the dump's
+`oneliner` flag and the filter lists `_fix_flat_entry_keys()` names, tells
+`dict_walker.py` to combine them.
 
 ## 6. Worked Examples
 
@@ -180,10 +206,11 @@ Positions:
 
 **Symptom:** Array entries emitted as three separate set lines with key names instead of one flat line with values only.
 
-**Root cause:** Schema-level — XSD had no `oneliner` flag for `attributes-match`.
+**Root cause:** Schema-level — the parser dropped the three identifiers the XSD
+declares for `attributes-match` (`from-event-attribute`, `condition`,
+`to-event-attribute-value`), leaving the list childless.
 
-**Fix:**
-
-1. `xsd_fixes.py` — Group B2: `_fix_attributes_match_oneliner()` adds `oneliner` flag
-2. `xsd_fixes.py` — Group H: `_fix_flat_entry_keys()` adds `flat-entry::values-only` flag + `oneliner`
-3. `dict_walker.py` — `get_flat_entry_config()` reads `fe` flag for flattening config
+**Fix:** The parser keeps every identifier as a key field ("Keyed entries"
+above). This replaced the earlier patch -- a `flat-entry::values-only` flag, the
+`_v0`/`_v1` keys and a fix adding `oneliner` -- which the identifier-key-fields
+change retired.

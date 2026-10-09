@@ -19,13 +19,16 @@ make changes for common tasks.
 These principles govern all code changes in this project. They are non-negotiable
 constraints that must be followed consistently.
 
-**Schema as Single Source of Truth.** The Junos XSD schema is the authoritative source
-of structural and type information. When data can be extracted from the XSD — enums,
-patterns, types, mandatory flags, element relationships — it must be extracted rather
-than hardcoded. When the XSD is wrong or incomplete, fix it at the schema level in
-`xsd_fixes.py`, not with runtime workarounds. Schema fixes are Python code that
-persists across XSD regeneration; they are applied every time artifacts are rebuilt
-from any Junos version's XSD dump.
+**Schema as the default structural model.** The evidence for what Junos accepts ranks,
+strongest first: device output, then the corrected schema model (the XSD plus
+`xsd_fixes.py`), then the generated artifacts, then a documented fallback. The Junos XSD
+is the default model of structure and types, not an infallible one, and device output
+overrides it. When data can be extracted from the XSD — enums, patterns, types,
+mandatory flags, element relationships — it must be extracted rather than hardcoded.
+When the XSD is wrong or incomplete, or a device disagrees with it, fix it in the schema
+model at the owning layer, in `xsd_fixes.py`, not with runtime workarounds. Schema fixes
+are Python code that persists across XSD regeneration; they are applied every time
+artifacts are rebuilt from any Junos version's XSD dump.
 
 **Prefer Established, Actively Maintained Libraries.** Use battle-tested, well-maintained
 dependencies over custom implementations. The project uses lxml for XML processing (not
@@ -390,7 +393,7 @@ artifacts at build time. These artifacts are bundled in the package for runtime 
 flowchart TD
     XSD["NETCONF XSD dump\n(output.xml)"] --> EXT["xsd_extractor.py\nextract &lt;xsd:schema&gt;"]
     EXT --> PARSE["xsd_parser.py\nparse → SchemaNode tree"]
-    PARSE --> FIX["xsd_fixes.py\napply 42 fixes (Groups A-H)"]
+    PARSE --> FIX["xsd_fixes.py\napply 41 fixes (Groups A-H)"]
     FIX --> BUILD["artifact_builder.py"]
     FIX --> SGEN["schema_generator.py"]
     FIX --> GGEN["grammar_generator.py"]
@@ -426,13 +429,12 @@ parsing. Fixes are organized into eight groups:
 |-------|----------|-------------|-------|
 | **A** | Variable placeholders | `$junos-*` freeform elements (handled in parser) | — |
 | **B** | Structure replacement | Replace `groups` with proper container→named-list pattern | 1 |
-| **B2** | Missing flags | Mark elements with missing `oneliner` flag | 1 |
 | **C** | Literal symbol names | Rename `equal-literal` → `=`, `plus-literal` → `+`, `minus-literal` → `-` | 3 |
 | **D** | Missing elements | Add missing alternatives, arguments, and elements | 14 |
 | **E** | Wrong element names | Rename elements whose XSD names differ from CLI names | 5 |
 | **F** | Nokeyword/generic names | Mark elements as freeform or positional | 4 |
 | **G** | Structure/combinator | Fix element combinators (choice → seq_choice), presence flags | 6 |
-| **H** | Conversion hints | Encode runtime behavior into schema flags (transparent, flat-entry, positional-key) | 8 |
+| **H** | Conversion hints | Encode runtime behavior into schema flags (transparent, oneliner, positional-key) | 8 |
 
 ### Persistence model
 
