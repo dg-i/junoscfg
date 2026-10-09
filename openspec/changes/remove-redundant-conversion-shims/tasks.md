@@ -15,13 +15,13 @@
   production-consumer compatibility boundary, ban the retired imports, and add
   the changelog fragment.
 
-  Evidence: 142 focused conversion tests passed. The production collection's
-  33 tests passed against the roadmap integration checkout whose four
+  Evidence after review correction: 166 focused conversion tests passed. The
+  production collection's 33 tests passed against this checkout, whose four
   top-level imports this change preserves.
 - [x] 2.4 Run focused tests and the locked full repository check.
 
-  Passed at `f437768`: 142 focused conversion tests, all 33 production
-  collection tests, the lane gate, and the locked full repository check.
+  Passed at `e8a7e3a`: 1,627 repository tests passed and 72 skipped; all 33
+  production collection tests and the explicit-base lane gate also passed.
 
 ## 3. Review and evidence
 
