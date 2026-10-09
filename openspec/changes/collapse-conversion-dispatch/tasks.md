@@ -20,4 +20,4 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Complete the fresh-session review and write `review.md`.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
