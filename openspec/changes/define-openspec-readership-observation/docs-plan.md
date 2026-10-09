@@ -22,6 +22,8 @@
   capture inputs, provenance, limitations, and evidence interpretation.
 - `docs/roadmaps/2026-10-08-junoscfg-simplification.md`: authoritative status
   of the seven simplification tasks and the release-long hold point.
+- `changelog.d/+openspec-readership-observation.misc.md`: release-note pointer
+  to the new maintenance protocol.
 
 ## Documentation QA
 
