@@ -6,7 +6,8 @@
    exist after the source change was archived. The durable source is
    `openspec/changes/archive/2026-10-08-save-simplification-plan/proposal.md`.
    Correct the pointer before merge so a public reader can follow the roadmap's
-   provenance.
+   provenance. **Resolved:** commit `75d5334` points to the archived proposal;
+   the target exists and the fast gate set passes.
 
 ## Already provided
 
@@ -34,5 +35,5 @@ provenance pointer.
 
 ## Verdict
 
-One documentation-correctness finding must be fixed before merge. No API, CLI,
-security, or behavioral finding blocks the change after that correction.
+Ready to merge. The sole documentation-correctness finding is resolved, and no
+API, CLI, security, or behavioral finding remains.
