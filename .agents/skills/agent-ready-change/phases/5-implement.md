@@ -37,6 +37,9 @@ checkpoint green, and nothing in the diff the proposal did not ask for.
    `tasks.md`, then commit that evidence-only edit. The checkpoint remains valid
    across review, metrics, and evidence-only edits; runtime code, tests,
    generated artifacts, or their configuration invalidate it.
+   When one change contains several coherent tasks, run targeted tests as each
+   task lands and take this full checkpoint once, after the last implementation
+   task. Independent changes never share a checkpoint.
 5. Tick each test and implementation task as it lands. `npx --yes
    @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
    graph; `tasks.md` is the lifecycle authority.

@@ -14,6 +14,13 @@ the delta, the contracts of the modules touched, the tests, and the diff, in
 that order of leverage, and nothing the implementer wrote about its own work.
 The reviewer model is at least as capable as the implementer's.
 
+Several coherent tasks inside this one change receive this one review after all
+implementation tasks are complete. Several independent changes receive a
+separate verdict and `review.md` each, even when the owner batches their
+acceptance or one fresh reviewer session processes a bounded review window. A
+final integration review supplements rather than replaces those verdicts; use
+`batches.md` for the boundary.
+
 An accepted correction runs its regression and `uv run --locked --group dev
 agent-ready check --set fast`,
 then returns to the reviewer. After approval, rerun the full set only if runtime

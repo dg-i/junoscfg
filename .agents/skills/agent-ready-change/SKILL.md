@@ -1,6 +1,6 @@
 ---
 name: agent-ready-change
-description: Run one change through the workflow, one phase per session, from proposal to archive on the OpenSpec CLI. Use for every change to this repository, fix lane included.
+description: Run one change through the phased workflow, from proposal to archive on the OpenSpec CLI. Use for every change to this repository, fix lane included.
 ---
 
 # Change
@@ -9,6 +9,11 @@ One change is one branch, one pull request, one change folder under
 `openspec/changes/<slug>/`. Invoke as `agent-ready-change <phase>`, and read
 this file and the one phase file you are running. Do not read the others; they
 cost tokens you will not use.
+
+When the request contains several tasks, read `batches.md` before choosing a
+lane or writing intent. It decides whether they are one coherent change or
+independent changes and where review and full-check work may be shared. Do not
+load it for a single task.
 
 The standard and docs lanes follow these phases. The docs lane takes each
 phase's **Documentation-only route**. The fix lane follows the shorter route
