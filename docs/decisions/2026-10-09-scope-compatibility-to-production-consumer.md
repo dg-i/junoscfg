@@ -1,7 +1,7 @@
 ---
 status: accepted
 scope: ["src/junoscfg/__init__.py", "src/junoscfg/cli.py"]
-enforced-by: agent-ready lane
+enforced-by: repository API tests and agent-ready lane
 review-by: 2027-04-06
 bans:
   - junoscfg.display.to_yaml.json_to_yaml
@@ -20,8 +20,10 @@ was documented as a primary entry point or used by the production consumer.
 The owner permits package API changes provided they do not break
 `dg-i/ansible-collection-junos-config`. At its inspected HEAD, that collection
 imports exactly `convert_config`, `validate_config`, `Format`, and
-`FieldValidationError` from the top-level package. Its pipelines also use the
-documented CLI conversion and `edityaml` commands. All 33 collection tests pass
+`FieldValidationError` from the top-level package. Repository API tests exercise
+those names, and the lane detects changes to their owning package door. Its
+pipelines also use the documented CLI conversion and `edityaml` commands. As
+release evidence beyond the repository gates, all 33 collection tests pass
 against the roadmap integration checkout.
 
 ## Decision
