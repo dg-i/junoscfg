@@ -74,6 +74,26 @@ class TestACurlyTagMarksTheStatementStart:
         assert "exact" in entry and "accept" in entry
         assert not any(key.startswith("@") and key != "@" for key in entry)
 
+    def test_a_tag_on_a_bare_list_keyword_marks_the_list(self) -> None:
+        """`inactive: source-prefix-list { PL1; }` is `deactivate … source-prefix-list`.
+
+        The device writes a list of bare names as a block under its keyword;
+        a tag on that keyword's line is the whole list's, as `inactive:
+        routing-instance { R1 {…} }` is `deactivate … routing-instance`
+        (deactivate6.txt), and a tag on an entry's line is the entry's.
+        """
+        path = "firewall family inet filter FILTER-V4 term T1 from source-prefix-list"
+        curly = (
+            "firewall {\n    family inet {\n        filter FILTER-V4 {\n            term T1 {\n"
+            "                from {\n                    inactive: source-prefix-list {\n"
+            "                        PL1;\n                        inactive: PL2;\n"
+            "                    }\n                }\n            }\n        }\n    }\n}\n"
+        )
+        assert _ir(curly, Format.STRUCTURED) == _ir(
+            f"set {path} PL1\nset {path} PL2\ndeactivate {path}\ndeactivate {path} PL2\n",
+            Format.SET,
+        )
+
     def test_set_input_still_marks_the_last_node(self) -> None:
         ir = _ir(
             "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
@@ -143,9 +163,12 @@ class TestStructuredOutputPutsATagFirst:
             to_format=Format.STRUCTURED,
         )
         lines = [line.strip() for line in curly.splitlines()]
-        assert "then {" in lines
         assert "inactive: accept;" in lines
         assert not any(" inactive: " in line or " protect: " in line for line in lines)
+        # Meaning, not layout: read back, only `accept` is inactive.
+        assert _ir(curly, Format.STRUCTURED) == _ir(
+            SHAPES["inactive accept under then"], Format.SET
+        )
 
     @pytest.mark.parametrize("shape", list(SHAPES))
     def test_round_trips_keep_the_ir(self, shape: str) -> None:
@@ -194,6 +217,11 @@ FAMILY_TAGGED = {
                 }
             }
         }
+    ),
+    Format.STRUCTURED: (
+        "interfaces {\n    xe-0/0/0 {\n        unit 0 {\n            inactive: family {\n"
+        "                inet {\n                    address 10.0.0.1/24;\n"
+        "                }\n            }\n        }\n    }\n}\n"
     ),
     Format.YAML: (
         "configuration:\n  interfaces:\n    interface:\n    - name: xe-0/0/0\n      unit:\n"

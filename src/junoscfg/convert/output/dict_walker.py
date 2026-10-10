@@ -268,6 +268,10 @@ class DictWalker:
                 ):
                     items = " ".join(format_value(v) for v in value)
                     output.emit(path + [f"{set_key} [ {items} ]"])
+                    # `inactive: members [ … ];`, as the device writes it.
+                    attr = obj.get(f"@{key}")
+                    if isinstance(attr, dict):
+                        self._emit_attrs(path + [set_key], self._read_leaf_attrs(attr))
                     continue
 
                 if key == "data" and path and path[-1].startswith("apply-macro"):
@@ -385,8 +389,11 @@ class DictWalker:
             if not attr_key.startswith("@") or attr_key == "@":
                 continue
             key = attr_key[1:]
+            # A container's tag is its inline `@`; JSON may also write it
+            # beside the container, as `@family`, and that is repeated too.
+            held = obj.get(key)
             if (
-                key in obj and not isinstance(obj[key], bool) and obj[key] is not None
+                key in obj and not isinstance(held, bool | dict) and held is not None
             ) or not isinstance(attr, dict):
                 continue
             attrs = self._read_leaf_attrs(attr)

@@ -94,12 +94,6 @@ def test_an_inactive_leaf_list_from_xml_writes_the_device_set_lines() -> None:
     ]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="PRODUCT DEFECT (writer, pre-existing, now reachable from XML): structured "
-    "output writes `members [ … ];` without `inactive:` and without a diagnostic; the device "
-    "shows `inactive: members [ … ];` (deactivate6.txt). Owned by the curly writer (change B)",
-)
 def test_an_inactive_leaf_list_from_xml_survives_structured_output() -> None:
     curly = convert_config(LEAF_LIST_XML, from_format=Format.XML, to_format=Format.STRUCTURED)
     assert _ir(curly, Format.STRUCTURED) == _ir(LEAF_LIST_XML, Format.XML)

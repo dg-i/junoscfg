@@ -198,7 +198,7 @@ def _holds_a_value(element: etree._Element, node: dict[str, Any] | None) -> bool
     inactive=…/>` has no node of its own, being one spelling of the tree's
     `enable-disable`, and set input gives it `[null]` and `@disable`.
     """
-    if (element.text or "").strip() or not _get_inactive_attrs(element):
+    if (element.text or "").strip() or not _get_tag_attrs(element):
         return True
     return not (node and node.get("c") and not node.get("l") and not node.get("p"))
 

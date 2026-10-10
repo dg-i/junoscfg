@@ -112,12 +112,14 @@ def statements_to_dict(statements: list[list[tuple[str, frozenset[str]]]]) -> di
         tags: dict[int, frozenset[str]] = {}
         for text, level_tags in levels:
             level = _tokenize(text)
-            if level and level_tags:
+            if level:
+                # Every level start is recorded, tagged or not: where a level
+                # starts says which node a tag belongs to.
                 tags[len(tokens)] = level_tags
             tokens += level
         if tokens:
             _merge_tokens(config, tokens, schema, index, tags)
-        if tags:
+        if any(tags.values()):
             # A level boundary inside a key or a value: no node starts
             # there, so the tag has nowhere to go. No device writes this.
             raise ValueError(
@@ -144,6 +146,11 @@ def _mark(holder: dict[str, Any], tags: frozenset[str], key: str | None = None) 
     for tag in sorted(tags):
         name, value = _TAG_ATTRS[tag]
         attrs[name] = value
+
+
+def _tag_attrs(tags: frozenset[str]) -> dict[str, Any]:
+    """*tags* as the ``@`` dict they make."""
+    return dict(_TAG_ATTRS[tag] for tag in sorted(tags))
 
 
 def _tags_from(tags: dict[int, frozenset[str]], i: int) -> frozenset[str]:
@@ -364,9 +371,11 @@ def _merge_tokens(
 ) -> None:
     """Walk tokens against the schema tree and merge into config dict.
 
-    *tags* maps the token where a curly level starts to the tags leading it;
-    each lands on the node that token starts (`statements_to_dict`).
+    *tags* maps the token where each curly level starts to the tags leading
+    it; each lands on the node that token starts (`statements_to_dict`).
+    Set input passes none.
     """
+    curly = tags is not None
     current = config
     current_schema = schema
     i = 0
@@ -393,7 +402,7 @@ def _merge_tokens(
             current[token] = lst
             if val not in lst:
                 lst.append(val)
-            _mark(current, here | _tags_from(tags, i), token)
+            _mark(current, here, token)
             return
 
         # Apply-macro (not in the schema). It takes a name, then optionally a
@@ -402,13 +411,16 @@ def _merge_tokens(
         # entry without a word.
         if token == "apply-macro" and i + 1 < len(tokens):
             lst = current.get("apply-macro", [])
-            if len(tokens) - i > 4 or not isinstance(lst, list):
+            # A tag on one data line has no place in the IR's `data` pairs:
+            # the line is kept whole and reported, never widened to the macro.
+            data_tagged = any(tags.get(k) for k in range(i + 2, len(tokens)))
+            if len(tokens) - i > 4 or not isinstance(lst, list) or data_tagged:
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
             current["apply-macro"] = lst
             entry = _find_or_create_entry(lst, {"name": _parse_value(tokens[i + 1])}, index)
-            _mark(entry, here | _tags_from(tags, i))
+            _mark(entry, here | tags.pop(i + 1, frozenset()))
             if i + 2 < len(tokens):
                 pair = dict(
                     zip(("name", "value"), map(_parse_value, tokens[i + 2 :]), strict=False)
@@ -570,8 +582,20 @@ def _merge_tokens(
             current[token] = entries
             entry = _find_or_create_entry(entries, key, index)
             # The entry ends after its key: a tag on `route 0.0.0.0/0
-            # next-hop 10.0.0.1` is the route's.
-            _mark(entry, here)
+            # next-hop 10.0.0.1` is the route's. Where the keyword stands
+            # alone on its line -- `source-prefix-list { inactive: PL1; }`,
+            # as the device writes a list of bare names -- a tag on the
+            # keyword is the whole list's (`deactivate … source-prefix-list`)
+            # and one on the key's line is the entry's.
+            alone = i + 1 in tags
+            on_key: frozenset[str] = frozenset()
+            for k in range(i + 1, after):
+                on_key |= tags.pop(k, frozenset())
+            if alone:
+                _mark(current, here, token)
+                _mark(entry, on_key)
+            else:
+                _mark(entry, here | on_key)
             if after == len(tokens):
                 return
             owner, owner_i = current, i
@@ -583,6 +607,14 @@ def _merge_tokens(
         # Leaf node (accumulate repeated values). A tag is the leaf's, never
         # its value's: `inactive: vlan-id 751;` is `<vlan-id inactive=…>751`.
         if child.get("l"):
+            if curly and token in current and current.get(f"@{token}", {}) != _tag_attrs(here):
+                # `members 64496:1; inactive: members 64496:2;`: the device
+                # rejects a tag on one value (`deactivate … members 64496:2`
+                # is a syntax error), and widening it deactivates the other.
+                raise ValueError(
+                    f"Invalid structured input: '{token}' tags some of its values and not "
+                    "others; Junos tags a leaf as a whole"
+                )
             _mark(current, here, token)
             is_leaf_list = child.get("ll")
             if i + 1 < len(tokens):
@@ -624,10 +656,12 @@ def _merge_tokens(
         if child.get("c"):
             owner, owner_i = current, i
             current = current.setdefault(token, {})
-            if here and passes_tag_to_child(child) and i + 1 < len(tokens):
+            if here and passes_tag_to_child(child) and i + 1 < len(tokens) and i + 1 not in tags:
                 # `inactive: family inet {` marks `inet`: the device never
-                # tags `family` (`deactivate … family` is rejected).
-                tags[i + 1] = tags.get(i + 1, frozenset()) | here
+                # tags `family` (`deactivate … family` is rejected). On a line
+                # of its own, `inactive: family {` tags `family` itself, which
+                # field validation reports.
+                tags[i + 1] = here
             else:
                 _mark(current, here)
             current_schema = child

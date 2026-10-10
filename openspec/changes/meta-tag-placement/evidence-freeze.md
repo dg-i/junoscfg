@@ -8,7 +8,7 @@
 
 ## Requirements
 
-- `specs/conversion/meta-tags/spec.md` (ADDED to change A's capability): a curly tag marks the node its statement starts; structured output puts a tag first; a tag on an unkeyed `homogeneous` container is reported; XML keeps `protect`.
+- `specs/conversion/curly-meta-tags/spec.md` (new): a curly tag marks the node its statement starts; structured output puts a tag first. `specs/conversion/meta-tags/spec.md` (ADDED to change A's capability): a tag on an unkeyed `homogeneous` container is reported; XML keeps `protect`. Split on 2026-10-10 when the challenge fixes took one delta past the 100-line spec cap.
 - `specs/conversion/raw-set-input/spec.md` (MODIFIED): the bracket requirement names any command instead of the internal `replace` form; behaviour and tests unchanged.
 - Contradicted requirement: none. `conversion/entry-keys` "a statement the reader cannot complete is kept whole" stands: a tag on a kept-whole statement marks the kept key.
 
