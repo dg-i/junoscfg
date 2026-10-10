@@ -9,8 +9,14 @@ inactive="inactive">`, `inactive: family inet {` is `<inet inactive=…>`,
 `protect: route 0.0.0.0/0 next-hop 10.0.0.1;` is `<route protect=…>`, and
 `deactivate … family` and `protect … family` are rejected. Layout is free
 (ARCHITECTURE.md section 1); what is asserted here is meaning.
-Specs: openspec/changes/meta-tag-placement/specs/conversion/curly-meta-tags/ and
-tag-acceptance/.
+Specs: openspec/specs/conversion/{curly-meta-tags,tag-acceptance,meta-tags}/.
+
+That a tagged shape reads as one IR from every input and round-trips through
+every writer is the shape catalogue (`tests/support/shapes.py`, the meta-tag
+rows) under `tests/contract/test_format_matrix.py`. This file keeps where a tag
+lands in the IR, how structured output writes it, and what is reported or
+refused. It also holds what the meta-tag-placement and xml-inactive-leaf test
+challenges (openspec/changes/archive/2026-10-10-*/test-challenge.md) added.
 """
 
 from __future__ import annotations
@@ -18,8 +24,11 @@ from __future__ import annotations
 import json
 
 import pytest
+from click.testing import CliRunner
 
 from junoscfg import Format, convert_config, convert_config_result
+from junoscfg.cli import main
+from tests.support.shapes import BY_NAME
 
 # The IR spelling of each tag: what `deactivate`, `protect` and the
 # `replace:` and `delete:` operations write.
@@ -33,6 +42,19 @@ TAGS = {
 
 def _ir(text: str, fmt: Format) -> dict:
     return json.loads(convert_config(text, from_format=fmt, to_format=Format.JSON))["configuration"]
+
+
+def _nest(path: list[str], body: str) -> str:
+    """Wrap *body* in the curly blocks *path* opens, four spaces a level."""
+    text = body
+    for depth, opener in reversed(list(enumerate(path))):
+        pad = "    " * depth
+        text = f"{pad}{opener} {{\n{text}{pad}}}\n"
+    return text
+
+
+def _set_source(shape: str) -> str:
+    return BY_NAME[shape].sources[Format.SET]
 
 
 def _static_route(curly_statement: str) -> dict:
@@ -75,26 +97,6 @@ class TestACurlyTagMarksTheStatementStart:
         assert "exact" in entry and "accept" in entry
         assert not any(key.startswith("@") and key != "@" for key in entry)
 
-    def test_a_tag_on_a_bare_list_keyword_marks_the_list(self) -> None:
-        """`inactive: source-prefix-list { PL1; }` is `deactivate … source-prefix-list`.
-
-        The device writes a list of bare names as a block under its keyword;
-        a tag on that keyword's line is the whole list's, as `inactive:
-        routing-instance { R1 {…} }` is `deactivate … routing-instance`
-        (deactivate6.txt), and a tag on an entry's line is the entry's.
-        """
-        path = "firewall family inet filter FILTER-V4 term T1 from source-prefix-list"
-        curly = (
-            "firewall {\n    family inet {\n        filter FILTER-V4 {\n            term T1 {\n"
-            "                from {\n                    inactive: source-prefix-list {\n"
-            "                        PL1;\n                        inactive: PL2;\n"
-            "                    }\n                }\n            }\n        }\n    }\n}\n"
-        )
-        assert _ir(curly, Format.STRUCTURED) == _ir(
-            f"set {path} PL1\nset {path} PL2\ndeactivate {path}\ndeactivate {path} PL2\n",
-            Format.SET,
-        )
-
     def test_set_input_still_marks_the_last_node(self) -> None:
         ir = _ir(
             "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
@@ -105,61 +107,32 @@ class TestACurlyTagMarksTheStatementStart:
         assert route["@next-hop"] == {"inactive": True}
         assert "@" not in route
 
+    def test_stacked_curly_tags_mark_one_entry_in_either_order(self) -> None:
+        def route(tags: str) -> dict:
+            curly = _nest(
+                ["routing-options", "static"],
+                f"        {tags} route 0.0.0.0/0 next-hop 10.0.0.1;\n",
+            )
+            return _ir(curly, Format.STRUCTURED)["routing-options"]["static"]["route"][0]
 
-# Each tagged shape as set input; the round trips start from here.
-SHAPES = {
-    "one-line route, apply-groups": (
-        "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_LOC\n"
-        "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_DEF\n"
-        "deactivate routing-options rib inet6.0 bgp-static route ::/0\n"
-    ),
-    "protected route": (
-        "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
-        "protect routing-options static route 0.0.0.0/0\n"
-    ),
-    "inactive next-hop": (
-        "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
-        "deactivate routing-options static route 0.0.0.0/0 next-hop\n"
-    ),
-    "inactive family inet": (
-        "set interfaces xe-0/0/0 unit 751 family inet filter input FILTER-V4\n"
-        "set interfaces xe-0/0/0 unit 751 family inet address 198.51.100.1/24\n"
-        "deactivate interfaces xe-0/0/0 unit 751 family inet\n"
-    ),
-    "inactive address under family": (
-        "set interfaces xe-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
-        "deactivate interfaces xe-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
-        "protect interfaces xe-0/0/0 unit 0 family inet\n"
-    ),
-    "inactive leaf and unit": (
-        "set interfaces xe-0/0/0 unit 751 vlan-id 751\n"
-        "deactivate interfaces xe-0/0/0 unit 751 vlan-id\n"
-        "deactivate interfaces xe-0/0/0 unit 751\n"
-    ),
-    "inactive route-filter entry": (
-        "set policy-options policy-statement P1 term T1 from "
-        "route-filter 198.51.100.0/24 exact accept\n"
-        "deactivate policy-options policy-statement P1 term T1 from "
-        "route-filter 198.51.100.0/24 exact\n"
-    ),
-    "inactive accept under then": (
-        "set policy-options policy-statement P1 term T1 then accept\n"
-        "deactivate policy-options policy-statement P1 term T1 then accept\n"
-    ),
-}
+        expected = {"inactive": True, "protect": "protect"}
+        assert route("protect: inactive:")["@"] == route("inactive: protect:")["@"] == expected
+        assert "@next-hop" not in route("protect: inactive:")
 
 
 class TestStructuredOutputPutsATagFirst:
     def test_an_inactive_family_inet(self) -> None:
         curly = convert_config(
-            SHAPES["inactive family inet"], from_format=Format.SET, to_format=Format.STRUCTURED
+            _set_source("an-inactive-family-inet"),
+            from_format=Format.SET,
+            to_format=Format.STRUCTURED,
         )
         assert "inactive: family inet {" in curly
         assert "family inactive:" not in curly
 
     def test_a_tagged_child_is_not_joined(self) -> None:
         curly = convert_config(
-            SHAPES["inactive accept under then"],
+            _set_source("an-inactive-accept-under-then"),
             from_format=Format.SET,
             to_format=Format.STRUCTURED,
         )
@@ -168,22 +141,7 @@ class TestStructuredOutputPutsATagFirst:
         assert not any(" inactive: " in line or " protect: " in line for line in lines)
         # Meaning, not layout: read back, only `accept` is inactive.
         assert _ir(curly, Format.STRUCTURED) == _ir(
-            SHAPES["inactive accept under then"], Format.SET
-        )
-
-    @pytest.mark.parametrize("shape", list(SHAPES))
-    def test_round_trips_keep_the_ir(self, shape: str) -> None:
-        before = _ir(SHAPES[shape], Format.SET)
-        curly = convert_config(SHAPES[shape], from_format=Format.SET, to_format=Format.STRUCTURED)
-        assert _ir(curly, Format.STRUCTURED) == before
-        again = convert_config(curly, from_format=Format.STRUCTURED, to_format=Format.SET)
-        assert _ir(again, Format.SET) == before
-        assert (
-            _ir(
-                convert_config(again, from_format=Format.SET, to_format=Format.STRUCTURED),
-                Format.STRUCTURED,
-            )
-            == before
+            _set_source("an-inactive-accept-under-then"), Format.SET
         )
 
 
@@ -256,38 +214,40 @@ class TestATagOnFamilyIsReported:
         notes = [d for d in result.diagnostics if d.severity == "note" and "family" in d.message]
         assert len(notes) == 1
 
-
-# A tag on a whole list: set `deactivate system name-server`, JSON
-# `"@name-server"`. Structured output wrote it on the first entry's line,
-# which reads back as that entry's tag (phase-6 review, change B).
-WHOLE_LISTS = {
-    "name-server": (
-        "set system name-server 192.168.0.1\n"
-        "set system name-server 192.168.0.2\n"
-        "deactivate system name-server\n"
-    ),
-    "static route": (
-        "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
-        "set routing-options static route 198.51.100.0/24 discard\n"
-        "protect routing-options static route\n"
-    ),
-    "one entry": "set system name-server 192.168.0.1\ndeactivate system name-server\n",
-    "route-filter, a one-line list": (
-        "set policy-options policy-statement P1 term T1 from "
-        "route-filter 198.51.100.0/24 exact accept\n"
-        "deactivate policy-options policy-statement P1 term T1 from route-filter\n"
-    ),
-}
-
-
-class TestAListTaggedAsAWhole:
-    @pytest.mark.parametrize("shape", list(WHOLE_LISTS))
-    def test_structured_output_keeps_the_tag_on_the_list(self, shape: str) -> None:
-        before = _ir(WHOLE_LISTS[shape], Format.SET)
-        curly = convert_config(
-            WHOLE_LISTS[shape], from_format=Format.SET, to_format=Format.STRUCTURED
+    def test_a_family_block_holding_two_families_is_reported_once(self) -> None:
+        curly = _nest(
+            ["interfaces", "xe-0/0/0", "unit 0"],
+            "            inactive: family {\n                inet {\n"
+            "                    address 10.0.0.1/24;\n                }\n"
+            "                inet6;\n            }\n",
         )
-        assert _ir(curly, Format.STRUCTURED) == before
+        result = convert_config_result(curly, from_format=Format.STRUCTURED, to_format=Format.SET)
+        unplaced = [
+            d for d in result.diagnostics if "family" in d.render() and "placed" in d.render()
+        ]
+        assert len(unplaced) == 1
+
+    def test_set_output_repeats_a_sibling_family_tag_from_json(self) -> None:
+        doc = {
+            "configuration": {
+                "interfaces": {
+                    "interface": [
+                        {
+                            "name": "xe-0/0/0",
+                            "unit": [
+                                {
+                                    "name": "0",
+                                    "family": {"inet": {"address": [{"name": "10.0.0.1/24"}]}},
+                                    "@family": {"inactive": True},
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        }
+        out = convert_config(json.dumps(doc), from_format=Format.JSON, to_format=Format.SET)
+        assert "deactivate interfaces xe-0/0/0 unit 0 family" in out.splitlines()
 
 
 class TestOnlyTagsCountAsTags:
@@ -329,3 +289,40 @@ class TestOnlyTagsCountAsTags:
         unit["@family"] = {"inactive": True}
         out = convert_config(json.dumps(doc), from_format=Format.JSON, to_format=Format.SET)
         assert out.splitlines().count("deactivate interfaces xe-0/0/0 unit 0 family") == 1
+
+
+class TestATagDoesNotGrowOverActiveConfiguration:
+    def test_a_tag_on_apply_macro_data_does_not_tag_the_macro(self) -> None:
+        curly = _nest(["system", "apply-macro M1"], "        k1 v1;\n        inactive: k2 v2;\n")
+        macro = _ir(curly, Format.STRUCTURED)["system"]["apply-macro"][0]
+        assert "@" not in macro
+
+
+# One value of a leaf-list tagged and its sibling not: no IR holds it (one
+# `@members` tags the whole leaf-list), so every input refuses it.
+PARTLY_TAGGED_XML = (
+    "<configuration><policy-options><community><name>C1</name><members>64496:1</members>"
+    '<members inactive="inactive">64496:2</members></community></policy-options>'
+    "</configuration>"
+)
+
+
+class TestATagOnOneValueOfALeafListIsRefused:
+    def test_a_per_value_tag_in_curly_is_refused_as_in_xml(self) -> None:
+        curly = _nest(
+            ["policy-options", "community C1"],
+            "        members 64496:1;\n        inactive: members 64496:2;\n",
+        )
+        with pytest.raises(ValueError, match="members"):
+            _ir(curly, Format.STRUCTURED)
+
+    def test_a_partly_inactive_leaf_list_is_refused_by_convert_config_result(self) -> None:
+        with pytest.raises(ValueError, match="members"):
+            convert_config_result(PARTLY_TAGGED_XML, from_format=Format.XML, to_format=Format.SET)
+
+    def test_a_partly_inactive_leaf_list_exits_two_on_the_cli(self) -> None:
+        result = CliRunner().invoke(
+            main, ["convert", "-i", "xml", "-e", "set"], input=PARTLY_TAGGED_XML
+        )
+        assert result.exit_code == 2
+        assert "members" in result.output

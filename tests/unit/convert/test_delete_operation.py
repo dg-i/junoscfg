@@ -1,187 +1,81 @@
-"""Tests for the delete operation support (JSON/YAML → set & structured)."""
+"""What conversion says about a delete it cannot write.
+
+Set output writes ``delete <path>`` after the content it deletes; structured
+output has no delete, so it drops the annotation and keeps the content. Both
+are rows of the shape catalogue (`tests/support/shapes.py`, the delete rows),
+checked through every reader and writer by `tests/contract/test_format_matrix.py`.
+This file keeps what the rows cannot see: the note that reports the drop, which
+travels with the result and never reaches stderr. The display filters' handling
+of delete lines is `tests/unit/display/test_delete_lines.py`.
+"""
 
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
+from typing import Any
 
-import yaml
+import pytest
 
-if TYPE_CHECKING:
-    import pytest
-
-from junoscfg import Format, convert_config, convert_config_result
-from junoscfg.display import filter_set_by_path, is_display_set
-from junoscfg.display.config_store import filter_structured_by_path
-from junoscfg.display.set_converter import SetConverter
+from junoscfg import Format, convert_config_result
 
 
-class TestJsonDeleteToSet:
-    """JSON with operation=delete → set mode."""
-
-    def test_delete_container(self) -> None:
-        """Container-level delete annotation produces 'delete <path>'."""
-        data = {
-            "configuration": {
-                "system": {
-                    "services": {
-                        "@": {"operation": "delete"},
-                        "ssh": [None],
-                    }
-                }
-            }
-        }
-        result = convert_config(json.dumps(data), from_format=Format.JSON, to_format=Format.SET)
-        assert "delete system services" in result
-
-    def test_delete_leaf(self) -> None:
-        """Leaf-level delete annotation produces 'delete <path> <leaf>'."""
-        data = {
-            "configuration": {
-                "system": {
-                    "host-name": "router1",
-                    "@host-name": {"operation": "delete"},
-                }
-            }
-        }
-        result = convert_config(json.dumps(data), from_format=Format.JSON, to_format=Format.SET)
-        assert "delete system host-name" in result
+def _json(config: dict[str, Any]) -> str:
+    return json.dumps({"configuration": config})
 
 
-class TestJsonDeleteToStructured:
-    """JSON with operation=delete → structured mode."""
+class TestStructuredOutputDropsADeleteWithANote:
+    """A delete is dropped from structured output with a note, never on stderr."""
 
-    def test_delete_container_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Delete annotations are dropped from structured output with a note."""
-        data = {
-            "configuration": {
-                "system": {
-                    "services": {
-                        "@": {"operation": "delete"},
-                        "ssh": [None],
-                    }
-                }
-            }
-        }
+    @pytest.mark.parametrize(
+        ("source", "from_format", "kept"),
+        [
+            pytest.param(
+                _json({"system": {"services": {"@": {"operation": "delete"}, "ssh": [None]}}}),
+                Format.JSON,
+                "ssh",
+                id="a-deleted-container",
+            ),
+            pytest.param(
+                _json({"system": {"host-name": "router1", "@host-name": {"operation": "delete"}}}),
+                Format.JSON,
+                "host-name",
+                id="a-deleted-leaf",
+            ),
+            pytest.param(
+                "set system services ssh\ndelete system services ssh",
+                Format.SET,
+                None,
+                id="a-statement-set-then-deleted",
+            ),
+        ],
+    )
+    def test_the_delete_is_dropped_with_a_note(
+        self,
+        source: str,
+        from_format: Format,
+        kept: str | None,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
         converted = convert_config_result(
-            json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
+            source, from_format=from_format, to_format=Format.STRUCTURED
         )
-        result = converted.output
-        assert "delete:" not in result
-        assert "ssh" in result  # content still renders
-        assert capsys.readouterr().err == ""
-        assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
-
-    def test_delete_leaf_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """Leaf-level delete annotations are dropped from structured output."""
-        data = {
-            "configuration": {
-                "system": {
-                    "host-name": "router1",
-                    "@host-name": {"operation": "delete"},
-                }
-            }
-        }
-        converted = convert_config_result(
-            json.dumps(data), from_format=Format.JSON, to_format=Format.STRUCTURED
-        )
-        result = converted.output
-        assert "delete:" not in result
-        assert "host-name" in result
+        assert "delete:" not in converted.output
+        if kept is None:
+            assert converted.output.strip() == ""
+        else:
+            assert kept in converted.output
         assert capsys.readouterr().err == ""
         assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
 
 
-class TestSetToStructuredDelete:
-    """'delete' set commands cannot be represented in structured output."""
+class TestAnAnnotationOnlyLeafIsNoFieldError:
+    """`"host-name": {"@": {"operation": "delete"}}` has no value to validate."""
 
-    def test_delete_command_to_structured(self, capsys: pytest.CaptureFixture[str]) -> None:
-        """A delete-only node is omitted from structured output with a note."""
-        input_text = "set system services ssh\ndelete system services ssh"
-        converted = convert_config_result(
-            input_text, from_format=Format.SET, to_format=Format.STRUCTURED
-        )
-        result = converted.output
-        assert result.strip() == ""
-        assert capsys.readouterr().err == ""
-        assert "delete annotation(s) dropped" in converted.diagnostics[0].render()
-
-
-class TestStructuredToSetDelete:
-    """Structured with delete: prefix → set commands."""
-
-    def test_delete_prefix_to_set(self) -> None:
-        """'delete: services { ssh; }' → 'delete services' (marks the container)."""
-        input_text = "delete: services {\n    ssh;\n}"
-        result = SetConverter(input_text).to_set()
-        assert "delete services" in result
-        assert "set services ssh" in result
-
-    def test_delete_prefix_leaf(self) -> None:
-        """'system { delete: host-name router1; }' → 'delete system host-name router1'."""
-        input_text = "system {\n    delete: host-name router1;\n}"
-        result = SetConverter(input_text).to_set()
-        assert "delete system host-name router1" in result
-
-
-class TestYamlDeleteToSet:
-    """YAML with @: {operation: delete} → set mode."""
-
-    def test_yaml_delete_container(self) -> None:
-        """YAML delete annotation on container produces 'delete <path>'."""
-        data = {
-            "configuration": {
-                "system": {
-                    "services": {
-                        "@": {"operation": "delete"},
-                        "ssh": None,
-                    }
-                }
-            }
-        }
-        yaml_text = yaml.dump(data, default_flow_style=False)
-        result = convert_config(yaml_text, from_format=Format.YAML, to_format=Format.SET)
-        assert "delete system services" in result
-
-
-class TestFilterSetDelete:
-    """filter_set_by_path handles delete lines."""
-
-    def test_filters_delete_lines(self) -> None:
-        text = (
-            "set system services ssh\ndelete system services ssh\nset interfaces ge-0/0/0 unit 0\n"
-        )
-        result = filter_set_by_path(text, ["system", "services"])
-        assert "set system services ssh\n" in result
-        assert "delete system services ssh\n" in result
-        assert "interfaces" not in result
-
-    def test_relative_with_delete(self) -> None:
-        text = "set system services ssh\ndelete system services ssh\n"
-        result = filter_set_by_path(text, ["system", "services"], relative=True)
-        assert "set ssh\n" in result
-        assert "delete ssh\n" in result
-
-
-class TestFilterStructuredDelete:
-    """filter_structured_by_path handles delete: prefix."""
-
-    def test_preserves_delete_prefix(self) -> None:
-        text = "system {\n    delete: services {\n        ssh;\n    }\n}\n"
-        result = filter_structured_by_path(text, ["system"], relative=True)
-        assert "delete: services {" in result
-
-
-class TestIsDisplaySetDelete:
-    """is_display_set accepts delete lines."""
-
-    def test_delete_only(self) -> None:
-        assert is_display_set("delete system services ssh\n")
-
-    def test_mixed_set_delete(self) -> None:
-        assert is_display_set("set system host-name r1\ndelete system services ssh\n")
-
-    def test_mixed_set_deactivate_delete(self) -> None:
-        assert is_display_set(
-            "set system host-name r1\ndeactivate system syslog\ndelete system services ssh\n"
-        )
+    def test_no_field_validate_warning_for_annotation_only_leaf(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        source = _json({"system": {"host-name": {"@": {"operation": "delete"}}}})
+        converted = convert_config_result(source, from_format=Format.JSON, to_format=Format.SET)
+        assert converted.output == "delete system host-name\n"
+        assert not [d for d in converted.diagnostics if d.source == "field-validate"]
+        assert "field-validate" not in capsys.readouterr().err

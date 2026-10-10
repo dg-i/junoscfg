@@ -1,15 +1,25 @@
-"""Tests for the unified convert_config() API and Format enum."""
+"""The convert_config() door, the Format enum, and what one reader or writer adds.
+
+What holds for every (reader, writer) pair -- each conversion reads back as the
+IR it was given -- is `tests/contract/test_format_matrix.py`, over the shape
+catalogue; this file keeps what belongs to one door: refusals, path
+selection, and the value shapes one reader or writer settles.
+"""
 
 from __future__ import annotations
 
 import json
 import re
+from typing import TYPE_CHECKING
 
 import pytest
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
-from junoscfg.convert import pipeline
-from junoscfg.convert.input import to_dict
+from junoscfg.convert import pipeline, to_dict
+from junoscfg.display import artifacts_dir as artifacts_in
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestSetBracketSyntaxRejection:
@@ -40,179 +50,6 @@ class TestFormatEnum:
     def test_format_from_string(self) -> None:
         assert Format("set") is Format.SET
         assert Format("json") is Format.JSON
-
-
-class TestConvertJsonToSet:
-    def test_simple(self) -> None:
-        source = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = convert_config(source, from_format=Format.JSON, to_format=Format.SET)
-        assert "set system host-name r1" in result
-
-
-class TestConvertJsonToStructured:
-    def test_simple(self) -> None:
-        source = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = convert_config(source, from_format=Format.JSON, to_format=Format.STRUCTURED)
-        assert "host-name r1;" in result
-
-
-class TestConvertXmlToSet:
-    def test_simple(self) -> None:
-        source = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = convert_config(source, from_format=Format.XML, to_format=Format.SET)
-        assert "set system host-name r1" in result
-
-
-class TestConvertXmlToStructured:
-    def test_simple(self) -> None:
-        source = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = convert_config(source, from_format=Format.XML, to_format=Format.STRUCTURED)
-        assert "host-name r1;" in result
-
-
-class TestConvertYamlToSet:
-    def test_simple(self) -> None:
-        source = "configuration:\n  system:\n    host-name: router1\n"
-        result = convert_config(source, from_format=Format.YAML, to_format=Format.SET)
-        assert "set system host-name router1" in result
-
-
-class TestConvertYamlToStructured:
-    def test_simple(self) -> None:
-        source = "configuration:\n  system:\n    host-name: router1\n"
-        result = convert_config(source, from_format=Format.YAML, to_format=Format.STRUCTURED)
-        assert "host-name router1;" in result
-
-
-class TestConvertSetToStructured:
-    def test_simple(self) -> None:
-        source = "set system host-name router1"
-        result = convert_config(source, from_format=Format.SET, to_format=Format.STRUCTURED)
-        assert "host-name router1;" in result
-
-
-class TestConvertStructuredToSet:
-    def test_simple(self) -> None:
-        source = "system {\n    host-name foo;\n}"
-        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.SET)
-        assert "set system host-name foo" in result
-
-
-class TestConvertJsonToYaml:
-    def test_simple(self) -> None:
-        source = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = convert_config(source, from_format=Format.JSON, to_format=Format.YAML)
-        assert "host-name: r1" in result
-
-
-class TestConvertXmlToYaml:
-    def test_simple(self) -> None:
-        source = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = convert_config(source, from_format=Format.XML, to_format=Format.YAML)
-        assert "host-name: r1" in result
-
-
-class TestConvertSetToJson:
-    def test_simple(self) -> None:
-        source = "set system host-name r1"
-        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
-        assert '"host-name": "r1"' in result
-        assert '"configuration"' in result
-
-    def test_multiple_commands(self) -> None:
-        source = "set system host-name r1\nset system domain-name example.com"
-        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
-        import json
-
-        parsed = json.loads(result)
-        assert parsed["configuration"]["system"]["host-name"] == "r1"
-        assert parsed["configuration"]["system"]["domain-name"] == "example.com"
-
-
-class TestConvertSetToYaml:
-    def test_simple(self) -> None:
-        source = "set system host-name r1"
-        result = convert_config(source, from_format=Format.SET, to_format=Format.YAML)
-        assert "host-name: r1" in result
-
-
-class TestConvertStructuredToJson:
-    def test_simple(self) -> None:
-        source = "system {\n    host-name r1;\n}"
-        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.JSON)
-        assert '"host-name": "r1"' in result
-        assert '"configuration"' in result
-
-
-class TestJsonOutputGroupsFormat:
-    """Verify JSON output uses native Junos format for groups.
-
-    Native Junos JSON uses ``"groups": [...]`` directly, not
-    ``"groups": {"group": [...]}``.
-    """
-
-    def test_set_to_json_groups_native_format(self) -> None:
-        source = (
-            "set groups mygroup system host-name r1\n"
-            "set groups other system domain-name example.com\n"
-        )
-        result = convert_config(source, from_format=Format.SET, to_format=Format.JSON)
-        parsed = json.loads(result)
-        groups = parsed["configuration"]["groups"]
-        assert isinstance(groups, list), f"expected list, got {type(groups).__name__}"
-        names = [g["name"] for g in groups]
-        assert "mygroup" in names
-        assert "other" in names
-
-    def test_structured_to_json_groups_native_format(self) -> None:
-        source = (
-            "groups {\n    mygroup {\n        system {\n"
-            "            host-name r1;\n        }\n    }\n}\n"
-        )
-        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.JSON)
-        parsed = json.loads(result)
-        groups = parsed["configuration"]["groups"]
-        assert isinstance(groups, list), f"expected list, got {type(groups).__name__}"
-        assert groups[0]["name"] == "mygroup"
-
-    def test_json_roundtrip_preserves_native_groups(self) -> None:
-        source = json.dumps(
-            {
-                "configuration": {
-                    "groups": [
-                        {"name": "g1", "system": {"host-name": "r1"}},
-                    ]
-                }
-            }
-        )
-        result = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
-        parsed = json.loads(result)
-        groups = parsed["configuration"]["groups"]
-        assert isinstance(groups, list)
-        assert groups[0]["name"] == "g1"
-
-
-class TestConvertStructuredToYaml:
-    def test_simple(self) -> None:
-        source = "system {\n    host-name r1;\n}"
-        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.YAML)
-        assert "host-name: r1" in result
-
-
-class TestConvertYamlToJson:
-    def test_simple(self) -> None:
-        source = "configuration:\n  system:\n    host-name: r1\n"
-        result = convert_config(source, from_format=Format.YAML, to_format=Format.JSON)
-        assert '"host-name": "r1"' in result
-        assert '"configuration"' in result
-
-
-class TestConvertXmlToJson:
-    def test_simple(self) -> None:
-        source = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = convert_config(source, from_format=Format.XML, to_format=Format.JSON)
-        assert '"host-name": "r1"' in result
-        assert '"configuration"' in result
 
 
 class TestPartialStructuredConfig:
@@ -246,97 +83,11 @@ class TestPartialStructuredConfig:
         assert lo["unit"][0]["family"]["inet"]["address"] == [{"name": "10.0.36.103/32"}]
 
 
-class TestTransparentListKeyRoundTrip:
-    """End-to-end: prefix-list-item and syslog contents survive round-trip."""
-
-    def test_prefix_list_json_roundtrip(self) -> None:
-        source = json.dumps(
-            {
-                "configuration": {
-                    "policy-options": {
-                        "prefix-list": [
-                            {
-                                "name": "MY-LIST",
-                                "prefix-list-item": [
-                                    {"name": "127.0.0.1/32"},
-                                    {"name": "10.0.0.0/8"},
-                                ],
-                            }
-                        ]
-                    }
-                }
-            }
-        )
-        # JSON → set → JSON
-        set_text = convert_config(source, from_format=Format.JSON, to_format=Format.SET)
-        result = convert_config(set_text, from_format=Format.SET, to_format=Format.JSON)
-        parsed = json.loads(result)
-        items = parsed["configuration"]["policy-options"]["prefix-list"][0]["prefix-list-item"]
-        names = [i["name"] for i in items]
-        assert "127.0.0.1/32" in names
-        assert "10.0.0.0/8" in names
-
-    def test_syslog_contents_json_roundtrip(self) -> None:
-        source = json.dumps(
-            {
-                "configuration": {
-                    "system": {
-                        "syslog": {
-                            "file": [
-                                {
-                                    "name": "messages",
-                                    "contents": [
-                                        {"name": "interactive-commands", "any": [None]},
-                                    ],
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        )
-        # JSON → set → JSON
-        set_text = convert_config(source, from_format=Format.JSON, to_format=Format.SET)
-        result = convert_config(set_text, from_format=Format.SET, to_format=Format.JSON)
-        parsed = json.loads(result)
-        contents = parsed["configuration"]["system"]["syslog"]["file"][0]["contents"]
-        assert len(contents) == 1
-        assert contents[0]["name"] == "interactive-commands"
-        assert contents[0]["any"] == [None]
-
-
 class TestConvertUnsupported:
     def test_xml_output_not_supported(self) -> None:
         source = '{"configuration": {"system": {"host-name": "r1"}}}'
         with pytest.raises(NotImplementedError, match="XML output"):
             convert_config(source, from_format=Format.JSON, to_format=Format.XML)
-
-
-class TestConvertIdentity:
-    """Identity conversions parse and re-render through the pipeline."""
-
-    def test_json_to_json(self) -> None:
-        source = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
-        import json
-
-        parsed = json.loads(result)
-        assert parsed["configuration"]["system"]["host-name"] == "r1"
-
-    def test_set_to_set(self) -> None:
-        source = "set system host-name r1"
-        result = convert_config(source, from_format=Format.SET, to_format=Format.SET)
-        assert "set system host-name r1" in result
-
-    def test_yaml_to_yaml(self) -> None:
-        source = "configuration:\n  system:\n    host-name: r1\n"
-        result = convert_config(source, from_format=Format.YAML, to_format=Format.YAML)
-        assert "host-name: r1" in result
-
-    def test_structured_to_structured(self) -> None:
-        source = "system {\n    host-name r1;\n}"
-        result = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.STRUCTURED)
-        assert "host-name r1;" in result
 
 
 _PATH_FILTER_SOURCE = (
@@ -485,7 +236,10 @@ class TestPathFiltering:
 
 
 class TestValidateConfig:
-    """Tests for the unified validate_config() API."""
+    """The unified validate_config() door accepts and rejects through every format.
+
+    Validation behaviour, kept here until the validation tests take it in.
+    """
 
     def test_validate_json_valid(self, artifacts_dir: str) -> None:
         source = '{"configuration": {"system": {"host-name": "r1"}}}'
@@ -641,19 +395,25 @@ class TestUserClassSingle:
 class TestLeafListPromotion:
     """Scalar leaf-list values are promoted only for adapters that require it."""
 
-    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(self, monkeypatch) -> None:
-        """JSON retains its supplied shape and has no schema-artifact dependency."""
-        import junoscfg.convert.input.normalization as normalization
+    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(
+        self, tmp_path: Path
+    ) -> None:
+        """JSON retains its supplied shape and has no schema-artifact dependency.
 
-        def fail_if_called():
-            raise AssertionError("JSON input must not load the schema tree")
-
-        monkeypatch.setattr(normalization, "load_schema_tree", fail_if_called)
+        Read with the artifacts pointed at an empty directory: any schema load
+        there raises, as the YAML read beside it shows.
+        """
         source = '{"configuration":{"protocols":{"evpn":{"extended-vni-list":"3001000-3001100"}}}}'
-
-        assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
-            "3001000-3001100"
+        yaml_source = (
+            "configuration:\n  protocols:\n    evpn:\n      extended-vni-list: 3001000-3001100\n"
         )
+
+        with artifacts_in(tmp_path):
+            assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
+                "3001000-3001100"
+            )
+            with pytest.raises(ValueError, match="No junos-structure-tree"):
+                to_dict(yaml_source, "yaml")
 
     def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
         """YAML scalar extended-vni-list must become a single-element JSON array."""
