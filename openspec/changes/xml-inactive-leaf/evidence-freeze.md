@@ -39,7 +39,7 @@ None, because D1 and D2 are answered by `private_test_data/deactivate6.txt` (del
 - Assurance preference: balanced
 - Risk floor: normal (yellow zone, one package, no surface break)
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer; Finalizer
-- Resume point: phase 4 (acceptance tests); phase 2 closed on the 2026-10-10 delta below
+- Resume point: phase 5 pre-review full checkpoint, run with change B's at the end (owner answer 3); last valid evidence: focused tests 245 passed and `agent-ready check --set fast` green on the commit that records this line
 
 ## Delta log
 
