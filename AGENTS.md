@@ -55,8 +55,8 @@ changed. Schema, corpus and per-path extras: developer guide, Testing Architectu
 
 ## Version Management
 
-Version lives in three places that move together: `pyproject.toml`,
-`src/junoscfg/__init__.py`, and the assertion in `tests/unit/cli/test_cli.py`.
+Version lives in `pyproject.toml` and `src/junoscfg/__init__.py`, which move
+together; `tests/unit/cli/test_cli.py::TestVersion` fails when they disagree.
 
 - A break on a named surface (`consumer`, `cli`) raises the **minor**, as
   `[tool.template.stage] break-bumps` declares. Everything else is a patch.

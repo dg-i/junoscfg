@@ -29,8 +29,8 @@ When two of these conflict, the order is:
    the wheel.
 4. **Latency** — last; a multi-megabyte schema load on start-up is tolerated.
 
-The ranking is visible in the record. `tests/contract/test_convert_consistency.py`
-asserts every format pair agrees and every round trip preserves content.
+The ranking is visible in the record. `tests/contract/test_format_matrix.py`
+asserts every reader gives one IR and every (reader, writer) pair preserves it.
 `docs/architecture/design-decisions.md` records rejecting both a prefix trie
 and a Lark grammar for set-to-structured conversion because each got
 context-dependent elements wrong, in favour of a slower schema tree walk. XML

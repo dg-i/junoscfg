@@ -91,7 +91,7 @@ For each bug, apply fixes in this order:
 
 4. **Key aliases** — If JSON input uses an original XML name, add to `KEY_ALIASES` in `constants.py`. The set input parser also resolves `KEY_ALIASES` during schema lookup so that aliased keywords (e.g., `802.3ad` → `ieee-802.3ad`) match the correct schema node.
 
-5. **Regression test** — Add a test in `tests/unit/convert/test_convert_roundtrip.py` (for format conversions) and/or `tests/unit/display/test_set_converter.py` (for set/structured output).
+5. **Regression test** — Add a row to `tests/support/shapes.py`: the configuration in every format it can be written in and the IR they read as; `tests/contract/test_format_matrix.py` then checks it through every reader and writer. A writer-specific case goes in `tests/unit/convert/` or `tests/unit/display/`. Placement and naming: `tests/CONTRACT.md`.
 
 ## 4. Key Files and Their Roles
 
