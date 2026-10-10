@@ -1,9 +1,10 @@
-"""`junoscfg edityaml addvars` and `ansibilize`: input, options, exit codes.
+"""`junoscfg edityaml addvars`, `ansibilize` and `rename-root`: input, options, exit codes.
 
-The commands' plumbing only: what they read, which options reach the library
-call, and how they exit. An ansibilize run prints exactly what the library
-gives for the options' values. The behaviour itself is tested in
-``tests/unit/edityaml/``.
+The plumbing of addvars and ansibilize: what they read, which options reach
+the library call, and how they exit. An ansibilize run prints exactly what the
+library gives for the options' values; their behaviour is tested in
+``tests/unit/edityaml/``. `rename-root` has no library function, its logic
+lives in ``cli.py``, so its behaviour is tested here.
 """
 
 from __future__ import annotations
@@ -160,6 +161,13 @@ class TestAddvars:
         exit_code, _ = run_cli(["edityaml", "addvars", "--set", "_foo=bar"], as_yaml(SYSTEM))
         assert exit_code == 2
 
+    def test_empty_input_prints_nothing(self) -> None:
+        exit_code, output = run_cli(
+            ["edityaml", "addvars", "--path", "configuration.system", "--set", "_a=static(1)"], ""
+        )
+        assert exit_code == 0
+        assert output == ""
+
 
 ITEMS = {"items": [{"name": "10.0.0.1", "desc": "a"}]}
 INTERFACES_CFG = {
@@ -295,3 +303,95 @@ class TestAnsibilizeOffset:
         )
         assert exit_code == 1
         assert "hello" in output
+
+
+GROUPED = {
+    "configuration": {
+        "@": {"junos:commit-user": "admin"},
+        "groups": [
+            {"name": "ansible-managed", "interfaces": {"ge-0/0/0": {"unit": 0}}},
+        ],
+    }
+}
+
+
+class TestRenameRoot:
+    """`rename-root` renames the top-level key, or makes a subtree the document.
+
+    Its logic is in ``cli.py`` only, so these are its behaviour tests too.
+    """
+
+    def test_the_default_from_key_is_configuration(self) -> None:
+        exit_code, output = run_cli(
+            ["edityaml", "rename-root", "--to", "junos_config"], as_yaml(SYSTEM)
+        )
+        assert exit_code == 0
+        assert yaml.safe_load(output) == {"junos_config": SYSTEM["configuration"]}
+
+    def test_an_explicit_from_key(self) -> None:
+        data = {"my_root": {"interfaces": {"ge-0/0/0": "up"}}}
+        exit_code, output = run_cli(
+            ["edityaml", "rename-root", "--from", "my_root", "--to", "device_config"],
+            as_yaml(data),
+        )
+        assert exit_code == 0
+        assert yaml.safe_load(output) == {"device_config": data["my_root"]}
+
+    def test_a_missing_from_key_exits_two(self) -> None:
+        result = CliRunner().invoke(
+            main, ["edityaml", "rename-root", "--to", "new_name"], input="other_key:\n  value: 1\n"
+        )
+        assert result.exit_code == 2
+        assert result.stdout == ""
+        assert result.stderr == "Error: key 'configuration' not found in input.\n"
+
+    def test_a_file_argument_is_read(self, tmp_path: Path) -> None:
+        config_file = tmp_path / "config.yaml"
+        config_file.write_text(as_yaml(SYSTEM))
+        exit_code, output = run_cli(
+            ["edityaml", "rename-root", "--to", "junos_config", str(config_file)]
+        )
+        assert exit_code == 0
+        assert yaml.safe_load(output) == {"junos_config": SYSTEM["configuration"]}
+
+    def test_empty_input_prints_nothing(self) -> None:
+        exit_code, output = run_cli(["edityaml", "rename-root", "--to", "junos_config"], "")
+        assert exit_code == 0
+        assert output == ""
+
+    def test_the_other_top_level_keys_stay_in_their_place(self) -> None:
+        data = {**SYSTEM, "metadata": {"version": 1}}
+        exit_code, output = run_cli(
+            ["edityaml", "rename-root", "--to", "junos_config"], as_yaml(data)
+        )
+        assert exit_code == 0
+        renamed = yaml.safe_load(output)
+        assert list(renamed) == ["junos_config", "metadata"]
+        assert renamed == {"junos_config": SYSTEM["configuration"], "metadata": {"version": 1}}
+
+    def test_a_path_from_makes_the_subtree_the_document(self) -> None:
+        """A `--from` with dots or brackets is a path expression, as in ansibilize."""
+        exit_code, output = run_cli(
+            [
+                "edityaml",
+                "rename-root",
+                "--from",
+                "configuration.groups[ansible-managed].interfaces",
+                "--to",
+                "junos_interfaces",
+            ],
+            as_yaml(GROUPED),
+        )
+        assert exit_code == 0
+        assert yaml.safe_load(output) == {"junos_interfaces": {"ge-0/0/0": {"unit": 0}}}
+
+    def test_a_path_from_that_matches_nothing_exits_two(self) -> None:
+        path = "configuration.groups[other-group].interfaces"
+        result = CliRunner().invoke(
+            main,
+            ["edityaml", "rename-root", "--from", path, "--to", "junos_interfaces"],
+            input=as_yaml(GROUPED),
+        )
+        assert result.exit_code == 2
+        assert result.stdout == ""
+        assert result.stderr == f"Error: path '{path}' not found in input.\n"

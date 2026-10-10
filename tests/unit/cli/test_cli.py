@@ -1,754 +1,437 @@
-"""Tests for CLI interface."""
+"""`junoscfg` and `junoscfg convert`: options, input, output and exit codes.
+
+The plumbing only. Each option is run once, and what the command prints is what
+the library gives for the same arguments, and differs from what it gives
+without the option, so the option is seen to reach the library. What a
+conversion, a path or an anonymize rule does is tested where it is done:
+
+- conversions, every reader to every writer: `tests/contract/test_format_matrix.py`
+  over `tests/support/shapes.py`;
+- `--path` and `--relative`: `tests/unit/convert/test_convert_api.py`
+  (`TestPathFiltering`);
+- the rule flags (`--anonymize-passwords`, `-ssh-keys`, `-ips`, `-communities`,
+  `-identities`, `-groups`, `-descriptions`, `-as-numbers`, `-sensitive-words`,
+  `-sensitive-patterns`) with `--anonymize-salt`, `--anonymize-dump-map`,
+  `--anonymize-revert-map` and `--no-field-validate`:
+  `tests/contract/test_every_rule.py::TestEveryRule::test_the_cli_flags_keep_the_same_law`;
+- the other anonymize options: `tests/unit/anonymize/`;
+- `-v` against the minimal artifacts and `schema info`: `test_cli_validate.py`.
+"""
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
 
-from click.testing import CliRunner
+import pytest
+import tomllib
+from click.testing import CliRunner, Result
 
+import junoscfg
+from junoscfg import Format, convert_config, convert_config_result, validate_config
+from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
+from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.paths import PROJECT_ROOT
+from tests.support.shapes import SHAPES, WRITERS
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+#: `system host-name r1` in every format, from the shape catalogue.
+A_LEAF = next(shape for shape in SHAPES if shape.name == "a-leaf").sources
+READERS = tuple(A_LEAF)
 
-class TestCli:
-    def test_version(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["--version"])
+
+def run(args: list[str], stdin: str | None = None) -> Result:
+    return CliRunner().invoke(main, args, input=stdin)
+
+
+def library(source: str, reader: Format, writer: Format, **options: Any) -> str:
+    return convert_config(source, from_format=reader, to_format=writer, **options)
+
+
+class TestVersion:
+    """One version, three places that must agree; no test names its value."""
+
+    def test_the_cli_prints_the_package_version(self) -> None:
+        result = run(["--version"])
         assert result.exit_code == 0
-        assert "0.15.2" in result.output
+        assert result.stdout == f"junoscfg, version {junoscfg.__version__}\n"
 
-    def test_no_mode_shows_help(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, [])
+    def test_the_package_version_is_the_installed_distributions(self) -> None:
+        assert junoscfg.__version__ == importlib.metadata.version("junoscfg")
+
+    def test_the_package_version_is_the_project_version(self) -> None:
+        with open(PROJECT_ROOT / "pyproject.toml", "rb") as handle:
+            project = tomllib.load(handle)["project"]
+        assert junoscfg.__version__ == project["version"]
+
+
+def _commands(group: Any, prefix: str = "junoscfg") -> list[str]:
+    """Every command's full name under *group*, the `fullhelp` command aside."""
+    names = []
+    for name, command in group.commands.items():
+        if name == "fullhelp":
+            continue
+        names.append(f"{prefix} {name}")
+        if hasattr(command, "commands"):
+            names.extend(_commands(command, f"{prefix} {name}"))
+    return names
+
+
+_CONVERT_OPTIONS = [
+    max(param.opts, key=len) for param in main.commands["convert"].params if param.opts[0][0] == "-"
+]
+
+
+class TestHelp:
+    def test_no_arguments_print_the_help(self) -> None:
+        result = run([])
         assert result.exit_code == 0
-        assert "Junoscfg" in result.output
+        assert "Junoscfg" in result.stdout
 
-    def test_convert_no_export_shows_error(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["convert", "-i", "json"], input="{}")
-        assert result.exit_code == 2
-        assert "Error" in result.output
-
-    def test_display_set_from_json_stdin(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "router1"}}}'
-        result = runner.invoke(main, ["-i", "json", "-e", "set"], input=json_input)
+    @pytest.mark.parametrize("option", ["--help", "-h", "-?"], ids=["long", "h", "question-mark"])
+    @pytest.mark.parametrize(
+        ("command", "title"), [([], "Junoscfg"), (["convert"], "Convert")], ids=["main", "convert"]
+    )
+    def test_every_help_option_prints_the_help(
+        self, command: list[str], title: str, option: str
+    ) -> None:
+        result = run([*command, option])
         assert result.exit_code == 0
-        assert "set system host-name router1" in result.output
+        assert title in result.stdout
 
-    def test_display_set_from_xml_stdin(self) -> None:
-        runner = CliRunner()
-        xml_input = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = runner.invoke(main, ["-i", "xml", "-e", "set"], input=xml_input)
+    @pytest.mark.parametrize("option", _CONVERT_OPTIONS)
+    def test_convert_help_lists_every_option(self, option: str) -> None:
+        result = run(["convert", "--help"])
         assert result.exit_code == 0
-        assert "set system host-name r1" in result.output
+        assert option in result.stdout
 
-    def test_structured_from_set_stdin(self) -> None:
-        runner = CliRunner()
-        set_input = "set system host-name router1"
-        result = runner.invoke(main, ["-i", "set", "-e", "structured"], input=set_input)
+    @pytest.mark.parametrize("command", ["junoscfg", *_commands(main)])
+    def test_fullhelp_has_a_section_per_command(self, command: str) -> None:
+        result = run(["fullhelp"])
         assert result.exit_code == 0
-        assert "system host-name" in result.output
-        assert "host-name router1;" in result.output
+        assert f"  {command}\n" in result.stdout, f"no section for {command}"
 
-    def test_display_set_from_structured_stdin(self) -> None:
-        runner = CliRunner()
-        config = "system {\n    host-name foo;\n}"
-        result = runner.invoke(main, ["-i", "structured", "-e", "set"], input=config)
+
+class TestConvertIsTheDefaultCommand:
+    """Without a subcommand, options and a file go to `convert`."""
+
+    def test_options_without_a_subcommand_run_convert(self) -> None:
+        source = A_LEAF[Format.JSON]
+        implicit = run(["-i", "json", "-e", "set"], source)
+        assert implicit.exit_code == 0
+        assert implicit.stdout == run(["convert", "-i", "json", "-e", "set"], source).stdout
+
+    def test_a_file_without_a_subcommand_is_converted(self, tmp_path: Path) -> None:
+        source = tmp_path / "config.json"
+        source.write_text(A_LEAF[Format.JSON])
+        result = run([str(source), "-e", "set"])
         assert result.exit_code == 0
-        assert "set system host-name foo" in result.output
+        assert result.stdout == library(A_LEAF[Format.JSON], Format.JSON, Format.SET)
 
-    def test_structured_from_json_stdin(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "router1"}}}'
-        result = runner.invoke(main, ["-i", "json", "-e", "structured"], input=json_input)
+
+class TestConvertReadsAndWrites:
+    """`-i` and `-e` reach the library; input comes from a file or stdin."""
+
+    @pytest.mark.parametrize("writer", WRITERS, ids=[w.value for w in WRITERS])
+    @pytest.mark.parametrize("reader", READERS, ids=[r.value for r in READERS])
+    def test_every_import_and_export_format_reaches_the_library(
+        self, reader: Format, writer: Format
+    ) -> None:
+        source = A_LEAF[reader]
+        result = run(["convert", "-i", reader.value, "-e", writer.value], source)
+        assert result.exit_code == 0, result.output
+        assert result.stdout == library(source, reader, writer)
+        assert result.stderr == ""
+
+    @pytest.mark.parametrize("reader", READERS, ids=[r.value for r in READERS])
+    def test_without_an_import_format_the_format_is_detected(self, reader: Format) -> None:
+        source = A_LEAF[reader]
+        result = run(["convert", "-e", "set"], source)
+        assert result.exit_code == 0, result.output
+        assert result.stdout == library(source, reader, Format.SET)
+
+    @pytest.mark.parametrize(
+        ("import_format", "export_format"),
+        [("conf", "set"), ("set", "conf"), ("conf", "conf")],
+        ids=["import", "export", "both"],
+    )
+    def test_conf_is_an_alias_for_structured(self, import_format: str, export_format: str) -> None:
+        reader = Format.STRUCTURED if import_format == "conf" else Format.SET
+        writer = Format.STRUCTURED if export_format == "conf" else Format.SET
+        result = run(["convert", "-i", import_format, "-e", export_format], A_LEAF[reader])
         assert result.exit_code == 0
-        assert "system host-name" in result.output
-        assert "host-name router1;" in result.output
+        assert result.stdout == library(A_LEAF[reader], reader, writer)
 
-    def test_display_set_from_json_file(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        runner = CliRunner()
-        json_file = tmp_path / "config.json"
-        json_file.write_text('{"configuration": {"system": {"host-name": "router1"}}}')
-        result = runner.invoke(main, ["-i", "json", "-e", "set", str(json_file)])
+    def test_a_file_argument_is_read(self, tmp_path: Path) -> None:
+        source = tmp_path / "config.json"
+        source.write_text(A_LEAF[Format.JSON])
+        result = run(["convert", "-i", "json", "-e", "set", str(source)])
         assert result.exit_code == 0
-        assert "set system host-name router1" in result.output
+        assert result.stdout == library(A_LEAF[Format.JSON], Format.JSON, Format.SET)
 
-    def test_empty_input(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["-i", "json", "-e", "set"], input="")
+    def test_empty_input_prints_nothing(self) -> None:
+        result = run(["convert", "-i", "json", "-e", "set"], "")
         assert result.exit_code == 0
         assert result.output == ""
 
-    def test_display_set_from_yaml_stdin(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: router1\n"
-        result = runner.invoke(main, ["-i", "yaml", "-e", "set"], input=yaml_input)
-        assert result.exit_code == 0
-        assert "set system host-name router1" in result.output
 
-    def test_structured_from_yaml_stdin(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: router1\n"
-        result = runner.invoke(main, ["-i", "yaml", "-e", "structured"], input=yaml_input)
-        assert result.exit_code == 0
-        assert "system host-name" in result.output
-        assert "host-name router1;" in result.output
+class TestUsageErrorsExitTwo:
+    """A usage or input error exits 2, says why on stderr, and writes nothing."""
 
-    def test_yaml_from_json_stdin(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "router1"}}}'
-        result = runner.invoke(main, ["-i", "json", "-e", "yaml"], input=json_input)
-        assert result.exit_code == 0
-        assert "configuration:" in result.output
-        assert "host-name: router1" in result.output
+    def _refused(self, result: Result, message: str) -> None:
+        assert result.exit_code == 2
+        assert result.stdout == ""
+        assert message in result.stderr
 
-    def test_yaml_from_xml_stdin(self) -> None:
-        runner = CliRunner()
-        xml_input = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = runner.invoke(main, ["-i", "xml", "-e", "yaml"], input=xml_input)
-        assert result.exit_code == 0
-        assert "configuration:" in result.output
-        assert "host-name: r1" in result.output
+    def test_convert_without_an_export_format(self) -> None:
+        self._refused(run(["convert", "-i", "json"], "{}"), "Error: specify -e/--export-format")
 
-    def test_auto_detect_set_input(self) -> None:
-        runner = CliRunner()
-        set_input = "set system host-name router1"
-        result = runner.invoke(main, ["-e", "structured"], input=set_input)
-        assert result.exit_code == 0
-        assert "host-name router1;" in result.output
-
-    def test_auto_detect_structured_input(self) -> None:
-        runner = CliRunner()
-        config = "system {\n    host-name foo;\n}"
-        result = runner.invoke(main, ["-e", "set"], input=config)
-        assert result.exit_code == 0
-        assert "set system host-name foo" in result.output
-
-    def test_auto_detect_json_input(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = runner.invoke(main, ["-e", "set"], input=json_input)
-        assert result.exit_code == 0
-        assert "set system host-name r1" in result.output
-
-    def test_auto_detect_xml_input(self) -> None:
-        runner = CliRunner()
-        xml_input = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = runner.invoke(main, ["-e", "set"], input=xml_input)
-        assert result.exit_code == 0
-        assert "set system host-name r1" in result.output
-
-
-class TestInactiveXmlLeaf:
-    """XML input's inactive leaf renders as the device's two set lines."""
-
-    def test_set_output_deactivates_the_leaf(self) -> None:
-        xml = (
-            "<configuration><interfaces><interface><name>xe-0/0/0</name>"
-            '<unit><name>751</name><vlan-id inactive="inactive">751</vlan-id></unit>'
-            "</interface></interfaces></configuration>"
+    def test_relative_without_path(self) -> None:
+        self._refused(
+            run(["convert", "-i", "json", "-e", "set", "--relative"], A_LEAF[Format.JSON]),
+            "Error: --relative requires --path.",
         )
-        result = CliRunner().invoke(main, ["convert", "-i", "xml", "-e", "set"], input=xml)
+
+    def test_a_file_that_does_not_exist(self, tmp_path: Path) -> None:
+        missing = tmp_path / "missing.json"
+        self._refused(run(["convert", "-e", "set", str(missing)]), "does not exist")
+
+    def test_xml_output(self) -> None:
+        self._refused(
+            run(["convert", "-i", "json", "-e", "xml"], A_LEAF[Format.JSON]),
+            "Error: XML output is not yet supported.",
+        )
+
+    def test_malformed_json(self) -> None:
+        self._refused(run(["convert", "-i", "json", "-e", "set"], "{bad json"), "Error: ")
+
+    def test_malformed_yaml(self) -> None:
+        self._refused(
+            run(["convert", "-i", "yaml", "-e", "set"], "configuration: [unclosed\n"),
+            "Error: Invalid YAML: ",
+        )
+
+    def test_set_bracket_syntax_is_refused_with_the_whole_line(self) -> None:
+        """The diagnostic names the line in full, however long it is.
+
+        Spec: conversion/raw-set-input; the readers' rejection itself is
+        `tests/unit/convert/test_set_input.py::TestSetBracketSyntaxRejection`.
+        """
+        line = "set system host-name " + "r" * 120 + " [broken]"
+        self._refused(
+            run(["convert", "-i", "set", "-e", "json"], line),
+            f"Unsupported bracket syntax in set input on line 1:\n{line}",
+        )
+
+
+#: A statement the bundled schema cannot place: a field-validation finding.
+UNPLACED = "set interfaces ge-0/0/0 nonsense alpha"
+
+
+class TestFieldValidationOptions:
+    """Field validation reports on stderr; `--strict` fails; `--no-field-validate` skips it."""
+
+    def test_a_finding_goes_to_stderr_beside_the_output(self) -> None:
+        result = run(["convert", "-i", "set", "-e", "set"], UNPLACED)
+        expected = convert_config_result(UNPLACED, from_format=Format.SET, to_format=Format.SET)
         assert result.exit_code == 0
-        assert result.output.splitlines() == [
-            "set interfaces xe-0/0/0 unit 751 vlan-id 751",
-            "deactivate interfaces xe-0/0/0 unit 751 vlan-id",
+        assert result.stdout == expected.output
+        assert expected.diagnostics
+        assert result.stderr == "".join(d.render() + "\n" for d in expected.diagnostics)
+
+    def test_no_field_validate_reports_nothing(self) -> None:
+        result = run(["convert", "-i", "set", "-e", "set", "--no-field-validate"], UNPLACED)
+        assert result.exit_code == 0
+        assert result.stdout == library(UNPLACED, Format.SET, Format.SET, validate=False)
+        assert result.stderr == ""
+
+    def test_strict_exits_one_with_the_error(self) -> None:
+        result = run(["convert", "-i", "set", "-e", "set", "--strict"], UNPLACED)
+        assert result.exit_code == 1
+        assert result.stdout == ""
+        lines = result.stderr.splitlines()
+        assert lines[0] == "Field validation: FAILED (1 error(s))"
+        assert len(lines) == 2
+        assert "'nonsense alpha' under interfaces ge-0/0/0 could not be placed" in lines[1]
+
+    def test_strict_exits_one_with_the_first_ten_errors(self) -> None:
+        source = "\n".join(f"set interfaces ge-0/0/{n} nonsense alpha" for n in range(11))
+        result = run(["convert", "-i", "set", "-e", "set", "--strict"], source)
+        assert result.exit_code == 1
+        assert result.stdout == ""
+        lines = result.stderr.splitlines()
+        assert lines[0] == "Field validation: FAILED (11 error(s))"
+        assert [line.split(" under interfaces ", 1)[1].split()[0] for line in lines[1:11]] == [
+            f"ge-0/0/{n}" for n in range(10)
         ]
+        assert lines[11:] == ["  ... and 1 more errors"]
 
 
-class TestCliPathFilter:
-    """Tests for --path and --relative CLI options."""
+class TestValidateOption:
+    """`-v` beside `-e` validates, then converts; the artifacts it reads can fail."""
 
-    def test_set_path_filter(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}, "interfaces": {}}}'
-        )
-        result = runner.invoke(
-            main, ["-i", "json", "-e", "set", "--path", "system.syslog"], input=json_input
-        )
+    def test_validate_with_an_export_format_validates_and_converts(self) -> None:
+        source = A_LEAF[Format.JSON]
+        result = run(["convert", "-v", "-i", "json", "-e", "set"], source)
         assert result.exit_code == 0
-        assert "syslog" in result.output
-        assert "host-name" not in result.output
-        assert "interfaces" not in result.output
+        assert result.stderr == "Validation: OK\n"
+        assert result.stdout == library(source, Format.JSON, Format.SET)
 
-    def test_set_path_filter_relative(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}}}'
-        )
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "set", "--path", "system.syslog", "--relative"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "system" not in result.output
-        assert "syslog" not in result.output
-        assert "file messages" in result.output
+    def test_more_than_ten_errors_are_counted_not_listed(self, artifacts_dir: str) -> None:
+        source = "\n".join(f"set bogus{n} x" for n in range(11))
+        result = run(["convert", "-v", "-i", "set", "--artifacts", artifacts_dir], source)
+        errors = validate_config(source, format="set", artifacts_dir=artifacts_dir).errors
+        assert result.exit_code == 1
+        lines = result.stderr.splitlines()
+        assert lines[0] == "Validation: FAILED (11 error(s))"
+        assert lines[1:11] == [f"  - {e.message} (line {e.line})" for e in errors[:10]]
+        assert lines[11:] == ["  ... and 1 more errors"]
 
-    def test_structured_path_filter(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}, "interfaces": {}}}'
-        )
-        result = runner.invoke(
-            main, ["-i", "json", "-e", "structured", "--path", "system"], input=json_input
-        )
-        assert result.exit_code == 0
-        assert "system" in result.output
-        assert "interfaces" not in result.output
+    def test_artifacts_that_cannot_load_exit_three(self, tmp_path: Path) -> None:
+        result = run(["convert", "-v", "-i", "json", "--artifacts", str(tmp_path)], "{}")
+        assert result.exit_code == 3
+        assert result.stderr.startswith("Error loading validation artifacts: ")
 
-    def test_structured_path_filter_relative(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}}}'
-        )
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "structured", "--path", "system", "--relative"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "system" not in result.output
-        assert "host-name r1;" in result.output
 
-    def test_yaml_path_filter(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}, "interfaces": {}}}'
-        result = runner.invoke(
-            main, ["-i", "json", "-e", "yaml", "--path", "system"], input=json_input
-        )
-        assert result.exit_code == 0
-        assert "host-name" in result.output
-        assert "interfaces" not in result.output
+class TestArtifactsOption:
+    """`--artifacts` holds for the conversion too, and only for that command."""
 
-    def test_yaml_path_filter_relative(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}, "interfaces": {}}}'
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "yaml", "--path", "system", "--relative"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "host-name: r1" in result.output
-        assert "system" not in result.output
-        assert "configuration" not in result.output
+    def _expected_error(self, directory: str) -> str:
+        with artifacts_in(directory), pytest.raises(ValueError) as refused:
+            library(A_LEAF[Format.SET], Format.SET, Format.JSON)
+        return f"Error: {refused.value}\n"
 
-    def test_relative_without_path_shows_error(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = runner.invoke(main, ["-i", "json", "-e", "set", "--relative"], input=json_input)
+    def test_the_conversion_reads_the_named_artifacts(self, artifacts_dir: str) -> None:
+        """The minimal artifacts carry no structure tree, so the conversion is refused."""
+        result = run(
+            ["convert", "-i", "set", "-e", "json", "--artifacts", artifacts_dir],
+            A_LEAF[Format.SET],
+        )
         assert result.exit_code == 2
-        assert "--relative requires --path" in result.output
+        assert result.stderr == self._expected_error(artifacts_dir)
+        after = library(A_LEAF[Format.SET], Format.SET, Format.JSON)
+        assert json.loads(after)["configuration"] == {"system": {"host-name": "r1"}}, (
+            "the override outlived the command"
+        )
 
-    def test_json_path_filter(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}, "interfaces": {}}}'
+    def test_the_environment_variable_is_the_option(self, artifacts_dir: str) -> None:
+        result = CliRunner(env={"JUNOSCFG_ARTIFACTS": artifacts_dir}).invoke(
+            main, ["convert", "-i", "set", "-e", "json"], input=A_LEAF[Format.SET]
         )
-        result = runner.invoke(
-            main, ["-i", "json", "-e", "json", "--path", "system"], input=json_input
-        )
+        assert result.exit_code == 2
+        assert result.stderr == self._expected_error(artifacts_dir)
+
+
+class TestPathOptions:
+    """`--path` and `--relative` reach `convert_config(path=, relative=)`."""
+
+    SOURCE = (
+        '{"configuration": {"system": {"host-name": "r1",'
+        ' "syslog": {"file": [{"name": "messages"}]}}, "interfaces": {}}}'
+    )
+
+    @pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+    @pytest.mark.parametrize(
+        ("writer", "path"),
+        [
+            (Format.SET, "system.syslog"),
+            (Format.STRUCTURED, "system"),
+            (Format.YAML, "system"),
+            (Format.JSON, "system"),
+            (Format.SET, "nonexistent"),
+        ],
+        ids=["set", "structured", "yaml", "json", "set-not-found"],
+    )
+    def test_the_path_reaches_the_library(self, writer: Format, path: str, relative: bool) -> None:
+        flags = ["--path", path] + (["--relative"] if relative else [])
+        result = run(["convert", "-i", "json", "-e", writer.value, *flags], self.SOURCE)
+        expected = library(self.SOURCE, Format.JSON, writer, path=path, relative=relative)
         assert result.exit_code == 0
-        assert '"system"' in result.output
-        assert '"interfaces"' not in result.output
-
-    def test_json_path_filter_relative(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"host-name": "r1",'
-            ' "syslog": {"file": [{"name": "messages"}]}}, "interfaces": {}}}'
-        )
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json", "--path", "system", "--relative"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert '"host-name"' in result.output
-        assert '"configuration"' not in result.output
-        assert '"system"' not in result.output
-
-    def test_path_not_found_empty_output(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = runner.invoke(
-            main, ["-i", "json", "-e", "set", "--path", "nonexistent"], input=json_input
-        )
-        assert result.exit_code == 0
-        assert result.output == ""
+        assert result.stdout == expected
+        if path != "nonexistent":
+            assert expected != library(self.SOURCE, Format.JSON, writer)
 
 
-class TestCliIdentityConversion:
-    """Identity conversions via CLI."""
-
-    def test_json_to_json(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"host-name": "r1"}}}'
-        result = runner.invoke(main, ["-i", "json", "-e", "json"], input=json_input)
-        assert result.exit_code == 0
-        assert '"host-name": "r1"' in result.output
-
-    def test_set_to_set(self) -> None:
-        runner = CliRunner()
-        set_input = "set system host-name r1"
-        result = runner.invoke(main, ["-i", "set", "-e", "set"], input=set_input)
-        assert result.exit_code == 0
-        assert "set system host-name r1" in result.output
-
-    def test_yaml_to_yaml(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: r1\n"
-        result = runner.invoke(main, ["-i", "yaml", "-e", "yaml"], input=yaml_input)
-        assert result.exit_code == 0
-        assert "host-name: r1" in result.output
-
-    def test_structured_to_structured(self) -> None:
-        runner = CliRunner()
-        struct_input = "system {\n    host-name r1;\n}"
-        result = runner.invoke(main, ["-i", "structured", "-e", "structured"], input=struct_input)
-        assert result.exit_code == 0
-        assert "host-name r1;" in result.output
+#: An IP-typed leaf, a name server.
+NAME_SERVER = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
+#: An address in the system tree and one in the interfaces tree.
+TWO_TREES = json.dumps(
+    {
+        "configuration": {
+            "system": {"name-server": [{"name": "8.8.8.8"}]},
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "ge-0/0/0",
+                        "unit": [
+                            {
+                                "name": "0",
+                                "family": {"inet": {"address": [{"name": "10.1.2.3/24"}]}},
+                            }
+                        ],
+                    }
+                ]
+            },
+        }
+    }
+)
 
 
-class TestCliConfAlias:
-    """Tests for 'conf' as CLI alias for 'structured'."""
-
-    def test_conf_as_import(self) -> None:
-        runner = CliRunner()
-        struct_input = "system {\n    host-name r1;\n}"
-        result = runner.invoke(main, ["-i", "conf", "-e", "set"], input=struct_input)
-        assert result.exit_code == 0
-        assert "set system host-name r1" in result.output
-
-    def test_conf_as_export(self) -> None:
-        runner = CliRunner()
-        set_input = "set system host-name r1"
-        result = runner.invoke(main, ["-i", "set", "-e", "conf"], input=set_input)
-        assert result.exit_code == 0
-        assert "host-name r1;" in result.output
-
-    def test_conf_as_both(self) -> None:
-        runner = CliRunner()
-        struct_input = "system {\n    host-name r1;\n}"
-        result = runner.invoke(main, ["-i", "conf", "-e", "conf"], input=struct_input)
-        assert result.exit_code == 0
-        assert "host-name r1;" in result.output
+def _name_servers(*addresses: str) -> str:
+    servers = [{"name": address} for address in addresses]
+    return json.dumps({"configuration": {"system": {"name-server": servers}}})
 
 
-class TestCliAnonymize:
-    """Tests for --anonymize-* CLI options on the convert command."""
+@dataclass(frozen=True)
+class AnonymizeOption:
+    """One `--anonymize-*` option and the `AnonymizeConfig` fields it sets.
 
-    def test_anonymize_ips_flag(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json", "--anonymize-ips", "--anonymize-salt", "cli-test"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "8.8.8.8" not in result.output
-        assert "name-server" in result.output
+    *base* is what the option needs beside it (an IP option needs the IP rule
+    on); the expected output is the library's with ``base_config`` and
+    ``config``, and the option must change it from ``base_config`` alone.
+    """
 
-    def test_anonymize_all_keeps_the_as_list_reference(self, tmp_path) -> None:
-        """Spec: identifier-key-fields, anonymization/keyed-entries.
-
-        The reported defect: `--anonymize-all` on structured input wrote
-        `as-path-neighbors as-list` with the list name gone."""
-        source = tmp_path / "grouped.conf"
-        source.write_text(
-            "groups {\n"
-            "    SAMPLE-GROUP {\n"
-            "        policy-options {\n"
-            "            as-list SAMPLE-AS-LIST members 64496;\n"
-            "            policy-statement SAMPLE-POLICY {\n"
-            "                term T1 {\n"
-            "                    from {\n"
-            "                        as-path-neighbors as-list SAMPLE-AS-LIST;\n"
-            "                    }\n"
-            "                    then accept;\n"
-            "                }\n"
-            "            }\n"
-            "        }\n"
-            "    }\n"
-            "}\n",
-            encoding="utf-8",
-        )
-        runner = CliRunner()
-        for flags in (
-            ["--anonymize-all"],
-            ["--anonymize-as-numbers", "64496"],
-            ["--anonymize-all", "--anonymize-as-numbers", "64496"],
-        ):
-            result = runner.invoke(
-                main,
-                [
-                    "convert",
-                    "-i",
-                    "structured",
-                    "-e",
-                    "set",
-                    *flags,
-                    "--anonymize-salt",
-                    "keyed",
-                    str(source),
-                ],
-            )
-            assert result.exit_code == 0, result.output
-            found = [
-                line.split(" as-path-neighbors ", 1)[1].split()
-                for line in result.output.splitlines()
-                if " as-path-neighbors " in line
-            ]
-            assert len(found) == 1 and len(found[0]) == 2, result.output
-            assert found[0][0] == "as-list"
-            if flags == ["--anonymize-as-numbers", "64496"]:
-                assert found[0][1] == "SAMPLE-AS-LIST"
-            if "--anonymize-all" in flags:
-                assert "SAMPLE-GROUP" not in result.output
-
-    def test_anonymize_ips_with_set_output(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "set", "--anonymize-ips", "--anonymize-salt", "set-test"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "set system name-server" in result.output
-        assert "8.8.8.8" not in result.output
-
-    def test_anonymize_salt_deterministic(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        result1 = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json", "--anonymize-ips", "--anonymize-salt", "fixed"],
-            input=json_input,
-        )
-        result2 = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json", "--anonymize-ips", "--anonymize-salt", "fixed"],
-            input=json_input,
-        )
-        assert result1.exit_code == 0
-        assert result2.exit_code == 0
-        assert result1.output == result2.output
-
-    def test_anonymize_include(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]},'
-            '"interfaces": {"interface": [{"name": "ge-0/0/0", "unit": [{"name": "0",'
-            '"family": {"inet": {"address": [{"name": "10.1.2.3/24"}]}}}]}]}}}'
-        )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-salt",
-                "incl",
-                "--anonymize-include",
-                "interfaces",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        # name-server should NOT be anonymized (outside include scope)
-        assert "8.8.8.8" in result.output
-        # Interface IP SHOULD be anonymized
-        assert "10.1.2.3/24" not in result.output
-
-    def test_anonymize_exclude(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]},'
-            '"interfaces": {"interface": [{"name": "ge-0/0/0", "unit": [{"name": "0",'
-            '"family": {"inet": {"address": [{"name": "10.1.2.3/24"}]}}}]}]}}}'
-        )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-salt",
-                "excl",
-                "--anonymize-exclude",
-                "system",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        # name-server should NOT be anonymized (excluded)
-        assert "8.8.8.8" in result.output
-        # Interface IP SHOULD be anonymized
-        assert "10.1.2.3/24" not in result.output
-
-    def test_anonymize_preserve_prefixes(self) -> None:
-        runner = CliRunner()
-        json_input = (
-            '{"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0",'
-            '"unit": [{"name": "0", "family": {"inet": '
-            '{"address": [{"name": "10.1.2.3/24"}]}}}]}]}}}'
-        )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-salt",
-                "pp",
-                "--anonymize-preserve-prefixes",
-                "10.1.0.0/16",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        # IP in preserved prefix should be unchanged
-        assert "10.1.2.3/24" in result.output
-
-    def test_anonymize_without_any_flag_no_change(self) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        result = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json"],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        # No anonymization: IP should be unchanged
-        assert "8.8.8.8" in result.output
-
-    def test_anonymize_ips_in_strings(self) -> None:
-        runner = CliRunner()
-        json_input = json.dumps(
-            {
-                "configuration": {
-                    "security": {
-                        "ssh-known-hosts": {
-                            "host": [{"name": "server.example.com,10.1.2.3"}],
-                        },
-                    },
-                },
-            }
-        )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-ips-in-strings",
-                "--anonymize-salt",
-                "str-cli",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "10.1.2.3" not in result.output
-        assert "server.example.com," in result.output
-
-    def test_anonymize_as_numbers_in_strings_flag(self) -> None:
-        """--anonymize-as-numbers-in-strings replaces AS numbers embedded in strings."""
-        runner = CliRunner()
-        json_input = json.dumps(
-            {
-                "configuration": {
-                    "protocols": {
-                        "bgp": {
-                            "group": [
-                                {
-                                    "name": "inet-Upstream-AS64497",
-                                    "peer-as": "64497",
-                                },
-                            ],
-                        },
-                    },
-                },
-            }
-        )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-as-numbers",
-                "64497",
-                "--anonymize-as-numbers-in-strings",
-                "--anonymize-salt",
-                "as-str-cli",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "64497" not in result.output
-
-    def test_anonymize_help_shows_options(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["convert", "--help"])
-        assert result.exit_code == 0
-        assert "--anonymize-ips" in result.output
-        assert "--anonymize-salt" in result.output
-        assert "--anonymize-include" in result.output
-        assert "--anonymize-exclude" in result.output
+    id: str
+    flags: tuple[str, ...]
+    config: dict[str, Any]
+    source: str = NAME_SERVER
+    writer: Format = Format.JSON
+    base: tuple[str, ...] = ("--anonymize-ips",)
+    base_config: dict[str, Any] = field(default_factory=lambda: {"ips": True})
 
 
-class TestCliAnonymizeDumpRevert:
-    """Tests for --anonymize-dump-map, --anonymize-revert-map, --anonymize-config."""
+_EVERY_BOOLEAN_RULE = {
+    "ips": True,
+    "passwords": True,
+    "communities": True,
+    "ssh_keys": True,
+    "identities": True,
+    "groups": True,
+    "descriptions": True,
+    "ips_in_strings": True,
+    "as_numbers_in_strings": True,
+}
 
-    def test_dump_map_writes_file(self, tmp_path) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        map_file = tmp_path / "map.json"
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-salt",
-                "dump-test",
-                "--anonymize-dump-map",
-                str(map_file),
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "8.8.8.8" not in result.output
-        assert map_file.exists()
-        import json as json_mod
-
-        mapping = json_mod.loads(map_file.read_text())
-        assert "ip" in mapping
-        assert len(mapping["ip"]) > 0
-
-    def test_revert_map_restores_originals(self, tmp_path) -> None:
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-
-        # Step 1: anonymize and dump the map
-        map_file = tmp_path / "map.json"
-        result1 = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-ips",
-                "--anonymize-salt",
-                "revert-test",
-                "--anonymize-dump-map",
-                str(map_file),
-            ],
-            input=json_input,
-        )
-        assert result1.exit_code == 0
-        anon_output = result1.output
-        assert "8.8.8.8" not in anon_output
-
-        # Step 2: revert using the map
-        result2 = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-revert-map",
-                str(map_file),
-            ],
-            input=anon_output,
-        )
-        assert result2.exit_code == 0
-        assert "8.8.8.8" in result2.output
-
-    def test_config_file(self, tmp_path) -> None:
-        config_file = tmp_path / "anon.yaml"
-        config_file.write_text("anonymize:\n  ips: true\n  salt: cfg-test\n")
-
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-config",
-                str(config_file),
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "8.8.8.8" not in result.output
-
-    def test_config_file_with_cli_override(self, tmp_path) -> None:
-        config_file = tmp_path / "anon.yaml"
-        config_file.write_text("anonymize:\n  ips: true\n  salt: file-salt\n")
-
-        runner = CliRunner()
-        json_input = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'
-
-        # With file salt
-        result1 = runner.invoke(
-            main,
-            ["-i", "json", "-e", "json", "--anonymize-config", str(config_file)],
-            input=json_input,
-        )
-        # With CLI salt override
-        result2 = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-config",
-                str(config_file),
-                "--anonymize-salt",
-                "cli-salt",
-            ],
-            input=json_input,
-        )
-        assert result1.exit_code == 0
-        assert result2.exit_code == 0
-        # Different salts should produce different output
-        assert result1.output != result2.output
-
-    def test_anonymize_all_flag(self) -> None:
-        runner = CliRunner()
-        json_input = json.dumps(
+ANONYMIZE_OPTIONS = (
+    AnonymizeOption("ips", ("--anonymize-ips",), {"ips": True}, base=(), base_config={}),
+    AnonymizeOption(
+        "ips-set-output",
+        ("--anonymize-ips",),
+        {"ips": True},
+        writer=Format.SET,
+        base=(),
+        base_config={},
+    ),
+    AnonymizeOption(
+        "all",
+        ("--anonymize-all",),
+        _EVERY_BOOLEAN_RULE,
+        source=json.dumps(
             {
                 "configuration": {
                     "system": {
@@ -761,267 +444,169 @@ class TestCliAnonymizeDumpRevert:
                                 }
                             ]
                         },
-                    },
-                },
+                    }
+                }
             }
+        ),
+        base=(),
+        base_config={},
+    ),
+    AnonymizeOption(
+        "include", ("--anonymize-include", "interfaces"), {"include": ["interfaces"]}, TWO_TREES
+    ),
+    AnonymizeOption(
+        "exclude", ("--anonymize-exclude", "system"), {"exclude": ["system"]}, TWO_TREES
+    ),
+    AnonymizeOption(
+        "preserve-prefixes",
+        ("--anonymize-preserve-prefixes", "10.1.0.0/16"),
+        {"preserve_prefixes": ["10.1.0.0/16"]},
+        TWO_TREES,
+    ),
+    AnonymizeOption(
+        "networks",
+        ("--anonymize-networks", "203.0.114.0/24"),
+        {"networks": ["203.0.114.0/24"]},
+        _name_servers("203.0.114.1", "203.0.114.254"),
+    ),
+    AnonymizeOption(
+        "ignore-subnets",
+        ("--anonymize-ignore-subnets",),
+        {"ignore_subnets": True},
+        _name_servers("192.168.1.1"),
+    ),
+    AnonymizeOption(
+        "ignore-reserved",
+        ("--anonymize-ignore-reserved",),
+        {"ignore_reserved": True},
+        _name_servers("127.0.0.1"),
+    ),
+    AnonymizeOption(
+        "ips-in-strings",
+        ("--anonymize-ips-in-strings",),
+        {"ips_in_strings": True},
+        json.dumps(
+            {
+                "configuration": {
+                    "security": {
+                        "ssh-known-hosts": {"host": [{"name": "server.example.com,10.1.2.3"}]}
+                    }
+                }
+            }
+        ),
+    ),
+    AnonymizeOption(
+        "as-numbers-in-strings",
+        ("--anonymize-as-numbers-in-strings",),
+        {"as_numbers_in_strings": True},
+        json.dumps(
+            {
+                "configuration": {
+                    "protocols": {
+                        "bgp": {"group": [{"name": "inet-Upstream-AS64497", "peer-as": "64497"}]}
+                    }
+                }
+            }
+        ),
+        base=("--anonymize-as-numbers", "64497"),
+        base_config={"as_numbers": [64497]},
+    ),
+)
+
+SALT = "cli-option"
+
+
+def _anonymized(source: str, writer: Format, salt: str = SALT, **config: Any) -> str:
+    anon = AnonymizeConfig(salt=salt, **config) if config else None
+    return library(source, Format.JSON, writer, anon_config=anon)
+
+
+class TestAnonymizeOptions:
+    """Each `--anonymize-*` option sets its `AnonymizeConfig` field."""
+
+    @pytest.mark.parametrize("option", ANONYMIZE_OPTIONS, ids=[o.id for o in ANONYMIZE_OPTIONS])
+    def test_the_option_reaches_the_library(self, option: AnonymizeOption) -> None:
+        args = ["convert", "-i", "json", "-e", option.writer.value, *option.base, *option.flags]
+        result = run([*args, "--anonymize-salt", SALT], option.source)
+        expected = _anonymized(option.source, option.writer, **option.base_config, **option.config)
+        assert result.exit_code == 0, result.output
+        assert result.stdout == expected
+        assert expected != _anonymized(option.source, option.writer, **option.base_config)
+
+    def test_a_network_file_reaches_the_library(self, tmp_path: Path) -> None:
+        networks = tmp_path / "networks.txt"
+        networks.write_text("203.0.114.0/24\n")
+        source = _name_servers("203.0.114.1", "203.0.114.254")
+        result = run(
+            ["convert", "-i", "json", "-e", "json", "--anonymize-ips"]
+            + ["--anonymize-network-file", str(networks), "--anonymize-salt", SALT],
+            source,
         )
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "json",
-                "-e",
-                "json",
-                "--anonymize-all",
-                "--anonymize-salt",
-                "all-test",
-            ],
-            input=json_input,
-        )
-        assert result.exit_code == 0
-        assert "8.8.8.8" not in result.output
-        assert "$6$abc123$xyz" not in result.output
+        expected = _anonymized(source, Format.JSON, ips=True, network_file=str(networks))
+        assert result.exit_code == 0, result.output
+        assert result.stdout == expected
+        assert expected != _anonymized(source, Format.JSON, ips=True)
 
+    def test_networks_auto_scans_the_input_for_subnets(self, tmp_path: Path) -> None:
+        """`--anonymize-networks auto` keeps two hosts of one subnet in one subnet.
 
-class TestCliHelp:
-    """Tests for -h, -?, and --help options."""
-
-    def test_main_help(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["--help"])
-        assert result.exit_code == 0
-        assert "Junoscfg" in result.output
-
-    def test_main_h(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["-h"])
-        assert result.exit_code == 0
-        assert "Junoscfg" in result.output
-
-    def test_main_question_mark(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["-?"])
-        assert result.exit_code == 0
-        assert "Junoscfg" in result.output
-
-    def test_convert_help(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["convert", "--help"])
-        assert result.exit_code == 0
-        assert "Convert" in result.output
-
-    def test_convert_h(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["convert", "-h"])
-        assert result.exit_code == 0
-        assert "Convert" in result.output
-
-    def test_convert_question_mark(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["convert", "-?"])
-        assert result.exit_code == 0
-        assert "Convert" in result.output
-
-
-class TestFullHelp:
-    """Tests for the fullhelp command."""
-
-    def test_fullhelp(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["fullhelp"])
-        assert result.exit_code == 0
-        for keyword in ("convert", "addvars", "ansibilize", "generate", "info"):
-            assert keyword in result.output
-
-    def test_fullhelp_contains_all_sections(self) -> None:
-        runner = CliRunner()
-        result = runner.invoke(main, ["fullhelp"])
-        assert result.exit_code == 0
-        expected_headers = [
-            "junoscfg\n",
-            "junoscfg convert\n",
-            "junoscfg edityaml\n",
-            "junoscfg edityaml addvars\n",
-            "junoscfg edityaml ansibilize\n",
-            "junoscfg edityaml rename-root\n",
-            "junoscfg schema\n",
-            "junoscfg schema generate\n",
-            "junoscfg schema info\n",
-        ]
-        for header in expected_headers:
-            assert header in result.output, f"Missing section header: {header.strip()}"
-
-
-class TestCliRenameRoot:
-    """Tests for edityaml rename-root command."""
-
-    def test_rename_root_default_from(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: r1\n"
-        result = runner.invoke(
-            main, ["edityaml", "rename-root", "--to", "junos_config"], input=yaml_input
-        )
-        assert result.exit_code == 0
-        assert "junos_config:" in result.output
-        assert "configuration:" not in result.output
-        assert "host-name: r1" in result.output
-
-    def test_rename_root_explicit_from(self) -> None:
-        runner = CliRunner()
-        yaml_input = "my_root:\n  interfaces:\n    ge-0/0/0: up\n"
-        result = runner.invoke(
-            main,
-            ["edityaml", "rename-root", "--from", "my_root", "--to", "device_config"],
-            input=yaml_input,
-        )
-        assert result.exit_code == 0
-        assert "device_config:" in result.output
-        assert "my_root:" not in result.output
-        assert "ge-0/0/0: up" in result.output
-
-    def test_rename_root_missing_key_error(self) -> None:
-        runner = CliRunner()
-        yaml_input = "other_key:\n  value: 1\n"
-        result = runner.invoke(
-            main, ["edityaml", "rename-root", "--to", "new_name"], input=yaml_input
-        )
-        assert result.exit_code == 2
-        assert "configuration" in result.output
-        assert "not found" in result.output
-
-    def test_rename_root_stdin(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: r1\n"
-        result = runner.invoke(
-            main, ["edityaml", "rename-root", "--to", "device_config"], input=yaml_input
-        )
-        assert result.exit_code == 0
-        assert "device_config:" in result.output
-        assert "host-name: r1" in result.output
-
-    def test_rename_root_from_file(self, tmp_path) -> None:  # type: ignore[no-untyped-def]
-        runner = CliRunner()
-        yaml_file = tmp_path / "config.yaml"
-        yaml_file.write_text("configuration:\n  system:\n    host-name: r1\n")
-        result = runner.invoke(
-            main, ["edityaml", "rename-root", "--to", "junos_config", str(yaml_file)]
-        )
-        assert result.exit_code == 0
-        assert "junos_config:" in result.output
-
-    def test_rename_root_preserves_other_keys(self) -> None:
-        runner = CliRunner()
-        yaml_input = "configuration:\n  system:\n    host-name: r1\nmetadata:\n  version: 1\n"
-        result = runner.invoke(
-            main, ["edityaml", "rename-root", "--to", "junos_config"], input=yaml_input
-        )
-        assert result.exit_code == 0
-        assert "junos_config:" in result.output
-        assert "metadata:" in result.output
-        assert "configuration:" not in result.output
-
-    def test_rename_root_dotted_path_extracts_subtree(self) -> None:
-        runner = CliRunner()
-        yaml_input = (
-            "configuration:\n"
-            "  '@':\n"
-            "    junos:commit-seconds: '1771029110'\n"
-            "    junos:commit-localtime: 2026-02-14 00:31:50 UTC\n"
-            "    junos:commit-user: admin\n"
-            "  groups:\n"
-            "  - name: ansible-managed\n"
-            "    interfaces:\n"
-            "      ge-0/0/0:\n"
-            "        unit: 0\n"
-        )
-        result = runner.invoke(
-            main,
-            [
-                "edityaml",
-                "rename-root",
-                "--from",
-                "configuration.groups[ansible-managed].interfaces",
-                "--to",
-                "junos_interfaces",
-            ],
-            input=yaml_input,
-        )
-        assert result.exit_code == 0
-        assert "junos_interfaces:" in result.output
-        assert "ge-0/0/0:" in result.output
-        assert "configuration:" not in result.output
-        assert "groups:" not in result.output
-
-    def test_rename_root_dotted_path_no_match(self) -> None:
-        runner = CliRunner()
-        yaml_input = (
-            "configuration:\n"
-            "  groups:\n"
-            "  - name: other-group\n"
-            "    interfaces:\n"
-            "      ge-0/0/0:\n"
-            "        unit: 0\n"
-        )
-        result = runner.invoke(
-            main,
-            [
-                "edityaml",
-                "rename-root",
-                "--from",
-                "configuration.groups[ansible-managed].interfaces",
-                "--to",
-                "junos_interfaces",
-            ],
-            input=yaml_input,
-        )
-        assert result.exit_code == 2
-        assert "not found" in result.output
-
-
-class TestAnonymizeNetworksAuto:
-    """`--anonymize-networks auto` had no automated test at all.
-
-    `cli.py` is the only place that supplies `source_text`, so deleting those
-    two lines would have broken subnet auto-detection with zero test failures.
-    """
-
-    def test_auto_preserves_subnet_structure(self, tmp_path: Path) -> None:
+        `cli.py` is the one caller that hands the input text to the IP rule
+        (`AnonymizeConfig.source_text`); without it the subnets go undetected.
+        """
         source = tmp_path / "in.set"
         source.write_text(
             "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.1/24\n"
             "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.254/24\n"
         )
-        runner = CliRunner()
-        result = runner.invoke(
-            main,
-            [
-                "-i",
-                "set",
-                "-e",
-                "set",
-                "--anonymize-ips",
-                "--anonymize-networks",
-                "auto",
-                "--anonymize-salt",
-                "fixed",
-                str(source),
-            ],
+        result = run(
+            ["convert", "-i", "set", "-e", "set", "--anonymize-ips"]
+            + ["--anonymize-networks", "auto", "--anonymize-salt", "fixed", str(source)]
         )
-
         assert result.exit_code == 0
-        addrs = [line.rsplit(" ", 1)[-1] for line in result.output.strip().splitlines()]
+        addrs = [line.rsplit(" ", 1)[-1] for line in result.stdout.strip().splitlines()]
         assert addrs[0] != "203.0.114.1/24"
         assert addrs[0].endswith(".1/24")
         assert addrs[1].endswith(".254/24")
         assert addrs[0].rsplit(".", 1)[0] == addrs[1].rsplit(".", 1)[0]
 
+    def test_a_config_file_reaches_the_library(self, tmp_path: Path) -> None:
+        config_file = tmp_path / "anon.yaml"
+        config_file.write_text("anonymize:\n  ips: true\n  salt: cfg-test\n")
+        result = run(
+            ["convert", "-i", "json", "-e", "json", "--anonymize-config", str(config_file)],
+            NAME_SERVER,
+        )
+        assert result.exit_code == 0
+        assert result.stdout == _anonymized(NAME_SERVER, Format.JSON, "cfg-test", ips=True)
+        assert result.stdout != _anonymized(NAME_SERVER, Format.JSON)
 
-class TestSetBracketSyntaxRejection:
-    def test_conversion_exits_two_with_complete_diagnostic(self) -> None:
-        runner = CliRunner()
-        line = "set system host-name " + "r" * 120 + " [broken]"
+    def test_a_salt_option_overrides_the_config_file(self, tmp_path: Path) -> None:
+        """The precedence itself is `build_config_from_cli`'s, tested in
+        `tests/unit/anonymize/test_config.py`."""
+        config_file = tmp_path / "anon.yaml"
+        config_file.write_text("anonymize:\n  ips: true\n  salt: file-salt\n")
+        args = ["convert", "-i", "json", "-e", "json", "--anonymize-config", str(config_file)]
+        from_file = run(args, NAME_SERVER)
+        overridden = run([*args, "--anonymize-salt", "cli-salt"], NAME_SERVER)
+        assert from_file.exit_code == overridden.exit_code == 0
+        assert overridden.stdout == _anonymized(NAME_SERVER, Format.JSON, "cli-salt", ips=True)
+        assert overridden.stdout != from_file.stdout
 
-        result = runner.invoke(main, ["-i", "set", "-e", "json"], input=line)
-
-        assert result.exit_code == 2
-        assert f"Unsupported bracket syntax in set input on line 1:\n{line}" in result.output
+    @pytest.mark.parametrize("level", ["quiet", "normal", "debug"])
+    def test_the_log_level_reaches_the_library(self, level: str) -> None:
+        """Only `debug` adds the anonymizer's lines; the CLI prints them on stderr."""
+        result = run(
+            ["convert", "-i", "json", "-e", "json", "--anonymize-ips"]
+            + ["--anonymize-salt", SALT, "--anonymize-log-level", level],
+            NAME_SERVER,
+        )
+        expected = convert_config_result(
+            NAME_SERVER,
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            anon_config=AnonymizeConfig(ips=True, salt=SALT, log_level=level),
+        )
+        assert result.exit_code == 0
+        assert result.stdout == expected.output
+        assert result.stderr == "".join(d.render() + "\n" for d in expected.diagnostics)
+        assert bool(result.stderr) == (level == "debug")

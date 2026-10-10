@@ -13,10 +13,12 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
+import yaml
 
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
 from junoscfg.convert import pipeline, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.shapes import read_ir
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -96,8 +98,42 @@ _PATH_FILTER_SOURCE = (
 )
 
 
+_SYSLOG = {"file": [{"name": "messages"}]}
+#: The IR each path keeps of `_PATH_FILTER_SOURCE`.
+_UNDER = {
+    "system": {"system": {"host-name": "r1", "syslog": _SYSLOG}},
+    "system.syslog": {"system": {"syslog": _SYSLOG}},
+}
+_WRITERS = [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML]
+_WRITER_IDS = [writer.value for writer in _WRITERS]
+
+
+def _put_back(output: str, fmt: Format, path: str) -> object:
+    """The IR of relative *output* once it is put back under *path*."""
+    tokens = path.split(".")
+    if fmt is Format.SET:
+        prefix = "set " + " ".join(tokens) + " "
+        lines = [prefix + line.removeprefix("set ") for line in output.splitlines()]
+        return read_ir("\n".join(lines) + "\n", fmt)
+    if fmt is Format.STRUCTURED:
+        text = output
+        for token in reversed(tokens):
+            body = "".join("    " + line + "\n" for line in text.splitlines())
+            text = f"{token} {{\n{body}}}\n"
+        return read_ir(text, fmt)
+    value = json.loads(output) if fmt is Format.JSON else yaml.safe_load(output)
+    for token in reversed(tokens):
+        value = {token: value}
+    return value
+
+
 class TestPathFiltering:
-    """Tests for path and relative parameters on convert_config()."""
+    """`path=` keeps one subtree of the IR; `relative=True` writes it without the path.
+
+    The CLI's `--path` and `--relative` pass these through
+    (`tests/unit/cli/test_cli.py`); the per-format text filters are
+    `tests/unit/display/test_display_filters.py`.
+    """
 
     def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
         rendered: list[dict] = []
@@ -153,48 +189,29 @@ class TestPathFiltering:
         )
         assert len(rendered) == 2
 
-    def test_path_filter_set(self) -> None:
+    @pytest.mark.parametrize("path", sorted(_UNDER), ids=sorted(_UNDER))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_path_keeps_only_its_subtree(self, path: str, to_format: Format) -> None:
+        """What lies outside the path, `interfaces` and siblings alike, is not written."""
         result = convert_config(
-            _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=Format.SET, path="system"
+            _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=to_format, path=path
         )
-        assert "system" in result
-        assert "interfaces" not in result
+        assert read_ir(result, to_format) == _UNDER[path]
 
-    def test_path_filter_structured(self) -> None:
+    @pytest.mark.parametrize("path", sorted(_UNDER), ids=sorted(_UNDER))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_relative_output_is_the_subtree_without_the_path(
+        self, path: str, to_format: Format
+    ) -> None:
+        """Put back under the path, the relative output reads as the absolute one."""
         result = convert_config(
             _PATH_FILTER_SOURCE,
             from_format=Format.JSON,
-            to_format=Format.STRUCTURED,
-            path="system",
-        )
-        assert "system" in result
-        assert "interfaces" not in result
-
-    def test_path_filter_yaml(self) -> None:
-        result = convert_config(
-            _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=Format.YAML, path="system"
-        )
-        assert "host-name" in result
-        assert "interfaces" not in result
-
-    def test_path_filter_json(self) -> None:
-        result = convert_config(
-            _PATH_FILTER_SOURCE, from_format=Format.JSON, to_format=Format.JSON, path="system"
-        )
-        parsed = json.loads(result)
-        assert "system" in parsed["configuration"]
-        assert "interfaces" not in parsed.get("configuration", {})
-
-    def test_path_filter_relative(self) -> None:
-        result = convert_config(
-            _PATH_FILTER_SOURCE,
-            from_format=Format.JSON,
-            to_format=Format.SET,
-            path="system",
+            to_format=to_format,
+            path=path,
             relative=True,
         )
-        assert "system" not in result
-        assert "host-name r1" in result
+        assert _put_back(result, to_format, path) == _UNDER[path]
 
     @pytest.mark.parametrize(
         ("to_format", "expected"),
@@ -216,11 +233,12 @@ class TestPathFiltering:
         )
         assert result == expected
 
-    def test_path_filter_not_found(self) -> None:
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_path_not_in_the_configuration_gives_no_output(self, to_format: Format) -> None:
         result = convert_config(
             _PATH_FILTER_SOURCE,
             from_format=Format.JSON,
-            to_format=Format.SET,
+            to_format=to_format,
             path="nonexistent",
         )
         assert result == ""

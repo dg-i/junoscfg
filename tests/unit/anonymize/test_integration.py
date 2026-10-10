@@ -402,6 +402,28 @@ class TestKeyedEntriesSurvive:
             assert list_name, "the list name was lost"
             assert "SAMPLE-GROUP" not in out, "the group was not anonymized"
 
+    def test_an_as_list_reference_survives_anonymize_all_with_as_numbers(self) -> None:
+        """`--anonymize-all --anonymize-as-numbers 64496` on structured input.
+
+        The reported defect wrote `as-path-neighbors as-list` with the list
+        name gone; this is the third flag set the CLI test of it ran.
+        """
+        from junoscfg import Format, convert_config
+
+        cfg = build_config_from_cli(
+            anonymize_all=True, anonymize_as_numbers="64496", anonymize_salt="keyed"
+        )
+        out = convert_config(
+            _GROUPED, from_format=Format.STRUCTURED, to_format=Format.SET, anon_config=cfg
+        )
+        found = _neighbor_lines(out)
+        assert len(found) == 1, out
+        list_type, list_name = found[0]
+        assert list_type == "as-list"
+        assert list_name, "the list name was lost"
+        assert "SAMPLE-GROUP" not in out, "the group was not anonymized"
+        assert "members 64496" not in out
+
     def test_as_numbers_leave_the_as_list_reference_whole(self) -> None:
         from junoscfg import Format, convert_config
         from tests.support.keyed_entries import as_json, ir
