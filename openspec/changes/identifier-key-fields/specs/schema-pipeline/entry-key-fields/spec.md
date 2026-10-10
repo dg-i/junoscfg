@@ -1,7 +1,6 @@
 ## Purpose
 
-The structure tree keeps every child a list declares, in order, and names the
-fields that key its entries, so no site keeps its own answer to either.
+The structure tree keeps every child a list declares, in order, and names the fields that key its entries, so no site keeps its own answer to either.
 
 ## ADDED Requirements
 
@@ -38,6 +37,7 @@ Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identif
 ### Requirement: A simpleContent key keeps anonymization type knowledge
 
 WHEN an identifier leaf's type is an inline `simpleContent` extension THEN the parser SHALL record its extension base as anonymization type knowledge and the structure tree SHALL preserve it separately from the `tr` field strict field validation consumes. JSON/YAML schema generation, field validation and grammar generation SHALL not treat that hint as a validation type.
+Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_simple_content_key_keeps_anonymization_type_only`, `tests/test_field_validator.py::TestIPAddressValidation::test_anonymization_type_does_not_validate_a_template_value`
 
 #### Scenario: IP prefix key and template value
 
@@ -91,8 +91,7 @@ Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_b
 #### Scenario: The AS-list slots
 
 - **WHEN** the tree is walked for the three `as-path-*` lists
-- **THEN** all 24 slots, at the root, in logical systems, in groups and in
-  grouped logical systems, with and without a `term`, carry both keys
+- **THEN** all 24 slots, at the root, in logical systems, in groups and grouped logical systems, with and without a `term`, carry both keys
 
 #### Scenario: Two lists named community
 

@@ -42,6 +42,21 @@ Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identif
 - **WHEN** `forwarding-classes class` declares `maxOccurs="16"`
 - **THEN** it is a list, keyed `name` (challenge A, owner decision)
 
+### Requirement: A simpleContent key keeps anonymization type knowledge
+
+WHEN an identifier leaf's type is an inline `simpleContent` extension THEN the
+parser SHALL record its extension base as anonymization type knowledge and the
+structure tree SHALL preserve it separately from the `tr` field strict field
+validation consumes. JSON/YAML schema generation, field validation and grammar
+generation SHALL not treat that hint as a validation type.
+Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_simple_content_key_keeps_anonymization_type_only`, `tests/test_field_validator.py::TestIPAddressValidation::test_anonymization_type_does_not_validate_a_template_value`
+
+#### Scenario: IP prefix key and template value
+
+- **WHEN** a route-filter `address` extends `ipprefix`
+- **THEN** its structure-tree leaf carries `ipprefix` for anonymization, while
+  a synthetic template value in that key gains no IP-validation warning
+
 ### Requirement: The structure tree carries the keys and the declared order
 
 WHEN a list node is written to the structure tree and read back THEN the tree
