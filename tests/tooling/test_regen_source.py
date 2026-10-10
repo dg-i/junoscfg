@@ -19,7 +19,7 @@ import pytest
 if TYPE_CHECKING:
     from pathlib import Path
 
-from tests.conftest import (
+from tests.support.regen import (
     REGEN_SOURCE_EXIT,
     XsdSourceError,
     find_xsd_source,
