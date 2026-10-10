@@ -8,8 +8,9 @@ unsupported spellings from entering the configuration IR.
 
 ### Requirement: Raw set conversion rejects unquoted square brackets
 
-WHEN `set`, `delete`, `deactivate`, `activate`, `protect`, or the internal
-`replace` form contains an unquoted `[` or `]` in raw set input THEN the system
+WHEN any line of raw set input, whatever its command (`set`, `delete`,
+`deactivate`, `activate`, `protect` or another), contains an unquoted `[` or
+`]` THEN the system
 SHALL reject the input before constructing an IR with `ValueError`, independent
 of validation and strictness, and SHALL report the complete original offending
 line as `Unsupported bracket syntax in set input on line N:\n<line>`.

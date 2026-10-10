@@ -188,3 +188,18 @@ Same Reviewer. I reviewed only the corrections: `git diff 445aca8..733574d`, whi
 
 - R1 (High, a tagged statement-name flag under a container: dropped beside a sibling, read back as the container's tag alone): corrected in change A's writer (a tagged flag is a line of its own) together with this change's rule that no line joins past a tagged node. `TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_flag_under_a_container_keeps_its_tag` covers both lldp shapes; change A's strict xfail for the shape alone is promoted here and passes.
 - The replaced `anon/` export carries no tags, as the re-review notes: the tag figures in the freeze rest on the earlier export and on the level probe, which tags every level itself.
+
+### Second re-review (2026-10-10)
+
+I re-reviewed only R1 at 6f2f058, rebased onto A's 406137f. B's only change in this step is the test diff `773fdf6..6f2f058`, which promotes A's xfail. I edited nothing; one mutation run was restored afterwards.
+
+**Verdict: mergeable.** R1 is fixed, and I found nothing new.
+
+- **The tests fail without the fix.** With 733574d's `dict_walker.py` (before A's R1 fix) swapped in, both `test_an_inactive_flag_under_a_container_keeps_its_tag` cases fail. At 6f2f058 both pass.
+- **Focused tests** (`test_meta_tags*`, `test_xml_inactive_leaf_challenge`, `test_to_yaml`, `test_characterization`, `test_cli`, `test_config_store`, `test_artifact_builder`, `test_set_input`, `test_convert_*`, `test_set_converter`): 610 passed.
+- **Every shape round-trips** through both structured and set output: lldp `disable` alone and beside a sibling, interface `disable`, unit `disable`, the `groups` wildcard `disable`, and `protect` on lldp `disable`. All of them write `inactive: disable;` (or `protect: disable;`) on its own line inside the parent's block. XML `<lldp><disable inactive=…/></lldp>` gives set input's IR.
+- **Nothing I verified before regressed:**
+  - The whole-list block shapes all still round-trip: `name-server`, static `route`, `unit`, multi-key `route-filter`, `community`, `term`, a whole list plus a protected entry, a whole list in `groups`, and an inner `next-hop` tag inside a whole-tagged list.
+  - `junos:group` on `family` is still not counted as a tag, and uneven `apply-groups` tags are still refused.
+  - Level probe: none of 20,048 level taggings raises, and all 16,624 block-opener taggings match set `deactivate`.
+  - Oracle: the curly-input IR equals the set-input IR, and set output from curly equals set output from set. Round trips hold for set and curly sources. The current `anon/` export carries no tags, so these oracle figures do not exercise tags.
