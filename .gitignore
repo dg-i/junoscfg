@@ -33,3 +33,9 @@ scratchpad/
 .agents/skills/source-command-*/
 tmp/
 local-test-data/
+
+# Coverage data written by the full set and CI
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

@@ -352,17 +352,6 @@ def yaml_config(json_config: str) -> str:
 # ----------------------------------------------------------------------
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line(
-        "markers",
-        "schema: needs a device XSD dump in private_test_data/schemas/; run with --schema",
-    )
-    config.addinivalue_line(
-        "markers",
-        "jvd: needs Juniper's jvd corpus; run with --jvd",
-    )
-
-
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     if not config.getoption("--schema"):
         skip = pytest.mark.skip(reason="needs --schema and a dump in private_test_data/schemas/")

@@ -52,6 +52,23 @@ junoscfg = "junoscfg.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+xfail_strict = true
+markers = [
+    "schema: needs a device XSD dump in private_test_data/schemas/; run with --schema",
+    "jvd: needs Juniper's jvd corpus; run with --jvd",
+]
+
+# Branch coverage, measured by the full set and CI (`--cov`), not by focused
+# runs. `fail_under` is a ratchet: a change that adds coverage raises it, and
+# lowering it takes a decision record naming why, as a cap does.
+[tool.coverage.run]
+branch = true
+source_pkgs = ["junoscfg"]
+
+[tool.coverage.report]
+fail_under = 90.60
+precision = 2
 
 # The stage levers are rendered from [tool.template.stage] into the delimited
 # blocks below by `agent-ready render levers`; edit the stage, not a block.
@@ -133,10 +150,17 @@ exclude = [
 packages = ["src/junoscfg"]
 
 [dependency-groups]
-dev = [
-    "pytest>=7.0",
-    "ruff>=0.4",
+# What the suite needs and nothing else, so CI can run it on every declared
+# interpreter (3.10 included, which the dev tooling does not support) from the
+# lock. The dev group includes it.
+test = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0",
     "lxml>=4.9",
+]
+dev = [
+    {include-group = "test"},
+    "ruff>=0.4",
     "mypy>=2.4",
     "types-PyYAML>=6.0",
     "deptry>=0.25.1",
@@ -163,7 +187,7 @@ base = "master"
 # The native acceptance leaf. The full set runs this complete committed suite;
 # the fast set is governance and pre-commit only. Focused pytest nodes or files
 # are the implementation loop.
-test-command = ["uv", "run", "pytest", "tests/", "-q"]
+test-command = ["uv", "run", "--locked", "pytest", "tests/", "-q", "--cov", "--cov-report=term:skip-covered"]
 
 # Budgets what is loaded at session start, not what the repository stores:
 # `agent-ready budget` counts AGENTS.md, CLAUDE.md beyond a bridge, every
@@ -286,6 +310,12 @@ licence = "Apache-2.0"
 name = "pytest"
 purpose = "tests"
 minimum-version = "9.0.2"
+licence = "MIT"
+
+[[tool.template.toolbox.approved]]
+name = "pytest-cov"
+purpose = "branch coverage of the suite, gated by the ratchet floor in [tool.coverage.report]"
+minimum-version = "7.0.0"
 licence = "MIT"
 
 [[tool.template.toolbox.approved]]

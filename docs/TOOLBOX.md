@@ -10,6 +10,7 @@ Generated from `[tool.template.toolbox]` in `pyproject.toml` by `agent-ready ren
 | mypy | blocking strict checks for stable package interfaces and caller-visible result and configuration models | 2.4.0 | MIT |
 | types-PyYAML | development-only type information for the YAML-backed anonymization configuration interface | 6.0 | Apache-2.0 |
 | pytest | tests | 9.0.2 | MIT |
+| pytest-cov | branch coverage of the suite, gated by the ratchet floor in [tool.coverage.report] | 7.0.0 | MIT |
 | deptry | undeclared and unused dependencies | 0.25.1 | MIT |
 | tach | module boundaries and the public name surface | 0.35.1 | MIT |
 | griffe | the symbol index, and the API surface check in the mode the stage sets | 2.3.0 | ISC |
