@@ -1,0 +1,493 @@
+{
+  "schema_version": 1,
+  "change": "agent-guidance-gates-and-contracts",
+  "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
+  "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+  "entries": [
+    {
+      "phase": "preflight",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "npx --yes @fission-ai/openspec@1.13.0 new change agent-guidance-gates-and-contracts",
+          "duration_ms": 1132,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-0 preflight)",
+          "duration_ms": 1313,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "intent",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "openspec instructions proposal",
+          "duration_ms": 1845,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec instructions metrics",
+          "duration_ms": 1121,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec validate (phase 1)",
+          "duration_ms": 1216,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready fields (phase 1)",
+          "duration_ms": 514,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec status",
+          "duration_ms": 1083,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-1 intent)",
+          "duration_ms": 1112,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "spec",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "pytest --collect-only cited ids",
+          "duration_ms": 844,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec validate --strict (phase 2)",
+          "duration_ms": 1144,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready reconcile (phase 2)",
+          "duration_ms": 462,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready caps (phase 2)",
+          "duration_ms": 486,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready lane (skip_specs + delta)",
+          "duration_ms": 418,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec validate --strict (no skip_specs)",
+          "duration_ms": 1354,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready lane (no skip_specs)",
+          "duration_ms": 424,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec validate --strict (phase 2, final)",
+          "duration_ms": 1202,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-2 freeze)",
+          "duration_ms": 1141,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "tests",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "mkdocs build --strict (baseline)",
+          "duration_ms": 2024,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "pre-commit markdownlint (baseline)",
+          "duration_ms": 529,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready caps (phase 4)",
+          "duration_ms": 531,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "openspec validate --strict (phase 4)",
+          "duration_ms": 1652,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-4 QA tasks and challenge)",
+          "duration_ms": 1138,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "implement",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "agent-ready caps (phase 5, working tree)",
+          "duration_ms": 605,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "pre-commit markdownlint (deliverables)",
+          "duration_ms": 629,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "mkdocs build --strict (working tree)",
+          "duration_ms": 2073,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "qa_tree.py (tasks 1.2-1.5, 1.11-1.15, 1.19, working tree)",
+          "duration_ms": 2187,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "qa_tree.py (rerun after fixes)",
+          "duration_ms": 2003,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-5 deliverables)",
+          "duration_ms": 1429,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "mkdocs build --strict (worktree 19d05de)",
+          "duration_ms": 3346,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready lane --base master (worktree)",
+          "duration_ms": 533,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "behaviour probes 1.16 (read-only)",
+          "duration_ms": 262,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready lane --base master (worktree 19d05de)",
+          "duration_ms": 214,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready check --set full --base master (worktree 19d05de)",
+          "duration_ms": 9758,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "behaviour probes 1.16 (read-only, rerun)",
+          "duration_ms": 775,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready skills --regenerate (worktree mirror)",
+          "duration_ms": 176,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready check --set full --base master (worktree 19d05de, rerun with mirror)",
+          "duration_ms": 7583,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (owner's garden output)",
+          "duration_ms": 1473,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-5 evidence)",
+          "duration_ms": 1084,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 2,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "review",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "qa_tree.py (fix pass)",
+          "duration_ms": 2165,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready caps (fix pass)",
+          "duration_ms": 484,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "pre-commit markdownlint (fix pass)",
+          "duration_ms": 558,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "mkdocs build --strict (fix pass, working tree)",
+          "duration_ms": 2003,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-6 fix pass)",
+          "duration_ms": 1492,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "agent-ready check --set fast --base master (worktree 68b4f5a)",
+          "duration_ms": 8038,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "mkdocs build --strict (worktree 68b4f5a)",
+          "duration_ms": 2258,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "pre-commit markdownlint (residues)",
+          "duration_ms": 464,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "git commit (phase-6 re-review record)",
+          "duration_ms": 1283,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "tests",
+      "role": "test-challenge",
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "phase-4 Test/Challenge agent (opus, context-isolated)",
+          "duration_ms": 667418,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "review",
+      "role": "reviewer",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "phase-6 fresh review agent (junoscfg-reviewer, fable)",
+          "duration_ms": 708822,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "phase-6 re-review agent (junoscfg-reviewer, fable)",
+          "duration_ms": 165689,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 2,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "review",
+      "role": "test-challenge",
+      "provider": "anthropic",
+      "model": "claude-opus-5-5",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "post-implementation Test/Challenge agent (opus)",
+          "duration_ms": 712525,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "finalize",
+      "role": "builder",
+      "provider": "anthropic",
+      "model": "claude-fable-5-1",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "agent-ready metrics --workflow-telemetry (dry run in worktree)",
+          "duration_ms": 1036,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "finalize",
+      "role": "finalizer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "uv run --locked --group dev agent-ready reconcile",
+          "duration_ms": 462,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "throwaway worktree add, skills regenerate, misspelled id, agent-ready reconcile (expected exit 1 naming the id)",
+          "duration_ms": 1374,
+          "outcome": "failed"
+        },
+        {
+          "kind": "command",
+          "name": "npx --yes @fission-ai/openspec@1.13.0 validate agent-guidance-gates-and-contracts --strict",
+          "duration_ms": 1597,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "npx --yes @fission-ai/openspec@1.13.0 validate --specs",
+          "duration_ms": 1191,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "uv run --locked --group dev agent-ready lane --base master (detached worktree of a3dc03d; known external refusal)",
+          "duration_ms": 274,
+          "outcome": "failed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    }
+  ]
+}

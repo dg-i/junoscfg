@@ -87,13 +87,18 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   toolbox, specs, reconcile, the four renders, decisions, stage griffe, towncrier and
   vulture, budget, skills, codemap check, retired. The task stays open until the owner
   resolves the two external failures and the check reruns on the resulting head.
-- [ ] 1.10 Telemetry: base = full SHA of `2a3e025` (master tip and merge base; the range
+- [x] 1.10 Telemetry: base = full SHA of `2a3e025` (master tip and merge base; the range
   holds the owner's garden commit 01efe85, disclosed in `metrics.md`), head = the code
   commit; `uv run --locked --group dev agent-ready metrics
   agent-guidance-gates-and-contracts --base-sha <base> --head-sha <head>
   --workflow-telemetry openspec/changes/agent-guidance-gates-and-contracts/workflow-telemetry.json`;
   expect the import accepted, `grep -ciE 'estimat|approx' workflow-telemetry.json` = 0, every
   command entry carrying an observed duration, every other unavailable row `UNMEASURED`.
+  Evidence (Finalizer): base 2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87, head
+  f31949b9be83597afe1c3450b411db4d41b29056; `workflow-telemetry.json` bound to both, 10
+  observed entries plus the finalizer's; `agent-ready metrics` exit 0 wrote `metrics.md`
+  and `metrics.json`; `grep -ciE 'estimat|approx'` prints 0; token usage stays null
+  (UNMEASURED); the six context-expansion rows survived capture.
 - [x] 1.11 Tier bullets survive verbatim: split the old "When to use each tier" section
   (`git show eb369dd:docs/architecture/developer-guide.md`) into its blocks,
   whitespace-normalised; expect each a substring of the new section.
@@ -213,7 +218,15 @@ Change commit: 19d05de. Nothing else outside the change folder is touched.
   failed; every failure and partial corrected in the fix pass).
 - [x] 3.2 Complete the risk-required fresh isolated review (`review.md`), correct the
   findings, return them to the same isolated Reviewer.
-- [ ] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head, with
+- [x] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head, with
   the workflow telemetry.
-- [ ] 3.4 Finalizer applies `main-spec-edit.md` to the main spec, runs 1.18, reruns the lane
+- [x] 3.4 Finalizer applies `main-spec-edit.md` to the main spec, runs 1.18, reruns the lane
   gate, ticks metrics; no archive, no merge.
+  Evidence (Finalizer): main spec applied at a3dc03d; 1.18 done; metrics ticked (3.3,
+  1.10). `uv run --locked --group dev agent-ready lane --base master` in a detached
+  worktree of a3dc03d, exit 1, output verbatim (the known external refusal, the owner's
+  commits 01efe85 and 306233b, not this change's to fix; 1.9 stays open):
+
+  ```text
+  agent-guidance-gates-and-contracts: documentation-only changes may not alter non-documentation files: .agents/skills/agent-ready-garden/SKILL.md, .agents/skills/agent-ready-garden/jobs/5-instructions.md, mkdocs.yml; retype the change for code or executable configuration
+  ```
