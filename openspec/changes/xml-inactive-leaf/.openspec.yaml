@@ -3,3 +3,6 @@ created: 2026-10-10
 type: bug
 zone: kernel
 assurance: balanced
+domains: [conversion]
+removes:
+  - "the nested `{name: [value], \"@\": attrs}` shape XML input gave an inactive leaf"
