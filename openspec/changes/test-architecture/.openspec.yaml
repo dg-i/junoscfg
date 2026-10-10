@@ -20,9 +20,13 @@ declared-break:
       below the surface gain exports (convert, validate, anonymize, audit,
       edityaml) and display gains build_from_artifact and
       forget_loaded_artifacts; nothing is removed or renamed.
-    migration: None.
+    migration: >-
+      None needed: every name a caller imported before still imports, with the
+      same behaviour; the new exports are additions.
   cli:
     why: >-
       cli.py's lazy imports go through the edityaml and audit doors instead of
       their submodules; no command, option, output or exit code changes.
-    migration: None.
+    migration: >-
+      None needed: every command line that worked before gives the same output
+      and exit code.

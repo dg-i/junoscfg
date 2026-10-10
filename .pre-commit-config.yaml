@@ -41,11 +41,14 @@ repos:
       # The tests the staged files can break: tests/unit/ of each package
       # touched and of every package importing it, plus tests/contract/; shared
       # ground runs the whole default suite. tools/affected_tests.py says why.
+      # It reads the staged files from git itself, so a `--all-files` run (the
+      # agent-ready check sets) selects the branch's change, not every file.
       - id: affected-tests
         name: affected tests
         entry: uv run --locked --group dev python tools/affected_tests.py --run
         language: system
         files: ^(src/|tests/|pyproject\.toml$|uv\.lock$)
+        pass_filenames: false
         require_serial: true
 
       # The check package is pinned by uv.lock, so the hook runs the project's

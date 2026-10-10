@@ -10,7 +10,10 @@ that file; to a ``conftest.py``, its directory; to ``tests/support/``,
 suite. Anything else selects nothing.
 
 ``uv run python tools/affected_tests.py FILE...`` prints the selection;
-``--run`` runs it with pytest, which is what the pre-commit hook does.
+``--run`` runs it with pytest. With no files it reads the change from git: the
+staged files on a commit, or, with nothing staged (``pre-commit run
+--all-files``, as the agent-ready check sets run it), the branch's diff
+against its base plus the working tree. That is what the pre-commit hook does.
 """
 
 from __future__ import annotations
@@ -96,10 +99,31 @@ def select(files: list[str]) -> list[str]:
     return sorted(chosen)
 
 
+def _git(*args: str) -> list[str]:
+    out = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=False)
+    return [line for line in out.stdout.splitlines() if line]
+
+
+def changed_files() -> list[str]:
+    """The staged files; with none staged, the branch's change and the working tree."""
+    staged = _git("diff", "--cached", "--name-only")
+    if staged:
+        return staged
+    import tomllib
+
+    with open(ROOT / "pyproject.toml", "rb") as handle:
+        base = tomllib.load(handle).get("tool", {}).get("template", {}).get("base", "master")
+    fork = _git("merge-base", "HEAD", base)
+    branch = _git("diff", "--name-only", f"{fork[0]}...HEAD") if fork else []
+    working = [line[3:] for line in _git("status", "--porcelain")]
+    return sorted(set(branch) | set(working))
+
+
 def main(argv: list[str]) -> int:
     """Print the selection, or with ``--run`` run it."""
     run = "--run" in argv
-    selection = select([a for a in argv if a != "--run"])
+    files = [a for a in argv if a != "--run"]
+    selection = select(files or changed_files())
     if not run:
         print("\n".join(selection))
         return 0

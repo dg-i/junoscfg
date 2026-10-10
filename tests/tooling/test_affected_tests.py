@@ -54,6 +54,29 @@ class TestASourceChangeSelectsItsPackageAndItsImporters:
             assert (PROJECT_ROOT / path).is_dir(), path
 
 
+class TestWithNoFilesTheChangeComesFromGit:
+    def test_a_commit_selects_by_its_staged_files(self, monkeypatch) -> None:
+        answers = {("diff", "--cached", "--name-only"): ["src/junoscfg/audit/engine.py"]}
+        monkeypatch.setattr(affected, "_git", lambda *args: answers.get(args, []))
+        assert affected.changed_files() == ["src/junoscfg/audit/engine.py"]
+
+    def test_with_nothing_staged_the_branch_and_the_working_tree_count(self, monkeypatch) -> None:
+        def git(*args: str) -> list[str]:
+            if args[0] == "merge-base":
+                return ["abc123"]
+            if args[:2] == ("diff", "--name-only"):
+                return ["src/junoscfg/edityaml/rules.py"]
+            if args[0] == "status":
+                return [" M tests/unit/audit/test_engine.py"]
+            return []
+
+        monkeypatch.setattr(affected, "_git", git)
+        assert affected.changed_files() == [
+            "src/junoscfg/edityaml/rules.py",
+            "tests/unit/audit/test_engine.py",
+        ]
+
+
 class TestATestChangeSelectsItself:
     def test_a_test_file_selects_that_file(self) -> None:
         name = "tests/tooling/test_affected_tests.py"

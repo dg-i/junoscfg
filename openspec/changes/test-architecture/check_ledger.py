@@ -138,6 +138,7 @@ def rewrite(files: list[str]) -> None:
             path.write_text(new_text, encoding="utf-8")
             print(f"rewrote {name}")
 
+
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "--rewrite":
         rewrite(sys.argv[2:])
