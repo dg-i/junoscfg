@@ -18,12 +18,15 @@
 
 - `openspec/specs/conversion/entry-keys/spec.md`, "A statement the reader cannot complete is
   kept whole": MODIFIED for traceability, behaviour unchanged; text frozen in
-  `main-spec-edit.md`. No other requirement changes.
+  `main-spec-edit.md` as the sibling live delta's owner-approved wording (commit 211a165,
+  never applied to the main spec) plus the five `TestAMetaCommandIsNeverPartiallyApplied`
+  ids (challenges S1 to S3). No other requirement changes.
 
 ## Evidence
 
-- Every test id the documents will cite collects: 60 nodes, `uv run pytest --collect-only -q`
-  on 2026-10-10 (phase-2 telemetry event).
+- The 24 ids of `main-spec-edit.md` collect as 60 nodes (`uv run pytest --collect-only -q`,
+  2026-10-10); the phase-4 challenge found one dead id in `docs-plan.md` (S4, corrected);
+  task 1.2 re-collects every id the deliverables cite and expects exit 0, not a count.
 - Tier flags and help text: `tests/conftest.py` `pytest_addoption`; the schema tier is
   `tests/test_schema_data.py` (`pytestmark = pytest.mark.schema`).
 - Contract lengths today: display 27, validate 24, convert 30, anonymize 28 lines; cap 30.
@@ -83,3 +86,17 @@ fail until it is answered there or that change is archived.
   f3bd902 and phase-0 commit 384acc3.
 - 2026-10-10, phase 2: the lane gate refuses to run beside the owner's two uncommitted files;
   the checks will run with them stashed and restored (instruction-integrity delta log).
+- 2026-10-10, phase 4, independent Test/Challenge (`test-challenge.md`): seven challenges S1
+  to S7 recorded in `review.md`, each with the interim safe action; eleven checks added as
+  tasks 1.11 to 1.21 and tasks 1.1 to 1.10 tightened. Invalidated: the frozen clause of
+  `main-spec-edit.md` (replaced by the sibling's wording plus ids), docs-plan rows for the
+  display, validate, convert and timing claims and one dead test id (corrected), the "60
+  nodes" evidence line (reworded). Reruns required: every phase-4 check runs after the
+  edits; the challenger's behaviour probes are re-run in 1.16.
+- 2026-10-10, phase 4, repository state: the owner committed 01efe85 ("Update garden
+  instruction audit modules", two template-managed files under
+  `.agents/skills/agent-ready-garden/`) on this branch between phase 0 and phase 1, and a
+  second untracked review (`docs/reviews/2026-10-10-instruction-audit.md`) appeared. The
+  owner works in this checkout concurrently, so no stash: every gate runs in a detached
+  worktree of the checked commit. The pull-request range now carries 01efe85; the owner may
+  move it to `master` or leave it. Consistent with the freeze; nothing else invalidated.

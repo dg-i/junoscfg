@@ -3,7 +3,9 @@ created: 2026-10-10
 type: docs
 # The highest-tier zone whose paths this change edits: src/junoscfg/anonymize/CONTRACT.md.
 zone: anonymize
-domains: [conversion]
+# Every domain whose declared paths a deliverable touches: convert/CONTRACT.md and
+# anonymize/CONTRACT.md. display/ and validate/CONTRACT.md lie under no domain's paths.
+domains: [conversion, anonymization]
 removes: "none, because the change adds mappings, invariants, a form and test references to existing documents; every existing mapping, invariant and requirement is preserved or restated whole"
 assurance: balanced
 skip_specs: true

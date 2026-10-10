@@ -1,14 +1,15 @@
 # Checkpoint
 
-- Next incomplete phase: 4 (QA tasks in `tasks.md`; phase 3 is skipped for type `docs`).
-- Last valid evidence: the phase-2 commit holding `docs-plan.md`, `evidence-freeze.md` and
-  `main-spec-edit.md`; `openspec validate --strict` passed; `agent-ready reconcile` and
-  `caps` passed; the 60 cited test ids collected.
-- Open repository correction, not this change's: `agent-ready fields` exits 1 on
-  `openspec/changes/identifier-key-fields/.openspec.yaml` (no `assurance`, a field the
-  v0.7.8 template added after that change was written). Every field of this change is
-  answered. The owner decides whether to answer it there or archive that change first.
-- Gate note: `agent-ready lane` refuses to run beside the owner's uncommitted `mkdocs.yml`
-  and the untracked review; the checks run with both stashed and restored.
+- Next incomplete phase: 5 (change and verify; documentation-only route).
+- Last valid evidence: the phase-4 commit holding `tasks.md` (1.1 to 1.21 tightened per the
+  challenge), `test-challenge.md`, `review.md` with challenges S1 to S7 and their interim
+  actions, `main-spec-edit.md` rebuilt on the sibling delta's wording plus the five ids,
+  and the corrected `docs-plan.md` and `evidence-freeze.md`.
+- Owner decisions pending (none blocks phase 5; each interim action is a safe reversal to
+  owner-approved text or a narrowing to what tests assert): S1 to S7 in `review.md`; the
+  three open product defects listed there; whether to move commit 01efe85 to `master`;
+  whether to answer `assurance` in the sibling change so the `fields` gate passes.
+- Gates run in a detached worktree of the checked commit; the owner's uncommitted files
+  are never stashed.
 - Telemetry: raw events in `private_test_data/agent-guidance-telemetry/telemetry-events.jsonl`
   (gitignored); bound `workflow-telemetry.json` is written in phase 7.
