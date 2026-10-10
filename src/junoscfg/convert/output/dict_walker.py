@@ -17,9 +17,9 @@ from junoscfg.display import (
     get_transparent_child,
     is_flat_dict,
     is_freeform_nk,
-    is_keyword_field,
     is_positional_key,
     is_transparent_list_key,
+    key_is_positional,
     load_schema_tree,
     resolve_key_alias,
 )
@@ -325,6 +325,12 @@ class DictWalker:
                     else:
                         output.emit(path + [f"{set_key} {format_value(entry)}"])
 
+                attr = obj.get(f"@{key}")
+                if isinstance(attr, dict):
+                    attrs = self._read_leaf_attrs(attr)
+                    if attrs:
+                        self._emit_attrs(path + [set_key], attrs)
+
             elif isinstance(value, bool):
                 output.emit(path + [set_key])
 
@@ -355,6 +361,22 @@ class DictWalker:
 
             elif value is None:
                 output.emit(path + [set_key])
+
+        # A meta command can target an unknown statement that is already kept
+        # whole only through longer descendant statements.  Its sibling
+        # attribute therefore has no exact data key to trigger the branches
+        # above; emit that command without inventing a corresponding `set`.
+        for attr_key, attr in obj.items():
+            if not attr_key.startswith("@") or attr_key == "@":
+                continue
+            key = attr_key[1:]
+            if (
+                key in obj and not isinstance(obj[key], bool) and obj[key] is not None
+            ) or not isinstance(attr, dict):
+                continue
+            attrs = self._read_leaf_attrs(attr)
+            if attrs:
+                self._emit_attrs(path + [resolve_key_alias(key)], attrs)
 
     def _process_hash(
         self,
@@ -409,8 +431,10 @@ class DictWalker:
             has_content = any(not k.startswith("@") for k in hash_)
 
             if not has_content:
-                # Delete-only nodes emit just the delete command
-                if "delete" not in attrs:
+                # An attribute-only unknown node is a kept-whole meta command,
+                # not an invented `set` command. Known containers still emit
+                # their set form before the attribute, as before.
+                if "delete" not in attrs and (schema_node is not None or not attrs):
                     output.emit(new_path)
             else:
                 self._walk(
@@ -453,7 +477,7 @@ class DictWalker:
                 value = value[0]
             written.add(field)
             leaf = (schema_node or {}).get("c", {}).get(field)
-            if is_keyword_field(leaf):
+            if not key_is_positional(leaf):
                 # A key field whose leaf is not `nokeyword` is written with its
                 # keyword: `virtual-link neighbor-id 10.255.255.1 transit-area
                 # 0.0.0.2` (device probe, vMX 23.2R2-S7.5).

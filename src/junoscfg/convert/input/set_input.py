@@ -11,7 +11,7 @@ from typing import Any
 from junoscfg.display import (
     KEY_ALIASES,
     entry_keys,
-    is_keyword_field,
+    key_is_positional,
     load_schema_tree,
     statement_children,
     statement_name_spellings,
@@ -203,7 +203,7 @@ def _read_key(
     keyworded = [
         field
         for field in fields
-        if not isinstance(field, tuple) and is_keyword_field(children.get(field))
+        if not isinstance(field, tuple) and not key_is_positional(children.get(field))
     ]
     positional = [f for f in fields if not isinstance(f, tuple) and f not in keyworded]
     found: dict[str | tuple[str, ...], tuple[str, Any]] = {}
@@ -250,6 +250,40 @@ def _keep_whole(current: dict[str, Any], tokens: list[str], i: int) -> None:
     nothing of a line the reader cannot complete is applied or dropped.
     """
     current.setdefault(" ".join(_parse_value(t) for t in tokens[i:]), True)
+
+
+def _keep_meta_whole(
+    current: dict[str, Any],
+    tokens: list[str],
+    i: int,
+    attr_key: str,
+    attr_value: Any,
+) -> None:
+    """Keep a meta command's unresolved suffix without annotating its prefix."""
+    key = " ".join(_parse_value(token) for token in tokens[i:])
+    # When an ordinary command already kept this exact unknown statement, or
+    # a statement below it, retain the meta command as its sibling attribute.
+    # That preserves both commands and leaves the existing unknown statement
+    # as the single UNPLACED diagnostic instead of inventing a second child.
+    if any(
+        isinstance(existing, str)
+        and not existing.startswith("@")
+        and (existing == key or existing.startswith(f"{key} "))
+        for existing in current
+    ):
+        current.setdefault(f"@{key}", {})[attr_key] = attr_value
+        return
+    if " " not in key and any(
+        isinstance(value, str | int | float) and str(value) == key
+        for existing, value in current.items()
+        if not existing.startswith("@")
+    ):
+        current.setdefault(f"@{key}", {})[attr_key] = attr_value
+        return
+    kept = current.get(key)
+    if not isinstance(kept, dict):
+        kept = current[key] = {}
+    kept.setdefault("@", {})[attr_key] = attr_value
 
 
 # ── Core token walking ──────────────────────────────────────────────
@@ -619,8 +653,8 @@ def _apply_meta(
                             item.setdefault("@", {})[attr_key] = attr_value
                             return
 
-            # Unknown path — apply to current
-            current.setdefault("@", {})[attr_key] = attr_value
+            # Unknown path: the valid prefix is not the requested target.
+            _keep_meta_whole(current, tokens, i, attr_key, attr_value)
             return
 
         child = children[schema_key]
@@ -639,7 +673,11 @@ def _apply_meta(
         # Named list: descend into the entry its whole key names
         read = _read_key(child, tokens, i + 1) if child.get("L") else None
         if read is not None:
-            key, i = read
+            key, end = read
+            if end < len(tokens) and not statement_children(child):
+                _keep_meta_whole(current, tokens, i, attr_key, attr_value)
+                return
+            i = end
             entry = _find_or_create_entry(current.setdefault(token, []), key, index)
             if i >= len(tokens):
                 entry.setdefault("@", {})[attr_key] = attr_value
@@ -647,6 +685,10 @@ def _apply_meta(
             current = entry
             current_schema = child
             continue
+
+        if child.get("L"):
+            _keep_meta_whole(current, tokens, i, attr_key, attr_value)
+            return
 
         # Container, so descend
         if child.get("c"):
@@ -662,5 +704,5 @@ def _apply_meta(
             return
 
         # Fallback
-        current.setdefault("@", {})[attr_key] = attr_value
+        _keep_meta_whole(current, tokens, i, attr_key, attr_value)
         return

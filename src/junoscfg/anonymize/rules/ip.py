@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from ipanon import Anonymizer, NetworkRegistry
 
 from junoscfg.anonymize.rules import Rule
+from junoscfg.display import strip_type_prefix
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
@@ -134,6 +135,14 @@ class IpRule(Rule):
         if the parent path segment is a known IP-keyed list and the value
         parses as an IP address.
         """
+        anonymization_type = schema_node.get("atr")
+        if (
+            anonymization_type is not None
+            and strip_type_prefix(anonymization_type).lower() in _IP_TYPE_REFS
+            and _looks_like_ip(str(value))
+        ):
+            return True
+
         type_ref = schema_node.get("tr")
         if type_ref is not None and type_ref.lower() in _IP_TYPE_REFS:
             return True

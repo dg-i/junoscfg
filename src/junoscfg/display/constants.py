@@ -190,15 +190,19 @@ def statement_children(schema_node: Any) -> dict[str, Any]:
     return {name: node for name, node in children.items() if name not in keys}
 
 
-def is_keyword_field(field_node: Any) -> bool:
-    """Whether a key field is written `keyword value`: a leaf not `nokeyword`.
+def key_is_positional(field_node: Any) -> bool:
+    """Whether a key field is written as its bare value, not `keyword value`.
 
-    The set reader, the writer and the grammar share this answer. Takes a
-    structure-tree node, a `SchemaNode`, or ``None`` for a missing field.
+    A key is positional only when it carries ``nokeyword`` without
+    ``freeform-nk``. The latter flag exists for validation but keeps the field
+    keyword in set syntax. A missing implicit key stays positional for the
+    schema-less compatibility path.
     """
+    if field_node is None:
+        return True
     if isinstance(field_node, dict):
-        return bool(field_node.get("l")) and not field_node.get("nk")
-    return field_node is not None and field_node.is_leaf and "nokeyword" not in field_node.flags
+        return bool(field_node.get("nk")) and not field_node.get("frnk")
+    return "nokeyword" in field_node.flags and "freeform-nk" not in field_node.flags
 
 
 def is_freeform_nk(schema_node: dict[str, Any] | None) -> bool:

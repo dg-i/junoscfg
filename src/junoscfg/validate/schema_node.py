@@ -34,6 +34,9 @@ class SchemaNode:
     pattern: str | None = None
     pattern_negated: bool = False
     type_ref: str | None = None
+    #: Type knowledge used only by anonymization. Inline ``simpleContent``
+    #: identifier bases live here so strict validation keeps its diagnostics.
+    anonymization_type_ref: str | None = None
     flags: set[str] = field(default_factory=set)
     #: The fields that key a list's entries, in declared order: an identifier
     #: element's name, or a tuple of names for a choice of identifiers. Empty
@@ -62,6 +65,8 @@ class SchemaNode:
             parts.append(f", enums={len(self.enums)}")
         if self.type_ref:
             parts.append(f", type={self.type_ref}")
+        if self.anonymization_type_ref:
+            parts.append(f", anonymization_type={self.anonymization_type_ref}")
         parts.append(")")
         return "".join(parts)
 

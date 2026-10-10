@@ -294,6 +294,12 @@ def _build_from_complex_type(
     simple_content = ct.find(_xsd("simpleContent"))
     if simple_content is not None:
         enums = _extract_enums(ct)
+        anonymization_type_ref = None
+        if is_key:
+            derivation = next((d for d in simple_content if isinstance(d.tag, str)), None)
+            base = derivation.get("base") if derivation is not None else None
+            if base and base != "xsd:anyType":
+                anonymization_type_ref = base
         return SchemaNode(
             name=name,
             is_leaf=True,
@@ -302,6 +308,7 @@ def _build_from_complex_type(
             is_mandatory=is_mandatory,
             flags=flags,
             type_ref=type_ref,
+            anonymization_type_ref=anonymization_type_ref,
             enums=enums or None,
             pattern=pattern,
             pattern_negated=pattern_negated,

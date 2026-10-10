@@ -419,6 +419,16 @@ class TestPatternValidation:
 
 
 class TestIPAddressValidation:
+    def test_anonymization_type_does_not_validate_a_template_value(self) -> None:
+        schema = _make_schema(
+            tree=_container(
+                configuration=_container(iface=_container(prefix=_leaf(atr="ipprefix")))
+            )
+        )
+        result = FieldValidator(schema=schema).validate({"iface": {"prefix": "$ROUTE_PREFIX"}})
+        assert result.errors == []
+        assert result.warnings == []
+
     def test_valid_ipv4_passes(self) -> None:
         schema = _make_schema(
             tree=_container(configuration=_container(iface=_container(addr=_leaf(tr="ipaddr")))),

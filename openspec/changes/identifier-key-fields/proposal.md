@@ -1,20 +1,12 @@
 ## Why
 
-`from as-path-neighbors as-list AS_LIST_NAME` loses `AS_LIST_NAME` on set and
-structured input (`private_test_data/bugreport.txt`).
-`_build_from_complex_type` keeps a sequence's first `xsd:choice` and drops the
-rest: identifiers (2,800 types keyed `name`, right by accident; 171 by one
-other element; 64 by two to four, `list-type` and `list-name` among them) and a
-second choice (seven types, route-filter's `accept` among them). 38 list
-definitions also key on a choice marked `<identifier/>`, such as route-filter's
-match type. `fe`, `values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the
-`community-name` branches and `_takes_either_order` each patch part of the loss.
+`from as-path-neighbors as-list AS_LIST_NAME` loses `AS_LIST_NAME` on set and structured input (`private_test_data/bugreport.txt`).
+`_build_from_complex_type` keeps a sequence's first `xsd:choice` and drops the rest: identifiers (2,800 types keyed `name`, right by accident; 171 by one other element; 64 by two to four, `list-type` and `list-name` among them) and a second choice (seven types, route-filter's `accept` among them).
+38 list definitions also key on a choice marked `<identifier/>`, such as route-filter's match type. `fe`, `values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the `community-name` branches and `_takes_either_order` each patch part of the loss.
 
 ## What Changes
 
-- The parser keeps every element a sequence declares, in declared order. Every
-  list node carries its key fields (`k`, omitted for `("name",)`): each
-  identifier element, and each all-identifier choice as one field.
+- The parser keeps every element a sequence declares, in declared order. Every list node carries its key fields (`k`, omitted for `("name",)`): each identifier element, and each all-identifier choice as one field.
 - One kernel helper, `entry_keys()`, answers the fields at every site. Identity
   is the key tuple. Set output writes the key values in declared order, then a
   line per other child: every device set shape, no flag. Structured output keeps
@@ -23,7 +15,11 @@ match type. `fe`, `values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the
 - One unplaced rule replaces the reader's silent branches: a statement the
   reader cannot complete (a partial key, a surplus after a terminal entry,
   `apply-groups` with a surplus) is kept whole, from its keyword, at its
-  parent, and validation reports it `UNPLACED`.
+  parent, and validation reports it `UNPLACED`. The same rule covers
+  `deactivate`, `activate`, `protect` and `delete`, including an unknown path;
+  a meta attribute on a whole list is written back at the list path.
+- One kernel rule says a key is positional only with `nokeyword` and without `freeform-nk`; the reader, writer and grammar all consume it.
+- A key whose XSD type exists only as a `simpleContent` extension base carries that base as anonymization type knowledge, separate from strict field validation. Route-filter addresses and name-keyed IP objects are anonymized without adding template-value diagnostics.
 - Retired: `fe`, `values-only`, `_v<n>`, `_takes_either_order`,
   `_fix_attributes_match_oneliner`, the `flat-entry` half of
   `_fix_flat_entry_keys`, `FLAT_ENTRY_ELEMENTS`, the `community-name` branches;
@@ -49,9 +45,10 @@ match type. `fe`, `values-only`, `_v<n>`, `ENTRY_KEY_OVERRIDES`, the
 
 ## Non-goals
 
-- IR, grammar and output of `name`-keyed lists stay byte-identical (test and
-  corpus); structured `oneliner-plus` and `homogeneous` shapes; key types from
-  `simpleContent` bases; numeric JSON normalization; lost values elsewhere.
+- IR, grammar and output of `name`-keyed lists stay byte-identical except that
+  their IP-valued keys are now anonymized when requested (test and corpus);
+  structured `oneliner-plus` and `homogeneous` shapes; numeric JSON
+  normalization; lost values elsewhere; the other delayed anonymizer items.
 
 ## Impact
 

@@ -24,7 +24,7 @@ from junoscfg.display import (
     UNQUOTABLE_TYPES,
     entry_keys,
     enum_is_fragment,
-    is_keyword_field,
+    key_is_positional,
     open_artifact_write,
     statement_children,
     strip_type_prefix,
@@ -165,7 +165,7 @@ def _key_value(node: SchemaNode | None) -> str:
         value = "(" + " | ".join(f'"{value}"' for value in node.enums) + ")"
     else:
         value = _value_token(node)
-    if is_keyword_field(node):
+    if not key_is_positional(node):
         return f'"{node.name}" {value}'
     return value
 
@@ -197,7 +197,7 @@ def _key_sequence(node: SchemaNode) -> str:
             choices.append("(" + " | ".join(alternatives) + ")")
         else:
             child = node.children.get(field)
-            (keyworded if is_keyword_field(child) else positional).append(_key_value(child))
+            (positional if key_is_positional(child) else keyworded).append(_key_value(child))
     values = positional[:]
     if len(keyworded) > 1:
         orders = (" ".join(order) for order in itertools.permutations(keyworded))

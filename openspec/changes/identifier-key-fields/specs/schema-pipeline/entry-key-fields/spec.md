@@ -17,29 +17,32 @@ Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identif
 
 #### Scenario: Two identifiers beside a choice of comments only
 
-- **WHEN** a type declares identifiers `list-type`, `list-name` and a choice of
-  comments only
-- **THEN** it has those children, the keys `(list-type, list-name)`, and is no
-  childless presence list
+- **WHEN** a type declares identifiers `list-type`, `list-name` and a choice of comments only
+- **THEN** it has those children, the keys `(list-type, list-name)`, and is no childless presence list
 
 #### Scenario: A key, an identifier choice, an action choice
 
-- **WHEN** a type declares `address`, an `<identifier/>` choice of `exact` and
-  `orlonger`, then a choice holding `accept` and `reject`
-- **THEN** the keys are `(address, (exact, orlonger))`, the five children kept
-  in that order
+- **WHEN** a type declares `address`, an `<identifier/>` choice of `exact` and `orlonger`, then a choice holding `accept` and `reject`
+- **THEN** the keys are `(address, (exact, orlonger))`, the five children kept in that order
 
 #### Scenario: An identifier choice first, and name
 
-- **WHEN** one type declares an `<identifier/>` choice of `add` and `delete`,
-  then `community-name`, and another the one identifier `name`
-- **THEN** the first is keyed `((add, delete), community-name)`, the second
-  `("name",)` with the child `name`
+- **WHEN** one type declares an `<identifier/>` choice of `add` and `delete`, then `community-name`, and another the one identifier `name`
+- **THEN** the first is keyed `((add, delete), community-name)`, the second `("name",)` with the child `name`
 
 #### Scenario: A list the XSD bounds by a number
 
 - **WHEN** `forwarding-classes class` declares `maxOccurs="16"`
 - **THEN** it is a list, keyed `name` (challenge A, owner decision)
+
+### Requirement: A simpleContent key keeps anonymization type knowledge
+
+WHEN an identifier leaf's type is an inline `simpleContent` extension THEN the parser SHALL record its extension base as anonymization type knowledge and the structure tree SHALL preserve it separately from the `tr` field strict field validation consumes. JSON/YAML schema generation, field validation and grammar generation SHALL not treat that hint as a validation type.
+
+#### Scenario: IP prefix key and template value
+
+- **WHEN** a route-filter `address` extends `ipprefix`
+- **THEN** its structure-tree leaf carries `ipprefix` for anonymization, while a synthetic template value in that key gains no IP-validation warning
 
 ### Requirement: The structure tree carries the keys and the declared order
 
@@ -52,8 +55,7 @@ Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered
 
 #### Scenario: Round trip
 
-- **WHEN** nodes keyed `(list-type, list-name)`, `(address, (exact, orlonger))`
-  and `("name",)` are written and read
+- **WHEN** nodes keyed `(list-type, list-name)`, `(address, (exact, orlonger))` and `("name",)` are written and read
 - **THEN** each keeps keys and child order; only the first two carry `k`
 
 ### Requirement: One kernel helper answers an entry's keys
@@ -68,10 +70,8 @@ Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_h
 
 #### Scenario: The helper's answers
 
-- **WHEN** the node carries `k` `["list-type", "list-name"]`, or `["address",
-  ["exact", "orlonger"]]`, or no `k`
-- **THEN** the helper answers `("list-type", "list-name")`, `("address",
-  ("exact", "orlonger"))`, `("name",)`
+- **WHEN** the node carries `k` `["list-type", "list-name"]`, or `["address", ["exact", "orlonger"]]`, or no `k`
+- **THEN** the helper answers `("list-type", "list-name")`, `("address", ("exact", "orlonger"))`, `("name",)`
 
 #### Scenario: The source holds no second answer
 

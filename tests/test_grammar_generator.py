@@ -501,6 +501,23 @@ class TestFreeformNokeywordKeepsItsKeyword:
         assert not _parses(self._tree(freeform=False), "set unit 0 vlan-id 100")
         assert _parses(self._tree(freeform=False), "set unit 0 100")
 
+    def test_a_keyed_freeform_nk_leaf_takes_its_keyword(self) -> None:
+        vlan = SchemaNode(name="vlan-id", is_leaf=True)
+        vlan.flags.update({"nokeyword", "freeform-nk"})
+        root = SchemaNode(
+            name="configuration",
+            children={
+                "sample": SchemaNode(
+                    name="sample",
+                    is_list=True,
+                    children={"vlan-id": vlan},
+                    key_fields=("vlan-id",),
+                )
+            },
+        )
+        assert _parses(root, "set sample vlan-id 100")
+        assert not _parses(root, "set sample 100")
+
 
 class TestAnyLeafValueMayBeQuoted:
     """Junos quotes any value holding a space, not a known list of fields.

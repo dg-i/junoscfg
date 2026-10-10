@@ -82,3 +82,20 @@ grammar sample: newly rejected 0, newly accepted 2
   - Full check at e6b7886: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` exit 0, "every check passed" (1892 passed, 45 skipped, 1 xfailed).
   - `review_tools.py corpus`, `grammar`, `compare` (tag r11, branch only): unplaced 68,172, other field warnings 329, 35 failing files on both sides; grammar 10,970 / 30, newly rejected 0, newly accepted 2; 2 files with more unplaced than master, 161 fewer; set output differs from master in 75 files. Equal to the re-review.
   - No `--regen-schema`; `git diff --stat ad9a625..HEAD -- src/junoscfg/validate/data` is empty.
+
+## 5. Application-side consolidation (owner, 2026-10-10)
+
+- [x] 5.1 Regression tests: partial/surplus keyed-list meta commands stay whole
+  for `deactivate`, `activate`, `protect` and `delete`; unknown paths do not
+  annotate a valid prefix; whole-list attributes survive writer output.
+- [x] 5.2 Replace `is_keyword_field()` with one shared `key_is_positional()`
+  answer in reader, writer and grammar; cover keyed `freeform-nk` fields.
+- [x] 5.3 Carry `simpleContent` key bases as anonymization-only type knowledge;
+  anonymize route-filter and OSPF area-range addresses without new validation
+  warnings for synthetic template values.
+- [x] 5.4 Regenerate affected artifacts twice and prove reproducibility.
+- [x] 5.5 Update only the fixed rows in the two private follow-up records.
+- [ ] 5.6 Run focused tests, the full project check, the frozen 1,538-file
+  corpus comparison, and the 30,000-entry plus `ma4_mx204.conf` benchmarks;
+  review the final diff for loss, partial application, rule disagreement and
+  special cases.

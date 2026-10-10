@@ -1087,6 +1087,108 @@ def _unplaced(source: str, fmt: str = "set") -> list[str]:
     ]
 
 
+class TestAMetaCommandIsNeverPartiallyApplied:
+    """A malformed meta path is data to report, never a shorter valid path."""
+
+    _ATTRS = {
+        "deactivate": {"inactive": True},
+        "activate": {"active": "active"},
+        "protect": {"protect": "protect"},
+        "delete": {"operation": "delete"},
+    }
+
+    @pytest.mark.parametrize("command", _ATTRS)
+    @pytest.mark.parametrize(
+        "suffix",
+        ["as-path-neighbors as-list", "as-path-neighbors as-list SAMPLE-AS-LIST extra"],
+        ids=["partial-key", "surplus-token"],
+    )
+    def test_a_partial_or_surplus_key_is_kept_whole(self, command: str, suffix: str) -> None:
+        set_line = f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST"
+        meta_line = f"{command} {_TERM[4:]} from {suffix}"
+
+        ir = set_to_dict(f"{set_line}\n{meta_line}")
+        from_ = ir["policy-options"]["policy-statement"][0]["term"][0]["from"]
+
+        assert "@" not in from_
+        assert "@" not in from_["as-path-neighbors"][0]
+        assert from_[suffix]["@"] == self._ATTRS[command]
+        assert len(_unplaced(f"{set_line}\n{meta_line}\n")) == 1
+        assert meta_line in dict_to_set(ir).splitlines()
+
+    def test_an_unknown_path_does_not_annotate_its_valid_parent(self) -> None:
+        source = "set system host-name router1\ndeactivate system bogus-thing"
+        ir = set_to_dict(source)
+
+        assert "@" not in ir["system"]
+        assert ir["system"]["bogus-thing"] == {"@": {"inactive": True}}
+        assert len(_unplaced(source + "\n")) == 1
+        assert dict_to_set(ir).splitlines() == source.splitlines()
+
+    def test_meta_on_an_existing_unknown_prefix_reuses_its_unplaced_report(self) -> None:
+        source = "set system bogus-thing value\ndeactivate system bogus-thing"
+        ir = set_to_dict(source)
+
+        assert "@" not in ir["system"]
+        assert ir["system"]["bogus-thing value"] is True
+        assert ir["system"]["@bogus-thing"] == {"inactive": True}
+        assert len(_unplaced(source + "\n")) == 1
+        assert dict_to_set(ir).splitlines() == source.splitlines()
+
+    def test_meta_on_an_existing_positional_value_is_kept_whole(self) -> None:
+        source = "set protocols isis SAMPLE-UNKNOWN\ndeactivate protocols isis SAMPLE-UNKNOWN"
+        ir = set_to_dict(source)
+
+        assert ir["protocols"]["isis"]["enable-disable"] == "SAMPLE-UNKNOWN"
+        assert ir["protocols"]["isis"]["@SAMPLE-UNKNOWN"] == {"inactive": True}
+        assert _unplaced(source + "\n") == []
+        assert dict_to_set(ir).splitlines() == source.splitlines()
+
+    @pytest.mark.parametrize("command", _ATTRS)
+    @pytest.mark.parametrize(
+        ("set_line", "list_path"),
+        [
+            (
+                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
+                f"{_TERM[4:]} from as-path-neighbors",
+            ),
+            ("set system login user admin uid 2000", "system login user"),
+        ],
+        ids=["as-path-neighbors", "login-user"],
+    )
+    def test_a_meta_attribute_on_a_whole_list_is_written(
+        self, command: str, set_line: str, list_path: str
+    ) -> None:
+        meta_line = f"{command} {list_path}"
+        ir = set_to_dict(f"{set_line}\n{meta_line}")
+        assert set_line in dict_to_set(ir).splitlines()
+        assert meta_line in dict_to_set(ir).splitlines()
+
+
+class TestAFreeformNokeywordKeyKeepsItsKeyword:
+    def test_reader_and_writer_share_the_grammar_rule(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import junoscfg.convert.input.set_input as reader
+        import junoscfg.convert.output.dict_walker as writer
+
+        tree = {
+            "c": {
+                "sample": {
+                    "L": True,
+                    "k": ["vlan-id"],
+                    "c": {"vlan-id": {"l": True, "nk": True, "frnk": True}},
+                }
+            }
+        }
+        monkeypatch.setattr(reader, "load_schema_tree", lambda: tree)
+        monkeypatch.setattr(writer, "load_schema_tree", lambda: tree)
+
+        line = "set sample vlan-id 100"
+        assert set_to_dict(line) == {"sample": [{"vlan-id": "100"}]}
+        assert dict_to_set({"sample": [{"vlan-id": "100"}]}) == line + "\n"
+
+
 class TestANonListNodeNeverReplacesAnEntry:
     """Challenge A, owner decision (phase-6 review): any `maxOccurs` but 1 is a
     list, and a nokeyword leaf never overwrites a present, different value.

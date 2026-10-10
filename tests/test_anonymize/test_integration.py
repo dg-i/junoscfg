@@ -510,6 +510,54 @@ def _neighbor_lines(output: str) -> list[list[str]]:
 
 
 class TestKeyedEntriesSurvive:
+    @pytest.mark.parametrize(
+        "line",
+        [
+            (
+                "set policy-options policy-statement SAMPLE-POLICY term T1 from route-filter "
+                "203.0.114.0/24 exact accept"
+            ),
+            "set protocols ospf area 0.0.0.0 area-range 203.0.114.0/24",
+        ],
+        ids=["route-filter", "ospf-area-range"],
+    )
+    def test_simple_content_ip_keys_are_anonymized(self, line: str) -> None:
+        from junoscfg import Format, convert_config
+
+        out = convert_config(
+            line + "\n",
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, salt="simple-content"),
+        )
+        assert "203.0.114.0/24" not in out
+        assert " route-filter " in out or " area-range " in out
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            (
+                "set policy-options policy-statement SAMPLE-POLICY term T1 from route-filter "
+                "$ROUTE_PREFIX exact accept"
+            ),
+            "set protocols ospf area 0.0.0.0 area-range $AREA_RANGE",
+        ],
+        ids=["route-filter", "ospf-area-range"],
+    )
+    def test_simple_content_template_keys_add_no_ip_diagnostic(self, line: str) -> None:
+        from junoscfg import Format, convert_config_result
+
+        result = convert_config_result(
+            line + "\n",
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, salt="simple-content-template"),
+        )
+        messages = [diagnostic.message for diagnostic in result.diagnostics]
+        assert not [message for message in messages if "not a valid IP" in message]
+        template = "$" + line.rsplit("$", 1)[1].split()[0]
+        assert template in result.output
+
     def test_an_as_list_reference_survives_anonymize_all(self) -> None:
         from junoscfg import Format, convert_config
         from junoscfg.anonymize.config import build_config_from_cli

@@ -516,3 +516,18 @@ class TestEveryDeclaredChildIsKept:
         assert list(match["c"]) == ["from-event-attribute", "condition", "to-event-attribute-value"]
         assert match["k"] == ["from-event-attribute", "condition", "to-event-attribute-value"]
         assert tree["_enums"][match["c"]["condition"]["e"]] == ["equals", "starts-with", "matches"]
+
+    def test_a_simple_content_key_keeps_anonymization_type_only(self, tmp_path) -> None:
+        from tests.keyed_entries import node
+
+        route_address = node(
+            self._tree(tmp_path),
+            "policy-options",
+            "policy-statement",
+            "term",
+            "from",
+            "route-filter",
+            "address",
+        )
+        assert route_address["atr"] == "ipprefix"
+        assert "tr" not in route_address

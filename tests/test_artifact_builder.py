@@ -155,6 +155,7 @@ def _rich_tree() -> SchemaNode:
         is_mandatory=True,
         pattern="^[a-z]+$",
         type_ref="string-type",
+        anonymization_type_ref="ipaddr",
     )
     # Keyed by an identifier and a choice of identifiers (identifier-key-fields:
     # `k` replaced the retired `flat-entry:<key>:<position>` value flag).
@@ -209,6 +210,7 @@ class TestStructureTreeRoundTrip:
         name = term.children["name"]
         assert name.is_mandatory and name.pattern == "^[a-z]+$"
         assert name.type_ref == "string-type"
+        assert name.anonymization_type_ref == "ipaddr"
 
         negated = back.children["extras"].children["not-this"]
         assert negated.pattern == "^bad$" and negated.pattern_negated

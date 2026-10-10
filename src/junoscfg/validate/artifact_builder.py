@@ -306,6 +306,7 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         r: index into root _patterns dedup table
         m: true if mandatory field
         tr: XSD type reference
+        atr: anonymization-only XSD type reference
     """
     d: dict[str, Any] = {}
 
@@ -346,6 +347,9 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
 
     if node.type_ref:
         d["tr"] = node.type_ref
+
+    if node.anonymization_type_ref:
+        d["atr"] = node.anonymization_type_ref
 
     if node.key_fields:
         d["k"] = [list(f) if isinstance(f, tuple) else f for f in node.key_fields]
@@ -394,6 +398,7 @@ def _deserialize_node(
     node.is_list = bool(d.get("L")) or bool(d.get("ll"))
     node.is_mandatory = bool(d.get("m"))
     node.type_ref = d.get("tr")
+    node.anonymization_type_ref = d.get("atr")
     node.key_fields = tuple(tuple(f) if isinstance(f, list) else f for f in d.get("k", ()))
 
     if "e" in d:
@@ -423,8 +428,7 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     from the bundled artifacts when the XSD dump they came from is no longer
     to hand. :func:`junoscfg.validate.grammar_generator.generate_lark_grammar`
     reads only ``name``, ``children``, ``is_leaf``, ``is_list``,
-    ``is_presence``, ``flags`` and ``type_ref``, all of which the format
-    carries.
+    ``is_presence``, ``flags`` and ``type_ref``, all of which the format carries.
 
     What it does not carry, because ``_serialize_node`` never writes it. This
     is a lossy format, not a faithful copy; do not use this tree where any of
@@ -447,8 +451,8 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
     - ``is_presence`` on a leaf, and ``pattern_negated`` with no ``pattern``.
 
     None of these reaches ``generate_lark_grammar``, which reads only ``name``,
-    ``children``, ``is_leaf``, ``is_list``, ``is_presence``, ``type_ref`` and
-    the ``nokeyword``, ``freeform-nk`` and ``flat-dict`` flags, and
+    ``children``, ``is_leaf``, ``is_list``, ``is_presence``, ``type_ref``, the
+    ``nokeyword``, ``freeform-nk`` and ``flat-dict`` flags, and
     ``key_fields`` -- all of which survive. ``type_ref`` is how a policy-algebra slot is told
     apart from every other value slot.
 

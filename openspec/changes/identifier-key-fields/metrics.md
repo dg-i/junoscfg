@@ -78,5 +78,11 @@
 | Context expansion: private_test_data/jvd ma4_mx204.conf | phase-6 re-review: finding 4 timing, 4.2 s structured to set |
 | Context expansion: private_test_data/bugreport.txt | phase-6 re-review: the synthetic fixture for the reference probe |
 | Addition beyond the proposal: `is_keyword_field()` in `junoscfg.display` | owner decision on re-review finding 11, "fold now": one predicate for the set reader, the set writer and the grammar, replacing three local spellings |
+| Owner-directed consolidation: meta commands, positional key rule, simpleContent anonymization hints | 2026-10-10 request folds the control review's safe meta handling and the two delayed anonymizer rows into this live change, while preserving corpus diagnostics |
+| Consolidation focused tests | 678 passed, 1 skipped, 1 xfailed in 127.07 s |
+| Consolidation full pytest | 1,919 passed, 45 skipped, 1 xfailed in 210.62 s |
+| Consolidation frozen corpus | 1,538 files / 4,947,067 lines; 68,172 unplaced, 329 other field warnings, 35 failed files; grammar 10,970 accepted / 30 rejected, no newly rejected lines |
+| Consolidation performance | 30,000 keyed entries: 1.002 / 0.844 / 0.723 s; `ma4_mx204.conf`: 4.650 / 4.435 / 4.441 s |
+| Consolidation generated artifacts | two regenerations produced identical JSON, YAML, grammar and structure-tree payload hashes; metadata differed only by generation time |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

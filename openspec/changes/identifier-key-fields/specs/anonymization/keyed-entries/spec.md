@@ -13,9 +13,9 @@ WHEN the anonymize walker meets a list entry THEN it SHALL hand each key field
 the type the tree records for that leaf, and SHALL synthesise no leaf for
 `name`; a key choice's keyword SHALL pass unchanged. For every leaf, key or
 not, a value from that leaf's own enum is configuration syntax and SHALL pass
-every anonymization rule unchanged (owner decision, phase-6 review). Recording
-a type the XSD gives only as a `simpleContent` extension base is not part of
-this change.
+every anonymization rule unchanged (owner decision, phase-6 review). For a key
+whose type exists only as a `simpleContent` extension base, the IP rule SHALL
+consume the separate anonymization type hint and strict validation SHALL not.
 Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_value_from_its_leafs_enum_passes_every_rule`
 
 #### Scenario: Two key fields
@@ -49,6 +49,18 @@ Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_
 - **WHEN** a `policy-statement` entry keyed `name` is walked
 - **THEN** the rules see `name` as the tree's `name` leaf, not a leaf built
   from the list node
+
+#### Scenario: Two simpleContent IP keys
+
+- **WHEN** `route-filter 203.0.114.0/24 exact` and OSPF `area-range
+  203.0.114.0/24` are anonymized with `--anonymize-ips`
+- **THEN** both key values are replaced and their keyed statement shapes are
+  preserved
+
+#### Scenario: A template value is not strict IP data
+
+- **WHEN** either key holds a synthetic template token instead of a literal IP
+- **THEN** field validation emits no additional IP-type diagnostic
 
 ### Requirement: An AS-list reference survives anonymization
 

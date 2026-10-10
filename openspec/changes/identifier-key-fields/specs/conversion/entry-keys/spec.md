@@ -10,7 +10,8 @@ each input gives the device's IR, output writes it so, and no token is dropped.
 WHEN a list entry arrives as set, structured, JSON, YAML or XML through
 `to_dict` or `convert_config` THEN each reader SHALL key it by the fields
 `entry_keys()` names; the set reader SHALL take one value per positional field
-in order, a field whose leaf is not `nokeyword` as `keyword value` (such fields
+in order, where a field is positional only when it carries `nokeyword` and not
+`freeform-nk`, and SHALL take every other field as `keyword value` (such fields
 in any order among themselves), a key choice as its keyword and value before or
 after the rest (device probe, vMX 23.2R2-S7.5), and merge equal key tuples.
 The XML walker in `display/to_yaml.py` SHALL take a lone element's list shape
@@ -20,35 +21,27 @@ Tests: `tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders::test
 
 #### Scenario: AS-list references
 
-- **WHEN** `from as-path-neighbors as-list AS-LIST-A`, or `as-path-origins` or
-  `as-path-transits`, arrives in each format, at term and policy level, at the
-  root, in a logical system, a group and a grouped one, XML of one entry too
-- **THEN** each IR is `[{"list-type": "as-list", "list-name": "AS-LIST-A"}]`
-  (device probe, vMX 23.2R2-S7.5)
+- **WHEN** `from as-path-neighbors as-list AS-LIST-A`, or `as-path-origins` or `as-path-transits`, arrives in each format, at term and policy level, at the root, in a logical system, a group and a grouped one, XML of one entry too
+- **THEN** each IR is `[{"list-type": "as-list", "list-name": "AS-LIST-A"}]` (device probe, vMX 23.2R2-S7.5)
 
 #### Scenario: Three key fields, and a key choice with an action
 
-- **WHEN** `attributes-match ping.test-owner matches "^uptime$"` and `from
-  route-filter 198.51.100.0/24 exact accept` are read
-- **THEN** the first carries its three fields and no `name`, `_v0` or `_v1`; the
-  second is `{"address": "198.51.100.0/24", "exact": [null], "accept": [null]}`
+- **WHEN** `attributes-match ping.test-owner matches "^uptime$"` and `from route-filter 198.51.100.0/24 exact accept` are read
+- **THEN** the first carries its three fields and no `name`, `_v0` or `_v1`; the second is `{"address": "198.51.100.0/24", "exact": [null], "accept": [null]}`
 
 #### Scenario: Key keywords in either order
 
-- **WHEN** `then community COMM-A add`, or `virtual-link transit-area 0.0.0.3
-  neighbor-id 10.255.255.2`, or the device's XML or JSON of either, is read
+- **WHEN** `then community COMM-A add`, or `virtual-link transit-area 0.0.0.3 neighbor-id 10.255.255.2`, or the device's XML or JSON of either, is read
 - **THEN** the IR and set output hold the fields in declared order
 
 #### Scenario: Lists the XSD bounds by a number
 
-- **WHEN** `forwarding-classes { class fc0 queue-num 0; class fc1 queue-num 1;
-  class mcast-fc queue-num 2; }`, or two `commit peers`, or two `http servers server`
+- **WHEN** `forwarding-classes { class fc0 queue-num 0; class fc1 queue-num 1; class mcast-fc queue-num 2; }`, or two `commit peers`, or two `http servers server`
 - **THEN** each is a list holding every entry, none replaced (challenge A)
 
 #### Scenario: Identity
 
-- **WHEN** an AS-list line twice, `as-list-group`, `as-list AS-LIST-B`; or
-  `route-filter 198.51.100.0/24` `exact`, then `orlonger`, are read
+- **WHEN** an AS-list line twice, `as-list-group`, `as-list AS-LIST-B`; or `route-filter 198.51.100.0/24` `exact`, then `orlonger`, are read
 - **THEN** the first list holds three entries and the second two, in order
 
 #### Scenario: Device-truth captures
@@ -69,10 +62,8 @@ Tests: `tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders::test
 
 #### Scenario: Device JSON and XML to set and structured
 
-- **WHEN** the device-shaped AS-list, community, route-filter, source-address-filter
-  and `attributes-match` entries are converted
-- **THEN** each is one set line as the device displays it, and structured output
-  writes `route-filter 198.51.100.0/24 exact accept;` and `community add COMM-A;`
+- **WHEN** the device-shaped AS-list, community, route-filter, source-address-filter and `attributes-match` entries are converted
+- **THEN** each is one set line as the device displays it, and structured output writes `route-filter 198.51.100.0/24 exact accept;` and `community add COMM-A;`
 
 #### Scenario: Name-keyed lists, as the device splits them
 
@@ -81,20 +72,21 @@ Tests: `tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders::test
 
 ### Requirement: A statement the reader cannot complete is kept whole
 
-WHEN a set line holds an entry whose key values run out, a key field without
-its keyword, a token after a terminal entry, `apply-groups` bare or with two
-names, `apply-macro` with a fourth value, or a second, different value for a
-nokeyword leaf of a node that is no list, THEN the reader
-SHALL create, replace and apply nothing from it, SHALL keep it whole from its
-keyword at its parent, and field validation SHALL report it `UNPLACED`; an
-unknown token after a complete key of an entry with children stays in-entry.
+WHEN a set line holds an entry whose key values run out, a key field without its keyword, a token after a terminal entry, `apply-groups` bare or with two names, `apply-macro` with a fourth value, or a second, different value for a nokeyword leaf of a node that is no list, THEN the reader SHALL create, replace and apply nothing from it, SHALL keep it whole from its keyword at its parent, and field validation SHALL report it `UNPLACED`; an unknown token after a complete key of an entry with children stays in-entry.
+The same applies to `deactivate`, `activate`, `protect` and `delete`: a partial or surplus keyed-list key and an unknown path SHALL apply no attribute to the nearest valid parent or entry. A meta attribute addressed to an entire list SHALL survive set output at that list path.
 Tests: `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_a_partial_key_creates_no_entry`, `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_a_surplus_after_a_terminal_entry_keeps_the_line_whole`, `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_an_unknown_token_in_an_entry_with_children_is_unchanged`, `tests/test_set_input.py::TestApplyGroups::test_a_second_group_token_keeps_the_line_whole`, `tests/test_field_validator.py::TestAnUnmodelledStatementIsReported::test_an_incomplete_statement_is_unplaced`, `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_a_bare_list_keyword_creates_no_entry`, `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_a_partial_attributes_match_creates_no_entry`, `tests/test_set_input.py::TestTokensTheReaderCannotPlaceAreKept::test_a_surplus_after_attributes_match_keeps_the_line_whole`, `tests/test_set_input.py::TestApplyGroupsAndKeyedEntries::test_one_name_inside_a_policy`, `tests/test_set_input.py::TestApplyGroupsAndKeyedEntries::test_two_names_apply_no_group`, `tests/test_field_validator.py::TestAnIncompleteStatementIsUnplaced::test_each_door_reports_it`, `tests/test_set_input.py::TestKeyFieldsGivenByKeyword::test_an_incomplete_key_is_kept_whole_and_reported`, `tests/test_set_input.py::TestApplyMacroTakesAtMostThreeValues::test_one_to_three_values`, `tests/test_set_input.py::TestApplyMacroTakesAtMostThreeValues::test_a_fourth_value_is_kept_whole_and_reported`, `tests/test_set_input.py::TestABareApplyGroups::test_it_is_reported`, `tests/test_set_input.py::TestABareApplyGroups::test_a_group_after_a_bare_one_is_kept_too`, `tests/test_set_input.py::TestABareApplyGroups::test_a_keyed_entry_after_a_bare_keyword_is_kept_too`, `tests/test_set_input.py::TestANonListNodeNeverReplacesAnEntry::test_a_second_value_of_a_nokeyword_leaf_is_kept_whole`, `tests/test_set_input.py::TestANonListNodeNeverReplacesAnEntry::test_the_same_value_again_is_one_statement`
 
 #### Scenario: Statements the device rejects
 
-- **WHEN** `... as-path-neighbors as-list`, `... route-filter 198.51.100.0/24
-  next-policy`, `... as-list AS-LIST-A EXTRA`, `set apply-groups G1 G2`, bare
-  `set apply-groups`, `virtual-link neighbor-id 10.255.255.3`, `virtual-link
-  10.255.255.4 0.0.0.2` or `apply-macro 12345 "KADJBF KU!H" balks XXXXX` is read
-- **THEN** the parent holds it unplaced, set output reproduces it (device probe,
-  vMX 23.2R2-S7.5, rejects each)
+- **WHEN** `... as-path-neighbors as-list`, `... route-filter 198.51.100.0/24 next-policy`, `... as-list AS-LIST-A EXTRA`, `set apply-groups G1 G2`, bare `set apply-groups`, `virtual-link neighbor-id 10.255.255.3`, `virtual-link 10.255.255.4 0.0.0.2` or `apply-macro 12345 "KADJBF KU!H" balks XXXXX` is read
+- **THEN** the parent holds it unplaced, set output reproduces it (device probe, vMX 23.2R2-S7.5, rejects each)
+
+#### Scenario: Meta commands never fall back to a valid prefix
+
+- **WHEN** any of the four meta commands addresses a partial or surplus `as-path-neighbors` key, or `deactivate system bogus-thing` is read
+- **THEN** the command is kept whole and reported `UNPLACED`, and no parent or keyed entry receives its attribute
+
+#### Scenario: A whole list carries a meta attribute
+
+- **WHEN** a meta command addresses all of `from as-path-neighbors` or all of `system login user`
+- **THEN** set output writes that same meta command at the list path while its entries remain unchanged
