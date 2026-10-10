@@ -32,18 +32,18 @@ None, because the change replaces one dict shape with another on the same walk.
 
 ## Outstanding decisions
 
-- D1: how the device writes a whole inactive leaf-list in XML and JSON (`deactivate policy-options community C1 members`): one tag on every `<members>` element, or one only? The second requirement's "every value tagged" reading rests on it.
-- D2: the device JSON for an inactive leaf with a value (`deactivate2.txt` has XML and set only); the IR's sibling `@vlan-id` follows Junos JSON's attribute convention, not a capture.
+None, because D1 and D2 are answered by `private_test_data/deactivate6.txt` (delta log).
 
 ## Execution and checkpoint
 
 - Assurance preference: balanced
 - Risk floor: normal (yellow zone, one package, no surface break)
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer; Finalizer
-- Resume point: phase 2 closes when D1 and D2 are answered; then phase 4
+- Resume point: phase 4 (acceptance tests); phase 2 closed on the 2026-10-10 delta below
 
 ## Delta log
 
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze drafted on `change/xml-inactive-leaf` after 69c1684, with D1 and D2 outstanding.
+- 2026-10-10, owner device round `private_test_data/deactivate6.txt` (23.2R2-S7.5). D1: `deactivate policy-options community C1 members` is accepted; XML tags every value (`<members inactive="inactive">` on both), JSON writes one `"@members": {"inactive": true}`, curly `inactive: members [ … ];`. D2: JSON writes `"vlan-id": 751` with sibling `"@vlan-id": {"inactive": true}`. Both confirm the frozen requirements unchanged; no work invalidated, no rerun. The owner's go-ahead to run the prompt end to end with reviews at the end is read as approval to proceed on artefacts that follow it; the owner reviews them with the final batch.
