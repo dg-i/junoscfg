@@ -9,7 +9,8 @@ inactive="inactive">`, `inactive: family inet {` is `<inet inactive=…>`,
 `protect: route 0.0.0.0/0 next-hop 10.0.0.1;` is `<route protect=…>`, and
 `deactivate … family` and `protect … family` are rejected. Layout is free
 (ARCHITECTURE.md section 1); what is asserted here is meaning.
-Spec: openspec/changes/meta-tag-placement/specs/conversion/meta-tags/spec.md.
+Specs: openspec/changes/meta-tag-placement/specs/conversion/curly-meta-tags/ and
+tag-acceptance/.
 """
 
 from __future__ import annotations
@@ -254,3 +255,77 @@ class TestATagOnFamilyIsReported:
         assert "family inet {" in result.output
         notes = [d for d in result.diagnostics if d.severity == "note" and "family" in d.message]
         assert len(notes) == 1
+
+
+# A tag on a whole list: set `deactivate system name-server`, JSON
+# `"@name-server"`. Structured output wrote it on the first entry's line,
+# which reads back as that entry's tag (phase-6 review, change B).
+WHOLE_LISTS = {
+    "name-server": (
+        "set system name-server 192.168.0.1\n"
+        "set system name-server 192.168.0.2\n"
+        "deactivate system name-server\n"
+    ),
+    "static route": (
+        "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
+        "set routing-options static route 198.51.100.0/24 discard\n"
+        "protect routing-options static route\n"
+    ),
+    "one entry": "set system name-server 192.168.0.1\ndeactivate system name-server\n",
+    "route-filter, a one-line list": (
+        "set policy-options policy-statement P1 term T1 from "
+        "route-filter 198.51.100.0/24 exact accept\n"
+        "deactivate policy-options policy-statement P1 term T1 from route-filter\n"
+    ),
+}
+
+
+class TestAListTaggedAsAWhole:
+    @pytest.mark.parametrize("shape", list(WHOLE_LISTS))
+    def test_structured_output_keeps_the_tag_on_the_list(self, shape: str) -> None:
+        before = _ir(WHOLE_LISTS[shape], Format.SET)
+        curly = convert_config(
+            WHOLE_LISTS[shape], from_format=Format.SET, to_format=Format.STRUCTURED
+        )
+        assert _ir(curly, Format.STRUCTURED) == before
+
+
+class TestOnlyTagsCountAsTags:
+    def test_metadata_on_family_is_not_a_tag(self) -> None:
+        doc = json.dumps(
+            {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {
+                                "name": "xe-0/0/0",
+                                "unit": [
+                                    {
+                                        "name": "0",
+                                        "family": {"@": {"junos:group": "G1"}, "inet": {}},
+                                    }
+                                ],
+                            }
+                        ]
+                    }
+                }
+            }
+        )
+        result = convert_config_result(doc, from_format=Format.JSON, to_format=Format.SET)
+        assert not [d for d in result.diagnostics if "placed" in d.render()]
+
+    def test_uneven_tags_on_apply_groups_are_refused(self) -> None:
+        curly = "system {\n    apply-groups G1;\n    inactive: apply-groups G2;\n}\n"
+        with pytest.raises(ValueError, match="apply-groups"):
+            _ir(curly, Format.STRUCTURED)
+
+    def test_a_family_tag_written_twice_is_repeated_once(self) -> None:
+        doc = json.loads(
+            convert_config(
+                FAMILY_TAGGED[Format.JSON], from_format=Format.JSON, to_format=Format.JSON
+            )
+        )
+        unit = doc["configuration"]["interfaces"]["interface"][0]["unit"][0]
+        unit["@family"] = {"inactive": True}
+        out = convert_config(json.dumps(doc), from_format=Format.JSON, to_format=Format.SET)
+        assert out.splitlines().count("deactivate interfaces xe-0/0/0 unit 0 family") == 1

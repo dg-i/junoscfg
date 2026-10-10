@@ -399,6 +399,13 @@ def _merge_tokens(
                 _keep_whole(current, tokens, i, tags)
                 return
             val = _parse_value(tokens[i + 1])
+            if curly and lst and current.get(f"@{token}", {}) != _tag_attrs(here):
+                # `apply-groups G1; inactive: apply-groups G2;`: as for a
+                # leaf, a tag on one value is not widened to the others.
+                raise ValueError(
+                    f"Invalid structured input: '{token}' tags some of its values and not "
+                    "others; Junos tags a leaf as a whole"
+                )
             current[token] = lst
             if val not in lst:
                 lst.append(val)

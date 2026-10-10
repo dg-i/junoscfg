@@ -8,7 +8,7 @@
 
 ## Requirements
 
-- `specs/conversion/curly-meta-tags/spec.md` (new): a curly tag marks the node its statement starts; structured output puts a tag first. `specs/conversion/meta-tags/spec.md` (ADDED to change A's capability): a tag on an unkeyed `homogeneous` container is reported; XML keeps `protect`. Split on 2026-10-10 when the challenge fixes took one delta past the 100-line spec cap.
+- `specs/conversion/curly-meta-tags/spec.md` (new): a curly tag marks the node its statement starts; structured output puts a tag first. `specs/conversion/tag-acceptance/spec.md` (new): a tag on an unkeyed `homogeneous` container is reported; XML keeps `protect`. Moved out of change A's `conversion/meta-tags` in phase 6 so that main spec stays under the 100-line cap after both merge. Split on 2026-10-10 when the challenge fixes took one delta past the 100-line spec cap.
 - `specs/conversion/raw-set-input/spec.md` (MODIFIED): the bracket requirement names any command instead of the internal `replace` form; behaviour and tests unchanged.
 - Contradicted requirement: none. `conversion/entry-keys` "a statement the reader cannot complete is kept whole" stands: a tag on a kept-whole statement marks the kept key.
 
@@ -35,7 +35,7 @@ None measurable: the curly reader drops one text round trip (curly → set text 
 
 ## Outstanding decisions
 
-None blocking. `tunnel encapsulation` is the rule's one member without device evidence (`private_test_data/deactivate7.in`, first block); it is a merge condition: if the device accepts a tag there, the rule narrows to what the device refuses.
+None blocking. The rule follows the schema flag, so it covers `family` (evidenced) and `tunnel encapsulation` (not evidenced): `passes_tag_to_child` refuses and passes on a tag on both. That is a merge condition: `private_test_data/deactivate7.in`, first block; if the device accepts a tag on `encapsulation`, the rule narrows to what the device refuses. Phase 6 also needs a device answer for the whole-list layout on a list the device does not print as a block (`deactivate routing-options static route`).
 
 ## Execution and checkpoint
 
@@ -49,4 +49,5 @@ None blocking. `tunnel encapsulation` is the rule's one member without device ev
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established on `change/meta-tag-placement` after 515b180.
+- 2026-10-10, phase 6 (fresh Reviewer, `review.md`): accepted corrections for findings 1–3 and the Low items; the "family only" sentence above said less than the code does and is corrected. Rerun after the corrections: focused tests, whole suite, oracle, fast set, full check.
 - 2026-10-10, phase 5: one `--regen-schema`. The structure tree gains `h`; the set grammar is identical once its variant-name hashes are masked (9,779 lines either way, no difference): `grammar_generator` hashes each node's sorted flags into variant names, and `homogeneous` is now among them, so set validation is unchanged. Three `tests/test_config_store.py` tests pushed a path named `family` and expected merging from the name; they now call `mark_merged`, the declared replacement for `COMPOUND_KEYWORDS`, with their assertions unchanged, and three tests are added beside them. My own `TestHomogeneousFlag` test indexed the tree under `configuration`, whose root it is; the path is corrected, the assertion unchanged. Device oracle (`private_test_data/anon/`): structured input now gives the IR set input gives (562 differing lines against device JSON for both, down from 588), set output from structured input equals set output from set input, no new difference in any direction; structured output read back keeps the IR for set and structured sources. JSON and XML sources do not round-trip through structured output on master either: JSON input keeps numbers, XML input keeps 230 single leaf-list values scalar (follow-ups). No acceptance criterion changed.

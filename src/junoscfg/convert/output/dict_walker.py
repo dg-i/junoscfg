@@ -15,6 +15,7 @@ from junoscfg.display import (
     entry_keys,
     format_value,
     get_transparent_child,
+    holds_tag,
     is_flat_dict,
     is_freeform_nk,
     is_positional_key,
@@ -56,6 +57,13 @@ class WalkOutput(ABC):
     @abstractmethod
     def emit_delete(self, hierarchy: list[str]) -> None:
         """Emit a delete operation."""
+
+    def keep_block(self, hierarchy: list[str]) -> None:  # noqa: B027
+        """A node structured output must write as a block, never one line.
+
+        A list whose tag is on the list itself is written as its keyword's
+        block; joined to one entry's line, the tag would read as that entry's.
+        """
 
     def mark_merged(self, hierarchy: list[str]) -> None:  # noqa: B027
         """A container the schema says is written merged with each child.
@@ -316,6 +324,18 @@ class DictWalker:
                         list_schema = tc_child
 
                 is_tc = tc_child_name is not None
+                # A tag on the whole list: structured output writes it as the
+                # device writes `inactive: routing-instance { R1 {…} }`, the
+                # keyword on its own tagged line and the entries in its block,
+                # which reads back as a tag on the list, not on its first entry.
+                wrapped = bool(
+                    self._is_structured_mode()
+                    and not is_tc
+                    and holds_tag(obj.get(f"@{key}"))
+                    and any(isinstance(entry, dict) for entry in value)
+                )
+                if wrapped:
+                    output.keep_block(path + [set_key])
                 for entry in value:
                     if isinstance(entry, dict):
                         if is_transparent_list_key(child_schema, key):
@@ -331,7 +351,7 @@ class DictWalker:
                                 set_key,
                                 entry,
                                 path,
-                                split_key_name=is_tc,
+                                split_key_name=is_tc or wrapped,
                                 schema_node=list_schema,
                             )
                     elif is_transparent_list_key(child_schema, key):
@@ -393,8 +413,10 @@ class DictWalker:
             # beside the container, as `@family`, and that is repeated too.
             held = obj.get(key)
             if (
-                key in obj and not isinstance(held, bool | dict) and held is not None
-            ) or not isinstance(attr, dict):
+                (key in obj and not isinstance(held, bool | dict) and held is not None)
+                or (isinstance(held, dict) and holds_tag(held.get("@")))
+                or not isinstance(attr, dict)
+            ):
                 continue
             attrs = self._read_leaf_attrs(attr)
             if attrs:
@@ -433,6 +455,7 @@ class DictWalker:
                 and not skip_key
                 and schema_node is not None
                 and schema_node.get("o")
+                and not split_key_name
                 and not _holds_a_tag(remaining)
             )
 
@@ -567,10 +590,10 @@ class DictWalker:
 
 
 def _holds_a_tag(value: Any) -> bool:
-    """Whether a tag sits anywhere in *value*: an ``@`` or ``@key`` with content."""
+    """Whether a tag sits anywhere in *value*, on an ``@`` or an ``@key``."""
     if isinstance(value, dict):
         return any(
-            (key.startswith("@") and bool(item)) or _holds_a_tag(item)
+            (key.startswith("@") and holds_tag(item)) or _holds_a_tag(item)
             for key, item in value.items()
         )
     if isinstance(value, list):

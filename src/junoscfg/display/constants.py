@@ -135,6 +135,13 @@ def is_flat_dict(schema_node: dict[str, Any] | None, key: str | None = None) -> 
     return key is not None and key in _FLAT_DICT_ELEMENTS
 
 
+def holds_tag(attrs: Any) -> bool:
+    """Whether an ``@`` dict holds a Junos tag, not only metadata such as `junos:group`."""
+    return isinstance(attrs, dict) and any(
+        key in attrs for key in ("inactive", "protect", "operation", "active")
+    )
+
+
 def passes_tag_to_child(schema_node: dict[str, Any] | None) -> bool:
     """Whether a tag on this node belongs to the child that follows it.
 
@@ -147,6 +154,8 @@ def passes_tag_to_child(schema_node: dict[str, Any] | None) -> bool:
     `homogeneous` lists take tags as any entry does.
     """
     if not schema_node or not schema_node.get("h") or schema_node.get("L"):
+        return False
+    if schema_node.get("l") or not schema_node.get("c"):
         return False
     return "k" not in schema_node and "name" not in schema_node.get("c", {})
 

@@ -17,6 +17,7 @@ from junoscfg.display import (
     entry_key_names,
     entry_keys,
     enum_is_fragment,
+    holds_tag,
     passes_tag_to_child,
     statement_name_spellings,
     strip_type_prefix,
@@ -332,7 +333,9 @@ class FieldValidator:
                     path.pop()
                 # Container — recurse
                 elif isinstance(value, dict):
-                    if passes_tag_to_child(child_schema) and (value.get("@") or obj.get(f"@{key}")):
+                    if passes_tag_to_child(child_schema) and (
+                        holds_tag(value.get("@")) or holds_tag(obj.get(f"@{key}"))
+                    ):
                         # `deactivate … family`: the device rejects it
                         # ("missing argument"); it tags the family inside.
                         entry = self._entry_label(schema_node, obj)

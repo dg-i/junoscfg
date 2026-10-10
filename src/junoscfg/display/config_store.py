@@ -159,6 +159,9 @@ class ConfigStore:
         # Written merged with each child, `family inet {`: the writer sets it
         # from the schema's `homogeneous` flag (`mark_merged`).
         self.merged = False
+        # Written as a block even with one child: a list tagged as a whole
+        # (`keep_block`).
+        self.block = False
 
     def push(self, path_str: str) -> None:
         """Add a newline-separated hierarchical path to the tree."""
@@ -180,6 +183,10 @@ class ConfigStore:
     def mark_protected(self, path_str: str) -> None:
         """Mark a path as protected."""
         self._set(path_str, "protected")
+
+    def keep_block(self, path_str: str) -> None:
+        """Mark a path as written as a block, never collapsed onto one line."""
+        self._set(path_str, "block")
 
     def mark_merged(self, path_str: str) -> None:
         """Mark a path as written merged with each child (`family inet {`)."""
@@ -284,7 +291,7 @@ class ConfigStore:
         transparent entries (contain uppercase, digits, or special
         characters like ``ge-0/0/0``) always use block form.
         """
-        if len(node._children) != 1:
+        if len(node._children) != 1 or node.block:
             return False
         child = next(iter(node._children.values()))
         if not child.empty() or child.tagged():
@@ -368,6 +375,7 @@ class ConfigStore:
         last.replaced = node.replaced
         last.protected = node.protected
         last.merged = node.merged
+        last.block = node.block
         current._children[path_tokens[-1]] = last
         return result
 
@@ -386,6 +394,7 @@ class ConfigStore:
         clone.replaced = self.replaced
         clone.protected = self.protected
         clone.merged = self.merged
+        clone.block = self.block
         for key, child in self._children.items():
             clone._children[key] = child._reroot_at(depth + 1)
         return clone

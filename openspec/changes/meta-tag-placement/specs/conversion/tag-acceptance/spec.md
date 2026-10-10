@@ -1,3 +1,9 @@
+## Purpose
+
+Which Junos tags each input carries into the IR, and which it refuses: XML
+keeps `protect` as it keeps `inactive`, and a tag Junos never accepts -- on
+`family` itself -- is reported from every input instead of passed on.
+
 ## ADDED Requirements
 
 ### Requirement: A tag on an unkeyed homogeneous container is reported
@@ -6,9 +12,11 @@ WHEN any input tags an unkeyed `homogeneous` container itself
 (`deactivate … family`, `protect … family`, `<family inactive="inactive">`,
 `"family": {"@": {"inactive": true}}`) THEN field validation SHALL report it
 `UNPLACED`, set output SHALL repeat it as written, and structured output SHALL
-drop it and say so on the diagnostic sink, because the device rejects it
+drop it and say so on the diagnostic sink, because the device rejects it. Only a
+tag counts (`inactive`, `protect`, `operation`, `active`); metadata such as
+`junos:group` on the container is not one. The device rejects it
 (`missing argument`, `private_test_data/deactivate4.txt` and `deactivate6.txt`).
-Tests: `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_every_input_reports_it`, `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_repeats_it`, `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_structured_output_drops_it_with_a_note`, `tests/test_meta_tags_challenge.py::test_set_output_repeats_a_sibling_family_tag_from_json`
+Tests: `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_every_input_reports_it`, `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_repeats_it`, `tests/test_meta_tags.py::TestATagOnFamilyIsReported::test_structured_output_drops_it_with_a_note`, `tests/test_meta_tags_challenge.py::test_set_output_repeats_a_sibling_family_tag_from_json`, `tests/test_meta_tags.py::TestOnlyTagsCountAsTags::test_metadata_on_family_is_not_a_tag`, `tests/test_meta_tags.py::TestOnlyTagsCountAsTags::test_a_family_tag_written_twice_is_repeated_once`
 
 #### Scenario: Every input
 

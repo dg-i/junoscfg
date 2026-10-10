@@ -20,6 +20,7 @@ class StructuredWalkOutput(WalkOutput):
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
         self._merged: list[str] = []
+        self._blocks: list[str] = []
         self._diagnostic_sink = diagnostic_sink
 
     def emit(self, hierarchy: list[str]) -> None:
@@ -54,6 +55,10 @@ class StructuredWalkOutput(WalkOutput):
         # with an aggregated note in finalize()
         self._dropped_deletes.append(" ".join(hierarchy))
 
+    def keep_block(self, hierarchy: list[str]) -> None:
+        """Defer writing *hierarchy* as a block until :meth:`finalize`."""
+        self._blocks.append(" ".join(hierarchy))
+
     def mark_merged(self, hierarchy: list[str]) -> None:
         """Defer writing *hierarchy* merged with each child until :meth:`finalize`."""
         self._merged.append(" ".join(hierarchy))
@@ -63,6 +68,8 @@ class StructuredWalkOutput(WalkOutput):
         merged = set(self._merged)
         for path_str in self._merged:
             self.config.mark_merged(path_str)
+        for path_str in self._blocks:
+            self.config.keep_block(path_str)
         dropped_tags: list[str] = []
         for op, hierarchy in self._deferred:
             path_str = " ".join(hierarchy)

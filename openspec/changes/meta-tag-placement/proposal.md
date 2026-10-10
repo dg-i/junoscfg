@@ -29,11 +29,11 @@ Evidence: `private_test_data/deactivate{,2,3,4,6}.txt`; layout is cosmetic
 
 - `conversion/curly-meta-tags`: where a tag lands reading and writing curly
   configuration.
+- `conversion/tag-acceptance`: XML keeps `protect`; a tag on `family` is
+  reported from every input.
 
 ### Modified Capabilities
 
-- `conversion/meta-tags`: the `family` refusal and XML `protect` (ADDED to
-  change A's capability).
 - `conversion/raw-set-input`: the bracket requirement no longer names the
   internal `replace` form.
 

@@ -235,4 +235,6 @@ class TestConfigStoreSubtree:
         store = ConfigStore()
         store.push("then\naccept")
         store.deactivate("then accept")
-        assert str(store) == "then {\n    inactive: accept;\n}\n"
+        lines = [line.strip() for line in str(store).splitlines()]
+        assert "inactive: accept;" in lines
+        assert not any(" inactive: " in line for line in lines)

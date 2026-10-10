@@ -498,7 +498,8 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
     # inactive=…>`; `inactive: family inet {` is `<inet inactive=…>`;
     # `protect: route … next-hop …;` is `<route protect=…>`). Curly input
     # tagged the last token, and XML input dropped `protect`. Spec:
-    # openspec/changes/meta-tag-placement/specs/conversion/meta-tags/spec.md.
+    # openspec/changes/meta-tag-placement/specs/conversion/ (curly-meta-tags,
+    # tag-acceptance).
 
     @staticmethod
     def _configurations(inputs: dict[str, str]) -> dict[str, dict]:

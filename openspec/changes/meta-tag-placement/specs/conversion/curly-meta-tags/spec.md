@@ -19,11 +19,11 @@ its own, `inactive: family {` tags `family` itself, which is reported). Where a
 list keyword stands alone on its line and its entries follow as lines of the
 block (`source-prefix-list { PL1; }`), a tag on the keyword marks the whole
 list and a tag on an entry's line marks that entry. A tag that would mark only
-some values of a leaf, or one data line of `apply-macro`, is not widened: the
-leaf is refused with `ValueError`, as XML input refuses it, and the macro line
-is kept whole and reported. The schema walk that reads set input SHALL apply
+some values of a leaf or of `apply-groups`, or one data line of `apply-macro`,
+is not widened: the leaf is refused with `ValueError`, as XML input refuses it,
+and the macro line is kept whole and reported. The schema walk that reads set input SHALL apply
 this rule; no curly statement is flattened to set text first.
-Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_a_one_line_tagged_route_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_family_inet_reaches_one_ir`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_every_tag_on_a_one_line_entry`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_a_transparent_list_entry`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_an_entry_keyed_by_two_fields`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_set_input_still_marks_the_last_node`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_a_tag_on_a_bare_list_keyword_marks_the_list`, `tests/test_meta_tags_challenge.py::test_a_tag_on_an_entry_inside_its_list_block`, `tests/test_meta_tags_challenge.py::test_a_per_value_tag_in_curly_is_refused_as_in_xml`, `tests/test_meta_tags_challenge.py::test_a_tag_on_apply_macro_data_does_not_tag_the_macro`, `tests/test_meta_tags_challenge.py::test_stacked_curly_tags_mark_one_entry_in_either_order`
+Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_a_one_line_tagged_route_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_family_inet_reaches_one_ir`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_every_tag_on_a_one_line_entry`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_a_transparent_list_entry`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_an_entry_keyed_by_two_fields`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_set_input_still_marks_the_last_node`, `tests/test_meta_tags.py::TestACurlyTagMarksTheStatementStart::test_a_tag_on_a_bare_list_keyword_marks_the_list`, `tests/test_meta_tags_challenge.py::test_a_tag_on_an_entry_inside_its_list_block`, `tests/test_meta_tags_challenge.py::test_a_per_value_tag_in_curly_is_refused_as_in_xml`, `tests/test_meta_tags.py::TestOnlyTagsCountAsTags::test_uneven_tags_on_apply_groups_are_refused`, `tests/test_meta_tags_challenge.py::test_a_tag_on_apply_macro_data_does_not_tag_the_macro`, `tests/test_meta_tags_challenge.py::test_stacked_curly_tags_mark_one_entry_in_either_order`
 
 #### Scenario: One-line entry
 
@@ -64,7 +64,10 @@ unkeyed `homogeneous` container is written merged with each child
 (`family inet {`), decided by the schema's `homogeneous` flag rather than by a
 list of names. Layout is otherwise free (`ARCHITECTURE.md` §1).
 A tagged leaf-list keeps its tag on the bracket line (`inactive: members [ … ];`).
-Tests: `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_an_inactive_family_inet`, `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_a_tagged_child_is_not_joined`, `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_round_trips_keep_the_ir`, `tests/test_meta_tags_challenge.py::test_a_tagged_leaf_list_survives_structured_output`, `tests/test_meta_tags_challenge.py::test_more_round_trips_keep_the_ir`, `tests/test_artifact_builder.py::TestHomogeneousFlag::test_the_tree_carries_it`
+A list tagged as a whole is written as its keyword's tagged block with the
+entries inside, never collapsed (`inactive: name-server { 192.168.0.1; }`), as
+the device writes `inactive: routing-instance { R1 {…} }`.
+Tests: `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_an_inactive_family_inet`, `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_a_tagged_child_is_not_joined`, `tests/test_meta_tags.py::TestStructuredOutputPutsATagFirst::test_round_trips_keep_the_ir`, `tests/test_meta_tags_challenge.py::test_a_tagged_leaf_list_survives_structured_output`, `tests/test_meta_tags_challenge.py::test_more_round_trips_keep_the_ir`, `tests/test_meta_tags.py::TestAListTaggedAsAWhole::test_structured_output_keeps_the_tag_on_the_list`, `tests/test_artifact_builder.py::TestHomogeneousFlag::test_the_tree_carries_it`
 
 #### Scenario: Tag inside a merged line
 
