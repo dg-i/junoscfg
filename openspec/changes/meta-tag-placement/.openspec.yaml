@@ -3,3 +3,28 @@ created: 2026-10-10
 type: bug
 zone: conversion
 assurance: balanced
+domains: [schema-pipeline, conversion, validation]
+removes:
+  - "the `replace <path>` pseudo command of set input and the `emit_replace` parameter of `SetConverter`, whose only caller was the structured-input bridge"
+  - "`ConfigStore.COMPOUND_KEYWORDS`, the hard-coded `family`, replaced by the XSD's `homogeneous` flag"
+  - "the curly reader's flattening of a statement to set text before the schema walk, which put a tag on the last node of a one-line statement"
+declared-break:
+  consumer:
+    why: >-
+      The surface file changes only `__version__`; no name or signature changes.
+      Behind it, convert_config from structured input marks the node a tagged
+      statement starts (a one-line `inactive: route … next-hop …;` deactivates
+      the route where it deactivated `next-hop`), structured output writes a
+      tag at the head of its line (`inactive: family inet {` where it wrote
+      `family inactive: inet {`), a tag on `family` itself is reported
+      UNPLACED by field validation and dropped from structured output with a
+      note, and XML input keeps `protect`. The owner classes these as bug
+      fixes, patch bump (see change A's C7 for the version question).
+    migration: >-
+      None for a caller that wants the device's meaning. A caller that relied
+      on the old placement re-reads its tagged one-line statements.
+  cli:
+    why: >-
+      `junoscfg convert` gives the same corrected results as convert_config,
+      and prints one more field-validation diagnostic for a tag on `family`.
+    migration: None; exit codes are unchanged.
