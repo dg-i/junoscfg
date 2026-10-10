@@ -18,8 +18,9 @@ import os
 import subprocess
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-CACHE_DIR = PROJECT_ROOT / "private_test_data" / "jvd"
+from tests.support.paths import PRIVATE_DATA
+
+CACHE_DIR = PRIVATE_DATA / "jvd"
 PATH_ENV = "JUNOSCFG_JVD_PATH"
 CLONE_URL = "https://github.com/Juniper/jvd.git"
 

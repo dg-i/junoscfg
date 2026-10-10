@@ -9,6 +9,7 @@ import pytest
 from junoscfg.display import find_artifact, read_artifact_text
 from junoscfg.validate.grammar_generator import generate_lark_grammar
 from junoscfg.validate.schema_node import Combinator, SchemaNode
+from tests.support.paths import TEST_DATA
 
 
 def _make_tree() -> SchemaNode:
@@ -817,7 +818,7 @@ _EVENT = "set event-options policy SAMPLE-EVENT-POLICY attributes-match"
 
 @pytest.fixture(scope="module")
 def keyed_artifacts(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    from tests.keyed_entries import KEYED_XSD, build_artifacts
+    from tests.support.keyed_entries import KEYED_XSD, build_artifacts
 
     return build_artifacts(KEYED_XSD, tmp_path_factory.mktemp("keyed"))
 
@@ -956,11 +957,11 @@ class TestKeyedEntryTakesExactlyItsKeys:
         `universal_statement`, where `apply-macro` takes one to three values,
         as the device does (phase-6 fix pass, device probe, vMX 23.2R2-S7.5).
         """
-        from tests.keyed_entries import NAME_KEYED_XSD, build_artifacts
+        from tests.support.keyed_entries import NAME_KEYED_XSD, build_artifacts
 
         directory = build_artifacts(NAME_KEYED_XSD, tmp_path)
         grammar = read_artifact_text(find_artifact(directory, "junos-set.lark"))
-        pinned = Path(__file__).resolve().parent / "data" / "name-keyed.lark"
+        pinned = TEST_DATA / "name-keyed.lark"
         # The generator ends with a blank line; the file keeps one newline,
         # as the end-of-file hook wants, so the comparison adds the other.
         assert grammar == pinned.read_text(encoding="utf-8") + "\n"

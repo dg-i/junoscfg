@@ -14,7 +14,7 @@ of the node in declared order, and SHALL record as the node's key fields, in
 declared order, each identifier element and each choice whose every element is
 an identifier (`<flag>identifier</flag>` or `<identifier/>`), such a choice as
 one field whose alternatives are its elements. Any `maxOccurs` but 1 is a list.
-Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_one_identifier_other_than_name`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_name_is_a_key_child`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_second_choice_is_kept`, `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_an_identifier_choice_is_one_key_field`
+Tests: `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_two_identifiers_beside_a_comment_only_choice`, `tests/unit/validate/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list`, `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_one_identifier_other_than_name`, `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_name_is_a_key_child`, `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_second_choice_is_kept`, `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_an_identifier_choice_is_one_key_field`
 
 #### Scenario: Two identifiers beside a choice of comments only
 
@@ -49,7 +49,7 @@ parser SHALL record its extension base as anonymization type knowledge and the
 structure tree SHALL preserve it separately from the `tr` field strict field
 validation consumes. JSON/YAML schema generation, field validation and grammar
 generation SHALL not treat that hint as a validation type.
-Tests: `tests/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_simple_content_key_keeps_anonymization_type_only`, `tests/test_field_validator.py::TestIPAddressValidation::test_anonymization_type_does_not_validate_a_template_value`
+Tests: `tests/unit/validate/test_xsd_parser.py::TestEveryDeclaredChildIsKept::test_a_simple_content_key_keeps_anonymization_type_only`, `tests/unit/convert/test_field_validator.py::TestIPAddressValidation::test_anonymization_type_does_not_validate_a_template_value`
 
 #### Scenario: IP prefix key and template value
 
@@ -64,7 +64,7 @@ SHALL keep its children in declared order and carry its key fields as an
 ordered list under `k`, a field of alternatives as a nested list, omitted only
 where the keys are `("name",)`, and SHALL restore both on read; no node SHALL
 carry `fe`.
-Tests: `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered_entry_keys_survive`, `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_declared_child_order_survives`, `tests/test_artifact_builder.py::TestStructureTreeRoundTrip::test_no_node_carries_fe`
+Tests: `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_ordered_entry_keys_survive`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_declared_child_order_survives`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_no_node_carries_fe`
 
 #### Scenario: Round trip
 
@@ -80,7 +80,7 @@ statement inside it names, THEN it SHALL read `entry_keys()` or
 `src/junoscfg/` SHALL read `fe`, `values-only`, a `_v<n>` key, a literal
 `community-name`, `FLAT_ENTRY_ELEMENTS`, `ENTRY_KEY_OVERRIDES` or
 `get_flat_entry_config`, and the last two SHALL be banned imports.
-Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
+Tests: `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
 
 #### Scenario: The helper's answers
 
@@ -102,7 +102,7 @@ THEN `control-as-list-type` SHALL carry the keys `list-type`, `list-name`;
 `list_name` then the match-type choice, actions as children; `then community`
 its action choice then `community-name`; and `o` SHALL stand where the dump
 flags `oneliner`, and on those filter lists (owner decision, phase 5).
-Tests: `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_follows_the_dump`, `tests/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
+Tests: `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_follows_the_dump`, `tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
 
 #### Scenario: The AS-list slots
 

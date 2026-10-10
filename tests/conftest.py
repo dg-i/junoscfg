@@ -12,8 +12,7 @@ from types import SimpleNamespace
 import pytest
 
 from junoscfg.display import find_artifact, read_artifact_text
-
-from . import jvd_data, schema_data
+from tests.support import jvd_data, schema_data
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES_DIR = PROJECT_ROOT / "examples"

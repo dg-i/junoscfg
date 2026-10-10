@@ -58,7 +58,7 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
     Set validation checks *shape*, not values: every leaf accepts any token.
     It also over-rejects. Against the 117 commands in
     `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    105 are accepted; `tests/test_set_corpus.py` lists every rejection and
+    105 are accepted; `tests/corpus/test_set_corpus.py` lists every rejection and
     distinguishes malformed input, intentional exclusions, and accidental
     over-rejection. The remaining accidental cause is:
 

@@ -307,7 +307,7 @@ class TestStructureTreeRoundTrip:
     def _keyed_tree_files(tmp: Path) -> tuple[dict, dict]:
         """The tree the keyed XSD writes, and the tree read back and rewritten."""
         from junoscfg.validate.xsd_parser import parse_xsd
-        from tests.keyed_entries import KEYED_XSD
+        from tests.support.keyed_entries import KEYED_XSD
 
         first = tmp / "first.json"
         second = tmp / "second.json"
@@ -319,7 +319,7 @@ class TestStructureTreeRoundTrip:
         )
 
     def test_ordered_entry_keys_survive(self, tmp_path: Path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         written, rebuilt = self._keyed_tree_files(tmp_path)
         term = ("policy-options", "policy-statement", "term")
@@ -343,7 +343,7 @@ class TestStructureTreeRoundTrip:
         assert rebuilt == written
 
     def test_declared_child_order_survives(self, tmp_path: Path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         written, rebuilt = self._keyed_tree_files(tmp_path)
         term = ("policy-options", "policy-statement", "term")
@@ -365,7 +365,7 @@ class TestStructureTreeRoundTrip:
         rather than passing for want of nodes.
         """
         import junoscfg.validate as validate_pkg
-        from tests.keyed_entries import KEYED_XSD, artifact_json, build_artifacts
+        from tests.support.keyed_entries import KEYED_XSD, artifact_json, build_artifacts
 
         def carriers(tree: dict) -> tuple[int, list[str]]:
             seen = 0

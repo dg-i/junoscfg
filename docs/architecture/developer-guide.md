@@ -679,14 +679,14 @@ figures below were measured on 2026-10-08 with the commands shown:
 | **Device truth** | Automatic | seconds | Runs against capture pairs under `tests/data/captures/` and `private_test_data/captures/`; skipped where there are none |
 
 For a grammar change, run the affected generator nodes or
-`tests/test_grammar_generator.py`, the affected set-validator nodes or
-`tests/test_set_validator.py`, and these integration guards:
+`tests/unit/validate/test_grammar_generator.py`, the affected set-validator nodes or
+`tests/unit/validate/test_set_validator.py`, and these integration guards:
 
 ```bash
 uv run pytest \
-  tests/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones \
-  tests/test_cli_validate.py::TestCliValidation::test_validate_set_with_multiple_siblings \
-  tests/test_grammar_generator.py::TestBundledGrammarIsReproducible::test_bundled_grammar_matches_its_structure_tree \
+  tests/corpus/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones \
+  tests/unit/cli/test_cli_validate.py::TestCliValidation::test_validate_set_with_multiple_siblings \
+  tests/unit/validate/test_grammar_generator.py::TestBundledGrammarIsReproducible::test_bundled_grammar_matches_its_structure_tree \
   -q
 ```
 
@@ -706,7 +706,7 @@ uv run pytest tests/ -q --jvd                        # clones into private_test_
 JUNOSCFG_JVD_PATH=~/src/jvd uv run pytest -q --jvd   # reuse a clone you have
 ```
 
-`tests/test_jvd_corpus.py` asserts thresholds rather than exact counts, because
+`tests/corpus/test_jvd_corpus.py` asserts thresholds rather than exact counts, because
 the corpus is upstream and will change. It also carries one guard per defect
 the corpus found, each taking its example from the corpus itself.
 
@@ -717,7 +717,7 @@ same subtree as the device rendered it through `| display json`. The device
 is the oracle and no schema is involved in the judging, so a difference is
 junoscfg's or the artifacts', never a release gap read into the data. It is
 what showed the 24.4R0 artifacts to be defective: every `hop-limit` came back
-as a fused key. `tests/test_device_truth.py` re-roots the fragment along its
+as a fused key. `tests/corpus/test_device_truth.py` re-roots the fragment along its
 path, converts it, and compares the set of JSON paths, `@` attributes aside.
 A pair is one operator's configuration: it sits under the gitignored
 `private_test_data/captures/` until its owner moves it to
@@ -738,7 +738,7 @@ A pair is one operator's configuration: it sits under the gitignored
 Before review of a grammar or field-validator change, beside the one full
 checkpoint:
 
-1. `uv run pytest --jvd tests/test_jvd_corpus.py -q`, which includes
+1. `uv run pytest --jvd tests/corpus/test_jvd_corpus.py -q`, which includes
    `TestFieldWarningBudget`: the full check does not run it, and a change that
    floods valid configuration with field warnings fails only here.
 2. The corpus comparison against the frozen master baseline, when the change
@@ -758,11 +758,11 @@ checkpoint alone, and the change record says so.
 
 | Paths touched | While editing | Once before review, beside the full checkpoint | The change record carries |
 |---|---|---|---|
-| XSD parser, schema model, fixes or artifact builder: `src/junoscfg/validate/xsd_extractor.py`, `xsd_parser.py`, `xsd_fixes.py`, `schema_node.py`, `artifact_builder.py`, `schema_generator.py`, `grammar_generator.py` | the affected nodes of `tests/test_xsd_parser.py`, `test_xsd_fixes.py`, `test_artifact_builder.py`, `test_schema_generator.py` and `test_grammar_generator.py`; while the generator still moves, regenerate in a throwaway `git worktree` and discard it | `uv run pytest tests/ -q --regen-schema` once, after the generator settles; `uv run pytest --schema tests/test_schema_data.py -q` once, which parametrises over every dump under gitignored `private_test_data/schemas/`; reproducibility: a second `--regen-schema` on the committed tree leaves `git diff --stat -- src/junoscfg/validate/data` empty; `uv run pytest tests/test_device_truth.py -q` wherever capture pairs exist | the regeneration count and the reason for any run beyond the one official regeneration; the schema-tier and device-truth results |
-| Set reader, grammar or field validator: `src/junoscfg/convert/input/set_input.py`, `src/junoscfg/input.py` (the lexical boundary), the grammar rules in `grammar_generator.py`, the shipped grammar `src/junoscfg/validate/data/junos-set.lark.gz` and its runtime `src/junoscfg/validate/set_validator.py`, `src/junoscfg/convert/field_validator.py` | the affected nodes of `tests/test_set_input.py`, `test_set_validator.py` and `test_field_validator.py`, and the three grammar guards listed above | items 1 and 2 above: the JVD corpus with `TestFieldWarningBudget`, and the comparison against the frozen master baseline when the change carries one | the warning counts, and every set-output difference explained |
-| Cross-format IR, a reader or a writer: `src/junoscfg/convert/input/`, `convert/output/`, `display/to_yaml.py`, `display/config_store.py` | `tests/test_convert_consistency.py`, `test_convert_roundtrip.py` and the affected `test_characterization.py` classes | public-door semantic parity and round trip: `uv run pytest tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr tests/test_convert_consistency.py tests/test_device_truth.py -q`; every door gives one IR and every pair round-trips | which doors the change touched and the parity result |
-| Anonymization, the red zone: `src/junoscfg/anonymize/` | `uv run pytest tests/test_anonymize -q` | the same suite, read for three probes by name: syntax values pass unchanged (`tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves`), the mapping is stable for the same input and the same salt (`tests/test_anonymize/test_ip_rule.py::TestIpRuleTransform::test_deterministic_with_same_salt`), and revert with the mapping restores the original (`tests/test_anonymize/test_integration.py::TestPipelineDumpMapIntegration::test_revert_map_restores_originals`); plus the fresh-agent review rule in [Solo review](../how-to/solo-review.md) | the three probe results |
-| Entry lookup or a schema-wide walk: `src/junoscfg/display/constants.py` (`entry_keys`), `display/config_store.py`, `convert/output/dict_walker.py`, `audit/walker.py`, `anonymize/walker.py` | the affected nodes | no committed timing guard covers these; the only committed bound, `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_compact_siblings_keep_practical_parse_time`, times the grammar. Measure and explain: time the same large input (the largest configuration you hold under gitignored `private_test_data/`, and a synthetic list of tens of thousands of entries) at the base commit and at the head on the same machine, and explain the difference; the identifier-key-fields change record (its tasks 4.4 and 5.6) shows the shape. It is a record, never a gate over correctness: `ARCHITECTURE.md` section 1 ranks latency last | both timings, the input's size, and the explanation |
+| XSD parser, schema model, fixes or artifact builder: `src/junoscfg/validate/xsd_extractor.py`, `xsd_parser.py`, `xsd_fixes.py`, `schema_node.py`, `artifact_builder.py`, `schema_generator.py`, `grammar_generator.py` | the affected nodes of `tests/unit/validate/test_xsd_parser.py`, `test_xsd_fixes.py`, `test_artifact_builder.py`, `test_schema_generator.py` and `test_grammar_generator.py`; while the generator still moves, regenerate in a throwaway `git worktree` and discard it | `uv run pytest tests/ -q --regen-schema` once, after the generator settles; `uv run pytest --schema tests/corpus/test_schema_data.py -q` once, which parametrises over every dump under gitignored `private_test_data/schemas/`; reproducibility: a second `--regen-schema` on the committed tree leaves `git diff --stat -- src/junoscfg/validate/data` empty; `uv run pytest tests/corpus/test_device_truth.py -q` wherever capture pairs exist | the regeneration count and the reason for any run beyond the one official regeneration; the schema-tier and device-truth results |
+| Set reader, grammar or field validator: `src/junoscfg/convert/input/set_input.py`, `src/junoscfg/input.py` (the lexical boundary), the grammar rules in `grammar_generator.py`, the shipped grammar `src/junoscfg/validate/data/junos-set.lark.gz` and its runtime `src/junoscfg/validate/set_validator.py`, `src/junoscfg/convert/field_validator.py` | the affected nodes of `tests/unit/convert/test_set_input.py`, `test_set_validator.py` and `test_field_validator.py`, and the three grammar guards listed above | items 1 and 2 above: the JVD corpus with `TestFieldWarningBudget`, and the comparison against the frozen master baseline when the change carries one | the warning counts, and every set-output difference explained |
+| Cross-format IR, a reader or a writer: `src/junoscfg/convert/input/`, `convert/output/`, `display/to_yaml.py`, `display/config_store.py` | `tests/contract/test_convert_consistency.py`, `test_convert_roundtrip.py` and the affected `test_characterization.py` classes | public-door semantic parity and round trip: `uv run pytest tests/contract/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr tests/contract/test_convert_consistency.py tests/corpus/test_device_truth.py -q`; every door gives one IR and every pair round-trips | which doors the change touched and the parity result |
+| Anonymization, the red zone: `src/junoscfg/anonymize/` | `uv run pytest tests/unit/anonymize -q` | the same suite, read for three probes by name: syntax values pass unchanged (`tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves`), the mapping is stable for the same input and the same salt (`tests/unit/anonymize/test_ip_rule.py::TestIpRuleTransform::test_deterministic_with_same_salt`), and revert with the mapping restores the original (`tests/unit/anonymize/test_integration.py::TestPipelineDumpMapIntegration::test_revert_map_restores_originals`); plus the fresh-agent review rule in [Solo review](../how-to/solo-review.md) | the three probe results |
+| Entry lookup or a schema-wide walk: `src/junoscfg/display/constants.py` (`entry_keys`), `display/config_store.py`, `convert/output/dict_walker.py`, `audit/walker.py`, `anonymize/walker.py` | the affected nodes | no committed timing guard covers these; the only committed bound, `tests/unit/validate/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_compact_siblings_keep_practical_parse_time`, times the grammar. Measure and explain: time the same large input (the largest configuration you hold under gitignored `private_test_data/`, and a synthetic list of tens of thousands of entries) at the base commit and at the head on the same machine, and explain the difference; the identifier-key-fields change record (its tasks 4.4 and 5.6) shows the shape. It is a record, never a gate over correctness: `ARCHITECTURE.md` section 1 ranks latency last | both timings, the input's size, and the explanation |
 
 `ARCHITECTURE.md` ranks the product's latency last; that ranking does not waive
 economy in the workflow. Run focused tests while editing; regenerate in scratch

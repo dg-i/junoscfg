@@ -13,9 +13,14 @@ names that stop a real XSD compiling.
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+from tests.support.paths import EXAMPLES
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 pytestmark = pytest.mark.schema
 
@@ -147,7 +152,7 @@ class TestConversionAgainstRealArtifacts:
 
         from junoscfg import Format, convert_config
 
-        source = Path("examples/router1.conf").read_text()
+        source = (EXAMPLES / "router1.conf").read_text()
         as_set = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.SET)
         back = convert_config(as_set, from_format=Format.SET, to_format=Format.STRUCTURED)
 
@@ -163,7 +168,7 @@ class TestConversionAgainstRealArtifacts:
 
         from junoscfg import Format, convert_config
 
-        source = Path("examples/router1.conf").read_text()
+        source = (EXAMPLES / "router1.conf").read_text()
         via_json = convert_config(
             convert_config(source, from_format=Format.STRUCTURED, to_format=Format.JSON),
             from_format=Format.JSON,

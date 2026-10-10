@@ -18,7 +18,7 @@ device JSON input give for the same statement.
 An empty tagged element is an empty container, `{"@": {...}}`, only where the
 tree names a container, as set and structured input give; set and structured
 output keep a tag on a flag spelled by its value (`disable`).
-Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/test_xml_inactive_leaf_challenge.py::test_an_empty_inactive_container_matches_set_input`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_disable_flag_keeps_its_tag`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_flag_under_a_container_keeps_its_tag`, `tests/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
+Tests: `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/unit/display/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/unit/convert/test_xml_inactive_leaf_challenge.py::test_an_empty_inactive_container_matches_set_input`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_disable_flag_keeps_its_tag`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_flag_under_a_container_keeps_its_tag`, `tests/unit/cli/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
 
 #### Scenario: Single inactive leaf
 
@@ -73,7 +73,7 @@ sibling `@<name>` key. WHEN only some of its values carry it THEN the system
 SHALL refuse the input with `ValueError` naming the element, because Junos has
 no per-value tag (the CLI rejects `deactivate policy-options community C1
 members 64496:2`) and widening the tag would deactivate active values.
-Tests: `tests/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_leaf_list_takes_one_marker`, `tests/test_to_yaml.py::TestInactiveLeaf::test_a_partly_inactive_leaf_list_is_refused`
+Tests: `tests/unit/display/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_leaf_list_takes_one_marker`, `tests/unit/display/test_to_yaml.py::TestInactiveLeaf::test_a_partly_inactive_leaf_list_is_refused`
 
 #### Scenario: Every value inactive
 

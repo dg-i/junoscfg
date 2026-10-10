@@ -12,11 +12,11 @@ validator import an `xsd_*` module.
 
 - Schema corrections live in `xsd_fixes.py` as Python, never edited into the
   generated artifacts, so they survive regeneration — enforced by
-  `tests/test_xsd_fixes.py::TestFixRegistry::test_all_fixes_have_metadata`.
+  `tests/unit/validate/test_xsd_fixes.py::TestFixRegistry::test_all_fixes_have_metadata`.
 - `ArtifactBuilder` and `JunosValidator` resolve lazily through `__getattr__`:
   importing this package must not pull lxml or the schema artifacts.
 - Any `maxOccurs` other than 1 makes a list, however the dump bounds it
-  — enforced by `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list` and `tests/test_xsd_parser.py::TestCardinality::test_unbounded_is_list`.
+  — enforced by `tests/unit/validate/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list` and `tests/unit/validate/test_xsd_parser.py::TestCardinality::test_unbounded_is_list`.
 
 ## Precedent
 

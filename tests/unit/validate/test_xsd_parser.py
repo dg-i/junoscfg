@@ -443,12 +443,12 @@ class TestEveryDeclaredChildIsKept:
 
     @staticmethod
     def _tree(tmp_path) -> dict:
-        from tests.keyed_entries import KEYED_XSD, structure_tree
+        from tests.support.keyed_entries import KEYED_XSD, structure_tree
 
         return structure_tree(KEYED_XSD, tmp_path)
 
     def test_two_identifiers_beside_a_comment_only_choice(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         tree = self._tree(tmp_path)
         for slot in ("as-path-neighbors", "as-path-origins"):
@@ -463,7 +463,7 @@ class TestEveryDeclaredChildIsKept:
                 assert tree["_enums"][list_type["e"]] == ["as-list", "as-list-group"]
 
     def test_one_identifier_other_than_name(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         server = node(self._tree(tmp_path), "system", "ntp", "server")
         assert list(server["c"]) == ["address", "version", "prefer"]
@@ -472,7 +472,7 @@ class TestEveryDeclaredChildIsKept:
         assert _entry_keys(server) == ("address",)
 
     def test_name_is_a_key_child(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         tree = self._tree(tmp_path)
         for path in (
@@ -488,7 +488,7 @@ class TestEveryDeclaredChildIsKept:
             assert _entry_keys(found) == ("name",)
 
     def test_a_second_choice_is_kept(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         tree = self._tree(tmp_path)
         route_filter = node(
@@ -499,7 +499,7 @@ class TestEveryDeclaredChildIsKept:
             assert route_filter["c"][action].get("p") is True
 
     def test_an_identifier_choice_is_one_key_field(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         tree = self._tree(tmp_path)
         term = ("policy-options", "policy-statement", "term")
@@ -518,7 +518,7 @@ class TestEveryDeclaredChildIsKept:
         assert tree["_enums"][match["c"]["condition"]["e"]] == ["equals", "starts-with", "matches"]
 
     def test_a_simple_content_key_keeps_anonymization_type_only(self, tmp_path) -> None:
-        from tests.keyed_entries import node
+        from tests.support.keyed_entries import node
 
         route_address = node(
             self._tree(tmp_path),

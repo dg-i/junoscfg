@@ -12,7 +12,7 @@ WHEN a caller opts into `convert_config_result()` or `pipeline_result()` THEN
 the system SHALL return converted output plus immutable structured diagnostics,
 while `convert_config()` and `pipeline()` continue to return only strings.
 
-Tests: `tests/test_conversion_diagnostics.py::TestStructuredConversionResult::test_opt_in_result_preserves_legacy_return_contracts`
+Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestStructuredConversionResult::test_opt_in_result_preserves_legacy_return_contracts`
 
 #### Scenario: Top-level package door
 
@@ -36,7 +36,7 @@ or structured-output loss notes THEN the system SHALL carry them as diagnostics
 without writing from library code, and the CLI SHALL render their existing text
 to stderr with unchanged exit behavior.
 
-Tests: `tests/test_conversion_diagnostics.py::TestDiagnosticRouting::test_cli_is_only_stderr_renderer`
+Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestDiagnosticRouting::test_cli_is_only_stderr_renderer`
 
 #### Scenario: Library call
 

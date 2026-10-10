@@ -10,13 +10,12 @@ header of `data/set_corpus.txt`.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from junoscfg.validate.set_validator import SetValidator  # noqa: TC001
+from tests.support.paths import TEST_DATA
 
-CORPUS = Path(__file__).parent / "data" / "set_corpus.txt"
+CORPUS = TEST_DATA / "set_corpus.txt"
 
 # Commands the grammar rejects. Keeping the full list, rather than a count,
 # means a new false positive and a fixed one are both visible in the diff.

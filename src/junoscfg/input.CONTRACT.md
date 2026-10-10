@@ -11,7 +11,7 @@ line-continuations so a parser sees clean text; deciding which parser runs is
 ## Invariants
 
 - Comment stripping never removes content inside a quoted value — enforced by
-  `tests/test_input.py::TestRemoveComments::test_preserves_inline_content`.
+  `tests/unit/input/test_input.py::TestRemoveComments::test_preserves_inline_content`.
 
 ## Precedent
 

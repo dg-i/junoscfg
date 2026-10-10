@@ -24,6 +24,7 @@ from junoscfg.anonymize.config import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.display import read_artifact_text
 from junoscfg.validate import SchemaLoadError
+from tests.support.paths import EXAMPLES, PACKAGE_SRC, TEST_DATA
 
 SIMPLE_XML = "<configuration><system><host-name>router1</host-name></system></configuration>"
 
@@ -270,7 +271,7 @@ class TestEdityamlSurfaceTheCollectionDrives:
     def _yaml_config(tmp_path: Path) -> Path:
         from junoscfg import Format, convert_config
 
-        src = Path("examples/router1.conf").read_text()
+        src = (EXAMPLES / "router1.conf").read_text()
         out = tmp_path / "router1.yaml"
         out.write_text(convert_config(src, from_format=Format.STRUCTURED, to_format=Format.YAML))
         return out
@@ -333,8 +334,8 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
 
         from junoscfg import Format, convert_config
 
-        conf = Path("examples/router1.conf").read_text()
-        xml = Path("examples/router1.xml").read_text()
+        conf = (EXAMPLES / "router1.conf").read_text()
+        xml = (EXAMPLES / "router1.xml").read_text()
         return (
             json.loads(convert_config(conf, from_format=Format.STRUCTURED, to_format=Format.JSON)),
             json.loads(convert_config(xml, from_format=Format.XML, to_format=Format.JSON)),
@@ -362,8 +363,8 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
     def test_set_output_still_agrees(self) -> None:
         from junoscfg import Format, convert_config
 
-        conf = Path("examples/router1.conf").read_text()
-        xml = Path("examples/router1.xml").read_text()
+        conf = (EXAMPLES / "router1.conf").read_text()
+        xml = (EXAMPLES / "router1.xml").read_text()
         assert convert_config(
             conf, from_format=Format.STRUCTURED, to_format=Format.SET
         ) == convert_config(xml, from_format=Format.XML, to_format=Format.SET)
@@ -632,7 +633,14 @@ import re  # noqa: E402
 from typing import Any  # noqa: E402
 
 from junoscfg import Format, convert_config  # noqa: E402
-from tests.keyed_entries import as_json, ir, set_ir, term_from, term_then, to_set  # noqa: E402
+from tests.support.keyed_entries import (  # noqa: E402
+    as_json,
+    ir,
+    set_ir,
+    term_from,
+    term_then,
+    to_set,
+)
 
 _LIST = "SAMPLE-AS-LIST"
 _AS_LIST = {"list-type": "as-list", "list-name": _LIST}
@@ -764,7 +772,7 @@ class TestEntryKeysComeFromTheTree:
         retired_strings = {"fe", "values-only", "community-name"}
         retired_names = {"FLAT_ENTRY_ELEMENTS", "ENTRY_KEY_OVERRIDES", "get_flat_entry_config"}
         positional = re.compile(r"^_v\d+$")
-        src = Path(__file__).resolve().parent.parent / "src" / "junoscfg"
+        src = PACKAGE_SRC
         files = sorted(src.rglob("*.py"))
         assert len(files) > 60, "the scan found too little source to mean anything"
 
@@ -913,7 +921,7 @@ class TestEntryKeysComeFromTheTree:
         every one a node that became a list by it (48 `algorithm`, 16
         `host-discovery`, ...); 88 hold a child beyond their key fields.
         """
-        from tests.keyed_entries import KEYED_XSD, artifact_json, build_artifacts, node
+        from tests.support.keyed_entries import KEYED_XSD, artifact_json, build_artifacts, node
 
         tree = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
         term = ("policy-options", "policy-statement", "term")
@@ -1337,13 +1345,13 @@ class TestNameKeyedListsAreUnchanged:
             "xml": (Format.XML, "da3e1e578f8ec992f13d10a657745078d36f110e12639828b2f24bc435d30097"),
         }
         for suffix, (fmt, digest) in examples.items():
-            source = Path(f"examples/router1.{suffix}").read_text(encoding="utf-8")
+            source = (EXAMPLES / f"router1.{suffix}").read_text(encoding="utf-8")
             rendered = self._render(source, fmt)
             assert hashlib.sha256(rendered.encode()).hexdigest() == digest, suffix
 
         lines = [
             line.strip()
-            for line in Path("tests/data/set_corpus.txt").read_text().splitlines()
+            for line in (TEST_DATA / "set_corpus.txt").read_text().splitlines()
             if line.startswith("set ")
         ]
         kept = [line for line in lines if not any(k in line + " " for k in self._REKEYED)]

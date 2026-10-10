@@ -13,7 +13,7 @@ pipeline THEN the system SHALL select that path from the dict IR before invoking
 the target renderer, return an empty string when it is absent, and preserve the
 existing relative and path-wrapped output semantics.
 
-Tests: `tests/test_convert_api.py::TestPathFiltering::test_pipeline_filters_ir_before_rendering`
+Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_pipeline_filters_ir_before_rendering`
 
 #### Scenario: Wrapped subtree
 

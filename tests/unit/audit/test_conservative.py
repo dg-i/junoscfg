@@ -17,7 +17,7 @@ import pytest
 from junoscfg.audit.engine import run_audit
 from junoscfg.audit.walker import collect_occurrences
 from junoscfg.display.constants import load_schema_tree
-from tests.test_audit.conftest import POLICY_STATEMENT, make_registry
+from tests.unit.audit.conftest import POLICY_STATEMENT, make_registry
 
 if TYPE_CHECKING:
     from collections.abc import Callable

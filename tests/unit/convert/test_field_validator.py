@@ -11,6 +11,7 @@ from junoscfg.convert.field_validator import (
     FieldValidationResult,
     FieldValidator,
 )
+from tests.support.paths import EXAMPLES
 
 # ── Test schema fixtures ─────────────────────────────────────────────
 
@@ -851,7 +852,7 @@ class TestAnUnmodelledStatementIsReported:
         reader cannot complete is kept whole". The reader used to make
         `{"name": "as-list"}` of it, which validated."""
         from junoscfg.convert import validate_ir
-        from tests.keyed_entries import TERM, set_ir
+        from tests.support.keyed_entries import TERM, set_ir
 
         ir = set_ir(f"{TERM} from as-path-neighbors as-list")
         result = validate_ir({"configuration": ir})
@@ -1020,13 +1021,7 @@ class TestFullConfigValidation:
     """Smoke test: validate the example config against the bundled schema."""
 
     @pytest.mark.skipif(
-        not __import__("pathlib")
-        .Path(
-            __import__("pathlib").Path(__file__).resolve().parent.parent
-            / "examples"
-            / "load_ox_conf.json"
-        )
-        .exists(),
+        not __import__("pathlib").Path(EXAMPLES / "load_ox_conf.json").exists(),
         reason="Example config files not available",
     )
     def test_example_config_validates(self, json_config: str) -> None:
@@ -1169,7 +1164,7 @@ class TestAnIncompleteStatementIsUnplaced:
     def test_each_door_reports_it(self, line: str) -> None:
         from junoscfg import Format, convert_config
         from junoscfg.convert import validate_ir
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         result = validate_ir({"configuration": set_ir(line)})
         assert not result.valid
@@ -1186,7 +1181,7 @@ class TestANameKeyIsOpen:
 
     def test_a_classifier_name_is_clean(self) -> None:
         from junoscfg.convert import validate_ir
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         line = "set class-of-service interfaces ge-0/0/0 unit 0 classifiers dscp SAMPLE-DSCP"
         assert validate_ir({"configuration": set_ir(line)}).errors == []

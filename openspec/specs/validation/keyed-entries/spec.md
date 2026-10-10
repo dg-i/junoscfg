@@ -17,7 +17,7 @@ names in `k` and open, as a fragment, for a `name` key (owner decision,
 challenge C); SHALL report no unplaced error for a key field, and SHALL report
 `name`, `_v0` or `_v1` under a list keyed otherwise as unplaced; no key SHALL
 be exempted by spelling.
-Tests: `tests/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_list_reference_is_clean`, `tests/test_field_validator.py::TestANameKeyIsOpen::test_a_classifier_name_is_clean`, `tests/test_field_validator.py::TestANameKeyIsOpen::test_a_k_key_stays_closed`, `tests/test_field_validator.py::TestKeyedEntries::test_a_key_value_is_checked_against_its_leaf`, `tests/test_field_validator.py::TestKeyedEntries::test_name_under_a_list_keyed_otherwise_is_unplaced`, `tests/test_field_validator.py::TestKeyedEntries::test_attributes_match_takes_its_three_fields`, `tests/test_field_validator.py::TestKeyedEntries::test_a_route_filter_action_is_clean`
+Tests: `tests/unit/convert/test_field_validator.py::TestKeyedEntries::test_a_device_keyed_as_list_reference_is_clean`, `tests/unit/convert/test_field_validator.py::TestANameKeyIsOpen::test_a_classifier_name_is_clean`, `tests/unit/convert/test_field_validator.py::TestANameKeyIsOpen::test_a_k_key_stays_closed`, `tests/unit/convert/test_field_validator.py::TestKeyedEntries::test_a_key_value_is_checked_against_its_leaf`, `tests/unit/convert/test_field_validator.py::TestKeyedEntries::test_name_under_a_list_keyed_otherwise_is_unplaced`, `tests/unit/convert/test_field_validator.py::TestKeyedEntries::test_attributes_match_takes_its_three_fields`, `tests/unit/convert/test_field_validator.py::TestKeyedEntries::test_a_route_filter_action_is_clean`
 
 #### Scenario: AS-list reference
 
@@ -56,7 +56,7 @@ names THEN field validation SHALL report it with the unplaced message
 (`'<list>' entry without its key field '<field>' could not be placed in the
 schema: kept as written, not validated`), so `--strict` and anonymization
 refuse it, as they refuse a set statement the reader could not complete.
-Tests: `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_validation_reports_it`, `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it`, `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_a_complete_entry_is_clean`
+Tests: `tests/unit/convert/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_validation_reports_it`, `tests/unit/convert/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it`, `tests/unit/convert/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_a_complete_entry_is_clean`
 
 #### Scenario: An AS-list reference without its list-type
 
@@ -72,7 +72,7 @@ SHALL hold its key fields from `entry_keys()`, and `name` only where `name` is
 the key, with no `required` added; `validate_json`, `validate_yaml`,
 `validate_config` and CLI `-v` on JSON or YAML SHALL accept the device-shaped
 entry and reject one keyed `name` under a list keyed otherwise.
-Tests: `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_entry_properties_are_the_key_fields`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_name_keyed_lists_keep_name`, `tests/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_no_required_is_added`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_the_device_shaped_as_list_reference_validates`, `tests/test_json_yaml_validator.py::TestKeyedEntries::test_name_under_an_as_list_reference_is_rejected`, `tests/test_cli_validate.py::TestCliValidation::test_validate_json_with_an_as_list_reference`, `tests/test_cli_validate.py::TestCliValidationOfKeyedEntries::test_validate_yaml_with_an_as_list_reference`
+Tests: `tests/unit/validate/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_entry_properties_are_the_key_fields`, `tests/unit/validate/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_name_keyed_lists_keep_name`, `tests/unit/validate/test_schema_generator.py::TestEntryKeysAreTheTreesFields::test_no_required_is_added`, `tests/unit/validate/test_json_yaml_validator.py::TestKeyedEntries::test_the_device_shaped_as_list_reference_validates`, `tests/unit/validate/test_json_yaml_validator.py::TestKeyedEntries::test_name_under_an_as_list_reference_is_rejected`, `tests/unit/cli/test_cli_validate.py::TestCliValidation::test_validate_json_with_an_as_list_reference`, `tests/unit/cli/test_cli_validate.py::TestCliValidationOfKeyedEntries::test_validate_yaml_with_an_as_list_reference`
 
 #### Scenario: Device-shaped JSON
 

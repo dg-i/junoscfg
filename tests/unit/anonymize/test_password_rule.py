@@ -10,6 +10,7 @@ from netutils.password import JUNIPER_KEYS_STRING, decrypt_juniper_type9
 from junoscfg.anonymize import anonymize
 from junoscfg.anonymize.config import AnonymizeConfig
 from junoscfg.anonymize.rules.password import PasswordRule
+from tests.support.paths import PACKAGE_SRC
 
 
 class TestPasswordRuleMatches:
@@ -457,9 +458,8 @@ class TestCryptIndependence:
 
     def test_no_crypt_import_anywhere_in_the_package(self) -> None:
         import ast
-        from pathlib import Path
 
-        package = Path(__file__).resolve().parents[2] / "src" / "junoscfg"
+        package = PACKAGE_SRC
         assert package.is_dir(), package
         scanned = 0
         offenders = []

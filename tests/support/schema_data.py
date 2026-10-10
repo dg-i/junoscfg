@@ -27,10 +27,14 @@ is picked up, so the suffix costs nothing here.
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from typing import TYPE_CHECKING
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SCHEMA_DIR = PROJECT_ROOT / "private_test_data" / "schemas"
+from tests.support.paths import PRIVATE_DATA
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+SCHEMA_DIR = PRIVATE_DATA / "schemas"
 STAGING_NAME = "new.xsd"
 SOURCE_ENV = "JUNOSCFG_XSD_SOURCE"
 

@@ -8,6 +8,7 @@ import pytest
 
 from junoscfg.anonymize import anonymize
 from junoscfg.anonymize.config import AnonymizeConfig
+from tests.support.paths import EXAMPLES
 
 
 class TestPipelineIntegration:
@@ -574,7 +575,7 @@ class TestKeyedEntriesSurvive:
 
     def test_as_numbers_leave_the_as_list_reference_whole(self) -> None:
         from junoscfg import Format, convert_config
-        from tests.keyed_entries import as_json, ir
+        from tests.support.keyed_entries import as_json, ir
 
         device = as_json(ir(_GROUPED_SET, Format.SET))
         for source, fmt in (
@@ -699,9 +700,8 @@ class TestKeyedEntriesSurvive:
         )
 
     def test_no_value_anonymized_before_escapes(self) -> None:
-        from pathlib import Path
 
-        source = json.loads(Path("examples/router1.json").read_text(encoding="utf-8"))
+        source = json.loads((EXAMPLES / "router1.json").read_text(encoding="utf-8"))
         mapping = anonymize(source, self._every_rule()).mapping
         for rule, values in self.BEFORE.items():
             missing = set(values) - set(mapping.get(rule, {}))
@@ -710,11 +710,10 @@ class TestKeyedEntriesSurvive:
     def test_name_keyed_output_is_unchanged(self) -> None:
         """Pinned before the change; expected to hold across it."""
         import hashlib
-        from pathlib import Path
 
         from junoscfg import Format, convert_config
 
-        source = Path("examples/router1.json").read_text(encoding="utf-8")
+        source = (EXAMPLES / "router1.json").read_text(encoding="utf-8")
         out = convert_config(
             source,
             from_format=Format.JSON,

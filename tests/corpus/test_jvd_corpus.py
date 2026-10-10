@@ -29,8 +29,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 from junoscfg import Format, convert_config
-
-from . import jvd_data
+from tests.support import jvd_data
 
 pytestmark = pytest.mark.jvd
 

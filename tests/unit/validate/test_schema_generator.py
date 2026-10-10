@@ -6,6 +6,7 @@ import pytest
 
 from junoscfg.validate.schema_generator import generate_json_schema
 from junoscfg.validate.schema_node import SchemaNode
+from tests.support.paths import TEST_DATA
 
 
 def _make_tree() -> SchemaNode:
@@ -257,7 +258,7 @@ class TestUniversalStatementsReachEveryContainer:
 
 def _keyed_schema(variant: str = "json") -> dict:
     from junoscfg.validate.xsd_parser import parse_xsd
-    from tests.keyed_entries import KEYED_XSD
+    from tests.support.keyed_entries import KEYED_XSD
 
     return generate_json_schema(parse_xsd(KEYED_XSD), variant=variant)
 
@@ -324,12 +325,11 @@ class TestEntryKeysAreTheTreesFields:
         `ENTRY_KEY_OVERRIDES` spelling, keyed on the node's name alone.
         """
         import json
-        from pathlib import Path
 
         from junoscfg.validate.xsd_parser import parse_xsd
-        from tests.keyed_entries import NAME_KEYED_XSD
+        from tests.support.keyed_entries import NAME_KEYED_XSD
 
-        data = Path(__file__).resolve().parent / "data"
+        data = TEST_DATA
         for variant in ("json", "yaml"):
             pinned = json.loads((data / f"name-keyed-schema-{variant}.json").read_text("utf-8"))
             for top in (pinned["properties"]["configuration"], pinned):

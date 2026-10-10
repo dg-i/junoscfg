@@ -56,7 +56,7 @@ After XSD/schema changes, use `--regen-schema` as the developer guide describes.
 ## Version Management
 
 Version lives in three places that move together: `pyproject.toml`,
-`src/junoscfg/__init__.py`, and the assertion in `tests/test_cli.py`.
+`src/junoscfg/__init__.py`, and the assertion in `tests/unit/cli/test_cli.py`.
 
 - A break on a named surface (`consumer`, `cli`) raises the **minor**, as
   `[tool.template.stage] break-bumps` declares. Everything else is a patch.

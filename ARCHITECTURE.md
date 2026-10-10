@@ -29,7 +29,7 @@ When two of these conflict, the order is:
    the wheel.
 4. **Latency** — last; a multi-megabyte schema load on start-up is tolerated.
 
-The ranking is visible in the record. `tests/test_convert_consistency.py`
+The ranking is visible in the record. `tests/contract/test_convert_consistency.py`
 asserts every format pair agrees and every round trip preserves content.
 `docs/architecture/design-decisions.md` records rejecting both a prefix trie
 and a Lark grammar for set-to-structured conversion because each got
@@ -47,7 +47,7 @@ form rather than fetching or deriving them at run time.
   resulting file.
 - **Python 3.10 or later.** The suite is green on 3.10, 3.11, 3.12, 3.13 and
   3.14. Onboarding briefly raised this floor to 3.13 to get past six failures
-  in `tests/test_anonymize/test_password_rule.py`; the failures were a defect,
+  in `tests/unit/anonymize/test_password_rule.py`; the failures were a defect,
   not a language requirement. `_make_crypt_hash()` called `crypt.crypt()`,
   which macOS answers with a 13-character DES hash instead of the requested
   `$1$`/`$5$`/`$6$` format, and which Python removed in 3.13. The branch is

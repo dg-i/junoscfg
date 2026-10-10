@@ -9,7 +9,7 @@ import pytest
 from junoscfg.audit import find_unused
 from junoscfg.audit.engine import run_audit
 from junoscfg.audit.registry import TypeEntry
-from tests.test_audit.conftest import (
+from tests.unit.audit.conftest import (
     CONFIG_GROUP,
     POLICY_STATEMENT,
     PREFIX_LIST,

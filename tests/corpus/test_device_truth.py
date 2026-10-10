@@ -28,15 +28,17 @@ from __future__ import annotations
 
 import json
 import shlex
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from junoscfg import Format, convert_config
 from junoscfg.convert.ir import find_configuration
+from tests.support.paths import PROJECT_ROOT
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if TYPE_CHECKING:
+    from pathlib import Path
+
 CAPTURE_DIRS = (
     PROJECT_ROOT / "tests" / "data" / "captures",
     PROJECT_ROOT / "private_test_data" / "captures",

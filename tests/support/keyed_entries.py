@@ -12,15 +12,17 @@ the tests prove behaviour and not the shape of the code that delivers it.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from junoscfg import Format, convert_config
 from junoscfg.display import read_artifact_text
 from junoscfg.validate.artifact_builder import ArtifactBuilder, write_structure_tree
 from junoscfg.validate.xsd_parser import parse_xsd
+from tests.support.paths import TEST_DATA as DATA
 
-DATA = Path(__file__).resolve().parent / "data"
+if TYPE_CHECKING:
+    from pathlib import Path
+
 KEYED_XSD = (DATA / "keyed-entries.xsd").read_text(encoding="utf-8")
 
 #: A schema with `name`-keyed lists only, for the byte-identity pins.

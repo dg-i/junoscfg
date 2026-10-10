@@ -879,14 +879,14 @@ KEPT = [None]
 
 
 def _from(line: str) -> dict:
-    from tests.keyed_entries import set_ir, term_from
+    from tests.support.keyed_entries import set_ir, term_from
 
     return term_from(set_ir(line))
 
 
 def _round_trip(source: str) -> list[str]:
     from junoscfg import Format
-    from tests.keyed_entries import to_set
+    from tests.support.keyed_entries import to_set
 
     return to_set(source + "\n", Format.SET)
 
@@ -929,7 +929,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
         ]
 
     def test_a_partial_attributes_match_creates_no_entry(self) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         line = (
             "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner matches"
@@ -952,7 +952,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
     def test_a_surplus_after_a_terminal_entry_keeps_the_line_whole(
         self, where: str, statement: str
     ) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         line = f"{_TERM} {where} {statement}"
         term = set_ir(line)["policy-options"]["policy-statement"][0]["term"][0]
@@ -960,7 +960,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
         assert _round_trip(line) == [line]
 
     def test_a_surplus_after_attributes_match_keeps_the_line_whole(self) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         statement = 'attributes-match ping.test-owner matches "^uptime$" SAMPLE-EXTRA'
         line = f"set event-options policy SAMPLE-EVENT-POLICY {statement}"
@@ -1041,7 +1041,7 @@ class TestMetaCommandsOnAKeyedEntry:
     def test_the_attribute_lands_on_the_entry(
         self, command: str, attribute: dict, where: str, statement: str, entry: dict
     ) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         set_line = f"{_TERM} {where} {statement}"
         meta_line = f"{command} {set_line[len('set ') :]}"
@@ -1056,7 +1056,7 @@ class TestApplyGroupsAndKeyedEntries:
     """`apply-groups` takes one name; a second token is a statement kept whole."""
 
     def test_one_name_inside_a_policy(self) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         line = "set policy-options policy-statement SAMPLE-POLICY apply-groups SAMPLE-GROUP"
         policy = set_ir(line)["policy-options"]["policy-statement"][0]
@@ -1065,7 +1065,7 @@ class TestApplyGroupsAndKeyedEntries:
     @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
     @pytest.mark.parametrize("prefix", ["set", "set policy-options policy-statement SAMPLE-POLICY"])
     def test_two_names_apply_no_group(self, keyword: str, prefix: str) -> None:
-        from tests.keyed_entries import set_ir
+        from tests.support.keyed_entries import set_ir
 
         line = f"{prefix} {keyword} SAMPLE-GROUP SAMPLE-GROUP-2"
         got = set_ir(line)
@@ -1196,7 +1196,7 @@ class TestANonListNodeNeverReplacesAnEntry:
 
     def test_three_forwarding_classes_stay_three(self) -> None:
         from junoscfg import Format
-        from tests.keyed_entries import ir, to_set
+        from tests.support.keyed_entries import ir, to_set
 
         source = (
             "class-of-service {\n    forwarding-classes {\n"
@@ -1291,7 +1291,7 @@ class TestKeyFieldsGivenByKeyword:
 
     def test_device_json_keeps_the_keywords(self) -> None:
         from junoscfg import Format
-        from tests.keyed_entries import as_json, to_set
+        from tests.support.keyed_entries import as_json, to_set
 
         config = {
             "protocols": {"ospf": {"area": [{"name": "0.0.0.0", "virtual-link": [self._ENTRY]}]}}

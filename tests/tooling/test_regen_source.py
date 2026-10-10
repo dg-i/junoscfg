@@ -145,7 +145,7 @@ class TestTheRunStops:
                 sys.executable,
                 "-m",
                 "pytest",
-                "tests/test_cli.py",
+                "tests/unit/cli/test_cli.py",
                 "-q",
                 "--collect-only",
                 "--regen-schema",

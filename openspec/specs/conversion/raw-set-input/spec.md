@@ -14,7 +14,7 @@ WHEN any line of raw set input, whatever its command (`set`, `delete`,
 SHALL reject the input before constructing an IR with `ValueError`, independent
 of validation and strictness, and SHALL report the complete original offending
 line as `Unsupported bracket syntax in set input on line N:\n<line>`.
-Tests: `tests/test_set_input.py::TestSetBracketSyntaxRejection::test_every_command_and_bracket_form_is_rejected`, `tests/test_convert_api.py::TestSetBracketSyntaxRejection::test_public_conversion_doors_reject_without_validation`, `tests/test_cli.py::TestSetBracketSyntaxRejection::test_conversion_exits_two_with_complete_diagnostic`
+Tests: `tests/unit/convert/test_set_input.py::TestSetBracketSyntaxRejection::test_every_command_and_bracket_form_is_rejected`, `tests/unit/convert/test_convert_api.py::TestSetBracketSyntaxRejection::test_public_conversion_doors_reject_without_validation`, `tests/unit/cli/test_cli.py::TestSetBracketSyntaxRejection::test_conversion_exits_two_with_complete_diagnostic`
 
 #### Scenario: Bracket-form matrix
 
@@ -41,7 +41,7 @@ Tests: `tests/test_set_input.py::TestSetBracketSyntaxRejection::test_every_comma
 WHEN square brackets occur only inside a quoted raw set value or on an ignored
 comment line THEN the system SHALL treat them as content rather than unsupported
 bracket syntax.
-Tests: `tests/test_set_input.py::TestSetBracketSyntaxRejection::test_quoted_brackets_and_comments_remain_ordinary_content`
+Tests: `tests/unit/convert/test_set_input.py::TestSetBracketSyntaxRejection::test_quoted_brackets_and_comments_remain_ordinary_content`
 
 #### Scenario: Quoted regular-expression value
 
@@ -60,7 +60,7 @@ WHEN structured Junos input contains a bracket list THEN the system SHALL keep
 accepting that structured syntax and SHALL render canonical set output as one
 repeated command per list value; raw set users migrating from bracket shorthand
 SHALL be able to supply those repeated commands instead.
-Tests: `tests/test_set_converter.py::TestStructuredBracketLists::test_structured_bracket_list_emits_repeated_set_commands`
+Tests: `tests/unit/display/test_set_converter.py::TestStructuredBracketLists::test_structured_bracket_list_emits_repeated_set_commands`
 
 #### Scenario: VLAN members list
 

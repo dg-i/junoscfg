@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import shlex
-from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).parents[1]
+from tests.support.paths import PROJECT_ROOT
+
+ROOT = PROJECT_ROOT
 
 CHECKED_INTERFACES = {
     "src/junoscfg/__init__.py",

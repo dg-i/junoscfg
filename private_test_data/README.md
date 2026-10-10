@@ -51,7 +51,7 @@ stop happens before collection, with the reason and exit code 7.
 `captures/` holds pairs of files, `<name>.conf` beside `<name>.json`: a subtree
 as `show configuration <path>` prints it, headed by a line naming that path,
 and the same subtree as the device rendered it through `| display json`. The
-device is the oracle, with no schema in the judging; `tests/test_device_truth.py`
+device is the oracle, with no schema in the judging; `tests/corpus/test_device_truth.py`
 converts the fragment and compares the set of JSON paths. Pairs here run on
 the machine that holds them and are skipped elsewhere; a pair the owner is
 content to publish moves to `tests/data/captures/` unchanged.
@@ -77,7 +77,7 @@ paths are compared, and only element paths are printed on a failure.
 
 ```bash
 uv run pytest tests/ --schema          # all of them, against every synced dump
-uv run pytest tests/test_schema_data.py --schema -k 23.2R2
+uv run pytest tests/corpus/test_schema_data.py --schema -k 23.2R2
 ```
 
 Without `--schema` those tests are skipped and the rest of the suite runs in

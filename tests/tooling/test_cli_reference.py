@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
 
 from junoscfg.cli import main
+from tests.support.paths import PROJECT_ROOT
 from tools.generate_cli_reference import render_cli_reference
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ def _walk_commands(
 
 
 def test_generated_reference_is_current() -> None:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = PROJECT_ROOT
     committed = (repo_root / "docs/guide/cli-reference.md").read_text()
     assert committed == render_cli_reference()
 

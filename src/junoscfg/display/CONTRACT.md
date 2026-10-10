@@ -8,7 +8,7 @@ Display rendering only in name: the shared kernel six of the eight packages
 import; `constants.py` and `config_store.py` are a schema flag table and a tree.
 Nor for placing a tag: schema-free `SetConverter.to_set()` gives a one-line
 statement's tag to its last node; conversion reads `statements()` through the
-schema, where an entry ends (`tests/test_meta_tags.py`).
+schema, where an entry ends (`tests/unit/convert/test_meta_tags.py`).
 
 ## Invariants
 
@@ -16,10 +16,10 @@ schema, where an entry ends (`tests/test_meta_tags.py`).
 - Importing this package pulls in neither lxml nor the schema artifacts:
   `load_schema_tree()` is lazy and cached, and the XML path imports lxml on
   first use — enforced by
-  `tests/test_to_yaml.py::TestLazyXmlImport::test_to_yaml_module_level_has_no_lxml`.
+  `tests/unit/display/test_to_yaml.py::TestLazyXmlImport::test_to_yaml_module_level_has_no_lxml`.
 - `entry_keys()` and `statement_children()` are the one answer for an entry's key
   fields and a statement's children, and no module reads a retired key spelling
-  (`fe`, `values-only`, `community-name`, `_v<n>`) — enforced by `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields` and `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
+  (`fe`, `values-only`, `community-name`, `_v<n>`) — enforced by `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields` and `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
 
 ## Precedent
 

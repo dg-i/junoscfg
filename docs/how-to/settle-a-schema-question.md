@@ -67,11 +67,11 @@ grammar, so `set system host-name (anything at all goes here)` validated.
 Scoped by the XSD type reference `policy-algebra`, the same alternative reaches
 159 slots. The number was available before the change and nobody took it.
 
-The counterpart is a test that must stay red. `tests/test_set_validator.py`
+The counterpart is a test that must stay red. `tests/unit/validate/test_set_validator.py`
 ran entirely against a three-rule grammar, so every assertion in it was
 positive, and a validator that accepts everything passes every positive test
 there is. It now also runs against the artefact we ship, and
-`tests/test_set_corpus.py` records each rejection by name so a new false
+`tests/corpus/test_set_corpus.py` records each rejection by name so a new false
 positive and a fixed one are both visible in the diff.
 
 ## 5. Freeze device evidence once, sanitized

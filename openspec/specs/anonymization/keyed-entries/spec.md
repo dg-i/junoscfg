@@ -17,7 +17,7 @@ not, a value from that leaf's own enum is configuration syntax and SHALL pass
 every anonymization rule unchanged (owner decision, phase-6 review). Recording
 a type the XSD gives only as a `simpleContent` extension base is not part of
 this change.
-Tests: `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_value_from_its_leafs_enum_passes_every_rule`
+Tests: `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_field_carries_the_trees_type`, `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`, `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_no_name_leaf_is_synthesised`, `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_value_from_its_leafs_enum_passes_every_rule`
 
 #### Scenario: Two key fields
 
@@ -59,7 +59,7 @@ through `convert_config` or CLI `convert` with `--anonymize-all`, or with
 `as-path-neighbors <list-type> <list-name>` statement with both key values,
 `list-type` unchanged, and under `--anonymize-all` SHALL anonymize the group
 name.
-Tests: `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_an_as_list_reference_survives_anonymize_all`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_as_numbers_leave_the_as_list_reference_whole`, `tests/test_cli.py::TestCliAnonymize::test_anonymize_all_keeps_the_as_list_reference`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_every_rule_keeps_the_key_whole`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_other_keyed_lists_keep_their_keys`
+Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_an_as_list_reference_survives_anonymize_all`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_as_numbers_leave_the_as_list_reference_whole`, `tests/unit/cli/test_cli.py::TestCliAnonymize::test_anonymize_all_keeps_the_as_list_reference`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_every_rule_keeps_the_key_whole`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_other_keyed_lists_keep_their_keys`
 
 #### Scenario: Structured input, every rule on
 
@@ -79,7 +79,7 @@ value from its leaf's own enum, which the previous release turned into invalid
 configuration; the anonymized output of `name`-keyed lists SHALL be
 byte-identical; phase 5 SHALL stop and report any value whose treatment moves
 otherwise.
-Tests: `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_no_value_anonymized_before_escapes`, `tests/test_anonymize/test_integration.py::TestKeyedEntriesSurvive::test_name_keyed_output_is_unchanged`
+Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_no_value_anonymized_before_escapes`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_name_keyed_output_is_unchanged`
 
 #### Scenario: An IP key keyed name
 
