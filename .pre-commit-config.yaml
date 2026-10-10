@@ -1,4 +1,4 @@
-# The fast set. Everything slower runs in CI. The hook repositories are pinned
+# The fast set, and the tests a commit affects. Everything slower runs in CI. The hook repositories are pinned
 # and `pre-commit autoupdate` moves them; the checks that read the project's
 # own dependencies run through its environment with `uv run --locked --group dev`, so
 # a new dependency never needs an edit here. The file is this repository's
@@ -27,6 +27,26 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      # Tests reach the product through the doors tach.toml declares; see
+      # tests/CONTRACT.md. Whole tree: an export removed from a door breaks a
+      # test that never changed.
+      - id: test-doors
+        name: test doors
+        entry: uv run --locked --group dev python tools/check_test_doors.py
+        language: system
+        files: ^(tests/.*\.py|tach\.toml|src/junoscfg/.*__init__\.py)$
+        pass_filenames: false
+
+      # The tests the staged files can break: tests/unit/ of each package
+      # touched and of every package importing it, plus tests/contract/; shared
+      # ground runs the whole default suite. tools/affected_tests.py says why.
+      - id: affected-tests
+        name: affected tests
+        entry: uv run --locked --group dev python tools/affected_tests.py --run
+        language: system
+        files: ^(src/|tests/|pyproject\.toml$|uv\.lock$)
+        require_serial: true
 
       # The check package is pinned by uv.lock, so the hook runs the project's
       # own copy rather than installing a second one here.

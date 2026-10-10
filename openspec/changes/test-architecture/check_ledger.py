@@ -81,7 +81,9 @@ def check() -> int:
         row_key = node_moved if node_moved in sheet else _base(node_moved)
         if row_key in sheet:
             new, note, where = sheet[row_key]
-            used.add(row_key)
+            # A function-level row beside per-parametrisation rows is what the
+            # document rewrite reads; it is used whenever one of them is.
+            used.update({row_key, _base(row_key)})
             if new == "dropped":
                 if not note:
                     problems.append(f"{where}: {node_moved} dropped without a reason")
