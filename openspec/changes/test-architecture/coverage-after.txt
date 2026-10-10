@@ -1,0 +1,71 @@
+ 95.24     2 miss     2 brmiss  src/junoscfg/__init__.py
+ 93.65     1 miss    11 brmiss  src/junoscfg/anonymize/__init__.py
+ 92.58    11 miss     8 brmiss  src/junoscfg/anonymize/config.py
+100.00     0 miss     0 brmiss  src/junoscfg/anonymize/path_filter.py
+ 94.44     1 miss     3 brmiss  src/junoscfg/anonymize/revert.py
+ 98.36     1 miss     0 brmiss  src/junoscfg/anonymize/rules/__init__.py
+ 95.06     2 miss     2 brmiss  src/junoscfg/anonymize/rules/as_number.py
+ 95.74     1 miss     1 brmiss  src/junoscfg/anonymize/rules/community.py
+100.00     0 miss     0 brmiss  src/junoscfg/anonymize/rules/description.py
+100.00     0 miss     0 brmiss  src/junoscfg/anonymize/rules/group.py
+100.00     0 miss     0 brmiss  src/junoscfg/anonymize/rules/identity.py
+ 95.56     3 miss     1 brmiss  src/junoscfg/anonymize/rules/ip.py
+ 87.88    13 miss    11 brmiss  src/junoscfg/anonymize/rules/password.py
+ 95.00     1 miss     2 brmiss  src/junoscfg/anonymize/rules/sensitive_word.py
+ 92.73     3 miss     1 brmiss  src/junoscfg/anonymize/rules/ssh_key.py
+ 79.87    17 miss    15 brmiss  src/junoscfg/anonymize/walker.py
+100.00     0 miss     0 brmiss  src/junoscfg/audit/__init__.py
+100.00     0 miss     0 brmiss  src/junoscfg/audit/algebra.py
+ 98.54     1 miss     1 brmiss  src/junoscfg/audit/engine.py
+100.00     0 miss     0 brmiss  src/junoscfg/audit/model.py
+ 92.11     6 miss     6 brmiss  src/junoscfg/audit/registry.py
+100.00     0 miss     0 brmiss  src/junoscfg/audit/render.py
+ 88.65    11 miss    15 brmiss  src/junoscfg/audit/walker.py
+ 97.62     8 miss     2 brmiss  src/junoscfg/cli.py
+ 97.53     1 miss     1 brmiss  src/junoscfg/convert/__init__.py
+ 92.86     1 miss     1 brmiss  src/junoscfg/convert/diagnostics.py
+ 93.05    16 miss    17 brmiss  src/junoscfg/convert/field_validator.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/input/__init__.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/input/json_input.py
+ 94.59     1 miss     1 brmiss  src/junoscfg/convert/input/normalization.py
+ 86.68    51 miss    50 brmiss  src/junoscfg/convert/input/set_input.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/input/structured_input.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/input/xml_input.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/input/yaml_input.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/ir.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/output/__init__.py
+ 80.31    48 miss    55 brmiss  src/junoscfg/convert/output/dict_walker.py
+ 93.46     4 miss     6 brmiss  src/junoscfg/convert/output/json_output.py
+ 94.87     1 miss     1 brmiss  src/junoscfg/convert/output/set_output.py
+ 84.11     7 miss    10 brmiss  src/junoscfg/convert/output/structured_output.py
+100.00     0 miss     0 brmiss  src/junoscfg/convert/output/yaml_output.py
+ 88.00     3 miss     3 brmiss  src/junoscfg/display/__init__.py
+ 91.73    16 miss    16 brmiss  src/junoscfg/display/config_store.py
+ 94.64     7 miss     5 brmiss  src/junoscfg/display/constants.py
+ 84.15     8 miss     5 brmiss  src/junoscfg/display/format_detection.py
+100.00     0 miss     0 brmiss  src/junoscfg/display/path_filter.py
+ 93.13     6 miss    10 brmiss  src/junoscfg/display/set_converter.py
+ 21.05     9 miss     6 brmiss  src/junoscfg/display/to_json.py
+ 96.23     3 miss     5 brmiss  src/junoscfg/display/to_yaml.py
+100.00     0 miss     0 brmiss  src/junoscfg/display/value_format.py
+100.00     0 miss     0 brmiss  src/junoscfg/display/xml_helpers.py
+100.00     0 miss     0 brmiss  src/junoscfg/edityaml/__init__.py
+ 90.04    12 miss    12 brmiss  src/junoscfg/edityaml/ansibilize.py
+ 92.52     6 miss    10 brmiss  src/junoscfg/edityaml/path_walker.py
+ 86.75     9 miss     2 brmiss  src/junoscfg/edityaml/rules.py
+ 96.51     2 miss     1 brmiss  src/junoscfg/edityaml/transforms.py
+ 96.83     2 miss     2 brmiss  src/junoscfg/input.py
+ 92.31     1 miss     1 brmiss  src/junoscfg/validate/__init__.py
+ 99.61     0 miss     1 brmiss  src/junoscfg/validate/artifact_builder.py
+ 96.68     6 miss     7 brmiss  src/junoscfg/validate/grammar_generator.py
+ 91.89     3 miss     3 brmiss  src/junoscfg/validate/json_yaml_validator.py
+ 92.17     4 miss     5 brmiss  src/junoscfg/validate/schema_generator.py
+ 86.54     7 miss     7 brmiss  src/junoscfg/validate/schema_node.py
+ 96.67     1 miss     1 brmiss  src/junoscfg/validate/set_validator.py
+ 87.50     2 miss     0 brmiss  src/junoscfg/validate/structured_validator.py
+ 91.01     4 miss     4 brmiss  src/junoscfg/validate/validator.py
+ 86.79     2 miss     5 brmiss  src/junoscfg/validate/xml_validator.py
+100.00     0 miss     0 brmiss  src/junoscfg/validate/xsd_extractor.py
+ 83.16    42 miss    40 brmiss  src/junoscfg/validate/xsd_fixes.py
+ 89.46    13 miss    20 brmiss  src/junoscfg/validate/xsd_parser.py
+ 91.47   380 miss   394 brmiss  TOTAL

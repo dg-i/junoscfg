@@ -169,12 +169,15 @@ UNPLACED = "a statement the schema places"
 class FieldValidator:
     """Validates leaf values in the JSON dict IR against schema constraints."""
 
-    def __init__(self, schema: dict[str, Any] | None = None) -> None:
-        """Build the validator against *schema*, or the bundled schema tree."""
-        if schema is None:
-            from junoscfg.display import load_schema_tree
+    def __init__(self) -> None:
+        """Build the validator against the structure tree the artifacts resolve to.
 
-            schema = load_schema_tree()
+        It took a ``schema`` argument too, which only tests passed; they now
+        select a tree the way a caller does, with ``display.artifacts_dir``.
+        """
+        from junoscfg.display import load_schema_tree
+
+        schema = load_schema_tree()
         self._schema = schema
         self._enums: list[list[str]] = []
         self._patterns: list[str] = []

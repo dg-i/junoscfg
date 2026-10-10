@@ -67,7 +67,7 @@ branch = true
 source_pkgs = ["junoscfg"]
 
 [tool.coverage.report]
-fail_under = 90.60
+fail_under = 91.47
 precision = 2
 
 # The stage levers are rendered from [tool.template.stage] into the delimited
