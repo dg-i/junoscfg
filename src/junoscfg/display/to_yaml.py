@@ -181,6 +181,19 @@ def _xml_multi_elements(elements: list[etree._Element], schema: dict[str, Any] |
     return result
 
 
+def _holds_a_value(element: etree._Element, node: dict[str, Any] | None) -> bool:
+    """Whether a childless element is a leaf rather than an empty container.
+
+    A value says so, and so does the schema (`l`, `p`). An untagged empty
+    element stays the presence flag `[null]` it always was; a tagged one the
+    schema does not call a leaf -- `<lldp inactive="inactive"/>` -- is the
+    container set and structured input give, `{"@": {...}}`.
+    """
+    if (element.text or "").strip() or not _get_inactive_attrs(element):
+        return True
+    return bool(node and (node.get("l") or node.get("p")))
+
+
 def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str, Any] | None]:
     """A leaf's IR value and the attributes its sibling ``@<name>`` carries.
 
@@ -195,8 +208,8 @@ def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str,
     tags = [_get_inactive_attrs(el) for el in elements]
     if any(tag != tags[0] for tag in tags):
         raise ValueError(
-            f"Invalid XML: <{name}> marks some of its values inactive and not others; "
-            "Junos deactivates a leaf as a whole"
+            f"Invalid XML: <{name}> tags some of its values and not others; "
+            "Junos tags a leaf as a whole"
         )
     if len(values) > 1:
         return values, tags[0]
@@ -229,7 +242,9 @@ def _xml_children_to_dict(
     for name in order:
         elements = groups[name]
         node = _schema_of(elements[0], schema)
-        if not any(_filtered_children(el) for el in elements):
+        if not any(_filtered_children(el) for el in elements) and (
+            len(elements) > 1 or _holds_a_value(elements[0], node)
+        ):
             result[name], attrs = _xml_leaf(name, elements)
             if attrs:
                 result[f"@{name}"] = attrs
