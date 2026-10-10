@@ -459,6 +459,40 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
             == irs[Format.SET]
         )
 
+    @pytest.mark.parametrize(
+        "set_text",
+        [
+            pytest.param(
+                "set protocols lldp disable\ndeactivate protocols lldp disable\n",
+                marks=pytest.mark.xfail(
+                    strict=True,
+                    reason="structured output joins a tagged child onto its parent's line "
+                    "(`lldp inactive: disable;`); change meta-tag-placement stops that",
+                ),
+            ),
+            "set protocols lldp interface all\nset protocols lldp disable\n"
+            "deactivate protocols lldp disable\n",
+        ],
+        ids=["alone", "beside a sibling"],
+    )
+    def test_an_inactive_flag_under_a_container_keeps_its_tag(self, set_text: str) -> None:
+        """Under a container, the flag was merged into its parent's line.
+
+        `lldp disable;` lost the tag, and LLDP loaded disabled; alone,
+        `protocols inactive: lldp disable;` is a line the device rejects.
+        """
+        import json
+
+        from junoscfg import Format, convert_config
+
+        before = json.loads(convert_config(set_text, from_format=Format.SET, to_format=Format.JSON))
+        curly = convert_config(set_text, from_format=Format.SET, to_format=Format.STRUCTURED)
+        assert (
+            json.loads(convert_config(curly, from_format=Format.STRUCTURED, to_format=Format.JSON))
+            == before
+        )
+        assert not any(" inactive: " in line.strip() for line in curly.splitlines())
+
     def test_an_inactive_unit_and_leaf_reach_one_ir(self) -> None:
         units = self._unit_by_format(self._inactive_leaf_inputs(unit_inactive=True))
         expected = {

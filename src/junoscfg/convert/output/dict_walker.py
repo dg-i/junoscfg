@@ -283,15 +283,17 @@ class DictWalker:
                         if name not in keys
                     )
                     if has_nk_leaf:
-                        if schema_node and schema_node.get("L"):
+                        # `deactivate interfaces xe-0/0/0 disable`: the tag was
+                        # dropped here, and the interface loaded disabled. A
+                        # tagged flag is a line of its own, never merged into
+                        # its parent's (`lldp disable;`), where the tag would
+                        # be lost or read as the parent's.
+                        attrs = self._read_leaf_attrs(obj.get(f"@{key}") or {})
+                        if (schema_node and schema_node.get("L")) or attrs:
                             output.emit(path + [set_key])
                         else:
                             output.emit_positional(path, set_key)
-                        # `deactivate interfaces xe-0/0/0 disable`: dropped
-                        # here, the interface loaded disabled.
-                        attr = obj.get(f"@{key}")
-                        if isinstance(attr, dict):
-                            self._emit_attrs(path + [set_key], self._read_leaf_attrs(attr))
+                        self._emit_attrs(path + [set_key], attrs)
                         continue
 
                 list_schema = child_schema

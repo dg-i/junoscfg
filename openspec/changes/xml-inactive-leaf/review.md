@@ -108,3 +108,30 @@ correction for that depends on a writer defect that was already on master (F2).
 - Finding 3 (Low): agreed; `test_an_empty_inactive_container_matches_set_input` is a guard against change A's own interim regression, not an acceptance test of the original defect; kept as a guard.
 - Finding 4 (Low, comment node, pre-existing): carried forward to `private_test_data/meta-tag-follow-ups.md`.
 - The fix returns to the same Reviewer before merge (phase 6: accepted corrections go back to it).
+
+### Re-review (2026-10-10)
+
+Same Reviewer. I reviewed only the corrections, `git diff 458e9b3..164ae86`, and edited nothing. The mutation runs were restored afterwards, and the tree is clean apart from this section.
+
+**Verdict: mergeable after fixes.** F1 and F2 are fixed for a flag whose parent is a list entry (`interfaces … disable`), and F3 and F4 are dispositioned. The same flag under a plain container is still lost (R1).
+
+- The F1 and F2 fixes check out:
+  - `test_an_inactive_disable_flag_keeps_its_tag` fails when either the base `to_yaml.py` or the base `dict_walker.py` is swapped in, and passes at 164ae86.
+  - Focused tests (`test_xml_inactive_leaf_challenge`, `test_to_yaml`, `test_characterization`, `test_cli`, `test_set_input`, `test_convert_api`, `test_convert_consistency`, `test_convert_roundtrip`): 483 passed, 1 xfailed.
+  - My earlier XML probes (groups wildcard `disable`, interface `disable`, `lldp disable`, `system services ssh`, `lldp` container) now give set input's IR. The one exception is the known one-value `apply-groups` scalar, a recorded follow-up whose set output is equal.
+  - `_holds_a_value` treats an element as a container only for `c`-without-`l`/`p`, which keeps `<lldp inactive/>` as `{"@": …}`.
+  - Set output now keeps `deactivate … disable` once. The trailing `@key` loop still skips list-valued keys, so the line is not duplicated.
+
+**R1. High: an inactive flag spelled by its value under a non-list container still loses its tag in structured output.**
+- Requirement: "set and structured output keep a tag on a flag spelled by its value (`disable`)" (the corrected requirement 1).
+- Artifact: the corrected `has_nk_leaf` branch in `dict_walker.py`. For a parent that is not a list it calls `emit_positional`, which merges the flag into the parent's line (`lldp disable`), and ConfigStore cannot place the deferred `deactivate … lldp disable` on its own line.
+- Evidence:
+  - `printf 'set protocols lldp interface all\nset protocols lldp disable\ndeactivate protocols lldp disable\n' | uv run --locked junoscfg convert -i set -e structured` prints `lldp interface all;` and `lldp disable;` with no tag. Silent: LLDP loads disabled.
+  - Without the sibling it prints `protocols inactive: lldp disable;`. The device rejects that line, and reading it back gives an UNPLACED statement.
+  - Set output is correct in both cases. Master dropped the tag in both, so this is pre-existing, and the new requirement text now claims it is fixed.
+- The test covers only the list-entry parent (`emit`).
+- Proposed correction: when the flag carries a tag (or always), emit `path + [set_key]` instead of `emit_positional`, so `inactive: disable;` stands inside `lldp { … }`. Add `deactivate protocols lldp disable`, with and without a sibling, to the structured round trip. On change B's head the single-child case is worse; see B's re-review.
+
+### Builder response to the re-review (2026-10-10)
+
+- R1 (High, a tagged statement-name flag merged into a non-list parent's line): corrected. `DictWalker` writes a tagged flag as a line of its own inside its parent's block (`lldp { interface all; inactive: disable; }`). `test_an_inactive_flag_under_a_container_keeps_its_tag` covers both lldp shapes; the shape beside a sibling fails without the correction (product code stashed) and passes with it. The flag alone still collapses on this change's head (`lldp inactive: disable;`), because the rule that no line joins past a tagged node is change B's `ConfigStore` correction; that case is a strict xfail naming change B and is promoted there.
