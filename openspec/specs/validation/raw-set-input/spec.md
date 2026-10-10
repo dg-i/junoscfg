@@ -51,7 +51,7 @@ record device-valid bracket shorthand under `INTENTIONALLY_UNSUPPORTED`, SHALL
 not count it as malformed or accidental over-rejection, and SHALL classify
 `set policy-options community FOO members` as correctly rejected because the
 leaf-list has no value.
-Tests: `tests/corpus/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_set_corpus.py::TestShippedGrammarAgainstTheCorpus::test_the_recorded_rejections_are_still_in_the_corpus`
+Tests: `tests/corpus/test_set_corpus.py::TestTheGrammarRefusesWhatIsNotJunos::test_malformed_junos_is_rejected`, `tests/corpus/test_set_corpus.py::TestTheGrammarRefusesWhatIsNotJunos::test_bracket_shorthand_is_refused_with_its_reason`
 
 #### Scenario: Bracket shorthand classification
 

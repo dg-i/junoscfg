@@ -63,10 +63,11 @@ WHEN set or structured output renders a list entry THEN set output SHALL write
 the keyword, the key values in declared order, each not `nokeyword` with its
 keyword, a key choice as its keyword and value, then each other child on a line
 of its own; structured output SHALL put an entry on one line exactly where the
-node carries `o`. `name`-keyed output SHALL stay byte-identical, the device's
-structured static route and `attributes-match` SHALL be pinned beside today's,
-and phase 5 SHALL stop and report any other slot whose rendering moves.
-Tests: `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/corpus/test_name_keyed_lists.py::TestNameKeyedListsAreUnchanged::test_corpus_output_is_byte_identical`, `tests/corpus/test_device_truth.py::test_name_keyed_set_lines_match_the_device`, `tests/corpus/test_device_truth.py::test_unexplained_structured_shapes_are_pinned`
+node carries `o`. The device's structured static route and `attributes-match`
+SHALL be pinned beside today's. Correctness is the device's display set
+(`tests/corpus/test_device_renderings.py`), not byte identity with an earlier
+release.
+Tests: `tests/corpus/test_device_renderings.py::TestJunoscfgWritesTheDevicesSet::test_only_the_recorded_lines_differ`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/corpus/test_device_truth.py::test_name_keyed_set_lines_match_the_device`, `tests/corpus/test_device_truth.py::test_unexplained_structured_shapes_are_pinned`
 
 #### Scenario: Device JSON and XML to set and structured
 

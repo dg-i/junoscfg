@@ -114,10 +114,13 @@ def rewrite(files: list[str]) -> None:
     stands for the catalogue rows its note names, which the sheet keeps. On a
     ``Tests:`` line an id named twice is named once.
     """
+    # A function whose node ids still exist keeps its name: a row for one of its
+    # parametrisations moved that case, not the function.
+    alive = {_base(node) for node in collected()}
     sheet = {
         _base(old): (new if "[" in new else _base(new))
         for old, (new, _, _) in rows().items()
-        if new != "dropped"
+        if new != "dropped" and _base(old) not in alive
     }
     if not sheet:
         return
