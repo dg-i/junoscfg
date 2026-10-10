@@ -14,11 +14,24 @@ override`, never committed there, and saved by the device with `show`, `show
 `manifest.json` lists every capture, every device's model and release (and
 where the release was read), and the origin of every JVD configuration.
 
+## What is here, and why so little
+
+Few captures, each for something no other shows (`SELECTION` in
+`tools/import_device_captures.py` gives the reason for each). `junoscfg-oracle`
+is written for this: every construct the converters must carry, the routing
+and system material the anonymizer needs, and an ELS switching section; the
+vMX's renderings of it are `examples/`, the QFX5120's carry the switching
+section on the release the shipped artifacts come from. Three JVD
+configurations add what only real designs showed. The EX and QFX renderings
+of the same configurations gave no junoscfg difference the vMX's did not, so
+they, and the JVD configurations whose classes others already show, stay in
+`private_test_data/`; the grammar corpus still draws on every line there.
+
 | Directory | Holds | Licence |
 |---|---|---|
 | `synthetic/sources/` | configurations written for these captures, following `AGENTS.md`'s test-data values | junoscfg's (MIT) |
 | `synthetic/<device>/` | each device's renderings of them | junoscfg's (MIT) |
-| `jvd/sources/` | five configurations from Juniper's Validated Designs, unmodified | Apache-2.0, `jvd/LICENSE`, `jvd/NOTICE` |
+| `jvd/sources/` | three configurations from Juniper's Validated Designs, unmodified | Apache-2.0, `jvd/LICENSE`, `jvd/NOTICE` |
 | `jvd/<device>/` | each device's renderings of them: derived works, see `jvd/NOTICE` | Apache-2.0 |
 
 Secrets in both sets are public: the synthetic ones are invented, and the JVD

@@ -50,6 +50,13 @@
    "device": "vmx-23.2R2-S7.5",
    "captured": "2026-10-10",
    "note": "junoscfg's renderings, loaded to ask the device their meaning"
+  },
+  {
+   "name": "junoscfg-oracle",
+   "source": "synthetic",
+   "device": "qfx5120-25.2R2-S1.5",
+   "captured": "2026-10-10",
+   "note": "the switching (ELS) section, on the release the shipped artifacts come from"
   }
  ]
 }
