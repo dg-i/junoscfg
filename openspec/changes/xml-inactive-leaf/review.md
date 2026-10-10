@@ -135,3 +135,15 @@ Same Reviewer. I reviewed only the corrections, `git diff 458e9b3..164ae86`, and
 ### Builder response to the re-review (2026-10-10)
 
 - R1 (High, a tagged statement-name flag merged into a non-list parent's line): corrected. `DictWalker` writes a tagged flag as a line of its own inside its parent's block (`lldp { interface all; inactive: disable; }`). `test_an_inactive_flag_under_a_container_keeps_its_tag` covers both lldp shapes; the shape beside a sibling fails without the correction (product code stashed) and passes with it. The flag alone still collapses on this change's head (`lldp inactive: disable;`), because the rule that no line joins past a tagged node is change B's `ConfigStore` correction; that case is a strict xfail naming change B and is promoted there.
+
+### Second re-review (2026-10-10)
+
+I re-reviewed only R1's correction (`git diff 164ae86..406137f`) and edited nothing. One mutation run was restored afterwards.
+
+**Verdict: mergeable.** R1 is fixed for the shape this change can reach, a flag beside a sibling. The shape where the flag stands alone stays a strict xfail that names change B; the owner merges A, then B (owner answer 3).
+
+- **The correction:** the statement-name branch now emits a tagged flag as its own line (`emit`) and writes its tag once. An untagged flag still merges into its parent's line (`emit_positional`), so layout is unchanged where there is no tag.
+- **The test fails without the fix.** `test_an_inactive_flag_under_a_container_keeps_its_tag[beside a sibling]` fails with 164ae86's `dict_walker.py` swapped in and passes at 406137f. The `[alone]` case is a strict xfail.
+- **Focused tests** (`test_xml_inactive_leaf_challenge`, `test_to_yaml`, `test_characterization`, `test_cli`, `test_set_input`, `test_convert_api`, `test_convert_consistency`, `test_convert_roundtrip`): 484 passed, 2 xfailed.
+- **These shapes round-trip** through both structured and set output: lldp `disable` beside `interface all`, interface `disable`, unit `disable`, and a `groups` wildcard `disable`. XML `<lldp><disable inactive=…/></lldp>` gives set input's IR. Untagged `lldp disable` keeps its old layout.
+- **Residue, Low and loud.** On this head alone, `deactivate protocols lldp disable` without a sibling, and the same with `protect`, write `lldp inactive: disable;`. Reading that back reports UNPLACED. Change B closes it. If A were released without B, that shape would stay loud and wrong, never silent.
