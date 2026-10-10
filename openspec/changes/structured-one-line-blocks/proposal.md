@@ -25,7 +25,7 @@ one-line statement's last node (OPEN-10, three strict xfails).
   and `load_schema_tree()` are the only readers of that directory.
 - Deprecated until the next minor, behaviour kept: `SetConverter.to_set()`,
   `StructuredValidator`, `JunosValidator.validate_structured()`.
-- `omitted-block-emitted` leaves `known-differences.json` through the tool. Patch bump.
+- `omitted-block-emitted` leaves `known-differences.json` through the tool. Minor bump to 0.16.0 (declared breaks, `AGENTS.md`).
 
 ## Capabilities
 

@@ -12,7 +12,7 @@ declared-break:
   consumer:
     why: >-
       No name or signature changes. The surface file changes `__version__`
-      (0.15.3 to 0.15.4) and `validate_structured`, which `validate_config`
+      (0.15.3 to 0.16.0) and `validate_structured`, which `validate_config`
       calls for structured input. Behind it, convert_config from structured
       input converts a block written on one line, which it returned empty;
       raises ValueError for unbalanced braces or brackets, a statement without
@@ -21,8 +21,8 @@ declared-break:
       instead of writing them. validate_config and validate_structured check a
       one-line curly statement as conversion reads it, so the device's
       `hold-time up 2000 down 0;` and `protect:` lines validate, and a one-line
-      block is validated instead of passing as empty. The owner classes these
-      as bug fixes, patch bump (instruction-integrity C7).
+      block is validated instead of passing as empty. Declared breaks on a
+      named surface raise the minor (AGENTS.md; instruction-integrity C7).
     migration: >-
       None for input a device loads. A caller that passed malformed curly text
       gets ValueError (convert) or an invalid result (validate) and fixes the

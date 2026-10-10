@@ -3,7 +3,7 @@
 ## Resolved instructions
 
 - Owner brief and intake answers of 2026-10-11 (`instruction-integrity.md`): IDs OPEN-1 (=NEW-A1), NEW-B6, DEV-18, OPEN-10, NEW-B5; owning layer the curly lexer; a non-empty input that yields nothing is a diagnostic; `to_set()` fixed or deprecated consistently with `display/CONTRACT.md`; `omitted-block-emitted` removed only through `tools/device_differences.py`.
-- C4: curly validation is composed at the surface; the `validate` package's structured doors are deprecated with `to_set()` (no new import edge). C5: validation checks the input's own tokens split as the walk reads them, never the writer's output. C6: `to_set()`'s strict xfails stay until its removal. C7: patch bump with `declared-break` entries, per precedent.
+- C4: curly validation is composed at the surface; the `validate` package's structured doors are deprecated with `to_set()` (no new import edge). C5: validation checks the input's own tokens split as the walk reads them, never the writer's output. C6: `to_set()`'s strict xfails stay until its removal. C7: minor bump to 0.16.0 for the declared breaks (`AGENTS.md`), superseding the patch precedent.
 - The run's working ledger for every later change is `ledger.md` in this folder.
 
 ## Requirements
@@ -36,7 +36,7 @@ The lexer is one regular-expression scan per input instead of a per-line loop; a
 
 ## Outstanding decisions
 
-None blocking. C7 (patch versus minor) is reported to the owner at the end of the run with the interim patch.
+None. C7 is settled: minor bump to 0.16.0.
 
 ## Execution and checkpoint
 
@@ -51,3 +51,4 @@ None blocking. C7 (patch versus minor) is reported to the owner at the end of th
 
 - Freeze established after the proposal commit `144a9fb`. Approved under the owner's unattended-run instruction of 2026-10-11.
 - Phase 4: acceptance tests committed; on the merge base every new test id fails except the guard parameters (`an-unquoted-multi-word-value`, `a-keyword-leaf-the-writer-drops`, two comment parameters, and the deprecated door's verdict rows), which pass on both sides by design. Approved under the owner's unattended-run instruction of 2026-10-11. No acceptance criterion changed.
+- 2026-10-11, during STOP-T: C7 settled by the orchestrator's ruling (minor, 0.16.0, `AGENTS.md`). No acceptance criterion or test changes; no work invalidated.
