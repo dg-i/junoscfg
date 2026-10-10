@@ -31,8 +31,8 @@ generated data under `src/junoscfg/validate/data/` and never a `CONTRACT.md` or
 a page under `docs/`, fall in more than one of these six areas receives, beside
 the fresh agent review above, an independent adversarial corpus review, green
 gates notwithstanding: the identifier-key-fields review found three High
-findings after the full check was green. The areas, disjoint, as the developer
-guide's rows draw them:
+findings after the full check was green. The six areas, disjoint, with the paths
+the developer guide's rows name:
 
 - the schema pipeline: `validate/xsd_extractor.py`, `xsd_parser.py`,
   `xsd_fixes.py`, `schema_node.py`, `artifact_builder.py`,

@@ -32,7 +32,7 @@ No override, fallback, parameter or environment read is added.
 ### Modified Capabilities
 
 - `conversion/entry-keys`: "A statement the reader cannot complete is kept whole" gains the
-  metadata-verb clause and test ids; behaviour is unchanged, so `skip_specs: true` stands.
+  meta-command clause and test ids; behaviour is unchanged, so `skip_specs: true` stands.
 
 ## Non-goals
 

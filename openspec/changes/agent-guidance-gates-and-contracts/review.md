@@ -394,3 +394,111 @@ leaks, caps exit 0, markdownlint Passed, strict MkDocs 0 warnings with the new a
 - Not changed: S1's "The same applies to…" sentence stays the sibling's wording; the three
   product defects stay open for a `bug`-lane change with a device artefact first; the
   sibling's live ADDED block is not edited by this change (S3).
+
+## Phase-6 re-review (fresh session, 2026-10-10)
+
+Re-reviewed the fix pass only, commit 68b4f5a against b20ca29, in a detached worktree of
+68b4f5a (`git worktree add --detach /Users/manon-dev/src/junoscfg-wt-review2 68b4f5a`,
+skills mirror regenerated, removed afterwards). `git diff --stat b20ca29..68b4f5a` outside
+the change folder: the eight deliverables only (the `mkdocs.yml` and
+`docs/reviews/2026-10-10-instruction-audit.md` in the wider `eb369dd..68b4f5a` range are the
+owner's 306233b, not the fix pass); `.agents/` unchanged since 01efe85.
+
+### Verified
+
+- Finding 1 / S8: `main-spec-edit.md` line 8 now ends "A meta attribute on a positional
+  value the reader placed is written back and reports nothing." The diff against the
+  sibling's requirement block is exactly that sentence plus the five ids on `Tests:`.
+  The sentence matches `test_meta_on_an_existing_positional_value_is_kept_whole`:
+  `ir["protocols"]["isis"]["@SAMPLE-UNKNOWN"] == {"inactive": True}`, exact round trip,
+  `_unplaced(source + "\n") == []`, where `_unplaced` (test_set_input.py:1078) collects
+  the `field-validate` "could not be placed" messages.
+- Finding 2: guide row 1 names `xsd_extractor.py`; row 2 names `src/junoscfg/input.py`,
+  `src/junoscfg/validate/data/junos-set.lark.gz` and `src/junoscfg/validate/set_validator.py`;
+  the intro closes with the "path in no row" rule. Every newly named path exists
+  (`test -e` on nine paths, all present; `src/junoscfg/input.py` is a module beside
+  `input.CONTRACT.md`). `solo-review.md` lists six areas whose path sets are pairwise
+  disjoint (schema pipeline, `validate/data/`, `convert/` except `field_validator.py` plus
+  `input.py`, `validate/set_validator.py`, the four runtime validators plus
+  `convert/field_validator.py`, `anonymize/`), and item 1 links the guide's table instead
+  of repeating commands; the link target
+  `../../architecture/developer-guide/#pre-review-evidence-by-the-paths-a-change-touches`
+  resolves to an `id` present once in the built page.
+- Finding 3 / S6: display reads "no module reads a retired key spelling (`fe`,
+  `values-only`, `community-name`, `_v<n>`)", the set `test_no_module_keeps_its_own_key`
+  bans; 30 lines. Validate adds `TestCardinality::test_unbounded_is_list`
+  (`assert ifaces.is_list is True`, `maxOccurs="unbounded"`); 26 lines.
+- Finding 4: `grep -rni 'metadata verb|metadata-verb|immutable baseline|sanitis'` over
+  `docs`, `src`, `changelog.d`, `main-spec-edit.md` and the proposal: one residual hit,
+  `proposal.md` line 35 ("metadata-verb clause", Capabilities section); "sanitized" has
+  its committed precedent in `docs/decisions/2026-10-09-reject-raw-set-brackets.md`.
+- Finding 5: the literal `--jvd` and device-truth commands are in the guide only.
+- Finding 6: row 1 reads "`--schema … -q` once, which parametrises over every dump".
+- Finding 7: "with the device's response quoted and its prompt masked".
+- Finding 8: the proposal names `schema_version: 1` and the metrics how-to.
+- Challenge claim 1: "device truth runs in the default tier wherever capture pairs exist"
+  holds: `pytest --collect-only -q tests/test_device_truth.py -m 'not schema and not jvd'`
+  collects 23 nodes and `tests/data/captures/` holds 31 files.
+- Anonymize "passes the rules unchanged": the two walker tests enable seven and eight
+  rule flags, so the narrower wording is the backed one.
+- `docs-plan.md` now cites sibling items 4.12 and 5.4 for reproducibility; 4.12 is
+  "Artifacts regenerated twice with `--regen-schema` … each committed separately", 5.4
+  "Regenerate affected artifacts twice and prove reproducibility". Correct.
+- Mechanical QA at 68b4f5a: `mkdocs build --strict` exit 0, 0 WARNING, no INFO anchor
+  line naming an edited page, tables 15/0/1, broken markers 0/0/0; 47 distinct cited ids
+  collect (155 nodes, exit 0, 0 `not found`); `agent-ready caps` exit 0, contracts
+  30/26/30/30, no line over 84 outside test ids; `git diff --check eb369dd..68b4f5a`
+  silent; markdownlint Passed on the eight files; deny-list 0 hits; 9 old tier blocks
+  survive; 0 backticked tokens lost per contract; `agent-ready check --set fast --base
+  master` exit 1, `failing: fields, lane`, both the recorded external causes.
+
+### Findings
+
+1. **Low. One residual "metadata-verb" in the proposal.** `proposal.md` line 35,
+   Capabilities: "gains the metadata-verb clause and test ids". Finding 4 is otherwise
+   closed; this is the one spelling the fix pass missed. Not a deliverable; fix when the
+   proposal is next touched.
+2. **Low (wording). "as the developer guide's rows draw them" overstates.**
+   `solo-review.md` line 36: the six areas are disjoint, but the guide's rows are not
+   (`grammar_generator.py` sits in rows 1 and 2, `convert/input/` in rows 2 and 3,
+   `config_store.py` in rows 3 and 5). The areas use the rows' path names, not their
+   grouping. Say "with the paths the developer guide's rows name".
+3. **Info. "reports nothing" is read against `UNPLACED`.** The added sentence's test
+   asserts only that no "could not be placed" message is emitted; other diagnostics are
+   not asserted. In the requirement's context ("field validation SHALL report it
+   `UNPLACED`") the sentence reads correctly; "is not reported `UNPLACED`" would be the
+   exact form. No action required.
+
+### Could not check
+
+- Unchanged from the first review: the `--schema`, `--jvd` and `--regen-schema` tiers
+  themselves; device behaviour of probes A, D and E; `openspec archive` of the sibling's
+  `ADDED` block; 1.7 and 1.9 on the head after the owner decides on 01efe85 and 306233b
+  (the lane message now also names `mkdocs.yml`); 1.10 and 1.18 on the real phase-7 commit.
+- The challenger's post-implementation sampling (20 claims) was read for its headings
+  and the fix pass's account of it, not re-executed claim by claim; the two failed and
+  four partial claims it names are the ones the fix pass lists, and each correction above
+  is verified against its source.
+
+### Specification challenges
+
+None new. S8's interim action (option b) is applied; S1 to S8 remain "Pending owner
+decision" with their interim actions.
+
+### Verdict
+
+Merge-ready on this change's own terms: both Medium findings are corrected and verified
+at 68b4f5a, the Low findings are closed except the one residual word in the proposal
+(finding 1 above, non-blocking), and the main-spec text the Finalizer applies is the
+sibling's owner-approved wording plus one test-backed sentence and the five ids. What
+still stands between this branch and merge is outside the change: the owner's decisions on
+01efe85 and 306233b (lane) and the sibling's `assurance` (fields), and the owner's
+accept/reject on S1 to S8 and the three open product defects.
+
+## Residue after the re-review (2026-10-10, Builder)
+
+- Re-review finding 1 (Low): `proposal.md` now says "meta-command clause".
+- Re-review finding 2 (Low): `solo-review.md` says "The six areas, disjoint, with the paths
+  the developer guide's rows name", since the guide's rows overlap and the areas do not.
+- Re-review finding 3 (Info): the S8 sentence keeps "reports nothing", which is correct in
+  the requirement's `UNPLACED` context; no change.
