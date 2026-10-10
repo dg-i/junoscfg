@@ -95,7 +95,7 @@ grammar sample: newly rejected 0, newly accepted 2
   warnings for synthetic template values.
 - [x] 5.4 Regenerate affected artifacts twice and prove reproducibility.
 - [x] 5.5 Update only the fixed rows in the two private follow-up records.
-- [ ] 5.6 Run focused tests, the full project check, the frozen 1,538-file
+- [x] 5.6 Run focused tests, the full project check, the frozen 1,538-file
   corpus comparison, and the 30,000-entry plus `ma4_mx204.conf` benchmarks;
   review the final diff for loss, partial application, rule disagreement and
   special cases.

@@ -5,7 +5,7 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | {"added": 6742, "binary_files": 5, "files": 87, "removed": 705} |
+| lines added and removed | {"added": 7544, "binary_files": 5, "files": 94, "removed": 717} |
 | dependency count | UNMEASURED |
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | `agent-ready reconcile` exit 0, no output, run at c297bd8 with the six deltas live |
@@ -84,5 +84,6 @@
 | Consolidation frozen corpus | 1,538 files / 4,947,067 lines; 68,172 unplaced, 329 other field warnings, 35 failed files; grammar 10,970 accepted / 30 rejected, no newly rejected lines |
 | Consolidation performance | 30,000 keyed entries: 1.002 / 0.844 / 0.723 s; `ma4_mx204.conf`: 4.650 / 4.435 / 4.441 s |
 | Consolidation generated artifacts | two regenerations produced identical JSON, YAML, grammar and structure-tree payload hashes; metadata differed only by generation time |
+| Consolidation full project check | `agent-ready check --set full`: every check passed; 1,919 passed, 45 skipped, 1 xfailed in 201.58 s |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

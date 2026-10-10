@@ -3,8 +3,8 @@
   "metrics": {
     "declared_runtime_dependencies": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -25,8 +25,8 @@
     },
     "files_read": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -37,8 +37,8 @@
     },
     "human_effort": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "no human-effort record supplied",
       "source": {
         "kind": "not_provided",
@@ -49,8 +49,8 @@
     },
     "lines_added_removed": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": null,
       "source": {
         "kind": "git_diff",
@@ -65,8 +65,15 @@
             "docs/decisions/2026-10-09-key-entries-by-declared-identifiers.md",
             "docs/decisions/index.md",
             "docs/guide/validation.md",
+            "openspec/specs/anonymization/keyed-entries/spec.md",
+            "openspec/specs/audit/keyed-references/spec.md",
+            "openspec/specs/conversion/entry-keys/spec.md",
+            "openspec/specs/schema-pipeline/entry-key-fields/spec.md",
+            "openspec/specs/validation/keyed-entries/spec.md",
+            "openspec/specs/validation/set-command-validation/spec.md",
             "pyproject.toml",
             "src/junoscfg/__init__.py",
+            "src/junoscfg/anonymize/rules/ip.py",
             "src/junoscfg/anonymize/walker.py",
             "src/junoscfg/audit/data/unused-types.yaml",
             "src/junoscfg/audit/walker.py",
@@ -148,22 +155,22 @@
         },
         "selector": [
           "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-          "e6b7886e27a1fd5d8af14892f37e9e6063ece214"
+          "b041b113713e08c90f01d377cc64e32b5da0327e"
         ],
         "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
       },
       "status": "measured",
       "value": {
-        "added": 6742,
+        "added": 7544,
         "binary_files": 5,
-        "files": 87,
-        "removed": 705
+        "files": 94,
+        "removed": 717
       }
     },
     "locked_packages": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -184,8 +191,8 @@
     },
     "phase_span": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -194,10 +201,25 @@
       "status": "unmeasured",
       "value": null
     },
+    "requirement_test_reconcile": {
+      "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
+      "reason": null,
+      "source": {
+        "kind": "operator_markdown",
+        "path": "/Users/manon-dev/src/junoscfg/openspec/changes/identifier-key-fields/metrics.md",
+        "selector": "requirement-to-test reconcile result",
+        "semantics": "preserved human-written Field/Value row; content not independently verified",
+        "sha256": "8464e31c83e8bf41c809553540e0e2176a7eec3140a089c2ca03308be4040865"
+      },
+      "status": "reported",
+      "value": "`agent-ready reconcile` exit 0, no output, run at c297bd8 with the six deltas live"
+    },
     "retries": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -208,8 +230,8 @@
     },
     "runtime_tokens": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -220,8 +242,8 @@
     },
     "wall_clock_intent_to_merge": {
       "base_sha": "588d16a90700d60ba385e0a786070eb4eb2de1b4",
-      "captured_at": "2026-10-09T21:01:32.567431Z",
-      "head_sha": "e6b7886e27a1fd5d8af14892f37e9e6063ece214",
+      "captured_at": "2026-10-10T01:47:41.482648Z",
+      "head_sha": "b041b113713e08c90f01d377cc64e32b5da0327e",
       "reason": "intent and merge timestamps were not supplied",
       "source": {
         "kind": "not_provided",
