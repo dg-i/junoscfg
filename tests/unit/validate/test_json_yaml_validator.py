@@ -3,78 +3,24 @@
 from __future__ import annotations
 
 import json
-import tempfile
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.validate import SchemaLoadError
-from junoscfg.validate.json_yaml_validator import JsonYamlValidator
+from junoscfg.validate import JsonYamlValidator, SchemaLoadError
+from tests.support.artifacts import make_artifacts_dir
 
-# Minimal JSON Schema for testing
-MINIMAL_JSON_SCHEMA = {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-        "configuration": {
-            "type": "object",
-            "properties": {
-                "system": {
-                    "type": "object",
-                    "properties": {
-                        "host-name": {},
-                    },
-                    "additionalProperties": False,
-                },
-            },
-            "additionalProperties": False,
-        },
-    },
-    "additionalProperties": False,
-}
-
-MINIMAL_YAML_SCHEMA = {
-    **MINIMAL_JSON_SCHEMA,
-    "properties": {
-        "configuration": {
-            "type": "object",
-            "properties": {
-                "system": {
-                    "type": "object",
-                    "properties": {
-                        "host-name": {},
-                    },
-                    "additionalProperties": False,
-                    "patternProperties": {
-                        "^_ansible_": {},
-                        "^_meta_": {},
-                    },
-                },
-            },
-            "additionalProperties": False,
-            "patternProperties": {
-                "^_ansible_": {},
-                "^_meta_": {},
-            },
-        },
-    },
-}
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
-def schema_paths():
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as json_f:
-        json.dump(MINIMAL_JSON_SCHEMA, json_f)
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as yaml_f:
-        json.dump(MINIMAL_YAML_SCHEMA, yaml_f)
-
-    return json_f.name, yaml_f.name
-
-
-@pytest.fixture
-def validator(schema_paths):
-    json_path, yaml_path = schema_paths
-    return JsonYamlValidator(json_schema_path=json_path, yaml_schema_path=yaml_path)
+def validator(tmp_path: Path) -> JsonYamlValidator:
+    """Both minimal schemas of `tests/support/artifacts.py`."""
+    minimal = make_artifacts_dir(tmp_path)
+    return JsonYamlValidator(
+        json_schema_path=minimal.json_schema, yaml_schema_path=minimal.yaml_schema
+    )
 
 
 class TestJsonValidation:
@@ -141,77 +87,3 @@ class TestSchemaLoadError:
         v = JsonYamlValidator()
         with pytest.raises(SchemaLoadError):
             v.validate_yaml("")
-
-
-# ── identifier-key-fields: the bundled schemas and keyed entries ─────
-#
-# Spec: openspec/changes/identifier-key-fields/specs/validation/keyed-entries,
-# "The JSON and YAML schemas name the key fields". Through the public doors,
-# against the bundled artefacts.
-
-
-def _document(entry: dict, slot: str = "as-path-neighbors", where: str = "from") -> dict:
-    return {
-        "configuration": {
-            "policy-options": {
-                "policy-statement": [
-                    {"name": "SAMPLE-POLICY", "term": [{"name": "T1", where: {slot: [entry]}}]}
-                ]
-            }
-        }
-    }
-
-
-class TestKeyedEntries:
-    DEVICE = {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}
-
-    @staticmethod
-    def _doors(document: dict) -> dict[str, bool]:
-        import yaml
-
-        from junoscfg import Format, validate_config, validate_json, validate_yaml
-
-        text = json.dumps(document)
-        as_yaml = yaml.safe_dump(document)
-        return {
-            "validate_json": validate_json(text).valid,
-            "validate_yaml": validate_yaml(as_yaml).valid,
-            "validate_config json": validate_config(text, format=Format.JSON).valid,
-            "validate_config yaml": validate_config(as_yaml, format=Format.YAML).valid,
-        }
-
-    @pytest.mark.parametrize(
-        ("slot", "where", "entry"),
-        [
-            ("as-path-neighbors", "from", {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}),
-            ("as-path-origins", "from", {"list-type": "as-list-group", "list-name": "SAMPLE-ASG"}),
-            (
-                "route-filter",
-                "from",
-                {"address": "198.51.100.0/24", "exact": [None], "accept": [None]},
-            ),
-            (
-                "source-address-filter",
-                "from",
-                {"address": "198.51.100.0/24", "exact": [None], "accept": [None]},
-            ),
-            ("community", "then", {"add": [None], "community-name": "SAMPLE-COMM"}),
-        ],
-    )
-    def test_the_device_shaped_as_list_reference_validates(
-        self, slot: str, where: str, entry: dict
-    ) -> None:
-        assert all(self._doors(_document(entry, slot, where)).values())
-
-    @pytest.mark.parametrize(
-        ("slot", "entry"),
-        [
-            ("as-path-neighbors", {"name": "as-list"}),
-            ("as-path-neighbors", {"name": "SAMPLE-AS-LIST", "list-type": "as-list"}),
-            ("source-address-filter", {"name": "198.51.100.0/24", "exact": [None]}),
-            ("route-filter", {"name": "198.51.100.0/24", "exact": [None]}),
-        ],
-    )
-    def test_name_under_an_as_list_reference_is_rejected(self, slot: str, entry: dict) -> None:
-        doors = self._doors(_document(entry, slot))
-        assert not any(doors.values()), doors

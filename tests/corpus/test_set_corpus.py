@@ -10,9 +10,10 @@ header of `data/set_corpus.txt`.
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from junoscfg.validate.set_validator import SetValidator  # noqa: TC001
 from tests.support.paths import TEST_DATA
 
 CORPUS = TEST_DATA / "set_corpus.txt"
@@ -69,7 +70,7 @@ def _corpus() -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def validator(bundled_set_validator: SetValidator) -> SetValidator:
+def validator(bundled_set_validator: Any) -> Any:
     """The session's one grammar compile; it costs about four seconds."""
     return bundled_set_validator
 
@@ -78,7 +79,7 @@ class TestShippedGrammarAgainstTheCorpus:
     def test_corpus_is_not_empty(self) -> None:
         assert len(_corpus()) > 100
 
-    def test_rejections_are_exactly_the_recorded_ones(self, validator: SetValidator) -> None:
+    def test_rejections_are_exactly_the_recorded_ones(self, validator: Any) -> None:
         rejected = {c for c in _corpus() if not validator.validate(c).valid}
         expected = set(CORRECTLY_REJECTED) | set(INTENTIONALLY_UNSUPPORTED) | set(OVER_REJECTED)
         assert rejected == expected, (

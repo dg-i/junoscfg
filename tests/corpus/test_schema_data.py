@@ -17,12 +17,35 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+# The schema tier tests the build-time pipeline stage by stage on a device
+# dump; the named surfaces expose it only composed, as `schema generate`. The
+# imports below are exceptions in `tools/check_test_doors.py`.
+from junoscfg.display import entry_keys, read_artifact_text
+from junoscfg.validate import (
+    ALL_FIXES,
+    ArtifactBuilder,
+    extract_xsd,
+    parse_xsd,
+    write_json_schema,
+    write_lark_grammar,
+    write_structure_tree,
+)
 from tests.support.paths import EXAMPLES
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 pytestmark = pytest.mark.schema
+
+_XSD_SEQUENCE = "{http://www.w3.org/2001/XMLSchema}sequence"
+
+
+@pytest.fixture(scope="module")
+def real_artifacts(parsed_schema: object, tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Every artifact `schema generate` writes for this dump, built once per dump."""
+    out = tmp_path_factory.mktemp("real-artifacts")
+    ArtifactBuilder().build_from_xsd(parsed_schema.xsd_text, out)
+    return out
 
 
 class TestFixesApply:
@@ -47,10 +70,6 @@ class TestFixesApply:
         which, so the number stops being a mystery and a change to it is
         visible.
         """
-        from junoscfg.validate.xsd_extractor import extract_xsd
-        from junoscfg.validate.xsd_fixes import ALL_FIXES
-        from junoscfg.validate.xsd_parser import parse_xsd
-
         # a fresh tree: apply_all_fixes has already run on parsed_schema.tree
         tree = parse_xsd(extract_xsd(parsed_schema.path.read_text(errors="replace")))
         unapplied = [fix.id for fix in ALL_FIXES if not fix.apply(tree)]
@@ -63,10 +82,10 @@ class TestFixesApply:
 class TestPipelineIntegrity:
     """The generator survives a real schema and produces usable artifacts."""
 
-    def test_structure_is_plausible(self, parsed_schema: object) -> None:
-        from junoscfg.validate.artifact_builder import _count_stats
-
-        stats = _count_stats(parsed_schema.tree)
+    def test_structure_is_plausible(self, real_artifacts: Path) -> None:
+        """Counted by the builder over the fixed tree, as the metadata records it."""
+        meta = json.loads(read_artifact_text(real_artifacts / "junos-schema-meta.json.gz"))
+        stats = meta["stats"]
         # A real Junos schema is hundreds of thousands of nodes. A collapse to
         # a few thousand means the parser silently stopped descending.
         assert stats["total_nodes"] > 100_000
@@ -78,8 +97,6 @@ class TestPipelineIntegrity:
         """The Lark grammar is generated, not written, so it can be invalid."""
         import lark
 
-        from junoscfg.validate.grammar_generator import write_lark_grammar
-
         grammar_path = tmp_path / "junos-set.lark"
         write_lark_grammar(parsed_schema.tree, str(grammar_path))
         assert grammar_path.stat().st_size > 100_000
@@ -89,8 +106,6 @@ class TestPipelineIntegrity:
     def test_generated_json_schema_is_valid(self, parsed_schema: object, tmp_path: Path) -> None:
         """A JSON Schema that is not itself valid rejects everything."""
         import jsonschema
-
-        from junoscfg.validate.schema_generator import write_json_schema
 
         path = tmp_path / "junos-json-schema.json"
         write_json_schema(parsed_schema.tree, str(path), variant="json")
@@ -133,16 +148,6 @@ class TestConversionAgainstRealArtifacts:
     The schema decides how set commands nest, so a conversion bug can hide
     behind the bundled artifacts and appear on another release.
     """
-
-    @pytest.fixture(scope="class")
-    def real_artifacts(
-        self, parsed_schema: object, tmp_path_factory: pytest.TempPathFactory
-    ) -> Path:
-        from junoscfg.validate.artifact_builder import ArtifactBuilder
-
-        out = tmp_path_factory.mktemp("real-artifacts")
-        ArtifactBuilder().build_from_xsd(parsed_schema.xsd_text, out)
-        return out
 
     def test_roundtrip_against_this_release(
         self, real_artifacts: Path, monkeypatch: pytest.MonkeyPatch
@@ -191,8 +196,6 @@ class TestEntryKeysOnTheDump:
     SLOTS = {"25.2": 24, "23.2": 24}
 
     def test_the_as_list_slots_carry_both_keys(self, parsed_schema: object, tmp_path: Path) -> None:
-        from junoscfg.validate.artifact_builder import write_structure_tree
-
         train = next((t for t in self.SLOTS if parsed_schema.version.startswith(t)), None)
         if train is None:
             pytest.skip(f"no pinned count for {parsed_schema.version}")
@@ -213,8 +216,6 @@ class TestEntryKeysOnTheDump:
             assert node["k"] == ["list-type", "list-name"]
             assert list(node["c"])[:2] == ["list-type", "list-name"]
             assert "p" not in node
-        from junoscfg.display import entry_keys
-
         assert all(entry_keys(node) == ("list-type", "list-name") for node in slots)
 
 
@@ -233,14 +234,16 @@ class TestIdentifierCounts:
     def test_the_counts_are_the_proposals(self, parsed_schema: object) -> None:
         from lxml import etree
 
-        from junoscfg.validate import xsd_parser
+        # The parser's own identifier rule, private: the counts are over the
+        # dump's sequences, which no tree the parser builds still shows.
+        import junoscfg.validate.xsd_parser as xsd_parser
 
         train = next((t for t in self.COUNTS if parsed_schema.version.startswith(t)), None)
         if train is None:
             pytest.skip(f"no pinned count for {parsed_schema.version}")
         root = etree.fromstring(parsed_schema.xsd_text.encode("utf-8"))
         name_only = one_other = several = choice_keyed = 0
-        for seq in root.iter(xsd_parser._xsd("sequence")):  # noqa: SLF001
+        for seq in root.iter(_XSD_SEQUENCE):
             keys = xsd_parser._key_fields(seq)  # noqa: SLF001
             values = [k for k in keys if isinstance(k, str)]
             choice_keyed += any(isinstance(k, tuple) for k in keys)
@@ -254,8 +257,6 @@ class TestIdentifierCounts:
         assert (name_only, one_other, several, choice_keyed)[: len(expected)] == expected
 
     def test_no_name_keyed_list_carries_k(self, parsed_schema: object, tmp_path: Path) -> None:
-        from junoscfg.validate.artifact_builder import write_structure_tree
-
         path = tmp_path / "tree.json"
         write_structure_tree(parsed_schema.tree, str(path))
         stack = [json.loads(path.read_text(encoding="utf-8"))]

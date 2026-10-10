@@ -79,8 +79,12 @@ expose = ["find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"
 [[interfaces]]
 from = ["junoscfg.validate"]
 expose = [
-    "ArtifactBuilder", "JunosValidator", "SchemaLoadError", "ValidationError",
-    "ValidationResult",
+    "ALL_FIXES", "ArtifactBuilder", "Combinator", "JsonYamlValidator", "JunosValidator",
+    "SchemaLoadError", "SchemaNode", "SetValidator", "StructuredValidator", "ValidationError",
+    "ValidationResult", "XmlValidator", "XsdFix", "apply_all_fixes", "extract_xsd", "find_all",
+    "generate_json_schema", "generate_lark_grammar", "get_fix_count", "navigate", "parse_xsd",
+    "read_structure_tree", "walk", "write_json_schema", "write_lark_grammar",
+    "write_structure_tree",
 ]
 
 [[interfaces]]

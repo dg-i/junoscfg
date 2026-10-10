@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
-from junoscfg.validate.schema_node import Combinator, SchemaNode
-from junoscfg.validate.xsd_fixes import (
+from junoscfg.validate import (
     ALL_FIXES,
+    Combinator,
+    SchemaNode,
+    XsdFix,
     apply_all_fixes,
     get_fix_count,
 )
+
+
+def registered(fix_id: str) -> XsdFix:
+    """The registered fix *fix_id*; a renamed or dropped fix fails here by name."""
+    found = [f for f in ALL_FIXES if f.id == fix_id]
+    assert len(found) == 1, f"{fix_id!r} is registered {len(found)} times"
+    return found[0]
 
 
 def _make_root(*children_items: tuple[str, SchemaNode]) -> SchemaNode:
@@ -57,7 +66,7 @@ class TestGroupBGroupsFix:
         root = _make_root(("groups", groups), ("system", system))
 
         # Apply just the groups fix
-        fix = next(f for f in ALL_FIXES if f.id == "groups-structure")
+        fix = registered("groups-structure")
         fix.apply(root)
 
         # groups is a container (not a named list)
@@ -83,20 +92,20 @@ class TestGroupBGroupsFix:
 class TestGroupCLiteralNames:
     def test_equal_literal_renamed(self):
         root = _make_root(("equal-literal", SchemaNode(name="equal-literal", is_leaf=True)))
-        fix = next(f for f in ALL_FIXES if f.id == "literal-equal")
+        fix = registered("literal-equal")
         fix.apply(root)
         assert "=" in root.children
         assert "equal-literal" not in root.children
 
     def test_plus_literal_renamed(self):
         root = _make_root(("plus-literal", SchemaNode(name="plus-literal", is_leaf=True)))
-        fix = next(f for f in ALL_FIXES if f.id == "literal-plus")
+        fix = registered("literal-plus")
         fix.apply(root)
         assert "+" in root.children
 
     def test_minus_literal_renamed(self):
         root = _make_root(("minus-literal", SchemaNode(name="minus-literal", is_leaf=True)))
-        fix = next(f for f in ALL_FIXES if f.id == "literal-minus")
+        fix = registered("literal-minus")
         fix.apply(root)
         assert "-" in root.children
 
@@ -108,7 +117,7 @@ class TestGroupDMissingElements:
         system = SchemaNode(name="system", children={"processes": processes})
         root = _make_root(("system", system))
 
-        fix = next(f for f in ALL_FIXES if f.id == "missing-dhcp")
+        fix = registered("missing-dhcp")
         fix.apply(root)
 
         procs = root.children["system"].children["processes"]
@@ -123,7 +132,7 @@ class TestGroupDMissingElements:
         """
         root = _make_root(("system", SchemaNode(name="system")))
 
-        fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
+        fix = registered("apply-statements")
         assert fix.apply(root)
 
         for name in (
@@ -152,7 +161,7 @@ class TestGroupDMissingElements:
         system = SchemaNode(name="system")
         root = _make_root(("system", system))
 
-        next(f for f in ALL_FIXES if f.id == "apply-statements").apply(root)
+        registered("apply-statements").apply(root)
 
         assert "apply-groups" not in system.children
 
@@ -167,7 +176,7 @@ class TestGroupDMissingElements:
         members = SchemaNode(name="members")
         root = _make_root(("members", members))
 
-        fix = next(f for f in ALL_FIXES if f.id == "members-bracket")
+        fix = registered("members-bracket")
         fix.apply(root)
 
         assert root.children["members"].is_leaf
@@ -177,7 +186,7 @@ class TestGroupDMissingElements:
         speed = SchemaNode(name="speed", enums=["100g", "400g"], is_leaf=True)
         root = _make_root(("speed", speed))
 
-        fix = next(f for f in ALL_FIXES if f.id == "800g-speed")
+        fix = registered("800g-speed")
         fix.apply(root)
 
         assert "800g" in root.children["speed"].enums
@@ -189,7 +198,7 @@ class TestGroupEWrongNames:
         member_range = SchemaNode(name="member-range", children={"end-range": end_range})
         root = _make_root(("member-range", member_range))
 
-        fix = next(f for f in ALL_FIXES if f.id == "end-range-to")
+        fix = registered("end-range-to")
         fix.apply(root)
 
         assert "to" in root.children["member-range"].children
@@ -199,7 +208,7 @@ class TestGroupEWrongNames:
         node = SchemaNode(name="ieee-802.3ad", is_leaf=True)
         root = _make_root(("ieee-802.3ad", node))
 
-        fix = next(f for f in ALL_FIXES if f.id == "ieee-802.3ad")
+        fix = registered("ieee-802.3ad")
         fix.apply(root)
 
         assert "802.3ad" in root.children
@@ -209,7 +218,7 @@ class TestGroupEWrongNames:
             node = SchemaNode(name=old_name, is_leaf=True)
             root = _make_root((old_name, node))
 
-            fix = next(f for f in ALL_FIXES if f.id == "nat-rule-match")
+            fix = registered("nat-rule-match")
             fix.apply(root)
 
             assert "match" in root.children
@@ -219,7 +228,7 @@ class TestGroupEWrongNames:
         snmp = SchemaNode(name="snmp", children={"system-name": sys_name})
         root = _make_root(("snmp", snmp))
 
-        fix = next(f for f in ALL_FIXES if f.id == "system-name")
+        fix = registered("system-name")
         fix.apply(root)
 
         assert "name" in root.children["snmp"].children
@@ -236,7 +245,7 @@ class TestGroupEWrongNames:
         )
         root = _make_root(("speed", speeds))
 
-        fix = next(f for f in ALL_FIXES if f.id == "ethernet-speed-prefix")
+        fix = registered("ethernet-speed-prefix")
         fix.apply(root)
 
         assert "10g" in root.children["speed"].children
@@ -249,7 +258,7 @@ class TestGroupFNokeyword:
         vlan_name = SchemaNode(name="vlan-name", is_leaf=False)
         root = _make_root(("vlan-name", vlan_name))
 
-        fix = next(f for f in ALL_FIXES if f.id == "vlan-name-freeform")
+        fix = registered("vlan-name-freeform")
         fix.apply(root)
 
         assert root.children["vlan-name"].is_leaf is True
@@ -259,7 +268,7 @@ class TestGroupFNokeyword:
         vlan_id = SchemaNode(name="vlan-id", is_leaf=False)
         root = _make_root(("vlan-id", vlan_id))
 
-        fix = next(f for f in ALL_FIXES if f.id == "vlan-id-freeform")
+        fix = registered("vlan-id-freeform")
         fix.apply(root)
 
         assert root.children["vlan-id"].is_leaf is True
@@ -274,7 +283,7 @@ class TestGroupGCombinator:
         )
         root = _make_root(("archive", archive))
 
-        fix = next(f for f in ALL_FIXES if f.id == "archive-seqchoice")
+        fix = registered("archive-seqchoice")
         fix.apply(root)
 
         assert root.children["archive"].combinator == Combinator.SEQ_CHOICE
@@ -290,7 +299,7 @@ class TestGroupGCombinator:
         )
         root = _make_root(("term", term))
 
-        fix = next(f for f in ALL_FIXES if f.id == "term-seqchoice")
+        fix = registered("term-seqchoice")
         fix.apply(root)
 
         assert root.children["term"].combinator == Combinator.SEQ_CHOICE
@@ -301,7 +310,7 @@ class TestGroupGCombinator:
         orlonger = SchemaNode(name="orlonger", is_leaf=True)
         root = _make_root(("exact", exact), ("longer", longer), ("orlonger", orlonger))
 
-        fix = next(f for f in ALL_FIXES if f.id == "exact-longer-presence")
+        fix = registered("exact-longer-presence")
         fix.apply(root)
 
         for name in ("exact", "longer", "orlonger"):
@@ -317,7 +326,7 @@ class TestGroupGCombinator:
         system = SchemaNode(name="system", children={"login": login})
         root = _make_root(("system", system))
 
-        fix = next(f for f in ALL_FIXES if f.id == "login-user-seqchoice")
+        fix = registered("login-user-seqchoice")
         fix.apply(root)
 
         user_node = root.children["system"].children["login"].children["user"]
@@ -330,7 +339,7 @@ class TestGroupGCombinator:
         system = SchemaNode(name="system", children={"login": login})
         root = _make_root(("system", system))
 
-        fix = next(f for f in ALL_FIXES if f.id == "user-class-single")
+        fix = registered("user-class-single")
         applied = fix.apply(root)
 
         assert applied is True
@@ -345,7 +354,7 @@ class TestGroupGCombinator:
         system = SchemaNode(name="system", children={"login": login})
         root = _make_root(("system", system))
 
-        fix = next(f for f in ALL_FIXES if f.id == "user-class-single")
+        fix = registered("user-class-single")
         applied = fix.apply(root)
 
         assert applied is False
@@ -361,7 +370,7 @@ class TestGroupHUfdGroupTransparent:
 
     @staticmethod
     def _fix():
-        return next(f for f in ALL_FIXES if f.id == "ufd-group-transparent")
+        return registered("ufd-group-transparent")
 
     @staticmethod
     def _tree() -> SchemaNode:

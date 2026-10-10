@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from junoscfg.validate.schema_node import Combinator, SchemaNode, find_all, navigate, walk
+from junoscfg.validate import Combinator, SchemaNode, find_all, navigate, walk
 
 
 def _make_tree() -> SchemaNode:

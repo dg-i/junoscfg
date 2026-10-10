@@ -2,38 +2,21 @@
 
 from __future__ import annotations
 
-import tempfile
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.validate.set_validator import SetValidator
-from junoscfg.validate.structured_validator import StructuredValidator
+from junoscfg.validate import SetValidator, StructuredValidator
+from tests.support.artifacts import make_artifacts_dir
 
-# Minimal Lark grammar for testing
-MINIMAL_GRAMMAR = """\
-start: SET configuration
-configuration: "system" system | "interfaces" interfaces
-system: "host-name" VALUE | "services" services
-services: "ssh"
-interfaces: "description" QUOTED_OR_VALUE
-
-SET: "set"
-VALUE: /\\S+/
-QUOTED: /"[^"]*"/
-QUOTED_OR_VALUE: QUOTED | VALUE
-
-%import common.WS
-%ignore WS
-"""
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
-def structured_validator():
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".lark", delete=False) as f:
-        f.write(MINIMAL_GRAMMAR)
-        grammar_path = f.name
-    set_validator = SetValidator(grammar_path)
-    return StructuredValidator(set_validator)
+def structured_validator(tmp_path: Path) -> StructuredValidator:
+    """Around a `SetValidator` on the minimal grammar, as `JunosValidator` builds it."""
+    return StructuredValidator(SetValidator(make_artifacts_dir(tmp_path).grammar))
 
 
 class TestStructuredValidator:

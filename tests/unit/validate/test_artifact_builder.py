@@ -6,16 +6,21 @@ import json
 import tempfile
 from pathlib import Path
 
-from junoscfg.display import find_artifact, read_artifact_text
-from junoscfg.validate.artifact_builder import (
-    _BOOL_FLAG_KEYS,
-    _VALUE_FLAG_KEYS,
+from junoscfg.display import read_artifact_text
+from junoscfg.validate import (
     ArtifactBuilder,
+    Combinator,
+    SchemaNode,
+    generate_lark_grammar,
+    parse_xsd,
     read_structure_tree,
     write_structure_tree,
 )
-from junoscfg.validate.grammar_generator import generate_lark_grammar
-from junoscfg.validate.schema_node import Combinator, SchemaNode
+
+# The structure tree's flag tables: the one list of what the writer must carry.
+# An exception in `tools/check_test_doors.py`; see `test_every_flag_the_tables_name_survives`.
+from junoscfg.validate.artifact_builder import _BOOL_FLAG_KEYS, _VALUE_FLAG_KEYS
+from tests.support.artifacts import shipped
 
 SAMPLE_XSD = """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -258,7 +263,7 @@ class TestStructureTreeRoundTrip:
         """A new value flag with no sample above leaves itself untested."""
         assert set(_VALUE_FLAG_SAMPLES) == set(_VALUE_FLAG_KEYS)
 
-    def test_the_bundled_tree_survives_a_round_trip_exactly(self) -> None:
+    def test_the_bundled_tree_survives_a_round_trip_exactly(self, bundled_tree: dict) -> None:
         """Reader and writer are inverses over the artefact we actually ship.
 
         13 MB and 428,000 nodes, which is the only sample that covers every
@@ -266,17 +271,11 @@ class TestStructureTreeRoundTrip:
         the bytes: the writer emits its keys in table order now, where it used
         to iterate a set.
         """
-        import junoscfg.validate as validate_pkg
-
-        src = find_artifact(
-            Path(validate_pkg.__file__).parent / "data", "junos-structure-tree.json"
-        )
-        original = json.loads(read_artifact_text(src))
         with tempfile.TemporaryDirectory() as d:
             out = str(Path(d) / "tree.json")
-            write_structure_tree(read_structure_tree(src), out)
+            write_structure_tree(read_structure_tree(shipped("junos-structure-tree.json")), out)
             rebuilt = json.loads(Path(out).read_text(encoding="utf-8"))
-        assert rebuilt == original
+        assert rebuilt == bundled_tree
 
     def test_the_three_fields_the_format_drops(self) -> None:
         """Pinned so nobody reads this tree as a faithful copy.
@@ -297,7 +296,7 @@ class TestStructureTreeRoundTrip:
         assert back.children["keyed"].is_key is False
         assert back.children["groups"].is_presence is False
 
-    # ── identifier-key-fields: the keys and the declared order ──────────
+    # ── Entry keys: the keys and the declared order ─────────────────────
     # Spec: openspec/changes/identifier-key-fields/specs/schema-pipeline/
     # entry-key-fields, "The structure tree carries the keys and the declared
     # order". Driven from an XSD, so the keys reach the tree however the
@@ -306,7 +305,6 @@ class TestStructureTreeRoundTrip:
     @staticmethod
     def _keyed_tree_files(tmp: Path) -> tuple[dict, dict]:
         """The tree the keyed XSD writes, and the tree read back and rewritten."""
-        from junoscfg.validate.xsd_parser import parse_xsd
         from tests.support.keyed_entries import KEYED_XSD
 
         first = tmp / "first.json"
@@ -358,13 +356,12 @@ class TestStructureTreeRoundTrip:
             assert list(node(written, *path)["c"]) == children, path
             assert list(node(rebuilt, *path)["c"]) == children, path
 
-    def test_no_node_carries_fe(self, tmp_path: Path) -> None:
+    def test_no_node_carries_fe(self, tmp_path: Path, bundled_tree: dict) -> None:
         """Neither a freshly built tree nor the bundled one holds `fe`.
 
         The scan counts what it walked, so an empty or unreadable tree fails
         rather than passing for want of nodes.
         """
-        import junoscfg.validate as validate_pkg
         from tests.support.keyed_entries import KEYED_XSD, artifact_json, build_artifacts
 
         def carriers(tree: dict) -> tuple[int, list[str]]:
@@ -385,10 +382,7 @@ class TestStructureTreeRoundTrip:
         assert seen > 30
         assert found == []
 
-        bundled = Path(validate_pkg.__file__).parent / "data"
-        seen, found = carriers(
-            json.loads(read_artifact_text(find_artifact(bundled, "junos-structure-tree.json")))
-        )
+        seen, found = carriers(bundled_tree)
         assert seen > 400_000
         assert found == [], f"{len(found)} nodes carry fe, e.g. {found[:3]}"
 
@@ -401,9 +395,7 @@ class TestHomogeneousFlag:
     readers and writers decide that from this flag, not from a name list.
     """
 
-    def test_the_tree_carries_it(self) -> None:
-        from junoscfg.display import load_schema_tree
-
+    def test_the_tree_carries_it(self, bundled_tree: dict) -> None:
         family = SchemaNode(name="family", flags={"homogeneous"})
         family.children["inet"] = SchemaNode(name="inet")
         root = SchemaNode(name="configuration")
@@ -414,5 +406,5 @@ class TestHomogeneousFlag:
             assert json.loads(Path(path).read_text())["c"]["family"]["h"] is True
             assert "homogeneous" in read_structure_tree(path).children["family"].flags
 
-        bundled = load_schema_tree()["c"]["interfaces"]["c"]["interface"]
+        bundled = bundled_tree["c"]["interfaces"]["c"]["interface"]
         assert bundled["c"]["unit"]["c"]["family"].get("h") is True

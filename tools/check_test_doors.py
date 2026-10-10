@@ -36,10 +36,36 @@ _CACHES = (
     "the fixture saves and restores the process caches around each test: no door can "
     "restore them, and dropping the shipped grammar's build costs every later test 12 s"
 )
+_FLAGS = (
+    "the flag tables are the only list of what the structure-tree writer must carry; a round "
+    "trip driven off them is how a flag the reader knows and the writer forgets fails"
+)
+_STAGES = (
+    "evidence about the shipped artifacts and real dumps is read stage by stage; the surfaces "
+    "expose the pipeline only composed, from an XSD the repository cannot hold"
+)
+_SEQUENCES = (
+    "identifier counts are taken over the dump's xsd:sequence elements with the parser's own "
+    "rule; no tree the parser builds still shows them"
+)
 EXCEPTIONS: dict[tuple[str, str], str] = {
     ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants"): _CACHES,
     ("unit/display/test_artifact_resolution.py", "constants._schema_trees"): _CACHES,
     ("unit/display/test_artifact_resolution.py", "constants._built_artifacts"): _CACHES,
+    ("unit/validate/test_artifact_builder.py", "junoscfg.validate.artifact_builder"): _FLAGS,
+    (
+        "unit/validate/test_artifact_builder.py",
+        "junoscfg.validate.artifact_builder._BOOL_FLAG_KEYS",
+    ): (_FLAGS),
+    (
+        "unit/validate/test_artifact_builder.py",
+        "junoscfg.validate.artifact_builder._VALUE_FLAG_KEYS",
+    ): (_FLAGS),
+    ("corpus/test_shipped_artifacts.py", "junoscfg.validate"): _STAGES,
+    ("corpus/test_schema_data.py", "junoscfg.validate"): _STAGES,
+    ("corpus/test_schema_data.py", "junoscfg.display"): _STAGES,
+    ("corpus/test_schema_data.py", "junoscfg.validate.xsd_parser"): _SEQUENCES,
+    ("corpus/test_schema_data.py", "xsd_parser._key_fields"): _SEQUENCES,
     ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants._BUNDLED_DIR"): (
         "only the bundled directory answers None instead of raising, and it is fixed at "
         "install time; pointing it at a missing directory is the one way to reach the branch"

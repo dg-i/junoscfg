@@ -91,7 +91,7 @@ def bundled_set_validator() -> object:
     the corpus tier and the negative tests that pin what the grammar must keep
     rejecting. A module-scoped fixture paid for it twice.
     """
-    from junoscfg.validate.set_validator import SetValidator
+    from junoscfg.validate import SetValidator
 
     return SetValidator(find_artifact(ARTIFACT_DIR, "junos-set.lark"))
 
@@ -115,7 +115,7 @@ def bundled_tree() -> dict:
 def bundled_validator() -> object:
     """The shipped JSON and YAML schemas, loaded once.
 
-    `tests/test_round_trip_validates.py` needs the same artifacts the CLI uses,
+    `tests/contract/test_round_trip_validates.py` needs the same artifacts the CLI uses,
     so it must resolve them the way everything else does rather than naming a
     path -- the one place that named its own went red the day they shipped
     gzipped.
@@ -205,9 +205,7 @@ def parsed_schema(schema_dump: Path) -> object:
     Session-scoped and parametrised, so each dump is parsed once however many
     tests use it.
     """
-    from junoscfg.validate.xsd_extractor import extract_xsd
-    from junoscfg.validate.xsd_fixes import apply_all_fixes, get_fix_count
-    from junoscfg.validate.xsd_parser import parse_xsd
+    from junoscfg.validate import apply_all_fixes, extract_xsd, get_fix_count, parse_xsd
 
     xsd_text = extract_xsd(schema_dump.read_text(encoding="utf-8", errors="replace"))
     tree = parse_xsd(xsd_text)

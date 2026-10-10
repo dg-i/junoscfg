@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from junoscfg.validate.xsd_parser import parse_xsd
+from junoscfg.validate import parse_xsd
 
 
 def _minimal_xsd(body: str) -> str:

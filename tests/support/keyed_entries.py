@@ -16,8 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 from junoscfg import Format, convert_config
 from junoscfg.display import read_artifact_text
-from junoscfg.validate.artifact_builder import ArtifactBuilder, write_structure_tree
-from junoscfg.validate.xsd_parser import parse_xsd
+from junoscfg.validate import ArtifactBuilder, parse_xsd, write_structure_tree
 from tests.support.paths import TEST_DATA as DATA
 
 if TYPE_CHECKING:

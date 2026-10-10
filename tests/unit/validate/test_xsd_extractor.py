@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-import tempfile
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.validate.xsd_extractor import extract_xsd
+from junoscfg.validate import extract_xsd
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 SAMPLE_NETCONF = """<?xml version="1.0"?>
 <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
@@ -45,17 +47,15 @@ class TestExtractXsdFromString:
 
 
 class TestExtractXsdFromFile:
-    def test_extracts_from_file(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-            f.write(SAMPLE_NETCONF)
-            f.flush()
-            result = extract_xsd(Path(f.name))
+    def test_extracts_from_file(self, tmp_path: Path) -> None:
+        dump = tmp_path / "dump.xml"
+        dump.write_text(SAMPLE_NETCONF, encoding="utf-8")
+        result = extract_xsd(dump)
         assert "<xsd:schema" in result
         assert "configuration" in result
 
-    def test_no_schema_in_file_raises(self):
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-            f.write("<rpc-reply><ok/></rpc-reply>")
-            f.flush()
-            with pytest.raises(ValueError, match="No <xsd:schema>"):
-                extract_xsd(Path(f.name))
+    def test_no_schema_in_file_raises(self, tmp_path: Path) -> None:
+        dump = tmp_path / "dump.xml"
+        dump.write_text("<rpc-reply><ok/></rpc-reply>", encoding="utf-8")
+        with pytest.raises(ValueError, match="No <xsd:schema>"):
+            extract_xsd(dump)

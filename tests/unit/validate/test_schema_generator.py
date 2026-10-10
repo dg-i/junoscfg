@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from junoscfg.validate.schema_generator import generate_json_schema
-from junoscfg.validate.schema_node import SchemaNode
+from junoscfg.validate import SchemaNode, generate_json_schema, parse_xsd
 from tests.support.paths import TEST_DATA
 
 
@@ -249,7 +248,7 @@ class TestUniversalStatementsReachEveryContainer:
         assert self._PATTERN in system["patternProperties"]
 
 
-# ── identifier-key-fields ────────────────────────────────────────────
+# ── Entry keys: the schemas name a list's key fields ─────────────────
 #
 # Spec: openspec/changes/identifier-key-fields/specs/validation/keyed-entries,
 # "The JSON and YAML schemas name the key fields". Generated from an XSD, so
@@ -257,7 +256,6 @@ class TestUniversalStatementsReachEveryContainer:
 
 
 def _keyed_schema(variant: str = "json") -> dict:
-    from junoscfg.validate.xsd_parser import parse_xsd
     from tests.support.keyed_entries import KEYED_XSD
 
     return generate_json_schema(parse_xsd(KEYED_XSD), variant=variant)
@@ -326,7 +324,6 @@ class TestEntryKeysAreTheTreesFields:
         """
         import json
 
-        from junoscfg.validate.xsd_parser import parse_xsd
         from tests.support.keyed_entries import NAME_KEYED_XSD
 
         data = TEST_DATA

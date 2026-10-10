@@ -6,8 +6,7 @@ import json
 
 import pytest
 
-from junoscfg.validate import SchemaLoadError
-from junoscfg.validate.validator import JunosValidator
+from junoscfg.validate import JunosValidator, SchemaLoadError
 
 
 class TestJunosValidator:
@@ -54,14 +53,12 @@ class TestJunosValidator:
 
 
 class TestArtifactResolution:
-    def test_explicit_dir(self, artifacts_dir):
-        v = JunosValidator(artifacts_dir=artifacts_dir)
-        assert v.schema_version == "21.4R0"
+    """What the validator does with the directory the resolver names.
 
-    def test_env_var(self, artifacts_dir, monkeypatch):
-        monkeypatch.setenv("JUNOSCFG_ARTIFACTS", artifacts_dir)
-        v = JunosValidator()
-        assert v.schema_version == "21.4R0"
+    The resolution order itself (argument, override, `JUNOSCFG_ARTIFACTS`,
+    bundle) is `display.resolve_artifacts_dir`'s, and its tests, the
+    validator's included, are `tests/unit/display/test_artifact_resolution.py`.
+    """
 
     def test_nonexistent_dir_raises(self):
         with pytest.raises(SchemaLoadError, match="not found"):

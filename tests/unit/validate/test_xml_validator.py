@@ -2,38 +2,22 @@
 
 from __future__ import annotations
 
-import tempfile
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.validate import SchemaLoadError
-from junoscfg.validate.xml_validator import XmlValidator
+from junoscfg.validate import SchemaLoadError, XmlValidator
+from tests.support.artifacts import MINIMAL_XSD
 
-# Minimal XSD for testing
-MINIMAL_XSD = """\
-<?xml version="1.0" encoding="UTF-8"?>
-<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <xsd:element name="configuration">
-    <xsd:complexType>
-      <xsd:sequence>
-        <xsd:element name="system" minOccurs="0">
-          <xsd:complexType>
-            <xsd:sequence>
-              <xsd:element name="host-name" type="xsd:string" minOccurs="0"/>
-            </xsd:sequence>
-          </xsd:complexType>
-        </xsd:element>
-      </xsd:sequence>
-    </xsd:complexType>
-  </xsd:element>
-</xsd:schema>"""
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
-def xsd_path():
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xsd", delete=False) as f:
-        f.write(MINIMAL_XSD)
-        return f.name
+def xsd_path(tmp_path: Path) -> Path:
+    path = tmp_path / "minimal.xsd"
+    path.write_text(MINIMAL_XSD, encoding="utf-8")
+    return path
 
 
 @pytest.fixture

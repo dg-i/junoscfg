@@ -2,14 +2,28 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import re
+from typing import TYPE_CHECKING
 
+import lark
 import pytest
+from click.testing import CliRunner
 
+from junoscfg import validate_config, validate_set
+from junoscfg.cli import main
 from junoscfg.display import find_artifact, read_artifact_text
-from junoscfg.validate.grammar_generator import generate_lark_grammar
-from junoscfg.validate.schema_node import Combinator, SchemaNode
+from junoscfg.validate import (
+    Combinator,
+    JunosValidator,
+    SchemaNode,
+    SetValidator,
+    generate_lark_grammar,
+)
 from tests.support.paths import TEST_DATA
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from pathlib import Path
 
 
 def _make_tree() -> SchemaNode:
@@ -134,6 +148,41 @@ class TestCombinators:
         assert "*" in grammar
 
 
+def _parses_grammar(grammar: str, command: str) -> bool:
+    """Whether ``command`` parses under the grammar text ``grammar``."""
+    parser = lark.Lark(grammar, parser="earley")
+    try:
+        parser.parse(command)
+    except lark.exceptions.UnexpectedInput:
+        return False
+    return True
+
+
+def _parses(root: SchemaNode, command: str) -> bool:
+    """Generate a grammar from ``root`` and report whether ``command`` parses."""
+    return _parses_grammar(generate_lark_grammar(root), command)
+
+
+def _container_tree(*names: str) -> SchemaNode:
+    """A root holding one container per name, each with a leaf `leaf`."""
+    return SchemaNode(
+        name="configuration",
+        children={
+            name: SchemaNode(name=name, children={"leaf": SchemaNode(name="leaf", is_leaf=True)})
+            for name in names
+        },
+    )
+
+
+def _rule_names(grammar: str) -> list[str]:
+    """Every rule the grammar defines; a terminal is uppercase and not a rule."""
+    return [
+        m.group(1)
+        for m in re.finditer(r"^([^\s:/]+):", grammar, re.MULTILINE)
+        if not m.group(1).isupper()
+    ]
+
+
 class TestRuleNamesAreValidLark:
     """Rule names Lark will actually accept.
 
@@ -146,101 +195,38 @@ class TestRuleNamesAreValidLark:
     """
 
     def test_names_are_lowercased(self) -> None:
-        from junoscfg.validate.grammar_generator import _safe_rule_name
-
-        assert _safe_rule_name("jnx-tel-RE-local-interfaces-stats") == (
-            "jnx_tel_re_local_interfaces_stats"
+        grammar = generate_lark_grammar(
+            _container_tree("jnx-tel-RE-local-interfaces-stats", "MixedCase")
         )
-        assert _safe_rule_name("MixedCase") == "mixedcase"
+        assert "jnx_tel_re_local_interfaces_stats" in _rule_names(grammar)
+        assert "mixedcase" in _rule_names(grammar)
+        assert _parses_grammar(grammar, "set jnx-tel-RE-local-interfaces-stats leaf 1")
+        assert _parses_grammar(grammar, "set MixedCase leaf 1")
 
     def test_start_does_not_collide_with_the_entry_rule(self) -> None:
-        from junoscfg.validate.grammar_generator import _safe_rule_name
-
-        assert _safe_rule_name("start") == "start_element"
+        start_options = _container_tree("start-options").children["start-options"]
+        root = SchemaNode(
+            name="configuration",
+            children={"start": SchemaNode(name="start", children={"start-options": start_options})},
+        )
+        grammar = generate_lark_grammar(root)
+        names = _rule_names(grammar)
+        assert names.count("start") == 1, "only the entry rule is called start"
+        assert "start_element" in names
         # Only the exact name is reserved: `start-options`, the child of the
         # colliding element, keeps its own rule name.
-        assert _safe_rule_name("start-options") == "start_options"
+        assert "start_options" in names
+        assert _parses_grammar(grammar, "set start start-options leaf 1")
 
     def test_every_generated_name_matches_larks_rule_pattern(self) -> None:
-        import re as _re
-
-        from junoscfg.validate.grammar_generator import _safe_rule_name
-
-        pattern = _re.compile(r"_?[a-z][_a-z0-9]*\Z")
-        for name in (
-            "start",
-            "ge-0/0/0",
-            "802.3ad",
-            "jnx-tel-RE-local",
-            "ieee-802.3ad",
-            "A",
-            "",
-        ):
-            assert pattern.match(_safe_rule_name(name)), name
-
-
-def _bundled_dir() -> Path:
-    import junoscfg.validate as validate_pkg
-
-    return Path(validate_pkg.__file__).parent / "data"
-
-
-class TestBundledGrammarCompiles:
-    """The shipped grammar must be loadable, or set validation does nothing.
-
-    It did not, from the 24.4 migration until the artefact was rebuilt: both
-    `junoscfg -i set -v` and `-i structured -v` reported "Error loading
-    validation artifacts" on a valid and an invalid config alike, because
-    JunosValidator builds StructuredValidator around the same SetValidator.
-    JSON and YAML validation never used this grammar.
-    """
-
-    def test_bundled_grammar_loads(self) -> None:
-        import lark
-
-        grammar = find_artifact(_bundled_dir(), "junos-set.lark")
-        lark.Lark(read_artifact_text(grammar), start="start")
-
-
-class TestBundledGrammarIsReproducible:
-    """The shipped grammar is what the generator makes from the shipped tree.
-
-    `ARCHITECTURE.md` section 8 forbids hand-editing a generated artefact, so
-    there has to be a way to tell. The XSD dump the artefacts came from is not
-    in the repository, so the grammar is rebuilt from `junos-structure-tree
-    .json` instead — which produces, on a real 25.2R2 tree, a grammar differing
-    from the XSD-built one in a single token. See `read_structure_tree`.
-
-    To rebuild it::
-
-        from junoscfg.validate.artifact_builder import read_structure_tree
-        from junoscfg.validate.grammar_generator import write_lark_grammar
-
-        root = read_structure_tree(".../data/junos-structure-tree.json")
-        write_lark_grammar(root, ".../data/junos-set.lark")
-    """
-
-    def test_bundled_grammar_matches_its_structure_tree(self) -> None:
-        from junoscfg.validate.artifact_builder import read_structure_tree
-
-        data = _bundled_dir()
-        rebuilt = generate_lark_grammar(
-            read_structure_tree(find_artifact(data, "junos-structure-tree.json"))
-        )
-        shipped = read_artifact_text(find_artifact(data, "junos-set.lark"))
-        assert rebuilt.strip() == shipped.strip()
-
-
-def _parses(root: SchemaNode, command: str) -> bool:
-    """Generate a grammar from ``root`` and report whether ``command`` parses."""
-    import lark
-
-    parser = lark.Lark(generate_lark_grammar(root), parser="earley")
-    try:
-        parser.parse(command)
-    except lark.exceptions.UnexpectedInput:
-        return False
-    return True
+        pattern = re.compile(r"_?[a-z][_a-z0-9]*\Z")
+        names = ("start", "ge-0/0/0", "802.3ad", "jnx-tel-RE-local", "ieee-802.3ad", "A")
+        for tree in (_container_tree(*names), _container_tree("")):
+            for rule in _rule_names(generate_lark_grammar(tree)):
+                assert pattern.match(rule), rule
+        # An element with an empty name gets a rule but no keyword Lark takes,
+        # so the compile is checked on the others.
+        lark.Lark(generate_lark_grammar(_container_tree(*names)), parser="earley")
 
 
 class TestNamedListKeysSurviveRuleMerging:
@@ -439,6 +425,105 @@ class TestFlatPositionalContainerTakesSiblingsOnOneLine:
         )
         command = "set beta outer maximum-prefixes rogue threshold 50"
         assert not _parses(root, command)
+
+
+def _siblings_tree() -> SchemaNode:
+    """An oneliner `ntp server` list and a flat positional `maximum-prefixes`."""
+    server = SchemaNode(
+        name="server",
+        is_list=True,
+        children={
+            "version": SchemaNode(name="version", is_leaf=True),
+            "prefer": SchemaNode(name="prefer", is_presence=True),
+            "routing-instance": SchemaNode(name="routing-instance", is_leaf=True),
+        },
+    )
+    server.flags.add("oneliner")
+    limit = SchemaNode(name="limit", is_leaf=True)
+    limit.flags.update({"nokeyword", "positional-key-flat"})
+    maximum_prefixes = SchemaNode(
+        name="maximum-prefixes",
+        children={
+            "limit": limit,
+            "threshold": SchemaNode(name="threshold", is_leaf=True),
+            "log-interval": SchemaNode(name="log-interval", is_leaf=True),
+        },
+    )
+    return SchemaNode(
+        name="configuration",
+        children={
+            "system": SchemaNode(
+                name="system",
+                children={"ntp": SchemaNode(name="ntp", children={"server": server})},
+            ),
+            "routing-options": SchemaNode(
+                name="routing-options",
+                children={"maximum-prefixes": maximum_prefixes},
+            ),
+        },
+    )
+
+
+def _cli_accepts(directory: str, source: str) -> bool:
+    result = CliRunner().invoke(main, ["-v", "-i", "set", "--artifacts", directory], input=source)
+    assert result.exit_code in (0, 1), result.output
+    return result.exit_code == 0
+
+
+#: Every validator a caller can point at a directory holding a generated grammar.
+_SET_DOORS: dict[str, Callable[[Path, str], bool]] = {
+    "SetValidator": lambda d, s: SetValidator(d / "junos-set.lark").validate(s).valid,
+    "JunosValidator": lambda d, s: JunosValidator(artifacts_dir=str(d)).validate_set(s).valid,
+    "validate_set": lambda d, s: validate_set(s, artifacts_dir=str(d)).valid,
+    "validate_config": lambda d, s: validate_config(s, format="set", artifacts_dir=str(d)).valid,
+    "cli": lambda d, s: _cli_accepts(str(d), s),
+}
+
+
+class TestEveryValidatorTakesTheGeneratedSiblings:
+    """Compact and expanded sibling forms validate through every set validator.
+
+    Spec: validation/set-command-validation, "Equivalent compact sibling forms
+    validate". The grammar is generated from a synthetic tree, so this holds
+    for the generator, not for one shipped artifact; the shipped grammar
+    through every door is `tests/contract/test_every_door.py`.
+    """
+
+    SOURCES = {
+        "ntp-compact": "set system ntp server 198.51.100.1 version 4 prefer routing-instance "
+        "mgmt_junos",
+        "ntp-two-siblings": "set system ntp server 198.51.100.1 version 4 prefer",
+        "maximum-prefixes-compact": "set routing-options maximum-prefixes 3000000 threshold 50 "
+        "log-interval 5",
+        "ntp-expanded": "set system ntp server 198.51.100.1 version 4\n"
+        "set system ntp server 198.51.100.1 prefer\n"
+        "set system ntp server 198.51.100.1 routing-instance mgmt_junos",
+        "maximum-prefixes-expanded": "set routing-options maximum-prefixes 3000000\n"
+        "set routing-options maximum-prefixes threshold 50\n"
+        "set routing-options maximum-prefixes log-interval 5",
+    }
+
+    @pytest.fixture(scope="class")
+    def generated(self, tmp_path_factory: pytest.TempPathFactory) -> Path:
+        directory = tmp_path_factory.mktemp("siblings")
+        (directory / "junos-set.lark").write_text(
+            generate_lark_grammar(_siblings_tree()), encoding="utf-8"
+        )
+        return directory
+
+    @pytest.mark.parametrize("door", _SET_DOORS)
+    @pytest.mark.parametrize("source", SOURCES)
+    def test_compact_and_expanded_forms_validate(
+        self, generated: Path, door: str, source: str
+    ) -> None:
+        assert _SET_DOORS[door](generated, self.SOURCES[source])
+
+    @pytest.mark.parametrize("door", _SET_DOORS)
+    def test_an_unknown_sibling_is_rejected(self, generated: Path, door: str) -> None:
+        """Control: the doors are not accepting everything."""
+        assert not _SET_DOORS[door](
+            generated, "set system ntp server 198.51.100.1 version 4 bogus-option 5"
+        )
 
 
 class TestUnknownTokensInsideANamedList:
@@ -751,63 +836,10 @@ class TestUniversalStatementsAreSplicedEverywhere:
         assert not _parses(self._tree(), "set interfaces interfaces")
 
 
-class TestTheBundledTreeCarriesTheApplyStatements:
-    """The shipped artifacts are what `_fix_apply_statements` produces.
-
-    Until 0.8.0 the bundled tree predated the fix, and a substitute test
-    applied it to the tree in memory to prove the grammar it would produce.
-    The 25.2R2 artifacts carry the four nodes, so the proof is the artifact
-    itself: the nodes are there with their flag, the fix has nothing left to
-    add, and the shipped grammar takes and rejects what the substitute pinned.
-    """
-
-    @staticmethod
-    def _tree() -> SchemaNode:
-        from junoscfg.validate.artifact_builder import read_structure_tree
-
-        return read_structure_tree(find_artifact(_bundled_dir(), "junos-structure-tree.json"))
-
-    def test_the_four_nodes_carry_the_flag(self) -> None:
-        tree = self._tree()
-        for name in ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro"):
-            assert "universal" in tree.children[name].flags, name
-
-    def test_the_fix_has_nothing_left_to_add(self) -> None:
-        from junoscfg.validate.xsd_fixes import ALL_FIXES
-
-        fix = next(f for f in ALL_FIXES if f.id == "apply-statements")
-        assert not fix.apply(self._tree())
-
-    def test_the_shipped_grammar_takes_them(self, bundled_set_validator) -> None:
-        for command in (
-            "set apply-groups global-vxlan",
-            "set protocols bgp group G apply-groups foo",
-            "set interfaces ge-0/0/0 unit 0 apply-groups foo",
-            "set protocols bgp group overlay apply-flags replace",
-            "set interfaces ge-0/0/0 apply-groups-except bar",
-            "set policy-options policy-statement p1 apply-macro m1 key1 val1",
-            'set interfaces ge-0/0/0 description "uplink to apply-groups foo"',
-        ):
-            bundled_set_validator._parser.parse(command)  # noqa: SLF001
-
-    def test_the_shipped_grammar_still_rejects_what_it_should(self, bundled_set_validator) -> None:
-        """The splice is four names, not a hole."""
-        import lark
-
-        for command in (
-            "set system host-name (foo bar)",
-            "set interfaces ge-0/0/0 bogus-thing 5",
-            "set system host-name",
-            "set system apply-nonsense foo",
-        ):
-            with pytest.raises(lark.exceptions.UnexpectedInput):
-                bundled_set_validator._parser.parse(command)  # noqa: SLF001
-
-
-# ── identifier-key-fields: a keyed entry takes exactly its key values ──
+# ── A keyed entry takes exactly its key values ───────────────────────
 #
-# Spec: openspec/changes/identifier-key-fields/specs/validation/
-# set-command-validation. The grammar is generated by `ArtifactBuilder` from
+# Spec: validation/set-command-validation, "A keyed entry takes exactly its
+# key values" (identifier-key-fields). The grammar is generated by `ArtifactBuilder` from
 # a synthetic XSD shaped like the dump's types, and lines go through the
 # public `validate_set`, so the tests hold however the generator is written.
 
@@ -824,16 +856,12 @@ def keyed_artifacts(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 @pytest.fixture(scope="module")
-def keyed_parser(keyed_artifacts: Path):
-    import lark
-
+def keyed_parser(keyed_artifacts: Path) -> lark.Lark:
     text = read_artifact_text(find_artifact(keyed_artifacts, "junos-set.lark"))
     return lark.Lark(text, start="start", parser="earley")
 
 
-def _valid(parser, line: str) -> bool:
-    import lark
-
+def _valid(parser: lark.Lark, line: str) -> bool:
     try:
         parser.parse(line)
     except lark.exceptions.UnexpectedInput:
@@ -843,8 +871,6 @@ def _valid(parser, line: str) -> bool:
 
 class TestKeyedEntryTakesExactlyItsKeys:
     def test_two_keys_are_taken_in_order(self, keyed_parser, keyed_artifacts: Path) -> None:
-        from junoscfg import validate_set
-
         lines = [
             f"{_T1} from as-path-neighbors as-list SAMPLE-AS-LIST",
             f"{_T1} from as-path-origins as-list-group SAMPLE-AS-LIST-GROUP",
@@ -881,8 +907,6 @@ class TestKeyedEntryTakesExactlyItsKeys:
     def test_a_missing_or_further_value_is_rejected(
         self, keyed_parser, keyed_artifacts: Path, line: str
     ) -> None:
-        from junoscfg import validate_set
-
         assert not _valid(keyed_parser, line)
         assert not validate_set(line, artifacts_dir=str(keyed_artifacts)).valid
 
@@ -944,8 +968,6 @@ class TestKeyedEntryTakesExactlyItsKeys:
         XSD's union also names `xsd:unsignedLong`. The device rejected
         `as-path-neighbors 1 ...` at `set` (round-1 probe, vMX 23.2R2-S7.5).
         Owner answer 8."""
-        from junoscfg import validate_set
-
         line = f"{_T1} from as-path-neighbors 1 SAMPLE-AS-LIST"
         assert not _valid(keyed_parser, line)
         assert not validate_set(line, artifacts_dir=str(keyed_artifacts)).valid
