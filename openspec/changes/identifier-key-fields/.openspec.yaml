@@ -3,6 +3,9 @@ created: 2026-10-09
 type: bug
 zone: kernel
 domains: [schema-pipeline, conversion, validation, audit, anonymization]
+# Answered 2026-10-10 after the v0.7.8 template added the field; the owner confirmed
+# balanced (the change had a fresh reviewer and a fresh re-review).
+assurance: balanced
 removes:
   - "the parser's drop of every element a sequence declares beside its first choice: the identifiers, which left `control-as-list-type` childless and every list keyed `name` whatever the dump declares, and the second choice of seven types, route-filter's actions among them"
   - "`fe` in the structure tree, `flat-entry:<key>:<position>`, `values-only` and the `_v<n>` keys that stood in for `attributes-match`'s three identifiers"
