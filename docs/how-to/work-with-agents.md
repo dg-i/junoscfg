@@ -15,24 +15,23 @@ module is not for. Import through the package door — `tach check` and
 
 | Where | What runs |
 |---|---|
-| `pre-commit`, on commit | ruff format and check, deptry, document caps, markdownlint |
-| CI, on push and pull request | the complete suite on every interpreter the classifiers declare, derived from `pyproject.toml`; after every matrix job passes, `agent-ready check --set fast --base origin/<pull-request-target>` and blocking mypy checks run once |
+| `pre-commit`, on commit | ruff format and check, deptry, document caps, markdownlint, the test door check, and the tests the staged files affect (`tools/affected_tests.py`) |
+| CI, on push and pull request | the complete suite from the lock on every interpreter the classifiers declare, derived from `pyproject.toml`, held to the branch-coverage floor; after every matrix job passes, `agent-ready check --set fast --base origin/<pull-request-target>` and blocking mypy checks run once |
+| CI, nightly | the jvd corpus tier (`.github/workflows/corpus.yml`) |
+| CI, on release | the same checks on the release commit before anything is built |
 
 Locally, agent-ready derives the live change's branch point against local
 `master`; `[tool.template] base = "master"` is the fallback when no change base
 can be read. Local `master` may be ahead of its remote. CI therefore passes the
 pull request's remote target explicitly instead of using the local fallback.
 
-During implementation, run exact test nodes or affected test files. Before
-review, run one authoritative `uv run --locked agent-ready check --set full`:
-its full set
-already runs pre-commit and the configured complete application suite, so do
-not run either separately on the same tree. Review corrections use focused
-tests plus `uv run --locked agent-ready check --set fast`, whose gates include
-pre-commit but exclude the application suite. Repeat the full checkpoint only
-when a runtime-relevant file changed after the previous full result. The locked
-invocation also prevents a stale global installation from supplying different
-render or base-resolution behavior under the same reported package version.
+When to run what, and how often, is `AGENTS.md`'s Verification rule; which
+tests a change selects and the opt-in tiers are the developer guide's
+[Testing Architecture](../architecture/developer-guide.md#testing-architecture);
+where a test goes is `tests/CONTRACT.md`. The locked invocation
+(`uv run --locked`) prevents a stale global installation from supplying
+different render or base-resolution behavior under the same reported package
+version.
 
 `lane` fails on any branch whose diff is not covered by a change folder under
 `openspec/changes/`. That is the gate that makes the workflow mandatory rather

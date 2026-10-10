@@ -45,13 +45,13 @@ owning layer, or record why not.** **Measure the blast radius before loosening**
 
 ## Verification
 
-Use exact test nodes or affected files during implementation; grammar changes use
-the focused list in [the developer guide](docs/architecture/developer-guide.md).
-Before review, run one `uv run --locked agent-ready check --set full`; it replaces
-pre-commit and full-pytest runs on the same tree.
-After review fixes, use focused tests plus the locked `agent-ready` fast set; repeat
-full only when runtime-relevant files changed after its previous result.
-After XSD/schema changes, use `--regen-schema` as the developer guide describes.
+Test placement and doors: `tests/CONTRACT.md`. While editing, run exact nodes or
+what `tools/affected_tests.py <files>` selects; each commit runs it. Before
+review, run one `uv run --locked --group dev --with griffe --with tach --with
+towncrier --with vulture agent-ready check --set full` (pre-commit, the whole
+suite, the coverage floor), never beside it on the same tree. After review fixes:
+focused tests plus the fast set; repeat full only when runtime-relevant files
+changed. Schema, corpus and per-path extras: developer guide, Testing Architecture.
 
 ## Version Management
 
