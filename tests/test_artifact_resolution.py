@@ -21,7 +21,9 @@ import pytest
 
 from junoscfg.display import (
     artifacts_dir,
+    build_from_artifact,
     constants,
+    forget_loaded_artifacts,
     load_schema_tree,
     resolve_artifacts_dir,
 )
@@ -34,10 +36,12 @@ if TYPE_CHECKING:
 def _clean_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
     """No test may leak an override or a cache entry into the next."""
     monkeypatch.delenv("JUNOSCFG_ARTIFACTS", raising=False)
-    before = dict(constants._schema_trees)
+    caches = (constants._schema_trees, constants._built_artifacts)
+    before = [dict(cache) for cache in caches]
     yield
-    constants._schema_trees.clear()
-    constants._schema_trees.update(before)
+    for cache, saved in zip(caches, before, strict=True):
+        cache.clear()
+        cache.update(saved)
 
 
 def _tree_at(directory: Path, marker: str) -> Path:
@@ -214,6 +218,54 @@ class TestCompressedAndPlainBothWork:
             h.write(json.dumps({"c": {"z": {}}}))
         assert "p" in load_schema_tree(plain)["c"]
         assert "z" in load_schema_tree(packed)["c"]
+
+
+class TestABuiltArtifactIsReusedWhileItsFileIsUnchanged:
+    """The compiled grammar and the loaded schemas cost seconds each, and every
+    `JunosValidator` paid for them again; one build per file and process now."""
+
+    @staticmethod
+    def _counting() -> tuple[list[str], object]:
+        seen: list[str] = []
+
+        def build(text: str) -> str:
+            seen.append(text)
+            return text.upper()
+
+        return seen, build
+
+    def test_a_second_request_reuses_the_first_build(self, tmp_path: Path) -> None:
+        artifact = tmp_path / "a.lark"
+        artifact.write_text("start: x")
+        seen, build = self._counting()
+        assert build_from_artifact(artifact, build) == "START: X"
+        assert build_from_artifact(artifact, build) == "START: X"
+        assert seen == ["start: x"]
+
+    def test_a_rewritten_file_is_built_again(self, tmp_path: Path) -> None:
+        artifact = tmp_path / "a.lark"
+        artifact.write_text("start: x")
+        seen, build = self._counting()
+        build_from_artifact(artifact, build)
+        artifact.write_text("start: x y z")
+        assert build_from_artifact(artifact, build) == "START: X Y Z"
+        assert seen == ["start: x", "start: x y z"]
+
+    def test_a_compressed_artifact_is_read_through_its_name(self, tmp_path: Path) -> None:
+        artifact = tmp_path / "a.lark.gz"
+        with gzip.open(artifact, "wt", encoding="utf-8") as handle:
+            handle.write("start: x")
+        seen, build = self._counting()
+        assert build_from_artifact(artifact, build) == "START: X"
+
+    def test_forgetting_drops_the_build(self, tmp_path: Path) -> None:
+        artifact = tmp_path / "a.lark"
+        artifact.write_text("start: x")
+        seen, build = self._counting()
+        build_from_artifact(artifact, build)
+        forget_loaded_artifacts()
+        build_from_artifact(artifact, build)
+        assert seen == ["start: x", "start: x"]
 
 
 class TestTheShippedArtifactsAreCompressed:

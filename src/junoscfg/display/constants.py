@@ -14,10 +14,12 @@ import json
 import os
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
+
+_T = TypeVar("_T")
 
 # ── XML-compat constants ─────────────────────────────────────────────
 # These mirror schema flags for converters that walk XML trees instead
@@ -333,6 +335,34 @@ def read_artifact_text(path: str | Path) -> str:
         with gzip.open(path, "rt", encoding="utf-8") as handle:
             return handle.read()
     return path.read_text(encoding="utf-8")
+
+
+# What was built from an artifact, per process: the compiled set grammar costs
+# seconds and the loaded JSON schemas most of one, and every `JunosValidator`
+# -- so every `validate_*` call -- paid for them again. Keyed on the builder
+# and the file's stat, so artifacts regenerated in place are a new key rather
+# than a stale hit.
+_built_artifacts: dict[tuple[Any, Path, int, int], Any] = {}
+
+
+def build_from_artifact(path: str | Path, build: Callable[[str], _T]) -> _T:
+    """``build(text)`` of an artifact, once per process while the file is unchanged."""
+    resolved = Path(path).resolve()
+    stat = resolved.stat()
+    key = (build, resolved, stat.st_mtime_ns, stat.st_size)
+    if key not in _built_artifacts:
+        _built_artifacts[key] = build(read_artifact_text(resolved))
+    return _built_artifacts[key]
+
+
+def forget_loaded_artifacts() -> None:
+    """Drop every cached structure tree and built artifact.
+
+    For a caller that rewrites the artifacts of a directory it has already
+    read, such as the test suite's ``--regen-schema``; nothing else needs it.
+    """
+    _schema_trees.clear()
+    _built_artifacts.clear()
 
 
 @contextmanager

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from lark import Lark
 from lark.exceptions import UnexpectedInput
 
-from junoscfg.display import read_artifact_text
+from junoscfg.display import build_from_artifact
 from junoscfg.input import find_unsupported_set_brackets, iter_visible_set_lines
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
@@ -41,8 +41,7 @@ class SetValidator:
             SchemaLoadError: If grammar cannot be loaded.
         """
         try:
-            grammar_text = read_artifact_text(grammar_path)
-            self._parser = Lark(grammar_text, parser="earley", propagate_positions=True)
+            self._parser = build_from_artifact(grammar_path, _compile)
         except Exception as e:
             raise SchemaLoadError(f"Failed to load Lark grammar: {e}") from e
 
@@ -101,3 +100,8 @@ class SetValidator:
                 message=f"Invalid syntax: {line[:80]}",
                 line=lineno,
             )
+
+
+def _compile(grammar_text: str) -> Lark:
+    """The parser for a grammar; one per grammar file and process, through the cache."""
+    return Lark(grammar_text, parser="earley", propagate_positions=True)

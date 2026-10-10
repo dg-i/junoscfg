@@ -11,7 +11,7 @@ from pathlib import Path  # noqa: TC003
 import jsonschema
 import yaml
 
-from junoscfg.display import read_artifact_text
+from junoscfg.display import build_from_artifact
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
 
@@ -94,10 +94,14 @@ class JsonYamlValidator:
 def _load_validator(schema_path: str | Path, label: str) -> jsonschema.Draft7Validator:
     """Load and compile a JSON Schema validator."""
     try:
-        schema = json.loads(read_artifact_text(schema_path))
-        return jsonschema.Draft7Validator(schema)
+        return build_from_artifact(schema_path, _compile)
     except Exception as e:
         raise SchemaLoadError(f"Failed to load {label} schema: {e}") from e
+
+
+def _compile(schema_text: str) -> jsonschema.Draft7Validator:
+    """The validator for a schema; one per schema file and process, through the cache."""
+    return jsonschema.Draft7Validator(json.loads(schema_text))
 
 
 def _validate_data(

@@ -127,9 +127,9 @@ def regenerate_from(xsd_source: Path) -> None:
         check=True,
         capture_output=True,
     )
-    import junoscfg.display.constants as constants
+    from junoscfg.display import forget_loaded_artifacts
 
-    constants._schema_tree = None
+    forget_loaded_artifacts()
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
