@@ -21,7 +21,7 @@ verbs is tested but not traceable from its requirement.
   generic evidence freeze.
 - `conversion/entry-keys`: the kept-whole requirement names `deactivate`, `activate`, `protect`
   and `delete` on a partial or surplus key path and its five existing tests; traceability only,
-  applied by the finalizer in phase 7 from the reviewed delta.
+  applied by the finalizer in phase 7 from the reviewed `main-spec-edit.md`.
 - This change's telemetry is recorded in the v0.7.8 format and imported by `agent-ready metrics`.
 
 No override, fallback, parameter or environment read is added.
