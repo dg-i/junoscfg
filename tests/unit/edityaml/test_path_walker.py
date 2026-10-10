@@ -1,58 +1,83 @@
-"""Tests for edityaml path walker."""
+"""Path syntax: which nodes a dot-separated path with wildcards selects.
+
+resolve_path returns the dict nodes a path selects; ansibilize names each
+extracted value after the wildcards it passed (the discriminators).
+"""
 
 from __future__ import annotations
 
-from junoscfg.edityaml.path_walker import _parse_path, resolve_path, resolve_path_with_context
+from typing import Any
+
+import pytest
+
+from junoscfg.edityaml import ansibilize, resolve_path
+
+# (id, path, data, the nodes selected) for each segment kind. A plain key,
+# ``*`` before a list, ``[name]`` and ``inet*`` before a list are in
+# TestResolvePath.
+SEGMENT_CASES: list[tuple[str, str, dict[str, Any], list[dict[str, Any]]]] = [
+    (
+        "wildcard-segment",
+        "a.b[*].c",
+        {"a": {"b": [{"c": {"x": 1}}, {"c": {"x": 2}}, {"d": {"x": 3}}]}},
+        [{"x": 1}, {"x": 2}],
+    ),
+    (
+        "multiple-wildcards",
+        "a[*].b[*].c",
+        {"a": [{"b": [{"c": {"x": 1}}]}, {"b": [{"c": {"x": 2}}, {"c": {"x": 3}}]}]},
+        [{"x": 1}, {"x": 2}, {"x": 3}],
+    ),
+    ("single-segment", "root", {"root": {"x": 1}, "other": {"x": 2}}, [{"x": 1}]),
+    (
+        "trailing-wildcard",
+        "a.items[*]",
+        {"a": {"items": [{"n": 1}, {"n": 2}]}},
+        [{"n": 1}, {"n": 2}],
+    ),
+    (
+        "dict-wildcard-standalone",
+        "*",
+        {"a": {"x": 1}, "b": {"y": 2}, "c": "a string"},
+        [{"x": 1}, {"y": 2}],
+    ),
+    (
+        "named-match-simple",
+        "items[foo]",
+        {"items": [{"name": "foo", "x": 1}, {"name": "bar", "x": 2}]},
+        [{"name": "foo", "x": 1}],
+    ),
+    (
+        "glob-bracket",
+        "groups[ansible-*].interfaces",
+        {
+            "groups": [
+                {"name": "ansible-managed", "interfaces": {"i": 1}},
+                {"name": "ansible-testing", "interfaces": {"i": 2}},
+                {"name": "other-group", "interfaces": {"i": 3}},
+            ]
+        },
+        [{"i": 1}, {"i": 2}],
+    ),
+    (
+        "glob-dict-key-standalone",
+        "inet*",
+        {"inet": {"x": 1}, "inet6": {"y": 2}, "mpls": {"z": 3}},
+        [{"x": 1}, {"y": 2}],
+    ),
+]
 
 
-class TestParsePath:
-    def test_simple_dotted(self) -> None:
-        result = _parse_path("a.b.c")
-        assert result == [("a", "key"), ("b", "key"), ("c", "key")]
-
-    def test_wildcard_segment(self) -> None:
-        result = _parse_path("a.b[*].c")
-        assert result == [("a", "key"), ("b", "list"), ("c", "key")]
-
-    def test_multiple_wildcards(self) -> None:
-        result = _parse_path("a[*].b[*].c")
-        assert result == [("a", "list"), ("b", "list"), ("c", "key")]
-
-    def test_single_segment(self) -> None:
-        result = _parse_path("root")
-        assert result == [("root", "key")]
-
-    def test_trailing_wildcard(self) -> None:
-        result = _parse_path("a.items[*]")
-        assert result == [("a", "key"), ("items", "list")]
-
-    def test_dict_wildcard(self) -> None:
-        result = _parse_path("family.*.address[*]")
-        assert result == [("family", "key"), ("", "dict"), ("address", "list")]
-
-    def test_dict_wildcard_standalone(self) -> None:
-        result = _parse_path("*")
-        assert result == [("", "dict")]
-
-    def test_named_match(self) -> None:
-        result = _parse_path("groups[ansible-managed].interfaces")
-        assert result == [("groups", "match:ansible-managed"), ("interfaces", "key")]
-
-    def test_named_match_simple(self) -> None:
-        result = _parse_path("items[foo]")
-        assert result == [("items", "match:foo")]
-
-    def test_glob_bracket(self) -> None:
-        result = _parse_path("groups[ansible-*].interfaces")
-        assert result == [("groups", "glob:ansible-*"), ("interfaces", "key")]
-
-    def test_glob_dict_key(self) -> None:
-        result = _parse_path("family.inet*.address[*]")
-        assert result == [("family", "key"), ("inet*", "dictglob"), ("address", "list")]
-
-    def test_glob_dict_key_standalone(self) -> None:
-        result = _parse_path("inet*")
-        assert result == [("inet*", "dictglob")]
+class TestPathSyntax:
+    @pytest.mark.parametrize(
+        ("path", "data", "expected"),
+        [case[1:] for case in SEGMENT_CASES],
+        ids=[case[0] for case in SEGMENT_CASES],
+    )
+    def test_each_segment_kind_selects_its_nodes(
+        self, path: str, data: dict[str, Any], expected: list[dict[str, Any]]
+    ) -> None:
+        assert resolve_path(data, path) == expected
 
 
 class TestResolvePath:
@@ -255,21 +280,25 @@ class TestResolvePath:
         assert result == [{"x": 1}]
 
 
-class TestResolvePathWithContext:
+class TestDiscriminators:
+    """Each wildcard a path passes adds one part to the variable name.
+
+    ``[*]`` adds the item's ``name``, except the last ``[*]`` when the leaf is
+    ``name`` itself, which adds the list index; ``*`` and ``inet*`` add the
+    dict key, ``[glob*]`` the item's name; a ``[name]`` match is a fixed
+    filter and adds nothing.
+    """
+
     def test_single_list_wildcard_uses_name(self) -> None:
         data = {"items": [{"name": "alpha", "val": 1}, {"name": "beta", "val": 2}]}
-        result = resolve_path_with_context(data, "items[*]", leaf_key="val")
-        assert len(result) == 2
-        assert result[0] == ({"name": "alpha", "val": 1}, ["alpha"])
-        assert result[1] == ({"name": "beta", "val": 2}, ["beta"])
+        host_vars, _ = ansibilize(data, "items[*].val", "p")
+        assert host_vars == {"p_alpha": 1, "p_beta": 2}
 
     def test_terminal_list_with_leaf_name_uses_index(self) -> None:
-        """When leaf_key is 'name' and this is the last [*], use list index."""
+        """When the leaf is ``name`` and this is the last ``[*]``, the index is used."""
         data = {"items": [{"name": "10.0.0.1/30"}, {"name": "10.0.0.5/30"}]}
-        result = resolve_path_with_context(data, "items[*]", leaf_key="name")
-        assert len(result) == 2
-        assert result[0] == ({"name": "10.0.0.1/30"}, ["0"])
-        assert result[1] == ({"name": "10.0.0.5/30"}, ["1"])
+        host_vars, _ = ansibilize(data, "items[*].name", "p")
+        assert host_vars == {"p_0": "10.0.0.1/30", "p_1": "10.0.0.5/30"}
 
     def test_dict_wildcard_uses_key_name(self) -> None:
         data = {
@@ -278,16 +307,11 @@ class TestResolvePathWithContext:
                 "inet6": {"address": [{"name": "2001:db8::1/64"}]},
             }
         }
-        result = resolve_path_with_context(data, "family.*.address[*]", leaf_key="name")
-        assert len(result) == 2
-        # Dict wildcard contributes the key name as discriminator
-        # Terminal list with leaf=name uses index
-        nodes = {r[0]["name"]: r[1] for r in result}
-        assert nodes["10.0.0.1/30"] == ["inet", "0"]
-        assert nodes["2001:db8::1/64"] == ["inet6", "0"]
+        host_vars, _ = ansibilize(data, "family.*.address[*].name", "p")
+        assert host_vars == {"p_inet_0": "10.0.0.1/30", "p_inet6_0": "2001:db8::1/64"}
 
     def test_nested_lists_with_dict_wildcard(self) -> None:
-        """Full interface path: interface[*].unit[*].family.*.address[*]"""
+        """interface and unit add their names, family its key, address its index."""
         data = {
             "interface": [
                 {
@@ -301,78 +325,45 @@ class TestResolvePathWithContext:
                 }
             ]
         }
-        result = resolve_path_with_context(
-            data, "interface[*].unit[*].family.*.address[*]", leaf_key="name"
-        )
-        assert len(result) == 1
-        node, discs = result[0]
-        assert node["name"] == "10.0.0.1/30"
-        # interface uses name, unit uses name, family uses dict key, address uses index
-        assert discs == ["xe-0/0/0", "100", "inet", "0"]
+        host_vars, _ = ansibilize(data, "interface[*].unit[*].family.*.address[*].name", "p")
+        assert host_vars == {"p_xe_0_0_0_100_inet_0": "10.0.0.1/30"}
 
     def test_non_terminal_list_with_leaf_name_uses_name(self) -> None:
-        """When leaf_key is 'name' but this is NOT the last [*], use item['name']."""
-        data = {
-            "groups": [
-                {"name": "g1", "items": [{"name": "i1"}]},
-            ]
-        }
-        result = resolve_path_with_context(data, "groups[*].items[*]", leaf_key="name")
-        assert len(result) == 1
-        node, discs = result[0]
-        assert node["name"] == "i1"
-        # groups[*] is non-terminal -> uses name "g1"
-        # items[*] is terminal with leaf=name -> uses index "0"
-        assert discs == ["g1", "0"]
+        """When the leaf is ``name`` but this is not the last ``[*]``, the name is used."""
+        data = {"groups": [{"name": "g1", "items": [{"name": "i1"}]}]}
+        host_vars, _ = ansibilize(data, "groups[*].items[*].name", "p")
+        assert host_vars == {"p_g1_0": "i1"}
 
     def test_empty_result(self) -> None:
         data = {"a": {"b": 1}}
-        result = resolve_path_with_context(data, "a.c[*]", leaf_key="name")
-        assert result == []
+        host_vars, group_vars = ansibilize(data, "a.c[*].name", "p")
+        assert host_vars == {}
+        assert group_vars == data
 
     def test_glob_bracket_adds_discriminator(self) -> None:
-        """Glob bracket [pattern*] adds name as discriminator (it's a wildcard)."""
+        """``[pattern*]`` is a wildcard: it adds the item's name."""
         data = {
             "groups": [
                 {"name": "ansible-managed", "items": [{"name": "10.0.0.1"}]},
                 {"name": "ansible-testing", "items": [{"name": "10.0.0.2"}]},
             ]
         }
-        result = resolve_path_with_context(data, "groups[ansible-*].items[*]", leaf_key="name")
-        assert len(result) == 2
-        nodes = {r[0]["name"]: r[1] for r in result}
-        assert nodes["10.0.0.1"] == ["ansible-managed", "0"]
-        assert nodes["10.0.0.2"] == ["ansible-testing", "0"]
+        host_vars, _ = ansibilize(data, "groups[ansible-*].items[*].name", "p")
+        assert host_vars == {"p_ansible_managed_0": "10.0.0.1", "p_ansible_testing_0": "10.0.0.2"}
 
     def test_glob_dict_key_adds_discriminator(self) -> None:
-        """Dict key glob (inet*) adds matching key as discriminator."""
+        """``inet*`` adds the matching key."""
         data = {
             "family": {
                 "inet": {"address": [{"name": "10.0.0.1/30"}]},
                 "inet6": {"address": [{"name": "2001:db8::1/64"}]},
             }
         }
-        result = resolve_path_with_context(data, "family.inet*.address[*]", leaf_key="name")
-        assert len(result) == 2
-        nodes = {r[0]["name"]: r[1] for r in result}
-        assert nodes["10.0.0.1/30"] == ["inet", "0"]
-        assert nodes["2001:db8::1/64"] == ["inet6", "0"]
+        host_vars, _ = ansibilize(data, "family.inet*.address[*].name", "p")
+        assert host_vars == {"p_inet_0": "10.0.0.1/30", "p_inet6_0": "2001:db8::1/64"}
 
     def test_named_match_no_discriminator(self) -> None:
-        """Named match [value] does not add a discriminator (it's a fixed filter)."""
-        data = {
-            "groups": [
-                {
-                    "name": "ansible-managed",
-                    "items": [{"name": "10.0.0.1"}],
-                },
-            ]
-        }
-        result = resolve_path_with_context(
-            data, "groups[ansible-managed].items[*]", leaf_key="name"
-        )
-        assert len(result) == 1
-        node, discs = result[0]
-        assert node["name"] == "10.0.0.1"
-        # Named match doesn't contribute a discriminator — only [*] and * do
-        assert discs == ["0"]
+        """``[value]`` is a fixed filter: only the ``[*]`` adds a part."""
+        data = {"groups": [{"name": "ansible-managed", "items": [{"name": "10.0.0.1"}]}]}
+        host_vars, _ = ansibilize(data, "groups[ansible-managed].items[*].name", "p")
+        assert host_vars == {"p_0": "10.0.0.1"}

@@ -1,11 +1,10 @@
-"""Tests for the audit output rendering."""
+"""render: an audit result as path lines or a Junos script, plain or verbose."""
 
 from __future__ import annotations
 
 import pytest
 
-from junoscfg.audit.model import AuditResult, Finding, Occurrence
-from junoscfg.audit.render import STYLE_CHOICES, render
+from junoscfg.audit import STYLE_CHOICES, AuditResult, Finding, Occurrence, render
 
 UNUSED = Finding(
     type_name="policy-statement",

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from junoscfg.edityaml.transforms import apply_transform
+from junoscfg.edityaml import apply_transform
 
 
 class TestRegexExtract:

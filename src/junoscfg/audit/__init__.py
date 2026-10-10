@@ -25,20 +25,26 @@ from junoscfg.audit.model import (
     Finding,
     Occurrence,
 )
-from junoscfg.audit.registry import Registry, RegistryError, load_registry
+from junoscfg.audit.registry import Registry, RegistryError, TypeEntry, load_registry
+from junoscfg.audit.render import STYLE_CHOICES, render
+from junoscfg.audit.walker import collect_occurrences
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 __all__ = [
+    "STYLE_CHOICES",
     "AuditLoadError",
     "AuditResult",
     "Finding",
     "Occurrence",
     "Registry",
     "RegistryError",
+    "TypeEntry",
+    "collect_occurrences",
     "find_unused",
     "load_registry",
+    "render",
 ]
 
 

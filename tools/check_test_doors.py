@@ -58,9 +58,17 @@ def _private(name: str) -> bool:
 
 
 class _Visitor(ast.NodeVisitor):
-    def __init__(self, allowed: frozenset[str], known: frozenset[str]) -> None:
+    def __init__(
+        self,
+        allowed: frozenset[str],
+        known: frozenset[str],
+        exported: dict[str, frozenset[str]] | None = None,
+    ) -> None:
         self.allowed = allowed
         self.known = known
+        # A name a door lists in __all__ is that door's, even where a submodule
+        # shares it (`junoscfg.audit.render` the function, not the module).
+        self.exported = exported or {}
         self.found: list[tuple[int, str, str]] = []
 
     def _module(self, lineno: int, module: str) -> None:
@@ -87,7 +95,9 @@ class _Visitor(ast.NodeVisitor):
                     self.found.append(
                         (node.lineno, f"{node.module}.{alias.name}", "imports a private name")
                     )
-                elif f"{node.module}.{alias.name}" in self.known:
+                elif f"{node.module}.{alias.name}" in self.known and alias.name not in (
+                    self.exported.get(node.module, frozenset())
+                ):
                     self.found.append(
                         (
                             node.lineno,
@@ -117,6 +127,20 @@ class _Visitor(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+def _exports() -> dict[str, frozenset[str]]:
+    """Each door's ``__all__``, read from its source without importing it."""
+    found = {}
+    for door in doors():
+        parts = door.split(".")
+        package = ROOT / "src" / Path(*parts) / "__init__.py"
+        path = package if package.exists() else (ROOT / "src" / Path(*parts)).with_suffix(".py")
+        for node in ast.parse(path.read_text(encoding="utf-8")).body:
+            targets = node.targets if isinstance(node, ast.Assign) else []
+            if any(isinstance(t, ast.Name) and t.id == "__all__" for t in targets):
+                found[door] = frozenset(ast.literal_eval(node.value))
+    return found
+
+
 def _modules_in_src() -> frozenset[str]:
     src = ROOT / "src"
     names = set()
@@ -130,11 +154,12 @@ def violations(paths: list[Path] | None = None) -> list[str]:
     """Every reach past a door in *paths* (default: all of tests/), less the exceptions."""
     every_door = doors()
     known = _modules_in_src()
+    exported = _exports()
     report = []
     for path in sorted(paths or TESTS.rglob("*.py")):
         rel = path.relative_to(TESTS).as_posix()
         allowed = SURFACES if rel.split("/")[0] in SURFACE_ONLY else every_door
-        visitor = _Visitor(allowed, known)
+        visitor = _Visitor(allowed, known, exported)
         visitor.visit(ast.parse(path.read_text(encoding="utf-8"), filename=str(path)))
         for lineno, what, why in visitor.found:
             if (rel, what) not in EXCEPTIONS:
@@ -148,7 +173,7 @@ def stale_exceptions() -> list[str]:
     for path in TESTS.rglob("*.py"):
         rel = path.relative_to(TESTS).as_posix()
         allowed = SURFACES if rel.split("/")[0] in SURFACE_ONLY else doors()
-        visitor = _Visitor(allowed, _modules_in_src())
+        visitor = _Visitor(allowed, _modules_in_src(), _exports())
         visitor.visit(ast.parse(path.read_text(encoding="utf-8")))
         seen.update((rel, what) for _, what, _ in visitor.found)
     return [

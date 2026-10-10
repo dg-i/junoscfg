@@ -1,117 +1,157 @@
-"""Tests for edityaml ansibilize module."""
+"""ansibilize: extract leaf values into host_vars and templatise the rest.
+
+The variable names, the leaf a path ends in and the offset expressions are
+reached through ansibilize and ansibilize_with_offset, the calls the CLI makes.
+"""
 
 from __future__ import annotations
+
+from typing import Any
 
 import pytest
 import yaml
 
-from junoscfg.edityaml.ansibilize import (
+from junoscfg.edityaml import (
     ansibilize,
     ansibilize_multi,
     ansibilize_with_offset,
-    detect_value_type,
     format_output,
     format_output_with_offset,
-    generate_var_name,
-    make_offset_expression,
-    sanitize_var_component,
-    split_leaf_from_path,
 )
 
 
-class TestSanitizeVarComponent:
-    def test_simple_lowercase(self) -> None:
-        assert sanitize_var_component("hello") == "hello"
-
-    def test_uppercase_to_lower(self) -> None:
-        assert sanitize_var_component("Hello") == "hello"
-
-    def test_special_chars_to_underscore(self) -> None:
-        assert sanitize_var_component("xe-0/0/0") == "xe_0_0_0"
-
-    def test_colons_and_slashes(self) -> None:
-        assert sanitize_var_component("2001:db8::1/64") == "2001_db8_1_64"
-
-    def test_collapse_multiple_underscores(self) -> None:
-        assert sanitize_var_component("a--b//c") == "a_b_c"
-
-    def test_strip_edge_underscores(self) -> None:
-        assert sanitize_var_component("-hello-") == "hello"
-
-    def test_numeric_string(self) -> None:
-        assert sanitize_var_component("1234") == "1234"
+def named_item(name: str) -> dict[str, Any]:
+    """One list item called *name*, whose ``v`` is extracted."""
+    return {"items": [{"name": name, "v": 1}]}
 
 
-class TestGenerateVarName:
-    def test_simple_prefix_and_discriminators(self) -> None:
-        result = generate_var_name("junos_addr", ["xe_0_0_0", "100", "inet", "0"])
-        assert result == "junos_addr_xe_0_0_0_100_inet_0"
+INTERFACE = {
+    "intf": [
+        {
+            "name": "xe-0/0/0",
+            "unit": [
+                {
+                    "name": "100",
+                    "v": 1,
+                    "family": {"inet": {"address": [{"name": "10.0.0.1/30"}]}},
+                }
+            ],
+        }
+    ]
+}
 
-    def test_discriminators_get_sanitized(self) -> None:
-        result = generate_var_name("junos_addr", ["xe-0/0/0", "100"])
-        assert result == "junos_addr_xe_0_0_0_100"
+# (id, data, path, prefix, the variable name). The discriminator of a ``[*]``
+# whose leaf is not ``name`` is the item's name, sanitized: lower case, every
+# other character an underscore, runs collapsed, edges stripped.
+VARIABLE_NAME_CASES: list[tuple[str, dict[str, Any], str, str, str]] = [
+    ("simple-lowercase", named_item("hello"), "items[*].v", "p", "p_hello"),
+    ("uppercase-to-lower", named_item("Hello"), "items[*].v", "p", "p_hello"),
+    ("special-chars-to-underscore", named_item("xe-0/0/0"), "items[*].v", "p", "p_xe_0_0_0"),
+    ("colons-and-slashes", named_item("2001:db8::1/64"), "items[*].v", "p", "p_2001_db8_1_64"),
+    ("collapse-multiple-underscores", named_item("a--b//c"), "items[*].v", "p", "p_a_b_c"),
+    ("strip-edge-underscores", named_item("-hello-"), "items[*].v", "p", "p_hello"),
+    ("numeric-string", named_item("1234"), "items[*].v", "p", "p_1234"),
+    (
+        "simple-prefix-and-discriminators",
+        INTERFACE,
+        "intf[*].unit[*].family.*.address[*].name",
+        "junos_addr",
+        "junos_addr_xe_0_0_0_100_inet_0",
+    ),
+    (
+        "discriminators-get-sanitized",
+        INTERFACE,
+        "intf[*].unit[*].v",
+        "junos_addr",
+        "junos_addr_xe_0_0_0_100",
+    ),
+    (
+        "empty-discriminators",
+        {"system": {"host-name": "r1"}},
+        "system.host-name",
+        "prefix",
+        "prefix",
+    ),
+]
 
-    def test_empty_discriminators(self) -> None:
-        result = generate_var_name("prefix", [])
-        assert result == "prefix"
+
+class TestVariableNames:
+    @pytest.mark.parametrize(
+        ("data", "path", "prefix", "expected"),
+        [case[1:] for case in VARIABLE_NAME_CASES],
+        ids=[case[0] for case in VARIABLE_NAME_CASES],
+    )
+    def test_the_variable_name(
+        self, data: dict[str, Any], path: str, prefix: str, expected: str
+    ) -> None:
+        host_vars, _ = ansibilize(data, path, prefix)
+        assert list(host_vars) == [expected]
 
 
-class TestSplitLeafFromPath:
-    def test_simple_key(self) -> None:
-        path, leaf = split_leaf_from_path("configuration.system.host-name")
-        assert path == "configuration.system"
-        assert leaf == "host-name"
+BGP = {
+    "configuration": {
+        "protocols": {
+            "bgp": {
+                "group": [
+                    {"name": "overlay", "neighbor": [{"name": "10.0.0.1", "description": "spine1"}]}
+                ]
+            }
+        }
+    }
+}
+FAMILY = {"family": {"inet": {"address": [{"name": "10.0.0.1/30"}]}}}
 
-    def test_after_list_wildcard(self) -> None:
-        path, leaf = split_leaf_from_path(
-            "configuration.protocols.bgp.group[*].neighbor[*].description"
-        )
-        assert path == "configuration.protocols.bgp.group[*].neighbor[*]"
-        assert leaf == "description"
+# (id, path, data, host_vars): the last segment is the leaf, after any wildcard.
+LEAF_CASES: list[tuple[str, str, dict[str, Any], dict[str, Any]]] = [
+    (
+        "simple-key",
+        "configuration.system.host-name",
+        {"configuration": {"system": {"host-name": "r1"}}},
+        {"p": "r1"},
+    ),
+    (
+        "after-list-wildcard",
+        "configuration.protocols.bgp.group[*].neighbor[*].description",
+        BGP,
+        {"p_overlay_10_0_0_1": "spine1"},
+    ),
+    ("after-dict-wildcard", "family.*.address[*].name", FAMILY, {"p_inet_0": "10.0.0.1/30"}),
+    (
+        "after-glob-bracket",
+        "groups[ansible-*].peer-as",
+        {"groups": [{"name": "ansible-a", "peer-as": "64496"}, {"name": "other"}]},
+        {"p_ansible_a": "64496"},
+    ),
+    ("after-dict-glob", "family.inet*.address[*].name", FAMILY, {"p_inet_0": "10.0.0.1/30"}),
+    ("single-segment", "host-name", {"host-name": "r1"}, {"p": "r1"}),
+]
 
-    def test_after_dict_wildcard(self) -> None:
-        path, leaf = split_leaf_from_path("family.*.address[*].name")
-        assert path == "family.*.address[*]"
-        assert leaf == "name"
 
-    def test_after_glob_bracket(self) -> None:
-        path, leaf = split_leaf_from_path("groups[ansible-*].peer-as")
-        assert path == "groups[ansible-*]"
-        assert leaf == "peer-as"
+class TestTheLeafOfAPath:
+    @pytest.mark.parametrize(
+        ("path", "data", "expected"),
+        [case[1:] for case in LEAF_CASES],
+        ids=[case[0] for case in LEAF_CASES],
+    )
+    def test_the_last_key_is_the_leaf(
+        self, path: str, data: dict[str, Any], expected: dict[str, Any]
+    ) -> None:
+        host_vars, _ = ansibilize(data, path, "p")
+        assert host_vars == expected
 
-    def test_after_dict_glob(self) -> None:
-        path, leaf = split_leaf_from_path("family.inet*.address[*].name")
-        assert path == "family.inet*.address[*]"
-        assert leaf == "name"
-
-    def test_single_segment(self) -> None:
-        path, leaf = split_leaf_from_path("host-name")
-        assert path == ""
-        assert leaf == "host-name"
-
-    def test_raises_on_trailing_list_wildcard(self) -> None:
-        import pytest
-
+    @pytest.mark.parametrize(
+        "path",
+        ["items[*]", "family.*", "groups[ansible-*]", "family.inet*"],
+        ids=[
+            "trailing-list-wildcard",
+            "trailing-dict-wildcard",
+            "trailing-glob",
+            "trailing-dict-glob",
+        ],
+    )
+    def test_a_path_ending_in_a_wildcard_is_rejected(self, path: str) -> None:
         with pytest.raises(ValueError, match="leaf"):
-            split_leaf_from_path("items[*]")
-
-    def test_raises_on_trailing_dict_wildcard(self) -> None:
-        import pytest
-
-        with pytest.raises(ValueError, match="leaf"):
-            split_leaf_from_path("family.*")
-
-    def test_raises_on_trailing_glob(self) -> None:
-        import pytest
-
-        with pytest.raises(ValueError, match="leaf"):
-            split_leaf_from_path("groups[ansible-*]")
-
-    def test_raises_on_trailing_dict_glob(self) -> None:
-        import pytest
-
-        with pytest.raises(ValueError, match="leaf"):
-            split_leaf_from_path("family.inet*")
+            ansibilize({}, path, "p")
 
 
 class TestAnsibilize:
@@ -481,79 +521,98 @@ class TestRootKeys:
         assert group_vars["other"]["system"]["host-name"] == "r2"
 
 
-class TestDetectValueType:
-    def test_ipv4(self) -> None:
-        assert detect_value_type("10.0.2.64") == "ip"
+IPMATH = "{{{{ '{}' | ansible.utils.ipmath({}) }}}}"
 
-    def test_ipv4_with_mask(self) -> None:
-        assert detect_value_type("10.0.2.64/31") == "ip"
+# (id, value, offset variable, expression). The value's type decides the form:
+# an address (any mask kept) goes through ipmath, a MAC address adds to its
+# last octet in hex, a trailing number adds to itself, zero padding kept.
+OFFSET_CASES: list[tuple[str, str, str, str]] = [
+    (
+        "ipv4-with-mask",
+        "10.0.2.64/31",
+        "base_address_offset",
+        IPMATH.format("10.0.2.64", "base_address_offset") + "/31",
+    ),
+    (
+        "ipv6",
+        "2001:db8::1",
+        "base_address_offset",
+        IPMATH.format("2001:db8::1", "base_address_offset"),
+    ),
+    (
+        "ipv6-with-mask",
+        "2001:db8::1:2e/112",
+        "base_address_offset",
+        IPMATH.format("2001:db8::1:2e", "base_address_offset") + "/112",
+    ),
+    (
+        "ip-no-mask",
+        "10.0.0.1",
+        "base_address_offset",
+        IPMATH.format("10.0.0.1", "base_address_offset"),
+    ),
+    (
+        "mac-colon",
+        "00:11:22:33:44:a5",
+        "base_address_offset",
+        "00:11:22:33:44:{{ '%02x' % (165 + base_address_offset) }}",
+    ),
+    (
+        "mac-dash",
+        "00-11-22-33-44-A5",
+        "base_address_offset",
+        "00-11-22-33-44-{{ '%02x' % (165 + base_address_offset) }}",
+    ),
+    (
+        "mac-dot",
+        "AABB.CCDD.EE55",
+        "base_address_offset",
+        "AABB.CCDD.EE{{ '%02x' % (85 + base_address_offset) }}",
+    ),
+    (
+        "trailing-numeric-zero-padded",
+        "router04",
+        "base_address_offset",
+        "router{{ '%02d' % (4 + base_address_offset) }}",
+    ),
+    (
+        "trailing-numeric-unpadded",
+        "spine-1",
+        "base_address_offset",
+        "spine-{{ 1 + base_address_offset }}",
+    ),
+    (
+        "custom-offset-var",
+        "10.0.0.1/30",
+        "my_offset",
+        IPMATH.format("10.0.0.1", "my_offset") + "/30",
+    ),
+]
 
-    def test_ipv6(self) -> None:
-        assert detect_value_type("2001:db8::1") == "ip"
 
-    def test_ipv6_with_mask(self) -> None:
-        assert detect_value_type("2001:db8::1:2e/112") == "ip"
+class TestOffsetExpressions:
+    @pytest.mark.parametrize(
+        ("value", "offset_var", "expected"),
+        [case[1:] for case in OFFSET_CASES],
+        ids=[case[0] for case in OFFSET_CASES],
+    )
+    def test_the_offset_expression(self, value: str, offset_var: str, expected: str) -> None:
+        _, offset_vars, _ = ansibilize_with_offset(
+            {"items": [{"name": value}]},
+            literal_pairs=[],
+            offset_pairs=[("x", "items[*].name")],
+            offset_var=offset_var,
+        )
+        assert offset_vars == {"x_0": expected}
 
-    def test_mac_colon(self) -> None:
-        assert detect_value_type("00:11:22:33:44:a5") == "mac"
-
-    def test_mac_dash(self) -> None:
-        assert detect_value_type("00-11-22-33-44-A5") == "mac"
-
-    def test_mac_dot(self) -> None:
-        assert detect_value_type("AABB.CCDD.EE55") == "mac"
-
-    def test_trailing_numeric(self) -> None:
-        assert detect_value_type("router04") == "trailing_numeric"
-
-    def test_trailing_numeric_with_separator(self) -> None:
-        assert detect_value_type("spine-1") == "trailing_numeric"
-
-    def test_unrecognized_raises(self) -> None:
-        with pytest.raises(ValueError, match="hello-world"):
-            detect_value_type("hello-world")
-
-
-class TestMakeOffsetExpression:
-    def test_ipv4_with_mask(self) -> None:
-        result = make_offset_expression("10.0.2.64/31", "base_address_offset")
-        assert result == "{{ '10.0.2.64' | ansible.utils.ipmath(base_address_offset) }}/31"
-
-    def test_ipv6_with_mask(self) -> None:
-        result = make_offset_expression("2001:db8::1:2e/112", "base_address_offset")
-        assert result == "{{ '2001:db8::1:2e' | ansible.utils.ipmath(base_address_offset) }}/112"
-
-    def test_ip_no_mask(self) -> None:
-        result = make_offset_expression("10.0.0.1", "base_address_offset")
-        assert result == "{{ '10.0.0.1' | ansible.utils.ipmath(base_address_offset) }}"
-
-    def test_mac_colon(self) -> None:
-        result = make_offset_expression("00:11:22:33:44:a5", "base_address_offset")
-        assert result == "00:11:22:33:44:{{ '%02x' % (165 + base_address_offset) }}"
-
-    def test_mac_dash(self) -> None:
-        result = make_offset_expression("00-11-22-33-44-A5", "base_address_offset")
-        assert result == "00-11-22-33-44-{{ '%02x' % (165 + base_address_offset) }}"
-
-    def test_mac_dot(self) -> None:
-        result = make_offset_expression("AABB.CCDD.EE55", "base_address_offset")
-        assert result == "AABB.CCDD.EE{{ '%02x' % (85 + base_address_offset) }}"
-
-    def test_trailing_numeric_zero_padded(self) -> None:
-        result = make_offset_expression("router04", "base_address_offset")
-        assert result == "router{{ '%02d' % (4 + base_address_offset) }}"
-
-    def test_trailing_numeric_unpadded(self) -> None:
-        result = make_offset_expression("spine-1", "base_address_offset")
-        assert result == "spine-{{ 1 + base_address_offset }}"
-
-    def test_custom_offset_var(self) -> None:
-        result = make_offset_expression("10.0.0.1/30", "my_offset")
-        assert result == "{{ '10.0.0.1' | ansible.utils.ipmath(my_offset) }}/30"
-
-    def test_unrecognized_raises(self) -> None:
-        with pytest.raises(ValueError, match="no-digits-here"):
-            make_offset_expression("no-digits-here", "base_address_offset")
+    @pytest.mark.parametrize("value", ["hello-world", "no-digits-here"])
+    def test_a_value_of_no_known_type_is_rejected(self, value: str) -> None:
+        with pytest.raises(ValueError, match=value):
+            ansibilize_with_offset(
+                {"items": [{"name": value}]},
+                literal_pairs=[],
+                offset_pairs=[("x", "items[*].name")],
+            )
 
 
 class TestAnsibilizeWithOffset:

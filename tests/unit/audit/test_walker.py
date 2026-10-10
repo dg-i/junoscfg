@@ -1,32 +1,32 @@
-"""Tests for the schema-guided audit occurrence walker."""
+"""collect_occurrences walks the IR and the shipped tree and names every value.
+
+Each name-like value becomes an Occurrence with its kind (entry key, leaf,
+algebra, apply-groups, unknown), its schema path for registry matching and its
+CLI path for emitted commands.
+"""
 
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 
-from junoscfg.audit.walker import collect_occurrences
+from junoscfg.audit import Occurrence, collect_occurrences
 from junoscfg.convert import to_dict
-from junoscfg.display.constants import load_schema_tree
 
-if TYPE_CHECKING:
-    from junoscfg.audit.model import Occurrence
+Occs = Callable[[dict[str, Any]], list[Occurrence]]
 
 
-def _schema_root() -> dict[str, Any]:
-    schema = load_schema_tree()
-    assert schema is not None
-    return schema.get("c", {}).get("configuration", schema)
+@pytest.fixture
+def occs(schema_root: dict[str, Any]) -> Occs:
+    """Collect all occurrences from an unwrapped IR dict, against the shipped tree."""
 
+    def _collect(ir: dict[str, Any]) -> list[Occurrence]:
+        return collect_occurrences(ir, schema_root)
 
-SCHEMA_ROOT: dict[str, Any] = _schema_root()
-
-
-def occs(ir: dict[str, Any]) -> list[Occurrence]:
-    """Collect all occurrences from an unwrapped IR dict."""
-    return collect_occurrences(ir, SCHEMA_ROOT)
+    return _collect
 
 
 def json_ir(config: dict[str, Any]) -> dict[str, Any]:
@@ -47,14 +47,14 @@ def one(occurrences: list[Occurrence], value: str) -> Occurrence:
 
 
 class TestEntryKeys:
-    def test_named_list_entry_key(self, make_ir: Any) -> None:
+    def test_named_list_entry_key(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set policy-options policy-statement FOO then accept")
         occ = one(occs(ir), "FOO")
         assert occ.kind == "entry-key"
         assert occ.schema_path[-2:] == ("policy-options", "policy-statement")
         assert occ.path == ("policy-options", "policy-statement", "FOO")
 
-    def test_native_json_entry_key(self) -> None:
+    def test_native_json_entry_key(self, occs: Occs) -> None:
         ir = json_ir(
             {"policy-options": {"policy-statement": [{"name": "FOO", "then": {"accept": [None]}}]}}
         )
@@ -67,7 +67,7 @@ class TestEntryKeys:
     # key field is the entry key". The bundled tree for the device's lists,
     # and small trees for keys no hard-coded spelling could have answered.
 
-    def test_a_single_key_other_than_name(self, make_ir: Any) -> None:
+    def test_a_single_key_other_than_name(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir(
             "set policy-options policy-statement p1 term 1 from prefix-list-filter plf-a orlonger"
         )
@@ -96,7 +96,7 @@ class TestEntryKeys:
         assert key.path == ("system", "server", "198.51.100.10")
         assert one(found, "4").path[-2:] == ("version", "4")
 
-    def test_a_community_action_is_keyed_community_name(self, make_ir: Any) -> None:
+    def test_a_community_action_is_keyed_community_name(self, occs: Occs, make_ir: Any) -> None:
         for line in (
             "set policy-options policy-statement p1 term 1 then community add comm-a",
             "set policy-options policy-statement p1 term 1 then community comm-a add",
@@ -151,13 +151,13 @@ class TestKeyedEntries:
     }
 
     @pytest.mark.parametrize("where", list(LINES))
-    def test_list_name_is_the_reference(self, make_ir: Any, where: str) -> None:
+    def test_list_name_is_the_reference(self, occs: Occs, make_ir: Any, where: str) -> None:
         occ = one(occs(make_ir(self.LINES[where])), "AS-LIST-A")
         assert occ.kind == "leaf"
         assert occ.schema_path[-1] == "list-name"
         assert occ.path[-2:] == ("list-name", "AS-LIST-A")
 
-    def test_the_device_json_gives_the_same_reference(self) -> None:
+    def test_the_device_json_gives_the_same_reference(self, occs: Occs) -> None:
         ir = json_ir(
             {
                 "policy-options": {
@@ -184,7 +184,7 @@ class TestKeyedEntries:
         assert occ.schema_path[-1] == "list-name"
 
     @pytest.mark.parametrize("where", list(LINES))
-    def test_list_type_is_no_reference(self, make_ir: Any, where: str) -> None:
+    def test_list_type_is_no_reference(self, occs: Occs, make_ir: Any, where: str) -> None:
         occurrences = occs(make_ir(self.LINES[where]))
         assert not by_value(occurrences, "as-list")
         assert not by_value(occurrences, "as-list-group")
@@ -192,14 +192,14 @@ class TestKeyedEntries:
 
 
 class TestLeaves:
-    def test_leaf_occurrence(self, make_ir: Any) -> None:
+    def test_leaf_occurrence(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set system login user alice class operator-class")
         occ = one(occs(ir), "operator-class")
         assert occ.kind == "leaf"
         assert occ.schema_path == ("system", "login", "user", "class")
         assert occ.path == ("system", "login", "user", "alice", "class", "operator-class")
 
-    def test_leaf_list_occurrences(self, make_ir: Any) -> None:
+    def test_leaf_list_occurrences(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir(
             "set interfaces ge-0/0/0 unit 0 family inet filter input-list f1\n"
             "set interfaces ge-0/0/0 unit 0 family inet filter input-list f2"
@@ -211,9 +211,15 @@ class TestLeaves:
             assert occ.schema_path[-2:] == ("filter", "input-list")
             assert occ.path[-2:] == ("input-list", name)
 
+    def test_domain_search_yields_leaf_occurrence(self, occs: Occs, make_ir: Any) -> None:
+        """A leaf-list item is a ``leaf`` occurrence, as the engine's
+        unknown-position case ``leaf-list-item`` assumes."""
+        occurrences = occs(make_ir("set system domain-search pol-unref"))
+        assert [occ.kind for occ in occurrences if occ.value == "pol-unref"] == ["leaf"]
+
 
 class TestAlgebra:
-    def test_boolean_expression_extracts_names(self, make_ir: Any) -> None:
+    def test_boolean_expression_extracts_names(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set protocols bgp group ibgp import ( pol-a && ! pol-b )")
         occurrences = occs(ir)
         algebra = [o for o in occurrences if o.kind == "algebra"]
@@ -258,6 +264,7 @@ class TestApplyGroups:
     )
     def test_apply_groups_occurrence(
         self,
+        occs: Occs,
         make_ir: Any,
         set_text: str,
         value: str,
@@ -272,7 +279,7 @@ class TestApplyGroups:
 
 
 class TestAnnotationsSkipped:
-    def test_deactivated_leaf_value_kept_annotation_skipped(self, make_ir: Any) -> None:
+    def test_deactivated_leaf_value_kept_annotation_skipped(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set system host-name router1\ndeactivate system host-name")
         occurrences = occs(ir)
         occ = one(occurrences, "router1")
@@ -281,11 +288,11 @@ class TestAnnotationsSkipped:
         assert not by_value(occurrences, "inactive")
         assert not by_value(occurrences, "delete")
 
-    def test_deactivated_container_yields_nothing(self, make_ir: Any) -> None:
+    def test_deactivated_container_yields_nothing(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set system services ssh\ndeactivate system services ssh")
         assert occs(ir) == []
 
-    def test_annotation_payload_strings_not_collected(self) -> None:
+    def test_annotation_payload_strings_not_collected(self, occs: Occs) -> None:
         ir: dict[str, Any] = {
             "system": {
                 "host-name": "router1",
@@ -297,7 +304,7 @@ class TestAnnotationsSkipped:
 
 
 class TestEnumExclusion:
-    def test_enum_leaf_value_not_collected(self, make_ir: Any) -> None:
+    def test_enum_leaf_value_not_collected(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set routing-instances VRF-A instance-type vrf")
         occurrences = occs(ir)
         assert not by_value(occurrences, "vrf")
@@ -308,7 +315,7 @@ class TestEnumExclusion:
 
 
 class TestTransparentContainers:
-    def test_set_parsed_groups_shape(self, make_ir: Any) -> None:
+    def test_set_parsed_groups_shape(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set groups g1 system host-name router1")
         assert ir == {"groups": {"group": [{"name": "g1", "system": {"host-name": "router1"}}]}}
         occ = one(occs(ir), "g1")
@@ -316,21 +323,21 @@ class TestTransparentContainers:
         assert occ.schema_path[-2:] == ("groups", "group")
         assert occ.path == ("groups", "g1")
 
-    def test_native_json_groups_shape(self) -> None:
+    def test_native_json_groups_shape(self, occs: Occs) -> None:
         ir = json_ir({"groups": [{"name": "g1", "system": {"host-name": "router1"}}]})
         occ = one(occs(ir), "g1")
         assert occ.kind == "entry-key"
         assert occ.schema_path[-2:] == ("groups", "group")
         assert occ.path == ("groups", "g1")
 
-    def test_both_shapes_yield_identical_occurrences(self, make_ir: Any) -> None:
+    def test_both_shapes_yield_identical_occurrences(self, occs: Occs, make_ir: Any) -> None:
         set_ir = make_ir("set groups g1 system host-name router1")
         native_ir = json_ir({"groups": [{"name": "g1", "system": {"host-name": "router1"}}]})
         assert occs(set_ir) == occs(native_ir)
 
 
 class TestLogicalSystems:
-    def test_nested_policy_statement_entry_key(self, make_ir: Any) -> None:
+    def test_nested_policy_statement_entry_key(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir(
             "set logical-systems ls1 policy-options policy-statement foo term 1 then accept"
         )
@@ -340,12 +347,12 @@ class TestLogicalSystems:
         assert occ.path == ("logical-systems", "ls1", "policy-options", "policy-statement", "foo")
 
 
-class TestFlatEntryKeys:
-    """Rewritten to the keyed form (identifier-key-fields, owner answer 1): the
-    key comes from the tree's key fields, and the entry's CLI path is its whole
-    key as written, the match type or action keyword included."""
+class TestAnEntryPathHoldsTheWholeKey:
+    """The key comes from the tree's key fields, and the entry's CLI path is its
+    whole key as written, the match type or action keyword included.
+    Change identifier-key-fields, owner answer 1 (it replaced the flat key)."""
 
-    def test_prefix_list_filter_fe_key(self, make_ir: Any) -> None:
+    def test_prefix_list_filter_fe_key(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir(
             "set policy-options policy-statement p1 term 1 from prefix-list-filter plf-a orlonger"
         )
@@ -354,7 +361,7 @@ class TestFlatEntryKeys:
         assert occ.schema_path[-2:] == ("from", "prefix-list-filter")
         assert occ.path[-3:] == ("prefix-list-filter", "plf-a", "orlonger")
 
-    def test_community_name_fallback_key(self, make_ir: Any) -> None:
+    def test_community_name_fallback_key(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set policy-options policy-statement p1 term 1 then community add comm-a")
         occ = one(occs(ir), "comm-a")
         assert occ.kind == "entry-key"
@@ -363,7 +370,7 @@ class TestFlatEntryKeys:
 
 
 class TestUnknownPositions:
-    def test_unknown_top_level_key_blind_walk(self) -> None:
+    def test_unknown_top_level_key_blind_walk(self, occs: Occs) -> None:
         ir: dict[str, Any] = {
             "policy-options": {"policy-statement": [{"name": "p1", "then": {"accept": [None]}}]},
             "made-up-extension": {"sub": {"ref": "some-name"}},
@@ -375,7 +382,7 @@ class TestUnknownPositions:
         # The schema-known part of the tree is still walked normally.
         assert one(occurrences, "p1").kind == "entry-key"
 
-    def test_apply_macro_contents_collected_as_unknown(self, make_ir: Any) -> None:
+    def test_apply_macro_contents_collected_as_unknown(self, occs: Occs, make_ir: Any) -> None:
         ir = make_ir("set policy-options policy-statement p1 apply-macro m1 key1 val1")
         occurrences = occs(ir)
         for value in ("m1", "key1", "val1"):
@@ -387,7 +394,7 @@ class TestUnknownPositions:
 
 
 class TestNonStringValues:
-    def test_int_leaf_value_is_coerced_and_collected(self) -> None:
+    def test_int_leaf_value_is_coerced_and_collected(self, occs: Occs) -> None:
         # Numeric leaves are collected as strings so numeric-named objects
         # match symmetrically on the definition and reference sides.
         ir: dict[str, Any] = {"protocols": {"bgp": {"hold-time": 90}}}
@@ -395,10 +402,10 @@ class TestNonStringValues:
         assert len(occurrences) == 1
         assert occurrences[0].kind == "leaf"
 
-    def test_none_presence_value_not_collected(self) -> None:
+    def test_none_presence_value_not_collected(self, occs: Occs) -> None:
         ir: dict[str, Any] = {"protocols": {"bgp": {"damping": None}}}
         assert occs(ir) == []
 
-    def test_bool_presence_value_not_collected(self) -> None:
+    def test_bool_presence_value_not_collected(self, occs: Occs) -> None:
         ir: dict[str, Any] = {"protocols": {"bgp": {"damping": True}}}
         assert occs(ir) == []

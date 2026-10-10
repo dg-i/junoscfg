@@ -1,4 +1,4 @@
-"""Shared fixtures for the audit test suite."""
+"""Fixtures for the audit tests; inline registries are in ``registries.py``."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ from typing import Any
 
 import pytest
 
-from junoscfg.audit.registry import Registry, TypeEntry
 from junoscfg.convert import to_dict
 
 
@@ -20,29 +19,7 @@ def make_ir() -> Any:
     return _make
 
 
-def make_registry(*entries: TypeEntry) -> Registry:
-    """Build a small inline registry for engine-level tests."""
-    return Registry(types={entry.name: entry for entry in entries})
-
-
-POLICY_STATEMENT = TypeEntry(
-    name="policy-statement",
-    source="curated",
-    definition=(("policy-options", "policy-statement"),),
-    reference_schema_types=frozenset({"policy-algebra"}),
-)
-
-PREFIX_LIST = TypeEntry(
-    name="prefix-list",
-    source="curated",
-    definition=(("policy-options", "prefix-list"),),
-    reference_paths=(("from", "prefix-list"),),
-)
-
-CONFIG_GROUP = TypeEntry(
-    name="config-group",
-    source="curated",
-    definition=(("groups", "group"),),
-    reference_paths=(("apply-groups",), ("apply-groups-except",)),
-    implicit=("re0", "re1", "global", "node*", "member*", "fabric*"),
-)
+@pytest.fixture
+def schema_root(bundled_tree: dict[str, Any]) -> dict[str, Any]:
+    """The configuration node of the shipped structure tree, as the engine walks it."""
+    return bundled_tree.get("c", {}).get("configuration", bundled_tree)

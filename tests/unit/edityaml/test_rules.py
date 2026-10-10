@@ -1,11 +1,11 @@
-"""Tests for edityaml rule parsing and loading."""
+"""Rules: loading a rule file, parsing ``--set`` expressions, merging rulesets."""
 
 from __future__ import annotations
 
 import pytest
 import yaml
 
-from junoscfg.edityaml.rules import load_rules_file, merge_rulesets, parse_inline_rules
+from junoscfg.edityaml import apply_rules, load_rules_file, merge_rulesets, parse_inline_rules
 
 
 class TestLoadRulesFile:
@@ -146,3 +146,28 @@ class TestMergeRulesets:
     def test_merge_none(self) -> None:
         merged = merge_rulesets()
         assert merged["rules"] == []
+
+
+class TestInlineRulesApplied:
+    """A parsed ``--set`` expression changes the data as its transform says."""
+
+    def test_copy_over_a_list(self) -> None:
+        data = {
+            "configuration": {
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/0", "unit": "0"},
+                        {"name": "ge-0/0/1", "unit": "1"},
+                    ]
+                }
+            }
+        }
+        ruleset = parse_inline_rules("configuration.interfaces.interface[*]", ["_intf=copy(name)"])
+        intfs = apply_rules(data, ruleset)["configuration"]["interfaces"]["interface"]
+        assert intfs[0]["_intf"] == "ge-0/0/0"
+        assert intfs[1]["_intf"] == "ge-0/0/1"
+
+    def test_a_bare_value_is_a_static_string(self) -> None:
+        data = {"configuration": {"system": {"host-name": "r1"}}}
+        ruleset = parse_inline_rules("configuration.system", ["_env=production"])
+        assert apply_rules(data, ruleset)["configuration"]["system"]["_env"] == "production"

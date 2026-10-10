@@ -485,8 +485,7 @@ def addvars(
     """
     import yaml
 
-    from junoscfg.edityaml import apply_rules
-    from junoscfg.edityaml.rules import load_rules_file, merge_rulesets, parse_inline_rules
+    from junoscfg.edityaml import apply_rules, load_rules_file, merge_rulesets, parse_inline_rules
 
     # Validate arguments
     if not rules_file and not set_exprs:
@@ -601,10 +600,7 @@ def ansibilize(
     rk = list(root_keys) if root_keys else None
 
     if offset_pairs:
-        from junoscfg.edityaml.ansibilize import (
-            ansibilize_with_offset,
-            format_output_with_offset,
-        )
+        from junoscfg.edityaml import ansibilize_with_offset, format_output_with_offset
 
         try:
             host_vars, offset_vars, template = ansibilize_with_offset(
@@ -618,7 +614,7 @@ def ansibilize(
             raise click.ClickException(str(e)) from None
         click.echo(format_output_with_offset(host_vars, offset_vars, template), nl=False)
     else:
-        from junoscfg.edityaml.ansibilize import ansibilize_multi, format_output
+        from junoscfg.edityaml import ansibilize_multi, format_output
 
         host_vars, group_vars = ansibilize_multi(data, literal_pairs, root_keys=rk)
         click.echo(format_output(host_vars, group_vars), nl=False)
@@ -660,7 +656,7 @@ def rename_root(from_key: str, to_key: str, file: str | None) -> None:
 
     # Detect path expression vs simple key
     if "." in from_key or "[" in from_key:
-        from junoscfg.edityaml.path_walker import resolve_path
+        from junoscfg.edityaml import resolve_path
 
         matches = resolve_path(data, from_key)
         if not matches:
@@ -833,8 +829,7 @@ def unused(
     """
     import yaml
 
-    from junoscfg.audit import AuditLoadError, find_unused, load_registry
-    from junoscfg.audit.render import render
+    from junoscfg.audit import AuditLoadError, find_unused, load_registry, render
     from junoscfg.convert import to_dict
 
     source = _read_input(file)

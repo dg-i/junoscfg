@@ -1,12 +1,20 @@
-"""Tests for the policy-expression tokenizer (extract_names)."""
+"""The policy-expression tokenizer: which names a policy-algebra value holds.
+
+Reached through collect_occurrences, which tokenizes the value of every
+policy-algebra leaf: the names are its ``algebra`` occurrences, in order.
+"""
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from junoscfg.audit.algebra import extract_names
+from junoscfg.audit import collect_occurrences
 
-REGRESSION_CASES = [
+# Names with spaces, found in the adversarial review of the audit; the
+# end-to-end case is TestAPolicyNameWithSpacesIsReferenced in test_types.py.
+QUOTED_NAME_CASES = [
     # A single quoted policy name keeps its spaces (the set parser strips
     # the surrounding quotes, so the value has no structure to tokenize).
     ("my pol", ["my pol"]),
@@ -46,13 +54,21 @@ EXTRACT_NAMES_CASES: list[tuple[str, list[str]]] = [
 ]
 
 
+def algebra_names(expr: str, schema_root: dict[str, Any]) -> list[str]:
+    """The names collected from *expr* as the import policy of a BGP group."""
+    ir = {"protocols": {"bgp": {"group": [{"name": "g", "import": [expr]}]}}}
+    return [o.value for o in collect_occurrences(ir, schema_root) if o.kind == "algebra"]
+
+
 class TestExtractNames:
-    """extract_names() tokenizes plain names, algebra, and bracket lists."""
+    """Plain names, boolean expressions and bracket lists give their names."""
 
     @pytest.mark.parametrize(("expr", "expected"), EXTRACT_NAMES_CASES)
-    def test_extract(self, expr: str, expected: list[str]) -> None:
-        assert extract_names(expr) == expected
+    def test_extract(self, schema_root: dict[str, Any], expr: str, expected: list[str]) -> None:
+        assert algebra_names(expr, schema_root) == expected
 
-    @pytest.mark.parametrize(("expr", "expected"), REGRESSION_CASES)
-    def test_quoted_and_spaced_names(self, expr: str, expected: list[str]) -> None:
-        assert extract_names(expr) == expected
+    @pytest.mark.parametrize(("expr", "expected"), QUOTED_NAME_CASES)
+    def test_quoted_and_spaced_names(
+        self, schema_root: dict[str, Any], expr: str, expected: list[str]
+    ) -> None:
+        assert algebra_names(expr, schema_root) == expected

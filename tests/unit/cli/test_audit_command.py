@@ -1,4 +1,10 @@
-"""Integration tests for the `junoscfg audit unused` CLI command."""
+"""`junoscfg audit unused`: input, options, exit codes.
+
+The command's plumbing only: what it reads, which options reach find_unused
+and render, and how it exits. The classification is tested in
+``tests/unit/audit/test_engine.py`` and the output styles in
+``tests/unit/audit/test_render.py``.
+"""
 
 from __future__ import annotations
 
@@ -8,15 +14,9 @@ import pytest
 from click.testing import CliRunner
 
 from junoscfg import Format, convert_config
+from junoscfg.audit import STYLE_CHOICES, find_unused, render
 from junoscfg.cli import main
-
-
-def to_format(fmt: str) -> str:
-    """Convert the shared set-text fixture into another input format."""
-    return convert_config(
-        SET_CONFIG, from_format=Format("set"), to_format=Format(fmt), validate=False
-    )
-
+from junoscfg.convert import to_dict
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -31,16 +31,12 @@ set policy-options policy-statement half-pol term 1 then accept
 
 INPUT_FORMATS = ["set", "structured", "json", "yaml"]
 
-OUTPUT_STYLES = [
-    ("pathname", "policy-options policy-statement dead-pol"),
-    ("delete-script", "delete policy-options policy-statement dead-pol"),
-    ("show-script", "show policy-options policy-statement dead-pol"),
-    (
-        "show-configuration-script",
-        "show configuration policy-options policy-statement dead-pol",
-    ),
-    ("deactivate-script", "deactivate policy-options policy-statement dead-pol"),
-]
+
+def to_format(fmt: str) -> str:
+    """Convert the shared set-text fixture into another input format."""
+    return convert_config(
+        SET_CONFIG, from_format=Format("set"), to_format=Format(fmt), validate=False
+    )
 
 
 def run_cli(args: list[str], stdin: str) -> tuple[int, str, str]:
@@ -83,30 +79,12 @@ class TestInputFormats:
 
 
 class TestOutputStyles:
-    @pytest.mark.parametrize(("style", "expected"), OUTPUT_STYLES)
-    def test_style(self, style: str, expected: str) -> None:
+    @pytest.mark.parametrize("style", STYLE_CHOICES)
+    def test_the_style_option_selects_the_rendering(self, style: str) -> None:
+        """``-o STYLE`` prints exactly what render gives for that style."""
         exit_code, output, _ = run_cli(["audit", "unused", "-o", style], SET_CONFIG)
         assert exit_code == 0
-        assert expected in output
-
-    @pytest.mark.parametrize(("style", "expected"), OUTPUT_STYLES)
-    def test_verbose_style(self, style: str, expected: str) -> None:
-        exit_code, output, _ = run_cli(["audit", "unused", "-o", f"{style}-verbose"], SET_CONFIG)
-        assert exit_code == 0
-        assert expected in output
-        assert "# summary:" in output
-
-    def test_non_verbose_is_pipe_clean(self) -> None:
-        exit_code, output, _ = run_cli(["audit", "unused", "-o", "delete-script"], SET_CONFIG)
-        assert exit_code == 0
-        lines = output.splitlines()
-        assert lines
-        assert all(line and not line.startswith("#") for line in lines)
-
-    def test_delete_script_excludes_probably_unused(self) -> None:
-        exit_code, output, _ = run_cli(["audit", "unused", "-o", "delete-script"], SET_CONFIG)
-        assert exit_code == 0
-        assert "half-pol" not in output
+        assert output == render(find_unused(to_dict(SET_CONFIG, "set")), style)
 
     def test_include_probably_unused_flag(self) -> None:
         exit_code, output, _ = run_cli(
@@ -124,21 +102,29 @@ class TestFilters:
         assert "dead-pol" in output
         assert "g-dead" not in output
 
-    def test_unknown_type_exits_2(self) -> None:
-        exit_code, _, stderr = run_cli(["audit", "unused", "--types", "nonsense"], SET_CONFIG)
-        assert exit_code == 2
-        assert "unknown audit type" in stderr
-
     def test_match_filter(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused", "--match", "^dead-"], SET_CONFIG)
         assert exit_code == 0
         assert "dead-pol" in output
         assert "half-pol" not in output
 
-    def test_invalid_match_regex_exits_2(self) -> None:
-        exit_code, _, stderr = run_cli(["audit", "unused", "--match", "["], SET_CONFIG)
+    @pytest.mark.parametrize(
+        ("option", "types", "match"),
+        [
+            (["--types", "nonsense"], ["nonsense"], None),
+            (["--match", "["], None, "["),
+        ],
+        ids=["unknown-type", "invalid-regex"],
+    )
+    def test_a_rejected_filter_exits_2_with_the_reason(
+        self, option: list[str], types: list[str] | None, match: str | None
+    ) -> None:
+        """The library's ValueError is the message, and the exit code is 2."""
+        with pytest.raises(ValueError) as rejected:
+            find_unused(to_dict(SET_CONFIG, "set"), types=types, match=match)
+        exit_code, _, stderr = run_cli(["audit", "unused", *option], SET_CONFIG)
         assert exit_code == 2
-        assert "invalid match regex" in stderr
+        assert str(rejected.value) in stderr
 
 
 class TestFailOn:

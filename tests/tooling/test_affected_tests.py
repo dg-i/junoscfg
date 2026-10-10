@@ -57,7 +57,7 @@ class TestATestChangeSelectsItself:
         assert affected.select([name]) == [name]
 
     def test_a_conftest_selects_its_directory(self) -> None:
-        assert affected.select(["tests/unit/anonymize/conftest.py"]) == ["tests/unit/anonymize/"]
+        assert affected.select(["tests/unit/audit/conftest.py"]) == ["tests/unit/audit/"]
 
     @pytest.mark.parametrize(
         "name",
