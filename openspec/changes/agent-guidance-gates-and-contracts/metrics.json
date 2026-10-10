@@ -2,9 +2,9 @@
   "change": "agent-guidance-gates-and-contracts",
   "metrics": {
     "declared_runtime_dependencies": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:14.594371Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -24,9 +24,9 @@
       }
     },
     "files_read": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -36,9 +36,9 @@
       "value": null
     },
     "human_effort": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "no human-effort record supplied",
       "source": {
         "kind": "not_provided",
@@ -48,47 +48,43 @@
       "value": null
     },
     "lines_added_removed": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:14.594371Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": null,
       "source": {
         "kind": "git_diff",
         "scope": {
           "paths": [
-            ".agents/skills/agent-ready-garden/SKILL.md",
-            ".agents/skills/agent-ready-garden/jobs/5-instructions.md",
             "changelog.d/+agent-guidance-gates-and-contracts.misc.md",
             "docs/architecture/developer-guide.md",
             "docs/how-to/settle-a-schema-question.md",
             "docs/how-to/solo-review.md",
-            "docs/reviews/2026-10-10-instruction-audit.md",
-            "mkdocs.yml",
             "src/junoscfg/anonymize/CONTRACT.md",
             "src/junoscfg/convert/CONTRACT.md",
             "src/junoscfg/display/CONTRACT.md",
             "src/junoscfg/validate/CONTRACT.md"
           ],
-          "since": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87"
+          "since": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f"
         },
         "selector": [
-          "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-          "f31949b9be83597afe1c3450b411db4d41b29056"
+          "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+          "e6327714f55219ed158def66876ac164f2294cda"
         ],
         "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
       },
       "status": "measured",
       "value": {
-        "added": 613,
+        "added": 104,
         "binary_files": 0,
-        "files": 12,
-        "removed": 11
+        "files": 8,
+        "removed": 10
       }
     },
     "locked_packages": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:14.594371Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -108,9 +104,9 @@
       }
     },
     "phase_span": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -119,10 +115,25 @@
       "status": "unmeasured",
       "value": null
     },
+    "requirement_test_reconcile": {
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
+      "reason": null,
+      "source": {
+        "kind": "operator_markdown",
+        "path": "/Users/manon-dev/src/junoscfg/openspec/changes/agent-guidance-gates-and-contracts/metrics.md",
+        "selector": "requirement-to-test reconcile result",
+        "semantics": "preserved human-written Field/Value row; content not independently verified",
+        "sha256": "d9276c6d154815a800056d5687a699687ac340308e5828e18fa2580638db3f60"
+      },
+      "status": "reported",
+      "value": "exit 0 at the applying commit a3dc03d (462 ms); negative probe with one misspelled `TestAMetaCommandIsNeverPartiallyApplied` id in a throwaway worktree: exit 1 naming that id"
+    },
     "retries": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -132,9 +143,9 @@
       "value": null
     },
     "runtime_tokens": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:08.691997Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -144,9 +155,9 @@
       "value": null
     },
     "wall_clock_intent_to_merge": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:14.594371Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": "intent and merge timestamps were not supplied",
       "source": {
         "kind": "not_provided",
@@ -156,16 +167,16 @@
       "value": null
     },
     "workflow_telemetry": {
-      "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-      "captured_at": "2026-10-10T04:23:20.640399Z",
-      "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+      "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+      "captured_at": "2026-10-10T12:03:14.594371Z",
+      "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
       "reason": null,
       "source": {
         "kind": "operator_workflow_telemetry",
         "path": "openspec/changes/agent-guidance-gates-and-contracts/workflow-telemetry.json",
         "schema": "workflow-telemetry/1",
         "semantics": "operator-bound phase, model, cache, command, and intervention events",
-        "sha256": "86173b7eff1b1f1b00b4bed0c8eee98e6a55bdcab414e12cb150f85b96258377"
+        "sha256": "5866f1b688440abb9144426ebde69909b988ac497611b3b19315ef46bd332c43"
       },
       "status": "reported",
       "value": {
@@ -654,6 +665,37 @@
             "role": "finalizer",
             "stalls": [],
             "usage": null
+          },
+          {
+            "commands": [
+              {
+                "duration_ms": 840,
+                "kind": "command",
+                "name": "uv run --locked --group dev agent-ready skills --regenerate (detached worktree of d1cc626)",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 219,
+                "kind": "command",
+                "name": "uv run --locked --group dev agent-ready lane --base master (detached worktree of d1cc626)",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 517,
+                "kind": "command",
+                "name": "uv run --locked --group dev agent-ready metrics --workflow-telemetry (first capture, rebased base and head)",
+                "outcome": "passed"
+              }
+            ],
+            "model": "claude-sonnet-5-5",
+            "owner_interventions": [],
+            "phase": "finalize",
+            "provider": "anthropic",
+            "regenerations": 0,
+            "retries": 0,
+            "role": "finalizer",
+            "stalls": [],
+            "usage": null
           }
         ],
         "summary": {
@@ -661,7 +703,7 @@
           "cache_reads": null,
           "cache_write_input_tokens": null,
           "cache_writes": null,
-          "command_duration_ms": 2335948,
+          "command_duration_ms": 2337524,
           "models": [
             "claude-fable-5-1",
             "claude-opus-5-5",

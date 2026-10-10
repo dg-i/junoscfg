@@ -111,3 +111,9 @@ fail until it is answered there or that change is archived.
   failed, 4 partial). Fix pass applied as recorded in `review.md`; invalidated and re-run:
   tasks 1.1, 1.2, 1.4, 1.6, 1.8, 1.11 to 1.17, 1.19 to 1.21 on the fix commit; the same
   isolated Reviewer re-reads the corrections.
+- 2026-10-10, phase 7: the owner authorised moving the garden commits and answering the
+  sibling's `assurance`; the branch was rebased onto master 7117e3a. The docs lane gate
+  refuses a behaviour spec in the range, so the reviewed main-spec edit (C4) lands on
+  master as its own commit after the merge (from e6a0c2a). The owner also directed the
+  merge, which records their acceptance of the interim actions on S1 to S8. Full
+  checkpoint green at d1cc626; nothing else invalidated.

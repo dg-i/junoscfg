@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "change": "agent-guidance-gates-and-contracts",
-  "base_sha": "2a3e025fedb1bb6bce0a87fb8a5ef546b7fa0a87",
-  "head_sha": "f31949b9be83597afe1c3450b411db4d41b29056",
+  "base_sha": "7117e3ae4bf6fe9ded1087b97f46a1457b77070f",
+  "head_sha": "e6327714f55219ed158def66876ac164f2294cda",
   "entries": [
     {
       "phase": "preflight",
@@ -482,6 +482,37 @@
           "name": "uv run --locked --group dev agent-ready lane --base master (detached worktree of a3dc03d; known external refusal)",
           "duration_ms": 274,
           "outcome": "failed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 0,
+      "stalls": [],
+      "owner_interventions": []
+    },
+    {
+      "phase": "finalize",
+      "role": "finalizer",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5",
+      "usage": null,
+      "commands": [
+        {
+          "kind": "command",
+          "name": "uv run --locked --group dev agent-ready skills --regenerate (detached worktree of d1cc626)",
+          "duration_ms": 840,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "uv run --locked --group dev agent-ready lane --base master (detached worktree of d1cc626)",
+          "duration_ms": 219,
+          "outcome": "passed"
+        },
+        {
+          "kind": "command",
+          "name": "uv run --locked --group dev agent-ready metrics --workflow-telemetry (first capture, rebased base and head)",
+          "duration_ms": 517,
+          "outcome": "passed"
         }
       ],
       "retries": 0,

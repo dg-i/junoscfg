@@ -74,7 +74,7 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   pass (S8) the diff is two line pairs: the `Tests:` line and the clause line, which gains
   "A meta attribute on a positional value the reader placed is written back and reports
   nothing." for the fifth id.
-- [ ] 1.9 Full checkpoint, once, after the last change task is committed, in the worktree
+- [x] 1.9 Full checkpoint, once, after the last change task is committed, in the worktree
   of that commit: `uv run --locked --group dev --with griffe --with tach --with towncrier
   --with vulture agent-ready check --set full --base master`; expected result: exit
   non-zero with exactly one failing check, `fields`, naming only `identifier-key-fields`
@@ -87,6 +87,9 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   toolbox, specs, reconcile, the four renders, decisions, stage griffe, towncrier and
   vulture, budget, skills, codemap check, retired. The task stays open until the owner
   resolves the two external failures and the check reruns on the resulting head.
+  Evidence (final): every check passed at d1cc626 in a detached worktree after the rebase
+  onto 7117e3a; earlier runs at 19d05de and 68b4f5a failed only on fields and lane, both
+  cleared by the owner's master-side commits (log: private_test_data/agent-guidance-telemetry/full-check-d1cc626.log).
 - [x] 1.10 Telemetry: base = full SHA of `2a3e025` (master tip and merge base; the range
   holds the owner's garden commit 01efe85, disclosed in `metrics.md`), head = the code
   commit; `uv run --locked --group dev agent-ready metrics
@@ -158,9 +161,14 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   Evidence: `evidence-freeze.md` Requirements and delta log, `review.md` S3. After the
   fix pass (S8) the diff against the sibling block is the five ids on the `Tests:` line
   plus one sentence for the placed positional value; 1.8's wording updated accordingly.
-- [ ] 1.18 After phase 7: `diff <(sed -n '5,$p' main-spec-edit.md) <(the applied block of
+- [x] 1.18 After phase 7: `diff <(sed -n '5,$p' main-spec-edit.md) <(the applied block of
   openspec/specs/conversion/entry-keys/spec.md)` empty; `agent-ready reconcile` exit 0; in a
   throwaway worktree, one misspelled new id makes `reconcile` exit 1 naming it.
+  Evidence: the application is landed on master from e6a0c2a right after the merge, as its
+  own commit, because the docs lane gate refuses a spec file in the range. Recorded before
+  standing: `agent-ready reconcile` exit 0 at the applying commit a3dc03d (462 ms); negative
+  probe with one misspelled `TestAMetaCommandIsNeverPartiallyApplied` id in a throwaway
+  worktree: exit 1 naming that id. Reconcile is rerun on master after the cherry-pick.
 - [x] 1.19 The guide states no contradicting policy: `git diff -U0 eb369dd --
   docs/architecture/developer-guide.md | grep '^+' | grep -nE 'determin|revert|baseline|
   latency|rerun|full check'`; every hit says "same salt" for deterministic, "with the
@@ -230,3 +238,8 @@ Change commit: 19d05de. Nothing else outside the change folder is touched.
   ```text
   agent-guidance-gates-and-contracts: documentation-only changes may not alter non-documentation files: .agents/skills/agent-ready-garden/SKILL.md, .agents/skills/agent-ready-garden/jobs/5-instructions.md, mkdocs.yml; retype the change for code or executable configuration
   ```
+
+  Lane note (second pass): that refusal is superseded. `uv run --locked --group dev
+  agent-ready lane --base master` in a detached worktree of d1cc626, after `agent-ready
+  skills --regenerate`, passes: exit 0 in 219 ms, no output, the owner's commits having
+  moved to master and the main-spec edit having left the range.
