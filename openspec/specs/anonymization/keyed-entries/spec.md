@@ -59,7 +59,7 @@ through `convert_config` or CLI `convert` with `--anonymize-all`, or with
 `as-path-neighbors <list-type> <list-name>` statement with both key values,
 `list-type` unchanged, and under `--anonymize-all` SHALL anonymize the group
 name.
-Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_an_as_list_reference_survives_anonymize_all`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_as_numbers_leave_the_as_list_reference_whole`, `tests/unit/cli/test_cli.py::TestCliAnonymize::test_anonymize_all_keeps_the_as_list_reference`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_every_rule_keeps_the_key_whole`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_other_keyed_lists_keep_their_keys`
+Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_an_as_list_reference_survives_anonymize_all`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_as_numbers_leave_the_as_list_reference_whole`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_an_as_list_reference_survives_anonymize_all_with_as_numbers`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_every_rule_keeps_the_key_whole`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_other_keyed_lists_keep_their_keys`
 
 #### Scenario: Structured input, every rule on
 

@@ -79,7 +79,7 @@ class ArtifactBuilder:
         # ships beside it. Built from the XSD tree the two disagree -- the
         # writer cannot store `is_presence` on a node that has children, so
         # `groups` renders differently -- and `--regen-schema` would then turn
-        # TestBundledGrammarIsReproducible red on a correctly regenerated set.
+        # TestTheShippedGrammarIsTheGeneratorsOutput red on a correctly regenerated set.
         grammar_path = str(output_dir / "junos-set.lark.gz")
         write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
         artifacts["lark-grammar"] = grammar_path
@@ -130,7 +130,7 @@ class ArtifactBuilder:
         # ships beside it. Built from the XSD tree the two disagree -- the
         # writer cannot store `is_presence` on a node that has children, so
         # `groups` renders differently -- and `--regen-schema` would then turn
-        # TestBundledGrammarIsReproducible red on a correctly regenerated set.
+        # TestTheShippedGrammarIsTheGeneratorsOutput red on a correctly regenerated set.
         grammar_path = str(output_dir / "junos-set.lark.gz")
         write_lark_grammar(read_structure_tree(structure_tree_path), grammar_path)
         artifacts["lark-grammar"] = grammar_path

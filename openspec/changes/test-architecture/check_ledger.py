@@ -108,21 +108,35 @@ def check() -> int:
 
 
 def rewrite(files: list[str]) -> None:
-    """Rewrite test ids named in documents, function level, by the sheet."""
-    sheet = {_base(old): _base(new) for old, (new, _, _) in rows().items() if new != "dropped"}
+    """Rewrite the test ids named in documents by the sheet.
+
+    A parametrised new id is kept as it is, being one node; a function-level one
+    stands for the catalogue rows its note names, which the sheet keeps. On a
+    ``Tests:`` line an id named twice is named once.
+    """
+    sheet = {
+        _base(old): (new if "[" in new else _base(new))
+        for old, (new, _, _) in rows().items()
+        if new != "dropped"
+    }
     if not sheet:
         return
-    pattern = re.compile(
-        "|".join(re.escape(k) for k in sorted(sheet, key=len, reverse=True)) + r"(?![\w])"
-    )
+    keys = sorted(sheet, key=len, reverse=True)
+    pattern = re.compile("`(" + "|".join(re.escape(k) for k in keys) + r")`")
     for name in files:
         path = Path(name)
         text = path.read_text(encoding="utf-8")
-        new = pattern.sub(lambda m: sheet[m.group(0)], text)
-        if new != text:
-            path.write_text(new, encoding="utf-8")
+        lines = []
+        for line in text.split("\n"):
+            line = pattern.sub(lambda m: f"`{sheet[m.group(1)]}`", line)
+            if line.startswith("Tests:"):
+                cited = dict.fromkeys(re.findall(r"`[^`]+`", line))
+                line = "Tests: " + ", ".join(cited)
+            lines.append(line)
+        new_text = "\n".join(lines)
+        if new_text != text:
+            path.write_text(new_text, encoding="utf-8")
             print(f"rewrote {name}")
-
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "--rewrite":

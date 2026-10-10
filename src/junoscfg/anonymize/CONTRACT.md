@@ -18,7 +18,7 @@ across calls.
   `tests/unit/anonymize/test_password_rule.py::TestSaltIsNotCopied`.
 - `networks=["auto"]` needs `source_text` and says so rather than doing
   nothing — enforced by
-  `tests/contract/test_characterization.py::TestNetworksAutoNeedsSourceText`.
+  `tests/unit/anonymize/test_ip_rule.py::TestNetworksAutoNeedsSourceText`.
 - A schema enum value or the keyword of a key choice is syntax and passes the
   rules unchanged — enforced by `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged` and `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`.
 

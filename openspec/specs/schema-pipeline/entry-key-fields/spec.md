@@ -80,7 +80,7 @@ statement inside it names, THEN it SHALL read `entry_keys()` or
 `src/junoscfg/` SHALL read `fe`, `values-only`, a `_v<n>` key, a literal
 `community-name`, `FLAT_ENTRY_ELEMENTS`, `ENTRY_KEY_OVERRIDES` or
 `get_flat_entry_config`, and the last two SHALL be banned imports.
-Tests: `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
+Tests: `tests/unit/display/test_entry_keys.py::TestEntryKeys::test_the_helper_answers_the_key_tuple`, `tests/unit/display/test_entry_keys.py::TestStatementChildren::test_statement_children_drop_the_key_fields`, `tests/tooling/test_entry_key_spellings.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`
 
 #### Scenario: The helper's answers
 
@@ -102,7 +102,7 @@ THEN `control-as-list-type` SHALL carry the keys `list-type`, `list-name`;
 `list_name` then the match-type choice, actions as children; `then community`
 its action choice then `community-name`; and `o` SHALL stand where the dump
 flags `oneliner`, and on those filter lists (owner decision, phase 5).
-Tests: `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_bundled_tree_carries_the_declared_keys`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_one_line_flag_follows_the_dump`, `tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
+Tests: `tests/unit/display/test_entry_keys.py::TestEntryKeys::test_the_bundled_tree_carries_the_declared_keys`, `tests/unit/validate/test_artifact_builder.py::TestTheOneLineFlag::test_the_one_line_flag_follows_the_dump`, `tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys`
 
 #### Scenario: The AS-list slots
 

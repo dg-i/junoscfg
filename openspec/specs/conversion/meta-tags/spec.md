@@ -18,7 +18,7 @@ device JSON input give for the same statement.
 An empty tagged element is an empty container, `{"@": {...}}`, only where the
 tree names a container, as set and structured input give; set and structured
 output keep a tag on a flag spelled by its value (`disable`).
-Tests: `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/unit/display/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/unit/convert/test_xml_inactive_leaf_challenge.py::test_an_empty_inactive_container_matches_set_input`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_disable_flag_keeps_its_tag`, `tests/contract/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_flag_under_a_container_keeps_its_tag`, `tests/unit/cli/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
+Tests: `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/unit/display/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/contract/test_format_matrix.py::TestAStructuredTagLeadsItsLine::test_no_tag_follows_a_word`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines[an-inactive-vlan-id-xml]`
 
 #### Scenario: Single inactive leaf
 

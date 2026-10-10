@@ -196,7 +196,7 @@ every field the format carries. It cannot restore `combinator`, `is_key`, or
 `is_presence` on a node that has children, because the writer stores none of
 them — see its docstring. Only the last of the three reaches the grammar: on a
 real 25.2R2 tree the rebuilt grammar differs from the XSD-built one in a single
-token, `groups`. `TestBundledGrammarIsReproducible` holds the shipped artifact
+token, `groups`. `tests/corpus/test_shipped_artifacts.py::TestTheShippedGrammarIsTheGeneratorsOutput` holds the shipped artifact
 to this command, so a hand-edit is caught.
 
 Regenerating everything from an XSD dump still goes through

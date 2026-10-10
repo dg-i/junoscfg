@@ -17,7 +17,7 @@ except through this one function signature.
   is a declared break — enforced by `agent-ready stage griffe`.
 - `validate_xml` needs a cleaned `junos-validated.xsd` that nothing in this
   package produces: a raw NETCONF dump does not compile — enforced by
-  `tests/contract/test_characterization.py::TestValidateXmlNeedsACleanedXsd`.
+  `tests/unit/validate/test_validator.py::TestValidateXmlNeedsACleanedXsd`.
 
 ## Precedent
 

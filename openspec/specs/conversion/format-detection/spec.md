@@ -13,7 +13,7 @@ system SHALL classify valid JSON, XML, YAML, display set, and structured input
 from content, prefer JSON for text valid as both JSON and YAML, parse-confirm
 brace-prefixed YAML rather than assuming JSON, and reject empty input.
 
-Tests: `tests/unit/display/test_format_detection.py::TestFormatDetection::test_characterization_matrix`
+Tests: `tests/unit/display/test_format_detection.py::TestFormatDetection::test_each_format_is_recognised`
 
 #### Scenario: Unambiguous supported formats
 

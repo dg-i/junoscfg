@@ -16,10 +16,10 @@ schema, where an entry ends (`tests/unit/convert/test_meta_tags.py`).
 - Importing this package pulls in neither lxml nor the schema artifacts:
   `load_schema_tree()` is lazy and cached, and the XML path imports lxml on
   first use — enforced by
-  `tests/unit/display/test_to_yaml.py::TestLazyXmlImport::test_to_yaml_module_level_has_no_lxml`.
+  `tests/unit/display/test_to_yaml.py::TestLazyXmlImport::test_importing_the_package_loads_no_lxml`.
 - `entry_keys()` and `statement_children()` are the one answer for an entry's key
   fields and a statement's children, and no module reads a retired key spelling
-  (`fe`, `values-only`, `community-name`, `_v<n>`) — enforced by `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields` and `tests/contract/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
+  (`fe`, `values-only`, `community-name`, `_v<n>`) — enforced by `tests/unit/display/test_entry_keys.py::TestEntryKeys::test_the_helper_answers_the_key_tuple`, `tests/unit/display/test_entry_keys.py::TestStatementChildren::test_statement_children_drop_the_key_fields` and `tests/tooling/test_entry_key_spellings.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
 
 ## Precedent
 

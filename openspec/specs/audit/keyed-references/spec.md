@@ -14,7 +14,7 @@ walk each key field as a leaf under its own tree node, so an enum key field
 such as `list-type` records no occurrence and `list-name` records one for the
 object it names, and `find_unused` SHALL count it as a use of the `as-list`
 or `as-list-group` of that name.
-Tests: `tests/unit/audit/test_walker.py::TestKeyedEntries::test_list_name_is_the_reference`, `tests/unit/audit/test_walker.py::TestKeyedEntries::test_list_type_is_no_reference`, `tests/unit/audit/test_regressions.py::TestKeyedReferences::test_an_as_list_used_by_as_path_neighbors_is_not_unused`, `tests/unit/audit/test_walker.py::TestKeyedEntries::test_the_device_json_gives_the_same_reference`, `tests/unit/audit/test_regressions.py::TestKeyedReferences::test_a_name_used_by_one_list_type_does_not_use_the_other`, `tests/unit/audit/test_types.py::TestUsed::test_reference_removes_finding`
+Tests: `tests/unit/audit/test_walker.py::TestKeyedEntries::test_list_name_is_the_reference`, `tests/unit/audit/test_walker.py::TestKeyedEntries::test_list_type_is_no_reference`, `tests/unit/audit/test_types.py::TestKeyedReferences::test_an_as_list_used_by_as_path_neighbors_is_not_unused`, `tests/unit/audit/test_walker.py::TestKeyedEntries::test_the_device_json_gives_the_same_reference`, `tests/unit/audit/test_types.py::TestKeyedReferences::test_a_name_used_by_one_list_type_does_not_use_the_other`, `tests/unit/audit/test_types.py::TestUsed::test_reference_removes_finding`
 
 #### Scenario: AS-list reference
 

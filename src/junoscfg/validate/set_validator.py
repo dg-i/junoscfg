@@ -9,7 +9,7 @@ the root with the `universal` flag and `grammar_generator` splices them into
 every rule, so the shipped grammar takes them wherever Junos does. Until the
 artifacts were regenerated in 0.8.0 this module cut them off the line before
 parsing; that bridge is gone, and
-`TestTheShippedGrammarModelsTheApplyStatements` pins what replaced it.
+`TestTheShippedArtifactsModelTheApplyStatements` pins what replaced it.
 """
 
 from __future__ import annotations

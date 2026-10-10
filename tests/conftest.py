@@ -14,7 +14,7 @@ import pytest
 from junoscfg.display import find_artifact
 from tests.support import jvd_data, schema_data
 from tests.support.artifacts import make_artifacts_dir
-from tests.support.paths import ARTIFACT_DIR, EXAMPLES, PROJECT_ROOT
+from tests.support.paths import ARTIFACT_DIR, EXAMPLES
 from tests.support.regen import (
     REGEN_SOURCE_EXIT,
     XSD_SOURCE_ENV,
@@ -126,47 +126,21 @@ def bundled_validator() -> object:
 
 
 @pytest.fixture
-def project_root() -> Path:
-    """The repository root, for tests that read a committed example."""
-    return PROJECT_ROOT
+def json_config() -> str:
+    """The synthetic example configuration, router1, in JSON."""
+    return (EXAMPLES / "router1.json").read_text()
 
 
 @pytest.fixture
-def examples_dir() -> Path:
-    """Path to the examples directory with test data."""
-    return EXAMPLES
+def xml_config() -> str:
+    """The synthetic example configuration, router1, in XML."""
+    return (EXAMPLES / "router1.xml").read_text()
 
 
 @pytest.fixture
-def set_lines(examples_dir: Path) -> str:
-    """Expected 'display set' output from the synthetic example config."""
-    return (examples_dir / "router1.set").read_text()
-
-
-@pytest.fixture
-def json_config(examples_dir: Path) -> str:
-    """Synthetic example config in JSON format."""
-    return (examples_dir / "router1.json").read_text()
-
-
-@pytest.fixture
-def xml_config(examples_dir: Path) -> str:
-    """Synthetic example config in XML format."""
-    return (examples_dir / "router1.xml").read_text()
-
-
-@pytest.fixture
-def structured_config(examples_dir: Path) -> str:
-    """Synthetic example config in structured (curly-brace) format."""
-    return (examples_dir / "router1.conf").read_text()
-
-
-@pytest.fixture
-def yaml_config(json_config: str) -> str:
-    """Synthetic example config in hyphenated YAML format (generated from JSON)."""
-    from junoscfg import Format, convert_config
-
-    return convert_config(json_config, from_format=Format.JSON, to_format=Format.YAML)
+def structured_config() -> str:
+    """The synthetic example configuration, router1, in structured (curly) form."""
+    return (EXAMPLES / "router1.conf").read_text()
 
 
 # ----------------------------------------------------------------------

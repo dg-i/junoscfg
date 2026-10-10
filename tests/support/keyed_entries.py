@@ -1,4 +1,4 @@
-"""Shared inputs for the identifier-key-fields acceptance tests.
+"""Keyed-entry inputs every layer shares: the as-list, route-filter and community shapes.
 
 Synthetic values only, as AGENTS.md names them: AS 64496-64511, `SAMPLE-*`
 names, 198.51.100.0/24. The shapes are the ones a vMX on 23.2R2-S7.5 showed

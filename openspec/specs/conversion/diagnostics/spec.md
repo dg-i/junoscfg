@@ -12,7 +12,7 @@ WHEN a caller opts into `convert_config_result()` or `pipeline_result()` THEN
 the system SHALL return converted output plus immutable structured diagnostics,
 while `convert_config()` and `pipeline()` continue to return only strings.
 
-Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestStructuredConversionResult::test_opt_in_result_preserves_legacy_return_contracts`
+Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestStructuredConversionResult::test_the_result_doors_agree_and_the_string_doors_return_text`
 
 #### Scenario: Top-level package door
 
