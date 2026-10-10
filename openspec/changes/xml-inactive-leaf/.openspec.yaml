@@ -6,3 +6,19 @@ assurance: balanced
 domains: [conversion]
 removes:
   - "the nested `{name: [value], \"@\": attrs}` shape XML input gave an inactive leaf"
+declared-break:
+  consumer:
+    why: >-
+      The surface file changes only `__version__` (0.15.0 to 0.15.1), the bump
+      AGENTS.md requires; no name or signature changes. Behind the surface,
+      convert_config's JSON and YAML output for XML input holding an inactive
+      leaf moves from the nested `{"vlan-id": {"@": …, "vlan-id": ["751"]}}`
+      to the device's `"vlan-id": "751", "@vlan-id": {…}`, the shape set,
+      structured and JSON input already give; the old shape rendered as a set
+      line the device rejects. XML holding a leaf tagged on some values only
+      now raises ValueError. The owner's prompt classes this as a bug fix,
+      patch bump, no break (instruction-integrity C7).
+    migration: >-
+      None for a caller that reads inactive leaves as Junos JSON writes them.
+      A caller that read the nested shape from XML input reads the value and
+      the sibling `@<name>` instead.
