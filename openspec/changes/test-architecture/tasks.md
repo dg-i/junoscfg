@@ -17,4 +17,4 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Review: the owner chose a lightweight record without the phase gates; each area agent's report was reviewed by the coordinator before its commit.
-- [ ] 3.2 Final full check and timings recorded below.
+- [x] 3.2 Final full check: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at e4b80e6, every gate passed, 6,018 passed / 44 skipped / 7 xfailed in 39.3 s (186 s at baseline for 2,009). Branch coverage 91.47 % (floor raised from 90.60); the CI command from the lock on 3.10, 3.11, 3.12, 3.13 and 3.14 passes the floor. `check_ledger.py`: 2,055 baseline nodes, 1,315 kept, 740 mapped, 0 dropped. Door check: no violations, 12 recorded exceptions.
