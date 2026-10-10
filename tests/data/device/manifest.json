@@ -24,39 +24,59 @@
  "secrets": "invented for the synthetic configurations, Juniper's published lab values in the JVD ones; public, and not masked. Each device re-encrypts them",
  "captures": [
   {
+   "name": "junoscfg-oracle",
+   "source": "synthetic",
+   "device": "vmx-23.2R2-S7.5",
+   "captured": "2026-10-10",
+   "note": "every construct the converters must carry, routing and system material for the anonymizer; the routing superset, and examples/",
+   "refused": [
+    "protocols bgp group RR multipath list-nexthop (syntax error; every device tested)"
+   ]
+  },
+  {
    "name": "bng1_mx304",
    "source": "jvd",
    "device": "vmx-23.2R2-S7.5",
    "captured": "2026-10-10",
-   "note": "the only capture of radius-timeout-dropped; `$junos-` variables"
+   "note": "the only capture of radius-timeout-dropped; `$junos-` variables",
+   "refused": []
   },
   {
    "name": "mdr1_acx7509",
    "source": "jvd",
    "device": "vmx-23.2R2-S7.5",
    "captured": "2026-10-10",
-   "note": "transport-class and isis overload; the bare-deactivate quirk"
+   "note": "transport-class and isis overload; the bare-deactivate quirk",
+   "refused": []
   },
   {
    "name": "services-leaf1_qfx5130-48c",
    "source": "jvd",
    "device": "vmx-23.2R2-S7.5",
    "captured": "2026-10-10",
-   "note": "policy-expression quoting; most XML/JSON element leaks"
+   "note": "policy-expression quoting; most XML/JSON element leaks",
+   "refused": []
   },
   {
    "name": "synthetic-probes",
    "source": "synthetic",
    "device": "vmx-23.2R2-S7.5",
    "captured": "2026-10-10",
-   "note": "junoscfg's renderings, loaded to ask the device their meaning"
+   "note": "junoscfg's renderings, loaded to ask the device their meaning",
+   "refused": []
   },
   {
    "name": "junoscfg-oracle",
    "source": "synthetic",
    "device": "qfx5120-25.2R2-S1.5",
    "captured": "2026-10-10",
-   "note": "the switching (ELS) section, on the release the shipped artifacts come from"
+   "note": "the switching (ELS) section, on the release the shipped artifacts come from",
+   "refused": [
+    "protocols bgp group RR multipath list-nexthop (syntax error)",
+    "bridge-domains",
+    "routing-instances VS-1, whole: its bridge-domains took the rest of the block",
+    "dynamic-profiles"
+   ]
   }
  ]
 }

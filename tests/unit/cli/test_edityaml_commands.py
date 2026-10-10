@@ -42,10 +42,16 @@ def as_yaml(data: dict[str, Any]) -> str:
 SYSTEM = {"configuration": {"system": {"host-name": "r1"}}}
 
 
-def router1_yaml(tmp_path: Path) -> Path:
-    """`examples/router1.conf` as the YAML file the Ansible collection hands the CLI."""
-    source = (EXAMPLES / "router1.conf").read_text(encoding="utf-8")
-    path = tmp_path / "router1.yaml"
+def example_yaml(tmp_path: Path) -> Path:
+    """`examples/junoscfg-oracle.conf` as the YAML file the Ansible collection hands the CLI.
+
+    What a vMX printed with `show`; the lines junoscfg reads wrongly from it
+    are recorded in `tests/data/device/known-differences.json`, and nothing
+    here asserts on them: these tests hold the CLI to the library on the
+    same data.
+    """
+    source = (EXAMPLES / "junoscfg-oracle.conf").read_text(encoding="utf-8")
+    path = tmp_path / "junoscfg-oracle.yaml"
     path.write_text(convert_config(source, from_format=Format.STRUCTURED, to_format=Format.YAML))
     return path
 
@@ -279,11 +285,11 @@ class TestAnsibilize:
         ansibilize in its group_vars pipelines, so this output shape is part of
         the declared ``cli`` surface.
         """
-        path = router1_yaml(tmp_path)
-        pair = ("hostname", "configuration.system.host-name")
+        path = example_yaml(tmp_path)
+        pair = ("hostname", "configuration.groups.group[*].system.host-name")
         exit_code, output = run_cli(["edityaml", "ansibilize", "-p", ":".join(pair), str(path)])
         assert exit_code == 0
-        assert output.startswith("hostname: router1\n")
+        assert output.startswith("hostname_gr_system: router1\n")
         assert "\n---\n" in output
         assert output == format_output(*ansibilize_multi(yaml.safe_load(path.read_text()), [pair]))
 
@@ -356,10 +362,10 @@ class TestRenameRoot:
         This pinned the opposite until openspec/changes/yaml-key-order: cli.py
         called yaml.dump without sort_keys=False, so every edityaml command
         alphabetised its output while the code right above it said "Preserve
-        key order by rebuilding dict". In `examples/router1.conf`, `system`
-        comes first and `firewall` last.
+        key order by rebuilding dict". In `examples/junoscfg-oracle.conf`,
+        `groups` comes first and `vlans` last, as the device printed them.
         """
-        path = router1_yaml(tmp_path)
+        path = example_yaml(tmp_path)
         exit_code, output = run_cli(["edityaml", "rename-root", "--to", "junos_config", str(path)])
         assert exit_code == 0
         assert output.startswith("junos_config:\n")
@@ -367,8 +373,8 @@ class TestRenameRoot:
         assert list(renamed) == ["junos_config"]
         statements = list(renamed["junos_config"])
         assert statements == list(yaml.safe_load(path.read_text())["configuration"])
-        assert statements[0] == "system"
-        assert statements[-1] == "firewall"
+        assert statements[0] == "groups"
+        assert statements[-1] == "vlans"
 
     def test_the_default_from_key_is_configuration(self) -> None:
         exit_code, output = run_cli(

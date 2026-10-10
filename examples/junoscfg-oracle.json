@@ -1,0 +1,1846 @@
+{
+    "configuration" : {
+        "@" : {
+            "junos:changed-seconds" : "1791656655", 
+            "junos:changed-localtime" : "2026-10-10 18:24:15 UTC"
+        }, 
+        "groups" : [
+        {
+            "name" : "GR-SYSTEM", 
+            "system" : {
+                "host-name" : "router1", 
+                "domain-name" : "example.net", 
+                "time-zone" : "Europe/Berlin", 
+                "ntp" : {
+                    "server" : [
+                    {
+                        "name" : "198.51.100.123", 
+                        "prefer" : [null]
+                    }
+                    ]
+                }
+            }
+        }, 
+        {
+            "name" : "GR-EDGE-INTF", 
+            "interfaces" : {
+                "interface" : [
+                {
+                    "name" : "<ge-*>", 
+                    "description" : "set by GR-EDGE-INTF", 
+                    "mtu" : 9192, 
+                    "unit" : [
+                    {
+                        "name" : "<*>", 
+                        "family" : {
+                            "inet" : {
+                                "mtu" : 1500
+                            }
+                        }
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "<[gx]e-*>", 
+                    "hold-time" : {
+                        "up" : 2000, 
+                        "down" : 0
+                    }
+                }
+                ]
+            }
+        }, 
+        {
+            "name" : "GR-BGP", 
+            "protocols" : {
+                "bgp" : {
+                    "group" : [
+                    {
+                        "name" : "<*>", 
+                        "hold-time" : 30, 
+                        "log-updown" : [null], 
+                        "@log-updown" : {
+                            "inactive" : true
+                        }
+                    }
+                    ]
+                }
+            }
+        }, 
+        {
+            "name" : "GR-VRF", 
+            "routing-instances" : {
+                "instance" : [
+                {
+                    "name" : "<VRF-*>", 
+                    "vrf-table-label" : [null]
+                }
+                ]
+            }
+        }, 
+        {
+            "name" : "GR-MACRO", 
+            "protocols" : {
+                "ospf" : {
+                    "apply-macro" : [
+                    {
+                        "name" : "GR-PARAMS", 
+                        "data" : [
+                        {
+                            "name" : "bfd"
+                        }, 
+                        {
+                            "name" : "metric", 
+                            "value" : "10"
+                        }
+                        ]
+                    }
+                    ]
+                }
+            }
+        }, 
+        {
+            "name" : "GR-ISIS-TPL", 
+            "protocols" : {
+                "isis" : {
+                    "interface" : [
+                    {
+                        "name" : "<ge-*>", 
+                        "hello-padding-type" : "strict", 
+                        "max-hello-size" : 9000, 
+                        "@max-hello-size" : {
+                            "inactive" : true
+                        }
+                    }
+                    ]
+                }
+            }
+        }, 
+        {
+            "name" : "GR-ACCESS-PORT", 
+            "interfaces" : {
+                "interface" : [
+                {
+                    "name" : "<xe-0/0/1*>", 
+                    "unit" : [
+                    {
+                        "name" : 0, 
+                        "family" : {
+                            "ethernet-switching" : {
+                                "interface-mode" : "access", 
+                                "storm-control" : {
+                                    "profile-name" : "SC-DEFAULT"
+                                }
+                            }
+                        }
+                    }
+                    ]
+                }
+                ]
+            }
+        }, 
+        {
+            "@" : {
+                "comment" : "/* apply-flags omit hides a statement's content in curly output; a group\n       of its own, not applied, so nothing else is hidden */" 
+            }, 
+            "name" : "GR-OMIT", 
+            "system" : {
+                "apply-flags" : {
+                    "omit" : [null]
+                }, 
+                "location" : {
+                    "building" : "omit probe"
+                }
+            }
+        }, 
+        {
+            "@" : {
+                "inactive" : true
+            }, 
+            "name" : "GR-UNUSED", 
+            "system" : {
+                "location" : {
+                    "building" : "B 2"
+                }
+            }
+        }, 
+        {
+            "@" : {
+                "protect" : true
+            }, 
+            "name" : "GR-PROTECTED", 
+            "snmp" : {
+                "location" : "rack 4, row B"
+            }
+        }
+        ], 
+        "@groups" : {
+            "comment" : "/* junoscfg-oracle: the configuration junoscfg is judged against. Every Junos\n   construct its converters must carry through set, curly, XML and JSON\n   (groups, wildcards, apply-*, tags, annotations, quoting, keyed entries, the\n   statements a schema cannot place), routing and system material for the\n   anonymizer, and an ELS switching section. Written for junoscfg; values are\n   its test-data conventions (AS 64496-64511; 10.x, 192.168.x and 198.51.100.x\n   kept; 203.0.114.x, 198.0.2.x and 3ffe:b00::/32 anonymized). Its secrets are\n   invented and public. Loaded on lab devices in configure private and rolled\n   back there; the devices' renderings of it are the test oracle.\n   The switching (ELS) section uses interfaces of its own (xe-*, ae1, irb.110).\n   A device that refuses a statement drops the rest of its enclosing block,\n   so each platform's renderings show what that platform keeps. */" 
+        }, 
+        "apply-groups" : ["GR-SYSTEM", "GR-EDGE-INTF", "GR-BGP", "GR-VRF", "GR-PROTECTED", "GR-ACCESS-PORT"],
+        "system" : {
+            "apply-macro" : [
+            {
+                "name" : "site-info", 
+                "data" : [
+                {
+                    "name" : "region", 
+                    "value" : "emea"
+                }, 
+                {
+                    "name" : "role", 
+                    "value" : "edge"
+                }, 
+                {
+                    "name" : "tier", 
+                    "value" : "core aggregation"
+                }
+                ]
+            }
+            ], 
+            "login" : {
+                "class" : [
+                {
+                    "name" : "OPS", 
+                    "permissions" : ["view", "view-configuration"],
+                    "allow-commands" : "^show ", 
+                    "deny-commands" : "(request|restart) .*"
+                }
+                ], 
+                "user" : [
+                {
+                    "name" : "admin", 
+                    "uid" : 2000, 
+                    "class" : "super-user", 
+                    "authentication" : {
+                        "encrypted-password" : "$6$ExAmPlEsAlT$fiqEywaWU84F2DQxEKayEdVSRDfC1VqHL8.DYBxx4GO8A1ucOdZ94PW0/bBSdNMOfiqEywaWU84F2DQxEKayEd", 
+                        "ssh-ed25519" : [
+                        {
+                            "name" : "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIImOTwJ85Tu6312p9Jeq+/gHDcc02lPR9J2HriFt+Uz/ admin@example.net"
+                        }
+                        ]
+                    }
+                }, 
+                {
+                    "name" : "operator", 
+                    "uid" : 2001, 
+                    "class" : "read-only", 
+                    "shell" : "csh"
+                }
+                ], 
+                "message" : "Authorized use only.\\nAll access is logged."
+            }, 
+            "services" : {
+                "ssh" : {
+                    "root-login" : "deny"
+                }, 
+                "extension-service" : {
+                    "request-response" : {
+                        "grpc" : {
+                            "clear-text" : {
+                                "port" : 32767
+                            }, 
+                            "skip-authentication" : [null]
+                        }
+                    }
+                }, 
+                "netconf" : {
+                    "ssh" : [null]
+                }
+            }, 
+            "name-server" : [
+            {
+                "name" : "192.168.0.53"
+            }, 
+            {
+                "name" : "198.0.2.53"
+            }
+            ], 
+            "tacplus-server" : [
+            {
+                "name" : "203.0.114.49", 
+                "secret" : "$9$8TCX7VaZjHkPs2PQz6u0EcylM8Nds2gJhSrvLXbwP5QF/CuORrlMQFclKMN-qmf", 
+                "source-address" : "10.255.0.1"
+            }
+            ], 
+            "syslog" : {
+                "host" : [
+                {
+                    "name" : "203.0.114.10", 
+                    "contents" : [
+                    {
+                        "name" : "any", 
+                        "warning" : [null]
+                    }
+                    ]
+                }
+                ], 
+                "file" : [
+                {
+                    "@" : {
+                        "comment" : "/* list entry with an annotation */" 
+                    }, 
+                    "name" : "interactive-commands", 
+                    "contents" : [
+                    {
+                        "name" : "interactive-commands", 
+                        "any" : [null]
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "messages", 
+                    "contents" : [
+                    {
+                        "name" : "any", 
+                        "notice" : [null]
+                    }, 
+                    {
+                        "name" : "authorization", 
+                        "info" : [null]
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "ddos-protection" : {
+                "protocols" : {
+                    "autoconf" : {
+                        "aggregate" : {
+                            "bandwidth" : 20000
+                        }
+                    }
+                }
+            }
+        }, 
+        "logical-systems" : [
+        {
+            "name" : "LS-1", 
+            "interfaces" : {
+                "interface" : [
+                {
+                    "name" : "ge-0/0/1", 
+                    "unit" : [
+                    {
+                        "name" : 400, 
+                        "vlan-id" : 400, 
+                        "family" : {
+                            "inet" : {
+                                "address" : [
+                                {
+                                    "name" : "10.0.40.1/24"
+                                }
+                                ]
+                            }
+                        }
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "routing-options" : {
+                "router-id" : "10.255.1.1"
+            }
+        }
+        ], 
+        "chassis" : {
+            "aggregated-devices" : {
+                "ethernet" : {
+                    "device-count" : 4
+                }
+            }, 
+            "network-services" : "enhanced-ip"
+        }, 
+        "interfaces" : {
+            "interface-range" : [
+            {
+                "name" : "IR-ACCESS", 
+                "member-range" : [
+                {
+                    "name" : "ge-0/0/2", 
+                    "end-range" : "ge-0/0/5"
+                }
+                ], 
+                "description" : "access range", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "inet" : [null]
+                    }
+                }
+                ]
+            }, 
+            {
+                "@" : {
+                    "comment" : "/* switching (ELS) */" 
+                }, 
+                "name" : "IR-SWITCH", 
+                "member" : [
+                {
+                    "name" : "xe-0/0/8"
+                }
+                ], 
+                "member-range" : [
+                {
+                    "name" : "xe-0/0/2", 
+                    "end-range" : "xe-0/0/5"
+                }
+                ], 
+                "description" : "access ports", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "ethernet-switching" : {
+                            "interface-mode" : "access", 
+                            "vlan" : {
+                                "members" : ["V100"]
+                            }
+                        }
+                    }
+                }
+                ]
+            }
+            ], 
+            "interface" : [
+            {
+                "@" : {
+                    "comment" : "/* uplink to sw1 */" 
+                }, 
+                "name" : "ge-0/0/0", 
+                "apply-groups-except" : ["GR-EDGE-INTF"],
+                "description" : "uplink to sw1 \"core\"", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "192.168.0.1/30"
+                            }
+                            ]
+                        }, 
+                        "iso" : [null], 
+                        "inet6" : {
+                            "address" : [
+                            {
+                                "name" : "2001:db8:0:1::1/64"
+                            }
+                            ]
+                        }, 
+                        "mpls" : [null]
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "xe-0/0/0", 
+                "description" : "uplink to sw1", 
+                "ether-options" : {
+                    "ieee-802.3ad" : {
+                        "bundle" : "ae1"
+                    }
+                }
+            }, 
+            {
+                "name" : "ge-0/0/1", 
+                "flexible-vlan-tagging" : [null], 
+                "encapsulation" : "flexible-ethernet-services", 
+                "unit" : [
+                {
+                    "name" : 100, 
+                    "vlan-id" : 100, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.0.100.1/24", 
+                                "primary" : [null], 
+                                "preferred" : [null]
+                            }, 
+                            {
+                                "name" : "10.0.101.1/24"
+                            }
+                            ]
+                        }
+                    }
+                }, 
+                {
+                    "@" : {
+                        "inactive" : true
+                    }, 
+                    "name" : 200, 
+                    "vlan-id" : 200, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.0.200.1/24"
+                            }
+                            ]
+                        }
+                    }
+                }, 
+                {
+                    "name" : 300, 
+                    "vlan-id" : 300, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.0.30.1/24"
+                            }
+                            ]
+                        }, 
+                        "inet6" : {
+                            "@" : {
+                                "inactive" : true
+                            }, 
+                            "address" : [
+                            {
+                                "name" : "2001:db8:0:300::1/64"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "xe-0/0/1", 
+                "ether-options" : {
+                    "ieee-802.3ad" : {
+                        "bundle" : "ae1"
+                    }
+                }
+            }, 
+            {
+                "@" : {
+                    "comment" : "/* annotation with \"quotes\" and a ; semicolon */" 
+                }, 
+                "name" : "ge-0/0/6", 
+                "description" : "a;b {c} #d /* e */", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "description" : "", 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.0.6.1/24"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "ge-0/0/7", 
+                "flexible-vlan-tagging" : [null], 
+                "encapsulation" : "flexible-ethernet-services", 
+                "unit" : [
+                {
+                    "name" : 100, 
+                    "encapsulation" : "vlan-bridge", 
+                    "vlan-id" : 100
+                }, 
+                {
+                    "name" : 200, 
+                    "encapsulation" : "vlan-bridge", 
+                    "vlan-id" : 200
+                }
+                ]
+            }, 
+            {
+                "name" : "ge-0/0/8", 
+                "flexible-vlan-tagging" : [null], 
+                "encapsulation" : "flexible-ethernet-services", 
+                "unit" : [
+                {
+                    "name" : 200, 
+                    "encapsulation" : "vlan-bridge", 
+                    "vlan-id" : 200
+                }, 
+                {
+                    "name" : 300, 
+                    "encapsulation" : "vlan-bridge", 
+                    "vlan-id" : 300
+                }
+                ]
+            }, 
+            {
+                "name" : "ge-0/0/9", 
+                "description" : "transit provider", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "203.0.114.1/30"
+                            }
+                            ]
+                        }, 
+                        "inet6" : {
+                            "address" : [
+                            {
+                                "name" : "3ffe:b00:0:9::1/126"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "xe-0/0/10", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "ethernet-switching" : {
+                            "vlan" : {
+                                "members" : ["V200"]
+                            }
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "ae0", 
+                "aggregated-ether-options" : {
+                    "bfd-liveness-detection" : {
+                        "minimum-interval" : 300, 
+                        "neighbor" : "10.0.0.2", 
+                        "local-address" : "10.0.0.1"
+                    }, 
+                    "lacp" : {
+                        "active" : [null], 
+                        "periodic" : "fast"
+                    }
+                }, 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.0.0.1/31"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "ae1", 
+                "native-vlan-id" : 999, 
+                "aggregated-ether-options" : {
+                    "lacp" : {
+                        "active" : [null], 
+                        "periodic" : "fast"
+                    }
+                }, 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "ethernet-switching" : {
+                            "interface-mode" : "trunk", 
+                            "vlan" : {
+                                "members" : ["V100", "V200", "V300-RANGE", "999"]
+                            }
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "irb", 
+                "unit" : [
+                {
+                    "name" : 100, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.1.100.1/24"
+                            }
+                            ]
+                        }
+                    }
+                }, 
+                {
+                    "name" : 110, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.1.110.1/24"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }, 
+            {
+                "@" : {
+                    "protect" : true
+                }, 
+                "name" : "lo0", 
+                "unit" : [
+                {
+                    "name" : 0, 
+                    "family" : {
+                        "inet" : {
+                            "address" : [
+                            {
+                                "name" : "10.255.0.1/32"
+                            }
+                            ]
+                        }, 
+                        "iso" : {
+                            "address" : [
+                            {
+                                "name" : "49.0001.0102.5500.0001.00"
+                            }
+                            ]
+                        }, 
+                        "inet6" : {
+                            "address" : [
+                            {
+                                "name" : "2001:db8::1/128"
+                            }
+                            ]
+                        }
+                    }
+                }
+                ]
+            }
+            ]
+        }, 
+        "snmp" : {
+            "community" : [
+            {
+                "name" : "example-ro", 
+                "authorization" : "read-only", 
+                "clients" : [
+                {
+                    "name" : "198.51.100.0/24"
+                }, 
+                {
+                    "name" : "203.0.114.0/24"
+                }
+                ]
+            }
+            ]
+        }, 
+        "forwarding-options" : {
+            "storm-control-profiles" : [
+            {
+                "name" : "SC-DEFAULT", 
+                "all" : {
+                    "bandwidth-percentage" : 5
+                }
+            }
+            ], 
+            "port-mirroring" : {
+                "family" : {
+                    "inet" : {
+                        "output" : {
+                            "routing-instance" : [
+                            {
+                                "@" : {
+                                    "inactive" : true
+                                }, 
+                                "name" : "VRF-A", 
+                                "ip-address" : "10.0.0.1"
+                            }
+                            ]
+                        }
+                    }
+                }
+            }
+        }, 
+        "event-options" : {
+            "policy" : [
+            {
+                "name" : "EV-PING-FAILS", 
+                "events" : ["ping_test_failed"],
+                "within" : [
+                {
+                    "name" : 1800, 
+                    "trigger" : {
+                        "after" : [null], 
+                        "count" : 1
+                    }
+                }
+                ], 
+                "attributes-match" : [
+                {
+                    "from-event-attribute" : "ping_test_failed.test-owner", 
+                    "condition" : "matches", 
+                    "to-event-attribute-value" : "^PROBE-[0-9]+$"
+                }
+                ], 
+                "then" : {
+                    "raise-trap" : [null]
+                }
+            }, 
+            {
+                "name" : "EV-LINK-DOWN", 
+                "events" : ["snmp_trap_link_down"],
+                "then" : {
+                    "raise-trap" : [null]
+                }
+            }
+            ]
+        }, 
+        "policy-options" : {
+            "prefix-list" : [
+            {
+                "name" : "PL-BGP-PEERS", 
+                "apply-path" : "protocols bgp group <*> neighbor <*>"
+            }, 
+            {
+                "name" : "PL-MGMT", 
+                "prefix-list-item" : [
+                {
+                    "name" : "10.0.0.0/8"
+                }, 
+                {
+                    "name" : "198.51.100.0/24"
+                }
+                ]
+            }, 
+            {
+                "name" : "PL-MGMT6", 
+                "prefix-list-item" : [
+                {
+                    "name" : "2001:db8::/32"
+                }
+                ]
+            }
+            ], 
+            "route-filter-list" : [
+            {
+                "name" : "RFL-DEFAULT", 
+                "rf_list" : [
+                {
+                    "address" : "0.0.0.0/0", 
+                    "exact" : [null]
+                }, 
+                {
+                    "address" : "10.0.0.0/8", 
+                    "orlonger" : [null]
+                }
+                ]
+            }, 
+            {
+                "name" : "RFL-MIXED", 
+                "rf_list" : [
+                {
+                    "address" : "10.10.0.0/18", 
+                    "upto" : "/32"
+                }, 
+                {
+                    "address" : "10.12.0.0/16", 
+                    "orlonger" : [null]
+                }, 
+                {
+                    "address" : "0.0.0.0/0", 
+                    "prefix-length-range" : "/1-/32"
+                }, 
+                {
+                    "address" : "198.51.100.0/24", 
+                    "exact" : [null]
+                }, 
+                {
+                    "address" : "2001:db8::/32", 
+                    "orlonger" : [null]
+                }
+                ]
+            }
+            ], 
+            "policy-statement" : [
+            {
+                "name" : "P-A", 
+                "term" : [
+                {
+                    "name" : "NEXT", 
+                    "from" : {
+                        "protocol" : ["bgp"]
+                    }, 
+                    "then" : {
+                        "local-preference" : {
+                            "local-preference" : 200
+                        }, 
+                        "next" : "term"
+                    }
+                }, 
+                {
+                    "name" : "ACCEPT", 
+                    "then" : {
+                        "accept" : [null]
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "P-B", 
+                "from" : {
+                    "route-filter-list" : [
+                    {
+                        "name" : "RFL-DEFAULT"
+                    }
+                    ]
+                }, 
+                "then" : {
+                    "reject" : [null]
+                }
+            }, 
+            {
+                "name" : "PS-COND", 
+                "term" : [
+                {
+                    "name" : "DEFAULT-PRESENT", 
+                    "from" : {
+                        "condition" : ["COND-DEFAULT"]
+                    }, 
+                    "then" : {
+                        "accept" : [null]
+                    }
+                }, 
+                {
+                    "name" : "REST", 
+                    "from" : {
+                        "route-filter-list" : [
+                        {
+                            "name" : "RFL-MIXED"
+                        }
+                        ]
+                    }, 
+                    "then" : {
+                        "reject" : [null]
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "PS-EXPORT", 
+                "term" : [
+                {
+                    "name" : "LOOPBACK", 
+                    "from" : {
+                        "protocol" : ["direct"],
+                        "route-filter" : [
+                        {
+                            "address" : "10.255.0.0/16", 
+                            "prefix-length-range" : "/32-/32"
+                        }
+                        ]
+                    }, 
+                    "then" : {
+                        "community" : [
+                        {
+                            "add" : [null], 
+                            "community-name" : "CM-CUSTOMER"
+                        }
+                        ], 
+                        "accept" : [null]
+                    }
+                }, 
+                {
+                    "@" : {
+                        "inactive" : true
+                    }, 
+                    "name" : "STATIC", 
+                    "from" : {
+                        "protocol" : ["static"]
+                    }, 
+                    "then" : {
+                        "accept" : [null]
+                    }
+                }, 
+                {
+                    "name" : "REJECT", 
+                    "then" : {
+                        "reject" : [null]
+                    }
+                }
+                ]
+            }, 
+            {
+                "name" : "PS-TRANSIT-IN", 
+                "term" : [
+                {
+                    "name" : "REJECT-BOGONS", 
+                    "from" : {
+                        "route-filter" : [
+                        {
+                            "address" : "10.0.0.0/8", 
+                            "orlonger" : [null]
+                        }, 
+                        {
+                            "address" : "192.168.0.0/16", 
+                            "orlonger" : [null], 
+                            "reject" : [null]
+                        }
+                        ]
+                    }, 
+                    "then" : {
+                        "reject" : [null]
+                    }
+                }, 
+                {
+                    "name" : "PRIVATE-AS", 
+                    "from" : {
+                        "as-path" : ["AP-PRIVATE"]
+                    }, 
+                    "then" : {
+                        "reject" : [null]
+                    }
+                }, 
+                {
+                    "name" : "ACCEPT", 
+                    "then" : {
+                        "local-preference" : {
+                            "local-preference" : 120
+                        }, 
+                        "community" : [
+                        {
+                            "add" : [null], 
+                            "community-name" : "CM-TRANSIT"
+                        }
+                        ], 
+                        "accept" : [null]
+                    }
+                }
+                ]
+            }
+            ], 
+            "community" : [
+            {
+                "name" : "CM-CUSTOMER", 
+                "members" : ["64496:100", "64496:200"]
+            }, 
+            {
+                "name" : "CM-NO-EXPORT", 
+                "members" : ["no-export"]
+            }, 
+            {
+                "name" : "CM-REGEX", 
+                "members" : ["^64496:1[0-9]+$"]
+            }, 
+            {
+                "name" : "CM-RT-ANY", 
+                "members" : ["target:64496:*"]
+            }, 
+            {
+                "name" : "CM-TRANSIT", 
+                "members" : ["64497:300"]
+            }
+            ], 
+            "as-path" : [
+            {
+                "name" : "AP-PRIVATE", 
+                "path" : "^6450[0-9]$"
+            }
+            ], 
+            "condition" : [
+            {
+                "name" : "COND-DEFAULT", 
+                "if-route-exists" : {
+                    "address" : "0.0.0.0/0", 
+                    "table" : "inet.0"
+                }
+            }
+            ]
+        }, 
+        "class-of-service" : {
+            "classifiers" : {
+                "dscp" : [
+                {
+                    "name" : "CL-DSCP", 
+                    "import" : "default", 
+                    "forwarding-class" : [
+                    {
+                        "name" : "FC-SIGNALING", 
+                        "loss-priority" : [
+                        {
+                            "name" : "low", 
+                            "code-points" : ["cs6", "cs7"]
+                        }
+                        ]
+                    }
+                    ]
+                }
+                ], 
+                "exp" : [
+                {
+                    "name" : "CL-EXP", 
+                    "forwarding-class" : [
+                    {
+                        "name" : "FC-SIGNALING", 
+                        "loss-priority" : [
+                        {
+                            "name" : "low", 
+                            "code-points" : ["110"]
+                        }
+                        ]
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "forwarding-classes" : {
+                "class" : [
+                {
+                    "name" : "FC-BE", 
+                    "queue-num" : 0
+                }, 
+                {
+                    "name" : "FC-SIGNALING", 
+                    "queue-num" : 3
+                }
+                ]
+            }, 
+            "interfaces" : {
+                "interface" : [
+                {
+                    "name" : "ge-0/0/7", 
+                    "scheduler-map" : "SM-EDGE", 
+                    "unit" : [
+                    {
+                        "name" : 100, 
+                        "classifiers" : {
+                            "dscp" : [
+                            {
+                                "name" : "CL-DSCP"
+                            }
+                            ]
+                        }, 
+                        "rewrite-rules" : {
+                            "exp" : [
+                            {
+                                "name" : "RR-EXP"
+                            }
+                            ]
+                        }
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "rewrite-rules" : {
+                "exp" : [
+                {
+                    "name" : "RR-EXP", 
+                    "forwarding-class" : [
+                    {
+                        "name" : "FC-SIGNALING", 
+                        "loss-priority" : [
+                        {
+                            "name" : "high", 
+                            "code-point" : "111"
+                        }, 
+                        {
+                            "name" : "low", 
+                            "code-point" : "110"
+                        }
+                        ]
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "scheduler-maps" : [
+            {
+                "name" : "SM-EDGE", 
+                "forwarding-class" : [
+                {
+                    "name" : "FC-BE", 
+                    "scheduler" : "SC-BE"
+                }, 
+                {
+                    "name" : "FC-SIGNALING", 
+                    "scheduler" : "SC-SIGNALING"
+                }
+                ]
+            }
+            ], 
+            "schedulers" : [
+            {
+                "name" : "SC-BE", 
+                "transmit-rate" : {
+                    "remainder" : [null]
+                }, 
+                "buffer-size" : {
+                    "remainder" : [null]
+                }, 
+                "priority" : "low"
+            }, 
+            {
+                "name" : "SC-SIGNALING", 
+                "transmit-rate" : {
+                    "percent" : 5
+                }, 
+                "shaping-rate" : {
+                    "percent" : 5
+                }, 
+                "buffer-size" : {
+                    "percent" : 5
+                }, 
+                "priority" : "strict-high"
+            }
+            ]
+        }, 
+        "firewall" : {
+            "family" : {
+                "inet" : {
+                    "filter" : [
+                    {
+                        "name" : "FW-PROTECT-RE", 
+                        "term" : [
+                        {
+                            "name" : "SSH", 
+                            "from" : {
+                                "source-prefix-list" : [
+                                {
+                                    "name" : "PL-MGMT"
+                                }
+                                ], 
+                                "protocol" : ["tcp"],
+                                "destination-port" : ["ssh", "830"]
+                            }, 
+                            "then" : {
+                                "accept" : [null]
+                            }
+                        }, 
+                        {
+                            "@" : {
+                                "inactive" : true
+                            }, 
+                            "name" : "ICMP", 
+                            "from" : {
+                                "protocol" : ["icmp"]
+                            }, 
+                            "then" : {
+                                "policer" : "P-1M", 
+                                "accept" : [null]
+                            }
+                        }, 
+                        {
+                            "name" : "DEFAULT", 
+                            "then" : {
+                                "count" : "c-default", 
+                                "log" : [null], 
+                                "discard" : [null]
+                            }
+                        }
+                        ]
+                    }
+                    ]
+                }, 
+                "ethernet-switching" : {
+                    "filter" : [
+                    {
+                        "name" : "FW-L2", 
+                        "term" : [
+                        {
+                            "name" : "BLOCK-MAC", 
+                            "from" : {
+                                "source-mac-address" : [
+                                {
+                                    "name" : "00:00:5e:00:53:66/48"
+                                }
+                                ]
+                            }, 
+                            "then" : {
+                                "discard" : [null]
+                            }
+                        }, 
+                        {
+                            "name" : "ALLOW", 
+                            "then" : {
+                                "accept" : [null]
+                            }
+                        }
+                        ]
+                    }
+                    ]
+                }
+            }, 
+            "policer" : [
+            {
+                "name" : "P-1M", 
+                "if-exceeding" : {
+                    "bandwidth-limit" : "1m", 
+                    "burst-size-limit" : "15k"
+                }, 
+                "then" : {
+                    "discard" : [null]
+                }
+            }
+            ]
+        }, 
+        "access" : {
+            "radius-server" : [
+            {
+                "name" : "192.168.50.10", 
+                "port" : 1812, 
+                "secret" : "$9$Tz391RSrlMtuMXxdg4UjHqfTFnCtpBUjT369B1Ndbs4aUjqTQnbsPQFnpuX7-", 
+                "timeout" : 10, 
+                "retry" : 3
+            }
+            ], 
+            "profile" : [
+            {
+                "name" : "PROF-1", 
+                "radius-server" : [
+                {
+                    "name" : "192.168.50.10", 
+                    "timeout" : 10
+                }
+                ]
+            }
+            ]
+        }, 
+        "routing-instances" : {
+            "instance" : [
+            {
+                "name" : "VRF-A", 
+                "instance-type" : "vrf", 
+                "protocols" : {
+                    "bgp" : {
+                        "group" : [
+                        {
+                            "name" : "CE", 
+                            "type" : "external", 
+                            "peer-as" : "64511", 
+                            "neighbor" : [
+                            {
+                                "name" : "10.0.100.2"
+                            }
+                            ]
+                        }
+                        ]
+                    }
+                }, 
+                "forwarding-options" : {
+                    "dhcp-relay" : {
+                        "forward-only" : [null], 
+                        "server-group" : {
+                            "server-group" : [
+                            {
+                                "name" : "SG-A", 
+                                "address" : [
+                                {
+                                    "name" : "10.0.100.200"
+                                }, 
+                                {
+                                    "name" : "10.0.100.201"
+                                }
+                                ]
+                            }
+                            ]
+                        }, 
+                        "active-server-group" : {
+                            "active-server-group" : "SG-A"
+                        }, 
+                        "group" : [
+                        {
+                            "name" : "G-A", 
+                            "interface" : [
+                            {
+                                "name" : "ge-0/0/1.100"
+                            }
+                            ]
+                        }
+                        ]
+                    }
+                }, 
+                "interface" : [
+                {
+                    "name" : "ge-0/0/1.100"
+                }
+                ], 
+                "route-distinguisher" : {
+                    "rd-type" : "10.255.0.1:100"
+                }, 
+                "vrf-target" : {
+                    "community" : "target:64496:100"
+                }
+            }, 
+            {
+                "@" : {
+                    "inactive" : true
+                }, 
+                "name" : "VRF-B", 
+                "instance-type" : "vrf", 
+                "interface" : [
+                {
+                    "name" : "ge-0/0/1.300"
+                }
+                ], 
+                "route-distinguisher" : {
+                    "rd-type" : "10.255.0.1:300"
+                }, 
+                "vrf-target" : {
+                    "community" : "target:64496:300"
+                }
+            }, 
+            {
+                "name" : "VS-1", 
+                "instance-type" : "virtual-switch", 
+                "protocols" : {
+                    "evpn" : {
+                        "encapsulation" : "vxlan", 
+                        "extended-vni-list" : ["all"]
+                    }
+                }, 
+                "vtep-source-interface" : {
+                    "interface-name" : "lo0.0"
+                }, 
+                "bridge-domains" : {
+                    "domain" : [
+                    {
+                        "name" : "BD-300", 
+                        "vlan-id" : 300, 
+                        "interface" : [
+                        {
+                            "name" : "ge-0/0/8.300"
+                        }
+                        ], 
+                        "vxlan" : {
+                            "vni" : 10300
+                        }
+                    }
+                    ]
+                }, 
+                "route-distinguisher" : {
+                    "rd-type" : "10.255.0.1:300"
+                }, 
+                "vrf-target" : {
+                    "community" : "target:64496:300"
+                }
+            }
+            ]
+        }, 
+        "dynamic-profiles" : [
+        {
+            "name" : "DP-PROBE", 
+            "predefined-variable-defaults" : {
+                "other-variables" : [
+                {
+                    "name" : "routing-instances", 
+                    "default-value" : "VRF-A"
+                }
+                ]
+            }, 
+            "routing-instances" : {
+                "instance" : [
+                {
+                    "name" : "$junos-routing-instance", 
+                    "interface" : [
+                    {
+                        "name" : "$junos-interface-name"
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "interfaces" : {
+                "interface" : [
+                {
+                    "name" : "demux0", 
+                    "unit" : [
+                    {
+                        "name" : "$junos-interface-unit", 
+                        "family" : {
+                            "inet" : {
+                                "demux-source" : [
+                                {
+                                    "name" : "$junos-subscriber-ip-address"
+                                }
+                                ]
+                            }
+                        }
+                    }
+                    ]
+                }
+                ]
+            }
+        }
+        ], 
+        "routing-options" : {
+            "rib" : [
+            {
+                "name" : "inet6.0", 
+                "static" : {
+                    "route" : [
+                    {
+                        "name" : "::/0", 
+                        "next-hop" : ["2001:db8:0:1::2"]
+                    }
+                    ]
+                }
+            }
+            ], 
+            "router-id" : "10.255.0.1", 
+            "@router-id" : {
+                "comment" : "/* router-id is the loopback */" 
+            }, 
+            "autonomous-system" : {
+                "@" : {
+                    "protect" : true
+                }, 
+                "as-number" : "64496"
+            }, 
+            "static" : {
+                "route" : [
+                {
+                    "name" : "0.0.0.0/0", 
+                    "next-hop" : ["192.168.0.2"]
+                }, 
+                {
+                    "name" : "10.97.0.0/16", 
+                    "qualified-next-hop" : [
+                    {
+                        "name" : "192.168.0.6", 
+                        "preference" : 7
+                    }
+                    ]
+                }, 
+                {
+                    "@" : {
+                        "inactive" : true
+                    }, 
+                    "name" : "10.98.0.0/16", 
+                    "reject" : [null]
+                }, 
+                {
+                    "name" : "10.99.0.0/16", 
+                    "discard" : [null], 
+                    "no-readvertise" : [null]
+                }, 
+                {
+                    "name" : "198.0.2.0/24", 
+                    "next-hop" : ["203.0.114.2"]
+                }
+                ]
+            }, 
+            "transport-class" : {
+                "auto-create" : [null], 
+                "fallback" : {
+                    "none" : [null]
+                }, 
+                "name" : [
+                {
+                    "name" : "gold", 
+                    "color" : 4000, 
+                    "tunnel-egress" : {
+                        "end-point" : [
+                        {
+                            "name" : "10.255.0.3"
+                        }
+                        ]
+                    }
+                }, 
+                {
+                    "name" : "bronze", 
+                    "color" : 6000
+                }
+                ]
+            }, 
+            "dynamic-tunnels" : {
+                "dynamic-tunnel" : [
+                {
+                    "name" : "DT-GRE", 
+                    "source-address" : "10.255.0.1", 
+                    "gre" : [null], 
+                    "destination-networks" : [
+                    {
+                        "name" : "10.200.0.0/16"
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "forwarding-table" : {
+                "chained-composite-next-hop" : {
+                    "ingress" : {
+                        "evpn" : [null], 
+                        "l3vpn" : [null], 
+                        "@l3vpn" : {
+                            "inactive" : true
+                        }
+                    }
+                }
+            }
+        }, 
+        "protocols" : {
+            "apply-groups" : ["GR-MACRO"],
+            "bgp" : {
+                "group" : [
+                {
+                    "name" : "IBGP", 
+                    "type" : "internal", 
+                    "local-address" : "10.255.0.1", 
+                    "family" : {
+                        "inet-vpn" : {
+                            "unicast" : [null]
+                        }
+                    }, 
+                    "neighbor" : [
+                    {
+                        "name" : "10.255.0.2", 
+                        "description" : "rr1 (route reflector)"
+                    }, 
+                    {
+                        "name" : "10.255.0.3"
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "RR", 
+                    "type" : "internal", 
+                    "local-address" : "10.255.0.1", 
+                    "bgp-error-tolerance" : [null], 
+                    "family" : {
+                        "inet6" : {
+                            "labeled-unicast" : {
+                                "per-prefix-label" : [null]
+                            }
+                        }
+                    }, 
+                    "multipath" : [null], 
+                    "neighbor" : [
+                    {
+                        "name" : "10.255.0.4"
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "EBGP", 
+                    "type" : "external", 
+                    "import" : ["PS-EXPORT"],
+                    "export" : ["PS-EXPORT"],
+                    "peer-as" : "64497", 
+                    "neighbor" : [
+                    {
+                        "name" : "192.168.0.2", 
+                        "apply-groups-except" : ["GR-BGP"]
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "TRANSIT", 
+                    "type" : "external", 
+                    "import" : ["PS-TRANSIT-IN"],
+                    "export" : ["PS-EXPORT"],
+                    "peer-as" : "64499", 
+                    "neighbor" : [
+                    {
+                        "name" : "203.0.114.2", 
+                        "description" : "transit provider"
+                    }, 
+                    {
+                        "name" : "3ffe:b00:0:9::2"
+                    }
+                    ]
+                }, 
+                {
+                    "name" : "EXPR", 
+                    "type" : "external", 
+                    "peer-as" : "64498", 
+                    "neighbor" : [
+                    {
+                        "name" : "192.168.1.1", 
+                        "import" : ["( P-A && P-B )"],
+                        "export" : ["( P-A || P-B )"]
+                    }, 
+                    {
+                        "name" : "192.168.1.2", 
+                        "import" : ["( P-A )"]
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "isis" : {
+                "apply-groups" : ["GR-ISIS-TPL"],
+                "interface" : [
+                {
+                    "name" : "ge-0/0/0.0", 
+                    "point-to-point" : [null]
+                }, 
+                {
+                    "name" : "lo0.0", 
+                    "passive" : [null]
+                }
+                ], 
+                "overload" : {
+                    "timeout" : 300, 
+                    "advertise-high-metrics" : [null]
+                }
+            }, 
+            "ldp" : {
+                "interface" : [
+                {
+                    "name" : "ge-0/0/0.0"
+                }
+                ]
+            }, 
+            "mpls" : {
+                "label-range" : {
+                    "srgb-label-range" : [
+                    {
+                        "name" : 800000, 
+                        "range-end" : 890000
+                    }
+                    ]
+                }, 
+                "interface" : [
+                {
+                    "name" : "ge-0/0/0.0"
+                }
+                ]
+            }, 
+            "ospf" : {
+                "area" : [
+                {
+                    "name" : "0.0.0.0", 
+                    "interface" : [
+                    {
+                        "name" : "ge-0/0/0.0", 
+                        "interface-type" : "p2p", 
+                        "metric" : 10
+                    }, 
+                    {
+                        "name" : "lo0.0", 
+                        "passive" : [null]
+                    }
+                    ]
+                }
+                ]
+            }, 
+            "lldp" : {
+                "interface" : [
+                {
+                    "name" : "all"
+                }
+                ]
+            }, 
+            "lldp-med" : {
+                "interface" : [
+                {
+                    "name" : "all"
+                }
+                ]
+            }, 
+            "igmp-snooping" : {
+                "vlan" : [
+                {
+                    "name" : "V100", 
+                    "immediate-leave" : [null]
+                }
+                ]
+            }, 
+            "rstp" : {
+                "bridge-priority" : "8k", 
+                "interface" : [
+                {
+                    "name" : "xe-0/0/2", 
+                    "edge" : [null]
+                }
+                ], 
+                "bpdu-block-on-edge" : [null]
+            }
+        }, 
+        "bridge-domains" : {
+            "domain" : [
+            {
+                "name" : "BD-100", 
+                "domain-type" : "bridge", 
+                "vlan-id" : 100, 
+                "interface" : [
+                {
+                    "name" : "ge-0/0/7.100"
+                }
+                ], 
+                "routing-interface" : "irb.100"
+            }, 
+            {
+                "name" : "BD-200", 
+                "vlan-id" : 200, 
+                "interface" : [
+                {
+                    "name" : "ge-0/0/7.200"
+                }, 
+                {
+                    "name" : "ge-0/0/8.200"
+                }
+                ], 
+                "bridge-options" : {
+                    "interface" : [
+                    {
+                        "name" : "ge-0/0/8.200", 
+                        "static-mac" : [
+                        {
+                            "name" : "00:00:5e:00:53:01"
+                        }
+                        ]
+                    }
+                    ]
+                }
+            }
+            ]
+        }, 
+        "vlans" : {
+            "vlan" : [
+            {
+                "name" : "V100", 
+                "description" : "users", 
+                "vlan-id" : 100, 
+                "l3-interface" : "irb.110", 
+                "forwarding-options" : {
+                    "dhcp-security" : {
+                        "arp-inspection" : [null], 
+                        "ip-source-guard" : [null]
+                    }
+                }
+            }, 
+            {
+                "name" : "V200", 
+                "vlan-id" : 200, 
+                "forwarding-options" : {
+                    "filter" : {
+                        "input" : "FW-L2"
+                    }
+                }
+            }, 
+            {
+                "name" : "V300-RANGE", 
+                "vlan-id-list" : ["300-310", "320"]
+            }, 
+            {
+                "@" : {
+                    "inactive" : true
+                }, 
+                "name" : "V999", 
+                "vlan-id" : 999
+            }
+            ]
+        }
+    }
+}

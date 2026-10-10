@@ -7,16 +7,48 @@ together, is `tests/contract/test_every_rule.py`.
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
-from typing import TYPE_CHECKING
+import shlex
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from junoscfg import Format, convert_config
 from junoscfg.anonymize import AnonymizeConfig, anonymize, build_config_from_cli
-from tests.support.paths import EXAMPLES
+from tests.support.devices import example, placed_only
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+
+
+def _leaves(node: Any, wanted: Callable[[str], bool]) -> set[str]:
+    """Every string under a key *wanted* accepts, anywhere in *node*."""
+    found: set[str] = set()
+    if isinstance(node, list):
+        for item in node:
+            found |= _leaves(item, wanted)
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            if wanted(key):
+                found |= _strings(value)
+            else:
+                found |= _leaves(value, wanted)
+    return found
+
+
+def _strings(node: Any) -> set[str]:
+    """Every value in *node*, as text; tags (``@`` keys) are not values."""
+    if isinstance(node, str):
+        return {node}
+    if isinstance(node, int) and not isinstance(node, bool):
+        return {str(node)}
+    if isinstance(node, list):
+        return set().union(*(_strings(item) for item in node))
+    if isinstance(node, dict):
+        return set().union(*(_strings(v) for k, v in node.items() if not k.startswith("@")))
+    return set()
 
 
 class TestPipelineIntegration:
@@ -503,40 +535,43 @@ class TestKeyedEntriesSurvive:
         assert json.loads(anonymized) == json.loads(plain)
         assert word in plain
 
-    #: Every value release 0.14.0 replaced in examples/router1.json with every
-    #: rule on, by rule; measured before the identifier-key-fields change.
-    BEFORE = {
-        "password": ["$9$ExAmPlEhAsH.KEY"],
-        "ip": [
-            "0.0.0.0",
-            "0.0.0.0/0",
-            "10.0.0.0/8",
-            "10.0.100.1/24",
-            "10.0.200.1/24",
-            "10.255.255.1",
-            "10.255.255.1/32",
-            "10.255.255.2",
-            "192.168.0.10",
-            "192.168.0.123",
-            "192.168.0.53",
-            "192.168.0.54",
-            "198.51.100.1/30",
-            "198.51.100.2",
-            "2001:db8:100::1/126",
-        ],
-        "identity": ["admin", "operator"],
-        "group": ["ebgp-peers", "ibgp-peers"],
-        "description": [
-            "bundled customer handoff",
-            "core router",
-            "customer handoff",
-            "customer handoff backup",
-            "downlink to access",
+    #: What each rule must replace in `examples/junoscfg-oracle.json`, written
+    #: from the example, not from the anonymizer's output. Addresses, passwords
+    #: and SSH keys are read from the example itself (`_must_replace`).
+    MUST_REPLACE = {
+        "identity": {"admin", "operator"},
+        "group": {
+            *("GR-SYSTEM", "GR-EDGE-INTF", "GR-BGP", "GR-VRF", "GR-MACRO", "GR-ISIS-TPL"),
+            *("GR-ACCESS-PORT", "GR-OMIT", "GR-UNUSED", "GR-PROTECTED"),
+            *("CE", "EBGP", "EXPR", "IBGP", "RR", "TRANSIT"),
+        },
+        "description": {
+            "set by GR-EDGE-INTF",
+            "rack 4, row B",
+            "access range",
+            "access ports",
+            'uplink to sw1 "core"',
+            "uplink to sw1",
+            "a;b {c} #d /* e */",
             "transit provider",
-            "uplink to core",
-        ],
-        "as_number": ["64496", "64497"],
-        "sensitive_word": ["customer-routes", "customers", "export-customers"],
+            "rr1 (route reflector)",
+            "users",
+        },
+        "community": {"example-ro"},
+        "as_number": {"64496", "64497", "64498", "64499", "64511"},
+        "sensitive_word": {"CM-CUSTOMER"},
+    }
+    #: What a rule leaves in the output today. PRODUCT DEFECT, no
+    #: known-differences class (the record is of set renderings): the IP rule
+    #: skips an address in a leaf the schema types `hostname` (`system
+    #: tacplus-server 203.0.114.49 source-address 10.255.0.1`) and in the
+    #: inactive port-mirroring `routing-instance VRF-A ip-address 10.0.0.1`,
+    #: which the JSON reader keeps as a one-entry list; the walker enters a
+    #: transparent container's own child only, so nothing under `interfaces
+    #: interface-range` is seen.
+    MISSED = {
+        "ip": {"203.0.114.49", "10.255.0.1", "10.0.0.1"},
+        "description": {"access range", "access ports"},
     }
 
     @staticmethod
@@ -549,20 +584,89 @@ class TestKeyedEntriesSurvive:
             identities=True,
             groups=True,
             descriptions=True,
-            as_numbers=[64496, 64497],
+            as_numbers=[64496, 64497, 64498, 64499, 64511],
             sensitive_words=["customer"],
             salt="pinned-salt",
         )
 
-    def test_no_value_anonymized_before_escapes(self) -> None:
-        """Every value 0.14.0 replaced is still replaced: a fix may add, never drop."""
-        source = json.loads((EXAMPLES / "router1.json").read_text(encoding="utf-8"))
-        mapping = anonymize(source, self._every_rule()).mapping
-        for rule, values in self.BEFORE.items():
-            missing = set(values) - set(mapping.get(rule, {}))
-            assert not missing, f"{rule} no longer replaces {sorted(missing)}"
+    @classmethod
+    def _must_replace(cls, source: dict) -> dict[str, set[str]]:
+        """`MUST_REPLACE`, with every address of the device's set and every secret."""
+        addresses = set()
+        for line in example().device_set():
+            for word in shlex.split(line):
+                try:
+                    ipaddress.ip_network(word, strict=False)
+                except ValueError:
+                    continue
+                addresses.add(word)
+        return {
+            **cls.MUST_REPLACE,
+            "ip": addresses,
+            "password": _leaves(source, lambda key: key in {"encrypted-password", "secret"}),
+            "ssh_key": _leaves(source, lambda key: key.startswith("ssh-")),
+        }
 
-    def test_name_keyed_output_is_unchanged(self, tmp_path: Path) -> None:
+    def test_no_value_anonymized_before_escapes(self, json_config: str) -> None:
+        """Every value a rule covers in the example is replaced, everywhere it is.
+
+        A fix may add, never drop. The floor was the values release 0.14.0
+        replaced in the synthetic `examples/router1.json`; the example is now
+        the device's, and the floor what it holds. A value a rule maps to
+        itself is one it keeps by design (`0.0.0.0/0`, the RFC 1918 and
+        documentation prefixes); a wildcard is `test_a_wildcard_group_name_passes_the_group_rule`.
+        """
+        source = json.loads(json_config)
+        must = self._must_replace(source)
+        assert all(must.values()), "a rule has nothing to replace in the example"
+        result = anonymize(source, self._every_rule())
+        for rule, values in must.items():
+            missing = values - self.MISSED.get(rule, set()) - set(result.mapping.get(rule, {}))
+            assert not missing, f"{rule} does not replace {sorted(missing)}"
+        left = _strings(result.ir)
+        for rule, replaced in result.mapping.items():
+            kept = {
+                value for value, by in replaced.items() if by != value and not value.startswith("<")
+            }
+            kept = (kept & left) - self.MISSED.get(rule, set())
+            assert not kept, f"{rule} leaves {sorted(kept)} in the output"
+
+    @pytest.mark.xfail(strict=True, reason="PRODUCT DEFECT: no known-differences class; see MISSED")
+    @pytest.mark.parametrize("rule", ["ip", "description"])
+    def test_what_a_rule_misses_today_is_replaced(self, rule: str, json_config: str) -> None:
+        result = anonymize(json.loads(json_config), self._every_rule())
+        assert self.MISSED[rule] <= set(result.mapping.get(rule, {}))
+        assert not self.MISSED[rule] & _strings(result.ir)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="PRODUCT DEFECT: no known-differences class: the group rule replaces the "
+        "wildcard `<*>` of `groups GR-BGP protocols bgp group <*>`, so the group then "
+        "matches no BGP group",
+    )
+    def test_a_wildcard_group_name_passes_the_group_rule(self, json_config: str) -> None:
+        mapping = anonymize(json.loads(json_config), self._every_rule()).mapping
+        assert not [name for name in mapping.get("group", {}) if name.startswith("<")]
+
+    def _anonymized(self, source: str, to_format: Format, dumped: Path) -> str:
+        """*source* (JSON) in *to_format* with every rule on, its mapping dumped."""
+        config = self._every_rule()
+        config.dump_map = str(dumped)
+        return convert_config(
+            source, from_format=Format.JSON, to_format=to_format, validate=False, anon_config=config
+        )
+
+    @staticmethod
+    def _reverted(text: str, fmt: Format, dumped: Path) -> object:
+        """The IR *text* reads to with the mapping reverted."""
+        revert = AnonymizeConfig(revert_map=str(dumped))
+        return json.loads(
+            convert_config(
+                text, from_format=fmt, to_format=Format.JSON, validate=False, anon_config=revert
+            )
+        )
+
+    def test_name_keyed_output_is_unchanged(self, tmp_path: Path, json_config: str) -> None:
         """For a fixed salt, every rule replaces the same values with the same values.
 
         Pinned before the identifier-key-fields change touched the walker, as
@@ -575,37 +679,45 @@ class TestKeyedEntriesSurvive:
         another, `rules/password.py`). The rest is meaning: the anonymized
         configuration differs from the original only by those replacements,
         so the mapping restores its IR.
+
+        The input is the example, re-pinned when it became the device's,
+        without the statements junoscfg cannot place
+        (`tests/support/devices.py` `UNPLACED_IN_THE_EXAMPLE`): anonymization
+        refuses a configuration holding one. The pin leaves out the wildcard
+        `<*>` the group rule replaces (`test_a_wildcard_group_name_passes_the_group_rule`).
+        The IR is restored through JSON output here; through set output it is
+        `test_the_mapping_restores_the_set_output`.
         """
-        from junoscfg import Format, convert_config
-
-        source = (EXAMPLES / "router1.json").read_text(encoding="utf-8")
-        dumped = tmp_path / "map.json"
-        config = self._every_rule()
-        config.dump_map = str(dumped)
-        out = convert_config(
-            source,
-            from_format=Format.JSON,
-            to_format=Format.SET,
-            validate=False,
-            anon_config=config,
-        )
-        mapping = json.loads(dumped.read_text(encoding="utf-8"))
+        source = json.dumps(placed_only(json.loads(json_config)))
+        self._anonymized(source, Format.SET, tmp_path / "map.json")
+        mapping = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
+        pinned = {
+            rule: {value: by for value, by in values.items() if not value.startswith("<")}
+            for rule, values in mapping.items()
+        }
         assert (
-            hashlib.sha256(json.dumps(mapping, sort_keys=True).encode()).hexdigest()
-            == "5d9e717aa62ad2c2939e7627991ec04ca0b62a529290591ddd0692794d94a8dd"
+            hashlib.sha256(json.dumps(pinned, sort_keys=True).encode()).hexdigest()
+            == "b8c3da0573385b58ec1f9a156d3e2ad62f279e92084beaf6dd3b36ee26aace99"
         )
 
+        out = self._anonymized(source, Format.JSON, tmp_path / "json-map.json")
+        plain = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
+        assert self._reverted(out, Format.JSON, tmp_path / "json-map.json") == json.loads(plain)
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="PRODUCT DEFECT: escaped-quote-lost: the plain set output writes ge-0/0/0's "
+        "description with its inner quotes bare, which reads back as another value; the "
+        "anonymized output carries a pseudonym there instead",
+    )
+    def test_the_mapping_restores_the_set_output(self, tmp_path: Path, json_config: str) -> None:
+        """Reverted, the anonymized set output reads to the IR the plain set output reads to."""
+        source = json.dumps(placed_only(json.loads(json_config)))
+        out = self._anonymized(source, Format.SET, tmp_path / "map.json")
         plain = convert_config(
             source, from_format=Format.JSON, to_format=Format.SET, validate=False
-        )
-        reverted = convert_config(
-            out,
-            from_format=Format.SET,
-            to_format=Format.JSON,
-            validate=False,
-            anon_config=AnonymizeConfig(revert_map=str(dumped)),
         )
         original = convert_config(
             plain, from_format=Format.SET, to_format=Format.JSON, validate=False
         )
-        assert json.loads(reverted) == json.loads(original)
+        assert self._reverted(out, Format.SET, tmp_path / "map.json") == json.loads(original)

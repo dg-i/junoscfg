@@ -32,6 +32,7 @@ from junoscfg.convert import (
 )
 from junoscfg.display import artifacts_dir
 from tests.support.artifacts import using_tree
+from tests.support.devices import placed_only
 from tests.support.keyed_entries import TERM, set_ir, structure_tree
 
 if TYPE_CHECKING:
@@ -928,13 +929,32 @@ class TestNoSchema:
 
 
 class TestTheExampleConfigurationValidates:
-    """`examples/router1.json`, the synthetic configuration every format of the
-    examples is made from, is clean against the shipped tree."""
+    """`examples/junoscfg-oracle.json`, what a vMX printed with `| display json`.
 
-    def test_router1_validates_clean(self, json_config: str) -> None:
+    A device loaded every statement of it, so every finding is junoscfg's or
+    the example's own. The one the example earns: `access profile PROF-1
+    radius-server` carries no `secret`, which the schema marks mandatory (the
+    device loaded it uncommitted, and mandatory is checked at commit).
+    """
+
+    RADIUS_SECRET = ("access.profile.radius-server.secret", "Missing mandatory field 'secret'")
+
+    def test_every_statement_the_schema_places_validates(self, json_config: str) -> None:
+        """Clean, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
+        result = validate_ir(to_dict(json.dumps(placed_only(json.loads(json_config))), "json"))
+        assert result.errors == []
+        assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="PRODUCT DEFECT: no known-differences class (set renderings keep them): the "
+        "shipped 25.2R0 schema cannot place five statements both devices loaded, and the "
+        "JSON reader keeps `ieee-802.3ad`; tests/support/devices.py UNPLACED_IN_THE_EXAMPLE",
+    )
+    def test_the_example_validates_clean(self, json_config: str) -> None:
         result = validate_ir(to_dict(json_config, "json"))
         assert result.errors == []
-        assert result.warnings == []
+        assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]
 
 
 class TestATreeBuiltFromAnXsdIsEnforced:

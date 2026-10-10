@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from junoscfg import Format, convert_config
 from junoscfg.display import SetConverter
+from tests.support.devices import example, recorded_lines
 
 
 def struct_to_set(config: str) -> str:
@@ -179,23 +182,72 @@ class TestSetConverter:
 
 
 class TestTheExampleConfigurationConvertsToSet:
-    """The committed example, structured to set, means what its JSON and XML mean.
+    """The example, curly to set, means what the device's own display set means.
 
-    `examples/router1.set` is generated from `examples/router1.conf` by this
-    converter, so comparing the two line by line proved only that the
-    converter had not changed. The JSON and XML forms are read by other
-    readers; the set output must read back to the IR both give.
+    `examples/junoscfg-oracle.conf` and `.set` are what a vMX printed for one
+    configuration (`tests/data/device/README.md`); the device law holds
+    junoscfg's set rendering of all four, the JSON and XML among them, to the
+    device's set. This converter writes set from curly on its own, for the
+    structured validator, so it is held to the same oracle: its output reads
+    to the IR the device's set reads to, both less the lines
+    `known-differences.json` records for the curly rendering.
     """
 
-    def test_the_set_output_reads_to_the_json_and_xml_ir(
-        self, structured_config: str, json_config: str, xml_config: str
-    ) -> None:
-        set_output = struct_to_set(structured_config)
+    @pytest.mark.xfail(
+        strict=True,
+        reason="PRODUCT DEFECT: no known-differences class (the device law reads curly "
+        "through SetConverter.statements, not to_set): to_set() writes the tag of a "
+        "one-line statement on the whole line, `inactive: route 10.98.0.0/16 reject;` as "
+        "`deactivate ... route 10.98.0.0/16 reject` and `protect: autonomous-system 64496;` "
+        "as `protect ... autonomous-system 64496`",
+    )
+    def test_the_set_output_means_what_the_devices_set_means(self, structured_config: str) -> None:
+        capture = example()
+        skip = recorded_lines(capture, "conf")
 
-        def ir(source: str, fmt: Format) -> dict:
-            return json.loads(convert_config(source, from_format=fmt, to_format=Format.JSON))
+        def ir(lines: list[str]) -> dict:
+            text = "".join(f"{line}\n" for line in lines if line not in skip)
+            return json.loads(convert_config(text, from_format=Format.SET, to_format=Format.JSON))
 
-        from_set = ir(set_output, Format.SET)
-        assert from_set == ir(json_config, Format.JSON)
-        assert from_set == ir(xml_config, Format.XML)
-        assert from_set["configuration"], "the example converted to nothing"
+        ours = ir(struct_to_set(structured_config).splitlines())
+        assert ours["configuration"], "the example converted to nothing"
+        assert ours == ir(capture.device_set())
+
+
+class TestATagOnAOneLineStatementCoversTheStatement:
+    """`inactive:` or `protect:` before a one-line statement tags the statement.
+
+    The device's display set of `examples/junoscfg-oracle.conf` writes the tag
+    on the statement's path, never on its value or child: `deactivate
+    routing-options static route 10.98.0.0/16`, `protect routing-options
+    autonomous-system`. Tagging the whole line deactivates `reject`, not the
+    route.
+    """
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="PRODUCT DEFECT: no known-differences class: SetConverter.to_set() writes "
+        "the tag on the whole line (see TestTheExampleConfigurationConvertsToSet)",
+    )
+    @pytest.mark.parametrize(
+        ("curly", "tag_line"),
+        [
+            (
+                "routing-options {\n    static {\n        inactive: route 10.98.0.0/16 reject;\n"
+                "    }\n}\n",
+                "deactivate routing-options static route 10.98.0.0/16",
+            ),
+            (
+                "routing-options {\n    protect: autonomous-system 64496;\n}\n",
+                "protect routing-options autonomous-system",
+            ),
+        ],
+        ids=["an-inactive-entry-with-a-flag", "a-protected-statement-with-a-value"],
+    )
+    def test_the_tag_names_the_statement(self, curly: str, tag_line: str) -> None:
+        tags = [
+            line
+            for line in struct_to_set(curly).splitlines()
+            if line.startswith(("deactivate ", "protect "))
+        ]
+        assert tags == [tag_line]

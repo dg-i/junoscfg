@@ -5,9 +5,10 @@ dumps into ``private_test_data/schemas/`` (gitignored); these then run with
 ``pytest --schema``, once per dump.
 
 They exist because a fixture this project can author cannot answer questions
-about what a device actually emits. The synthetic ``examples/router1.*`` pins
-conversion behaviour well and told us nothing about the 85 OpenConfig element
-names that stop a real XSD compiling.
+about what a device actually emits. The synthetic ``examples/router1.*`` of
+the time pinned conversion behaviour well and told us nothing about the 85
+OpenConfig element names that stop a real XSD compiling; the example is now a
+vMX's own renderings (``examples/junoscfg-oracle.*``).
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from junoscfg.validate import (
     write_lark_grammar,
     write_structure_tree,
 )
+from tests.support.devices import example, recorded_lines
 from tests.support.paths import EXAMPLES
 
 if TYPE_CHECKING:
@@ -152,13 +154,20 @@ class TestConversionAgainstRealArtifacts:
     def test_roundtrip_against_this_release(
         self, real_artifacts: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """structured -> set -> structured survives on real artifacts."""
+        """structured -> set -> structured survives on real artifacts.
+
+        The example's curly is the vMX's; the set lines `known-differences.json`
+        records for it are junoscfg's known misreadings, which do not read
+        back, so the round trip starts from the set output without them.
+        """
         monkeypatch.setenv("JUNOSCFG_ARTIFACTS", str(real_artifacts))
 
         from junoscfg import Format, convert_config
 
-        source = (EXAMPLES / "router1.conf").read_text()
-        as_set = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.SET)
+        source = (EXAMPLES / "junoscfg-oracle.conf").read_text(encoding="utf-8")
+        skip = recorded_lines(example(), "conf")
+        written = convert_config(source, from_format=Format.STRUCTURED, to_format=Format.SET)
+        as_set = "".join(f"{line}\n" for line in written.splitlines() if line not in skip)
         back = convert_config(as_set, from_format=Format.SET, to_format=Format.STRUCTURED)
 
         assert "host-name router1;" in back
@@ -173,7 +182,7 @@ class TestConversionAgainstRealArtifacts:
 
         from junoscfg import Format, convert_config
 
-        source = (EXAMPLES / "router1.conf").read_text()
+        source = (EXAMPLES / "junoscfg-oracle.conf").read_text(encoding="utf-8")
         via_json = convert_config(
             convert_config(source, from_format=Format.STRUCTURED, to_format=Format.JSON),
             from_format=Format.JSON,

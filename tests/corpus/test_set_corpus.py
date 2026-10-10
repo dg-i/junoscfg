@@ -8,7 +8,8 @@ a false rejection of valid configuration. Every line, by hand:
 `pytest tests/corpus/test_set_corpus.py --device-grammar`.
 
 The corpus this replaces, `tests/data/set_corpus.txt`, was harvested from the
-repository's own tests and from `examples/router1.set`, junoscfg's own output.
+repository's own tests and from `examples/router1.set`, junoscfg's own output;
+the example is now the device's (`examples/junoscfg-oracle.set`).
 """
 
 from __future__ import annotations

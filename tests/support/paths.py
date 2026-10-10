@@ -10,7 +10,8 @@ from __future__ import annotations
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-#: The committed synthetic configurations: router1 in every format.
+#: The example configuration, junoscfg-oracle, as a vMX printed it in four formats
+#: (the same files as its capture under ``tests/data/device/synthetic/``).
 EXAMPLES = PROJECT_ROOT / "examples"
 #: Committed test data: device captures, the set corpus, the keyed-entries XSD, goldens.
 TEST_DATA = PROJECT_ROOT / "tests" / "data"

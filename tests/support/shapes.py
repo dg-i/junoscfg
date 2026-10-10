@@ -36,7 +36,6 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
 
 from junoscfg import Format, convert_config
-from tests.support.paths import EXAMPLES
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -1899,24 +1898,6 @@ _add(
         read_back={w: _in_term(then={"accept": [None]}) for w in (SET, STRUCTURED)},
         why="No device writes it, and no output invents an entry: set and structured "
         "output write nothing for it.",
-    ),
-)
-
-# ── The committed example: router1 in every format ───────────────────
-
-_ROUTER1_SET = (EXAMPLES / "router1.set").read_text(encoding="utf-8")
-
-_add(
-    Shape(
-        "router1",
-        {
-            JSON: (EXAMPLES / "router1.json").read_text(encoding="utf-8"),
-            SET: _ROUTER1_SET,
-            STRUCTURED: (EXAMPLES / "router1.conf").read_text(encoding="utf-8"),
-            XML: (EXAMPLES / "router1.xml").read_text(encoding="utf-8"),
-        },
-        set_output=_ROUTER1_SET,
-        why="examples/router1.*: the four committed spellings of one configuration.",
     ),
 )
 

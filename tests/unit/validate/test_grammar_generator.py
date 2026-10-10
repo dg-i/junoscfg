@@ -567,7 +567,7 @@ class TestFreeformNokeywordKeepsItsKeyword:
     the nk flag for freeform validation but should be treated as normal
     keywords in conversion". Reading the bare `nokeyword` rejected
     `set interfaces ge-0/0/1 unit 0 vlan-id 100` — every VLAN-bearing config,
-    and a line of `examples/router1.set`.
+    and five lines of the vMX's own display set, `examples/junoscfg-oracle.set`.
     """
 
     @staticmethod

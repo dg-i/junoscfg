@@ -4,11 +4,12 @@ No test did this before. Conversion had its tests, validation had its tests,
 and nothing ran the two in sequence -- so the JSON and YAML schemas rejected
 the converter's own output for every configuration carrying a named list, a
 presence flag, a bare container statement or an `apply-groups`, which is very
-nearly all of them. `examples/router1.set` failed eight ways; three real device
-configurations failed 51, 17 and 38 ways.
+nearly all of them. `examples/router1.set`, the synthetic example of the time,
+failed eight ways; three real device configurations failed 51, 17 and 38 ways.
 
 Each cause is a separate row of the shape catalogue, so a regression names
-the one that came back.
+the one that came back. The example is now the device's own
+(`examples/junoscfg-oracle.*`), held here by `TestTheExampleRendersValid`.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from typing import Any
 import pytest
 
 from junoscfg import Format, convert_config
+from tests.support.devices import example, placed_only
 from tests.support.shapes import BY_NAME, SHAPES, Shape
 
 VALID = [shape for shape in SHAPES if shape.valid]
@@ -44,8 +46,7 @@ class TestTheConverterOutputValidates:
 
     Over the whole shape catalogue (`tests/support/shapes.py`): the rows
     `a-named-list-key` to `an-overridden-entry-key` are the causes listed
-    above, one row each, and `router1` is `examples/router1.set`, which failed
-    eight ways, every one its own output.
+    above, one row each.
     """
 
     @pytest.mark.parametrize("shape", VALID, ids=[shape.name for shape in VALID])
@@ -76,6 +77,57 @@ class TestTheConverterOutputValidates:
         entry = json.loads(rendered)["configuration"]["interfaces"]["interface"][0]
         assert entry["name"] == "ge-0/0/0"
         assert not bundled_validator.validate_json(rendered).errors
+
+
+_SCHEMA_GAPS = (
+    "PRODUCT DEFECT: no known-differences class (set renderings keep them): the shipped "
+    "schema cannot place five statements both devices loaded; tests/support/devices.py "
+    "UNPLACED_IN_THE_EXAMPLE"
+)
+_JSON_SHAPES = (
+    "PRODUCT DEFECT: no known-differences class: besides UNPLACED_IN_THE_EXAMPLE, the device "
+    "JSON's interface-range `member-range ... end-range` (both releases print it; the schema "
+    "and the XML reader say `to`), its one-entry arrays for `srgb-label-range` and an inactive "
+    "port-mirroring `routing-instance`, which the schema takes as scalars"
+)
+
+
+class TestTheExampleRendersValid:
+    """The example a vMX printed, read and written by junoscfg, is one junoscfg accepts.
+
+    `examples/junoscfg-oracle.*` (`tests/data/device/README.md`): the device
+    loaded every statement, so each schema error is junoscfg's. The XML
+    rendering is read, the one junoscfg reads closest to the schema.
+    """
+
+    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    def test_every_statement_the_schema_places_renders_valid(
+        self, fmt: Format, bundled_validator: Any
+    ) -> None:
+        """Valid, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
+        read = convert_config(
+            example().rendering("xml"), from_format=Format.XML, to_format=Format.JSON
+        )
+        placed = json.dumps(placed_only(json.loads(read)))
+        rendered = convert_config(placed, from_format=Format.JSON, to_format=fmt)
+        errors = _errors(bundled_validator, rendered, fmt)
+        assert not errors, errors[:2]
+
+    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    @pytest.mark.parametrize(
+        "suffix",
+        [
+            pytest.param("xml", marks=pytest.mark.xfail(strict=True, reason=_SCHEMA_GAPS)),
+            pytest.param("json", marks=pytest.mark.xfail(strict=True, reason=_JSON_SHAPES)),
+        ],
+    )
+    def test_the_example_renders_valid(
+        self, suffix: str, fmt: Format, bundled_validator: Any
+    ) -> None:
+        source = example().rendering(suffix)
+        reader = Format.XML if suffix == "xml" else Format.JSON
+        rendered = convert_config(source, from_format=reader, to_format=fmt)
+        assert not _errors(bundled_validator, rendered, fmt)
 
 
 class TestTheSchemaStillRejects:

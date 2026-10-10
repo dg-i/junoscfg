@@ -1,0 +1,351 @@
+set groups GR-SYSTEM system host-name router1
+set groups GR-SYSTEM system domain-name example.net
+set groups GR-SYSTEM system time-zone Europe/Berlin
+set groups GR-SYSTEM system ntp server 198.51.100.123 prefer
+set groups GR-EDGE-INTF interfaces <ge-*> description "set by GR-EDGE-INTF"
+set groups GR-EDGE-INTF interfaces <ge-*> mtu 9192
+set groups GR-EDGE-INTF interfaces <ge-*> unit <*> family inet mtu 1500
+set groups GR-EDGE-INTF interfaces "<[gx]e-*>" hold-time up 2000
+set groups GR-EDGE-INTF interfaces "<[gx]e-*>" hold-time down 0
+set groups GR-BGP protocols bgp group <*> hold-time 30
+set groups GR-BGP protocols bgp group <*> log-updown
+deactivate groups GR-BGP protocols bgp group <*> log-updown
+set groups GR-VRF routing-instances <VRF-*> vrf-table-label
+set groups GR-MACRO protocols ospf apply-macro GR-PARAMS bfd
+set groups GR-MACRO protocols ospf apply-macro GR-PARAMS metric 10
+set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict
+set groups GR-ISIS-TPL protocols isis interface <ge-*> max-hello-size 9000
+deactivate groups GR-ISIS-TPL protocols isis interface <ge-*> max-hello-size
+set groups GR-ACCESS-PORT interfaces <xe-0/0/1*> unit 0 family ethernet-switching interface-mode access
+set groups GR-ACCESS-PORT interfaces <xe-0/0/1*> unit 0 family ethernet-switching storm-control SC-DEFAULT
+set groups GR-OMIT system apply-flags omit
+set groups GR-OMIT system location building "omit probe"
+set groups GR-UNUSED system location building "B 2"
+deactivate groups GR-UNUSED
+set groups GR-PROTECTED snmp location "rack 4, row B"
+protect groups GR-PROTECTED
+set apply-groups GR-SYSTEM
+set apply-groups GR-EDGE-INTF
+set apply-groups GR-BGP
+set apply-groups GR-VRF
+set apply-groups GR-PROTECTED
+set apply-groups GR-ACCESS-PORT
+set system apply-macro site-info region emea
+set system apply-macro site-info role edge
+set system apply-macro site-info tier "core aggregation"
+set system login class OPS permissions view
+set system login class OPS permissions view-configuration
+set system login class OPS allow-commands "^show "
+set system login class OPS deny-commands "(request|restart) .*"
+set system login user admin uid 2000
+set system login user admin class super-user
+set system login user admin authentication encrypted-password "$6$ExAmPlEsAlT$fiqEywaWU84F2DQxEKayEdVSRDfC1VqHL8.DYBxx4GO8A1ucOdZ94PW0/bBSdNMOfiqEywaWU84F2DQxEKayEd"
+set system login user admin authentication ssh-ed25519 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIImOTwJ85Tu6312p9Jeq+/gHDcc02lPR9J2HriFt+Uz/ admin@example.net"
+set system login user operator uid 2001
+set system login user operator class read-only
+set system login user operator shell csh
+set system login message "Authorized use only.\nAll access is logged."
+set system services ssh root-login deny
+set system services extension-service request-response grpc clear-text port 32767
+set system services extension-service request-response grpc skip-authentication
+set system services netconf ssh
+set system name-server 192.168.0.53
+set system name-server 198.0.2.53
+set system tacplus-server 203.0.114.49 secret "$9$8TCX7VaZjHkPs2PQz6u0EcylM8Nds2gJhSrvLXbwP5QF/CuORrlMQFclKMN-qmf"
+set system tacplus-server 203.0.114.49 source-address 10.255.0.1
+set system syslog host 203.0.114.10 any warning
+set system syslog file interactive-commands interactive-commands any
+set system syslog file messages any notice
+set system syslog file messages authorization info
+set system ddos-protection protocols autoconf aggregate bandwidth 20000
+set logical-systems LS-1 interfaces ge-0/0/1 unit 400 vlan-id 400
+set logical-systems LS-1 interfaces ge-0/0/1 unit 400 family inet address 10.0.40.1/24
+set logical-systems LS-1 routing-options router-id 10.255.1.1
+set chassis aggregated-devices ethernet device-count 4
+set chassis network-services enhanced-ip
+set interfaces interface-range IR-ACCESS member-range ge-0/0/2 to ge-0/0/5
+set interfaces interface-range IR-ACCESS description "access range"
+set interfaces interface-range IR-ACCESS unit 0 family inet
+set interfaces interface-range IR-SWITCH member xe-0/0/8
+set interfaces interface-range IR-SWITCH member-range xe-0/0/2 to xe-0/0/5
+set interfaces interface-range IR-SWITCH description "access ports"
+set interfaces interface-range IR-SWITCH unit 0 family ethernet-switching interface-mode access
+set interfaces interface-range IR-SWITCH unit 0 family ethernet-switching vlan members V100
+set interfaces ge-0/0/0 apply-groups-except GR-EDGE-INTF
+set interfaces ge-0/0/0 description "uplink to sw1 \"core\""
+set interfaces ge-0/0/0 unit 0 family inet address 192.168.0.1/30
+set interfaces ge-0/0/0 unit 0 family iso
+set interfaces ge-0/0/0 unit 0 family inet6 address 2001:db8:0:1::1/64
+set interfaces ge-0/0/0 unit 0 family mpls
+set interfaces xe-0/0/0 description "uplink to sw1"
+set interfaces xe-0/0/0 ether-options 802.3ad ae1
+set interfaces ge-0/0/1 flexible-vlan-tagging
+set interfaces ge-0/0/1 encapsulation flexible-ethernet-services
+set interfaces ge-0/0/1 unit 100 vlan-id 100
+set interfaces ge-0/0/1 unit 100 family inet address 10.0.100.1/24 primary
+set interfaces ge-0/0/1 unit 100 family inet address 10.0.100.1/24 preferred
+set interfaces ge-0/0/1 unit 100 family inet address 10.0.101.1/24
+set interfaces ge-0/0/1 unit 200 vlan-id 200
+set interfaces ge-0/0/1 unit 200 family inet address 10.0.200.1/24
+deactivate interfaces ge-0/0/1 unit 200
+set interfaces ge-0/0/1 unit 300 vlan-id 300
+set interfaces ge-0/0/1 unit 300 family inet address 10.0.30.1/24
+set interfaces ge-0/0/1 unit 300 family inet6 address 2001:db8:0:300::1/64
+deactivate interfaces ge-0/0/1 unit 300 family inet6
+set interfaces xe-0/0/1 ether-options 802.3ad ae1
+set interfaces ge-0/0/6 description "a;b {c} #d /* e */"
+set interfaces ge-0/0/6 unit 0 description ""
+set interfaces ge-0/0/6 unit 0 family inet address 10.0.6.1/24
+set interfaces ge-0/0/7 flexible-vlan-tagging
+set interfaces ge-0/0/7 encapsulation flexible-ethernet-services
+set interfaces ge-0/0/7 unit 100 encapsulation vlan-bridge
+set interfaces ge-0/0/7 unit 100 vlan-id 100
+set interfaces ge-0/0/7 unit 200 encapsulation vlan-bridge
+set interfaces ge-0/0/7 unit 200 vlan-id 200
+set interfaces ge-0/0/8 flexible-vlan-tagging
+set interfaces ge-0/0/8 encapsulation flexible-ethernet-services
+set interfaces ge-0/0/8 unit 200 encapsulation vlan-bridge
+set interfaces ge-0/0/8 unit 200 vlan-id 200
+set interfaces ge-0/0/8 unit 300 encapsulation vlan-bridge
+set interfaces ge-0/0/8 unit 300 vlan-id 300
+set interfaces ge-0/0/9 description "transit provider"
+set interfaces ge-0/0/9 unit 0 family inet address 203.0.114.1/30
+set interfaces ge-0/0/9 unit 0 family inet6 address 3ffe:b00:0:9::1/126
+set interfaces xe-0/0/10 unit 0 family ethernet-switching vlan members V200
+set interfaces ae0 aggregated-ether-options bfd-liveness-detection minimum-interval 300
+set interfaces ae0 aggregated-ether-options bfd-liveness-detection neighbor 10.0.0.2
+set interfaces ae0 aggregated-ether-options bfd-liveness-detection local-address 10.0.0.1
+set interfaces ae0 aggregated-ether-options lacp active
+set interfaces ae0 aggregated-ether-options lacp periodic fast
+set interfaces ae0 unit 0 family inet address 10.0.0.1/31
+set interfaces ae1 native-vlan-id 999
+set interfaces ae1 aggregated-ether-options lacp active
+set interfaces ae1 aggregated-ether-options lacp periodic fast
+set interfaces ae1 unit 0 family ethernet-switching interface-mode trunk
+set interfaces ae1 unit 0 family ethernet-switching vlan members V100
+set interfaces ae1 unit 0 family ethernet-switching vlan members V200
+set interfaces ae1 unit 0 family ethernet-switching vlan members V300-RANGE
+set interfaces ae1 unit 0 family ethernet-switching vlan members 999
+set interfaces irb unit 100 family inet address 10.1.100.1/24
+set interfaces irb unit 110 family inet address 10.1.110.1/24
+set interfaces lo0 unit 0 family inet address 10.255.0.1/32
+set interfaces lo0 unit 0 family iso address 49.0001.0102.5500.0001.00
+set interfaces lo0 unit 0 family inet6 address 2001:db8::1/128
+protect interfaces lo0
+set snmp community example-ro authorization read-only
+set snmp community example-ro clients 198.51.100.0/24
+set snmp community example-ro clients 203.0.114.0/24
+set forwarding-options storm-control-profiles SC-DEFAULT all bandwidth-percentage 5
+set forwarding-options port-mirroring family inet output routing-instance VRF-A ip-address 10.0.0.1
+deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A
+set event-options policy EV-PING-FAILS events ping_test_failed
+set event-options policy EV-PING-FAILS within 1800 trigger after
+set event-options policy EV-PING-FAILS within 1800 trigger 1
+set event-options policy EV-PING-FAILS attributes-match ping_test_failed.test-owner matches "^PROBE-[0-9]+$"
+set event-options policy EV-PING-FAILS then raise-trap
+set event-options policy EV-LINK-DOWN events snmp_trap_link_down
+set event-options policy EV-LINK-DOWN then raise-trap
+set policy-options prefix-list PL-BGP-PEERS apply-path "protocols bgp group <*> neighbor <*>"
+set policy-options prefix-list PL-MGMT 10.0.0.0/8
+set policy-options prefix-list PL-MGMT 198.51.100.0/24
+set policy-options prefix-list PL-MGMT6 2001:db8::/32
+set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact
+set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger
+set policy-options route-filter-list RFL-MIXED 10.10.0.0/18 upto /32
+set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger
+set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32
+set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact
+set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger
+set policy-options policy-statement P-A term NEXT from protocol bgp
+set policy-options policy-statement P-A term NEXT then local-preference 200
+set policy-options policy-statement P-A term NEXT then next term
+set policy-options policy-statement P-A term ACCEPT then accept
+set policy-options policy-statement P-B from route-filter-list RFL-DEFAULT
+set policy-options policy-statement P-B then reject
+set policy-options policy-statement PS-COND term DEFAULT-PRESENT from condition COND-DEFAULT
+set policy-options policy-statement PS-COND term DEFAULT-PRESENT then accept
+set policy-options policy-statement PS-COND term REST from route-filter-list RFL-MIXED
+set policy-options policy-statement PS-COND term REST then reject
+set policy-options policy-statement PS-EXPORT term LOOPBACK from protocol direct
+set policy-options policy-statement PS-EXPORT term LOOPBACK from route-filter 10.255.0.0/16 prefix-length-range /32-/32
+set policy-options policy-statement PS-EXPORT term LOOPBACK then community add CM-CUSTOMER
+set policy-options policy-statement PS-EXPORT term LOOPBACK then accept
+set policy-options policy-statement PS-EXPORT term STATIC from protocol static
+set policy-options policy-statement PS-EXPORT term STATIC then accept
+deactivate policy-options policy-statement PS-EXPORT term STATIC
+set policy-options policy-statement PS-EXPORT term REJECT then reject
+set policy-options policy-statement PS-TRANSIT-IN term REJECT-BOGONS from route-filter 10.0.0.0/8 orlonger
+set policy-options policy-statement PS-TRANSIT-IN term REJECT-BOGONS from route-filter 192.168.0.0/16 orlonger reject
+set policy-options policy-statement PS-TRANSIT-IN term REJECT-BOGONS then reject
+set policy-options policy-statement PS-TRANSIT-IN term PRIVATE-AS from as-path AP-PRIVATE
+set policy-options policy-statement PS-TRANSIT-IN term PRIVATE-AS then reject
+set policy-options policy-statement PS-TRANSIT-IN term ACCEPT then local-preference 120
+set policy-options policy-statement PS-TRANSIT-IN term ACCEPT then community add CM-TRANSIT
+set policy-options policy-statement PS-TRANSIT-IN term ACCEPT then accept
+set policy-options community CM-CUSTOMER members 64496:100
+set policy-options community CM-CUSTOMER members 64496:200
+set policy-options community CM-NO-EXPORT members no-export
+set policy-options community CM-REGEX members "^64496:1[0-9]+$"
+set policy-options community CM-RT-ANY members target:64496:*
+set policy-options community CM-TRANSIT members 64497:300
+set policy-options as-path AP-PRIVATE "^6450[0-9]$"
+set policy-options condition COND-DEFAULT if-route-exists 0.0.0.0/0
+set policy-options condition COND-DEFAULT if-route-exists table inet.0
+set class-of-service classifiers dscp CL-DSCP import default
+set class-of-service classifiers dscp CL-DSCP forwarding-class FC-SIGNALING loss-priority low code-points cs6
+set class-of-service classifiers dscp CL-DSCP forwarding-class FC-SIGNALING loss-priority low code-points cs7
+set class-of-service classifiers exp CL-EXP forwarding-class FC-SIGNALING loss-priority low code-points 110
+set class-of-service forwarding-classes class FC-BE queue-num 0
+set class-of-service forwarding-classes class FC-SIGNALING queue-num 3
+set class-of-service interfaces ge-0/0/7 scheduler-map SM-EDGE
+set class-of-service interfaces ge-0/0/7 unit 100 classifiers dscp CL-DSCP
+set class-of-service interfaces ge-0/0/7 unit 100 rewrite-rules exp RR-EXP
+set class-of-service rewrite-rules exp RR-EXP forwarding-class FC-SIGNALING loss-priority high code-point 111
+set class-of-service rewrite-rules exp RR-EXP forwarding-class FC-SIGNALING loss-priority low code-point 110
+set class-of-service scheduler-maps SM-EDGE forwarding-class FC-BE scheduler SC-BE
+set class-of-service scheduler-maps SM-EDGE forwarding-class FC-SIGNALING scheduler SC-SIGNALING
+set class-of-service schedulers SC-BE transmit-rate remainder
+set class-of-service schedulers SC-BE buffer-size remainder
+set class-of-service schedulers SC-BE priority low
+set class-of-service schedulers SC-SIGNALING transmit-rate percent 5
+set class-of-service schedulers SC-SIGNALING shaping-rate percent 5
+set class-of-service schedulers SC-SIGNALING buffer-size percent 5
+set class-of-service schedulers SC-SIGNALING priority strict-high
+set firewall family inet filter FW-PROTECT-RE term SSH from source-prefix-list PL-MGMT
+set firewall family inet filter FW-PROTECT-RE term SSH from protocol tcp
+set firewall family inet filter FW-PROTECT-RE term SSH from destination-port ssh
+set firewall family inet filter FW-PROTECT-RE term SSH from destination-port 830
+set firewall family inet filter FW-PROTECT-RE term SSH then accept
+set firewall family inet filter FW-PROTECT-RE term ICMP from protocol icmp
+set firewall family inet filter FW-PROTECT-RE term ICMP then policer P-1M
+set firewall family inet filter FW-PROTECT-RE term ICMP then accept
+deactivate firewall family inet filter FW-PROTECT-RE term ICMP
+set firewall family inet filter FW-PROTECT-RE term DEFAULT then count c-default
+set firewall family inet filter FW-PROTECT-RE term DEFAULT then log
+set firewall family inet filter FW-PROTECT-RE term DEFAULT then discard
+set firewall family ethernet-switching filter FW-L2 term BLOCK-MAC from source-mac-address 00:00:5e:00:53:66/48
+set firewall family ethernet-switching filter FW-L2 term BLOCK-MAC then discard
+set firewall family ethernet-switching filter FW-L2 term ALLOW then accept
+set firewall policer P-1M if-exceeding bandwidth-limit 1m
+set firewall policer P-1M if-exceeding burst-size-limit 15k
+set firewall policer P-1M then discard
+set access radius-server 192.168.50.10 port 1812
+set access radius-server 192.168.50.10 secret "$9$Tz391RSrlMtuMXxdg4UjHqfTFnCtpBUjT369B1Ndbs4aUjqTQnbsPQFnpuX7-"
+set access radius-server 192.168.50.10 timeout 10
+set access radius-server 192.168.50.10 retry 3
+set access profile PROF-1 radius-server 192.168.50.10 timeout 10
+set routing-instances VRF-A instance-type vrf
+set routing-instances VRF-A protocols bgp group CE type external
+set routing-instances VRF-A protocols bgp group CE peer-as 64511
+set routing-instances VRF-A protocols bgp group CE neighbor 10.0.100.2
+set routing-instances VRF-A forwarding-options dhcp-relay forward-only
+set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200
+set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201
+set routing-instances VRF-A forwarding-options dhcp-relay active-server-group SG-A
+set routing-instances VRF-A forwarding-options dhcp-relay group G-A interface ge-0/0/1.100
+set routing-instances VRF-A interface ge-0/0/1.100
+set routing-instances VRF-A route-distinguisher 10.255.0.1:100
+set routing-instances VRF-A vrf-target target:64496:100
+set routing-instances VRF-B instance-type vrf
+set routing-instances VRF-B interface ge-0/0/1.300
+set routing-instances VRF-B route-distinguisher 10.255.0.1:300
+set routing-instances VRF-B vrf-target target:64496:300
+deactivate routing-instances VRF-B
+set routing-instances VS-1 instance-type virtual-switch
+set routing-instances VS-1 protocols evpn encapsulation vxlan
+set routing-instances VS-1 protocols evpn extended-vni-list all
+set routing-instances VS-1 vtep-source-interface lo0.0
+set routing-instances VS-1 bridge-domains BD-300 vlan-id 300
+set routing-instances VS-1 bridge-domains BD-300 interface ge-0/0/8.300
+set routing-instances VS-1 bridge-domains BD-300 vxlan vni 10300
+set routing-instances VS-1 route-distinguisher 10.255.0.1:300
+set routing-instances VS-1 vrf-target target:64496:300
+set dynamic-profiles DP-PROBE predefined-variable-defaults routing-instances VRF-A
+set dynamic-profiles DP-PROBE routing-instances "$junos-routing-instance" interface "$junos-interface-name"
+set dynamic-profiles DP-PROBE interfaces demux0 unit "$junos-interface-unit" family inet demux-source $junos-subscriber-ip-address
+set routing-options rib inet6.0 static route ::/0 next-hop 2001:db8:0:1::2
+set routing-options router-id 10.255.0.1
+set routing-options autonomous-system 64496
+protect routing-options autonomous-system
+set routing-options static route 0.0.0.0/0 next-hop 192.168.0.2
+set routing-options static route 10.97.0.0/16 qualified-next-hop 192.168.0.6 preference 7
+set routing-options static route 10.98.0.0/16 reject
+deactivate routing-options static route 10.98.0.0/16
+set routing-options static route 10.99.0.0/16 discard
+set routing-options static route 10.99.0.0/16 no-readvertise
+set routing-options static route 198.0.2.0/24 next-hop 203.0.114.2
+set routing-options transport-class auto-create
+set routing-options transport-class fallback none
+set routing-options transport-class name gold color 4000
+set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3
+set routing-options transport-class name bronze color 6000
+set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1
+set routing-options dynamic-tunnels DT-GRE gre
+set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16
+set routing-options forwarding-table chained-composite-next-hop ingress evpn
+set routing-options forwarding-table chained-composite-next-hop ingress l3vpn
+deactivate routing-options forwarding-table chained-composite-next-hop ingress l3vpn
+set protocols apply-groups GR-MACRO
+set protocols bgp group IBGP type internal
+set protocols bgp group IBGP local-address 10.255.0.1
+set protocols bgp group IBGP family inet-vpn unicast
+set protocols bgp group IBGP neighbor 10.255.0.2 description "rr1 (route reflector)"
+set protocols bgp group IBGP neighbor 10.255.0.3
+set protocols bgp group RR type internal
+set protocols bgp group RR local-address 10.255.0.1
+set protocols bgp group RR bgp-error-tolerance
+set protocols bgp group RR family inet6 labeled-unicast per-prefix-label
+set protocols bgp group RR multipath
+set protocols bgp group RR neighbor 10.255.0.4
+set protocols bgp group EBGP type external
+set protocols bgp group EBGP import PS-EXPORT
+set protocols bgp group EBGP export PS-EXPORT
+set protocols bgp group EBGP peer-as 64497
+set protocols bgp group EBGP neighbor 192.168.0.2 apply-groups-except GR-BGP
+set protocols bgp group TRANSIT type external
+set protocols bgp group TRANSIT import PS-TRANSIT-IN
+set protocols bgp group TRANSIT export PS-EXPORT
+set protocols bgp group TRANSIT peer-as 64499
+set protocols bgp group TRANSIT neighbor 203.0.114.2 description "transit provider"
+set protocols bgp group TRANSIT neighbor 3ffe:b00:0:9::2
+set protocols bgp group EXPR type external
+set protocols bgp group EXPR peer-as 64498
+set protocols bgp group EXPR neighbor 192.168.1.1 import ( P-A && P-B )
+set protocols bgp group EXPR neighbor 192.168.1.1 export ( P-A || P-B )
+set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )
+set protocols isis apply-groups GR-ISIS-TPL
+set protocols isis interface ge-0/0/0.0 point-to-point
+set protocols isis interface lo0.0 passive
+set protocols isis overload timeout 300
+set protocols isis overload advertise-high-metrics
+set protocols ldp interface ge-0/0/0.0
+set protocols mpls label-range srgb-label-range 800000 890000
+set protocols mpls interface ge-0/0/0.0
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 interface-type p2p
+set protocols ospf area 0.0.0.0 interface ge-0/0/0.0 metric 10
+set protocols ospf area 0.0.0.0 interface lo0.0 passive
+set protocols lldp interface all
+set protocols lldp-med interface all
+set protocols igmp-snooping vlan V100 immediate-leave
+set protocols rstp bridge-priority 8k
+set protocols rstp interface xe-0/0/2 edge
+set protocols rstp bpdu-block-on-edge
+set bridge-domains BD-100 domain-type bridge
+set bridge-domains BD-100 vlan-id 100
+set bridge-domains BD-100 interface ge-0/0/7.100
+set bridge-domains BD-100 routing-interface irb.100
+set bridge-domains BD-200 vlan-id 200
+set bridge-domains BD-200 interface ge-0/0/7.200
+set bridge-domains BD-200 interface ge-0/0/8.200
+set bridge-domains BD-200 bridge-options interface ge-0/0/8.200 static-mac 00:00:5e:00:53:01
+set vlans V100 description users
+set vlans V100 vlan-id 100
+set vlans V100 l3-interface irb.110
+set vlans V100 forwarding-options dhcp-security arp-inspection
+set vlans V100 forwarding-options dhcp-security ip-source-guard
+set vlans V200 vlan-id 200
+set vlans V200 forwarding-options filter input FW-L2
+set vlans V300-RANGE vlan-id-list 300-310
+set vlans V300-RANGE vlan-id-list 320
+set vlans V999 vlan-id 999
+deactivate vlans V999

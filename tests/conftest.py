@@ -136,20 +136,32 @@ def bundled_validator() -> object:
 
 @pytest.fixture
 def json_config() -> str:
-    """The synthetic example configuration, router1, in JSON."""
-    return (EXAMPLES / "router1.json").read_text()
+    """The example configuration as the vMX printed it with `| display json`.
+
+    `examples/junoscfg-oracle.json`: a device capture, so it carries lines
+    junoscfg gets wrong today, each recorded in `known-differences.json`.
+    """
+    return (EXAMPLES / "junoscfg-oracle.json").read_text(encoding="utf-8")
 
 
 @pytest.fixture
 def xml_config() -> str:
-    """The synthetic example configuration, router1, in XML."""
-    return (EXAMPLES / "router1.xml").read_text()
+    """The example configuration as the vMX printed it with `| display xml`.
+
+    `examples/junoscfg-oracle.xml`; its recorded differences are in
+    `known-differences.json`.
+    """
+    return (EXAMPLES / "junoscfg-oracle.xml").read_text(encoding="utf-8")
 
 
 @pytest.fixture
 def structured_config() -> str:
-    """The synthetic example configuration, router1, in structured (curly) form."""
-    return (EXAMPLES / "router1.conf").read_text()
+    """The example configuration as the vMX printed it with `show` (curly).
+
+    `examples/junoscfg-oracle.conf`; its recorded differences are in
+    `known-differences.json`.
+    """
+    return (EXAMPLES / "junoscfg-oracle.conf").read_text(encoding="utf-8")
 
 
 # ----------------------------------------------------------------------

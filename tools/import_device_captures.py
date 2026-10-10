@@ -93,6 +93,21 @@ SYNTHETIC = ("junoscfg-oracle", "synthetic-probes")
 NOT_THIS_DEVICE = {("vmx-23.2R2-S7.5", "synthetic-ex")}
 
 
+#: What a device refused when the source was loaded: its renderings lack these,
+#: and the source keeps them as the question asked.
+REFUSED = {
+    ("vmx-23.2R2-S7.5", "junoscfg-oracle"): [
+        "protocols bgp group RR multipath list-nexthop (syntax error; every device tested)",
+    ],
+    ("qfx5120-25.2R2-S1.5", "junoscfg-oracle"): [
+        "protocols bgp group RR multipath list-nexthop (syntax error)",
+        "bridge-domains",
+        "routing-instances VS-1, whole: its bridge-domains took the rest of the block",
+        "dynamic-profiles",
+    ],
+}
+
+
 def _write_gz(source: Path, target: Path) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     with (
@@ -137,6 +152,7 @@ def main(skip: set[str]) -> int:
                     "device": device,
                     "captured": "2026-10-10",
                     "note": why,
+                    "refused": REFUSED.get((device, name), []),
                 }
             )
     imported = {c["name"] for c in captures}
