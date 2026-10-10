@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from junoscfg import Format, convert_config
-from junoscfg.convert.ir import find_configuration
+from tests.support.keyed_entries import ir
 from tests.support.paths import PROJECT_ROOT
 
 if TYPE_CHECKING:
@@ -115,7 +115,8 @@ def test_junoscfg_renders_what_the_device_renders(conf: Path) -> None:
     first, _, body = conf.read_text(encoding="utf-8").partition("\n")
     assert first.startswith(HEADER), f"{conf.name} does not name its subtree"
     crumbs = shlex.split(first[len(HEADER) :])
-    device = find_configuration(json.loads(conf.with_suffix(".json").read_text(encoding="utf-8")))
+    # `| display json` wraps the subtree back to the root, under `configuration`.
+    device = json.loads(conf.with_suffix(".json").read_text(encoding="utf-8")).get("configuration")
     assert device is not None, f"{conf.stem}.json carries no configuration"
 
     rendered = convert_config(
@@ -135,7 +136,7 @@ def test_junoscfg_renders_what_the_device_renders(conf: Path) -> None:
     )
 
 
-# ── identifier-key-fields: every door against the device's keyed entries ──
+# ── Keyed entries: every door against the device's ───────────────────
 #
 # `tests/data/captures/keyed-entries-*` are the shapes a vMX on 23.2R2-S7.5
 # displayed for the probe's statements, rebuilt with the probe's synthetic
@@ -143,7 +144,7 @@ def test_junoscfg_renders_what_the_device_renders(conf: Path) -> None:
 # out. A group is one `.json` (the oracle) beside the `.set`, `.conf` and
 # `.xml` the device displayed for the same statements; the device showed no
 # structured or XML display for some, so those groups hold fewer doors.
-# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys.
+# Spec: conversion/entry-keys (identifier-key-fields).
 # Round 5 added `virtual-link`, keyed by two fields given by keyword, which
 # the device stores in declared order whatever order they were set in, and
 # `apply-macro`, a name with at most a keyword and its value, a quoted value
@@ -183,11 +184,6 @@ def _door_source(path: Path) -> str:
     return _reroot(shlex.split(first[len(HEADER) :]), body)
 
 
-def _ir(source: str, fmt: Format) -> dict[str, Any]:
-    rendered = convert_config(source, from_format=fmt, to_format=Format.JSON, validate=False)
-    return json.loads(rendered)["configuration"]
-
-
 def _device(group: str) -> dict[str, Any]:
     path = KEYED_DIR / f"keyed-entries-{group}.json"
     return json.loads(path.read_text(encoding="utf-8"))["configuration"]
@@ -203,7 +199,7 @@ def test_every_door_gives_the_device_ir(group: str) -> None:
     ]
     assert len(doors) >= 2, f"{group}: the oracle and at least one door"
     for path in doors:
-        assert _ir(_door_source(path), _DOORS[path.suffix]) == device, path.name
+        assert ir(_door_source(path), _DOORS[path.suffix]) == device, path.name
     set_lines = (KEYED_DIR / f"keyed-entries-{group}.set").read_text(encoding="utf-8")
     rendered = convert_config(
         json.dumps({"configuration": device}),
@@ -232,13 +228,13 @@ def test_device_attributes_leave_the_keys_alone(group: str) -> None:
 
     device = _device(group)
     marked = json.dumps({"configuration": _with_changed(device)})
-    assert _strip_attributes(_ir(marked, Format.JSON)) == device
+    assert _strip_attributes(ir(marked, Format.JSON)) == device
 
     xml_path = KEYED_DIR / f"keyed-entries-{group}.xml"
     if xml_path.is_file():
         attributes = " ".join(f'{k}="{v}"' for k, v in _CHANGED.items())
         xml = re.sub(r"<([a-z][\w-]*)>", rf"<\1 {attributes}>", xml_path.read_text("utf-8"))
-        assert _strip_attributes(_ir(xml, Format.XML)) == device
+        assert _strip_attributes(ir(xml, Format.XML)) == device
 
 
 def test_name_keyed_set_lines_match_the_device() -> None:
@@ -267,14 +263,15 @@ def test_unexplained_structured_shapes_are_pinned() -> None:
         assert case["device"] not in rendered, f"{case['case']}: no longer a difference"
 
 
-# ── identifier-key-fields, device round 4: route-filter identity ─────
+# ── Route-filter identity: address and match type ───────────────────
 #
-# `keyed-entries-route-filter.*`: R, one address with two match types, is two
-# entries; S, `exact accept` then `exact metric 10` on one address, is one
-# entry. Input acceptance and IR only, not structured layout (owner ruling).
-# The device's JSON writes `metric` as a number, which the set and XML readers
-# hold as text: numeric JSON normalization is outside this change, so those
-# doors are compared with the device's numbers as text.
+# `keyed-entries-route-filter.*`, round 4 of the identifier-key-fields device
+# probe: R, one address with two match types, is two entries; S, `exact
+# accept` then `exact metric 10` on one address, is one entry. Input
+# acceptance and IR only, not structured layout (owner ruling). The device's
+# JSON writes `metric` as a number, which the set and XML readers hold as
+# text: numeric JSON normalization is outside that change, so those doors are
+# compared with the device's numbers as text.
 
 
 def _as_text(obj: Any) -> Any:
@@ -289,10 +286,10 @@ def _as_text(obj: Any) -> Any:
 
 def test_route_filter_entries_are_keyed_by_address_and_match_type() -> None:
     device = _device("route-filter")
-    assert _ir(_door_source(KEYED_DIR / "keyed-entries-route-filter.json"), Format.JSON) == device
+    assert ir(_door_source(KEYED_DIR / "keyed-entries-route-filter.json"), Format.JSON) == device
     for suffix in (".set", ".xml"):
         path = KEYED_DIR / f"keyed-entries-route-filter{suffix}"
-        assert _ir(path.read_text(encoding="utf-8"), _DOORS[suffix]) == _as_text(device), suffix
+        assert ir(path.read_text(encoding="utf-8"), _DOORS[suffix]) == _as_text(device), suffix
     rendered = convert_config(
         json.dumps({"configuration": device}),
         from_format=Format.JSON,
@@ -309,6 +306,6 @@ def test_a_match_type_before_the_address_is_accepted() -> None:
     term = "set policy-options policy-statement SAMPLE-POLICY term T11 from route-filter"
     before = f"{term} exact 198.51.100.0/24\n"
     after = f"{term} 198.51.100.0/24 exact\n"
-    assert _ir(before, Format.SET) == _ir(after, Format.SET)
+    assert ir(before, Format.SET) == ir(after, Format.SET)
     rendered = convert_config(before, from_format=Format.SET, to_format=Format.SET, validate=False)
     assert rendered.strip().splitlines() == [after.strip()]

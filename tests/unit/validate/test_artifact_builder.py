@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 from pathlib import Path
+from typing import Any
 
-from junoscfg.display import read_artifact_text
+from junoscfg.display import entry_key_names, read_artifact_text
 from junoscfg.validate import (
     ArtifactBuilder,
     Combinator,
@@ -21,6 +23,7 @@ from junoscfg.validate import (
 # An exception in `tools/check_test_doors.py`; see `test_every_flag_the_tables_name_survives`.
 from junoscfg.validate.artifact_builder import _BOOL_FLAG_KEYS, _VALUE_FLAG_KEYS
 from tests.support.artifacts import shipped
+from tests.support.keyed_entries import KEYED_XSD, artifact_json, build_artifacts, node
 
 SAMPLE_XSD = """\
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
@@ -317,8 +320,6 @@ class TestStructureTreeRoundTrip:
         )
 
     def test_ordered_entry_keys_survive(self, tmp_path: Path) -> None:
-        from tests.support.keyed_entries import node
-
         written, rebuilt = self._keyed_tree_files(tmp_path)
         term = ("policy-options", "policy-statement", "term")
         expected = {
@@ -408,3 +409,63 @@ class TestHomogeneousFlag:
 
         bundled = bundled_tree["c"]["interfaces"]["c"]["interface"]
         assert bundled["c"]["unit"]["c"]["family"].get("h") is True
+
+
+class TestTheOneLineFlag:
+    """`o` stands where the dump flags `oneliner`, and on the filter lists."""
+
+    def test_the_one_line_flag_follows_the_dump(self, tmp_path: Path, bundled_tree: dict) -> None:
+        """The rule, on the synthetic XSD: the element or type flags `oneliner`
+        (`attributes-match`, `then community`, NTP `server`), or the list is one
+        the filter-list fix names (`route-filter`); `oneliner-plus` alone
+        (`as-path-neighbors`) is not `oneliner`.
+
+        Owner decision on the identifier-key-fields review challenge (phase 5),
+        replacing the pin of the 3,520 paths that carried `o` on 0.14.0. On the
+        bundled tree, measured on regeneration: 4,736 nodes carry `o`, 1,216
+        more than on 0.14.0 and none fewer. Every one gained is a list that was
+        childless for want of its key fields; `o` joins an entry's key to its
+        other children, so on a list whose only children are key fields it
+        moves no rendering. The carriers that hold a child beyond their key
+        fields are 0.14.0's own, less 56 whose children turned out to be their
+        key: 24 flowspec `port-range`, 16 `tunnel-attribute` and 16 `then
+        community` lists.
+
+        Owner decision on challenge A (phase-6 review): any `maxOccurs` but 1
+        is a list. Re-measured then: 102 nodes more carry `o`, none fewer,
+        every one a node that became a list by it (48 `algorithm`, 16
+        `host-discovery`, ...); 88 hold a child beyond their key fields.
+        """
+        tree = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
+        term = ("policy-options", "policy-statement", "term")
+        carriers = {
+            (*term, "then", "community"): True,
+            ("system", "ntp", "server"): True,
+            ("event-options", "policy", "attributes-match"): True,
+            (*term, "from", "route-filter"): True,
+            (*term, "from", "as-path-neighbors"): False,
+            (*term, "from", "as-path-origins"): False,
+            ("policy-options", "policy-statement"): False,
+            ("policy-options", "community"): False,
+        }
+        for path, expected in carriers.items():
+            assert bool(node(tree, *path).get("o")) is expected, path
+
+        with_others: list[str] = []
+        keys_only = 0
+        stack: list[tuple[str, dict[str, Any]]] = [("", bundled_tree)]
+        while stack:
+            path, current = stack.pop()
+            for name, child in (current.get("c") or {}).items():
+                here = f"{path}/{name}" if path else name
+                if child.get("o"):
+                    assert child.get("c"), here
+                    if set(child["c"]) - entry_key_names(child):
+                        with_others.append(here)
+                    else:
+                        keys_only += 1
+                stack.append((here, child))
+        with_others.sort()
+        assert (len(with_others), keys_only) == (3552, 1286)
+        digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
+        assert digest == "b6e5fa4ba01787cdc0396e170b5a14884a423056017d4db7d8a9f644f1b17807"

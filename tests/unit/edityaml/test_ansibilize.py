@@ -368,6 +368,19 @@ class TestConfigurationAutoDescend:
 
 
 class TestFormatOutput:
+    def test_host_vars_come_first_then_the_templated_configuration(self) -> None:
+        """The shape the Ansible collection's group_vars pipelines read."""
+        data = {"configuration": {"system": {"host-name": "router1"}, "interfaces": {}}}
+        output = format_output(
+            *ansibilize_multi(data, [("hostname", "configuration.system.host-name")])
+        )
+        assert output.startswith("hostname: router1\n")
+        host, group = output.split("\n---\n")
+        assert yaml.safe_load(host) == {"hostname": "router1"}
+        assert yaml.safe_load(group) == {
+            "configuration": {"system": {"host-name": "{{ hostname }}"}, "interfaces": {}}
+        }
+
     def test_two_yaml_documents(self) -> None:
         host_vars = {"addr_0": "10.0.0.1"}
         group_vars = {"items": [{"name": "{{ addr_0 }}"}]}

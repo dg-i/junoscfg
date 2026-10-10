@@ -8,7 +8,11 @@ written in (XML is input only), and says what must hold:
 - every writer's output reads back as that IR, except where a writer cannot
   carry part of it (``read_back``, keyed by writer, with the reason in
   ``why``);
-- a writer never writes what it cannot carry (``never_written``);
+- a writer never writes what it cannot carry (``never_written``), and writes
+  a statement as the device spells it where a row names the text
+  (``written``);
+- every reader keeps an entry's key fields first, in the declared order,
+  where a row says the order is meaning (``ordered``);
 - set output is one line per statement, the device's ``display set``, where a
   row declares it (``set_output``);
 - the JSON and YAML renderings validate against the bundled schemas, unless
@@ -66,6 +70,8 @@ class Shape:
     set_output: str | None = None
     read_back: Mapping[Format, Any] = field(default_factory=_empty)
     never_written: Mapping[Format, tuple[str, ...]] = field(default_factory=_empty)
+    written: Mapping[Format, tuple[str, ...]] = field(default_factory=_empty)
+    ordered: bool = False
     valid: bool = True
     why: str = ""
 
@@ -103,6 +109,23 @@ def _nest(path: list[str], body: str) -> str:
         pad = "    " * depth
         text = f"{pad}{opener} {{\n{text}{pad}}}\n"
     return text
+
+
+def _unit_751(unit: dict[str, Any]) -> dict[str, Any]:
+    """Unit 751 of xe-0/0/0 holding *unit*: the IR the deactivate6.txt rows share."""
+    return {"interfaces": {"interface": [{"name": "xe-0/0/0", "unit": [{"name": "751", **unit}]}]}}
+
+
+#: `vlan-id 751` tagged inactive, as a device's JSON writes it: the value and a sibling `@`.
+_VLAN_ID_INACTIVE = {"vlan-id": "751", "@vlan-id": {"inactive": True}}
+_INET_INACTIVE = {
+    "@": {"inactive": True},
+    "filter": {"input": {"filter-name": "FILTER-V4"}},
+    "address": [{"name": "198.51.100.1/24"}],
+}
+_ROUTE_V6 = {
+    "route": [{"@": {"inactive": True}, "name": "::/0", "apply-groups": ["G_LOC", "G_DEF"]}]
+}
 
 
 SHAPES: list[Shape] = []
@@ -162,6 +185,41 @@ _add(
         ir={"system": {"host-name": "my router"}},
         set_output='set system host-name "my router"\n',
         why="A value with a space is quoted in set output.",
+    ),
+    Shape(
+        "a-numeric-leaf",
+        {
+            XML: _xml(
+                "<system><login><user><name>admin</name><uid>2000</uid></user></login></system>"
+            ),
+            STRUCTURED: _nest(["system", "login", "user admin"], "            uid 2000;\n"),
+            SET: "set system login user admin uid 2000\n",
+        },
+        ir={"system": {"login": {"user": [{"name": "admin", "uid": "2000"}]}}},
+        set_output="set system login user admin uid 2000\n",
+        why="Junos JSON is string-valued and the IR follows it: XML input once gave an int "
+        "where structured gave a string, and set output hid it (xml-ir-parity).",
+    ),
+    Shape(
+        "a-key-alias",
+        {
+            XML: _xml(
+                "<interfaces><interface><name>ge-0/0/2</name><ether-options><ieee-802.3ad>"
+                "<bundle>ae0</bundle></ieee-802.3ad></ether-options></interface></interfaces>"
+            ),
+            STRUCTURED: _nest(
+                ["interfaces", "ge-0/0/2", "ether-options"], "            802.3ad ae0;\n"
+            ),
+            SET: "set interfaces ge-0/0/2 ether-options 802.3ad ae0\n",
+        },
+        ir={
+            "interfaces": {
+                "interface": [{"name": "ge-0/0/2", "ether-options": {"802.3ad": {"bundle": "ae0"}}}]
+            }
+        },
+        set_output="set interfaces ge-0/0/2 ether-options 802.3ad ae0\n",
+        why="`<ieee-802.3ad>` is `802.3ad`: `KEY_ALIASES` was once consulted by the set "
+        "reader only, so XML input kept the element's name (xml-ir-parity).",
     ),
     Shape(
         "an-empty-configuration",
@@ -592,10 +650,18 @@ _add(
                 "<interfaces><interface><name>xe-0/0/0</name><unit><name>751</name>"
                 '<vlan-id inactive="inactive">751</vlan-id></unit></interface></interfaces>'
             ),
+            STRUCTURED: _nest(
+                ["interfaces", "xe-0/0/0", "unit 751"], "            inactive: vlan-id 751;\n"
+            ),
+            JSON: _json(_unit_751(_VLAN_ID_INACTIVE)),
         },
+        ir=_unit_751(_VLAN_ID_INACTIVE),
         set_output="set interfaces xe-0/0/0 unit 751 vlan-id 751\n"
         "deactivate interfaces xe-0/0/0 unit 751 vlan-id\n",
-        why="deactivate6.txt (23.2R2-S7.5).",
+        why="deactivate6.txt (23.2R2-S7.5): XML tags the element, set writes `deactivate` "
+        "without the value, curly prints `inactive: vlan-id 751;`, JSON the value and a "
+        "sibling `@vlan-id`. XML input once nested the value under its own name, so set "
+        "output read `vlan-id vlan-id 751`. Spec conversion/meta-tags (xml-inactive-leaf).",
     ),
 )
 
@@ -878,15 +944,72 @@ _add(
         {
             SET: "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_LOC\n"
             "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_DEF\n"
-            "deactivate routing-options rib inet6.0 bgp-static route ::/0\n"
+            "deactivate routing-options rib inet6.0 bgp-static route ::/0\n",
+            STRUCTURED: _nest(
+                ["routing-options", "rib inet6.0", "bgp-static"],
+                "            inactive: route ::/0 apply-groups [ G_LOC G_DEF ];\n",
+            ),
+            JSON: _json(
+                {"routing-options": {"rib": [{"name": "inet6.0", "bgp-static": _ROUTE_V6}]}}
+            ),
+            XML: _xml(
+                "<routing-options><rib><name>inet6.0</name><bgp-static>"
+                '<route inactive="inactive"><name>::/0</name>'
+                "<apply-groups>G_LOC</apply-groups><apply-groups>G_DEF</apply-groups>"
+                "</route></bgp-static></rib></routing-options>"
+            ),
         },
+        ir={"routing-options": {"rib": [{"name": "inet6.0", "bgp-static": _ROUTE_V6}]}},
+        why="`inactive: route ::/0 apply-groups [ … ];` is `<route inactive=…>` (23.2R2): "
+        "curly input once tagged the last token instead of the route. Spec "
+        "conversion/curly-meta-tags (meta-tag-placement).",
     ),
     Shape(
         "a-protected-route",
         {
             SET: "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
-            "protect routing-options static route 0.0.0.0/0\n"
+            "protect routing-options static route 0.0.0.0/0\n",
+            STRUCTURED: _nest(
+                ["routing-options", "static"],
+                "        protect: route 0.0.0.0/0 next-hop 10.0.0.1;\n",
+            ),
+            JSON: _json(
+                {
+                    "routing-options": {
+                        "static": {
+                            "route": [
+                                {
+                                    "@": {"protect": True},
+                                    "name": "0.0.0.0/0",
+                                    "next-hop": ["10.0.0.1"],
+                                }
+                            ]
+                        }
+                    }
+                }
+            ),
+            XML: _xml(
+                "<routing-options><static>"
+                '<route protect="protect"><name>0.0.0.0/0</name><next-hop>10.0.0.1</next-hop>'
+                "</route></static></routing-options>"
+            ),
         },
+        ir={
+            "routing-options": {
+                "static": {
+                    "route": [
+                        {
+                            "@": {"protect": "protect"},
+                            "name": "0.0.0.0/0",
+                            "next-hop": ["10.0.0.1"],
+                        }
+                    ]
+                }
+            }
+        },
+        why="`protect: route … next-hop …;` is `<route protect=…>` (23.2R2): XML input once "
+        'dropped `protect`. A JSON `"protect": true` reads as the set spelling. Spec '
+        "conversion/tag-acceptance (meta-tag-placement).",
     ),
     Shape(
         "an-inactive-next-hop",
@@ -900,8 +1023,25 @@ _add(
         {
             SET: "set interfaces xe-0/0/0 unit 751 family inet filter input FILTER-V4\n"
             "set interfaces xe-0/0/0 unit 751 family inet address 198.51.100.1/24\n"
-            "deactivate interfaces xe-0/0/0 unit 751 family inet\n"
+            "deactivate interfaces xe-0/0/0 unit 751 family inet\n",
+            STRUCTURED: _nest(
+                ["interfaces", "xe-0/0/0", "unit 751"],
+                "            inactive: family inet {\n"
+                "                filter {\n                    input FILTER-V4;\n"
+                "                }\n                address 198.51.100.1/24;\n            }\n",
+            ),
+            JSON: _json(_unit_751({"family": {"inet": _INET_INACTIVE}})),
+            XML: _xml(
+                "<interfaces><interface><name>xe-0/0/0</name>"
+                '<unit><name>751</name><family><inet inactive="inactive">'
+                "<filter><input><filter-name>FILTER-V4</filter-name></input></filter>"
+                "<address><name>198.51.100.1/24</name></address>"
+                "</inet></family></unit></interface></interfaces>"
+            ),
         },
+        ir=_unit_751({"family": {"inet": _INET_INACTIVE}}),
+        why="`inactive: family inet {` is `<inet inactive=…>` (23.2R2). Spec "
+        "conversion/curly-meta-tags (meta-tag-placement).",
     ),
     Shape(
         "a-protected-family-with-an-inactive-address",
@@ -928,8 +1068,22 @@ _add(
         {
             SET: "set interfaces xe-0/0/0 unit 751 vlan-id 751\n"
             "deactivate interfaces xe-0/0/0 unit 751 vlan-id\n"
-            "deactivate interfaces xe-0/0/0 unit 751\n"
+            "deactivate interfaces xe-0/0/0 unit 751\n",
+            STRUCTURED: _nest(
+                ["interfaces", "xe-0/0/0"],
+                "        inactive: unit 751 {\n            inactive: vlan-id 751;\n        }\n",
+            ),
+            JSON: _json(_unit_751({"@": {"inactive": True}, **_VLAN_ID_INACTIVE})),
+            XML: _xml(
+                "<interfaces><interface><name>xe-0/0/0</name>"
+                '<unit inactive="inactive"><name>751</name>'
+                '<vlan-id inactive="inactive">751</vlan-id>'
+                "</unit></interface></interfaces>"
+            ),
         },
+        ir=_unit_751({"@": {"inactive": True}, **_VLAN_ID_INACTIVE}),
+        why="`deactivate … unit 751 vlan-id`, then the unit (23.2R2). Spec "
+        "conversion/meta-tags (xml-inactive-leaf).",
     ),
     Shape(
         "an-inactive-route-filter-entry",
@@ -1232,6 +1386,44 @@ _add(
         set_output="set system services\ndeactivate system services\n",
     ),
     Shape(
+        "an-inactive-disable-flag",
+        {
+            SET: "set interfaces xe-0/0/0 disable\ndeactivate interfaces xe-0/0/0 disable\n",
+            XML: _xml(
+                "<interfaces><interface><name>xe-0/0/0</name>"
+                '<disable inactive="inactive"/></interface></interfaces>'
+            ),
+            JSON: _json(
+                {
+                    "interfaces": {
+                        "interface": [
+                            {"name": "xe-0/0/0", "disable": [None], "@disable": {"inactive": True}}
+                        ]
+                    }
+                }
+            ),
+        },
+        set_output="set interfaces xe-0/0/0 disable\ndeactivate interfaces xe-0/0/0 disable\n",
+        why="`disable` is one spelling of the tree's `enable-disable`, so it has no node of "
+        "its own: XML read it as an empty container, and set and structured output dropped "
+        "its tag, so the interface loaded disabled.",
+    ),
+    Shape(
+        "an-inactive-flag-under-a-container",
+        {SET: "set protocols lldp disable\ndeactivate protocols lldp disable\n"},
+        why="Under a container, structured output merged the flag into its parent's line: "
+        "alone, `protocols inactive: lldp disable;`, a line the device rejects.",
+    ),
+    Shape(
+        "an-inactive-flag-under-a-container-beside-a-sibling",
+        {
+            SET: "set protocols lldp interface all\nset protocols lldp disable\n"
+            "deactivate protocols lldp disable\n"
+        },
+        why="Beside a sibling, structured output wrote `lldp disable;` without the tag, and "
+        "LLDP loaded disabled.",
+    ),
+    Shape(
         "an-inactive-leaf-the-attribute-namespaced",
         {
             XML: '<configuration xmlns:junos="http://xml.juniper.net/junos/23.2R2/junos">'
@@ -1297,6 +1489,416 @@ _add(
     Shape(
         "an-overridden-entry-key",
         {SET: "set policy-options policy-statement P term T then community add COMM-A\n"},
+    ),
+)
+
+# ── Keyed entries: a list entry is keyed by its declared fields ──────
+#
+# openspec/specs/conversion/entry-keys/ (identifier-key-fields). A list entry
+# is keyed by the fields the XSD declares, in order: `as-path-neighbors` by
+# `list-type` and `list-name`, route-filter by its address and match type,
+# `then community` by its action and `community-name`. The shapes are the
+# ones a vMX on 23.2R2-S7.5 displayed for the same statements
+# (`tests/data/captures/keyed-entries-*`, checked against the device in
+# `tests/corpus/test_device_truth.py`); the values are synthetic. A row's
+# YAML is the JSON source's YAML rendering, which the writer law reads back.
+
+_TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
+_TERM_CRUMBS = ["policy-options", "policy-statement SAMPLE-POLICY", "term T1"]
+_AS_LIST_NAME = "SAMPLE-AS-LIST"
+_AS_LIST = {"list-type": "as-list", "list-name": _AS_LIST_NAME}
+
+
+def _curly(crumbs: list[str], statements: str) -> str:
+    """*statements* nested inside *crumbs*, one brace level each."""
+    text = statements
+    for crumb in reversed(crumbs):
+        inner = "\n".join("    " + line for line in text.splitlines())
+        text = f"{crumb} {{\n{inner}\n}}"
+    return text + "\n"
+
+
+def _device_xml(config: dict[str, Any]) -> str:
+    """The device's XML for an IR: a list repeats its element, `[null]` is an
+    empty element, and an entry's `@` its attributes."""
+
+    def element(name: str, value: Any) -> str:
+        if isinstance(value, list):
+            return "".join(f"<{name}/>" if item is None else element(name, item) for item in value)
+        if isinstance(value, dict):
+            attributes = "".join(f' {key}="{key}"' for key in value.get("@", {}))
+            inner = "".join(element(k, v) for k, v in value.items() if not k.startswith("@"))
+            return f"<{name}{attributes}>{inner}</{name}>"
+        text = str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return f"<{name}>{text}</{name}>"
+
+    return element("configuration", config)
+
+
+def _in_term(**term: Any) -> dict[str, Any]:
+    """Term T1 of SAMPLE-POLICY holding *term*."""
+    return {
+        "policy-options": {
+            "policy-statement": [{"name": "SAMPLE-POLICY", "term": [{"name": "T1", **term}]}]
+        }
+    }
+
+
+def _keyed(
+    name: str,
+    lines: list[str],
+    curly: str,
+    config: dict[str, Any],
+    *,
+    xml: bool = True,
+    **extra: Any,
+) -> Shape:
+    """A keyed entry as set *lines*, *curly*, JSON and XML: one IR, the same set lines."""
+    sources = {SET: "\n".join(lines) + "\n", STRUCTURED: curly, JSON: _json(config)}
+    if xml:
+        sources[XML] = _device_xml(config)
+    return Shape(name, sources, ir=config, set_output="\n".join(lines) + "\n", **extra)
+
+
+#: Where a policy statement may stand: (set prefix, curly crumbs, wrap).
+_PLACEMENTS: dict[str, tuple[str, list[str], Any]] = {
+    "root": ("set", [], lambda po: {"policy-options": po}),
+    "logical-system": (
+        "set logical-systems SAMPLE-LS",
+        ["logical-systems SAMPLE-LS"],
+        lambda po: {"logical-systems": [{"name": "SAMPLE-LS", "policy-options": po}]},
+    ),
+    "group": (
+        "set groups SAMPLE-GROUP",
+        ["groups", "SAMPLE-GROUP"],
+        lambda po: {"groups": [{"name": "SAMPLE-GROUP", "policy-options": po}]},
+    ),
+    "grouped-logical-system": (
+        "set groups SAMPLE-GROUP logical-systems SAMPLE-LS",
+        ["groups", "SAMPLE-GROUP", "logical-systems SAMPLE-LS"],
+        lambda po: {
+            "groups": [
+                {
+                    "name": "SAMPLE-GROUP",
+                    "logical-systems": [{"name": "SAMPLE-LS", "policy-options": po}],
+                }
+            ]
+        },
+    ),
+}
+
+
+def _as_list_reference(slot: str, level: str, placement: str) -> Shape:
+    """`<slot> as-list SAMPLE-AS-LIST` under a policy or its term, wherever a policy stands."""
+    prefix, crumbs, wrap = _PLACEMENTS[placement]
+    # A wildcard name where a group may hold one.
+    policy = "<*>" if placement == "group" else "SAMPLE-POLICY"
+    where = ["policy-options", f"policy-statement {policy}"]
+    set_where = f"policy-options policy-statement {policy}"
+    entry: dict[str, Any] = {"name": policy}
+    body = {"from": {slot: [dict(_AS_LIST)]}}
+    if level == "term":
+        where.append("term T1")
+        set_where += " term T1"
+        entry["term"] = [{"name": "T1", **body}]
+    else:
+        entry.update(body)
+    statement = f"{slot} as-list {_AS_LIST_NAME}"
+    return _keyed(
+        f"{slot}-as-list-in-a-{level}-at-{placement}",
+        [f"{prefix} {set_where} from {statement}"],
+        _curly([*crumbs, *where, "from"], statement + ";"),
+        wrap({"policy-statement": [entry]}),
+    )
+
+
+_add(
+    *(
+        _as_list_reference(slot, level, placement)
+        for slot in ("as-path-neighbors", "as-path-origins", "as-path-transits")
+        for level in ("term", "policy")
+        for placement in _PLACEMENTS
+    )
+)
+
+_MATCH = {
+    "from-event-attribute": "ping.test-owner",
+    "condition": "matches",
+    "to-event-attribute-value": "^uptime$",
+}
+_SPACED_MATCH = {**_MATCH, "to-event-attribute-value": "^up time$"}
+_FILTER_ENTRY = {"address": "198.51.100.0/24", "exact": [None], "accept": [None]}
+
+_add(
+    _keyed(
+        "attributes-match-keyed-by-its-three-fields",
+        [
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^uptime$"',
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^up time$"',
+        ],
+        _curly(
+            ["event-options", "policy SAMPLE-EVENT-POLICY"],
+            'attributes-match ping.test-owner matches "^uptime$";\n'
+            'attributes-match ping.test-owner matches "^up time$";',
+        ),
+        {
+            "event-options": {
+                "policy": [
+                    {"name": "SAMPLE-EVENT-POLICY", "attributes-match": [_MATCH, _SPACED_MATCH]}
+                ]
+            }
+        },
+        why="The three fields, never a `name` or positional `_v0`/`_v1` keys.",
+    ),
+    *(
+        _keyed(
+            f"a-{slot}-entry-holds-its-action",
+            [f"{_TERM} from {slot} 198.51.100.0/24 exact accept"],
+            _curly([*_TERM_CRUMBS, "from"], f"{slot} 198.51.100.0/24 exact accept;"),
+            _in_term(**{"from": {slot: [dict(_FILTER_ENTRY)]}}),
+            ordered=True,
+        )
+        for slot in ("route-filter", "source-address-filter")
+    ),
+)
+
+for _action in ("add", "delete"):
+    _community = _in_term(then={"community": [{_action: [None], "community-name": "SAMPLE-COMM"}]})
+    _add(
+        _keyed(
+            f"a-community-{_action}-action",
+            [f"{_TERM} then community {_action} SAMPLE-COMM"],
+            _curly([*_TERM_CRUMBS, "then"], f"community {_action} SAMPLE-COMM;"),
+            _community,
+            ordered=True,
+            why="Keyed by the action, then the name, in the declared order.",
+        ),
+        Shape(
+            f"a-community-{_action}-action-written-after-the-name",
+            {SET: f"{_TERM} then community SAMPLE-COMM {_action}\n"},
+            ir=_community,
+            set_output=f"{_TERM} then community {_action} SAMPLE-COMM\n",
+            ordered=True,
+            why="The device takes the action on either side of the name and stores it first.",
+        ),
+    )
+
+_add(
+    Shape(
+        "as-list-entries-are-told-apart-by-both-keys",
+        {
+            SET: f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}\n"
+            f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}\n"
+            f"{_TERM} from as-path-neighbors as-list-group {_AS_LIST_NAME}\n"
+            f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST-2\n"
+        },
+        ir=_in_term(
+            **{
+                "from": {
+                    "as-path-neighbors": [
+                        dict(_AS_LIST),
+                        {"list-type": "as-list-group", "list-name": _AS_LIST_NAME},
+                        {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST-2"},
+                    ]
+                }
+            }
+        ),
+        why="An entry's identity is its key tuple: a repeated line is one entry.",
+    ),
+    Shape(
+        "route-filter-entries-are-told-apart-by-address-and-match-type",
+        {
+            SET: f"{_TERM} from route-filter 198.51.100.0/24 exact\n"
+            f"{_TERM} from route-filter 198.51.100.0/24 orlonger\n"
+            f"{_TERM} from route-filter 198.51.100.0/24 exact accept\n"
+        },
+        ir=_in_term(
+            **{
+                "from": {
+                    "route-filter": [
+                        dict(_FILTER_ENTRY),
+                        {"address": "198.51.100.0/24", "orlonger": [None]},
+                    ]
+                }
+            }
+        ),
+        why="One address with two match types is two entries; the action joins its entry. "
+        "The device's round-4 probe of the same shape is "
+        "`tests/data/captures/keyed-entries-route-filter.*`.",
+    ),
+)
+
+
+def _as_path_neighbors(list_type: str, name: str) -> dict[str, Any]:
+    return _in_term(
+        **{"from": {"as-path-neighbors": [{"list-type": list_type, "list-name": name}]}}
+    )
+
+
+#: A `list-name` of every shape, by row label: (the name, its set spelling).
+_LIST_NAMES = {
+    "a-keyword": ("as-list", "as-list"),
+    "the-other-keyword": ("as-list-group", "as-list-group"),
+    "a-number": ("64496", "64496"),
+    "a-space": ("SAMPLE AS LIST", '"SAMPLE AS LIST"'),
+    "punctuation": ("S_1.2-x", "S_1.2-x"),
+}
+
+_add(
+    *(
+        Shape(
+            f"device-json-{list_type}-named-with-{label}",
+            {JSON: _json(_as_path_neighbors(list_type, name))},
+            ir=_as_path_neighbors(list_type, name),
+            set_output=f"{_TERM} from as-path-neighbors {list_type} {spelled}\n",
+            why="Device JSON to one set line and back, over both enum values and every "
+            "shape a `list-name` takes.",
+        )
+        for list_type in ("as-list", "as-list-group")
+        for label, (name, spelled) in {
+            **_LIST_NAMES,
+            # `as-list SAMPLE-AS-LIST` from JSON is a source of the row
+            # as-path-neighbors-as-list-in-a-term-at-root.
+            **(
+                {"a-plain-name": (_AS_LIST_NAME, _AS_LIST_NAME)}
+                if list_type == "as-list-group"
+                else {}
+            ),
+        }.items()
+    )
+)
+
+_EVERY_KIND = [
+    f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST-2",
+    f"{_TERM} from as-path-neighbors as-list-group {_AS_LIST_NAME}",
+    f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}",
+    f"{_TERM} from route-filter 198.51.100.128/25 orlonger",
+    f"{_TERM} from route-filter 198.51.100.0/24 exact accept",
+    f"{_TERM} then community delete SAMPLE-COMM-2",
+    f"{_TERM} then community add SAMPLE-COMM",
+    "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+    'matches "^up time$"',
+]
+_EVERY_KIND_TERM = {
+    "from": {
+        "as-path-neighbors": [
+            {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST-2"},
+            {"list-type": "as-list-group", "list-name": _AS_LIST_NAME},
+            dict(_AS_LIST),
+        ],
+        "route-filter": [
+            {"address": "198.51.100.128/25", "orlonger": [None]},
+            dict(_FILTER_ENTRY),
+        ],
+    },
+    "then": {
+        "community": [
+            {"delete": [None], "community-name": "SAMPLE-COMM-2"},
+            {"add": [None], "community-name": "SAMPLE-COMM"},
+        ]
+    },
+}
+_DEVICE_KEYED = {
+    **_in_term(
+        **{
+            "from": {
+                "as-path-neighbors": [dict(_AS_LIST)],
+                "route-filter": [dict(_FILTER_ENTRY)],
+                "source-address-filter": [dict(_FILTER_ENTRY)],
+            },
+            "then": {"community": [{"add": [None], "community-name": "SAMPLE-COMM"}]},
+        }
+    ),
+    "event-options": {"policy": [{"name": "SAMPLE-EVENT-POLICY", "attributes-match": [_MATCH]}]},
+}
+
+_add(
+    Shape(
+        "keyed-entries-of-every-kind",
+        {SET: "\n".join(_EVERY_KIND) + "\n"},
+        ir={
+            **_in_term(**_EVERY_KIND_TERM),
+            "event-options": {
+                "policy": [{"name": "SAMPLE-EVENT-POLICY", "attributes-match": [_SPACED_MATCH]}]
+            },
+        },
+        set_output="\n".join(_EVERY_KIND) + "\n",
+        why="Every writer's output reads back as the IR, with the entries' order kept.",
+    ),
+    Shape(
+        "keyed-entries-as-the-device-writes-them",
+        {JSON: _json(_DEVICE_KEYED), XML: _device_xml(_DEVICE_KEYED)},
+        ir=_DEVICE_KEYED,
+        set_output=f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}\n"
+        f"{_TERM} from route-filter 198.51.100.0/24 exact accept\n"
+        f"{_TERM} from source-address-filter 198.51.100.0/24 exact accept\n"
+        f"{_TERM} then community add SAMPLE-COMM\n"
+        "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+        'matches "^uptime$"\n',
+        why="JSON and XML input write the device's set lines.",
+    ),
+    Shape(
+        "keyed-entries-in-structured-output",
+        {
+            SET: f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}\n"
+            f"{_TERM} from as-path-origins as-list-group SAMPLE-AS-LIST-GROUP\n"
+            f"{_TERM} from route-filter 198.51.100.0/24 exact accept\n"
+            f"{_TERM} from source-address-filter 198.51.100.0/24 exact accept\n"
+            f"{_TERM} then community add SAMPLE-COMM\n"
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner "
+            'matches "^uptime$"'
+        },
+        written={
+            STRUCTURED: (
+                f"as-path-neighbors as-list {_AS_LIST_NAME};",
+                "as-path-origins as-list-group SAMPLE-AS-LIST-GROUP;",
+                "route-filter 198.51.100.0/24 exact accept;",
+                "source-address-filter 198.51.100.0/24 exact accept;",
+                "community add SAMPLE-COMM;",
+                'attributes-match ping.test-owner matches "^uptime$";',
+            )
+        },
+        never_written={STRUCTURED: ("list-type", "list-name")},
+        why="Structured output writes an entry's keys as its values, in the declared order, "
+        "never by their field names.",
+    ),
+)
+
+_INACTIVE_ENTRY = _in_term(
+    **{"from": {"as-path-neighbors": [{"@": {"inactive": True}, **_AS_LIST}]}}
+)
+_PROTECTED_ENTRY = _in_term(
+    **{"from": {"as-path-neighbors": [{"@": {"protect": "protect"}, **_AS_LIST}]}}
+)
+
+_add(
+    _keyed(
+        "an-inactive-keyed-entry",
+        [
+            f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}",
+            f"deactivate {_TERM[4:]} from as-path-neighbors as-list {_AS_LIST_NAME}",
+        ],
+        _curly([*_TERM_CRUMBS, "from"], f"inactive: as-path-neighbors as-list {_AS_LIST_NAME};"),
+        _INACTIVE_ENTRY,
+    ),
+    _keyed(
+        "a-protected-keyed-entry",
+        [
+            f"{_TERM} from as-path-neighbors as-list {_AS_LIST_NAME}",
+            f"protect {_TERM[4:]} from as-path-neighbors as-list {_AS_LIST_NAME}",
+        ],
+        _curly([*_TERM_CRUMBS, "from"], f"protect: as-path-neighbors as-list {_AS_LIST_NAME};"),
+        _PROTECTED_ENTRY,
+    ),
+    Shape(
+        "an-empty-keyed-list",
+        {JSON: _json(_in_term(**{"from": {"as-path-neighbors": []}, "then": {"accept": [None]}}))},
+        set_output=f"{_TERM} then accept\n",
+        read_back={w: _in_term(then={"accept": [None]}) for w in (SET, STRUCTURED)},
+        why="No device writes it, and no output invents an entry: set and structured "
+        "output write nothing for it.",
     ),
 )
 

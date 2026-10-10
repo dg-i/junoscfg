@@ -15,6 +15,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
+from junoscfg import Format, convert_config
 from junoscfg.cli import main
 from junoscfg.edityaml import (
     ansibilize_multi,
@@ -22,6 +23,7 @@ from junoscfg.edityaml import (
     format_output,
     format_output_with_offset,
 )
+from tests.support.paths import EXAMPLES
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -38,6 +40,14 @@ def as_yaml(data: dict[str, Any]) -> str:
 
 
 SYSTEM = {"configuration": {"system": {"host-name": "r1"}}}
+
+
+def router1_yaml(tmp_path: Path) -> Path:
+    """`examples/router1.conf` as the YAML file the Ansible collection hands the CLI."""
+    source = (EXAMPLES / "router1.conf").read_text(encoding="utf-8")
+    path = tmp_path / "router1.yaml"
+    path.write_text(convert_config(source, from_format=Format.STRUCTURED, to_format=Format.YAML))
+    return path
 
 
 class TestHelp:
@@ -262,6 +272,21 @@ class TestAnsibilize:
         exit_code, _ = run_cli(["edityaml", "ansibilize"], "items:\n- name: a\n")
         assert exit_code == 2
 
+    def test_host_vars_then_group_vars_for_the_collection(self, tmp_path: Path) -> None:
+        """host_vars, a `---` separator, then the templated group_vars.
+
+        `https://github.com/dg-i/ansible-collection-junos-config` drives
+        ansibilize in its group_vars pipelines, so this output shape is part of
+        the declared ``cli`` surface.
+        """
+        path = router1_yaml(tmp_path)
+        pair = ("hostname", "configuration.system.host-name")
+        exit_code, output = run_cli(["edityaml", "ansibilize", "-p", ":".join(pair), str(path)])
+        assert exit_code == 0
+        assert output.startswith("hostname: router1\n")
+        assert "\n---\n" in output
+        assert output == format_output(*ansibilize_multi(yaml.safe_load(path.read_text()), [pair]))
+
 
 class TestAnsibilizeOffset:
     def test_offset_basic_ipv4(self) -> None:
@@ -318,8 +343,32 @@ GROUPED = {
 class TestRenameRoot:
     """`rename-root` renames the top-level key, or makes a subtree the document.
 
-    Its logic is in ``cli.py`` only, so these are its behaviour tests too.
+    Its logic is in ``cli.py`` only, so these are its behaviour tests too. The
+    Ansible collection drives it in its group_vars pipelines, so its output is
+    part of the declared ``cli`` surface.
     """
+
+    def test_the_new_root_comes_first_and_the_configuration_keeps_its_order(
+        self, tmp_path: Path
+    ) -> None:
+        """The statements stay in the configuration's order, never alphabetised.
+
+        This pinned the opposite until openspec/changes/yaml-key-order: cli.py
+        called yaml.dump without sort_keys=False, so every edityaml command
+        alphabetised its output while the code right above it said "Preserve
+        key order by rebuilding dict". In `examples/router1.conf`, `system`
+        comes first and `firewall` last.
+        """
+        path = router1_yaml(tmp_path)
+        exit_code, output = run_cli(["edityaml", "rename-root", "--to", "junos_config", str(path)])
+        assert exit_code == 0
+        assert output.startswith("junos_config:\n")
+        renamed = yaml.safe_load(output)
+        assert list(renamed) == ["junos_config"]
+        statements = list(renamed["junos_config"])
+        assert statements == list(yaml.safe_load(path.read_text())["configuration"])
+        assert statements[0] == "system"
+        assert statements[-1] == "firewall"
 
     def test_the_default_from_key_is_configuration(self) -> None:
         exit_code, output = run_cli(

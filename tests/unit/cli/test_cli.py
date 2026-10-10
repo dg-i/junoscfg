@@ -15,7 +15,8 @@ conversion, a path or an anonymize rule does is tested where it is done:
   `--anonymize-revert-map` and `--no-field-validate`:
   `tests/contract/test_every_rule.py::TestEveryRule::test_the_cli_flags_keep_the_same_law`;
 - the other anonymize options: `tests/unit/anonymize/`;
-- `-v` against the minimal artifacts and `schema info`: `test_cli_validate.py`.
+- `-v` against the minimal artifacts: `test_cli_validate.py`;
+- `schema generate` and `schema info`: `test_schema_command.py`.
 """
 
 from __future__ import annotations

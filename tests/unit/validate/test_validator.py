@@ -6,7 +6,9 @@ import json
 
 import pytest
 
+from junoscfg import validate_xml
 from junoscfg.validate import JunosValidator, SchemaLoadError
+from tests.support.paths import ARTIFACT_DIR
 
 
 class TestJunosValidator:
@@ -68,3 +70,32 @@ class TestArtifactResolution:
         # Should use bundled artifacts without error
         v = JunosValidator()
         assert v.schema_version is not None
+
+
+class TestValidateXmlNeedsACleanedXsd:
+    """``validate_xml`` needs ``junos-validated.xsd``, which nothing produces.
+
+    The name is the point: a *validated* XSD is a cleaned one. A raw NETCONF
+    dump does not compile. Measured on a real 163 MB dump at Junos 23.2R2,
+    lxml refuses it with::
+
+        Element 'xsd:element', attribute 'name': 'openconfig-lldp:lldp' is
+        not a valid value of the atomic type 'xs:NCName'
+
+    85 element names carry OpenConfig prefixes containing a colon, and that is
+    only the first error lxml reports. `schema generate` briefly wrote the raw
+    extract under this name; it was reverted, because a 156 MB file that does
+    not compile is worse than an honest absence. Cleaning the XSD is real work
+    and is not yet done. That `schema generate` writes no XSD is
+    `tests/unit/cli/test_schema_command.py::TestSchemaGenerate`.
+    """
+
+    def test_raises_when_the_xsd_is_absent(self, artifacts_dir: str) -> None:
+        xml = "<configuration><system><host-name>router1</host-name></system></configuration>"
+        with pytest.raises(SchemaLoadError, match="XSD not found"):
+            validate_xml(xml, artifacts_dir=artifacts_dir)
+
+    def test_the_bundled_artifacts_ship_no_xsd(self) -> None:
+        """Intended: the XSD is per-device and per-release, not per-wheel."""
+        assert ARTIFACT_DIR.is_dir()
+        assert list(ARTIFACT_DIR.glob("*.xsd*")) == []

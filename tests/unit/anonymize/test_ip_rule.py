@@ -8,6 +8,7 @@ IP rule's own: which leaves it takes and the form of its replacements.
 from __future__ import annotations
 
 import copy
+import dataclasses
 from typing import Any
 
 import pytest
@@ -353,3 +354,61 @@ class TestIpAnonymizeIntegration:
         host_val = result.ir["configuration"]["security"]["ssh-known-hosts"]["host"][0]["name"]
         # With ips_in_strings disabled, the embedded IP should still be there
         assert "10.1.2.3" in host_val
+
+
+def _addresses(*addresses: str) -> dict[str, Any]:
+    """One interface unit holding *addresses*."""
+    inet = {"address": [{"name": address} for address in addresses]}
+    unit = {"name": "0", "family": {"inet": inet}}
+    return {"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", "unit": [unit]}]}}}
+
+
+class TestNetworksAutoNeedsSourceText:
+    """``networks=["auto"]`` scans the configuration text for subnets.
+
+    It used to read that text from ``_source_text``, attached dynamically by
+    ``cli.py`` with a ``type: ignore`` and read back through ``hasattr``. A
+    caller using the documented Python API never set it, so asking for
+    auto-detection silently did nothing. ``source_text`` is a declared field
+    now, and asking for auto without it is an error rather than a no-op. The
+    CLI, the one caller that sets it, is
+    `tests/unit/cli/test_cli.py::TestAnonymizeOptions::test_networks_auto_scans_the_input_for_subnets`.
+    """
+
+    def test_auto_without_source_text_is_an_error(self) -> None:
+        config = AnonymizeConfig(ips=True, networks=["auto"], salt="pin-salt")
+        config.expand_all()
+        with pytest.raises(ValueError, match="source_text"):
+            anonymize(_addresses("203.0.114.1/24"), config)
+
+    def test_auto_with_source_text_preserves_subnet_structure(self) -> None:
+        """What `auto` is for: host bits survive within a subnet.
+
+        Asserting only that the address changed would pass even if
+        auto-detection found nothing, because plain IP anonymization changes it
+        too. The point of `auto` is that two addresses in one subnet stay in
+        one subnet, keeping their host bits.
+        """
+        config = AnonymizeConfig(
+            ips=True,
+            networks=["auto"],
+            salt="pin-salt",
+            source_text=(
+                "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.1/24\n"
+                "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.254/24\n"
+            ),
+        )
+        config.expand_all()
+        result = anonymize(_addresses("203.0.114.1/24", "203.0.114.254/24"), config)
+        unit = result.ir["configuration"]["interfaces"]["interface"][0]["unit"][0]
+        first, second = (a["name"] for a in unit["family"]["inet"]["address"])
+        assert first != "203.0.114.1/24"
+        # host bits kept, and both still in the same /24
+        assert first.endswith(".1/24")
+        assert second.endswith(".254/24")
+        assert first.rsplit(".", 1)[0] == second.rsplit(".", 1)[0]
+
+    def test_source_text_is_a_declared_field(self) -> None:
+        names = {f.name for f in dataclasses.fields(AnonymizeConfig)}
+        assert "source_text" in names
+        assert "_source_text" not in names

@@ -1,7 +1,7 @@
 """junoscfg against Juniper's published Validated Designs corpus.
 
-Everything here needs ``--jvd``; see ``tests/jvd_data.py`` for why the corpus
-is cloned rather than vendored.
+Everything here needs ``--jvd``; see ``tests/support/jvd_data.py`` for why the
+corpus is cloned rather than vendored.
 
 This exists because three defects reached a release that every committed
 fixture, the harvested `set_corpus.txt`, and three real device configurations
@@ -25,11 +25,11 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
 from junoscfg import Format, convert_config
 from tests.support import jvd_data
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 pytestmark = pytest.mark.jvd
 
@@ -165,12 +165,13 @@ def _first_match(corpus: Path, pattern: re.Pattern[str], limit: int = 400) -> st
     return None
 
 
-class TestShapesThatReachedARelease:
-    """One guard per defect this corpus found after it had already shipped.
+class TestTheCorpusShapesAreAccepted:
+    """A shape the corpus showed is converted, and validated, without complaint.
 
-    Each takes its example from the corpus rather than from a literal here, so
-    the test fails if the shape stops being handled *and* stays honest about
-    what real configurations contain.
+    One guard per defect this corpus found after it had already shipped (the
+    three in the module docstring). Each takes its example from the corpus
+    rather than from a literal here, so the test fails if the shape stops being
+    handled *and* stays honest about what real configurations contain.
     """
 
     def test_a_nokeyword_leaf_takes_a_value_outside_its_enum(self, jvd_corpus: Path) -> None:

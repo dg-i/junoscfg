@@ -12,7 +12,7 @@ skipped when they run.
 
 All of it runs on the shipped artifacts. XML has no door here: the package
 ships no XSD, and `validate_xml` says so (`TestValidateXmlNeedsACleanedXsd`
-in `test_characterization.py`).
+in `tests/unit/validate/test_validator.py`).
 
 Synthetic values only, as AGENTS.md names them. The keyed-entry lines are the
 ones a vMX on 23.2R2-S7.5 accepted and rejected, with the probe's synthetic
