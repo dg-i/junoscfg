@@ -14,9 +14,10 @@ or as a presence flag, THEN the system SHALL hold the leaf's value (`[null]`
 for a presence flag) as it holds an active leaf's value and SHALL mark it with
 the sibling `@<name>` key `{"inactive": true}`, the IR set, structured and
 device JSON input give for the same statement.
-An empty tagged element the schema does not call a leaf or presence flag is
-an empty container, `{"@": {...}}`, as set and structured input give.
-Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/test_xml_inactive_leaf_challenge.py::test_an_empty_inactive_container_matches_set_input`, `tests/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
+An empty tagged element is an empty container, `{"@": {...}}`, only where the
+tree names a container, as set and structured input give; set and structured
+output keep a tag on a flag spelled by its value (`disable`).
+Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/test_xml_inactive_leaf_challenge.py::test_an_empty_inactive_container_matches_set_input`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_disable_flag_keeps_its_tag`, `tests/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
 
 #### Scenario: Single inactive leaf
 
@@ -43,6 +44,13 @@ Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::t
 - **WHEN** `<no-redirects inactive="inactive"/>` under `system` is converted from XML
 - **THEN** the IR is `"no-redirects": [null], "@no-redirects": {"inactive": true}`,
   as `set system no-redirects` with `deactivate system no-redirects` gives
+
+#### Scenario: Tagged flag spelled by its value
+
+- **WHEN** `<disable inactive="inactive"/>` under an interface is converted from
+  XML, set (`deactivate interfaces xe-0/0/0 disable`) or JSON
+- **THEN** all give `"disable": [null], "@disable": {"inactive": true}`, and set
+  and structured output keep the tag (`deactivate … disable`, `inactive: disable;`)
 
 #### Scenario: Empty tagged container
 

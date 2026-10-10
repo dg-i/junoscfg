@@ -287,6 +287,11 @@ class DictWalker:
                             output.emit(path + [set_key])
                         else:
                             output.emit_positional(path, set_key)
+                        # `deactivate interfaces xe-0/0/0 disable`: dropped
+                        # here, the interface loaded disabled.
+                        attr = obj.get(f"@{key}")
+                        if isinstance(attr, dict):
+                            self._emit_attrs(path + [set_key], self._read_leaf_attrs(attr))
                         continue
 
                 list_schema = child_schema

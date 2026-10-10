@@ -21,5 +21,6 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Context expansion: src/junoscfg/display/to_yaml.py | owning module of defect 2; display lies under no domain's paths, so the slice ranked by the conversion domain omits it |
+| Context expansion: src/junoscfg/convert/output/dict_walker.py | phase-6 finding 2: the writer dropped the tag the reader now keeps |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

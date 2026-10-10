@@ -184,14 +184,16 @@ def _xml_multi_elements(elements: list[etree._Element], schema: dict[str, Any] |
 def _holds_a_value(element: etree._Element, node: dict[str, Any] | None) -> bool:
     """Whether a childless element is a leaf rather than an empty container.
 
-    A value says so, and so does the schema (`l`, `p`). An untagged empty
-    element stays the presence flag `[null]` it always was; a tagged one the
-    schema does not call a leaf -- `<lldp inactive="inactive"/>` -- is the
-    container set and structured input give, `{"@": {...}}`.
+    A value says so. An untagged empty element stays the presence flag
+    `[null]` it always was. A tagged one is the container set and structured
+    input give, `{"@": {...}}`, only where the tree names a container --
+    `<lldp inactive="inactive"/>`. Elsewhere it is a flag: `<disable
+    inactive=…/>` has no node of its own, being one spelling of the tree's
+    `enable-disable`, and set input gives it `[null]` and `@disable`.
     """
     if (element.text or "").strip() or not _get_inactive_attrs(element):
         return True
-    return bool(node and (node.get("l") or node.get("p")))
+    return not (node and node.get("c") and not node.get("l") and not node.get("p"))
 
 
 def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str, Any] | None]:

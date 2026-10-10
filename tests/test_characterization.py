@@ -425,6 +425,40 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
         assert units == dict.fromkeys(units, expected)
         assert set(units) == {"xml", "json", "set", "structured"}
 
+    def test_an_inactive_disable_flag_keeps_its_tag(self) -> None:
+        """`deactivate interfaces xe-0/0/0 disable`, through every door and writer.
+
+        `disable` is one spelling of the tree's `enable-disable`, so it has
+        no node of its own: XML read it as an empty container, and set and
+        structured output dropped its tag -- the interface loaded disabled.
+        """
+        import json
+
+        from junoscfg import Format, convert_config
+
+        set_text = "set interfaces xe-0/0/0 disable\ndeactivate interfaces xe-0/0/0 disable\n"
+        irs = {
+            fmt: json.loads(convert_config(text, from_format=fmt, to_format=Format.JSON))
+            for fmt, text in {
+                Format.SET: set_text,
+                Format.XML: (
+                    "<configuration><interfaces><interface><name>xe-0/0/0</name>"
+                    '<disable inactive="inactive"/></interface></interfaces></configuration>'
+                ),
+                Format.JSON: (
+                    '{"configuration": {"interfaces": {"interface": [{"name": "xe-0/0/0", '
+                    '"disable": [null], "@disable": {"inactive": true}}]}}}'
+                ),
+            }.items()
+        }
+        assert irs[Format.XML] == irs[Format.SET] == irs[Format.JSON]
+        assert convert_config(set_text, from_format=Format.SET, to_format=Format.SET) == set_text
+        curly = convert_config(set_text, from_format=Format.SET, to_format=Format.STRUCTURED)
+        assert (
+            json.loads(convert_config(curly, from_format=Format.STRUCTURED, to_format=Format.JSON))
+            == irs[Format.SET]
+        )
+
     def test_an_inactive_unit_and_leaf_reach_one_ir(self) -> None:
         units = self._unit_by_format(self._inactive_leaf_inputs(unit_inactive=True))
         expected = {
