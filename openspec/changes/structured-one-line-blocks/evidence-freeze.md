@@ -43,10 +43,11 @@ None blocking. C7 (patch versus minor) is reported to the owner at the end of th
 - Assurance preference: balanced
 - Risk floor: high (cross-domain: kernel, conversion, validation, surface; both named surfaces' files)
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer; Finalizer
-- Resume point: phase 4 (acceptance tests); phase 3 does not apply to type `bug`
+- Resume point: STOP-T, independent Test/Challenge on the committed acceptance tests; then phase 5. Phase 3 does not apply to type `bug`
 
 ## Delta log
 
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established after the proposal commit `144a9fb`. Approved under the owner's unattended-run instruction of 2026-10-11.
+- Phase 4: acceptance tests committed; on the merge base every new test id fails except the guard parameters (`an-unquoted-multi-word-value`, `a-keyword-leaf-the-writer-drops`, two comment parameters, and the deprecated door's verdict rows), which pass on both sides by design. Approved under the owner's unattended-run instruction of 2026-10-11. No acceptance criterion changed.

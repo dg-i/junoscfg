@@ -251,3 +251,164 @@ class TestATagOnAOneLineStatementCoversTheStatement:
             if line.startswith(("deactivate ", "protect "))
         ]
         assert tags == [tag_line]
+
+
+# ── The token lexer (makeover run 2026-10-11, change structured-one-line-blocks) ──
+
+_LAID_OUT_ROUTE = (
+    "routing-options {\n    static {\n        inactive: route 10.98.0.0/16 reject;\n    }\n}\n"
+)
+
+
+class TestTheLexerReadsTokensNotLines:
+    """Spec: conversion/structured-input, "Structured text is read by tokens, not lines".
+
+    OPEN-1 (= NEW-A1): the line reader dropped a block written on one line,
+    read `a; b;` on one line as one statement and dropped the block after a
+    `}` on the same line, without a word. Layout is free (`ARCHITECTURE.md`
+    §1), so one-line text reads as the same statements, tags included.
+    """
+
+    @pytest.mark.parametrize(
+        ("one_line", "laid_out"),
+        [
+            (
+                "class-of-service { forwarding-classes { class fc0 queue-num 0; } }",
+                "class-of-service {\n    forwarding-classes {\n"
+                "        class fc0 queue-num 0;\n    }\n}\n",
+            ),
+            (
+                "system { host-name router1; domain-name example.net; }",
+                "system {\n    host-name router1;\n    domain-name example.net;\n}\n",
+            ),
+            (
+                "system {\n    host-name router1;\n} "
+                "interfaces { ge-0/0/0 { description uplink; } }",
+                "system {\n    host-name router1;\n}\n"
+                "interfaces {\n    ge-0/0/0 {\n        description uplink;\n    }\n}\n",
+            ),
+            (
+                "routing-options { static { inactive: route 10.98.0.0/16 reject; } }",
+                _LAID_OUT_ROUTE,
+            ),
+            ("snmp { apply-groups [ G1 G2 ]; }", "snmp {\n    apply-groups [ G1 G2 ];\n}\n"),
+            (
+                'interfaces { ge-0/0/0 { description "a; b { c } # d"; } }',
+                'interfaces {\n    ge-0/0/0 {\n        description "a; b { c } # d";\n    }\n}\n',
+            ),
+        ],
+        ids=[
+            "a-nested-block",
+            "two-statements",
+            "a-block-after-a-closing-brace",
+            "a-tagged-entry",
+            "a-bracket-list",
+            "delimiters-inside-quotes",
+        ],
+    )
+    def test_one_line_text_reads_as_its_lines(self, one_line: str, laid_out: str) -> None:
+        statements = SetConverter(one_line).statements()
+        assert statements, "the one-line text read as nothing"
+        assert statements == SetConverter(laid_out).statements()
+
+
+class TestACommentIsNeverPartOfAStatement:
+    """Spec: conversion/structured-input, "A comment is never part of a statement".
+
+    NEW-B6: the line reader matched `(.*);` on the raw line, so a trailing
+    comment holding `;` joined the value (`host-name "r1; ## note"`).
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "system {\n    host-name router1; ## note; see ticket\n}\n",
+            "system {\n    host-name router1; /* a; b */\n}\n",
+            "system {\n    host-name /* a; { b } */ router1;\n}\n",
+            "system {\n    /* a note;\n       over two lines } */\n    host-name router1;\n}\n",
+            "system { # a; b {\n    host-name router1;\n}\n",
+        ],
+        ids=["hash", "block", "between-tokens", "over-two-lines", "after-an-opening-brace"],
+    )
+    def test_a_comment_holding_a_delimiter(self, text: str) -> None:
+        assert SetConverter(text).statements() == [
+            [("system", frozenset()), ("host-name router1", frozenset())]
+        ]
+
+
+class TestMalformedTextIsRefused:
+    """Spec: conversion/structured-input, "Malformed structured text is refused".
+
+    The line reader passed an unmatched `}` and an unclosed block silently and
+    read an open quote as a value; a device rejects each of them on load.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "fault"),
+        [
+            ("system {\n    host-name router1;\n}\n}\n", r"line 4: '\}' closes no block"),
+            ("system {\n    host-name router1;\n", r"line 1: block 'system' is never closed"),
+            (
+                "system {\n    host-name router1\n}\n",
+                r"line 2: statement 'host-name router1' has no ';'",
+            ),
+            ('system {\n    host-name "router1;\n}\n', r"line 2: a quoted value is never closed"),
+            ("system {\n    host-name router1; /* note\n}\n", r"line 2: a comment is never closed"),
+            ("snmp {\n    apply-groups [ G1 G2;\n}\n", r"line 2: '\[' is never closed"),
+            ("{\n    host-name router1;\n}\n", r"line 1: '\{' opens a block with no name"),
+        ],
+        ids=[
+            "a-brace-too-many",
+            "an-unclosed-block",
+            "a-statement-without-a-semicolon",
+            "an-open-quote",
+            "an-open-comment",
+            "an-open-bracket-list",
+            "a-block-without-a-name",
+        ],
+    )
+    def test_it_raises(self, text: str, fault: str) -> None:
+        with pytest.raises(ValueError, match=fault):
+            SetConverter(text).statements()
+
+
+class TestWhatYieldsNoStatementIsReported:
+    """Spec: conversion/structured-input, "What yields no statement is reported, never written".
+
+    DEV-18: the device's curly prints a statement under `apply-flags omit` as
+    `{ /* OMITTED */ }` (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5,
+    `tests/data/device/synthetic/*/junoscfg-oracle.conf.gz`, group `GR-OMIT`);
+    the line reader wrote the placeholder as a statement.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "note"),
+        [
+            (
+                "groups {\n    GR-OMIT {\n        system { /* OMITTED */ };\n    }\n}\n",
+                "groups GR-OMIT system: `apply-flags omit` hides this block's content",
+            ),
+            ("system {\n    inactive: services { }\n}\n", "system services: an empty block"),
+        ],
+        ids=["the-devices-placeholder", "an-empty-block"],
+    )
+    def test_the_lexer_names_the_block(self, text: str, note: str) -> None:
+        converter = SetConverter(text)
+        assert converter.statements() == []
+        notes = converter.notes()
+        assert len(notes) == 1
+        assert notes[0].startswith(note)
+
+
+class TestToSetIsDeprecated:
+    """Spec: conversion/structured-input, "The schema-free set writer of the lexer is deprecated".
+
+    OPEN-10: `to_set()` places a one-line statement's tag on its last node
+    (the strict xfails above); conversion reads the statement through the
+    schema. Its one caller, the structured validator, is deprecated with it.
+    """
+
+    def test_it_warns_and_keeps_its_output(self) -> None:
+        with pytest.deprecated_call(match="convert_config"):
+            output = SetConverter("system {\n    host-name router1;\n}\n").to_set()
+        assert output == "set system host-name router1\n"

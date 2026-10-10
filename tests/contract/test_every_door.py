@@ -22,6 +22,7 @@ names (`tests/data/captures/keyed-entries-*`).
 from __future__ import annotations
 
 import json
+import warnings
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -67,6 +68,8 @@ class Row:
     structured: str | None = None
     messages: tuple[str, ...] = ()
     xfail: str | None = None
+    # The doors the xfail holds for; empty, every door.
+    xfail_on: tuple[str, ...] = ()
 
     def text(self, fmt: str) -> str | None:
         if fmt == "set":
@@ -88,6 +91,17 @@ class Door:
 
 def _result(result: Any) -> Verdict:
     return Verdict(result.valid, "\n".join(error.message for error in result.errors))
+
+
+def _deprecated(call: Callable[[], Any]) -> Any:
+    """A deprecated door's verdict, its `DeprecationWarning` held back.
+
+    The warning is the door's unit test's to assert
+    (`tests/unit/validate/test_structured_validator.py`); here only the verdict counts.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return call()
 
 
 def _cli(fmt: str) -> Callable[[str, Any], Verdict]:
@@ -122,7 +136,7 @@ DOORS = (
     Door(
         "JunosValidator.validate_structured",
         "structured",
-        lambda t, v: _result(v.facade.validate_structured(t)),
+        lambda t, v: _result(_deprecated(lambda: v.facade.validate_structured(t))),
     ),
     Door("validate_structured", "structured", lambda t, _: _result(validate_structured(t))),
     Door(
@@ -141,7 +155,8 @@ def cases(rows: tuple[Row, ...]) -> list[Any]:
         for door in DOORS:
             if row.text(door.fmt) is None:
                 continue
-            marks = [pytest.mark.xfail(strict=True, reason=row.xfail)] if row.xfail else []
+            failing = row.xfail and (not row.xfail_on or door.name in row.xfail_on)
+            marks = [pytest.mark.xfail(strict=True, reason=row.xfail)] if failing else []
             found.append(pytest.param(row, door, id=f"{row.id}-{door.name}", marks=marks))
     return found
 
@@ -536,5 +551,95 @@ class TestBracketShorthandIsRejected:
     """
 
     @pytest.mark.parametrize(("row", "door"), cases(BRACKETS))
+    def test_every_door_agrees(self, row: Row, door: Door, validators: Any) -> None:
+        _check(row, door, validators)
+
+
+# ── Structured text validates as conversion reads it ─────────────────
+
+_SCHEMA_FREE = (
+    "deprecated door, removed in the next minor: JunosValidator.validate_structured "
+    "validates curly through the schema-free SetConverter.to_set(), which keeps a one-line "
+    "statement whole and writes a tag as a line of its own"
+)
+_DEPRECATED_DOOR = ("JunosValidator.validate_structured",)
+
+
+def _curly_interface(statement: str) -> str:
+    return f"interfaces {{\n    ge-0/0/0 {{\n        {statement};\n    }}\n}}\n"
+
+
+STRUCTURED_AS_READ = (
+    # vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 print `hold-time up 2000 down 0;`
+    # on one curly line and as two display-set lines
+    # (`tests/data/device/synthetic/*/junoscfg-oracle.*`).
+    Row(
+        "a-one-line-container-statement",
+        True,
+        set="set interfaces ge-0/0/0 hold-time up 2000\nset interfaces ge-0/0/0 hold-time down 0",
+        document={
+            "interfaces": {
+                "interface": [{"name": "ge-0/0/0", "hold-time": {"up": "2000", "down": "0"}}]
+            }
+        },
+        structured=_curly_interface("hold-time up 2000 down 0"),
+        xfail=_SCHEMA_FREE,
+        xfail_on=_DEPRECATED_DOOR,
+    ),
+    # The device's curly writes `protect: autonomous-system 64496;` (same captures).
+    Row(
+        "a-protected-statement",
+        True,
+        structured="routing-options {\n    protect: autonomous-system 64496;\n}\n",
+        xfail=_SCHEMA_FREE,
+        xfail_on=_DEPRECATED_DOOR,
+    ),
+    Row(
+        "a-block-on-one-line",
+        False,
+        set="set system bogus-statement 1",
+        structured="system { bogus-statement 1; }",
+    ),
+    Row(
+        "a-brace-too-many",
+        False,
+        structured="system {\n    host-name router1;\n}\n}\n",
+        messages=("closes no block",),
+    ),
+    # Nothing to validate but a warning: the device's own curly for a group
+    # under `apply-flags omit` (same captures, group GR-OMIT).
+    Row(
+        "the-omitted-placeholder",
+        True,
+        structured="groups {\n    GR-OMIT {\n        system { /* OMITTED */ };\n    }\n}\n",
+    ),
+    # Guards against validating the writer's output instead of the input: the
+    # walk joins `a b c` into one quoted value, and the writer drops `timeout`.
+    Row(
+        "an-unquoted-multi-word-value",
+        False,
+        set="set interfaces ge-0/0/0 description a b c",
+        structured=_curly_interface("description a b c"),
+    ),
+    Row(
+        "a-keyword-leaf-the-writer-drops",
+        True,
+        set="set protocols isis overload timeout 300",
+        structured="protocols {\n    isis {\n        overload timeout 300;\n    }\n}\n",
+    ),
+)
+
+
+class TestStructuredTextValidatesAsConversionReadsIt:
+    """Spec: validation/structured-validation.
+
+    Curly text is checked statement by statement as the conversion walk reads
+    it, in the input's own tokens. NEW-B5 and OPEN-1 (makeover run
+    2026-10-11): validation read curly through the schema-free `to_set()`, so
+    the device's one-line `hold-time` was rejected, a `protect:` line was
+    checked as a set command, and a block on one line passed as empty.
+    """
+
+    @pytest.mark.parametrize(("row", "door"), cases(STRUCTURED_AS_READ))
     def test_every_door_agrees(self, row: Row, door: Door, validators: Any) -> None:
         _check(row, door, validators)
