@@ -16,5 +16,5 @@
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: fresh Reviewer (`review.md`), two re-reviews; verdict mergeable at 6f2f058.
 
 Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full --base change/xml-inactive-leaf` at 6f2f058: every check passed, 2,009 passed / 45 skipped / 1 xfailed. Without `--base`, a branch whose diff touches two live change folders (this one stacks on change A) has its diff-reading gates read the last commit alone (`agent_ready_checks.stage.change_base`); the explicit base reads the whole of this change. The rebase onto change A's evidence-only commits that followed leaves this change's runtime content unchanged.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
