@@ -677,7 +677,7 @@ what it asserts. The layout carries the map from code to tests:
 A fix adds a catalogue row or a unit test at the owning layer, never a class
 named after the change. `tools/check_test_doors.py` holds every test to the
 doors `tach.toml` declares (`tach check` covers only `src/`), and
-`openspec/changes/archive/*-test-architecture/check_ledger.py` shows how the
+`openspec/changes/archive/2026-10-10-test-architecture/check_ledger.py` shows how the
 restructuring proved that no case was lost.
 
 ### When tests run
