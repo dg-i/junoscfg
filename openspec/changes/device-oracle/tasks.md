@@ -16,4 +16,4 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Review: lightweight record (owner); device facts and a review of the layout and the oracle law from the junoscfg-d9 session.
-- [ ] 3.2 Final full check recorded here.
+- [x] 3.2 Final full check: `agent-ready check --set full` at 02ba0e1, every gate passed; 6,016 passed / 45 skipped / 19 xfailed (12 new strict xfails, each a product defect the device-verified example showed). Ledger: 6,069 baseline nodes, 6,017 kept, 50 mapped, 2 dropped (the retired byte pin and the stale-entry guard), 0 problems. The entry-keys delta is applied to the main spec in this change.
