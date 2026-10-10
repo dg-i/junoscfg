@@ -391,3 +391,28 @@ class TestStructureTreeRoundTrip:
         )
         assert seen > 400_000
         assert found == [], f"{len(found)} nodes carry fe, e.g. {found[:3]}"
+
+
+class TestHomogeneousFlag:
+    """The structure tree carries the XSD's `homogeneous` flag as `h`.
+
+    An unkeyed `homogeneous` container -- `family` -- never carries a Junos
+    tag and is written merged with its child (`inactive: family inet {`);
+    readers and writers decide that from this flag, not from a name list.
+    """
+
+    def test_the_tree_carries_it(self) -> None:
+        from junoscfg.display import load_schema_tree
+
+        family = SchemaNode(name="family", flags={"homogeneous"})
+        family.children["inet"] = SchemaNode(name="inet")
+        root = SchemaNode(name="configuration")
+        root.children["family"] = family
+        with tempfile.TemporaryDirectory() as d:
+            path = str(Path(d) / "tree.json")
+            write_structure_tree(root, path)
+            assert json.loads(Path(path).read_text())["c"]["family"]["h"] is True
+            assert "homogeneous" in read_structure_tree(path).children["family"].flags
+
+        bundled = load_schema_tree()["c"]["configuration"]["c"]["interfaces"]["c"]["interface"]
+        assert bundled["c"]["unit"]["c"]["family"].get("h") is True

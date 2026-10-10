@@ -493,6 +493,125 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
         )
         assert not any(" inactive: " in line.strip() for line in curly.splitlines())
 
+    # Tags on one-line entries and on `family inet`, as a 23.2R2 device shows
+    # them (`inactive: route ::/0 apply-groups [ … ];` is `<route
+    # inactive=…>`; `inactive: family inet {` is `<inet inactive=…>`;
+    # `protect: route … next-hop …;` is `<route protect=…>`). Curly input
+    # tagged the last token, and XML input dropped `protect`. Spec:
+    # openspec/changes/meta-tag-placement/specs/conversion/meta-tags/spec.md.
+
+    @staticmethod
+    def _configurations(inputs: dict[str, str]) -> dict[str, dict]:
+        import json
+
+        from junoscfg import Format, convert_config
+
+        return {
+            fmt: json.loads(convert_config(text, from_format=Format(fmt), to_format=Format.JSON))
+            for fmt, text in inputs.items()
+        }
+
+    def test_a_one_line_tagged_route_reaches_one_ir(self) -> None:
+        irs = self._configurations(
+            {
+                "xml": (
+                    "<configuration><routing-options><rib><name>inet6.0</name><bgp-static>"
+                    '<route inactive="inactive"><name>::/0</name>'
+                    "<apply-groups>G_LOC</apply-groups><apply-groups>G_DEF</apply-groups>"
+                    "</route></bgp-static></rib></routing-options></configuration>"
+                ),
+                "json": (
+                    '{"configuration": {"routing-options": {"rib": [{"name": "inet6.0", '
+                    '"bgp-static": {"route": [{"@": {"inactive": true}, "name": "::/0", '
+                    '"apply-groups": ["G_LOC", "G_DEF"]}]}}]}}}'
+                ),
+                "set": (
+                    "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_LOC\n"
+                    "set routing-options rib inet6.0 bgp-static route ::/0 apply-groups G_DEF\n"
+                    "deactivate routing-options rib inet6.0 bgp-static route ::/0\n"
+                ),
+                "structured": (
+                    "routing-options {\n    rib inet6.0 {\n        bgp-static {\n"
+                    "            inactive: route ::/0 apply-groups [ G_LOC G_DEF ];\n"
+                    "        }\n    }\n}\n"
+                ),
+            }
+        )
+        route = irs["json"]["configuration"]["routing-options"]["rib"][0]["bgp-static"]["route"][0]
+        assert route == {
+            "@": {"inactive": True},
+            "name": "::/0",
+            "apply-groups": ["G_LOC", "G_DEF"],
+        }
+        assert irs == dict.fromkeys(irs, irs["json"])
+
+    def test_an_inactive_family_inet_reaches_one_ir(self) -> None:
+        from junoscfg import Format, convert_config
+
+        irs = self._configurations(
+            {
+                "xml": (
+                    "<configuration><interfaces><interface><name>xe-0/0/0</name>"
+                    '<unit><name>751</name><family><inet inactive="inactive">'
+                    "<filter><input><filter-name>FILTER-V4</filter-name></input></filter>"
+                    "<address><name>198.51.100.1/24</name></address>"
+                    "</inet></family></unit></interface></interfaces></configuration>"
+                ),
+                "json": (
+                    '{"configuration": {"interfaces": {"interface": [{"name": "xe-0/0/0", '
+                    '"unit": [{"name": "751", "family": {"inet": {"@": {"inactive": true}, '
+                    '"filter": {"input": {"filter-name": "FILTER-V4"}}, '
+                    '"address": [{"name": "198.51.100.1/24"}]}}}]}]}}}'
+                ),
+                "set": (
+                    "set interfaces xe-0/0/0 unit 751 family inet filter input FILTER-V4\n"
+                    "set interfaces xe-0/0/0 unit 751 family inet address 198.51.100.1/24\n"
+                    "deactivate interfaces xe-0/0/0 unit 751 family inet\n"
+                ),
+                "structured": (
+                    "interfaces {\n    xe-0/0/0 {\n        unit 751 {\n"
+                    "            inactive: family inet {\n"
+                    "                filter {\n                    input FILTER-V4;\n"
+                    "                }\n                address 198.51.100.1/24;\n"
+                    "            }\n        }\n    }\n}\n"
+                ),
+            }
+        )
+        assert irs == dict.fromkeys(irs, irs["json"])
+        # And back: what structured output writes reads as the same IR.
+        import json
+
+        curly = convert_config(
+            json.dumps(irs["json"]), from_format=Format.JSON, to_format=Format.STRUCTURED
+        )
+        assert self._configurations({"structured": curly})["structured"] == irs["json"]
+
+    def test_a_protected_one_line_route_reaches_one_ir(self) -> None:
+        irs = self._configurations(
+            {
+                "xml": (
+                    "<configuration><routing-options><static>"
+                    '<route protect="protect"><name>0.0.0.0/0</name><next-hop>10.0.0.1</next-hop>'
+                    "</route></static></routing-options></configuration>"
+                ),
+                "json": (
+                    '{"configuration": {"routing-options": {"static": {"route": [{"@": '
+                    '{"protect": true}, "name": "0.0.0.0/0", "next-hop": ["10.0.0.1"]}]}}}}'
+                ),
+                "set": (
+                    "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
+                    "protect routing-options static route 0.0.0.0/0\n"
+                ),
+                "structured": (
+                    "routing-options {\n    static {\n"
+                    "        protect: route 0.0.0.0/0 next-hop 10.0.0.1;\n    }\n}\n"
+                ),
+            }
+        )
+        route = irs["set"]["configuration"]["routing-options"]["static"]["route"][0]
+        assert route["@"] == {"protect": "protect"}
+        assert irs == dict.fromkeys(irs, irs["set"])
+
     def test_an_inactive_unit_and_leaf_reach_one_ir(self) -> None:
         units = self._unit_by_format(self._inactive_leaf_inputs(unit_inactive=True))
         expected = {
