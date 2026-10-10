@@ -17,12 +17,13 @@ verbs is tested but not traceable from its requirement.
   corpus review, green gates notwithstanding.
 - `src/junoscfg/{display,validate,convert,anonymize}/CONTRACT.md`: one settled invariant each,
   naming its public regression test, inside the 30-line cap.
-- `docs/how-to/settle-a-schema-question.md`: the sanitised device-evidence form, carried by the
+- `docs/how-to/settle-a-schema-question.md`: the sanitized device-evidence form, carried by the
   generic evidence freeze.
 - `conversion/entry-keys`: the kept-whole requirement names `deactivate`, `activate`, `protect`
   and `delete` on a partial or surplus key path and its five existing tests; traceability only,
   applied by the finalizer in phase 7 from the reviewed `main-spec-edit.md`.
-- This change's telemetry is recorded in the v0.7.8 format and imported by `agent-ready metrics`.
+- This change's telemetry is recorded in the workflow-telemetry format (`schema_version: 1`)
+  that `docs/how-to/capture-change-metrics.md` describes and imported by `agent-ready metrics`.
 
 No override, fallback, parameter or environment read is added.
 

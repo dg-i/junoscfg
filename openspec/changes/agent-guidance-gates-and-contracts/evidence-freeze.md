@@ -100,3 +100,14 @@ fail until it is answered there or that change is archived.
   owner works in this checkout concurrently, so no stash: every gate runs in a detached
   worktree of the checked commit. The pull-request range now carries 01efe85; the owner may
   move it to `master` or leave it. Consistent with the freeze; nothing else invalidated.
+- 2026-10-10, phase 5: the owner asked for the garden audit output to be committed; 306233b
+  adds `mkdocs.yml` and a review page to the range, which the docs lane gate also refuses.
+  The owner then accepted moving both commits to `master` and answering the sibling's
+  `assurance` as balanced; the permission classifier blocked the Builder from committing on
+  `master` or editing the sibling change, so the owner runs those commands. Nothing of this
+  change is invalidated; the full checkpoint reruns on the rebased head.
+- 2026-10-10, phase 6: fresh review (two Medium, six Low, new challenge S8) and the
+  post-implementation challenge (19 checks re-run, 0 mismatches; 20 claims sampled, 2
+  failed, 4 partial). Fix pass applied as recorded in `review.md`; invalidated and re-run:
+  tasks 1.1, 1.2, 1.4, 1.6, 1.8, 1.11 to 1.17, 1.19 to 1.21 on the fix commit; the same
+  isolated Reviewer re-reads the corrections.

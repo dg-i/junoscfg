@@ -74,7 +74,7 @@ there is. It now also runs against the artefact we ship, and
 `tests/test_set_corpus.py` records each rejection by name so a new false
 positive and a fixed one are both visible in the diff.
 
-## 5. Freeze device evidence once, sanitised
+## 5. Freeze device evidence once, sanitized
 
 One device-dependent change asks its device questions in one round and freezes
 the answers once, under Evidence in the change's `evidence-freeze.md`, before
@@ -87,7 +87,8 @@ every operator value replaced by the synthetic ranges in `AGENTS.md`:
 - **Hierarchy and question:** the exact path (rule 2) and the one question the
   probe answers.
 - **Forms tried:** each accepted and each rejected statement, the order and
-  surplus-token variants included, with the device's response quoted.
+  surplus-token variants included, with the device's response quoted and its
+  prompt masked.
 - **Views requested:** `show configuration <path> | display set`,
   `| display json` and `| display xml` (rule 1), each kept in the private
   capture.

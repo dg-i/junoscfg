@@ -61,14 +61,19 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   worktree; expect exit 0 and `git status --short` in the main checkout unchanged.
   Evidence: exit 1, not because of this change: "documentation-only changes may not alter
   non-documentation files: .agents/skills/agent-ready-garden/SKILL.md,
-  …/jobs/5-instructions.md", the owner's commit 01efe85 that sits on this branch. The
-  deliverables themselves are all Markdown. Owner decision recorded in `checkpoint.md`; the
-  gate reruns once 01efe85 leaves the branch range. Main checkout untouched.
+  …/jobs/5-instructions.md", the owner's commit 01efe85 that sits on this branch; at
+  b20ca29 the owner's 306233b adds `mkdocs.yml` to the refusal (challenge re-run). The
+  deliverables themselves are all Markdown: at 19d05de with base 01efe85 the gate passes
+  (challenge re-run). Owner decision recorded in `checkpoint.md`; the gate reruns once
+  both commits leave the branch range. Main checkout untouched.
 - [x] 1.8 Spec edit: `diff <(sed -n '5,$p' main-spec-edit.md) <(the sibling delta's
   requirement block)` shows only the five ids appended to the `Tests:` line; the 24 ids
   collect; the clause claims only what the five tests assert (1.16).
-  Evidence: the diff has one changed line pair, the `Tests:` line, old an exact prefix of
-  new; 24 ids collect as 60 nodes; wording is the sibling's (1.16).
+  Evidence: at 19d05de the diff had one changed line pair, the `Tests:` line, old an exact
+  prefix of new; 24 ids collect as 60 nodes; wording is the sibling's (1.16). After the fix
+  pass (S8) the diff is two line pairs: the `Tests:` line and the clause line, which gains
+  "A meta attribute on a positional value the reader placed is written back and reports
+  nothing." for the fifth id.
 - [ ] 1.9 Full checkpoint, once, after the last change task is committed, in the worktree
   of that commit: `uv run --locked --group dev --with griffe --with tach --with towncrier
   --with vulture agent-ready check --set full --base master`; expected result: exit
@@ -98,7 +103,10 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   | sort -u)`` empty; every `## ` heading and the `Interface:` line survive; exactly one
   added `- ` bullet under `## Invariants` per contract; `## Precedent` bullet count unchanged.
   Evidence: display lost 0, invariants 2→3, precedent 3→3; validate 0, 2→3, 2→2; convert
-  0, 3→4, 3→3; anonymize 0, 3→4, 2→2; every heading and Interface line kept.
+  0, 3→4, 3→3; anonymize 0, 3→4, 2→2; every heading and Interface line kept. Recorded
+  loss outside the token check (challenge): the convert "Not for" paragraph was reworded
+  to fit 84 columns and no longer says "section 1" after `ARCHITECTURE.md`; the pointer
+  to the file stays. Re-run after the fix pass: unchanged counts, display still 30 lines.
 - [x] 1.13 Each new invariant's cited test asserts it: quote the assertion lines.
   Evidence. display: `assert entry_keys({"L": True, "k": ["list-type", "list-name"]}) ==
   ("list-type", "list-name")`, `assert list(statement_children(keyed)) == ["accept"]`, and
@@ -112,13 +120,16 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   unplaced, round trip (meta on a partial or surplus key). anonymize: `assert
   entry["list-type"] == "as-list-group"` with `sensitive_words=["as-list"]`; `assert
   anonymized["exact"] == [None] and anonymized["accept"] == [None]`, `term["then"]
-  ["community"][0]["add"] == [None]`, and no rule saw `exact` or `accept`.
+  ["community"][0]["add"] == [None]`, and no rule saw `exact` or `accept`. The two tests
+  enable the rules they need, not all nine, so the contract says "passes the rules
+  unchanged" (fix pass; the challenge's all-nine probe held). Validate also cites
+  `test_unbounded_is_list`: `assert ifaces.is_list is True` for `maxOccurs="unbounded"`.
 - [x] 1.14 Device-evidence form: on the added lines of `settle-a-schema-question.md`, every
   IPv4 address and AS number in the `AGENTS.md` ranges; prompts generic
   (`grep -nE '[A-Za-z0-9_-]+@[A-Za-z0-9_-]+[>#]'` at most `admin@router1`); no pathless
   capture (`grep -nE 'show configuration *(\||$)|show \| compare *($|\|)'` none), the
   preflight step naming a path; set, JSON and XML all required; raw output stays in
-  gitignored `private_test_data/` and only the sanitised form enters `evidence-freeze.md`;
+  gitignored `private_test_data/` and only the sanitized form enters `evidence-freeze.md`;
   no timing figure (`grep -nE '\b[0-9.]+ ?(ms|s|seconds|minutes)\b'` none); the "Four
   rules" opening line updated (`grep -n '^Four rules'` none).
   Evidence: 0 addresses, 0 prompts, 0 pathless captures, the three views named, the
@@ -139,7 +150,9 @@ the commit (`qa_tree.py`, gitignored beside the telemetry) and are quoted below.
   Identical to the challenger's run; A, D and E stay open defects in `review.md`.
 - [x] 1.17 Sibling delta reconciled: 1.8's diff, plus a delta-log entry naming the shared
   wording and the unapplied sibling text (S3).
-  Evidence: `evidence-freeze.md` Requirements and delta log, `review.md` S3.
+  Evidence: `evidence-freeze.md` Requirements and delta log, `review.md` S3. After the
+  fix pass (S8) the diff against the sibling block is the five ids on the `Tests:` line
+  plus one sentence for the placed positional value; 1.8's wording updated accordingly.
 - [ ] 1.18 After phase 7: `diff <(sed -n '5,$p' main-spec-edit.md) <(the applied block of
   openspec/specs/conversion/entry-keys/spec.md)` empty; `agent-ready reconcile` exit 0; in a
   throwaway worktree, one misspelled new id makes `reconcile` exit 1 naming it.
@@ -182,7 +195,7 @@ Challenge executed at eb369dd: tier section renders `li=6 ul=1 ol=1`; contract w
 - [x] 2.3 `src/junoscfg/display/CONTRACT.md`, `validate/CONTRACT.md`, `convert/CONTRACT.md`,
   `anonymize/CONTRACT.md`: one invariant each, narrowed to its cited tests (S6), at or
   under 30 lines and 84 columns outside test ids, nothing dropped.
-- [x] 2.4 `docs/how-to/settle-a-schema-question.md`: rule 5, the sanitised device-evidence
+- [x] 2.4 `docs/how-to/settle-a-schema-question.md`: rule 5, the sanitized device-evidence
   form, carried by `evidence-freeze.md`; opening line updated.
 - [x] 2.5 `main-spec-edit.md`: the sibling delta's wording plus the five ids (S1 to S3);
   applied in phase 7.
@@ -193,10 +206,12 @@ Change commit: 19d05de. Nothing else outside the change folder is touched.
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Independent Test/Challenge (high floor): phase-4 challenge delivered
+- [x] 3.1 Independent Test/Challenge (high floor): phase-4 challenge delivered
   (`test-challenge.md`, seven challenges S1 to S7 in `review.md`); the post-implementation
-  half re-executes 1.1 to 1.21 independently and samples claims against sources.
-- [ ] 3.2 Complete the risk-required fresh isolated review (`review.md`), correct the
+  half re-executed 1.1 to 1.21 independently (0 mismatches against the recorded evidence;
+  four checks shown to fail on broken input) and sampled 20 claims (14 hold, 4 partly, 2
+  failed; every failure and partial corrected in the fix pass).
+- [x] 3.2 Complete the risk-required fresh isolated review (`review.md`), correct the
   findings, return them to the same isolated Reviewer.
 - [ ] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head, with
   the workflow telemetry.

@@ -17,8 +17,8 @@ flag table and a tree structure, not display logic.
   first use — enforced by
   `tests/test_to_yaml.py::TestLazyXmlImport::test_to_yaml_module_level_has_no_lxml`.
 - `entry_keys()` and `statement_children()` are the one answer for an entry's key
-  fields and a statement's children, and no module keeps a key spelling of its own
-  — enforced by `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields` and `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
+  fields and a statement's children, and no module reads a retired key spelling
+  (`fe`, `values-only`, `community-name`, `_v<n>`) — enforced by `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_the_helper_answers_the_key_tuple`, `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_statement_children_drop_the_key_fields` and `tests/test_characterization.py::TestEntryKeysComeFromTheTree::test_no_module_keeps_its_own_key`.
 
 ## Precedent
 

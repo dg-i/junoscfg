@@ -4,7 +4,7 @@
   writers, validators or anonymizer, or to settle a device question; and the reviewer of
   such a change.
 - Task: select the pre-review evidence from the paths the change touches; read the module's
-  settled invariant and its test before editing; freeze device evidence once, sanitised;
+  settled invariant and its test before editing; freeze device evidence once, sanitized;
   trace the metadata no-partial-application rule from its requirement to its tests.
 
 ## Authoritative sources
@@ -13,7 +13,7 @@
 |---|---|
 | The `--schema`, `--jvd` and `--regen-schema` tiers, their data needs and the regen exit code 7 | `tests/conftest.py` `pytest_addoption`; `tests/test_schema_data.py` docstring; the existing tier table |
 | The JVD gate is the only place the field-warning budget runs | `tests/test_jvd_corpus.py::TestFieldWarningBudget::test_warnings_stay_within_budget`; existing guide text |
-| A regenerated artifact set is reproducible when a second regeneration leaves `git diff --stat -- src/junoscfg/validate/data` empty | `openspec/changes/identifier-key-fields/tasks.md` items 4.15 and 5.4 |
+| A regenerated artifact set is reproducible when a second regeneration leaves `git diff --stat -- src/junoscfg/validate/data` empty | `openspec/changes/identifier-key-fields/tasks.md` items 4.12 and 5.4 |
 | Public-door semantic parity and round trip are pinned by named tests | `tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders::test_every_writer_reads_back_the_device_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr`, `tests/test_convert_consistency.py::TestJsonRoundTripConsistency::test_roundtrip_preserves_content`, `tests/test_device_truth.py::test_every_door_gives_the_device_ir` |
 | Anonymization is the red zone; syntax values pass unchanged; mapping is deterministic and revertible | `[tool.template.zones.anonymize]`; `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves`; `tests/test_anonymize/test_ip_rule.py::TestIpRuleTransform::test_deterministic_with_same_salt`; `tests/test_anonymize/test_integration.py::TestPipelineDumpMapIntegration::test_revert_map_restores_originals` |
 | No committed timing guard covers entry lookup or a schema-wide walk; the only committed bound times the set validator's grammar; a large-case measure-and-explain record exists | `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_compact_siblings_keep_practical_parse_time` (grammar only); `openspec/changes/identifier-key-fields/tasks.md` 4.4 and 5.6 (the procedure; the private file is never named in a deliverable) |

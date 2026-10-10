@@ -434,3 +434,474 @@ report was created or changed. The commands I ran are listed under "Evidence exe
   data, not `CONTRACT.md` or docs). Name the corpus and the command (e.g. `--jvd` and the
   frozen-baseline comparison already in the guide). Define the report's contents.
 - Decision: Pending owner decision.
+
+## Post-implementation challenge (after 19d05de)
+
+Challenger: the same context-isolated role. I read the committed artefacts at `b20ca29`
+(deliverables at `19d05de`) and the sources they cite. I did not read the Builder's
+`qa_tree.py` or telemetry, and wrote my own extraction scripts under `/tmp`.
+
+- Every check that reads the tree ran in my own detached worktree
+  (`junoscfg-wt-challenge`, at `19d05de`, after `agent-ready skills --regenerate`). I
+  moved it to `b20ca29` for one lane run, then removed it.
+- Negative probes that need an edited file ran in throwaway copies under `/tmp`, removed
+  afterwards.
+- The main checkout's `git status` was identical before and after. No file other than
+  this report was changed. No `--schema`, `--jvd` or `--regen-schema` run.
+
+### Re-execution of tasks 1.1 to 1.21
+
+1.10 and 1.18 are phase 7 and were not run. Results: 19 re-executed, 19 match the
+recorded evidence, 0 mismatches. Three recorded notes are incomplete; see 1.7, 1.12 and
+1.13.
+
+- **1.1**
+  - Command: `mkdocs build --strict -d /tmp/chal_site` (mkdocs 1.6.1, no `validation:`
+    block), then `grep -nE 'INFO .*(anchor|not found|unrecognized|absolute)'`.
+  - Result: exit 0; 0 `WARNING`; 0 INFO anchor lines; the only INFO note is the
+    not-in-nav list. The built guide carries `id="when-to-use-each-tier"` once. The
+    solo-review link resolves to `../../architecture/developer-guide/#when-to-use-each-tier`.
+  - Negative probe: in a `/tmp` copy, `#when-to-use-each-tierX` still exits 0, but the
+    INFO grep catches it ("does not contain an anchor").
+  - Matches: yes. Precise: yes, because of the INFO grep; exit 0 alone would not fail.
+- **1.2**
+  - Command: my own extraction over the eight files plus `main-spec-edit.md`. It unwraps
+    lines, rejoins `::` breaks, scans for abbreviated forms, and separates bare paths.
+    Then `pytest --collect-only -q <ids>`, and
+    `pytest --help --color=no | grep -oE -- '--(schema|jvd|regen-schema)\b' | sort -u | wc -l`.
+  - Result: 46 distinct ids, 154 nodes, exit 0, 0 `not found`. Added lines only: 17 ids,
+    93 nodes. 0 abbreviated forms. All 8 bare `test_*.py` names exist. Flags: 3.
+  - Negative probe: one id with a trailing `X` gives exit 4 and `ERROR: not found`.
+  - Matches: yes. Precise: yes.
+- **1.3**
+  - Command: every backticked token or link target in the added lines with a `/` or a
+    file extension. I took the part before `::` or `#`, resolved short forms against
+    the root, `src/junoscfg/`, `src/junoscfg/validate/`, `tests/` and the page's own
+    directory, and matched globs against `git ls-files`.
+  - Result: every path resolves to tracked files, `validate/xsd_*.py` to 3 and
+    `validate/*_validator.py` to 4. Unresolved: `private_test_data/schemas/`, which is
+    gitignored, and the generic `evidence-freeze.md`. All three `private_test_data/`
+    mentions sit beside "gitignored".
+  - Matches: yes.
+  - Precise: yes for full paths. The task does not say how the short relative names in
+    the guide's table are resolved (`xsd_fixes.py`, `audit/walker.py`). I resolved them
+    all.
+- **1.4**
+  - Command: the deny-list over the added lines of the nine files, plus counts of the
+    seven canonical terms in the added lines and in the reference set (main specs via
+    `find`).
+  - Result: deny-list 0 hits; every canonical term is spelt as in the sources.
+    - At 3c97a30, "key-choice keyword" would have hit; it is gone.
+    - Outside the fixed list, the new solo-review section says "every metadata verb
+      (`deactivate`, …)". The sibling requirement and `tests/test_set_input.py` say "meta
+      command(s)", and so does the convert contract. "metadata verb" occurs nowhere else
+      in the repository.
+  - Matches: yes. Precise: yes for its list; a fixed list cannot catch a new synonym.
+- **1.5**
+  - Command: `git diff --name-only eb369dd 19d05de` outside the folder;
+    `git diff --name-only 01efe85 19d05de -- .agents/`; `ARCHITECTURE.md` and
+    `AGENTS.md` diff; the policy probe on the guide and, wider, on `docs/how-to` and
+    `src`.
+  - Result: exactly the eight deliverable paths; `.agents/` empty; `ARCHITECTURE.md`
+    and `AGENTS.md` untouched; 2 policy hits (both "`ARCHITECTURE.md` … ranks latency
+    last"), 0 in the how-tos and contracts.
+  - Matches: yes. Precise: yes for paths. The policy probe is a word list (see claim 5).
+- **1.6**
+  - Commands and results:
+    - `agent-ready caps`: exit 0. Contracts 30/26/30/30.
+    - Width `awk` (as in the task): no output. Lines carrying test ids have prose parts
+      of 14–77 characters.
+    - Per-file `pre-commit run markdownlint`: Passed on the eight files the hook covers.
+      `main-spec-edit.md` is Skipped (excluded `openspec/changes/`).
+    - `git diff --check eb369dd 19d05de`: silent, exit 0.
+    - Built HTML, whole page: guide tables 15, solo-review ul 6, settle ul 7; broken
+      `<p>- ` or `<p>|` markers 0/0/0. Tier section: `li=6 ul=1 ol=1`, plus one table
+      of 5 rows × 4 cells.
+  - Negative probe: a 31-line display contract in a `/tmp` clone makes `caps` exit 1
+    ("31, limit 30").
+  - Matches: yes.
+  - Precise: yes. The test-id exemption is used to pack three ids onto one line (display
+    330 characters, convert 348). That is how three contracts reach exactly 30.
+- **1.7**
+  - Command: `agent-ready lane --base master` in my worktree, at `19d05de` and again at
+    `b20ca29`.
+  - Result at `19d05de`: exit 1, the two `.agents/skills/agent-ready-garden/` files from
+    01efe85. With `--base 01efe85`: exit 0. So the deliverables alone pass lane (not
+    recorded by the Builder).
+  - Result at `b20ca29`: exit 1, now also naming `mkdocs.yml` (owner commit 306233b).
+    It fails even with `--base 01efe85`.
+  - Main checkout untouched.
+  - Matches: yes at `19d05de`.
+  - The recorded note "the gate reruns once 01efe85 leaves the branch range" is
+    incomplete: 306233b must leave too. `checkpoint.md` item 1 says so correctly.
+  - Precise: yes.
+- **1.8**
+  - Command: `diff` of `main-spec-edit.md` from line 5 against the sibling block (line 73
+    of the sibling `spec.md`, last changed in 211a165).
+  - Result: one hunk, `5c5`, the `Tests:` line; old is an exact prefix of new. The
+    appended part is exactly the five `TestAMetaCommandIsNeverPartiallyApplied` ids. 24
+    ids, 24 distinct; they collect as part of 1.2.
+  - Matches: yes. Precise: yes.
+- **1.9**
+  - Command: `agent-ready check --set full --base master` with the four `--with` tools,
+    in my worktree at `19d05de`.
+  - Result: exit 1 in 8 s, `failing: fields, lane`.
+    - `fields`: only `identifier-key-fields/.openspec.yaml: assurance is not answered`.
+    - `lane`: the two 01efe85 files.
+    - Every other step passed: codemap build, pre-commit (markdownlint), tach, OpenSpec
+      specs/live/archive, interfaces, gates, toolbox, specs, reconcile, five
+      `render … --check`, decisions, stage griffe/towncrier/vulture, budget, skills,
+      codemap check, retired.
+    - No pytest step: `check.py` appends the test command only when the change is not
+      docs-only.
+  - Matches: yes. Precise: yes.
+  - The task stays open correctly. Its rerun must be on a head without 306233b as well
+    as 01efe85.
+- **1.11**
+  - Command: my own block split (bullets, numbered items, paragraphs) of the `eb369dd`
+    section, which is identical to `master`'s. Each whitespace-normalised block checked
+    as a substring of the new section.
+  - Result: 8 blocks, 0 missing.
+  - Negative probe: deleting one word from the new section gives 1 missing.
+  - Matches: yes. Precise: yes.
+- **1.12**
+  - Command: for each contract, the set difference of backticked tokens against
+    `eb369dd` (identical to `master`); heading and `Interface:` survival; bullet counts
+    under `## Invariants` and `## Precedent`. I added a sentence-level prose survival
+    check.
+  - Result:
+    - Token loss: 0/0/0/0.
+    - Headings and `Interface:` lines: kept.
+    - Invariants: display 2→3, validate 2→3, convert 3→4, anonymize 3→4. Precedent
+      unchanged.
+    - The prose check finds convert's existing text reworded to fit the cap. "Not for"
+      lost "direct", "that already has one" and the pointer "section 1". Invariant 2's
+      "retains" became "keeps".
+  - Matches: yes.
+  - Precise: only for tokens and counts. The rewording is not recorded, and task 2.3
+    says "nothing dropped". Meaning survives (`ARCHITECTURE.md` §1 item 2,
+    "Simplicity"), but the section pointer is lost.
+- **1.13**
+  - Command: read the cited tests in full (AST extraction).
+  - Result: the Builder's quoted assertions are accurate. Per invariant:
+    - Display: holds as narrowed. `test_no_module_keeps_its_own_key` pins single
+      ownership only by a deny-list of retired spellings and two banned imports. A new
+      module computing keys some other way would pass.
+    - Validate: holds. "However the dump bounds it" also covers `unbounded`, which only
+      the uncited `TestCardinality::test_unbounded_is_list` pins.
+    - Convert: holds. Set door UNPLACED plus strict raise; JSON/YAML/XML door
+      kept-as-written message plus strict raise; meta partial or surplus key kept whole
+      and 1 unplaced.
+    - Anonymize: "passes every rule unchanged" is not literally asserted.
+      `AnonymizeConfig` has nine rules. `test_a_key_choice_keyword_passes_unchanged`
+      turns on eight (no `sensitive_words`); `test_an_enum_key_passes_unchanged` turns
+      on eight (no `ssh_keys`). The walker assertion that no rule is offered
+      `exact`/`accept` covers every rule only for those two route-filter keywords.
+  - Probe (read-only, all nine rules on, `sensitive_words` and `sensitive_patterns`
+    aimed at `exact`, `accept`, `add`, `as-list`, `as-list-group`): all pass unchanged.
+    The behaviour holds; the test pins it only partly.
+  - Correction to my phase-4 report, item 3: I wrote "with all rules on". That was
+    wrong for both walker tests.
+  - Matches: yes. Precise: partly; quoting assertions does not test the claim's scope.
+- **1.14**
+  - Command: greps over the 27 added lines of `settle-a-schema-question.md`: IPv4, IPv6,
+    numbers of three or more digits, prompts, pathless captures, `display set|json|xml`,
+    `private_test_data`, timing, opening line, release and hostname tokens.
+  - Result: 0 addresses, 0 numbers, 0 prompts, 0 pathless captures, 0 timing figures,
+    no device names. All three views named. "gitignored `private_test_data/`" present.
+    The opening says "Five rules"; rule 5 is numbered.
+  - Matches: yes.
+  - Precise: yes, but the address and AS sub-checks are vacuous today because the form
+    carries no example values.
+- **1.15**
+  - Command: the Builder's needle set (capture names plus `.conf` names in the sibling
+    `tasks.md`), and a wider set (all top-level `private_test_data` names and stems).
+    Matched against added lines in `docs`, `src`, `changelog.d` and the change folder,
+    counting without printing the needles.
+  - Result: Builder set 8 needles, 0 hits. The wider set hits only generic names
+    (`captures`, `jvd`, `schemas`, "deactivate"). 0 identifiers.
+  - Matches: yes. Precise: yes for file-name identifiers; content identifiers are out of
+    reach (see Could not check).
+- **1.16**
+  - Command: my probes A to H (`convert_config_result`, set to set) at `19d05de`.
+  - Result: A 0 unplaced, `set apply-groups G1` + `deactivate apply-groups`; B 0,
+    `deactivate apply-groups`; C 1; D 1, the meta line not reproduced; E 0,
+    `set system ntp` synthesised; F 0, reproduced; G 1, reproduced; H 1, reproduced.
+  - Matches: yes, identical to the phase-4 run and the recorded evidence. Precise: yes.
+- **1.17**
+  - Command: 1.8's diff; read the `evidence-freeze.md` Requirements and Delta log and
+    `review.md` S3.
+  - Result: Requirements names the sibling wording (211a165) and "never applied to the
+    main spec". The phase-4 delta-log entry names the replaced clause.
+  - Neither says what the sibling's live delta, which still `ADDED`s the same
+    requirement without the ids, drops or becomes.
+  - Matches: yes. Precise: low; the "entry names the owner" half is inspection only.
+- **1.19**
+  - Command: the task's grep on the guide's added lines, then each hit read.
+  - Result: 9 hit lines. "Stable for the same input and the same salt", "revert with
+    the mapping restores the original", "Measure and explain … never a gate over
+    correctness", and the `AGENTS.md` Verification pointer are all present and
+    qualified.
+  - Matches: yes.
+  - Precise: for contradictions with `ARCHITECTURE.md` and the contract, yes. It cannot
+    catch a factual error in a hit line: hit 1 is claim 5 below, which fails.
+- **1.20**
+  - Command: read the new section; matched its path lists against `git ls-files` and
+    `[tool.template.domains]`.
+  - Result: triggers on behaviour-bearing paths and excludes `CONTRACT.md` and
+    `docs/`. Names `--jvd`, the baseline comparison and `test_device_truth.py`. Three
+    report items. "a second read by a fresh agent, never a second human". This change
+    touches no such path.
+  - Matches: yes.
+  - Precise: no for trigger coverage (claim 13 below). Wording inspection does not test
+    the area lists against the tree.
+- **1.21**
+  - Command: `.openspec.yaml` against `fnmatch` of each deliverable over
+    `[tool.template.domains.*].paths`.
+  - Result: convert → `conversion`, anonymize → `anonymization`; display, validate
+    contract, docs and changelog → none. Declared `[conversion, anonymization]`.
+  - Matches: yes. Precise: yes.
+
+### Sampled claims
+
+1. Guide tier table, cross-format row:
+   `uv run pytest tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr tests/test_convert_consistency.py tests/test_device_truth.py -q`.
+   - Source: `--collect-only` gives "101 tests collected", exit 0.
+   - Holds: yes.
+2. Guide tier table, anonymization row: `uv run pytest tests/test_anonymize -q` plus the
+   three probes by name.
+   - Source: "369 tests collected", and "6 tests collected" for the three ids
+     (`TestPipelineDumpMapIntegration`, the S4 fix).
+   - Holds: yes.
+3. Guide tier table, schema row: `uv run pytest --schema tests/test_schema_data.py -q`.
+   - Source: `--help`: "--schema  run tests that need a device XSD dump in
+     private_test_data/schemas/"; `tests/test_schema_data.py:20`
+     `pytestmark = pytest.mark.schema`; `conftest.py:367` skips `schema` items without
+     the flag; 12 collected.
+   - Holds: yes (collection only).
+4. Solo-review item 1: `uv run pytest --jvd tests/test_jvd_corpus.py -q`.
+   - Source: `--help` lists `--jvd`; `tests/test_jvd_corpus.py:35`
+     `pytestmark = pytest.mark.jvd`; 8 collected, and
+     `TestFieldWarningBudget` 1.
+   - Holds: yes (collection only).
+5. Guide, new paragraph: "The one full checkpoint before review is `AGENTS.md`'s
+   Verification rule; it runs neither the schema, the corpus nor the device tier".
+   - Source, the same page's tier table: "| **Full** | `uv run pytest tests/ -q` | … |
+     … run through the full checkpoint rather than beside it |" and "| **Device truth**
+     | Automatic | seconds | Runs against capture pairs under `tests/data/captures/` and
+     `private_test_data/captures/` |".
+   - Source, `pyproject.toml`: `test-command = ["uv", "run", "pytest", "tests/", "-q"]`
+     ("The full set runs this complete committed suite").
+   - Source, `agent_ready_checks/check.py`:
+     `if selected_set == "full" and not docs_only:` appends that command.
+   - `test_device_truth.py` is default-tier: 23 collected with and without
+     `-m "not schema and not jvd"`.
+   - Holds: **no.** For every change this rule is about (code), the full checkpoint runs
+     the device-truth tier. True for schema and corpus only. The row commands that add
+     `tests/test_device_truth.py` beside the checkpoint repeat it.
+6. Guide, entry-lookup row: "`src/junoscfg/display/constants.py` (`entry_keys`)".
+   - Source: `constants.py:138 def entry_keys(schema_node: Any)`; exported in
+     `display/__init__.py` `__all__`.
+   - Holds: yes.
+7. Guide, entry-lookup row: "the only committed bound … times the grammar".
+   - Source: `tests/test_set_validator.py:299 result = bundled_set_validator.validate(source)`,
+     `:302 assert elapsed < 5.0`. `git grep` for `perf_counter|time.time()|monotonic(|elapsed <|benchmark`
+     in `tests/` finds no other.
+   - Holds: yes.
+8. Guide: "the identifier-key-fields change record (its tasks 4.4 and 5.6) shows the
+   shape".
+   - Source: 4.4 records a base-vs-after timing of one large private input on one
+     machine; 5.6 is "the 30,000-entry plus … benchmarks".
+   - Holds: yes. The guide does not name the file; the sibling's 4.4 does, in a
+     committed file, which is pre-existing and not this change's.
+9. Validate contract: "Any `maxOccurs` other than 1 makes a list, however the dump
+   bounds it".
+   - Source: `assert root.children["class"].is_list is True` (maxOccurs 16),
+     `["source-port"].is_list is True` (32), `["host-name"].is_list is False` (1).
+   - Holds: yes for numeric bounds. `unbounded` is pinned by the uncited
+     `test_unbounded_is_list` (`assert ifaces.is_list is True`).
+10. Anonymize contract: "A schema enum value or the keyword of a key choice is syntax and
+    passes every rule unchanged".
+    - Source: `test_a_key_choice_keyword_passes_unchanged` builds `AnonymizeConfig(ips=True,
+      passwords=True, communities=True, ssh_keys=True, identities=True, groups=True,
+      descriptions=True, as_numbers=[64496], salt="s")`, with no `sensitive_words`.
+      `test_an_enum_key_passes_unchanged` has `sensitive_words=["as-list"]` and no
+      `ssh_keys`. `config.py` declares nine rule switches.
+    - Holds: **partly.** The product holds (my all-rules probe). "Every rule" is
+      asserted by neither cited test.
+11. Convert contract: an incomplete set statement, a keyed entry without its key from
+    JSON, YAML or XML, and a meta command on a partial or surplus key "are kept whole
+    and reported `UNPLACED`".
+    - Source: `assert any(e.expected == UNPLACED for e in result.errors)`; `assert
+      messages == ["'as-path-neighbors' entry without its key field 'list-type' could
+      not be placed in the schema: kept as written, not validated"]` per door;
+      `assert from_[suffix]["@"] == self._ATTRS[command]`, `assert len(_unplaced(...)) == 1`,
+      `assert meta_line in dict_to_set(ir).splitlines()`.
+    - Holds: yes.
+12. Display contract: "`entry_keys()` and `statement_children()` are the one answer …
+    and no module keeps a key spelling of its own".
+    - Source: `assert entry_keys({"L": True, "k": ["list-type", "list-name"]}) == (…)`,
+      `assert list(statement_children(keyed)) == ["accept"]`, and
+      `retired_strings = {"fe", "values-only", "community-name"}` … `assert found == []`.
+    - Holds: yes as worded, with the deny-list limit noted in 1.13.
+13. Solo-review trigger: "validation (`validate/*_validator.py`,
+    `convert/field_validator.py`)", "conversion (`convert/`)", "the grammar", "the
+    schema pipeline (… `grammar_generator.py`)".
+    - Source: `git ls-files 'src/junoscfg/validate/*_validator.py'` gives four files
+      and not `validate/validator.py`. `pyproject.toml` `[tool.template.domains.validation]`
+      lists `src/junoscfg/validate/validator.py`.
+    - Holds: **partly.**
+      - A change to `validate/validator.py` falls in no area.
+      - `convert/field_validator.py` is both conversion and validation, so a one-file
+        change "crosses more than one" area.
+      - "the grammar" has no path of its own; its generator is listed under the schema
+        pipeline and its output under the generated artifacts.
+14. Solo-review: "the identifier-key-fields review found three High findings after the
+    full check was green".
+    - Source: sibling `review.md:236` "9. **Full check** at fc22c57: exit 0, "every
+      check passed"" and `:252`, `:284`, `:307` "**1. High.**", "**2. High.**",
+      "**3. High.**".
+    - Holds: yes.
+15. Settle rule 5: "The identifier-key-fields pilot took five probe rounds relayed
+    through chat".
+    - Source: sibling `tasks.md:34` "(device probe round 5)"; sibling `metrics.md:73`
+      "relayed mid fix pass, device probe round 5".
+    - Holds: yes.
+16. Settle rule 5, the form, against `AGENTS.md` and rules 1 and 2.
+    - Source: `AGENTS.md:41` "**Ask for a device artefact before inferring**, in set,
+      JSON and XML" and "**Never request a whole configuration** — name a path"; settle
+      rule 2 "Every capture request names a path"; `AGENTS.md` "Real configurations go
+      in `private_test_data/`, which is gitignored".
+    - Holds: yes. The form names the path (rule 2), all three views (rule 1), a pathed
+      preflight, and the gitignored raw capture.
+    - Small overstatement: "every operator value replaced by the synthetic ranges in
+      `AGENTS.md`". The table covers addresses, AS numbers, passwords and user or host
+      names, not policy names or descriptions.
+17. `main-spec-edit.md` against the sibling delta and the main spec.
+    - Source: `diff` gives only `5c5`, the `Tests:` line, old a prefix of new. The main
+      spec's block (line 83 of `openspec/specs/conversion/entry-keys/spec.md`,
+      wrapped), whitespace-normalised, equals the edit minus the meta sentences, the five
+      ids and the two scenarios.
+    - Holds: yes. `## MODIFIED` is right for the main spec, which holds the requirement
+      since a920fab.
+18. `docs-plan.md` source row: reproducibility from "`openspec/changes/identifier-key-fields/tasks.md`
+    items 4.15 and 5.4".
+    - Source: 4.15 reads "Re-review finding 11 … `is_keyword_field()` in
+      `junoscfg.display` replaces the three local spellings"; 5.4 reads "Regenerate
+      affected artifacts twice and prove reproducibility."
+    - Holds: **partly.** 4.15 is the wrong item. The plan only, not a deliverable.
+19. Convert contract rewording against task 2.3 "nothing dropped".
+    - Source, old: "a second path for a pair that already has one is the duplicate
+      `ARCHITECTURE.md` section 1 calls a defect". New: "a second path for a pair is the
+      duplicate `ARCHITECTURE.md` calls a defect".
+    - Holds: **partly.** The meaning survives; the section pointer is dropped, and the
+      change is unrecorded.
+20. Solo-review terminology: "every metadata verb (`deactivate`, `activate`, `protect`,
+    `delete`)".
+    - Source: sibling requirement "Meta commands never fall back to a valid prefix";
+      `tests/test_set_input.py:175` "# ── Meta commands"; convert contract "a meta
+      command".
+    - Holds: **no.** A new synonym.
+
+Summary: 20 sampled; 14 hold, 4 partly (10, 13, 18, 19), 2 fail (5, 20). Of the
+failures, only claim 5 is substantive.
+
+### Interim actions on S1 to S7
+
+- **S1: partly resolved.**
+  - `main-spec-edit.md` now carries the sibling's narrower sentence. Under its colon
+    reading ("The same applies to `deactivate` …: a partial or surplus keyed-list key
+    and an unknown path SHALL …") it no longer contradicts probes A, D and E.
+  - The convert contract and the docs-plan row drop "every door" and "unmodelled path".
+  - Remains for the owner:
+    - "The same applies" can be read as carrying the whole first sentence (two
+      `apply-groups` names, a second nokeyword value) to the meta commands. A and D
+      would then contradict it. Wording such as "For `deactivate`, `activate`, `protect`
+      and `delete`, a partial or surplus keyed-list key and an unknown path SHALL …"
+      removes the reading. It is the sibling's text, so it is the owner's call.
+    - The three defects need a `bug`-lane change with a device artefact (named path)
+      first.
+- **S2: resolved.**
+  - The adopted text claims only that a whole-list meta attribute survives set output,
+    which `test_a_meta_attribute_on_a_whole_list_is_written` asserts.
+  - Remains (optional): the clause no longer mentions the placed positional value, so
+    `…_positional_value_is_kept_whole` traces to no sentence or scenario. Its name still
+    disagrees with its assertion (`_unplaced(...) == []`).
+- **S3: partly resolved.**
+  - One wording is adopted, and the overlap is logged in this change's
+    `evidence-freeze.md` and `review.md`.
+  - Archiving with `--skip-specs` (the change skill's rule) keeps the sibling delta from
+    colliding.
+  - Remains for the owner: the sibling's live `## ADDED` block still says nothing about
+    being superseded. Record in the sibling's change record that this change owns the
+    applied wording, or delete the sibling's block.
+- **S4: resolved.**
+  - `docs-plan.md` cites `TestPipelineDumpMapIntegration`.
+  - The `evidence-freeze.md` Evidence line no longer claims all ids from a count.
+  - 1.2 expects exit 0 and no `not found`, and fails on a bad id (my probe).
+- **S5: resolved.**
+  - The guide row says no committed timing guard covers entry lookup, and that the only
+    bound times the grammar (claim 7 holds).
+  - It prescribes measure-and-explain at base and head on one machine, "never a gate
+    over correctness".
+  - It names no private file and no path that moves on archive.
+- **S6: resolved for display, mostly for validate.**
+  - Display cites `test_no_module_keeps_its_own_key` and no longer claims
+    `key_is_positional`.
+  - Validate dropped "declared keys drive the generated artifacts". Its new tail
+    "however the dump bounds it" reaches `unbounded`, which the cited test does not
+    assert.
+  - Remains: cite `TestCardinality::test_unbounded_is_list` too, or drop the tail.
+- **S7: resolved for this change's self-application, partly for the rule's trigger.**
+  - The rule triggers on behaviour-bearing paths, excludes contracts and docs, names
+    corpus, commands and report, and says "fresh agent".
+  - Remains for the owner: the area lists (claim 13). `validate/validator.py` is in no
+    area. `convert/field_validator.py` and `grammar_generator.py` each sit in two, so
+    one file triggers the rule. Reusing `[tool.template.domains]` as the areas would
+    make the trigger mechanical.
+- **New, not raised in phase 4:** claim 5 (the full checkpoint does run device truth).
+  The fix is one sentence: "it runs neither the schema nor the corpus tier".
+
+### Could not check
+
+- 1.10 and 1.18: phase 7, by instruction. The telemetry file and the applied main spec
+  do not exist yet.
+- Whether the schema-tier, corpus-tier and regeneration commands pass. I may not run
+  `--schema`, `--jvd` or `--regen-schema`; claims 3 and 4 are verified by `--help`,
+  markers and collection only. The reproducibility recipe (a second `--regen-schema`
+  leaves `git diff --stat -- src/junoscfg/validate/data` empty) is unexecuted.
+- Device behaviour for defects A, D and E. This needs a device artefact for the named
+  paths (`apply-groups`, `access securid-server`, `system ntp`).
+- markdownlint on `main-spec-edit.md`: the hook excludes `openspec/changes/` (Skipped).
+  Neither the Builder nor I linted it.
+- Content-level identifiers. 1.15 matches file names only. Checking hostnames or values
+  from private configurations would mean opening them, which I did not do.
+- The Builder's working-tree runs before the commit (`qa_tree.py`, the recorded
+  durations). They are not reproducible as such; I re-derived every result at
+  `19d05de` instead.
+- The Builder's worktree `junoscfg-wt-19d05de` is still registered, although
+  `checkpoint.md` says "removed at the end". Possibly intentional for phases 6 and 7; I
+  did not touch it.
+
+### Verdict on the QA evidence
+
+The recorded evidence is trustworthy. Every one of the 19 checks I re-executed
+independently gives the Builder's result. The counts that can be compared match exactly:
+46 ids and 154 nodes, 8 blocks with 0 missing, 9 hit lines, 8 needles with 0 leaks,
+30/26/30/30 lines, and the HTML counts. Probes A to H reproduce. The full checkpoint
+fails on exactly `fields` and `lane` with the stated causes.
+
+The negative probes show that 1.1, 1.2, 1.6 (`caps`) and 1.11 can fail. The evidence is
+not complete in four places:
+
+- 1.7 names only 01efe85, while the current head also carries 306233b's `mkdocs.yml`,
+  which keeps lane red from either base.
+- 1.12 does not record that convert's existing prose was reworded to fit the cap.
+- 1.13 quotes assertions accurately, but they do not carry the anonymize invariant's
+  "every rule".
+- No check compared the guide's new opening sentence with its own tier table. That
+  sentence is the one false deliverable claim found (claim 5).
+
+None of this is a behaviour change. Claim 5 should be fixed before the fresh review
+closes. S1, S3 and S7 carry owner wording decisions, and the rerun of 1.9 must wait
+until both 01efe85 and 306233b leave the range.

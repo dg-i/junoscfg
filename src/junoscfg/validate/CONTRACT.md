@@ -16,7 +16,7 @@ validator import an `xsd_*` module.
 - `ArtifactBuilder` and `JunosValidator` resolve lazily through `__getattr__`:
   importing this package must not pull lxml or the schema artifacts.
 - Any `maxOccurs` other than 1 makes a list, however the dump bounds it
-  — enforced by `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list`.
+  — enforced by `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list` and `tests/test_xsd_parser.py::TestCardinality::test_unbounded_is_list`.
 
 ## Precedent
 
