@@ -16,14 +16,17 @@ top-level `system` would let a bare document pass without the wrapping.
 from __future__ import annotations
 
 import json
+import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-from junoscfg.display import find_artifact, read_artifact_text
+from junoscfg.display import artifacts_dir, find_artifact, read_artifact_text
 from tests.support.paths import ARTIFACT_DIR
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from collections.abc import Iterator
 
 _SYSTEM = {
     "type": "object",
@@ -139,3 +142,18 @@ def shipped(name: str) -> Path:
 def shipped_text(name: str) -> str:
     """The text of the shipped artifact *name*."""
     return read_artifact_text(shipped(name))
+
+
+@contextmanager
+def using_tree(parent: Path, tree: dict[str, Any]) -> Iterator[Path]:
+    """Convert and validate against *tree*, the structure-tree artifact, for one block.
+
+    Written to a fresh directory under *parent* each time and selected with
+    `artifacts_dir`, the route `--artifacts` takes. Fresh, because conversion
+    caches a tree per directory: rewriting one in place reads the old tree.
+    The format is the one `docs/architecture/schema-internals.md` documents.
+    """
+    directory = Path(tempfile.mkdtemp(dir=parent, prefix="artifacts-"))
+    (directory / "junos-structure-tree.json").write_text(json.dumps(tree), encoding="utf-8")
+    with artifacts_dir(directory):
+        yield directory

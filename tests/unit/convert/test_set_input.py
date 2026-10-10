@@ -15,20 +15,18 @@ statements, statements kept whole, and round trips.
 
 from __future__ import annotations
 
-import json
 import re
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from junoscfg import Format, convert_config_result
 from junoscfg.convert import from_dict, to_dict
-from junoscfg.display import artifacts_dir
+from tests.support.artifacts import using_tree
 from tests.support.keyed_entries import as_json, ir, set_ir, term_from, to_set
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable
     from pathlib import Path
 
 
@@ -44,19 +42,8 @@ def write_set(config: Any) -> str:
 
 @pytest.fixture
 def schema_tree(tmp_path: Path) -> Callable[[dict[str, Any]], Any]:
-    """Read and write against a hand-written structure tree for one block.
-
-    The tree is the `junos-structure-tree.json` artifact, in the format
-    `docs/architecture/schema-internals.md` documents.
-    """
-
-    @contextmanager
-    def use(tree: dict[str, Any]) -> Iterator[None]:
-        (tmp_path / "junos-structure-tree.json").write_text(json.dumps(tree), encoding="utf-8")
-        with artifacts_dir(tmp_path):
-            yield
-
-    return use
+    """Read and write against a hand-written structure tree for one block."""
+    return lambda tree: using_tree(tmp_path, tree)
 
 
 _TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"

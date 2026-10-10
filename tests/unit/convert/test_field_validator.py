@@ -12,9 +12,7 @@ The keyed-entry cases validate against the shipped tree.
 
 from __future__ import annotations
 
-import itertools
 import json
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -33,10 +31,11 @@ from junoscfg.convert import (
     validate_ir,
 )
 from junoscfg.display import artifacts_dir
+from tests.support.artifacts import using_tree
 from tests.support.keyed_entries import TERM, set_ir, structure_tree
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable
     from contextlib import AbstractContextManager
     from pathlib import Path
 
@@ -45,23 +44,13 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def use_tree(tmp_path: Path) -> Callable[[dict[str, Any]], AbstractContextManager[None]]:
+def use_tree(tmp_path: Path) -> Callable[[dict[str, Any]], AbstractContextManager[Path]]:
     """Convert and validate against *tree*, written as the structure tree artifact."""
-    count = itertools.count()
-
-    @contextmanager
-    def use(tree: dict[str, Any]) -> Iterator[None]:
-        directory = tmp_path / f"artifacts-{next(count)}"
-        directory.mkdir()
-        (directory / "junos-structure-tree.json").write_text(json.dumps(tree), encoding="utf-8")
-        with artifacts_dir(directory):
-            yield
-
-    return use
+    return lambda tree: using_tree(tmp_path, tree)
 
 
 @pytest.fixture
-def validate(use_tree: Callable[[dict[str, Any]], AbstractContextManager[None]]) -> Validate:
+def validate(use_tree: Callable[[dict[str, Any]], AbstractContextManager[Path]]) -> Validate:
     """`validate_ir` against a structure tree written for the call."""
 
     def run(tree: dict[str, Any], config: dict[str, Any]) -> FieldValidationResult:
