@@ -18,8 +18,12 @@ When two of these conflict, the order is:
 1. **Correctness** — a converted configuration must mean what the input meant.
    For Junos this is *Junos correctness*: junoscfg reads every statement the
    device accepts, and what it writes loads on a device as the same
-   configuration. Copying the device's display layout (where it splits lines,
-   whether it shows a block or a one-liner) is not a goal.
+   configuration. Equivalent is enough; bit-identical to Junos output is not
+   a goal. Copying the device's display layout (where it splits lines,
+   whether it shows a block or a one-liner) is not a goal, and a test asserts
+   what a configuration means (its IR, or a round trip back to the same IR),
+   never the device's layout. Layout matters only where it changes meaning:
+   a tag (`inactive:`, `protect:`) must lead the line of the node it marks.
 2. **Simplicity** — a second way to do the same conversion is a defect.
 3. **Cost / size** — accepted: generated schema artifacts ship compressed in
    the wheel.

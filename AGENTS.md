@@ -38,10 +38,10 @@ stage renders.
 
 ## Before you change what junoscfg accepts
 
-**Ask for a device artefact before inferring**, in set, JSON and XML: device output outranks the
-schema model ([evidence hierarchy, Junos correctness](ARCHITECTURE.md)). **Never request a whole
-configuration** — name a path. **Fix at the owning layer, or record why not.** **Measure the blast
-radius before loosening**: slots and a negative test. Examples: [settle a schema question](docs/how-to/settle-a-schema-question.md).
+**Ask for a device artefact before inferring**, in set, JSON and XML: device output outranks the schema model
+([evidence hierarchy, Junos correctness](ARCHITECTURE.md)). **Never request a whole configuration** — name a path.
+**Equivalent, not identical**: output loads as the same configuration, whatever the device's layout. **Fix at the
+owning layer, or record why not.** **Measure the blast radius before loosening**: slots and a negative test. Examples: [settle a schema question](docs/how-to/settle-a-schema-question.md).
 
 ## Verification
 
