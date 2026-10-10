@@ -149,3 +149,42 @@ Two regressions against change A should be fixed first (F2, F3). F1 sits inside 
 - Finding 5 (Low–Medium, `validate_config(format="structured")` through `to_set()`): carried forward as follow-up 10 in `private_test_data/meta-tag-follow-ups.md`.
 - Low: a tag written both inline and beside `family` is repeated once (`test_a_family_tag_written_twice_is_repeated_once`); `passes_tag_to_child` now requires a container (`c`, not `l`); the `_holds_a_tag` docstring states what it checks; the `ConfigStore` test asserts the tag position, not the whole text. The patch-versus-minor question stays with change A's C7.
 - The corrections return to the same Reviewer before merge.
+
+### Re-review (2026-10-10)
+
+Same Reviewer. I reviewed only the corrections: `git diff 445aca8..733574d`, which is the rebase of 7eebb2c onto A's 164ae86 plus `meta-tag-placement: phase-6 corrections`. I edited nothing; the mutation run was restored afterwards and the tree is clean apart from this section.
+
+**Verdict: mergeable after fixes.** Findings F1, F2, F3, F6, F7 and F8 are fixed, each with a test that fails without it. F4 and F5 are recorded (freeze and follow-up). One High remains: R1, which B's reader makes worse than on A.
+
+- **The new tests fail without the correction.** With 445aca8's `src/` swapped in, all 7 new tests fail: `TestAListTaggedAsAWhole` (4 shapes) and `TestOnlyTagsCountAsTags` (3). At 733574d the focused files (`test_meta_tags*`, `test_xml_inactive_leaf_challenge`, `test_to_yaml`, `test_characterization`, `test_cli`, `test_config_store`, `test_artifact_builder`, `test_set_input`, `test_convert_*`, `test_set_converter`) give 608 passed.
+- **The whole-list block layout (`keep_block` with `split_key_name`) holds.** Round trips through structured output and through set are equal for:
+  - `name-server`, static `route` and `unit`
+  - multi-key `route-filter`, written as `inactive: route-filter { 198.51.100.0/24 exact; … }`
+  - a whole `community` list and a whole `term` list
+  - a whole list plus a protected entry inside it
+  - a whole list inside `groups`
+  - an inner `next-hop` tag inside a whole-tagged `route` list.
+
+  The oneliner is now suppressed for every `split_key_name` entry, transparent-child entries included. That changes layout only (§1). The interface entry path is untouched.
+- **`holds_tag` holds.** `junos:group` on `family` no longer warns, and `--strict` exits 0. A real tag on `family` is still reported. A `family` tag written both inline and as a sibling is emitted once.
+- **The `apply-groups` evenness check holds.** An even `inactive: apply-groups [ G1 G2 ];` still reads; an uneven pair raises `ValueError`.
+- **`passes_tag_to_child` now requires `c` and no `l`**, so the 28 `name` leaves are out. The family and encapsulation behaviour is unchanged, and the set grammar is unaffected (the predicate is runtime only).
+- **The level probe and oracle still hold, with one caveat.** The owner replaced `anon/` at 15:39:
+  - None of 20,048 level taggings of the 3,424 statements raises.
+  - All 16,624 block-opener taggings equal set `deactivate <path>`.
+  - The curly IR equals the set IR (570 lines against device JSON for both), and set output from curly equals set output from set.
+  - Structured round trips hold for set and curly sources.
+  - Caveat: the new export carries **no tags in any format**, so it no longer exercises tag placement. The tag-placement figures in the evidence freeze rest on the earlier export.
+
+**R1. High (introduced by B's reader on top of change A's R1): `deactivate protocols lldp disable` becomes a deactivated `lldp` after a structured round trip.**
+- Requirements: "Structured output puts a tag at the head of its node's line … SHALL NOT join onto one line a node after the first that carries a tag", and "Round trips".
+- Artifact: the `has_nk_leaf` / `emit_positional` branch in `dict_walker.py`, which writes the flag merged into the parent's line. With the tag now emitted (change A's correction), it becomes `inactive: lldp disable;`, and B's reader correctly gives that tag to `lldp`, the node the statement starts.
+- Evidence: `printf 'set protocols lldp disable\ndeactivate protocols lldp disable\n' | uv run --locked junoscfg convert -i set -e structured | uv run --locked junoscfg convert -i structured -e json` gives `"lldp": {"@": {"inactive": true}, "disable": [null]}`. The whole of LLDP is deactivated, silently.
+- With a sibling (`set protocols lldp interface all`), the tag is dropped instead, also silently.
+- Set output is correct.
+- Proposed correction: as in change A's R1. Do not merge a tagged value-spelled flag into its parent's line; write `lldp { inactive: disable; … }`. Add both shapes to `SHAPES`.
+
+### Builder response to the re-review (2026-10-10)
+
+- R1 (High, a tagged statement-name flag under a container: dropped beside a sibling, read back as the container's tag alone): corrected in change A's writer (a tagged flag is a line of its own) together with this change's rule that no line joins past a tagged node. `TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_flag_under_a_container_keeps_its_tag` covers both lldp shapes; change A's strict xfail for the shape alone is promoted here and passes.
+- The replaced `anon/` export carries no tags, as the re-review notes: the tag figures in the freeze rest on the earlier export and on the level probe, which tags every level itself.

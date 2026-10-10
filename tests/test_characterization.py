@@ -462,14 +462,7 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
     @pytest.mark.parametrize(
         "set_text",
         [
-            pytest.param(
-                "set protocols lldp disable\ndeactivate protocols lldp disable\n",
-                marks=pytest.mark.xfail(
-                    strict=True,
-                    reason="structured output joins a tagged child onto its parent's line "
-                    "(`lldp inactive: disable;`); change meta-tag-placement stops that",
-                ),
-            ),
+            "set protocols lldp disable\ndeactivate protocols lldp disable\n",
             "set protocols lldp interface all\nset protocols lldp disable\n"
             "deactivate protocols lldp disable\n",
         ],
