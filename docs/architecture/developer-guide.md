@@ -670,7 +670,7 @@ what it asserts. The layout carries the map from code to tests:
 |---|---|
 | `tests/unit/<package>/` | one file per module of `src/junoscfg/<package>/` (`cli/` for `cli.py`, `input/` for `input.py`), through package doors |
 | `tests/contract/` | laws a whole family keeps, parametrised over catalogues: the format matrix over `tests/support/shapes.py`, every anonymize rule, every validation door |
-| `tests/corpus/` | evidence, strongest first: device captures, the set corpus, the shipped artifacts, name-keyed byte identity, jvd (`--jvd`), schema dumps (`--schema`) |
+| `tests/corpus/` | evidence, strongest first: device captures (`tests/data/device/`, judged by `test_device_renderings.py`), the grammar against device lines, the shipped artifacts, jvd (`--jvd`), schema dumps (`--schema`) |
 | `tests/tooling/` | CI, regeneration, generated documents, the selector and the door check |
 | `tests/support/` | paths, minimal artifacts, catalogues and helpers; no tests |
 

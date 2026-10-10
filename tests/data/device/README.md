@@ -1,0 +1,53 @@
+# Device captures
+
+What Junos devices printed for configurations loaded on them: the oracle at
+the top of the evidence hierarchy (`ARCHITECTURE.md`), above the schema model
+and anything junoscfg generates. A test that disagrees with a capture is
+wrong about Junos, never the capture.
+
+## What a capture is
+
+One configuration, loaded on a lab device in `configure private` with `load
+override`, never committed there, and saved by the device with `show`, `show
+| display xml`, `show | display json` and `show | display set`:
+`<device>/<name>.{conf,xml,json,set}.gz`. Nothing is trimmed or re-rooted.
+`manifest.json` lists every capture, every device's model and release (and
+where the release was read), and the origin of every JVD configuration.
+
+| Directory | Holds | Licence |
+|---|---|---|
+| `synthetic/sources/` | configurations written for these captures, following `AGENTS.md`'s test-data values | junoscfg's (MIT) |
+| `synthetic/<device>/` | each device's renderings of them | junoscfg's (MIT) |
+| `jvd/sources/` | five configurations from Juniper's Validated Designs, unmodified | Apache-2.0, `jvd/LICENSE`, `jvd/NOTICE` |
+| `jvd/<device>/` | each device's renderings of them: derived works, see `jvd/NOTICE` | Apache-2.0 |
+
+Secrets in both sets are public: the synthetic ones are invented, and the JVD
+ones are Juniper's published lab values. Each device re-encrypts them, so a
+`$9$` value differs between devices, never between one capture's renderings.
+
+## What the tests read and ignore
+
+`tests/support/devices.py` loads them; `tests/corpus/test_device_renderings.py`
+holds junoscfg's set rendering of each format to the device's display set.
+Comments are not statements and are ignored (`## Last changed`, `## Warning:
+... unsupported platform`, `## SECRET-DATA`), as are the `junos:changed-*`
+attributes, the XML `<cli>` banner and the release in the XML namespace.
+
+`known-differences.json` records every line that differs today, with its
+class: a junoscfg `defect`, an `equivalent` rendering the device loads alike,
+an `open` question, or a `device-quirk` of the device's own renderings (the
+curly `/* OMITTED */` of `apply-flags omit`, for one). A difference not
+recorded fails, and so does a recorded one that is gone.
+`grammar-corpus.json` holds the few device set lines that exercise every
+grammar rule the many do, and every line the shipped grammar rejects.
+
+## Adding or refreshing a capture
+
+1. Capture on the device as above, into `private_test_data/<folder>/`; the
+   capture log names lab devices and stays there.
+2. `uv run python tools/import_device_captures.py` copies the renderings and
+   sources here, gzipped reproducibly, and writes the manifest.
+3. `uv run python tools/device_differences.py` rewrites the record; it stops
+   on a line no class claims, which is classified before it is recorded.
+4. After a grammar change or new set lines: `uv run python
+   tools/device_grammar_corpus.py` (minutes).

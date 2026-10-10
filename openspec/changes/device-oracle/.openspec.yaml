@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-10
+type: refactor
+# No product code changes; the evidence judges conversion (and its spec
+# conversion/entry-keys is revised) and set validation.
+zone: conversion
+domains: [conversion, validation]
+removes: "the name-keyed byte-identity pin (tests/corpus/test_name_keyed_lists.py) and the requirement sentence it enforced, retired by the owner on 2026-10-10; the harvested set corpus and router1 as test inputs, replaced by device captures; every removed case is mapped in ledger/*.tsv"
+# The owner chose the lightweight record of test-architecture again (2026-10-10).
+assurance: economy

@@ -1,0 +1,55 @@
+{
+ "devices": {
+  "vmx-23.2R2-S7.5": {
+   "model": "vmx",
+   "release": "23.2R2-S7.5",
+   "release_source": "show version"
+  },
+  "qfx5120-25.2R2-S1.5": {
+   "model": "qfx5120-32c",
+   "release": "25.2R2-S1.5",
+   "release_source": "xml-namespace"
+  }
+ },
+ "jvd": {
+  "repository": "https://github.com/Juniper/jvd",
+  "commit": "ef889c28e687155388823ac09be5452701f97ef9",
+  "paths": {
+   "bng1_mx304": "service_provider/broadband_edge/configuration/conf/bng1_mx304.conf",
+   "mdr1_acx7509": "service_provider/metro_ethernet_business_services/configuration/conf/mdr1_acx7509.conf",
+   "services-leaf1_qfx5130-48c": "data_center/adc/5stage_evpn_vxlan/configuration/conf/services-leaf1_qfx5130-48c.conf"
+  },
+  "note": "loaded unmodified; the captures were run from a clone whose commit was not recorded, and the load-error line numbers match this commit"
+ },
+ "secrets": "invented for the synthetic configurations, Juniper's published lab values in the JVD ones; public, and not masked. Each device re-encrypts them",
+ "captures": [
+  {
+   "name": "bng1_mx304",
+   "source": "jvd",
+   "device": "vmx-23.2R2-S7.5",
+   "captured": "2026-10-10",
+   "note": "the only capture of radius-timeout-dropped; `$junos-` variables"
+  },
+  {
+   "name": "mdr1_acx7509",
+   "source": "jvd",
+   "device": "vmx-23.2R2-S7.5",
+   "captured": "2026-10-10",
+   "note": "transport-class and isis overload; the bare-deactivate quirk"
+  },
+  {
+   "name": "services-leaf1_qfx5130-48c",
+   "source": "jvd",
+   "device": "vmx-23.2R2-S7.5",
+   "captured": "2026-10-10",
+   "note": "policy-expression quoting; most XML/JSON element leaks"
+  },
+  {
+   "name": "synthetic-probes",
+   "source": "synthetic",
+   "device": "vmx-23.2R2-S7.5",
+   "captured": "2026-10-10",
+   "note": "junoscfg's renderings, loaded to ask the device their meaning"
+  }
+ ]
+}

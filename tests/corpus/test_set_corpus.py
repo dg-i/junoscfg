@@ -1,28 +1,32 @@
-"""The shipped grammar against set commands this repository already had.
+"""The shipped grammar against what devices print, and against what they would refuse.
 
-`examples/router1.set` is a fixture written alongside the grammar work, so it
-cannot say much about the grammar. These commands come from the test suite,
-which predates it. Two independent reviewers of the grammar changes could not
-reproduce the accept-rate figures in their records, because the corpus lived
-only in a scratch directory; it is committed now, with its derivation in the
-header of `data/set_corpus.txt`.
+Every `set` line a device printed is valid Junos. All of them through the
+Earley grammar take minutes, so `tests/data/device/grammar-corpus.json` holds
+the few that exercise every grammar rule the many do
+(`tools/device_grammar_corpus.py`), and every line the grammar rejects, each
+a false rejection of valid configuration. Every line, by hand:
+`pytest tests/corpus/test_set_corpus.py --device-grammar`.
+
+The corpus this replaces, `tests/data/set_corpus.txt`, was harvested from the
+repository's own tests and from `examples/router1.set`, junoscfg's own output.
 """
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
 
-from tests.support.paths import TEST_DATA
+from tests.support.devices import DEVICE_DATA, captures
+from tests.support.paths import PRIVATE_DATA
 
-CORPUS = TEST_DATA / "set_corpus.txt"
+GRAMMAR_CORPUS = json.loads((DEVICE_DATA / "grammar-corpus.json").read_text(encoding="utf-8"))
 
-# Commands the grammar rejects. Keeping the full list, rather than a count,
-# means a new false positive and a fixed one are both visible in the diff.
+# Commands the grammar must reject or cannot take, written by hand: a device
+# prints only valid configuration, so the device corpus has no negative cases.
 #
-# Correctly rejected — malformed fixtures the corpus inherited from the tests
-# they were harvested from:
+# Correctly rejected: malformed Junos.
 CORRECTLY_REJECTED = {
     "set interfaces ge-0/0/0 bogus-thing 5": "element does not exist",
     "set policy-options community FOO members": "leaf-list with no value",
@@ -61,41 +65,68 @@ OVER_REJECTED = {
 }
 
 
-def _corpus() -> list[str]:
-    return [
-        line
-        for line in CORPUS.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith("#")
-    ]
-
-
 @pytest.fixture(scope="module")
 def validator(bundled_set_validator: Any) -> Any:
-    """The session's one grammar compile; it costs about four seconds."""
+    """The session's one grammar compile."""
     return bundled_set_validator
 
 
-class TestShippedGrammarAgainstTheCorpus:
-    def test_corpus_is_not_empty(self) -> None:
-        assert len(_corpus()) > 100
+class TestTheGrammarTakesWhatDevicesPrint:
+    def test_the_corpus_covers_the_grammar_the_devices_use(self) -> None:
+        assert len(GRAMMAR_CORPUS["accepted"]) > 100
+        assert GRAMMAR_CORPUS["rules"] > 300
 
-    def test_rejections_are_exactly_the_recorded_ones(self, validator: Any) -> None:
-        rejected = {c for c in _corpus() if not validator.validate(c).valid}
-        expected = set(CORRECTLY_REJECTED) | set(INTENTIONALLY_UNSUPPORTED) | set(OVER_REJECTED)
-        assert rejected == expected, (
-            f"newly rejected: {sorted(rejected - expected)}\n"
-            f"no longer rejected: {sorted(expected - rejected)}"
+    def test_every_covering_line_is_accepted(self, validator: Any) -> None:
+        refused = [
+            line for line in GRAMMAR_CORPUS["accepted"] if not validator.validate(line).valid
+        ]
+        assert not refused, "\n".join(refused)
+
+    def test_the_false_rejections_are_exactly_the_recorded_ones(self, validator: Any) -> None:
+        """A device printed each of these; a fix accepts one and fails here until
+        `tools/device_grammar_corpus.py` drops it from the record."""
+        accepted = [line for line in GRAMMAR_CORPUS["rejected"] if validator.validate(line).valid]
+        assert not accepted, "now accepted, regenerate the corpus:\n" + "\n".join(accepted)
+
+
+class TestTheGrammarRefusesWhatIsNotJunos:
+    @pytest.mark.parametrize("line", sorted(CORRECTLY_REJECTED))
+    def test_malformed_junos_is_rejected(self, validator: Any, line: str) -> None:
+        assert not validator.validate(line).valid, CORRECTLY_REJECTED[line]
+
+    @pytest.mark.parametrize("line", sorted(INTENTIONALLY_UNSUPPORTED))
+    def test_bracket_shorthand_is_refused_with_its_reason(self, validator: Any, line: str) -> None:
+        assert validator.validate(line).errors[0].message == (
+            f"Unsupported bracket syntax in set input on line 1:\n{line}"
         )
-        for line in INTENTIONALLY_UNSUPPORTED:
-            result = validator.validate(line)
-            assert result.errors[0].message == (
-                f"Unsupported bracket syntax in set input on line 1:\n{line}"
-            )
 
-    def test_the_recorded_rejections_are_still_in_the_corpus(self) -> None:
-        """A command dropped from the corpus must not linger in the lists above."""
-        corpus = set(_corpus())
-        stale = (
-            set(CORRECTLY_REJECTED) | set(INTENTIONALLY_UNSUPPORTED) | set(OVER_REJECTED)
-        ) - corpus
-        assert not stale, f"recorded but absent from the corpus: {sorted(stale)}"
+    @pytest.mark.parametrize("line", sorted(OVER_REJECTED))
+    def test_a_known_limitation_is_still_rejected(self, validator: Any, line: str) -> None:
+        """Valid Junos the structural grammar cannot express (docs/guide/validation.md);
+        a fix moves the line out of OVER_REJECTED."""
+        assert not validator.validate(line).valid, OVER_REJECTED[line]
+
+
+def _every_device_line() -> list[str]:
+    lines = {
+        line
+        for folder in PRIVATE_DATA.glob("jvd_derived_data*")
+        for path in folder.glob("*.set")
+        if ".device." not in path.name
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.startswith("set ")
+    } or {line for c in captures() for line in c.device_set() if line.startswith("set ")}
+    return sorted(lines)
+
+
+@pytest.mark.device_grammar
+class TestEveryDeviceLine:
+    """By hand: every device line, minutes through the Earley grammar."""
+
+    def test_only_the_recorded_lines_are_rejected(self, validator: Any) -> None:
+        rejected = {line for line in _every_device_line() if not validator.validate(line).valid}
+        recorded = set(GRAMMAR_CORPUS["rejected"])
+        assert rejected == recorded, (
+            f"newly rejected: {sorted(rejected - recorded)}\n"
+            f"no longer rejected: {sorted(recorded - rejected)}"
+        )

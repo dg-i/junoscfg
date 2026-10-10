@@ -71,8 +71,8 @@ The counterpart is a test that must stay red. `tests/unit/validate/test_set_vali
 ran entirely against a three-rule grammar, so every assertion in it was
 positive, and a validator that accepts everything passes every positive test
 there is. It now also runs against the artefact we ship, and
-`tests/corpus/test_set_corpus.py` records each rejection by name so a new false
-positive and a fixed one are both visible in the diff.
+`tests/corpus/test_set_corpus.py` records each false rejection of a device's own
+line, so a new false positive and a fixed one are both visible in the diff.
 
 ## 5. Freeze device evidence once, sanitized
 

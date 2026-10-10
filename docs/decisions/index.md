@@ -12,3 +12,4 @@ Generated from the front-matter of every record in this directory by `agent-read
 | [Key list entries by the identifiers the XSD declares](2026-10-09-key-entries-by-declared-identifiers.md) | accepted | tests | 2027-04-09 |
 | [Reject bracket shorthand in raw set input](2026-10-09-reject-raw-set-brackets.md) | accepted | tests | 2027-10-09 |
 | [Scope compatibility to the production consumer](2026-10-09-scope-compatibility-to-production-consumer.md) | accepted | repository API tests and agent-ready lane | 2027-04-06 |
+| [Commit device captures, JVD's included, as the test oracle](2026-10-10-commit-device-captures-as-the-oracle.md) | accepted | tests | 2027-04-10 |

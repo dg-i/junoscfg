@@ -64,6 +64,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         ),
     )
     parser.addoption(
+        "--device-grammar",
+        action="store_true",
+        default=False,
+        help=(
+            "run the shipped grammar over every set line a device printed (minutes); "
+            "the default run takes the covering subset in tests/data/device/grammar-corpus.json"
+        ),
+    )
+    parser.addoption(
         "--regen-schema",
         action="store_true",
         default=False,
@@ -158,6 +167,11 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         skip = pytest.mark.skip(reason="needs --schema and a dump in private_test_data/schemas/")
         for item in items:
             if "schema" in item.keywords:
+                item.add_marker(skip)
+    if not config.getoption("--device-grammar"):
+        skip = pytest.mark.skip(reason="needs --device-grammar; minutes through the grammar")
+        for item in items:
+            if "device_grammar" in item.keywords:
                 item.add_marker(skip)
     if not config.getoption("--jvd"):
         skip = pytest.mark.skip(reason="needs --jvd; clones Juniper's jvd corpus")

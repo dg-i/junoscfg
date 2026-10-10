@@ -26,8 +26,10 @@ Where a test goes, which door it uses, and what it asserts.
 - **Doors.** Import names from a package door, never a submodule or an
   underscore name, and reach no private attribute; `tools/check_test_doors.py`
   enforces it, and an exception there carries its reason.
-- **Assert meaning**: the IR, accept or reject, a round trip to the same IR.
-  Byte layout only where a requirement declares it (name-keyed lists).
+- **Assert meaning**: the IR, accept or reject, a round trip to the same IR,
+  and for set output the device's display set; never the byte layout.
+- **Evidence ranks**: a device capture (`tests/data/device/`) outranks
+  anything written by hand or by junoscfg; a disagreement is junoscfg's.
 - **Paths** come from `tests/support/paths.py`; never `__file__` arithmetic or
   the working directory.
 - **Shipped artifacts** come from the session fixtures `bundled_tree`,

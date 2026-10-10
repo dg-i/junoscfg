@@ -56,11 +56,12 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 !!! warning "Structural only, and it rejects some valid configuration"
     Set validation checks *shape*, not values: every leaf accepts any token.
-    It also over-rejects. Against the 117 commands in
-    `tests/data/set_corpus.txt`, harvested from this repository's own tests,
-    105 are accepted; `tests/corpus/test_set_corpus.py` lists every rejection and
-    distinguishes malformed input, intentional exclusions, and accidental
-    over-rejection. The remaining accidental cause is:
+    It also over-rejects. Of the 8,643 distinct `set` lines four lab devices
+    printed for the configurations in `tests/data/device/`, all valid Junos, it
+    rejects 66; `tests/data/device/grammar-corpus.json` records each, and
+    `tests/corpus/test_set_corpus.py` fails when one is fixed or a new one
+    appears. It also lists the malformed input the grammar must refuse, the
+    intentional exclusions, and the known limitation:
 
     - **A rule merged from several places offers one choice**, so
       `set system location dc-a` is rejected even though the hierarchy exists.
