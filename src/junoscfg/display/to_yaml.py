@@ -160,61 +160,16 @@ def _xml_single_as_array(
 
 
 def _xml_single_element(element: etree._Element, schema: dict[str, Any] | None) -> Any:
-    """Convert a single XML element to a Junos JSON-equivalent value."""
-    children = _filtered_children(element)
+    """Convert a single XML container element to a Junos JSON-equivalent dict."""
+    child_dict = _xml_children_to_dict(_filtered_children(element), schema)
     inactive_attrs = _get_inactive_attrs(element)
-
-    if not children:
-        # Leaf element
-        text = (element.text or "").strip()
-        if text:
-            value = _coerce_value(text)
-            if inactive_attrs:
-                return {_local_name(element): [value], "@": inactive_attrs}
-            return value
-        # Empty element → presence flag [null]
-        if inactive_attrs:
-            return {"@": inactive_attrs}
-        return [None]
-
-    # Has sub-elements — it's a container or named entry
-    child_dict = _xml_children_to_dict(children, schema)
     if inactive_attrs:
         child_dict["@"] = inactive_attrs
     return child_dict
 
 
-def _xml_multi_elements(
-    tag_name: str, elements: list[etree._Element], schema: dict[str, Any] | None
-) -> Any:
-    """Convert multiple same-tag XML elements to a Junos JSON-equivalent value.
-
-    Multiple same-tag siblings become a JSON array. Each element becomes
-    a dict entry in the array.
-    """
-    # Check if these are leaf elements (no children, just text)
-    all_leaf = all(not _filtered_children(el) for el in elements)
-
-    if all_leaf:
-        # Check if all are empty (presence) or all have text
-        values: list[Any] = []
-        for el in elements:
-            text = (el.text or "").strip()
-            inactive_attrs = _get_inactive_attrs(el)
-            if text:
-                val = _coerce_value(text)
-                if inactive_attrs:
-                    values.append({tag_name: [val], "@": inactive_attrs})
-                else:
-                    values.append(val)
-            else:
-                if inactive_attrs:
-                    values.append({"@": inactive_attrs})
-                else:
-                    values.append(None)
-        return values
-
-    # Container elements → array of dicts
+def _xml_multi_elements(elements: list[etree._Element], schema: dict[str, Any] | None) -> Any:
+    """Convert same-tag XML container siblings to a JSON array of entries."""
     result: list[dict[str, Any]] = []
     for el in elements:
         children = _filtered_children(el)
@@ -224,6 +179,28 @@ def _xml_multi_elements(
             entry["@"] = inactive_attrs
         result.append(entry)
     return result
+
+
+def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str, Any] | None]:
+    """A leaf's IR value and the attributes its sibling ``@<name>`` carries.
+
+    Junos JSON keeps a leaf's value where an untagged leaf's would be and
+    puts the tag beside it: `"vlan-id": "751", "@vlan-id": {"inactive":
+    true}`. A tag marks the whole leaf: the CLI rejects `deactivate … members
+    64496:2`, and after `deactivate … members` the device's XML tags every
+    value. Values tagged unevenly are no configuration Junos writes, and
+    widening the tag would deactivate the untagged ones.
+    """
+    values = [_coerce_value(text) if (text := (el.text or "").strip()) else None for el in elements]
+    tags = [_get_inactive_attrs(el) for el in elements]
+    if any(tag != tags[0] for tag in tags):
+        raise ValueError(
+            f"Invalid XML: <{name}> marks some of its values inactive and not others; "
+            "Junos deactivates a leaf as a whole"
+        )
+    if len(values) > 1:
+        return values, tags[0]
+    return (values[0] if values[0] is not None else [None]), tags[0]
 
 
 def _xml_children_to_dict(
@@ -252,13 +229,17 @@ def _xml_children_to_dict(
     for name in order:
         elements = groups[name]
         node = _schema_of(elements[0], schema)
-        if len(elements) == 1:
+        if not any(_filtered_children(el) for el in elements):
+            result[name], attrs = _xml_leaf(name, elements)
+            if attrs:
+                result[f"@{name}"] = attrs
+        elif len(elements) == 1:
             if _should_be_array(elements[0], node):
                 result[name] = _xml_single_as_array(elements[0], node)
             else:
                 result[name] = _xml_single_element(elements[0], node)
         else:
-            result[name] = _xml_multi_elements(name, elements, node)
+            result[name] = _xml_multi_elements(elements, node)
     return result
 
 

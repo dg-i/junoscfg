@@ -1,0 +1,1 @@
+XML input now reads an inactive leaf as Junos JSON does: the value where an active leaf's would be and a sibling `@<name>` marker, as set and structured input already did. Previously `<vlan-id inactive="inactive">751</vlan-id>` became the set line `vlan-id vlan-id 751`, without a diagnostic. A leaf whose values are tagged unevenly is refused, since Junos tags a leaf as a whole.

@@ -9,11 +9,12 @@ would accept it.
 
 ### Requirement: An inactive leaf from XML reaches the IR set and structured input give
 
-WHEN XML input carries `inactive="inactive"` on a leaf element with a value
-THEN the system SHALL hold the leaf's value as it holds an active leaf's value
-and SHALL mark it with the sibling `@<name>` key `{"inactive": true}`, the IR
-set and structured input give for the same statement.
-Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
+WHEN XML input carries `inactive="inactive"` on a leaf element, with a value
+or as a presence flag, THEN the system SHALL hold the leaf's value (`[null]`
+for a presence flag) as it holds an active leaf's value and SHALL mark it with
+the sibling `@<name>` key `{"inactive": true}`, the IR set, structured and
+device JSON input give for the same statement.
+Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_leaf_reaches_one_ir`, `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::test_an_inactive_unit_and_leaf_reach_one_ir`, `tests/test_to_yaml.py::TestInactiveLeaf::test_an_inactive_presence_flag_matches_set_input`, `tests/test_cli.py::TestInactiveXmlLeaf::test_set_output_deactivates_the_leaf`
 
 #### Scenario: Single inactive leaf
 
@@ -21,8 +22,9 @@ Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::t
   under `interfaces interface xe-0/0/0` is converted by `convert_config` from
   XML, and the same statement is converted from set
   (`set … unit 751 vlan-id 751`, `deactivate … unit 751 vlan-id`) and from
-  structured (`inactive: vlan-id 751;`)
-- **THEN** all three give `"vlan-id": "751"` and `"@vlan-id": {"inactive": true}`
+  structured (`inactive: vlan-id 751;`), and from the device's JSON
+  (`"vlan-id": "751", "@vlan-id": {"inactive": true}`)
+- **THEN** all four give `"vlan-id": "751"` and `"@vlan-id": {"inactive": true}`
   on the unit, and set output is `set … unit 751 vlan-id 751` followed by
   `deactivate … unit 751 vlan-id`
 
@@ -31,6 +33,12 @@ Tests: `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr::t
 - **WHEN** `<unit inactive="inactive">` holds `<vlan-id inactive="inactive">751</vlan-id>`
 - **THEN** XML, set and structured input give one IR: the unit entry carries
   `"@": {"inactive": true}` and the leaf its sibling `@vlan-id`
+
+#### Scenario: Inactive presence flag
+
+- **WHEN** `<no-redirects inactive="inactive"/>` under `system` is converted from XML
+- **THEN** the IR is `"no-redirects": [null], "@no-redirects": {"inactive": true}`,
+  as `set system no-redirects` with `deactivate system no-redirects` gives
 
 #### Scenario: CLI
 

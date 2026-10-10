@@ -525,3 +525,16 @@ class TestInactiveLeaf:
             self._community(
                 '<members>64496:1</members><members inactive="inactive">64496:2</members>'
             )
+
+    def test_an_inactive_presence_flag_matches_set_input(self) -> None:
+        xml = xml_to_dict(
+            '<configuration><system><no-redirects inactive="inactive"/></system></configuration>'
+        )["configuration"]["system"]
+        from_set = json.loads(
+            convert_config(
+                "set system no-redirects\ndeactivate system no-redirects\n",
+                from_format=Format.SET,
+                to_format=Format.JSON,
+            )
+        )["configuration"]["system"]
+        assert xml == from_set == {"no-redirects": [None], "@no-redirects": {"inactive": True}}
