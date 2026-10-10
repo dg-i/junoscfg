@@ -20,5 +20,9 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: src/junoscfg/display/set_converter.py, config_store.py, constants.py, to_yaml.py | kernel modules the defects live in; display lies under no domain's paths |
+| Context expansion: src/junoscfg/convert/output/dict_walker.py, structured_output.py | the structured writer; the slice listed modules below the cut |
+| Context expansion: src/junoscfg/validate/grammar_generator.py | checked whether carrying a flag changes the grammar (it renames variants only) |
+| Context expansion: private_test_data/anon/, anaon.conf, jvd/ | device layout evidence; the anonymized dumps carry an older junoscfg's layout |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

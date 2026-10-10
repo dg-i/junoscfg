@@ -42,10 +42,11 @@ None blocking. `tunnel encapsulation` is the rule's one member without device ev
 - Assurance preference: balanced
 - Risk floor: high (cross-domain: schema-pipeline, conversion, validation, kernel; regenerated artifacts)
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer; Finalizer
-- Resume point: phase 4 (acceptance tests)
+- Resume point: phase 5 pre-review full checkpoint, run with change A's at the end (owner answer 3); last valid evidence: whole suite 1,959 passed / 45 skipped / 1 xfailed and `agent-ready check --set fast` green at ea224cd
 
 ## Delta log
 
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established on `change/meta-tag-placement` after 515b180.
+- 2026-10-10, phase 5: one `--regen-schema`. The structure tree gains `h`; the set grammar is identical once its variant-name hashes are masked (9,779 lines either way, no difference): `grammar_generator` hashes each node's sorted flags into variant names, and `homogeneous` is now among them, so set validation is unchanged. Three `tests/test_config_store.py` tests pushed a path named `family` and expected merging from the name; they now call `mark_merged`, the declared replacement for `COMPOUND_KEYWORDS`, with their assertions unchanged, and three tests are added beside them. My own `TestHomogeneousFlag` test indexed the tree under `configuration`, whose root it is; the path is corrected, the assertion unchanged. Device oracle (`private_test_data/anon/`): structured input now gives the IR set input gives (562 differing lines against device JSON for both, down from 588), set output from structured input equals set output from set input, no new difference in any direction; structured output read back keeps the IR for set and structured sources. JSON and XML sources do not round-trip through structured output on master either: JSON input keeps numbers, XML input keeps 230 single leaf-list values scalar (follow-ups). No acceptance criterion changed.
