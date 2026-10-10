@@ -143,6 +143,23 @@ class TestCli:
         assert "set system host-name r1" in result.output
 
 
+class TestInactiveXmlLeaf:
+    """XML input's inactive leaf renders as the device's two set lines."""
+
+    def test_set_output_deactivates_the_leaf(self) -> None:
+        xml = (
+            "<configuration><interfaces><interface><name>xe-0/0/0</name>"
+            '<unit><name>751</name><vlan-id inactive="inactive">751</vlan-id></unit>'
+            "</interface></interfaces></configuration>"
+        )
+        result = CliRunner().invoke(main, ["convert", "-i", "xml", "-e", "set"], input=xml)
+        assert result.exit_code == 0
+        assert result.output.splitlines() == [
+            "set interfaces xe-0/0/0 unit 751 vlan-id 751",
+            "deactivate interfaces xe-0/0/0 unit 751 vlan-id",
+        ]
+
+
 class TestCliPathFilter:
     """Tests for --path and --relative CLI options."""
 

@@ -368,6 +368,74 @@ class TestXmlAndStructuredInputAgreeOnTheIr:
             conf, from_format=Format.STRUCTURED, to_format=Format.SET
         ) == convert_config(xml, from_format=Format.XML, to_format=Format.SET)
 
+    # An inactive leaf with a value, as a 23.2R2 device shows it after
+    # `deactivate … unit 751 vlan-id` (and then the unit): XML tags the
+    # element, set writes `deactivate` without the value, curly prints
+    # `inactive: vlan-id 751;`, JSON writes the value and a sibling
+    # `@vlan-id`. XML input nested the value under its own name, so set
+    # output read `vlan-id vlan-id 751`. Spec:
+    # openspec/changes/xml-inactive-leaf/specs/conversion/meta-tags/spec.md.
+
+    @staticmethod
+    def _inactive_leaf_inputs(unit_inactive: bool) -> dict[str, str]:
+        unit_attr = ' inactive="inactive"' if unit_inactive else ""
+        unit_at = '"@": {"inactive": true}, ' if unit_inactive else ""
+        unit_tag = "inactive: " if unit_inactive else ""
+        deactivate_unit = "deactivate interfaces xe-0/0/0 unit 751\n" if unit_inactive else ""
+        return {
+            "xml": (
+                "<configuration><interfaces><interface><name>xe-0/0/0</name>"
+                f"<unit{unit_attr}><name>751</name>"
+                '<vlan-id inactive="inactive">751</vlan-id>'
+                "</unit></interface></interfaces></configuration>"
+            ),
+            "json": (
+                '{"configuration": {"interfaces": {"interface": [{"name": "xe-0/0/0", '
+                f'"unit": [{{{unit_at}"name": "751", "vlan-id": "751", '
+                '"@vlan-id": {"inactive": true}}]}]}}}'
+            ),
+            "set": (
+                "set interfaces xe-0/0/0 unit 751 vlan-id 751\n"
+                "deactivate interfaces xe-0/0/0 unit 751 vlan-id\n" + deactivate_unit
+            ),
+            "structured": (
+                "interfaces {\n    xe-0/0/0 {\n"
+                f"        {unit_tag}unit 751 {{\n"
+                "            inactive: vlan-id 751;\n"
+                "        }\n    }\n}\n"
+            ),
+        }
+
+    @staticmethod
+    def _unit_by_format(inputs: dict[str, str]) -> dict[str, dict]:
+        import json
+
+        from junoscfg import Format, convert_config
+
+        return {
+            fmt: json.loads(convert_config(text, from_format=Format(fmt), to_format=Format.JSON))[
+                "configuration"
+            ]["interfaces"]["interface"][0]["unit"][0]
+            for fmt, text in inputs.items()
+        }
+
+    def test_an_inactive_leaf_reaches_one_ir(self) -> None:
+        units = self._unit_by_format(self._inactive_leaf_inputs(unit_inactive=False))
+        expected = {"name": "751", "vlan-id": "751", "@vlan-id": {"inactive": True}}
+        assert units == dict.fromkeys(units, expected)
+        assert set(units) == {"xml", "json", "set", "structured"}
+
+    def test_an_inactive_unit_and_leaf_reach_one_ir(self) -> None:
+        units = self._unit_by_format(self._inactive_leaf_inputs(unit_inactive=True))
+        expected = {
+            "@": {"inactive": True},
+            "name": "751",
+            "vlan-id": "751",
+            "@vlan-id": {"inactive": True},
+        }
+        assert units == dict.fromkeys(units, expected)
+        assert set(units) == {"xml", "json", "set", "structured"}
+
 
 # ── identifier-key-fields ────────────────────────────────────────────
 #

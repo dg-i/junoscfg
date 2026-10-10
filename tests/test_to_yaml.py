@@ -492,3 +492,36 @@ class TestLoneEntryFollowsTheTree:
             "other-thing": {"v": "1"},
             "system": {"host-name": "r1"},
         }
+
+
+class TestInactiveLeaf:
+    """A tag on a leaf marks the leaf, never a value of it.
+
+    The CLI rejects `deactivate policy-options community C1 members 64496:2`
+    and accepts `… members`, after which the device's XML tags every
+    `<members>` element and its JSON writes one `"@members"` (23.2R2).
+    """
+
+    @staticmethod
+    def _community(members: str) -> dict:
+        return xml_to_dict(
+            "<configuration><policy-options><community><name>C1</name>"
+            f"{members}</community></policy-options></configuration>"
+        )["configuration"]["policy-options"]["community"][0]
+
+    def test_an_inactive_leaf_list_takes_one_marker(self) -> None:
+        community = self._community(
+            '<members inactive="inactive">64496:1</members>'
+            '<members inactive="inactive">64496:2</members>'
+        )
+        assert community == {
+            "name": "C1",
+            "members": ["64496:1", "64496:2"],
+            "@members": {"inactive": True},
+        }
+
+    def test_a_partly_inactive_leaf_list_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="members"):
+            self._community(
+                '<members>64496:1</members><members inactive="inactive">64496:2</members>'
+            )
