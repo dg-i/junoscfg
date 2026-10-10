@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from junoscfg.display.set_converter import SetConverter
+import json
+
+from junoscfg import Format, convert_config
+from junoscfg.display import SetConverter
 
 
 def struct_to_set(config: str) -> str:
@@ -175,22 +178,24 @@ class TestSetConverter:
         assert 'set interfaces ge-0/0/0 description "#"\n' in result
 
 
-class TestSetConverterExampleValidation:
-    def test_structured_produces_set_lines(self, structured_config: str, set_lines: str) -> None:
-        """Validate structured→set converter against the synthetic example.
+class TestTheExampleConfigurationConvertsToSet:
+    """The committed example, structured to set, means what its JSON and XML mean.
 
-        Characterization: examples/router1.set is generated from
-        examples/router1.conf by this implementation, so the two agree line for
-        line. The count and the per-line match are recorded as they are today.
-        """
-        result = struct_to_set(structured_config)
-        result_lines = result.strip().splitlines()
-        expected_lines = set_lines.strip().splitlines()
+    `examples/router1.set` is generated from `examples/router1.conf` by this
+    converter, so comparing the two line by line proved only that the
+    converter had not changed. The JSON and XML forms are read by other
+    readers; the set output must read back to the IR both give.
+    """
 
-        assert len(result_lines) == 61, f"Expected 61 lines, got {len(result_lines)}"
+    def test_the_set_output_reads_to_the_json_and_xml_ir(
+        self, structured_config: str, json_config: str, xml_config: str
+    ) -> None:
+        set_output = struct_to_set(structured_config)
 
-        # Every line matches: the fixtures are generated from one another.
-        for i in range(min(160, len(result_lines), len(expected_lines))):
-            assert result_lines[i] == expected_lines[i], (
-                f"Line {i + 1} differs:\n  got:  {result_lines[i]}\n  want: {expected_lines[i]}"
-            )
+        def ir(source: str, fmt: Format) -> dict:
+            return json.loads(convert_config(source, from_format=fmt, to_format=Format.JSON))
+
+        from_set = ir(set_output, Format.SET)
+        assert from_set == ir(json_config, Format.JSON)
+        assert from_set == ir(xml_config, Format.XML)
+        assert from_set["configuration"], "the example converted to nothing"

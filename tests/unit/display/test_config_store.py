@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from junoscfg.display.config_store import ConfigStore
+from junoscfg.display import ConfigStore
 
 
 class TestConfigStore:

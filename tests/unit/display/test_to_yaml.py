@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 
 import pytest
 import yaml
 
 from junoscfg import Format, convert_config
-from junoscfg.display import xml_to_dict
-from junoscfg.display.to_yaml import xml_to_yaml
+from junoscfg.display import xml_to_dict, xml_to_yaml
 
 
 def _convert_json_to_yaml(source: str) -> str:
@@ -302,57 +303,66 @@ class TestXmlToYamlBasic:
         assert ifaces[1]["description"] == "uplink"
 
 
+def _loads_lxml(code: str) -> bool:
+    """Whether *code*, run in a fresh interpreter, leaves lxml imported.
+
+    A fresh process, because in this one some earlier test has already
+    imported lxml; only a new interpreter shows what an import pulls in.
+    """
+    probe = f"{code}\nimport sys\nprint('lxml' in sys.modules)"
+    out = subprocess.run(
+        [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+    ).stdout
+    return out.strip().splitlines()[-1] == "True"
+
+
 class TestLazyXmlImport:
-    """Verify lxml is lazily imported — not loaded until XML features are used."""
+    """lxml is imported on the first XML call, not before.
+
+    A user converting JSON, YAML or set needs no XML dependency, and importing
+    the package must stay cheap (`src/junoscfg/display/CONTRACT.md`).
+    """
+
+    def test_importing_the_package_loads_no_lxml(self) -> None:
+        assert not _loads_lxml("import junoscfg.display")
 
     def test_json_to_yaml_pipeline_without_lxml(self) -> None:
         """Public JSON-to-YAML conversion does not require the XML dependency."""
-        # to_yaml module should be importable; lxml may be in sys.modules
-        # from other tests, but the key check is that the public conversion
-        # pipeline itself doesn't fail
-        j = json.dumps({"configuration": {"system": {"host-name": "test"}}})
-        result = yaml.safe_load(_convert_json_to_yaml(j))
-        assert result["configuration"]["system"]["host-name"] == "test"
+        assert not _loads_lxml(
+            "import json\n"
+            "from junoscfg import Format, convert_config\n"
+            "j = json.dumps({'configuration': {'system': {'host-name': 'test'}}})\n"
+            "out = convert_config(j, from_format=Format.JSON, to_format=Format.YAML)\n"
+            "assert 'host-name: test' in out, out"
+        )
 
     def test_filter_yaml_by_path_without_lxml(self) -> None:
-        """filter_yaml_by_path works without lxml — it only uses PyYAML."""
-        from junoscfg.display.to_yaml import filter_yaml_by_path
-
-        yaml_text = yaml.dump({"configuration": {"system": {"host-name": "r1"}}})
-        result = filter_yaml_by_path(yaml_text, ["system"])
-        parsed = yaml.safe_load(result)
-        assert parsed["configuration"]["system"]["host-name"] == "r1"
+        """filter_yaml_by_path works without lxml: it only uses PyYAML."""
+        assert not _loads_lxml(
+            "import yaml\n"
+            "from junoscfg.display import filter_yaml_by_path\n"
+            "text = yaml.dump({'configuration': {'system': {'host-name': 'r1'}}})\n"
+            "out = yaml.safe_load(filter_yaml_by_path(text, ['system']))\n"
+            "assert out['configuration']['system']['host-name'] == 'r1', out"
+        )
 
     def test_xml_to_yaml_requires_lxml(self) -> None:
-        """xml_to_yaml uses lxml and works when lxml is available."""
-        xml = "<configuration><system><host-name>r1</host-name></system></configuration>"
-        result = yaml.safe_load(xml_to_yaml(xml))
-        assert result["configuration"]["system"]["host-name"] == "r1"
+        """xml_to_yaml imports lxml when it is first called."""
+        assert _loads_lxml(
+            "import sys\n"
+            "import yaml\n"
+            "from junoscfg.display import xml_to_yaml\n"
+            "assert 'lxml' not in sys.modules\n"
+            "xml = '<configuration><system><host-name>r1</host-name></system></configuration>'\n"
+            "out = yaml.safe_load(xml_to_yaml(xml))\n"
+            "assert out['configuration']['system']['host-name'] == 'r1', out"
+        )
 
-    def test_to_yaml_module_level_has_no_lxml(self) -> None:
-        """The to_yaml module does not import lxml at the top level."""
-        import ast
-        import inspect
 
-        import junoscfg.display.to_yaml as mod
+class TestXmlToYamlReadsBackToTheSameIr:
+    """The YAML `xml_to_yaml` writes is YAML input that reads to the XML's IR."""
 
-        source = inspect.getsource(mod)
-        tree = ast.parse(source)
-        for node in ast.iter_child_nodes(tree):
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                names = []
-                if isinstance(node, ast.Import):
-                    names = [alias.name for alias in node.names]
-                else:
-                    names = [node.module or ""]
-                for name in names:
-                    assert "lxml" not in name, f"lxml imported at module level (line {node.lineno})"
-
-    """XML → YAML → set produces same output as XML → set."""
-
-    def test_simple_roundtrip(self) -> None:
-        from junoscfg import Format, convert_config
-
+    def test_its_yaml_reads_back_to_the_xml_ir(self) -> None:
         xml = """<configuration>
             <system>
                 <host-name>r1</host-name>
@@ -366,11 +376,13 @@ class TestLazyXmlImport:
             </interfaces>
         </configuration>"""
 
-        yaml_output = xml_to_yaml(xml)
-        yaml_set = convert_config(yaml_output, from_format=Format.YAML, to_format=Format.SET)
-        xml_set = convert_config(xml, from_format=Format.XML, to_format=Format.SET)
+        from_yaml = convert_config(xml_to_yaml(xml), from_format=Format.YAML, to_format=Format.JSON)
+        from_xml = convert_config(xml, from_format=Format.XML, to_format=Format.JSON)
 
-        assert set(yaml_set.strip().splitlines()) == set(xml_set.strip().splitlines())
+        assert json.loads(from_yaml) == json.loads(from_xml)
+        assert json.loads(from_xml)["configuration"]["interfaces"]["interface"] == [
+            {"name": "ae0", "mtu": "9216"}
+        ]
 
 
 class TestInvalidXmlIsReported:
@@ -403,12 +415,6 @@ class TestInvalidXmlIsReported:
         assert "dump-on-panic" in xml_to_yaml(full)
 
 
-# ── identifier-key-fields: a lone XML entry takes its shape from the tree ──
-#
-# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys.
-# One `<as-path-neighbors>` has no `<name>` child, so the walker's heuristic
-# made it a dict where the device's JSON holds a one-entry list.
-
 _XML_TERM = (
     '<rpc-reply xmlns:junos="http://xml.juniper.net/junos/23.2R2/junos">'
     '<configuration junos:changed-seconds="1759900000" '
@@ -420,6 +426,14 @@ _XML_TERM = (
 
 
 class TestLoneEntryFollowsTheTree:
+    """A lone XML entry takes its shape from the tree, not from a `<name>` child.
+
+    One `<as-path-neighbors>` has no `<name>` child, so the walker's name
+    heuristic made it a dict where the device's JSON holds a one-entry list.
+    Provenance: change identifier-key-fields, spec
+    `openspec/specs/conversion/entry-keys`.
+    """
+
     LONE = {
         "as-path-neighbors": (
             '<from><as-path-neighbors junos:changed-seconds="1759900000">'

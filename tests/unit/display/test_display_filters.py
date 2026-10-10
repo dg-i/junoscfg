@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import yaml
 
-from junoscfg.display import filter_set_by_path
-from junoscfg.display.config_store import filter_structured_by_path
-from junoscfg.display.path_filter import filter_dict_by_path
-from junoscfg.display.to_yaml import filter_yaml_by_path
+from junoscfg.display import (
+    filter_dict_by_path,
+    filter_set_by_path,
+    filter_structured_by_path,
+    filter_yaml_by_path,
+)
 
 
 class TestFilterSetByPath:

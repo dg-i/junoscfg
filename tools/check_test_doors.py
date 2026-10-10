@@ -32,7 +32,19 @@ SURFACE_TYPES: dict[str, frozenset[str]] = {
 }
 
 #: (test file relative to tests/, the module or ``module.attribute`` it reaches) -> why.
-EXCEPTIONS: dict[tuple[str, str], str] = {}
+_CACHES = (
+    "the fixture saves and restores the process caches around each test: no door can "
+    "restore them, and dropping the shipped grammar's build costs every later test 12 s"
+)
+EXCEPTIONS: dict[tuple[str, str], str] = {
+    ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants"): _CACHES,
+    ("unit/display/test_artifact_resolution.py", "constants._schema_trees"): _CACHES,
+    ("unit/display/test_artifact_resolution.py", "constants._built_artifacts"): _CACHES,
+    ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants._BUNDLED_DIR"): (
+        "only the bundled directory answers None instead of raising, and it is fixed at "
+        "install time; pointing it at a missing directory is the one way to reach the branch"
+    ),
+}
 
 
 def doors() -> frozenset[str]:

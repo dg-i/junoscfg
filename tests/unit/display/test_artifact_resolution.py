@@ -23,18 +23,33 @@ from junoscfg.display import (
     artifacts_dir,
     build_from_artifact,
     constants,
+    find_artifact,
     forget_loaded_artifacts,
     load_schema_tree,
+    open_artifact_write,
+    read_artifact_text,
     resolve_artifacts_dir,
 )
+from junoscfg.validate import JunosValidator
+from tests.support.paths import ARTIFACT_DIR
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+#: The structure tree's file name, the contract between the artifact builder and conversion.
+TREE_NAME = "junos-structure-tree.json"
+
 
 @pytest.fixture(autouse=True)
 def _clean_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
-    """No test may leak an override or a cache entry into the next."""
+    """No test may leak an override or a cache entry into the next.
+
+    The caches are saved and restored by reaching into `constants`, which no
+    door offers: `forget_loaded_artifacts` only drops them, and a test that
+    drops the shipped grammar's build makes every later test in the session
+    compile it again, about twelve seconds. Recorded as an exception in
+    `tools/check_test_doors.py`.
+    """
     monkeypatch.delenv("JUNOSCFG_ARTIFACTS", raising=False)
     caches = (constants._schema_trees, constants._built_artifacts)
     before = [dict(cache) for cache in caches]
@@ -46,13 +61,14 @@ def _clean_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _tree_at(directory: Path, marker: str) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / constants.STRUCTURE_TREE_NAME).write_text(json.dumps({"c": {marker: {"l": True}}}))
+    (directory / TREE_NAME).write_text(json.dumps({"c": {marker: {"l": True}}}))
     return directory
 
 
 class TestResolutionOrder:
     def test_the_bundle_is_the_default(self) -> None:
-        assert resolve_artifacts_dir() == constants._BUNDLED_DIR
+        """With nothing set, the artifacts the package ships, under `validate/data`."""
+        assert resolve_artifacts_dir() == ARTIFACT_DIR
 
     def test_the_environment_beats_the_bundle(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -99,12 +115,17 @@ class TestConversionHonoursIt:
             load_schema_tree(tmp_path / "nothing-here")
 
     def test_only_the_bundled_directory_answers_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """A package missing its own artifacts is not a path the user can fix."""
-        import junoscfg.display.constants as c
+        """A package missing its own artifacts is not a path the user can fix.
 
-        monkeypatch.setattr(c, "_BUNDLED_DIR", c._BUNDLED_DIR / "not-here")
-        monkeypatch.setattr(c, "_schema_trees", {})
-        assert c.load_schema_tree() is None
+        The bundled directory is fixed when the package is installed, so the
+        only way to take its tree away in this process is to point the module's
+        bundled path elsewhere; recorded as an exception in
+        `tools/check_test_doors.py`.
+        """
+        monkeypatch.setattr(
+            "junoscfg.display.constants._BUNDLED_DIR", resolve_artifacts_dir() / "not-here"
+        )
+        assert load_schema_tree() is None
 
 
 class TestTwoSchemasCoexist:
@@ -150,10 +171,20 @@ class TestValidationSharesTheResolver:
     def test_the_validator_resolves_the_same_way(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        from junoscfg.validate.validator import JunosValidator
-
+        """The validator reads its metadata from the directory the resolver names."""
+        (tmp_path / "junos-schema-meta.json").write_text(
+            json.dumps({"junos_version": "from-the-environment"})
+        )
         monkeypatch.setenv("JUNOSCFG_ARTIFACTS", str(tmp_path))
-        assert JunosValidator()._artifacts_dir == resolve_artifacts_dir()
+        assert resolve_artifacts_dir() == tmp_path
+        assert JunosValidator().schema_version == "from-the-environment"
+
+    def test_the_validator_honours_the_invocation_override(self, tmp_path: Path) -> None:
+        (tmp_path / "junos-schema-meta.json").write_text(
+            json.dumps({"junos_version": "from-the-flag"})
+        )
+        with artifacts_dir(tmp_path):
+            assert JunosValidator().schema_version == "from-the-flag"
 
 
 class TestCompressedAndPlainBothWork:
@@ -169,29 +200,29 @@ class TestCompressedAndPlainBothWork:
         (tmp_path / "a.json").write_text("plain")
         with gzip.open(tmp_path / "a.json.gz", "wt", encoding="utf-8") as h:
             h.write("compressed")
-        found = constants.find_artifact(tmp_path, "a.json")
+        found = find_artifact(tmp_path, "a.json")
         assert found is not None
-        assert constants.read_artifact_text(found) == "compressed"
+        assert read_artifact_text(found) == "compressed"
 
     def test_a_plain_artifact_is_still_found(self, tmp_path: Path) -> None:
         (tmp_path / "a.json").write_text("plain")
-        found = constants.find_artifact(tmp_path, "a.json")
+        found = find_artifact(tmp_path, "a.json")
         assert found is not None
-        assert constants.read_artifact_text(found) == "plain"
+        assert read_artifact_text(found) == "plain"
 
     def test_a_missing_artifact_is_none(self, tmp_path: Path) -> None:
-        assert constants.find_artifact(tmp_path, "nothing.json") is None
+        assert find_artifact(tmp_path, "nothing.json") is None
 
     def test_the_writer_compresses_when_the_name_says_to(self, tmp_path: Path) -> None:
         target = tmp_path / "out.json.gz"
-        with constants.open_artifact_write(target) as handle:
+        with open_artifact_write(target) as handle:
             handle.write("payload")
         assert target.read_bytes()[:2] == b"\x1f\x8b", "not gzip"
-        assert constants.read_artifact_text(target) == "payload"
+        assert read_artifact_text(target) == "payload"
 
     def test_the_writer_leaves_a_plain_name_plain(self, tmp_path: Path) -> None:
         target = tmp_path / "out.json"
-        with constants.open_artifact_write(target) as handle:
+        with open_artifact_write(target) as handle:
             handle.write("payload")
         assert target.read_text() == "payload"
 
@@ -203,18 +234,18 @@ class TestCompressedAndPlainBothWork:
         not, since two writes in one second agree anyway. Reading back is what
         tells a correct writer from one that lost the trailer."""
         target = tmp_path / "out.json.gz"
-        with constants.open_artifact_write(target) as handle:
+        with open_artifact_write(target) as handle:
             handle.write("payload")
         assert target.read_bytes()[4:8] == b"\x00\x00\x00\x00", "MTIME is stamped"
-        assert constants.read_artifact_text(target) == "payload"
+        assert read_artifact_text(target) == "payload"
 
     def test_a_schema_tree_loads_from_either_form(self, tmp_path: Path) -> None:
         plain = tmp_path / "plain"
         plain.mkdir()
-        (plain / constants.STRUCTURE_TREE_NAME).write_text(json.dumps({"c": {"p": {}}}))
+        (plain / TREE_NAME).write_text(json.dumps({"c": {"p": {}}}))
         packed = tmp_path / "packed"
         packed.mkdir()
-        with gzip.open(packed / f"{constants.STRUCTURE_TREE_NAME}.gz", "wt") as h:
+        with gzip.open(packed / f"{TREE_NAME}.gz", "wt") as h:
             h.write(json.dumps({"c": {"z": {}}}))
         assert "p" in load_schema_tree(plain)["c"]
         assert "z" in load_schema_tree(packed)["c"]
@@ -267,14 +298,27 @@ class TestABuiltArtifactIsReusedWhileItsFileIsUnchanged:
         build_from_artifact(artifact, build)
         assert seen == ["start: x", "start: x"]
 
+    def test_forgetting_drops_a_loaded_structure_tree(self, tmp_path: Path) -> None:
+        """A tree is cached per directory, not per file stat, so a tree
+        rewritten in place is read again only after forgetting; that is what
+        `--regen-schema` relies on."""
+        _tree_at(tmp_path, "before")
+        assert "before" in load_schema_tree(tmp_path)["c"]
+        _tree_at(tmp_path, "after")
+        assert "before" in load_schema_tree(tmp_path)["c"]
+        forget_loaded_artifacts()
+        assert "after" in load_schema_tree(tmp_path)["c"]
+
 
 class TestTheShippedArtifactsAreCompressed:
+    """The directory the resolver answers with nothing set is the one the package ships."""
+
     def test_every_bundled_artifact_is_gzipped(self) -> None:
-        shipped = sorted(p.name for p in constants._BUNDLED_DIR.iterdir() if p.is_file())
+        shipped = sorted(p.name for p in resolve_artifacts_dir().iterdir() if p.is_file())
         assert shipped, "no bundled artifacts"
         assert all(n.endswith(".gz") for n in shipped), shipped
 
     def test_the_bundled_set_stays_small(self) -> None:
         """34.5 MB raw. A plain file slipping back in would be visible here."""
-        total = sum(p.stat().st_size for p in constants._BUNDLED_DIR.iterdir() if p.is_file())
+        total = sum(p.stat().st_size for p in resolve_artifacts_dir().iterdir() if p.is_file())
         assert total < 6 * 1024 * 1024, f"{total / 1048576:.1f} MB"

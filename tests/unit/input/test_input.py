@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from junoscfg.input import normalize
 
 
@@ -54,8 +56,6 @@ class TestSquareBrackets:
         assert "set apply-groups [ foo bar ];" in result
 
     def test_unbalanced_open_bracket_raises(self) -> None:
-        import pytest
-
         text = "set foo [\nbar"
         with pytest.raises(ValueError, match="Unclosed bracket"):
             normalize(text)

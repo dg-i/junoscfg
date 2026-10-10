@@ -1,4 +1,4 @@
-"""Characterization tests for shared configuration format detection."""
+"""Tests for the one configuration format classifier and each caller's policy."""
 
 from __future__ import annotations
 
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class TestFormatDetection:
+    """Each format is recognised from its content alone."""
+
     @pytest.mark.parametrize(
         ("source", "expected"),
         [
@@ -35,18 +37,20 @@ class TestFormatDetection:
             ("system {\n    host-name r1;\n}\n", "structured"),
         ],
     )
-    def test_characterization_matrix(self, source: str, expected: str) -> None:
+    def test_each_format_is_recognised(self, source: str, expected: str) -> None:
         assert detect_format(source, accepted_formats=CONVERSION_FORMATS) == expected
 
         if expected in AUDIT_FORMATS:
             assert detect_format(source, accepted_formats=AUDIT_FORMATS) == expected
 
-    def test_characterization_matrix_rejects_empty_input(self) -> None:
+    def test_empty_input_is_rejected(self) -> None:
         with pytest.raises(ValueError, match="empty"):
             detect_format(" \n\t", accepted_formats=CONVERSION_FORMATS)
 
 
 class TestDetectionPolicies:
+    """Each caller infers only the formats its public contract permits."""
+
     def test_each_caller_policy(self, monkeypatch: MonkeyPatch) -> None:
         flow_yaml = "{configuration: {system: {host-name: r1}}}"
         runner = CliRunner()
