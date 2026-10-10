@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / "tests"
 SURFACES = frozenset({"junoscfg", "junoscfg.cli"})
 SURFACE_ONLY = ("contract", "corpus")
+#: Names outside the surfaces that the surfaces' own signatures take.
+SURFACE_TYPES: dict[str, frozenset[str]] = {
+    "junoscfg.anonymize": frozenset({"AnonymizeConfig"}),  # convert_config(anon_config=...)
+}
 
 #: (test file relative to tests/, the module or ``module.attribute`` it reaches) -> why.
 EXCEPTIONS: dict[tuple[str, str], str] = {}
@@ -60,6 +64,9 @@ class _Visitor(ast.NodeVisitor):
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.level or not node.module:
+            return
+        names = {alias.name for alias in node.names}
+        if self.allowed <= SURFACES and names <= SURFACE_TYPES.get(node.module, frozenset()):
             return
         self._module(node.lineno, node.module)
         if node.module.split(".")[0] == "junoscfg":
