@@ -1,8 +1,14 @@
-"""Acceptance tests for caller-owned conversion diagnostics."""
+"""Conversion diagnostics are returned to the caller, never printed by the library.
+
+Spec: conversion/diagnostics. `convert_config_result` and `pipeline_result`
+carry the findings; the string doors return only the output, and the CLI is
+the one place that renders them, on stderr.
+"""
 
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
@@ -11,9 +17,14 @@ from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.convert import pipeline, pipeline_result
 
+if TYPE_CHECKING:
+    import pytest
+
 
 class TestStructuredConversionResult:
-    def test_opt_in_result_preserves_legacy_return_contracts(self) -> None:
+    def test_the_result_doors_agree_and_the_string_doors_return_text(self) -> None:
+        """The two result doors give the same `ConversionResult`; `convert_config`
+        and `pipeline` still return a string."""
         source = '{"configuration": {"system": {"host-name": "r1"}}}'
 
         top_result = convert_config_result(
@@ -48,7 +59,9 @@ class TestStructuredConversionResult:
 
 
 class TestDiagnosticRouting:
-    def test_cli_is_only_stderr_renderer(self, capsys) -> None:
+    def test_cli_is_only_stderr_renderer(self, capsys: pytest.CaptureFixture[str]) -> None:
+        """A writer's note and the anonymizer's debug lines reach the result;
+        the library writes nothing to stderr, the CLI writes the note there."""
         source = json.dumps(
             {
                 "configuration": {

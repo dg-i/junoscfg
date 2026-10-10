@@ -1,20 +1,101 @@
-"""Tests for set→dict converter (Phase 3).
+"""The display-set reader: set commands into the dict IR.
 
-Tests the set_to_dict function that parses display set commands into
-the JSON dict IR.
+Read through the `junoscfg.convert` door, `to_dict(source, "set")`, and
+written back with `from_dict(ir, "set")` where a case is a round trip. The
+keyed-entry cases read through `convert_config`, the door the Ansible
+collection drives, with the helpers in `tests/support/keyed_entries.py`. A case
+that needs a schema other than the shipped one writes its structure tree into
+an artifacts directory and points conversion at it with
+`junoscfg.display.artifacts_dir`, as `--artifacts` does.
+
+Grouped by grammar feature: lexing, leaves, nokeyword leaves, presence, named
+lists, entry keys, key aliases, merging, meta commands, the `apply-*`
+statements, statements kept whole, and round trips.
 """
 
 from __future__ import annotations
 
+import json
 import re
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from junoscfg.convert.input.set_input import set_to_dict
-from junoscfg.convert.output.set_output import dict_to_set
+from junoscfg import Format, convert_config_result
+from junoscfg.convert import from_dict, to_dict
+from junoscfg.display import artifacts_dir
+from tests.support.keyed_entries import as_json, ir, set_ir, term_from, to_set
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from pathlib import Path
 
 
-class TestSetBracketSyntaxRejection:
+def read_set(source: str) -> dict[str, Any]:
+    """The IR the set reader gives for *source*."""
+    return to_dict(source, "set")
+
+
+def write_set(config: Any) -> str:
+    """Display-set text for an IR."""
+    return from_dict(config, "set")
+
+
+@pytest.fixture
+def schema_tree(tmp_path: Path) -> Callable[[dict[str, Any]], Any]:
+    """Read and write against a hand-written structure tree for one block.
+
+    The tree is the `junos-structure-tree.json` artifact, in the format
+    `docs/architecture/schema-internals.md` documents.
+    """
+
+    @contextmanager
+    def use(tree: dict[str, Any]) -> Iterator[None]:
+        (tmp_path / "junos-structure-tree.json").write_text(json.dumps(tree), encoding="utf-8")
+        with artifacts_dir(tmp_path):
+            yield
+
+    return use
+
+
+_TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
+
+#: How `convert_config` renders a statement kept whole in JSON: the line as
+#: one key, the value a bare statement's.
+KEPT = [None]
+
+
+def _from(line: str) -> dict:
+    """`from` of term T1, as `convert_config` reads *line*."""
+    return term_from(set_ir(line))
+
+
+def _round_trip(source: str) -> list[str]:
+    """*source* read and written back as display set, through `convert_config`."""
+    return to_set(source + "\n", Format.SET)
+
+
+def _unplaced(source: str, fmt: str = "set") -> list[str]:
+    """The `field-validate` unplaced messages a conversion reports."""
+    result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+    return [
+        d.message
+        for d in result.diagnostics
+        if d.source == "field-validate" and "could not be placed" in d.message
+    ]
+
+
+# ── Lexing ───────────────────────────────────────────────────────────
+
+
+class TestTheReaderRejectsBracketSyntax:
+    """`[ a b ]` is curly syntax, never display set; the reader refuses it.
+
+    The lexical check is `junoscfg.input.find_unsupported_set_brackets`, which
+    the reader applies before it builds the IR.
+    """
+
     @pytest.mark.parametrize(
         "line",
         [
@@ -36,7 +117,7 @@ class TestSetBracketSyntaxRejection:
     def test_every_command_and_bracket_form_is_rejected(self, line: str) -> None:
         expected = f"Unsupported bracket syntax in set input on line 1:\n{line}"
         with pytest.raises(ValueError, match=re.escape(expected)):
-            set_to_dict(line)
+            read_set(line)
 
     def test_quoted_brackets_and_comments_remain_ordinary_content(self) -> None:
         source = (
@@ -45,26 +126,186 @@ class TestSetBracketSyntaxRejection:
             "/* ignored closing bracket ] */"
         )
 
-        result = set_to_dict(source)
+        result = read_set(source)
 
         assert result["policy-options"]["community"][0]["members"] == ["64498:[2-6]....$"]
 
 
-# ── Simple leaves ────────────────────────────────────────────────────
+# ── Leaves ───────────────────────────────────────────────────────────
 
 
-class TestSimpleLeaves:
+class TestALeafTakesItsValue:
     def test_single_leaf(self) -> None:
-        result = set_to_dict("set system host-name r1")
-        assert result == {"system": {"host-name": "r1"}}
+        assert read_set("set system host-name r1") == {"system": {"host-name": "r1"}}
 
     def test_quoted_value(self) -> None:
-        result = set_to_dict('set system host-name "my router"')
+        result = read_set('set system host-name "my router"')
         assert result == {"system": {"host-name": "my router"}}
 
     def test_nested_leaf(self) -> None:
-        result = set_to_dict("set system services ssh root-login deny")
+        result = read_set("set system services ssh root-login deny")
         assert result == {"system": {"services": {"ssh": {"root-login": "deny"}}}}
+
+    def test_the_rest_of_the_line_is_the_value(self) -> None:
+        """Every token after a leaf with no schema sibling among them is its value."""
+        result = read_set("set system host-name foo bar baz")
+        assert result["system"]["host-name"] == "foo bar baz"
+
+    def test_a_leaf_takes_one_token_before_a_sibling(self) -> None:
+        """A leaf consumes one token when the next one is a schema sibling."""
+        source = (
+            "set system syslog file messages_firewall_any"
+            " archive size 10m files 5 no-world-readable"
+        )
+        archive = read_set(source)["system"]["syslog"]["file"][0]["archive"]
+        assert archive["size"] == "10m"
+        assert archive["files"] == "5"
+        assert archive["no-world-readable"] == [None]
+
+    def test_an_entry_keeps_its_sibling_leaves(self) -> None:
+        """An NTP server with `version`, `prefer` and `routing-instance` on one line."""
+        source = "set system ntp server 198.51.100.1 version 4 prefer routing-instance mgmt_junos"
+        server = read_set(source)["system"]["ntp"]["server"][0]
+        assert server["name"] == "198.51.100.1"
+        assert server["version"] == "4"
+        assert server["prefer"] == [None]
+        assert server["routing-instance"] == "mgmt_junos"
+
+
+class TestARepeatedLeafAccumulates:
+    """A leaf-list value given on several lines accumulates in order."""
+
+    @pytest.mark.parametrize(
+        "ciphers",
+        [["aes128-ctr", "aes256-ctr"], ["aes128-ctr", "aes256-ctr", "aes128-gcm"]],
+        ids=["two", "three"],
+    )
+    def test_repeated_values_accumulate_in_order(self, ciphers: list[str]) -> None:
+        source = "".join(f"set system services ssh ciphers {c}\n" for c in ciphers)
+        assert read_set(source)["system"]["services"]["ssh"]["ciphers"] == ciphers
+
+    def test_confederation_members_accumulate(self) -> None:
+        source = (
+            "set routing-options confederation members 64529\n"
+            "set routing-options confederation members 64530\n"
+        )
+        members = read_set(source)["routing-options"]["confederation"]["members"]
+        assert members == ["64529", "64530"]
+
+
+# ── Nokeyword leaves ─────────────────────────────────────────────────
+
+
+class TestANokeywordLeafTakesAPositionalValue:
+    """A nokeyword leaf's value stands where its keyword would, and the
+    statement's other tokens stay its siblings."""
+
+    def test_a_traceoptions_file_name_keeps_its_siblings(self) -> None:
+        source = "set protocols bgp traceoptions file bgp-log size 10m files 10"
+        f = read_set(source)["protocols"]["bgp"]["traceoptions"]["file"]
+        assert f["filename"] == "bgp-log"
+        assert f["size"] == "10m"
+        assert f["files"] == "10"
+
+    def test_a_maximum_prefixes_limit_keeps_its_siblings(self) -> None:
+        source = "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5"
+        mp = read_set(source)["routing-options"]["maximum-prefixes"]
+        assert mp["limit"] == "3000000"
+        assert mp["threshold"] == "50"
+        assert mp["log-interval"] == "5"
+
+    def test_a_flat_dict_trigger_keeps_its_count(self) -> None:
+        """`trigger` is a flat dict (`fd`) whose nokeyword `count` is its value."""
+        source = "set event-options policy test within 1800 trigger 1"
+        trigger = read_set(source)["event-options"]["policy"][0]["within"][0]["trigger"]
+        assert trigger["count"] == "1"
+
+    def test_a_freeform_nokeyword_leaf_keeps_its_name(self) -> None:
+        """`vlan-id` is nokeyword only so its value validates freeform."""
+        result = read_set("set interfaces ge-0/0/1 unit 0 vlan-id 100")
+        unit = result["interfaces"]["interface"][0]["unit"][0]
+        assert unit["vlan-id"] == "100"
+
+    def test_a_positional_nokeyword_leaf_keeps_its_name(self) -> None:
+        """26,386 nokeyword leaves carry a value and must not be re-keyed."""
+        entry = read_set("set policy-options prefix-list PL 10.0.0.0/8")["policy-options"][
+            "prefix-list"
+        ][0]
+        assert entry["prefix-list-item"] == [{"name": "10.0.0.0/8"}]
+
+    def test_a_freeform_nokeyword_key_keeps_its_keyword(self, schema_tree: Any) -> None:
+        """A `frnk` key is written with its keyword, and the reader and the writer
+        agree on it because they share the grammar rule."""
+        tree = {
+            "c": {
+                "sample": {
+                    "L": True,
+                    "k": ["vlan-id"],
+                    "c": {"vlan-id": {"l": True, "nk": True, "frnk": True}},
+                }
+            }
+        }
+        line = "set sample vlan-id 100"
+        with schema_tree(tree):
+            assert read_set(line) == {"sample": [{"vlan-id": "100"}]}
+            assert write_set({"sample": [{"vlan-id": "100"}]}) == line + "\n"
+
+
+class TestAnOnOffSwitchKeysOnTheStatement:
+    """An on/off switch keys on the statement, not on the schema node.
+
+    The schema folds `enable`/`disable` into one nokeyword leaf named
+    `enable-disable` whose enum is `['disable']`, so the token in a
+    configuration is the statement itself. A device renders it
+    `"disable": [null]`; keying on the node name invented an `enable-disable`
+    statement no Junos would accept, and it reached JSON and YAML output
+    silently — no validation failure, just wrong output on the path the
+    downstream Ansible collection renders through.
+
+    Found by round-tripping a device's own `| display json` and diffing:
+    147 of the differences were this.
+    """
+
+    def test_disable_keys_on_the_statement(self) -> None:
+        assert read_set("set protocols ospf disable") == {
+            "protocols": {"ospf": {"disable": [None]}}
+        }
+
+    def test_a_switch_is_still_the_statement(self) -> None:
+        assert read_set("set interfaces ge-0/0/0 disable") == {
+            "interfaces": {"interface": [{"name": "ge-0/0/0", "disable": [None]}]}
+        }
+
+    def test_a_switch_followed_by_a_sibling_still_parses(self) -> None:
+        entry = read_set("set interfaces ge-0/0/0 disable mtu 9000")["interfaces"]["interface"][0]
+        assert entry == {"name": "ge-0/0/0", "disable": [None], "mtu": "9000"}
+
+
+# ── Presence ─────────────────────────────────────────────────────────
+
+
+class TestPresenceStatements:
+    """A statement without a value reads as `[null]`; a presence list (`L` and
+    `p` together, `snmp filter-interfaces interfaces`) takes entries too."""
+
+    def test_an_ordinary_presence_statement_is_unchanged(self) -> None:
+        assert read_set("set system no-redirects") == {"system": {"no-redirects": [None]}}
+
+    def test_a_presence_list_with_a_value_gives_a_name_entry(self) -> None:
+        result = read_set('set snmp filter-interfaces interfaces "^ge-"')
+        assert result["snmp"]["filter-interfaces"]["interfaces"] == [{"name": "^ge-"}]
+
+    def test_a_presence_list_without_a_value_is_present(self) -> None:
+        result = read_set("set snmp filter-interfaces interfaces")
+        assert result["snmp"]["filter-interfaces"]["interfaces"] == [None]
+
+    def test_a_presence_list_takes_many_entries(self) -> None:
+        source = (
+            'set snmp filter-interfaces interfaces "^ge-0/0/0"\n'
+            'set snmp filter-interfaces interfaces "^ge-0/0/1"\n'
+        )
+        ifaces = read_set(source)["snmp"]["filter-interfaces"]["interfaces"]
+        assert ifaces == [{"name": "^ge-0/0/0"}, {"name": "^ge-0/0/1"}]
 
 
 # ── Named lists ──────────────────────────────────────────────────────
@@ -72,13 +313,13 @@ class TestSimpleLeaves:
 
 class TestNamedLists:
     def test_transparent_named_list(self) -> None:
-        result = set_to_dict("set interfaces ge-0/0/0 description uplink")
+        result = read_set("set interfaces ge-0/0/0 description uplink")
         assert result == {
             "interfaces": {"interface": [{"name": "ge-0/0/0", "description": "uplink"}]}
         }
 
     def test_transparent_named_list_no_children(self) -> None:
-        result = set_to_dict("set interfaces ge-0/0/0")
+        result = read_set("set interfaces ge-0/0/0")
         assert result == {"interfaces": {"interface": [{"name": "ge-0/0/0"}]}}
 
     def test_multiple_transparent_entries(self) -> None:
@@ -86,8 +327,7 @@ class TestNamedLists:
             "set interfaces ge-0/0/0 description uplink\n"
             "set interfaces ge-0/0/1 description downlink\n"
         )
-        result = set_to_dict(source)
-        assert result == {
+        assert read_set(source) == {
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/0", "description": "uplink"},
@@ -97,7 +337,7 @@ class TestNamedLists:
         }
 
     def test_regular_named_list(self) -> None:
-        result = set_to_dict("set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1")
+        result = read_set("set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1")
         assert result == {
             "routing-options": {
                 "static": {"route": [{"name": "0.0.0.0/0", "next-hop": ["10.0.0.1"]}]}
@@ -105,50 +345,429 @@ class TestNamedLists:
         }
 
     def test_nested_named_lists(self) -> None:
-        result = set_to_dict("set firewall family inet filter PROTECT term accept-ssh then accept")
+        """Lists inside lists; the presence statement `then accept` reads `[null]`."""
+        result = read_set("set firewall family inet filter PROTECT term accept-ssh then accept")
         assert result["firewall"]["family"]["inet"]["filter"] == [
             {"name": "PROTECT", "term": [{"name": "accept-ssh", "then": {"accept": [None]}}]}
         ]
 
-
-# ── Simple string lists (normalized from dict entries) ───────────────
-
-
-class TestSimpleStringLists:
-    def test_simple_list_with_children_schema(self) -> None:
-        """Named lists with children in schema always produce dict entries."""
+    def test_a_list_with_children_gives_name_entries(self) -> None:
+        """`name-server` has children in the schema (`routing-instance`,
+        `source-address`), so its entries are always dicts keyed `name`."""
         source = "set system name-server 8.8.8.8\nset system name-server 8.8.4.4\n"
-        result = set_to_dict(source)
-        # name-server has children in schema (routing-instance, source-address),
-        # so entries are always dict format with "name" key
-        assert result == {
-            "system": {
-                "name-server": [
-                    {"name": "8.8.8.8"},
-                    {"name": "8.8.4.4"},
+        assert read_set(source) == {
+            "system": {"name-server": [{"name": "8.8.8.8"}, {"name": "8.8.4.4"}]}
+        }
+
+    @pytest.mark.parametrize("second", ["0", "testdb"])
+    def test_a_list_without_children_gives_name_entries(self, second: str) -> None:
+        """`ephemeral instance` is `{L: true}`, no children: dict entries, not bare strings."""
+        source = (
+            "set system configuration-database ephemeral instance dgipingtest\n"
+            f"set system configuration-database ephemeral instance {second}\n"
+        )
+        instances = read_set(source)["system"]["configuration-database"]["ephemeral"]["instance"]
+        assert instances == [{"name": "dgipingtest"}, {"name": second}]
+
+
+class TestPartialConfigTransparentLookup:
+    """When set commands lack the parent keyword (e.g., 'interfaces'),
+    the child-scan logic should still resolve transparent named lists."""
+
+    def test_interface_without_parent(self) -> None:
+        """set ge-0/0/0 description 'foo' produces nested interfaces.interface."""
+        result = read_set('set ge-0/0/0 description "foo"')
+        assert result["interfaces"]["interface"] == [{"name": "ge-0/0/0", "description": "foo"}]
+
+    def test_loopback_without_parent(self) -> None:
+        """set lo0 unit 0 family inet address ... produces proper nesting."""
+        iface = read_set("set lo0 unit 0 family inet address 10.0.36.103/32")["interfaces"][
+            "interface"
+        ]
+        assert iface[0]["name"] == "lo0"
+        assert iface[0]["unit"][0]["name"] == "0"
+        assert iface[0]["unit"][0]["family"]["inet"]["address"] == [{"name": "10.0.36.103/32"}]
+
+    def test_ae_without_parent(self) -> None:
+        """set ae100 mtu 9192 works via child-scan."""
+        iface = read_set("set ae100 mtu 9192")["interfaces"]["interface"]
+        assert iface[0]["name"] == "ae100"
+        assert iface[0]["mtu"] == "9192"
+
+    def test_deactivate_without_parent(self) -> None:
+        """deactivate ge-0/0/0 applies inactive attribute via child-scan."""
+        source = 'set ge-0/0/0 description "uplink"\ndeactivate ge-0/0/0\n'
+        entry = read_set(source)["interfaces"]["interface"][0]
+        assert entry["@"]["inactive"] is True
+
+    def test_unknown_token_still_flattens(self) -> None:
+        """Truly unknown tokens still get the flat-key fallback."""
+        result = read_set("set xyzzy-nonexistent-thing some-value")
+        assert "xyzzy-nonexistent-thing some-value" in result
+
+
+class TestTransparentListKey:
+    """Tests for transparent-list-key children (tk flag) like
+    prefix-list-item and syslog file contents."""
+
+    def test_prefix_list_item_single(self) -> None:
+        """prefix-list-item entry is created for a single prefix."""
+        pl = read_set("set policy-options prefix-list MY-LIST 127.0.0.1/32")["policy-options"][
+            "prefix-list"
+        ][0]
+        assert pl["name"] == "MY-LIST"
+        assert pl["prefix-list-item"] == [{"name": "127.0.0.1/32"}]
+
+    def test_prefix_list_item_multiple(self) -> None:
+        """Multiple prefixes accumulate in the same prefix-list-item list."""
+        source = (
+            "set policy-options prefix-list MY-LIST 127.0.0.1/32\n"
+            "set policy-options prefix-list MY-LIST 10.0.0.0/8\n"
+        )
+        pl = read_set(source)["policy-options"]["prefix-list"][0]
+        assert pl["name"] == "MY-LIST"
+        assert pl["prefix-list-item"] == [{"name": "127.0.0.1/32"}, {"name": "10.0.0.0/8"}]
+
+    def test_syslog_contents_with_level(self) -> None:
+        """Syslog file contents entry preserves the facility and level."""
+        result = read_set("set system syslog file messages interactive-commands any")
+        contents = result["system"]["syslog"]["file"][0]["contents"]
+        assert contents == [{"name": "interactive-commands", "any": [None]}]
+
+    def test_syslog_contents_multiple_facilities(self) -> None:
+        """Multiple syslog facilities create separate contents entries."""
+        source = (
+            "set system syslog file messages interactive-commands any\n"
+            "set system syslog file messages any notice\n"
+        )
+        contents = read_set(source)["system"]["syslog"]["file"][0]["contents"]
+        assert [c["name"] for c in contents] == ["interactive-commands", "any"]
+
+    def test_deactivate_prefix_list_item(self) -> None:
+        """Deactivate targets a prefix-list-item entry correctly."""
+        source = (
+            "set policy-options prefix-list MY-LIST 10.0.0.0/8\n"
+            "deactivate policy-options prefix-list MY-LIST 10.0.0.0/8\n"
+        )
+        item = read_set(source)["policy-options"]["prefix-list"][0]["prefix-list-item"][0]
+        assert item["name"] == "10.0.0.0/8"
+        assert item["@"]["inactive"] is True
+
+
+class TestUplinkFailureDetectionGroupIsAList:
+    """`uplink-failure-detection group G ...` is a list entry, not a fused key.
+
+    The XSD wraps the named list `ufd-group-name` in a `group` container, the
+    shape `groups`/`group` takes, but no fix named the wrapper because `group`
+    is also BGP's list. Every release held read the line as one key; the
+    `ufd-group-transparent` fix scopes the flag to its parent.
+    """
+
+    SOURCE = (
+        "set protocols uplink-failure-detection group G link-to-monitor ae0\n"
+        "set protocols uplink-failure-detection group G link-to-disable ge-0/0/1\n"
+    )
+
+    def test_the_group_is_an_entry_with_its_links(self) -> None:
+        entries = read_set(self.SOURCE)["protocols"]["uplink-failure-detection"]["group"][
+            "ufd-group-name"
+        ]
+        assert entries == [
+            {
+                "name": "G",
+                "link-to-monitor": [{"name": "ae0"}],
+                "link-to-disable": [{"name": "ge-0/0/1"}],
+            }
+        ]
+
+    def test_it_round_trips_to_set(self) -> None:
+        assert write_set(read_set(self.SOURCE)).strip() == self.SOURCE.strip()
+
+    def test_a_deactivate_keeps_the_group_name(self) -> None:
+        """Under the fused key, `deactivate ... group G` lost its `G`."""
+        source = self.SOURCE + "deactivate protocols uplink-failure-detection group G\n"
+        assert write_set(read_set(source)).strip() == source.strip()
+
+
+class TestANonListNodeNeverReplacesAnEntry:
+    """Any `maxOccurs` but 1 is a list, and a nokeyword leaf never overwrites a
+    present, different value. `forwarding-classes class` collapsed into its
+    last class, without a word. Owner decision on challenge A, phase-6 review
+    of identifier-key-fields."""
+
+    def test_three_forwarding_classes_stay_three(self) -> None:
+        source = (
+            "class-of-service {\n    forwarding-classes {\n"
+            "        class fc0 queue-num 0;\n        class fc1 queue-num 1;\n"
+            "        class mcast-fc queue-num 2;\n    }\n}\n"
+        )
+        classes = ir(source, Format.STRUCTURED)["class-of-service"]["forwarding-classes"]["class"]
+        assert classes == [
+            {"name": "fc0", "queue-num": "0"},
+            {"name": "fc1", "queue-num": "1"},
+            {"name": "mcast-fc", "queue-num": "2"},
+        ]
+        assert to_set(source, Format.STRUCTURED) == [
+            f"set class-of-service forwarding-classes class {name} queue-num {n}"
+            for n, name in enumerate(("fc0", "fc1", "mcast-fc"))
+        ]
+        assert _unplaced(source, "structured") == []
+
+    @pytest.mark.parametrize(
+        "lines",
+        [
+            ["set system commit peers 10.0.0.1", "set system commit peers 10.0.0.2"],
+            [
+                "set system services http servers server S1 port 80",
+                "set system services http servers server S2 port 81",
+            ],
+        ],
+    )
+    def test_two_entries_stay_two(self, lines: list[str]) -> None:
+        source = "\n".join(lines) + "\n"
+        assert _round_trip(source.strip()) == lines
+        assert _unplaced(source) == []
+
+    def test_a_second_value_of_a_nokeyword_leaf_is_kept_whole(self) -> None:
+        """`access securid-server` is a single node keyed by a nokeyword `name`:
+        a second, different name is kept whole from the node's keyword and
+        reported, never written over the first."""
+        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
+        second = "set access securid-server SAMPLE-SERVER-2 configuration-file sample-2"
+        got = read_set(f"{first}\n{second}\n")["access"]
+        assert got["securid-server"] == {"name": "SAMPLE-SERVER", "configuration-file": "sample-1"}
+        assert got["securid-server SAMPLE-SERVER-2 configuration-file sample-2"] is True
+        assert _round_trip(f"{first}\n{second}") == [first, second]
+        assert len(_unplaced(f"{first}\n{second}\n")) == 1
+
+    def test_the_same_value_again_is_one_statement(self) -> None:
+        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
+        again = "set access securid-server SAMPLE-SERVER"
+        assert read_set(f"{first}\n{again}\n") == read_set(first)
+
+
+# ── Entry keys ───────────────────────────────────────────────────────
+
+
+class TestAnEntryKeyedOtherThanByName:
+    """A list whose key is not `name` keys its entries on the fields the
+    structure tree's `k` names, and writes them back in that order."""
+
+    def test_a_route_filter_keys_on_its_address(self) -> None:
+        result = read_set(
+            "set policy-options policy-statement FOO term BAR from route-filter 0.0.0.0/0 exact"
+        )
+        rf = result["policy-options"]["policy-statement"][0]["term"][0]["from"]["route-filter"]
+        assert rf == [{"address": "0.0.0.0/0", "exact": [None]}]
+
+    def test_a_prefix_list_filter_keys_on_its_list_name(self) -> None:
+        result = read_set(
+            "set policy-options policy-statement FOO term BAR from prefix-list-filter MY-LIST exact"
+        )
+        plf = result["policy-options"]["policy-statement"][0]["term"][0]["from"][
+            "prefix-list-filter"
+        ]
+        assert plf == [{"list_name": "MY-LIST", "exact": [None]}]
+
+    def test_attributes_match_keys_on_its_three_fields(self) -> None:
+        """Keyed by its three identifiers, where `name`, `_v0` and `_v1` used to
+        stand in for them (identifier-key-fields, owner answer 1)."""
+        source = (
+            "set event-options policy test-policy "
+            'attributes-match ping_test_failed.test-owner matches "^inet6-ping-uptime$"'
+        )
+        am = read_set(source)["event-options"]["policy"][0]["attributes-match"]
+        assert am == [
+            {
+                "from-event-attribute": "ping_test_failed.test-owner",
+                "condition": "matches",
+                "to-event-attribute-value": "^inet6-ping-uptime$",
+            }
+        ]
+
+    def test_attributes_match_round_trips(self) -> None:
+        source = (
+            "set event-options policy test-policy "
+            'attributes-match ping_test_failed.test-owner matches "^inet6-ping-uptime$"\n'
+        )
+        config = read_set(source)
+        assert write_set(config) == source, f"IR was: {config}"
+
+    def test_a_community_keys_on_its_action_and_name(self) -> None:
+        """`then community add VALUE`: the action comes before the name."""
+        source = (
+            "set policy-options policy-statement STMT term T then community add COMM1\n"
+            "set policy-options policy-statement STMT term T then community delete COMM2\n"
+        )
+        comms = read_set(source)["policy-options"]["policy-statement"][0]["term"][0]["then"][
+            "community"
+        ]
+        assert comms == [
+            {"community-name": "COMM1", "add": [None]},
+            {"community-name": "COMM2", "delete": [None]},
+        ]
+
+    def test_a_community_round_trips_action_first(self) -> None:
+        source = (
+            "set policy-options policy-statement STMT term T then community add COMM1\n"
+            "set policy-options policy-statement STMT term T then community delete COMM2\n"
+        )
+        config = read_set(source)
+        assert write_set(config) == source, f"IR was: {config}"
+
+
+class TestKeyValuesOfEveryShape:
+    """A key value is one token, whatever it spells."""
+
+    @pytest.mark.parametrize(
+        ("tokens", "entry"),
+        [
+            ("as-list as-list", {"list-type": "as-list", "list-name": "as-list"}),
+            ("as-list-group as-list", {"list-type": "as-list-group", "list-name": "as-list"}),
+            ('as-list "SAMPLE AS LIST"', {"list-type": "as-list", "list-name": "SAMPLE AS LIST"}),
+            ("as-list 64496", {"list-type": "as-list", "list-name": "64496"}),
+            # Out of the enum: read by position, reported by validation.
+            ("1 SAMPLE-AS-LIST", {"list-type": "1", "list-name": "SAMPLE-AS-LIST"}),
+        ],
+    )
+    def test_each_key_value_is_one_token(self, tokens: str, entry: dict) -> None:
+        line = f"{_TERM} from as-path-neighbors {tokens}"
+        assert _from(line) == {"as-path-neighbors": [entry]}
+        assert _round_trip(line) == [line]
+
+
+class TestAKeyKeywordBeforeTheValues:
+    """The device accepts `route-filter exact <address>` and stores it as
+    `route-filter <address> exact` (device probe round 4, vMX 23.2R2-S7.5)."""
+
+    def test_a_match_type_before_the_address(self) -> None:
+        line = f"{_TERM} from route-filter exact 198.51.100.0/24"
+        expected = {"route-filter": [{"address": "198.51.100.0/24", "exact": [None]}]}
+        assert _from(line) == expected
+        assert _from(f"{_TERM} from route-filter 198.51.100.0/24 exact") == expected
+        assert _round_trip(line) == [f"{_TERM} from route-filter 198.51.100.0/24 exact"]
+
+
+_AREA = "set protocols ospf area 0.0.0.0 virtual-link"
+
+
+class TestKeyFieldsGivenByKeyword:
+    """A key field whose leaf is not `nokeyword` is read as `keyword value`,
+    those fields in any order among themselves, and written in declared order;
+    a missing field, or a value without its keyword, is rejected. Owner
+    decision on challenge B, device probe round 5 (vMX 23.2R2-S7.5)."""
+
+    _ENTRY = {"neighbor-id": "10.255.255.2", "transit-area": "0.0.0.3"}
+
+    def test_declared_order(self) -> None:
+        line = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        area = read_set(line)["protocols"]["ospf"]["area"][0]
+        assert area["virtual-link"] == [self._ENTRY]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+    def test_the_reversed_order_gives_the_same_ir(self) -> None:
+        reversed_line = f"{_AREA} transit-area 0.0.0.3 neighbor-id 10.255.255.2"
+        declared = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        assert read_set(reversed_line) == read_set(declared)
+        assert _round_trip(reversed_line) == [declared]
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "virtual-link neighbor-id 10.255.255.3",
+            "virtual-link 10.255.255.4 0.0.0.2",
+            "virtual-link neighbor-id 10.255.255.4 0.0.0.2",
+            "virtual-link neighbor-id 10.255.255.4 neighbor-id 10.255.255.5",
+        ],
+    )
+    def test_an_incomplete_key_is_kept_whole_and_reported(self, statement: str) -> None:
+        line = f"set protocols ospf area 0.0.0.0 {statement}"
+        area = read_set(line)["protocols"]["ospf"]["area"][0]
+        assert "virtual-link" not in area
+        assert area[statement] is True
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+
+    def test_device_json_keeps_the_keywords(self) -> None:
+        config = {
+            "protocols": {"ospf": {"area": [{"name": "0.0.0.0", "virtual-link": [self._ENTRY]}]}}
+        }
+        assert to_set(as_json(config), Format.JSON) == [
+            f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
+        ]
+
+    @pytest.mark.parametrize(
+        ("line", "entry"),
+        [
+            (
+                "set services nat pool SAMPLE-POOL address-range low 198.51.100.1"
+                " high 198.51.100.9",
+                {"low": "198.51.100.1", "high": "198.51.100.9"},
+            ),
+            (
+                "set class-of-service schedulers SAMPLE-SCHED drop-profile-map loss-priority low"
+                " protocol any drop-profile SAMPLE-DP",
+                {"loss-priority": "low", "protocol": "any", "drop-profile": "SAMPLE-DP"},
+            ),
+        ],
+    )
+    def test_other_keyword_keys(self, line: str, entry: dict) -> None:
+        got = read_set(line)
+        parent = (
+            got["services"]["nat"]["pool"][0]
+            if "services" in got
+            else (got["class-of-service"]["schedulers"][0])
+        )
+        slot = "address-range" if "services" in got else "drop-profile-map"
+        assert parent[slot] == [entry]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+
+# ── Key aliases ──────────────────────────────────────────────────────
+
+
+class TestAKeyAliasIsTheSchemaKeyword:
+    """`ieee-802.3ad`, the JSON spelling, and `802.3ad`, the configuration's,
+    are one statement; the IR and the set output use the schema keyword."""
+
+    def test_a_lacp_statement_reads_under_its_interface(self) -> None:
+        source = (
+            "set interfaces ae0 aggregated-ether-options lacp force-up\n"
+            "set interfaces ae0 aggregated-ether-options lacp active\n"
+        )
+        iface = read_set(source)["interfaces"]["interface"][0]
+        assert iface["name"] == "ae0"
+        assert "aggregated-ether-options" in iface
+
+    def test_802_3ad_round_trips_with_its_nokeyword_bundle(self) -> None:
+        source = "set interfaces ge-0/0/0 ether-options 802.3ad ae22\n"
+        config = read_set(source)
+        iface = config["interfaces"]["interface"][0]
+        assert iface["ether-options"]["802.3ad"]["bundle"] == "ae22"
+        assert write_set(config) == source, f"IR was: {config}"
+
+    def test_the_json_spelling_is_written_as_the_schema_keyword(self) -> None:
+        config = {
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/0", "ether-options": {"ieee-802.3ad": {"bundle": "ae22"}}}
                 ]
             }
         }
+        result = write_set(config)
+        assert "802.3ad ae22" in result
+        assert "ieee-802.3ad" not in result
 
 
-# ── Presence flags ───────────────────────────────────────────────────
-
-
-class TestPresenceFlags:
-    def test_presence(self) -> None:
-        result = set_to_dict("set firewall family inet filter PROTECT term accept-ssh then accept")
-        then = result["firewall"]["family"]["inet"]["filter"][0]["term"][0]["then"]
-        assert then == {"accept": [None]}
-
-
-# ── Merging multiple set commands ────────────────────────────────────
+# ── Merging ──────────────────────────────────────────────────────────
 
 
 class TestMerging:
     def test_merge_siblings(self) -> None:
         source = "set system host-name r1\nset system domain-name example.com\n"
-        result = set_to_dict(source)
-        assert result == {"system": {"host-name": "r1", "domain-name": "example.com"}}
+        assert read_set(source) == {"system": {"host-name": "r1", "domain-name": "example.com"}}
 
     def test_merge_named_list_entries(self) -> None:
         source = (
@@ -156,17 +775,16 @@ class TestMerging:
             "set firewall family inet filter PROTECT term accept-ssh from destination-port ssh\n"
             "set firewall family inet filter PROTECT term accept-ssh then accept\n"
         )
-        result = set_to_dict(source)
-        term = result["firewall"]["family"]["inet"]["filter"][0]["term"][0]
-        assert term["name"] == "accept-ssh"
-        assert term["from"]["protocol"] == ["tcp"]
-        assert term["from"]["destination-port"] == ["ssh"]
-        assert term["then"]["accept"] == [None]
+        term = read_set(source)["firewall"]["family"]["inet"]["filter"][0]["term"][0]
+        assert term == {
+            "name": "accept-ssh",
+            "from": {"protocol": ["tcp"], "destination-port": ["ssh"]},
+            "then": {"accept": [None]},
+        }
 
     def test_merge_interface_children(self) -> None:
         source = "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
-        result = set_to_dict(source)
-        iface = result["interfaces"]["interface"][0]
+        iface = read_set(source)["interfaces"]["interface"][0]
         assert iface["name"] == "ge-0/0/0"
         assert iface["unit"][0]["name"] == "0"
         assert iface["unit"][0]["family"]["inet"]["address"] == [{"name": "10.0.0.1/24"}]
@@ -178,431 +796,36 @@ class TestMerging:
 class TestMetaCommands:
     def test_deactivate_container(self) -> None:
         source = "set system host-name r1\ndeactivate system\n"
-        result = set_to_dict(source)
-        assert result == {"system": {"@": {"inactive": True}, "host-name": "r1"}}
+        assert read_set(source) == {"system": {"@": {"inactive": True}, "host-name": "r1"}}
 
     def test_protect_container(self) -> None:
         source = "set system host-name r1\nprotect system\n"
-        result = set_to_dict(source)
-        assert result["system"]["@"]["protect"] == "protect"
+        assert read_set(source)["system"]["@"]["protect"] == "protect"
 
     def test_delete_container(self) -> None:
         source = "set system host-name r1\ndelete system\n"
-        result = set_to_dict(source)
-        assert result["system"]["@"]["operation"] == "delete"
+        assert read_set(source)["system"]["@"]["operation"] == "delete"
 
     def test_activate_container(self) -> None:
         source = "set system host-name r1\nactivate system\n"
-        result = set_to_dict(source)
-        assert result["system"]["@"]["active"] == "active"
+        assert read_set(source)["system"]["@"]["active"] == "active"
 
     def test_deactivate_transparent_entry(self) -> None:
         source = "set interfaces ge-0/0/0 description uplink\ndeactivate interfaces ge-0/0/0\n"
-        result = set_to_dict(source)
-        entry = result["interfaces"]["interface"][0]
+        entry = read_set(source)["interfaces"]["interface"][0]
         assert entry["@"]["inactive"] is True
-
-
-# ── Apply-groups ─────────────────────────────────────────────────────
-
-
-class TestApplyGroups:
-    def test_top_level_apply_groups(self) -> None:
-        source = "set apply-groups FOO\nset apply-groups BAR\n"
-        result = set_to_dict(source)
-        assert result == {"apply-groups": ["FOO", "BAR"]}
-
-    def test_embedded_apply_groups(self) -> None:
-        source = "set system host-name r1\nset system apply-groups FOO\n"
-        result = set_to_dict(source)
-        assert result["system"]["apply-groups"] == ["FOO"]
-
-    def test_a_second_group_token_keeps_the_line_whole(self) -> None:
-        """The device rejects `set apply-groups G1 G2` (vMX 23.2R2-S7.5); the
-        reader applied G1 and dropped G2. Spec: identifier-key-fields,
-        "A statement the reader cannot complete is kept whole"."""
-        source = "set apply-groups SAMPLE-GROUP SAMPLE-GROUP-2\n"
-        result = set_to_dict(source)
-        assert result == {"apply-groups SAMPLE-GROUP SAMPLE-GROUP-2": True}
-        assert dict_to_set(result) == source
-
-
-# ── Parser bug fixes ────────────────────────────────────────────────
-
-
-class TestParserBugFixes:
-    def test_leaf_list_accumulation(self) -> None:
-        """Bug 1: Repeated leaf values accumulate into a list."""
-        source = (
-            "set system services ssh ciphers aes128-ctr\n"
-            "set system services ssh ciphers aes256-ctr\n"
-        )
-        result = set_to_dict(source)
-        assert result["system"]["services"]["ssh"]["ciphers"] == ["aes128-ctr", "aes256-ctr"]
-
-    def test_leaf_triple_accumulation(self) -> None:
-        """Bug 1: Three repeated leaf values accumulate correctly."""
-        source = (
-            "set system services ssh ciphers aes128-ctr\n"
-            "set system services ssh ciphers aes256-ctr\n"
-            "set system services ssh ciphers aes128-gcm\n"
-        )
-        result = set_to_dict(source)
-        assert result["system"]["services"]["ssh"]["ciphers"] == [
-            "aes128-ctr",
-            "aes256-ctr",
-            "aes128-gcm",
-        ]
-
-    def test_route_filter_entry_key(self) -> None:
-        """Bug 2: route-filter uses 'address' as entry key, not 'name'."""
-        result = set_to_dict(
-            "set policy-options policy-statement FOO term BAR from route-filter 0.0.0.0/0 exact"
-        )
-        rf = result["policy-options"]["policy-statement"][0]["term"][0]["from"]["route-filter"]
-        assert rf == [{"address": "0.0.0.0/0", "exact": [None]}]
-
-    def test_prefix_list_filter_entry_key(self) -> None:
-        """Bug 2: prefix-list-filter uses 'list_name' as entry key, not 'name'."""
-        result = set_to_dict(
-            "set policy-options policy-statement FOO term BAR from prefix-list-filter MY-LIST exact"
-        )
-        plf = result["policy-options"]["policy-statement"][0]["term"][0]["from"][
-            "prefix-list-filter"
-        ]
-        assert plf == [{"list_name": "MY-LIST", "exact": [None]}]
-
-    def test_presence_named_list_with_value(self) -> None:
-        """Bug 3: L+p node with value creates dict entry, not bare string."""
-        # snmp filter-interfaces interfaces has both L and p flags
-        result = set_to_dict('set snmp filter-interfaces interfaces "^ge-"')
-        ifaces = result["snmp"]["filter-interfaces"]["interfaces"]
-        assert isinstance(ifaces, list)
-        assert len(ifaces) == 1
-        assert ifaces[0] == {"name": "^ge-"}
-
-    def test_presence_named_list_without_value(self) -> None:
-        """Bug 3: L+p node without value creates presence [null]."""
-        result = set_to_dict("set snmp filter-interfaces interfaces")
-        assert result["snmp"]["filter-interfaces"]["interfaces"] == [None]
-
-    def test_multi_token_leaf_value(self) -> None:
-        """Bug 4: All remaining tokens after a leaf are joined as the value."""
-        result = set_to_dict("set system host-name foo bar baz")
-        assert result["system"]["host-name"] == "foo bar baz"
-
-    def test_leaf_followed_by_sibling(self) -> None:
-        """Leaf consumes only one token when next token is a schema sibling."""
-        source = (
-            "set system syslog file messages_firewall_any"
-            " archive size 10m files 5 no-world-readable"
-        )
-        result = set_to_dict(source)
-        archive = result["system"]["syslog"]["file"][0]["archive"]
-        assert archive["size"] == "10m"
-        assert archive["files"] == "5"
-        assert archive["no-world-readable"] == [None]
-
-    def test_nokeyword_leaf_with_siblings(self) -> None:
-        """Nokeyword leaf (like traceoptions filename) preserves sibling tokens."""
-        source = "set protocols bgp traceoptions file bgp-log size 10m files 10"
-        result = set_to_dict(source)
-        f = result["protocols"]["bgp"]["traceoptions"]["file"]
-        assert f["filename"] == "bgp-log"
-        assert f["size"] == "10m"
-        assert f["files"] == "10"
-
-    def test_nokeyword_maximum_prefixes_with_siblings(self) -> None:
-        """maximum-prefixes nokeyword limit preserves threshold and log-interval."""
-        source = "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5"
-        result = set_to_dict(source)
-        mp = result["routing-options"]["maximum-prefixes"]
-        assert mp["limit"] == "3000000"
-        assert mp["threshold"] == "50"
-        assert mp["log-interval"] == "5"
-
-    def test_trigger_flat_dict_nokeyword(self) -> None:
-        """Trigger (fd) with nokeyword count value is preserved."""
-        source = "set event-options policy test within 1800 trigger 1"
-        result = set_to_dict(source)
-        trigger = result["event-options"]["policy"][0]["within"][0]["trigger"]
-        assert trigger["count"] == "1"
-
-    def test_confederation_members(self) -> None:
-        """Confederation members leaf accumulates values."""
-        source = (
-            "set routing-options confederation members 64529\n"
-            "set routing-options confederation members 64530\n"
-        )
-        result = set_to_dict(source)
-        members = result["routing-options"]["confederation"]["members"]
-        assert members == ["64529", "64530"]
-
-    def test_ntp_server_sibling_leaves(self) -> None:
-        """NTP server with version, prefer, and routing-instance siblings."""
-        source = "set system ntp server 198.51.100.1 version 4 prefer routing-instance mgmt_junos"
-        result = set_to_dict(source)
-        server = result["system"]["ntp"]["server"][0]
-        assert server["name"] == "198.51.100.1"
-        assert server["version"] == "4"
-        assert server["prefer"] == [None]
-        assert server["routing-instance"] == "mgmt_junos"
-
-    def test_filter_interfaces_multiple_entries(self) -> None:
-        """Bug 3: filter-interfaces interfaces creates dict entries."""
-        source = (
-            'set snmp filter-interfaces interfaces "^ge-0/0/0"\n'
-            'set snmp filter-interfaces interfaces "^ge-0/0/1"\n'
-        )
-        result = set_to_dict(source)
-        ifaces = result["snmp"]["filter-interfaces"]["interfaces"]
-        assert isinstance(ifaces, list)
-        assert len(ifaces) == 2
-        assert ifaces[0] == {"name": "^ge-0/0/0"}
-        assert ifaces[1] == {"name": "^ge-0/0/1"}
-
-    def test_attributes_match_values_preserved(self) -> None:
-        """Bug 5: attributes-match preserves condition and value tokens."""
-        source = (
-            "set event-options policy test-policy "
-            'attributes-match ping_test_failed.test-owner matches "^inet6-ping-uptime$"'
-        )
-        result = set_to_dict(source)
-        am = result["event-options"]["policy"][0]["attributes-match"]
-        assert isinstance(am, list)
-        assert len(am) == 1
-        entry = am[0]
-        assert isinstance(entry, dict)
-        # Keyed by its three identifiers (identifier-key-fields, owner answer
-        # 1), where `name`, `_v0` and `_v1` used to stand in for them.
-        assert entry == {
-            "from-event-attribute": "ping_test_failed.test-owner",
-            "condition": "matches",
-            "to-event-attribute-value": "^inet6-ping-uptime$",
-        }
-
-    def test_ephemeral_instance_named_list(self) -> None:
-        """Ephemeral instance preserves instance names as dict entries."""
-        source = (
-            "set system configuration-database ephemeral instance dgipingtest\n"
-            "set system configuration-database ephemeral instance 0\n"
-        )
-        result = set_to_dict(source)
-        instances = result["system"]["configuration-database"]["ephemeral"]["instance"]
-        assert instances == [{"name": "dgipingtest"}, {"name": "0"}]
-
-    def test_named_list_without_children_produces_dicts(self) -> None:
-        """Named lists without schema children produce dict entries, not bare strings."""
-        # ephemeral instance has {L: true} — no children, no fe
-        source = (
-            "set system configuration-database ephemeral instance dgipingtest\n"
-            "set system configuration-database ephemeral instance testdb\n"
-        )
-        result = set_to_dict(source)
-        instances = result["system"]["configuration-database"]["ephemeral"]["instance"]
-        assert isinstance(instances, list)
-        assert all(isinstance(e, dict) for e in instances)
-        assert instances[0] == {"name": "dgipingtest"}
-        assert instances[1] == {"name": "testdb"}
-
-    def test_community_action_first_pattern(self) -> None:
-        """Community entries use action-first pattern: community add VALUE."""
-        source = (
-            "set policy-options policy-statement STMT term T then community add COMM1\n"
-            "set policy-options policy-statement STMT term T then community delete COMM2\n"
-        )
-        result = set_to_dict(source)
-        comms = result["policy-options"]["policy-statement"][0]["term"][0]["then"]["community"]
-        assert isinstance(comms, list)
-        assert len(comms) == 2
-        assert comms[0] == {"community-name": "COMM1", "add": [None]}
-        assert comms[1] == {"community-name": "COMM2", "delete": [None]}
-
-    def test_community_action_first_roundtrip(self) -> None:
-        """Community action-first entries survive set round-trip."""
-        source = (
-            "set policy-options policy-statement STMT term T then community add COMM1\n"
-            "set policy-options policy-statement STMT term T then community delete COMM2\n"
-        )
-        ir = set_to_dict(source)
-        roundtripped = dict_to_set(ir)
-        assert roundtripped == source, f"IR was: {ir}"
-
-    def test_key_alias_ieee_802_3ad(self) -> None:
-        """Key alias: ieee-802.3ad resolves to 802.3ad for schema lookup."""
-        source = (
-            "set interfaces ae0 aggregated-ether-options lacp force-up\n"
-            "set interfaces ae0 aggregated-ether-options lacp active\n"
-        )
-        ir = set_to_dict(source)
-        iface = ir["interfaces"]["interface"][0]
-        assert iface["name"] == "ae0"
-        assert "aggregated-ether-options" in iface
-
-    def test_key_alias_ieee_802_3ad_roundtrip(self) -> None:
-        """802.3ad round-trips through set output (bundle is nk, omitted)."""
-        source = "set interfaces ge-0/0/0 ether-options 802.3ad ae22\n"
-        ir = set_to_dict(source)
-        # IR stores 802.3ad (the schema/conf keyword), with bundle as nk child
-        iface = ir["interfaces"]["interface"][0]
-        assert "802.3ad" in iface["ether-options"]
-        assert iface["ether-options"]["802.3ad"]["bundle"] == "ae22"
-        roundtripped = dict_to_set(ir)
-        assert roundtripped == source, f"IR was: {ir}"
-
-    def test_key_alias_ieee_802_3ad_from_json(self) -> None:
-        """JSON key ieee-802.3ad maps to 802.3ad in output."""
-        # JSON uses ieee-802.3ad, output should use 802.3ad
-        ir = {
-            "interfaces": {
-                "interface": [
-                    {"name": "ge-0/0/0", "ether-options": {"ieee-802.3ad": {"bundle": "ae22"}}}
-                ]
-            }
-        }
-        result = dict_to_set(ir)
-        assert "802.3ad ae22" in result
-        assert "ieee-802.3ad" not in result
-
-    def test_attributes_match_roundtrip(self) -> None:
-        """Bug 5: attributes-match round-trips through set output."""
-        source = (
-            "set event-options policy test-policy "
-            'attributes-match ping_test_failed.test-owner matches "^inet6-ping-uptime$"\n'
-        )
-        ir = set_to_dict(source)
-        roundtripped = dict_to_set(ir)
-        assert roundtripped == source, f"IR was: {ir}"
-
-
-# ── Deactivate ordering ────────────────────────────────────────────────
-
-
-# ── Partial config: transparent lookup without parent ────────────────
-
-
-class TestPartialConfigTransparentLookup:
-    """When set commands lack the parent keyword (e.g., 'interfaces'),
-    the child-scan logic should still resolve transparent named lists."""
-
-    def test_interface_without_parent(self) -> None:
-        """set ge-0/0/0 description 'foo' produces nested interfaces.interface."""
-        result = set_to_dict('set ge-0/0/0 description "foo"')
-        assert "interfaces" in result
-        iface = result["interfaces"]["interface"]
-        assert isinstance(iface, list)
-        assert len(iface) == 1
-        assert iface[0]["name"] == "ge-0/0/0"
-        assert iface[0]["description"] == "foo"
-
-    def test_loopback_without_parent(self) -> None:
-        """set lo0 unit 0 family inet address ... produces proper nesting."""
-        result = set_to_dict("set lo0 unit 0 family inet address 10.0.36.103/32")
-        assert "interfaces" in result
-        iface = result["interfaces"]["interface"]
-        assert isinstance(iface, list)
-        assert iface[0]["name"] == "lo0"
-        assert iface[0]["unit"][0]["name"] == "0"
-        assert iface[0]["unit"][0]["family"]["inet"]["address"] == [{"name": "10.0.36.103/32"}]
-
-    def test_ae_without_parent(self) -> None:
-        """set ae100 mtu 9192 works via child-scan."""
-        result = set_to_dict("set ae100 mtu 9192")
-        assert "interfaces" in result
-        iface = result["interfaces"]["interface"]
-        assert isinstance(iface, list)
-        assert iface[0]["name"] == "ae100"
-        assert iface[0]["mtu"] == "9192"
-
-    def test_deactivate_without_parent(self) -> None:
-        """deactivate ge-0/0/0 applies inactive attribute via child-scan."""
-        source = 'set ge-0/0/0 description "uplink"\ndeactivate ge-0/0/0\n'
-        result = set_to_dict(source)
-        assert "interfaces" in result
-        entry = result["interfaces"]["interface"][0]
-        assert entry["@"]["inactive"] is True
-
-    def test_unknown_token_still_flattens(self) -> None:
-        """Truly unknown tokens still get the flat-key fallback."""
-        result = set_to_dict("set xyzzy-nonexistent-thing some-value")
-        # Should NOT create any known parent — falls through to flat key
-        assert "xyzzy-nonexistent-thing some-value" in result
-
-
-# ── Transparent list key (tk flag) ───────────────────────────────────
-
-
-class TestTransparentListKey:
-    """Tests for transparent-list-key children (tk flag) like
-    prefix-list-item and syslog file contents."""
-
-    def test_prefix_list_item_single(self) -> None:
-        """prefix-list-item entry is created for a single prefix."""
-        result = set_to_dict("set policy-options prefix-list MY-LIST 127.0.0.1/32")
-        pl = result["policy-options"]["prefix-list"][0]
-        assert pl["name"] == "MY-LIST"
-        assert pl["prefix-list-item"] == [{"name": "127.0.0.1/32"}]
-
-    def test_prefix_list_item_multiple(self) -> None:
-        """Multiple prefixes accumulate in the same prefix-list-item list."""
-        source = (
-            "set policy-options prefix-list MY-LIST 127.0.0.1/32\n"
-            "set policy-options prefix-list MY-LIST 10.0.0.0/8\n"
-        )
-        result = set_to_dict(source)
-        pl = result["policy-options"]["prefix-list"][0]
-        assert pl["name"] == "MY-LIST"
-        items = pl["prefix-list-item"]
-        assert len(items) == 2
-        assert items[0]["name"] == "127.0.0.1/32"
-        assert items[1]["name"] == "10.0.0.0/8"
-
-    def test_syslog_contents_with_level(self) -> None:
-        """Syslog file contents entry preserves the facility and level."""
-        result = set_to_dict("set system syslog file messages interactive-commands any")
-        contents = result["system"]["syslog"]["file"][0]["contents"]
-        assert isinstance(contents, list)
-        assert len(contents) == 1
-        assert contents[0]["name"] == "interactive-commands"
-        assert contents[0]["any"] == [None]
-
-    def test_syslog_contents_multiple_facilities(self) -> None:
-        """Multiple syslog facilities create separate contents entries."""
-        source = (
-            "set system syslog file messages interactive-commands any\n"
-            "set system syslog file messages any notice\n"
-        )
-        result = set_to_dict(source)
-        contents = result["system"]["syslog"]["file"][0]["contents"]
-        assert len(contents) == 2
-        names = [c["name"] for c in contents]
-        assert "interactive-commands" in names
-        assert "any" in names
-
-    def test_deactivate_prefix_list_item(self) -> None:
-        """Deactivate targets a prefix-list-item entry correctly."""
-        source = (
-            "set policy-options prefix-list MY-LIST 10.0.0.0/8\n"
-            "deactivate policy-options prefix-list MY-LIST 10.0.0.0/8\n"
-        )
-        result = set_to_dict(source)
-        item = result["policy-options"]["prefix-list"][0]["prefix-list-item"][0]
-        assert item["name"] == "10.0.0.0/8"
-        assert item["@"]["inactive"] is True
 
 
 class TestDeactivateOrdering:
+    """A meta command is written right after its statement, not at the end."""
+
     def test_deactivate_appears_near_set(self) -> None:
-        """Deactivate lines appear right after related set lines, not at end."""
         source = (
             "set interfaces ge-0/0/0 description uplink\n"
             "deactivate interfaces ge-0/0/0\n"
             "set interfaces ge-0/0/1 description downlink\n"
         )
-        ir = set_to_dict(source)
-        result = dict_to_set(ir)
-        lines = result.strip().split("\n")
-        # deactivate should come right after the related set, not at the end
+        lines = write_set(read_set(source)).strip().split("\n")
         deact_idx = next(
             idx
             for idx, line in enumerate(lines)
@@ -616,21 +839,353 @@ class TestDeactivateOrdering:
         )
 
     def test_protect_appears_near_set(self) -> None:
-        """Protect lines appear right after related set lines."""
         source = (
             "set system host-name r1\n"
             "protect system\n"
             "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
         )
-        ir = set_to_dict(source)
-        result = dict_to_set(ir)
-        lines = result.strip().split("\n")
+        lines = write_set(read_set(source)).strip().split("\n")
         protect_idx = next(idx for idx, line in enumerate(lines) if line.startswith("protect"))
         route_idx = next(idx for idx, line in enumerate(lines) if "routing-options" in line)
         assert protect_idx < route_idx
 
 
-# ── Round-trip: dict→set→dict ────────────────────────────────────────
+class TestMetaCommandsOnAKeyedEntry:
+    """`deactivate`, `delete` and `protect` address an entry by its whole key."""
+
+    @pytest.mark.parametrize(
+        ("command", "attribute"),
+        [
+            ("deactivate", {"inactive": True}),
+            ("delete", {"operation": "delete"}),
+            ("protect", {"protect": "protect"}),
+        ],
+    )
+    @pytest.mark.parametrize(
+        ("where", "statement", "entry"),
+        [
+            (
+                "from",
+                "as-path-neighbors as-list SAMPLE-AS-LIST",
+                {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"},
+            ),
+            (
+                "from",
+                "route-filter 198.51.100.0/24 exact",
+                {"address": "198.51.100.0/24", "exact": [None]},
+            ),
+            ("then", "community add SAMPLE-COMM", {"add": [None], "community-name": "SAMPLE-COMM"}),
+        ],
+    )
+    def test_the_attribute_lands_on_the_entry(
+        self, command: str, attribute: dict, where: str, statement: str, entry: dict
+    ) -> None:
+        set_line = f"{_TERM} {where} {statement}"
+        meta_line = f"{command} {set_line[len('set ') :]}"
+        term = set_ir(set_line, meta_line)["policy-options"]["policy-statement"][0]["term"][0]
+        slot = statement.split()[0]
+        assert term[where][slot] == [{"@": attribute, **entry}]
+        if command != "delete":
+            assert _round_trip(f"{set_line}\n{meta_line}") == [set_line, meta_line]
+
+
+class TestAMetaCommandIsNeverPartiallyApplied:
+    """A malformed meta path is data to report, never a shorter valid path."""
+
+    _ATTRS = {
+        "deactivate": {"inactive": True},
+        "activate": {"active": "active"},
+        "protect": {"protect": "protect"},
+        "delete": {"operation": "delete"},
+    }
+
+    @pytest.mark.parametrize("command", _ATTRS)
+    @pytest.mark.parametrize(
+        "suffix",
+        ["as-path-neighbors as-list", "as-path-neighbors as-list SAMPLE-AS-LIST extra"],
+        ids=["partial-key", "surplus-token"],
+    )
+    def test_a_partial_or_surplus_key_is_kept_whole(self, command: str, suffix: str) -> None:
+        set_line = f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST"
+        meta_line = f"{command} {_TERM[4:]} from {suffix}"
+
+        config = read_set(f"{set_line}\n{meta_line}")
+        from_ = config["policy-options"]["policy-statement"][0]["term"][0]["from"]
+
+        assert "@" not in from_
+        assert "@" not in from_["as-path-neighbors"][0]
+        assert from_[suffix]["@"] == self._ATTRS[command]
+        assert len(_unplaced(f"{set_line}\n{meta_line}\n")) == 1
+        assert meta_line in write_set(config).splitlines()
+
+    def test_an_unknown_path_does_not_annotate_its_valid_parent(self) -> None:
+        source = "set system host-name router1\ndeactivate system bogus-thing"
+        config = read_set(source)
+
+        assert "@" not in config["system"]
+        assert config["system"]["bogus-thing"] == {"@": {"inactive": True}}
+        assert len(_unplaced(source + "\n")) == 1
+        assert write_set(config).splitlines() == source.splitlines()
+
+    def test_meta_on_an_existing_unknown_prefix_reuses_its_unplaced_report(self) -> None:
+        source = "set system bogus-thing value\ndeactivate system bogus-thing"
+        config = read_set(source)
+
+        assert "@" not in config["system"]
+        assert config["system"]["bogus-thing value"] is True
+        assert config["system"]["@bogus-thing"] == {"inactive": True}
+        assert len(_unplaced(source + "\n")) == 1
+        assert write_set(config).splitlines() == source.splitlines()
+
+    def test_meta_on_an_existing_positional_value_is_kept_whole(self) -> None:
+        source = "set protocols isis SAMPLE-UNKNOWN\ndeactivate protocols isis SAMPLE-UNKNOWN"
+        config = read_set(source)
+
+        assert config["protocols"]["isis"]["enable-disable"] == "SAMPLE-UNKNOWN"
+        assert config["protocols"]["isis"]["@SAMPLE-UNKNOWN"] == {"inactive": True}
+        assert _unplaced(source + "\n") == []
+        assert write_set(config).splitlines() == source.splitlines()
+
+    @pytest.mark.parametrize("command", _ATTRS)
+    @pytest.mark.parametrize(
+        ("set_line", "list_path"),
+        [
+            (
+                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
+                f"{_TERM[4:]} from as-path-neighbors",
+            ),
+            ("set system login user admin uid 2000", "system login user"),
+        ],
+        ids=["as-path-neighbors", "login-user"],
+    )
+    def test_a_meta_attribute_on_a_whole_list_is_written(
+        self, command: str, set_line: str, list_path: str
+    ) -> None:
+        meta_line = f"{command} {list_path}"
+        written = write_set(read_set(f"{set_line}\n{meta_line}")).splitlines()
+        assert set_line in written
+        assert meta_line in written
+
+
+# ── apply-groups and apply-macro ─────────────────────────────────────
+
+
+class TestApplyGroups:
+    """`apply-groups` and `apply-groups-except` take one name per statement,
+    at the top and inside any hierarchy level; anything else is a statement
+    the device rejects, kept whole and reported."""
+
+    def test_top_level_apply_groups(self) -> None:
+        source = "set apply-groups FOO\nset apply-groups BAR\n"
+        assert read_set(source) == {"apply-groups": ["FOO", "BAR"]}
+
+    def test_embedded_apply_groups(self) -> None:
+        source = "set system host-name r1\nset system apply-groups FOO\n"
+        assert read_set(source)["system"]["apply-groups"] == ["FOO"]
+
+    def test_one_name_inside_a_policy(self) -> None:
+        line = "set policy-options policy-statement SAMPLE-POLICY apply-groups SAMPLE-GROUP"
+        policy = set_ir(line)["policy-options"]["policy-statement"][0]
+        assert policy["apply-groups"] == ["SAMPLE-GROUP"]
+
+    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
+    @pytest.mark.parametrize("prefix", ["set", "set policy-options policy-statement SAMPLE-POLICY"])
+    def test_two_names_apply_no_group(self, keyword: str, prefix: str) -> None:
+        """The device rejects `set apply-groups G1 G2` (vMX 23.2R2-S7.5); the
+        reader applied G1 and dropped G2. Spec: identifier-key-fields,
+        "A statement the reader cannot complete is kept whole"."""
+        line = f"{prefix} {keyword} SAMPLE-GROUP SAMPLE-GROUP-2"
+        kept = f"{keyword} SAMPLE-GROUP SAMPLE-GROUP-2"
+        for got, value in ((set_ir(line), KEPT), (read_set(line), True)):
+            parent = got if prefix == "set" else got["policy-options"]["policy-statement"][0]
+            assert keyword not in parent
+            assert parent[kept] == value
+        assert _round_trip(line) == [line]
+
+    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
+    def test_a_bare_keyword_is_kept_whole_and_reported(self, keyword: str) -> None:
+        """A bare `set apply-groups` names no group, a statement the device
+        rejects (finding 6, phase-6 review of identifier-key-fields)."""
+        line = f"set system {keyword}"
+        assert read_set(line) == {"system": {keyword: True}}
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+
+    def test_a_group_after_a_bare_one_is_kept_too(self) -> None:
+        """Both statements survive; the reader used to raise on the second."""
+        source = "set apply-groups\nset apply-groups SAMPLE-GROUP"
+        assert read_set(source) == {"apply-groups": True, "apply-groups SAMPLE-GROUP": True}
+        assert _round_trip(source) == source.splitlines()
+
+
+class TestApplyMacroTakesAtMostThreeValues:
+    """`apply-macro` takes a name, then optionally a keyword and its value; the
+    device rejects a fourth value (device probe round 5, vMX 23.2R2-S7.5),
+    which the reader turned into a second data entry without a word."""
+
+    @pytest.mark.parametrize(
+        ("line", "entry"),
+        [
+            ("set apply-macro ABCDE", {"name": "ABCDE"}),
+            ("set apply-macro ABCDE DEFGH", {"name": "ABCDE", "data": [{"name": "DEFGH"}]}),
+            (
+                'set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks',
+                {"name": "12345", "data": [{"name": "KADJBF KU!H", "value": "balks"}]},
+            ),
+        ],
+    )
+    def test_one_to_three_values(self, line: str, entry: dict) -> None:
+        got = read_set(line)
+        parent = got["groups"]["group"][0] if "groups" in got else got
+        assert parent["apply-macro"] == [entry]
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == []
+
+    @pytest.mark.parametrize(
+        "statement",
+        ['apply-macro 12345 "KADJBF KU!H" balks XXXXX', "apply-macro 12345 XXX XXXX XXX"],
+    )
+    def test_a_fourth_value_is_kept_whole_and_reported(self, statement: str) -> None:
+        line = f"set groups SAMPLE-GROUP {statement}"
+        group = read_set(line)["groups"]["group"][0]
+        assert "apply-macro" not in group
+        assert [k for k in group if k != "name"] == [statement.replace('"', "")]
+        assert len(_unplaced(line + "\n")) == 1
+
+
+# ── Statements kept whole ────────────────────────────────────────────
+
+
+class TestTokensTheReaderCannotPlaceAreKept:
+    """No entry, no group and no dropped token from a line the device rejects.
+
+    Spec: conversion/entry-keys, "A statement the reader cannot complete is
+    kept whole" (change identifier-key-fields).
+    """
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "as-path-neighbors as-list",
+            "as-path-origins as-list-group",
+            "route-filter 198.51.100.0/24",
+            "route-filter 198.51.100.0/24 next-policy",
+            "source-address-filter 198.51.100.0/24",
+        ],
+    )
+    def test_a_partial_key_creates_no_entry(self, statement: str) -> None:
+        line = f"{_TERM} from {statement}"
+        assert _from(line) == {statement: KEPT}
+        assert _round_trip(line) == [line]
+
+    @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
+    def test_a_bare_list_keyword_creates_no_entry(self, slot: str) -> None:
+        """A keyed list's keyword with no key value is a statement the reader
+        cannot complete: kept whole, as written, and reported like a partial
+        key (owner decision, phase 5; the device rejects the bare line)."""
+        line = f"{_TERM} from {slot}"
+        assert _from(line) == {slot: KEPT}
+        assert _round_trip(line) == [line]
+        result = convert_config_result(
+            line + "\n", from_format=Format.SET, to_format=Format.SET, validate=True
+        )
+        assert result.output.strip() == line
+        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
+        assert messages == [
+            f"'{slot}' could not be placed in the schema: kept as written, not validated"
+        ]
+
+    def test_a_keyed_entry_after_a_bare_keyword_is_kept_too(self) -> None:
+        bare = f"{_TERM} from as-path-neighbors"
+        full = f"{bare} as-list SAMPLE-AS-LIST"
+        assert _from(f"{bare}\n{full}") == {
+            "as-path-neighbors": KEPT,
+            "as-path-neighbors as-list SAMPLE-AS-LIST": KEPT,
+        }
+
+    def test_a_partial_attributes_match_creates_no_entry(self) -> None:
+        line = (
+            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner matches"
+        )
+        policy = set_ir(line)["event-options"]["policy"][0]
+        assert policy == {
+            "name": "SAMPLE-EVENT-POLICY",
+            "attributes-match ping.test-owner matches": KEPT,
+        }
+        assert _round_trip(line) == [line]
+
+    @pytest.mark.parametrize(
+        ("where", "statement"),
+        [
+            ("from", "as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA"),
+            ("from", "as-path-transits as-list-group SAMPLE-AS-LIST SAMPLE-EXTRA"),
+            ("then", "community add SAMPLE-COMM SAMPLE-EXTRA"),
+        ],
+    )
+    def test_a_surplus_after_a_terminal_entry_keeps_the_line_whole(
+        self, where: str, statement: str
+    ) -> None:
+        line = f"{_TERM} {where} {statement}"
+        term = set_ir(line)["policy-options"]["policy-statement"][0]["term"][0]
+        assert term[where] == {statement: KEPT}
+        assert _round_trip(line) == [line]
+
+    def test_a_surplus_after_attributes_match_keeps_the_line_whole(self) -> None:
+        statement = 'attributes-match ping.test-owner matches "^uptime$" SAMPLE-EXTRA'
+        line = f"set event-options policy SAMPLE-EVENT-POLICY {statement}"
+        policy = set_ir(line)["event-options"]["policy"][0]
+        assert "attributes-match" not in policy
+        assert [k for k in policy if k != "name"] == [
+            "attributes-match ping.test-owner matches ^uptime$ SAMPLE-EXTRA"
+        ]
+
+    def test_an_unknown_token_in_an_entry_with_children_is_unchanged(self) -> None:
+        """Pinned as it is: after a complete key the entry is open, and an
+        unknown token stays in it, as `set interfaces ge-0/0/0 nonsense` does."""
+        line = f"{_TERM} from route-filter 198.51.100.0/24 exact SAMPLE-EXTRA"
+        assert _from(line) == {
+            "route-filter": [{"address": "198.51.100.0/24", "exact": [None], "SAMPLE-EXTRA": KEPT}]
+        }
+
+
+class TestAnUnmodelledStatementIsKeptWhole:
+    """A statement the schema cannot place keeps every token, as one key.
+
+    The nokeyword catch-all took an unknown token as the leaf's value and
+    returned, so `set interfaces ge-0/0/0 nonsense alpha beta gamma` became
+    `{"enable-disable": "nonsense"}` and three tokens vanished -- into a key
+    the JSON schema accepts, so nothing anywhere said so. That is the
+    mechanism that hid the defective 24.4R0 artifacts for five months. The
+    rest of the line is now kept verbatim, as the unknown-token path always
+    did, and field validation reports it.
+    """
+
+    def test_the_rest_of_the_line_is_not_dropped(self) -> None:
+        entry = read_set("set interfaces ge-0/0/0 nonsense alpha beta gamma")["interfaces"][
+            "interface"
+        ][0]
+        assert entry == {"name": "ge-0/0/0", "nonsense alpha beta gamma": True}
+
+    def test_it_round_trips_to_set(self) -> None:
+        source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
+        assert write_set(read_set(source)).strip() == source
+
+    def test_a_valid_line_with_two_positional_values_is_kept_whole(self) -> None:
+        """The one case where the guard moves a valid Junos line: a nokeyword
+        leaf takes one value, so the second used to vanish. 69 of 1.4 million
+        jvd set lines, every one kept whole now and reported as unplaced."""
+        source = "set protocols mpls label-range srgb-label-range 16000 23999"
+        config = read_set(source)
+        assert "23999" in str(config)
+        assert write_set(config).strip() == source
+
+    def test_a_schema_node_without_a_type_keeps_the_line_too(self, schema_tree: Any) -> None:
+        """The last fallback took one token as the value and dropped the rest."""
+        with schema_tree({"c": {"system": {"c": {"odd": {}}}}}):
+            assert read_set("set system odd a b") == {"system": {"odd a b": True}}
+
+
+# ── Round trips ──────────────────────────────────────────────────────
 
 
 ROUND_TRIP_CONFIGS = [
@@ -704,14 +1259,10 @@ class TestDictSetDictRoundTrip:
 
     @pytest.mark.parametrize("config", ROUND_TRIP_CONFIGS)
     def test_roundtrip_via_set(self, config: dict) -> None:
-        set_text = dict_to_set(config)
-        roundtripped = set_to_dict(set_text)
-        assert dict_to_set(roundtripped) == set_text, (
+        set_text = write_set(config)
+        assert write_set(read_set(set_text)) == set_text, (
             f"Set output differs after round-trip:\n{set_text}"
         )
-
-
-# ── Round-trip: set→dict→set ────────────────────────────────────────
 
 
 SET_ROUND_TRIP_SOURCES = [
@@ -738,652 +1289,5 @@ class TestSetDictSetRoundTrip:
 
     @pytest.mark.parametrize("source", SET_ROUND_TRIP_SOURCES)
     def test_roundtrip(self, source: str) -> None:
-        ir = set_to_dict(source)
-        roundtripped = dict_to_set(ir)
-        assert roundtripped == source, f"IR was: {ir}"
-
-
-class TestStatementNameNokeywordLeaf:
-    """An on/off switch keys on the statement, not on the schema node.
-
-    The schema folds `enable`/`disable` into one nokeyword leaf named
-    `enable-disable` whose enum is `['disable']`, so the token in a
-    configuration is the statement itself. A device renders it
-    `"disable": [null]`; keying on the node name invented an `enable-disable`
-    statement no Junos would accept, and it reached JSON and YAML output
-    silently — no validation failure, just wrong output on the path the
-    downstream Ansible collection renders through.
-
-    Found by round-tripping a device's own `| display json` and diffing:
-    147 of the differences were this.
-    """
-
-    def test_disable_keys_on_the_statement(self) -> None:
-        assert set_to_dict("set protocols ospf disable") == {
-            "protocols": {"ospf": {"disable": [None]}}
-        }
-
-    def test_an_ordinary_presence_statement_is_unchanged(self) -> None:
-        assert set_to_dict("set system no-redirects") == {"system": {"no-redirects": [None]}}
-
-    def test_a_freeform_nokeyword_leaf_keeps_its_name(self) -> None:
-        """`vlan-id` is nokeyword only so its value validates freeform."""
-        result = set_to_dict("set interfaces ge-0/0/1 unit 0 vlan-id 100")
-        unit = result["interfaces"]["interface"][0]["unit"][0]
-        assert unit["vlan-id"] == "100"
-
-    def test_a_positional_nokeyword_leaf_keeps_its_name(self) -> None:
-        """26,386 nokeyword leaves carry a value and must not be re-keyed."""
-        result = set_to_dict("set policy-options prefix-list PL 10.0.0.0/8")
-        entry = result["policy-options"]["prefix-list"][0]
-        assert entry["prefix-list-item"] == [{"name": "10.0.0.0/8"}]
-
-
-class TestAnUnmodelledStatementIsKeptWhole:
-    """A statement the schema cannot place keeps every token, as one key.
-
-    The nokeyword catch-all took an unknown token as the leaf's value and
-    returned, so `set interfaces ge-0/0/0 nonsense alpha beta gamma` became
-    `{"enable-disable": "nonsense"}` and three tokens vanished -- into a key
-    the JSON schema accepts, so nothing anywhere said so. That is the
-    mechanism that hid the defective 24.4R0 artifacts for five months. The
-    rest of the line is now kept verbatim, as the unknown-token path always
-    did, and field validation reports it.
-    """
-
-    def test_the_rest_of_the_line_is_not_dropped(self) -> None:
-        ir = set_to_dict("set interfaces ge-0/0/0 nonsense alpha beta gamma")
-        entry = ir["interfaces"]["interface"][0]
-        assert entry == {"name": "ge-0/0/0", "nonsense alpha beta gamma": True}
-
-    def test_it_round_trips_to_set(self) -> None:
-        source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
-        assert dict_to_set(set_to_dict(source)).strip() == source
-
-    def test_a_switch_is_still_the_statement(self) -> None:
-        assert set_to_dict("set interfaces ge-0/0/0 disable") == {
-            "interfaces": {"interface": [{"name": "ge-0/0/0", "disable": [None]}]}
-        }
-
-    def test_a_switch_followed_by_a_sibling_still_parses(self) -> None:
-        entry = set_to_dict("set interfaces ge-0/0/0 disable mtu 9000")["interfaces"]["interface"][
-            0
-        ]
-        assert entry == {"name": "ge-0/0/0", "disable": [None], "mtu": "9000"}
-
-    def test_a_valid_line_with_two_positional_values_is_kept_whole(self) -> None:
-        """The one case where the guard moves a valid Junos line: a nokeyword
-        leaf takes one value, so the second used to vanish. 69 of 1.4 million
-        jvd set lines, every one kept whole now and reported as unplaced."""
-        source = "set protocols mpls label-range srgb-label-range 16000 23999"
-        ir = set_to_dict(source)
-        assert "23999" in str(ir)
-        assert dict_to_set(ir).strip() == source
-
-    def test_a_schema_node_without_a_type_keeps_the_line_too(self) -> None:
-        """The last fallback took one token as the value and dropped the rest."""
-        from junoscfg.convert.input.set_input import _merge_tokens
-
-        tree = {"c": {"system": {"c": {"odd": {}}}}}
-        config: dict = {}
-        _merge_tokens(config, ["system", "odd", "a", "b"], tree, {})
-        assert config == {"system": {"odd a b": True}}
-
-
-class TestUplinkFailureDetectionGroupIsAList:
-    """`uplink-failure-detection group G ...` is a list entry, not a fused key.
-
-    The XSD wraps the named list `ufd-group-name` in a `group` container, the
-    shape `groups`/`group` takes, but no fix named the wrapper because `group`
-    is also BGP's list. Every release held read the line as one key; the
-    `ufd-group-transparent` fix scopes the flag to its parent.
-    """
-
-    SOURCE = (
-        "set protocols uplink-failure-detection group G link-to-monitor ae0\n"
-        "set protocols uplink-failure-detection group G link-to-disable ge-0/0/1\n"
-    )
-
-    def test_the_group_is_an_entry_with_its_links(self) -> None:
-        ir = set_to_dict(self.SOURCE)
-        entries = ir["protocols"]["uplink-failure-detection"]["group"]["ufd-group-name"]
-        assert entries == [
-            {
-                "name": "G",
-                "link-to-monitor": [{"name": "ae0"}],
-                "link-to-disable": [{"name": "ge-0/0/1"}],
-            }
-        ]
-
-    def test_it_round_trips_to_set(self) -> None:
-        assert dict_to_set(set_to_dict(self.SOURCE)).strip() == self.SOURCE.strip()
-
-    def test_a_deactivate_keeps_the_group_name(self) -> None:
-        """Under the fused key, `deactivate ... group G` lost its `G`."""
-        source = self.SOURCE + "deactivate protocols uplink-failure-detection group G\n"
-        assert dict_to_set(set_to_dict(source)).strip() == source.strip()
-
-
-# ── identifier-key-fields: a statement the reader cannot complete ────
-#
-# Spec: openspec/changes/identifier-key-fields/specs/conversion/entry-keys,
-# "A statement the reader cannot complete is kept whole". Read through
-# `convert_config`, the door the collection drives.
-
-_TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
-
-
-#: How `convert_config` renders a statement kept whole in JSON: the line as
-#: one key, the value a bare statement's.
-KEPT = [None]
-
-
-def _from(line: str) -> dict:
-    from tests.support.keyed_entries import set_ir, term_from
-
-    return term_from(set_ir(line))
-
-
-def _round_trip(source: str) -> list[str]:
-    from junoscfg import Format
-    from tests.support.keyed_entries import to_set
-
-    return to_set(source + "\n", Format.SET)
-
-
-class TestTokensTheReaderCannotPlaceAreKept:
-    """No entry, no group and no dropped token from a line the device rejects."""
-
-    @pytest.mark.parametrize(
-        "statement",
-        [
-            "as-path-neighbors as-list",
-            "as-path-origins as-list-group",
-            "route-filter 198.51.100.0/24",
-            "route-filter 198.51.100.0/24 next-policy",
-            "source-address-filter 198.51.100.0/24",
-        ],
-    )
-    def test_a_partial_key_creates_no_entry(self, statement: str) -> None:
-        line = f"{_TERM} from {statement}"
-        assert _from(line) == {statement: KEPT}
-        assert _round_trip(line) == [line]
-
-    @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
-    def test_a_bare_list_keyword_creates_no_entry(self, slot: str) -> None:
-        """A keyed list's keyword with no key value is a statement the reader
-        cannot complete: kept whole, as written, and reported like a partial
-        key (owner decision, phase 5; the device rejects the bare line)."""
-        from junoscfg import Format, convert_config_result
-
-        line = f"{_TERM} from {slot}"
-        assert _from(line) == {slot: KEPT}
-        assert _round_trip(line) == [line]
-        result = convert_config_result(
-            line + "\n", from_format=Format.SET, to_format=Format.SET, validate=True
-        )
-        assert result.output.strip() == line
-        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
-        assert messages == [
-            f"'{slot}' could not be placed in the schema: kept as written, not validated"
-        ]
-
-    def test_a_partial_attributes_match_creates_no_entry(self) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        line = (
-            "set event-options policy SAMPLE-EVENT-POLICY attributes-match ping.test-owner matches"
-        )
-        policy = set_ir(line)["event-options"]["policy"][0]
-        assert policy == {
-            "name": "SAMPLE-EVENT-POLICY",
-            "attributes-match ping.test-owner matches": KEPT,
-        }
-        assert _round_trip(line) == [line]
-
-    @pytest.mark.parametrize(
-        ("where", "statement"),
-        [
-            ("from", "as-path-neighbors as-list SAMPLE-AS-LIST SAMPLE-EXTRA"),
-            ("from", "as-path-transits as-list-group SAMPLE-AS-LIST SAMPLE-EXTRA"),
-            ("then", "community add SAMPLE-COMM SAMPLE-EXTRA"),
-        ],
-    )
-    def test_a_surplus_after_a_terminal_entry_keeps_the_line_whole(
-        self, where: str, statement: str
-    ) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        line = f"{_TERM} {where} {statement}"
-        term = set_ir(line)["policy-options"]["policy-statement"][0]["term"][0]
-        assert term[where] == {statement: KEPT}
-        assert _round_trip(line) == [line]
-
-    def test_a_surplus_after_attributes_match_keeps_the_line_whole(self) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        statement = 'attributes-match ping.test-owner matches "^uptime$" SAMPLE-EXTRA'
-        line = f"set event-options policy SAMPLE-EVENT-POLICY {statement}"
-        policy = set_ir(line)["event-options"]["policy"][0]
-        assert "attributes-match" not in policy
-        assert [k for k in policy if k != "name"] == [
-            "attributes-match ping.test-owner matches ^uptime$ SAMPLE-EXTRA"
-        ]
-
-    def test_an_unknown_token_in_an_entry_with_children_is_unchanged(self) -> None:
-        """Pinned as it is: after a complete key the entry is open, and an
-        unknown token stays in it, as `set interfaces ge-0/0/0 nonsense` does."""
-        line = f"{_TERM} from route-filter 198.51.100.0/24 exact SAMPLE-EXTRA"
-        assert _from(line) == {
-            "route-filter": [{"address": "198.51.100.0/24", "exact": [None], "SAMPLE-EXTRA": KEPT}]
-        }
-
-
-class TestAKeyKeywordBeforeTheValues:
-    """The device accepts `route-filter exact <address>` and stores it as
-    `route-filter <address> exact` (device probe round 4, vMX 23.2R2-S7.5)."""
-
-    def test_a_match_type_before_the_address(self) -> None:
-        line = f"{_TERM} from route-filter exact 198.51.100.0/24"
-        expected = {"route-filter": [{"address": "198.51.100.0/24", "exact": [None]}]}
-        assert _from(line) == expected
-        assert _from(f"{_TERM} from route-filter 198.51.100.0/24 exact") == expected
-        assert _round_trip(line) == [f"{_TERM} from route-filter 198.51.100.0/24 exact"]
-
-
-class TestKeyValuesOfEveryShape:
-    """A key value is one token, whatever it spells."""
-
-    @pytest.mark.parametrize(
-        ("tokens", "entry"),
-        [
-            ("as-list as-list", {"list-type": "as-list", "list-name": "as-list"}),
-            ("as-list-group as-list", {"list-type": "as-list-group", "list-name": "as-list"}),
-            ('as-list "SAMPLE AS LIST"', {"list-type": "as-list", "list-name": "SAMPLE AS LIST"}),
-            ("as-list 64496", {"list-type": "as-list", "list-name": "64496"}),
-            # Out of the enum: read by position, reported by validation.
-            ("1 SAMPLE-AS-LIST", {"list-type": "1", "list-name": "SAMPLE-AS-LIST"}),
-        ],
-    )
-    def test_each_key_value_is_one_token(self, tokens: str, entry: dict) -> None:
-        line = f"{_TERM} from as-path-neighbors {tokens}"
-        assert _from(line) == {"as-path-neighbors": [entry]}
-        assert _round_trip(line) == [line]
-
-
-class TestMetaCommandsOnAKeyedEntry:
-    """`deactivate`, `delete` and `protect` address an entry by its whole key."""
-
-    @pytest.mark.parametrize(
-        ("command", "attribute"),
-        [
-            ("deactivate", {"inactive": True}),
-            ("delete", {"operation": "delete"}),
-            ("protect", {"protect": "protect"}),
-        ],
-    )
-    @pytest.mark.parametrize(
-        ("where", "statement", "entry"),
-        [
-            (
-                "from",
-                "as-path-neighbors as-list SAMPLE-AS-LIST",
-                {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"},
-            ),
-            (
-                "from",
-                "route-filter 198.51.100.0/24 exact",
-                {"address": "198.51.100.0/24", "exact": [None]},
-            ),
-            ("then", "community add SAMPLE-COMM", {"add": [None], "community-name": "SAMPLE-COMM"}),
-        ],
-    )
-    def test_the_attribute_lands_on_the_entry(
-        self, command: str, attribute: dict, where: str, statement: str, entry: dict
-    ) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        set_line = f"{_TERM} {where} {statement}"
-        meta_line = f"{command} {set_line[len('set ') :]}"
-        term = set_ir(set_line, meta_line)["policy-options"]["policy-statement"][0]["term"][0]
-        slot = statement.split()[0]
-        assert term[where][slot] == [{"@": attribute, **entry}]
-        if command != "delete":
-            assert _round_trip(f"{set_line}\n{meta_line}") == [set_line, meta_line]
-
-
-class TestApplyGroupsAndKeyedEntries:
-    """`apply-groups` takes one name; a second token is a statement kept whole."""
-
-    def test_one_name_inside_a_policy(self) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        line = "set policy-options policy-statement SAMPLE-POLICY apply-groups SAMPLE-GROUP"
-        policy = set_ir(line)["policy-options"]["policy-statement"][0]
-        assert policy["apply-groups"] == ["SAMPLE-GROUP"]
-
-    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
-    @pytest.mark.parametrize("prefix", ["set", "set policy-options policy-statement SAMPLE-POLICY"])
-    def test_two_names_apply_no_group(self, keyword: str, prefix: str) -> None:
-        from tests.support.keyed_entries import set_ir
-
-        line = f"{prefix} {keyword} SAMPLE-GROUP SAMPLE-GROUP-2"
-        got = set_ir(line)
-        parent = got if prefix == "set" else got["policy-options"]["policy-statement"][0]
-        assert keyword not in parent
-        assert parent[f"{keyword} SAMPLE-GROUP SAMPLE-GROUP-2"] == KEPT
-        assert _round_trip(line) == [line]
-
-
-def _unplaced(source: str, fmt: str = "set") -> list[str]:
-    """The `field-validate` unplaced messages a conversion reports."""
-    from junoscfg import Format, convert_config_result
-
-    result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
-    return [
-        d.message
-        for d in result.diagnostics
-        if d.source == "field-validate" and "could not be placed" in d.message
-    ]
-
-
-class TestAMetaCommandIsNeverPartiallyApplied:
-    """A malformed meta path is data to report, never a shorter valid path."""
-
-    _ATTRS = {
-        "deactivate": {"inactive": True},
-        "activate": {"active": "active"},
-        "protect": {"protect": "protect"},
-        "delete": {"operation": "delete"},
-    }
-
-    @pytest.mark.parametrize("command", _ATTRS)
-    @pytest.mark.parametrize(
-        "suffix",
-        ["as-path-neighbors as-list", "as-path-neighbors as-list SAMPLE-AS-LIST extra"],
-        ids=["partial-key", "surplus-token"],
-    )
-    def test_a_partial_or_surplus_key_is_kept_whole(self, command: str, suffix: str) -> None:
-        set_line = f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST"
-        meta_line = f"{command} {_TERM[4:]} from {suffix}"
-
-        ir = set_to_dict(f"{set_line}\n{meta_line}")
-        from_ = ir["policy-options"]["policy-statement"][0]["term"][0]["from"]
-
-        assert "@" not in from_
-        assert "@" not in from_["as-path-neighbors"][0]
-        assert from_[suffix]["@"] == self._ATTRS[command]
-        assert len(_unplaced(f"{set_line}\n{meta_line}\n")) == 1
-        assert meta_line in dict_to_set(ir).splitlines()
-
-    def test_an_unknown_path_does_not_annotate_its_valid_parent(self) -> None:
-        source = "set system host-name router1\ndeactivate system bogus-thing"
-        ir = set_to_dict(source)
-
-        assert "@" not in ir["system"]
-        assert ir["system"]["bogus-thing"] == {"@": {"inactive": True}}
-        assert len(_unplaced(source + "\n")) == 1
-        assert dict_to_set(ir).splitlines() == source.splitlines()
-
-    def test_meta_on_an_existing_unknown_prefix_reuses_its_unplaced_report(self) -> None:
-        source = "set system bogus-thing value\ndeactivate system bogus-thing"
-        ir = set_to_dict(source)
-
-        assert "@" not in ir["system"]
-        assert ir["system"]["bogus-thing value"] is True
-        assert ir["system"]["@bogus-thing"] == {"inactive": True}
-        assert len(_unplaced(source + "\n")) == 1
-        assert dict_to_set(ir).splitlines() == source.splitlines()
-
-    def test_meta_on_an_existing_positional_value_is_kept_whole(self) -> None:
-        source = "set protocols isis SAMPLE-UNKNOWN\ndeactivate protocols isis SAMPLE-UNKNOWN"
-        ir = set_to_dict(source)
-
-        assert ir["protocols"]["isis"]["enable-disable"] == "SAMPLE-UNKNOWN"
-        assert ir["protocols"]["isis"]["@SAMPLE-UNKNOWN"] == {"inactive": True}
-        assert _unplaced(source + "\n") == []
-        assert dict_to_set(ir).splitlines() == source.splitlines()
-
-    @pytest.mark.parametrize("command", _ATTRS)
-    @pytest.mark.parametrize(
-        ("set_line", "list_path"),
-        [
-            (
-                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
-                f"{_TERM[4:]} from as-path-neighbors",
-            ),
-            ("set system login user admin uid 2000", "system login user"),
-        ],
-        ids=["as-path-neighbors", "login-user"],
-    )
-    def test_a_meta_attribute_on_a_whole_list_is_written(
-        self, command: str, set_line: str, list_path: str
-    ) -> None:
-        meta_line = f"{command} {list_path}"
-        ir = set_to_dict(f"{set_line}\n{meta_line}")
-        assert set_line in dict_to_set(ir).splitlines()
-        assert meta_line in dict_to_set(ir).splitlines()
-
-
-class TestAFreeformNokeywordKeyKeepsItsKeyword:
-    def test_reader_and_writer_share_the_grammar_rule(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        import junoscfg.convert.input.set_input as reader
-        import junoscfg.convert.output.dict_walker as writer
-
-        tree = {
-            "c": {
-                "sample": {
-                    "L": True,
-                    "k": ["vlan-id"],
-                    "c": {"vlan-id": {"l": True, "nk": True, "frnk": True}},
-                }
-            }
-        }
-        monkeypatch.setattr(reader, "load_schema_tree", lambda: tree)
-        monkeypatch.setattr(writer, "load_schema_tree", lambda: tree)
-
-        line = "set sample vlan-id 100"
-        assert set_to_dict(line) == {"sample": [{"vlan-id": "100"}]}
-        assert dict_to_set({"sample": [{"vlan-id": "100"}]}) == line + "\n"
-
-
-class TestANonListNodeNeverReplacesAnEntry:
-    """Challenge A, owner decision (phase-6 review): any `maxOccurs` but 1 is a
-    list, and a nokeyword leaf never overwrites a present, different value.
-    `forwarding-classes class` collapsed into its last class, without a word."""
-
-    def test_three_forwarding_classes_stay_three(self) -> None:
-        from junoscfg import Format
-        from tests.support.keyed_entries import ir, to_set
-
-        source = (
-            "class-of-service {\n    forwarding-classes {\n"
-            "        class fc0 queue-num 0;\n        class fc1 queue-num 1;\n"
-            "        class mcast-fc queue-num 2;\n    }\n}\n"
-        )
-        classes = ir(source, Format.STRUCTURED)["class-of-service"]["forwarding-classes"]["class"]
-        assert classes == [
-            {"name": "fc0", "queue-num": "0"},
-            {"name": "fc1", "queue-num": "1"},
-            {"name": "mcast-fc", "queue-num": "2"},
-        ]
-        assert to_set(source, Format.STRUCTURED) == [
-            f"set class-of-service forwarding-classes class {name} queue-num {n}"
-            for n, name in enumerate(("fc0", "fc1", "mcast-fc"))
-        ]
-        assert _unplaced(source, "structured") == []
-
-    @pytest.mark.parametrize(
-        "lines",
-        [
-            ["set system commit peers 10.0.0.1", "set system commit peers 10.0.0.2"],
-            [
-                "set system services http servers server S1 port 80",
-                "set system services http servers server S2 port 81",
-            ],
-        ],
-    )
-    def test_two_entries_stay_two(self, lines: list[str]) -> None:
-        source = "\n".join(lines) + "\n"
-        assert _round_trip(source.strip()) == lines
-        assert _unplaced(source) == []
-
-    def test_a_second_value_of_a_nokeyword_leaf_is_kept_whole(self) -> None:
-        """`access securid-server` is a single node keyed by a nokeyword `name`:
-        a second, different name is kept whole from the node's keyword and
-        reported, never written over the first."""
-        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
-        second = "set access securid-server SAMPLE-SERVER-2 configuration-file sample-2"
-        got = set_to_dict(f"{first}\n{second}\n")["access"]
-        assert got["securid-server"] == {"name": "SAMPLE-SERVER", "configuration-file": "sample-1"}
-        assert got["securid-server SAMPLE-SERVER-2 configuration-file sample-2"] is True
-        assert _round_trip(f"{first}\n{second}") == [first, second]
-        assert len(_unplaced(f"{first}\n{second}\n")) == 1
-
-    def test_the_same_value_again_is_one_statement(self) -> None:
-        first = "set access securid-server SAMPLE-SERVER configuration-file sample-1"
-        again = "set access securid-server SAMPLE-SERVER"
-        assert set_to_dict(f"{first}\n{again}\n") == set_to_dict(first)
-
-
-_AREA = "set protocols ospf area 0.0.0.0 virtual-link"
-
-
-class TestKeyFieldsGivenByKeyword:
-    """Challenge B, owner decision, device probe round 5 (vMX 23.2R2-S7.5): a
-    key field whose leaf is not `nokeyword` is read as `keyword value`, those
-    fields in any order among themselves, and written in declared order; a
-    missing field, or a value without its keyword, is rejected."""
-
-    _ENTRY = {"neighbor-id": "10.255.255.2", "transit-area": "0.0.0.3"}
-
-    def test_declared_order(self) -> None:
-        line = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
-        area = set_to_dict(line)["protocols"]["ospf"]["area"][0]
-        assert area["virtual-link"] == [self._ENTRY]
-        assert _round_trip(line) == [line]
-        assert _unplaced(line + "\n") == []
-
-    def test_the_reversed_order_gives_the_same_ir(self) -> None:
-        reversed_line = f"{_AREA} transit-area 0.0.0.3 neighbor-id 10.255.255.2"
-        declared = f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
-        assert set_to_dict(reversed_line) == set_to_dict(declared)
-        assert _round_trip(reversed_line) == [declared]
-
-    @pytest.mark.parametrize(
-        "statement",
-        [
-            "virtual-link neighbor-id 10.255.255.3",
-            "virtual-link 10.255.255.4 0.0.0.2",
-            "virtual-link neighbor-id 10.255.255.4 0.0.0.2",
-            "virtual-link neighbor-id 10.255.255.4 neighbor-id 10.255.255.5",
-        ],
-    )
-    def test_an_incomplete_key_is_kept_whole_and_reported(self, statement: str) -> None:
-        line = f"set protocols ospf area 0.0.0.0 {statement}"
-        area = set_to_dict(line)["protocols"]["ospf"]["area"][0]
-        assert "virtual-link" not in area
-        assert area[statement] is True
-        assert _round_trip(line) == [line]
-        assert len(_unplaced(line + "\n")) == 1
-
-    def test_device_json_keeps_the_keywords(self) -> None:
-        from junoscfg import Format
-        from tests.support.keyed_entries import as_json, to_set
-
-        config = {
-            "protocols": {"ospf": {"area": [{"name": "0.0.0.0", "virtual-link": [self._ENTRY]}]}}
-        }
-        assert to_set(as_json(config), Format.JSON) == [
-            f"{_AREA} neighbor-id 10.255.255.2 transit-area 0.0.0.3"
-        ]
-
-    @pytest.mark.parametrize(
-        ("line", "entry"),
-        [
-            (
-                "set services nat pool SAMPLE-POOL address-range low 198.51.100.1"
-                " high 198.51.100.9",
-                {"low": "198.51.100.1", "high": "198.51.100.9"},
-            ),
-            (
-                "set class-of-service schedulers SAMPLE-SCHED drop-profile-map loss-priority low"
-                " protocol any drop-profile SAMPLE-DP",
-                {"loss-priority": "low", "protocol": "any", "drop-profile": "SAMPLE-DP"},
-            ),
-        ],
-    )
-    def test_other_keyword_keys(self, line: str, entry: dict) -> None:
-        got = set_to_dict(line)
-        parent = (
-            got["services"]["nat"]["pool"][0]
-            if "services" in got
-            else (got["class-of-service"]["schedulers"][0])
-        )
-        slot = "address-range" if "services" in got else "drop-profile-map"
-        assert parent[slot] == [entry]
-        assert _round_trip(line) == [line]
-        assert _unplaced(line + "\n") == []
-
-
-class TestApplyMacroTakesAtMostThreeValues:
-    """`apply-macro` takes a name, then optionally a keyword and its value; the
-    device rejects a fourth value (device probe round 5, vMX 23.2R2-S7.5),
-    which the reader turned into a second data entry without a word."""
-
-    @pytest.mark.parametrize(
-        ("line", "entry"),
-        [
-            ("set apply-macro ABCDE", {"name": "ABCDE"}),
-            ("set apply-macro ABCDE DEFGH", {"name": "ABCDE", "data": [{"name": "DEFGH"}]}),
-            (
-                'set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks',
-                {"name": "12345", "data": [{"name": "KADJBF KU!H", "value": "balks"}]},
-            ),
-        ],
-    )
-    def test_one_to_three_values(self, line: str, entry: dict) -> None:
-        got = set_to_dict(line)
-        parent = got["groups"]["group"][0] if "groups" in got else got
-        assert parent["apply-macro"] == [entry]
-        assert _round_trip(line) == [line]
-        assert _unplaced(line + "\n") == []
-
-    @pytest.mark.parametrize(
-        "statement",
-        ['apply-macro 12345 "KADJBF KU!H" balks XXXXX', "apply-macro 12345 XXX XXXX XXX"],
-    )
-    def test_a_fourth_value_is_kept_whole_and_reported(self, statement: str) -> None:
-        line = f"set groups SAMPLE-GROUP {statement}"
-        group = set_to_dict(line)["groups"]["group"][0]
-        assert "apply-macro" not in group
-        assert [k for k in group if k != "name"] == [statement.replace('"', "")]
-        assert len(_unplaced(line + "\n")) == 1
-
-
-class TestABareApplyGroups:
-    """Finding 6 (phase-6 review): a bare `set apply-groups` names no group, a
-    statement the device rejects: kept whole and reported."""
-
-    @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
-    def test_it_is_reported(self, keyword: str) -> None:
-        line = f"set system {keyword}"
-        assert set_to_dict(line) == {"system": {keyword: True}}
-        assert _round_trip(line) == [line]
-        assert len(_unplaced(line + "\n")) == 1
-
-    def test_a_group_after_a_bare_one_is_kept_too(self) -> None:
-        """Both statements survive; the reader used to raise on the second."""
-        source = "set apply-groups\nset apply-groups SAMPLE-GROUP"
-        assert set_to_dict(source) == {"apply-groups": True, "apply-groups SAMPLE-GROUP": True}
-        assert _round_trip(source) == source.splitlines()
-
-    def test_a_keyed_entry_after_a_bare_keyword_is_kept_too(self) -> None:
-        bare = f"{_TERM} from as-path-neighbors"
-        full = f"{bare} as-list SAMPLE-AS-LIST"
-        assert _from(f"{bare}\n{full}") == {
-            "as-path-neighbors": KEPT,
-            "as-path-neighbors as-list SAMPLE-AS-LIST": KEPT,
-        }
+        config = read_set(source)
+        assert write_set(config) == source, f"IR was: {config}"

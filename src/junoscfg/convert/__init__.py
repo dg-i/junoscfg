@@ -17,7 +17,9 @@ Public API::
     # Output only (dict → any format)
     output = from_dict(ir, "set")
 
-    # Standalone field validation
+    # Standalone field validation: a FieldValidationResult of FieldErrors;
+    # an error whose ``expected`` is UNPLACED is a statement the schema
+    # could not place
     result = validate_ir(ir)
 """
 
@@ -29,7 +31,12 @@ if TYPE_CHECKING:
     from junoscfg.anonymize import AnonymizeConfig
 
 from junoscfg.convert.diagnostics import ConversionResult, Diagnostic
-from junoscfg.convert.field_validator import FieldValidationError
+from junoscfg.convert.field_validator import (
+    UNPLACED,
+    FieldError,
+    FieldValidationError,
+    FieldValidationResult,
+)
 from junoscfg.convert.input import to_dict
 from junoscfg.convert.ir import find_configuration
 from junoscfg.convert.output import from_dict
@@ -227,9 +234,12 @@ def _refuse_unplaced(ir: dict[str, Any]) -> None:
 
 
 __all__ = [
+    "UNPLACED",
     "ConversionResult",
     "Diagnostic",
+    "FieldError",
     "FieldValidationError",
+    "FieldValidationResult",
     "find_configuration",
     "from_dict",
     "pipeline",
