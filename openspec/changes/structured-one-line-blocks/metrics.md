@@ -17,5 +17,8 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: src/junoscfg/display/set_converter.py, src/junoscfg/input.py | the owning lexer and the normalizer it used; `display` lies under no domain's paths |
+| Context expansion: src/junoscfg/__init__.py, src/junoscfg/cli.py, tach.toml | the surface doors that compose validation and render warnings; the import edges |
+| Context expansion: tools/device_differences.py, tests/data/device/ | the device-law record and its generator |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
