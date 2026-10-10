@@ -41,8 +41,9 @@ DEVICES = {
     "qfx5120-25.2R2-S1.5": {
         "folder": "jvd_derived_data_qfx",
         "model": "qfx5120-32c",
+        # show version prints "25.2R2-S1.5 flex"; the XML namespace drops "flex".
         "release": "25.2R2-S1.5",
-        "release_source": "xml-namespace",
+        "release_source": "show version",
     },
 }
 
