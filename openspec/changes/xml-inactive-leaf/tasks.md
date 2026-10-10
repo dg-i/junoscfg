@@ -13,5 +13,5 @@
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: fresh Reviewer (`review.md`), two re-reviews; verdict mergeable at 406137f.
 
 Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 406137f: every check passed, 1,937 passed / 45 skipped / 3 xfailed.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
