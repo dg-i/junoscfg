@@ -2,7 +2,8 @@
 
 ## Outcome
 
-On a dedicated change branch, `openspec/changes/<slug>/proposal.md` approved:
+With the phase-0 instruction record committed,
+`openspec/changes/<slug>/proposal.md` approved:
 why, what changes, the
 capabilities it touches, and the non-goals, ten to thirty lines; and the lane
 fields the gate reads in `.openspec.yaml` beside it. The initial `metrics.md`
@@ -11,19 +12,17 @@ here is cheaper than rounds later.
 
 ## Process
 
-1. Create or switch to the dedicated change branch and run `git status
-   --short`. Do not start while governed changes sit outside `HEAD`: the lane
-   gate deliberately evaluates `base...HEAD`, not intent-to-add or working-tree
-   files.
-2. `npx --yes @fission-ai/openspec@1.13.0 new change <slug>` creates the folder
-   and its `.openspec.yaml` under the `agent-ready` schema; `npx --yes
-   @fission-ai/openspec@1.13.0 instructions proposal --change <slug>` prints the
-   template.
+1. Re-read `instruction-integrity.md` and verify its owner-decision batch is
+   resolved. Run `git status --short`; do not continue while governed changes
+   sit outside `HEAD`.
+2. Run `npx --yes @fission-ai/openspec@1.13.0 instructions proposal --change
+   <slug>` to print the template created by phase 0.
 3. Write Why and What Changes, then Capabilities: each as
    `<domain>/<capability>`, the domain a key of `[tool.template.domains]`, and
    an existing capability by its exact path under `openspec/specs/`.
 4. Add the lane fields to `.openspec.yaml`, where OpenSpec keeps
-   `skip_specs`: `type`, `zone`, `domains`, and `removes`, which may read
+   `skip_specs`: `type`, `zone`, `domains`, `removes`, and the phase-0
+   `assurance`, which may read
    "none, because ..." and never stays empty on the standard lane. The fix
    lane's metadata carries no `removes`. Non-goals are prose in the proposal.
 5. In beta and release, a change touching a named surface adds a
@@ -46,6 +45,7 @@ here is cheaper than rounds later.
    --locked --group dev agent-ready fields` reports no unanswered field in
    `.openspec.yaml`. Commit the approved proposal, metadata, and evidence ledger
    before phase 2 so every later gate reads the intended branch snapshot.
+   Record phase 2 as the resume point; the Builder progresses automatically.
 
 The human writes or approves the proposal; you draft from the human's intent
 and ask about what you cannot derive. Types `stage-up`, `pivot`, and `spike`

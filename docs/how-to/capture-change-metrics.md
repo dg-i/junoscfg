@@ -38,6 +38,57 @@ for Claude. Other well-formed formats remain unmeasured. Native usage is
 runtime-reported token use, not billing or prefix/work allocation. The event
 formats cannot establish complete file reads or retries.
 
+Use `--workflow-telemetry PATH` for provider-neutral workflow observations.
+The file is bound to the same immutable change and SHA pair:
+
+```json
+{
+  "schema_version": 1,
+  "change": "my-change",
+  "base_sha": "full-base-commit-id",
+  "head_sha": "full-code-commit-id",
+  "entries": [
+    {
+      "phase": "implement",
+      "role": "builder",
+      "provider": "provider-name",
+      "model": "model-name",
+      "usage": {
+        "input_tokens": 100,
+        "output_tokens": 20,
+        "cache_reads": 1,
+        "cache_writes": 1,
+        "cache_read_input_tokens": 80,
+        "cache_write_input_tokens": 10
+      },
+      "commands": [
+        {
+          "kind": "test",
+          "name": "pytest tests/test_feature.py",
+          "duration_ms": 1200,
+          "outcome": "passed"
+        }
+      ],
+      "retries": 0,
+      "regenerations": 1,
+      "stalls": [],
+      "owner_interventions": [
+        {"duration_ms": 60, "reason": "resolved an acceptance criterion"}
+      ]
+    }
+  ]
+}
+```
+
+Roles are `builder`, `test-challenge`, `reviewer`, or `finalizer`; command kinds
+are `command` or `test`; outcomes are `passed`, `failed`, `error`, or
+`cancelled`. Usage may be null. Each usage counter may be a nonnegative integer
+or null when the provider does not expose it. Durations are finite nonnegative
+milliseconds, and reasons, phases, providers, models, and command names are
+nonempty. The importer retains entries, hashes the exact file, and derives
+additive summaries. An empty entry list is unmeasured. Unknown fields, invalid
+roles or outcomes, negative counters, and identity mismatches are rejected.
+
 An optional `--human-effort PATH` accepts exactly this JSON shape:
 
 ```json

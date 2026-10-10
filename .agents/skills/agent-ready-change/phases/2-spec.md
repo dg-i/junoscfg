@@ -6,7 +6,8 @@ below.
 ## Outcome
 
 An approved `codemap.md` plus one valid delta per named capability at
-`specs/<domain>/<capability>/spec.md`.
+`specs/<domain>/<capability>/spec.md`, followed by an approved
+`evidence-freeze.md` that is the execution baseline.
 
 ## The code-map slice
 
@@ -49,6 +50,22 @@ preserves it. Follow the shared protocol in the skill root.
 
 Lite is default; cross-domain, API, migration, or security changes use full.
 
+## Evidence-freeze gate
+
+At the end of this phase, create `evidence-freeze.md` from its OpenSpec
+template. Resolve and cite the effective instructions, requirements, evidence,
+non-goals, acceptance criteria, performance expectations, and outstanding
+decisions. Record the assurance preference, risk floor, required roles, and
+resume point. Phase 2 cannot close with a material outstanding decision.
+
+Any instruction or evidence arriving after the freeze triggers a delta
+consistency check before affected work continues. Append the source, change,
+conflicts and criteria affected, invalidated work, and reruns required. An
+unchanged conclusion is still recorded; silently absorbing a delta is not.
+Regenerate only the artifacts the delta invalidates, once per distinct delta.
+If the same delta triggers regeneration again, diagnose the unstable source
+instead of looping.
+
 ## Stage
 
 In alpha, question an add-only feature or an unrequested review addition;
@@ -63,4 +80,5 @@ deprecation, and a declared break names its migration.
 ## Approval
 
 CODEOWNERS routes the delta to domain owners; without pull requests, approval
-is the owner's commit.
+is the owner's commit. Once the freeze is approved, the continuous Builder
+progresses automatically to design when required and otherwise to verification.

@@ -7,13 +7,14 @@ below.
 
 ## Outcome
 
-Every test and implementation task in `tasks.md` ticked, its review and metrics
-tasks still open for phases 6 and 7, the phase-4 tests and recorded full
-checkpoint green, and nothing in the diff the proposal did not ask for.
+Every test and implementation task ticked, review and metrics still open, the
+phase-4 tests and full checkpoint green, and no unrequested diff. The same
+continuous Builder owns specification refinement, implementation, and fixes.
 
 ## Process
 
-1. `npx --yes @fission-ai/openspec@1.13.0 instructions tasks --change <slug>`,
+1. Read the evidence freeze and its delta log. `npx --yes
+   @fission-ai/openspec@1.13.0 instructions tasks --change <slug>`,
    then write `tasks.md`: tests first, implementation second, and the shipped
    review and metrics lifecycle tasks last. An interrupted session resumes
    here; phase 5 never ticks the lifecycle tasks.
@@ -26,7 +27,8 @@ checkpoint green, and nothing in the diff the proposal did not ask for.
    never a copy, and the importing module's contract gains a precedent
    pointer to the home.
 4. While editing, run the named phase-4 acceptance tests or the affected test
-   files. Tick the test and implementation tasks, commit code, tests, and the
+   files; record command and test duration in workflow telemetry. Tick the test
+   and implementation tasks, commit code, tests, and the
    live change folder, and require `git status --short` to be empty. At the
    pre-review checkpoint run `uv run --locked --group dev --with griffe --with
    tach --with towncrier --with vulture agent-ready check --set full` once.
@@ -37,9 +39,11 @@ checkpoint green, and nothing in the diff the proposal did not ask for.
    `tasks.md`, then commit that evidence-only edit. The checkpoint remains valid
    across review, metrics, and evidence-only edits; runtime code, tests,
    generated artifacts, or their configuration invalidate it.
-   When one change contains several coherent tasks, run targeted tests as each
-   task lands and take this full checkpoint once, after the last implementation
-   task. Independent changes never share a checkpoint.
+   For several coherent tasks, run targeted tests as each lands and take one
+   full checkpoint after the last. Independent changes never share a checkpoint.
+   Expensive corpus checks reuse a tool cache or committed baseline only when
+   corpus, configuration, tool version, and relevant commit match; record cache
+   reads and writes. A cache accelerates but never replaces the required gate.
 5. Tick each test and implementation task as it lands. `npx --yes
    @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
    graph; `tasks.md` is the lifecycle authority.
@@ -48,6 +52,10 @@ checkpoint green, and nothing in the diff the proposal did not ask for.
    round-trip of phase 4 is what proves the pair. A second table or a
    hand-written remainder is a split answer: a design question in the
    proposal, never a local copy.
+7. Regenerate only artifacts invalidated by the current delta and do it once
+   after the source edit settles. A second regeneration for the same unchanged
+   delta is a stall to diagnose and record, not a reason to loop. After every
+   commit, update the resume point and last valid test/checkpoint evidence.
 
 ## Classify failures
 
@@ -60,6 +68,7 @@ fix once. If the same semantic failure repeats, challenge approved criteria
 only when evidence implicates them; otherwise report the implementation blocker.
 Do not make a blind third attempt or weaken the oracle. This is skill guidance,
 not a runtime-enforced retry counter.
+Record retries, regenerations, stalls, and durations in workflow telemetry; zero requires an observed event source.
 
 ## Specification challenges
 
@@ -72,6 +81,8 @@ in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep
 `uv run --locked --group dev agent-ready codemap check`.
+Run the evidence-freeze delta consistency check for every new instruction or
+counterexample before changing affected code, criteria, or tests.
 
 ## Stage
 
@@ -84,4 +95,5 @@ where the patch is minimal and a rewrite is a design.
 
 ## Approval
 
-None here. The review is the next phase, in a fresh session.
+None here. Risk decides whether phase 6 invokes a fresh isolated Reviewer or
+records its omission; the Builder progresses automatically.

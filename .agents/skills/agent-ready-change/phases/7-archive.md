@@ -7,13 +7,17 @@ below.
 
 ## Outcome
 
-The change folder under `openspec/changes/archive/`, reviewed requirements in
-the main capability specs, and `metrics.md` plus `metrics.json` carrying
-provenanced evidence.
+An economical Finalizer produces the change folder under
+`openspec/changes/archive/`, reviewed requirements in the main capability specs,
+and `metrics.md` plus `metrics.json` carrying provenanced evidence. The
+Finalizer performs bounded housekeeping only.
 
 ## Process
 
-After implementation and review, in this order:
+After implementation and any required review, in this order. The Finalizer may
+apply already-reviewed spec edits, capture evidence, tick housekeeping tasks,
+and move the folder. It may not edit product code, specifications' meaning,
+acceptance tests, or verdicts; such a need returns to the Builder or Reviewer.
 
 1. While the live change folder exists, apply its reviewed delta to
    `openspec/specs/` on the same branch. Use `npx --yes
@@ -31,8 +35,11 @@ After implementation and review, in this order:
    exists. Optional `--session-log PATH --runtime codex|claude
    --session-binding PATH` imports a native JSONL window declared by the
    operator; `--human-effort PATH` imports explicit human observations. The
-   binding and manual files carry the same change and SHA pair. Missing or
-   unsupported evidence remains `UNMEASURED`; no agent estimates it.
+   binding and manual files carry the same change and SHA pair.
+   `--workflow-telemetry PATH` imports provider-neutral per-phase role/model
+   usage, cache reads and writes, command and test durations, retries,
+   regenerations, stalls, and owner interventions. Missing or unsupported
+   evidence remains `UNMEASURED`; no agent estimates it.
 3. Review both metrics files, tick the metrics lifecycle task, run `uv run
    --locked --group dev agent-ready lane`, and commit the evidence files and
    task update. Then merge. The capture head remains
@@ -60,6 +67,11 @@ After implementation and review, in this order:
 OpenSpec moves both metrics files with the change folder. Context-expansion
 rows in the existing `metrics.md` Field/Value table survive capture. They
 record a decision to expand context, not measured read telemetry.
+
+The Finalizer verifies that every later instruction and evidence delta is
+recorded and consistent with the freeze. A material unresolved delta returns
+to its owning phase; finalization never resolves it by choosing a convenient
+reading.
 
 The pre-merge spec application is part of the same reviewed change. Never
 merge a live delta with unapplied main-spec edits: after the merge, the

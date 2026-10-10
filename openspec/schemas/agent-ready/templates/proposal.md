@@ -1,4 +1,4 @@
-<!-- The fields the lane gate reads live in .openspec.yaml beside this file: type, zone, domains, removes, and declared-break, shaped `declared-break: {<surface>: {why: ..., migration: ...}}`. This file is the prose a human approves. -->
+<!-- The fields the gates read live in .openspec.yaml beside this file: type, zone, domains, removes, assurance, and declared-break, shaped `declared-break: {<surface>: {why: ..., migration: ...}}`. This file is the prose a human approves. -->
 
 ## Why
 

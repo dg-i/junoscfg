@@ -1,6 +1,6 @@
 ---
 name: agent-ready-change
-description: Run one change through the phased workflow, from proposal to archive on the OpenSpec CLI. Use for every change to this repository, fix lane included.
+description: Run one change through the provider-agnostic phased workflow, from instruction-integrity preflight to bounded finalization. Use for every change to this repository, fix lane included.
 ---
 
 # Change
@@ -15,37 +15,39 @@ lane or writing intent. It decides whether they are one coherent change or
 independent changes and where review and full-check work may be shared. Do not
 load it for a single task.
 
-The standard and docs lanes follow these phases. The docs lane takes each
-phase's **Documentation-only route**. The fix lane follows the shorter route
-under **Lanes** and does not run the phase files.
+Every lane starts with phase 0. The standard and docs lanes then follow the
+remaining phases. The docs lane takes each phase's **Documentation-only
+route**. The fix lane follows the shorter route under **Lanes** after phase 0
+and does not run the later phase files.
 
 | Phase | File | Ends with |
 |---|---|---|
+| 0 Preflight | `phases/0-preflight.md` | effective instructions, assurance preference, and material decisions resolved |
 | 1 Intent | `phases/1-intent.md` | the proposal, approved |
-| 2 Spec | `phases/2-spec.md` | the code-map and delta, or docs plan, approved |
+| 2 Spec and freeze | `phases/2-spec.md` | the code-map and delta, or docs plan, plus the evidence freeze, approved |
 | 3 Design | `phases/3-design.md` | the design and the reuse verdict, approved; `feature` and `new-dependency` only |
 | 4 Tests | `phases/4-tests.md` | acceptance tests or documentation QA, reviewed |
 | 5 Implement | `phases/5-implement.md` | code or documents complete, the checks green |
-| 6 Review | `phases/6-review.md` | the review report, from a fresh session |
-| 7 Archive | `phases/7-archive.md` | metrics filled, the change archived |
+| 6 Review | `phases/6-review.md` | the risk-required verdict from a genuinely fresh isolated Reviewer |
+| 7 Finalize | `phases/7-archive.md` | economical housekeeping, metrics filled, the change archived |
 
 Four types carry a body of their own, read beside the phase from intent on:
 `types/stage-up.md`, `types/pivot.md`, `types/spike.md`, `types/docs.md`.
 
 ## Lanes
 
-The change's `.openspec.yaml` declares `type` and zone, and the lane follows.
+The change's `.openspec.yaml` declares `type`, zone, and the owner-confirmed
+`assurance`; the lane and assurance policy follow.
 The fix lane, type `fix`, is a ten-line proposal, one regression test, and
 code: two files, thirty lines, no delta, and `skip_specs: true`, in any zone.
-Its complete route is:
+After phase 0, its complete route is:
 
-1. Create or switch to its dedicated branch. Run `git status --short`; do not
-   begin with governed changes outside `HEAD`.
-2. Run `npx --yes @fission-ai/openspec@1.13.0 new change <slug>`, then write a
-   proposal of at most ten lines and set `type: fix`, the zone, and
-   `skip_specs: true` in `.openspec.yaml`. Commit that approved intent before
-   code or tests. The common OpenSpec graph is type-blind: its other status
-   entries are not fix-lane obligations.
+1. Re-read the committed preflight and run `git status --short`; do not begin
+   with governed changes outside `HEAD`.
+2. Write the proposal created by phase 0, at most ten lines, and set `type:
+   fix`, the zone, `assurance`, and `skip_specs: true` in `.openspec.yaml`.
+   Commit that approved intent before code or tests. The common OpenSpec graph
+   is type-blind: its other status entries are not fix-lane obligations.
 3. Write the one regression test and watch it fail, implement the repair, and
    commit the test and code. `uv run --locked --group dev agent-ready lane`
    also runs the added test against the merge base and rejects one that passed
@@ -74,11 +76,31 @@ adapter; the reviewed QA plan supplies the evidence application tests cannot.
 
 ## Sessions
 
-Consecutive phases with no human approval between them may share a session.
-Human approval ends the session: start the next phase fresh and carry only the
-change folder. Implement to review is also fresh, because a review anchored on
-the code it just wrote finds what it expects. There is no handoff file, and
-nothing relies on compaction.
+Execution is provider-agnostic: describe roles, isolation, capability, and
+evidence, never a provider's session or delegation feature as the policy. One
+continuous **Builder** owns specification refinement, implementation, and
+accepted fixes. It progresses automatically across every non-decision boundary
+and resumes from committed change artefacts after interruption; do not ask the
+owner to relay phase output. Compaction is never the checkpoint.
+
+Independent **Test/Challenge** work runs only where the risk floor or assurance
+preference requires it. A genuinely fresh isolated **Reviewer** receives the
+frozen evidence, diff, tests, and contracts but none of the Builder's private
+reasoning. An economical **Finalizer** performs only the bounded housekeeping
+in phase 7. It cannot change product code, specifications, acceptance tests, or
+review verdicts.
+
+High risk means a red zone, security or trust-boundary work, data migration, a
+declared break, a named public-surface change, or a cross-domain change. High
+risk always receives independent Test/Challenge work and a fresh Reviewer at
+least as capable as the Builder. `economy` adds neither role below that floor;
+`balanced` adds Test/Challenge work for behavioural changes and a Reviewer for
+yellow zones; `maximum-assurance` uses both for every standard or docs change.
+Provider or model unavailability is recorded in the preflight and cannot be
+papered over by calling the Builder independent.
+
+After each phase, record the next incomplete phase and last valid evidence in
+the change folder and commit it. Resume automatically from that checkpoint.
 
 ## The tools
 
@@ -116,9 +138,11 @@ correctness challenge; accepted corrections return through spec/test approval.
 ## Asking
 
 Ask the way `agent-ready-onboard` does: in prose and never as a menu, in one
-batch at the end of a phase, each question numbered and carrying the evidence
-you derived and what you would do. Never fill a judgement call with a
-plausible guess; an unanswered question is the phase's output.
+consolidated batch for all material unresolved decisions known at that point,
+each question numbered and carrying the evidence, effect, and safe default.
+Do not ask about phase transitions or facts the repository establishes. Never
+fill a judgement call with a plausible guess; an unanswered material question
+is the phase's output.
 
 ## Stage
 
@@ -130,7 +154,8 @@ proposal. Each phase file carries the stage paragraph that applies to it, and
 
 ## Stopping
 
-Stop and report when the same check or test fails twice in a row, when a
-phase's question is unanswered, when a failing existing test in release looks
-like a break, or when you are about to write a fact you cannot point at
-evidence for.
+Stop and report when the same failure repeats without new evidence or a changed
+hypothesis, when a phase's question is unanswered, when a failing existing test
+in release looks like a break, or when you are about to write a fact you cannot
+point at evidence for. Never repeat an unchanged attempt or weaken the oracle.
+Before stopping or resuming, update the checkpoint and telemetry.

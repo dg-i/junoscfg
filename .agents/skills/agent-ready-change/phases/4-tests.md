@@ -7,8 +7,9 @@ below.
 
 ## Outcome
 
-The acceptance tests the delta names, and any contract test changes, written
-in one pass with no implementation, and reviewed by the human.
+The acceptance tests the evidence freeze names, and any contract test changes,
+written in one pass with no implementation. Risk-required independent
+Test/Challenge evidence is separate from the Builder's tests.
 
 ## Process
 
@@ -30,9 +31,16 @@ in one pass with no implementation, and reviewed by the human.
    it found, or an empty scan passes it; a test asserts the property the
    feature exists for, not that something moved; a test command that can skip
    everything needs a check that it did not.
-5. The human reviews the test files, not the diff of the whole change. Approved
-   tests are the baseline, subject to the formal challenge path; never silently
-   change approved intent or weaken a kept requirement's assertion.
+5. Apply the role policy from the freeze. High risk and maximum assurance use a
+   context-isolated Test/Challenge role; balanced uses it for behavioural
+   changes; economy omits it below the mandatory floor. The independent role
+   challenges criteria and proposes or writes adversarial tests but does not
+   implement the product. Record why it ran or why policy omitted it.
+6. The human reviews the test files under the existing zone approval policy,
+   not the whole diff. Consolidate any material questions. Approved tests are
+   the baseline, subject to the formal challenge path; never silently change
+   approved intent or weaken a kept requirement's assertion. After approval,
+   progress automatically to implementation without an owner relay.
 
 ## Specification challenges
 
@@ -45,6 +53,8 @@ in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep
 `uv run --locked --group dev agent-ready codemap check`.
+Every new counterexample also receives the evidence-freeze delta consistency
+check before the affected acceptance criteria change.
 
 ## Stage
 
@@ -60,4 +70,5 @@ in alpha.
 
 ## Approval
 
-The human approves the test files.
+The human approves the test files as the zone policy requires. The Builder then
+records the checkpoint and continues without asking for a phase transition.

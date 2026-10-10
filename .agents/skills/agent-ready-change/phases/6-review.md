@@ -4,28 +4,31 @@ Type `docs` follows phase 6 in `types/docs.md` and stops before the code route b
 
 ## Outcome
 
-`review.md`: ranked correctness or contract findings and existing providers the change duplicates. The reviewer writes only the report and evidence.
+`review.md`: the risk-required fresh isolated verdict with ranked findings and
+duplicated providers, or the recorded policy reason review was not required.
 
-## A fresh session
+## A fresh isolated Reviewer
 
-The review never shares a session with implementation. On Claude Code use a
-read-only subagent; on Codex use a new session on the branch. Either reads
-the delta, the contracts of the modules touched, the tests, and the diff, in
-that order of leverage, and nothing the implementer wrote about its own work.
-The reviewer model is at least as capable as the implementer's.
+Use the freeze's risk floor and assurance preference. High risk always requires
+this Reviewer; balanced adds yellow zones; maximum assurance adds every standard
+or docs change; economy omits it below the floor. Record an omission without
+presenting Builder self-review as independent.
 
-Several coherent tasks inside this one change receive this one review after all
-implementation tasks are complete. Several independent changes receive a
-separate verdict and `review.md` each, even when the owner batches their
-acceptance or one fresh reviewer session processes a bounded review window. A
-final integration review supplements rather than replaces those verdicts; use
-`batches.md` for the boundary.
+The Reviewer is fresh and isolated from Builder reasoning and write access. It
+reads the freeze, delta, touched contracts, challenge evidence, tests, and diff,
+in that order. Its model is at least as capable as the Builder. Provider-specific
+mechanisms are implementation details. If the runtime cannot supply the required
+isolation or capability, record a runtime/operator correction and stop.
 
-An accepted correction runs its regression and `uv run --locked --group dev
-agent-ready check --set fast`,
-then returns to the reviewer. After approval, rerun the full set only if runtime
-code, tests, generated artifacts, or their configuration changed since the
-recorded checkpoint; it replaces standalone pre-commit and full tests.
+Coherent tasks in one change receive one review after implementation. Independent
+changes receive a separate verdict and `review.md` each, even when acceptance is batched
+or one fresh Reviewer processes a bounded window. An integration review only
+supplements those verdicts; use `batches.md` for the boundary.
+
+An accepted correction runs its regression and `agent-ready check --set fast`,
+then returns to the same isolated Reviewer. Rerun the full set only if runtime
+code, tests, generated artifacts, or configuration changed since its checkpoint;
+it replaces standalone pre-commit and full tests.
 
 ## Findings
 
@@ -49,14 +52,11 @@ recorded checkpoint; it replaces standalone pre-commit and full tests.
 
 Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`,
 `Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
-reviewer edits no code, spec, or test; agents cannot approve their own proposals.
-The owner decides, and only a safe reversible
-action may proceed while pending; preserve existing entries. Minimal reads
-outside the slice are allowed for a concrete counterexample; record each extra
-path as its own row in the existing Field/Value table in `metrics.md`:
-`| Context expansion: <path> | <reason> |`. The archive metrics writer
-preserves these rows. Apply phase 2's explicit slice-refresh triggers.
-When complete, tick the review lifecycle task in `tasks.md`; leave the metrics task open.
+Reviewer edits no code, spec, or test; agents cannot approve their own proposals.
+The owner decides; preserve existing entries, and proceed only with safe reversible
+work. Record each justified slice read in the Field/Value table in `metrics.md`:
+`| Context expansion: <path> | <reason> |`. The archive metrics writer preserves
+these rows. Apply phase 2's triggers, check the freeze, tick review, leave metrics open.
 
 Before concluding, answer these prompts:
 

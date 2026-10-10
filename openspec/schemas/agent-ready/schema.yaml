@@ -6,6 +6,18 @@ name: agent-ready
 version: 1
 description: The agent-ready change, proposal to metrics
 artifacts:
+  - id: instruction-integrity
+    generates: instruction-integrity.md
+    description: Effective instruction stack, conflicts, assurance preference, and owner decision batch
+    template: instruction-integrity.md
+    instruction: |
+      Complete before proposal work. Inventory the complete effective
+      instruction stack, classify every conflict using the six workflow
+      classes, report the effect of likely-defective higher-priority
+      instructions while obeying them, and record the owner's economy,
+      balanced, or maximum-assurance preference in .openspec.yaml.
+    requires: []
+
   - id: proposal
     generates: proposal.md
     description: Why the change, what changes, which capabilities, and the non-goals; the lane fields sit in .openspec.yaml
@@ -15,7 +27,8 @@ artifacts:
       non-goals. Ten to thirty lines. A capability path is
       <domain>/<capability>, the domain being a key of [tool.template.domains].
       The fields the lane gate reads go in .openspec.yaml beside this file:
-      `type`, `zone`, `domains`, `removes` on the standard lane, which may read
+      `type`, `zone`, `domains`, `removes` on the standard lane, and the
+      owner-confirmed `assurance` on every lane. `removes` may read
       "none, because ...", and in beta and release `declared-break`, one entry
       per named surface the change touches with its `why` and `migration`,
       shaped `declared-break: {api: {why: ..., migration: ...}}`. A
@@ -23,7 +36,7 @@ artifacts:
       rather than inventing a requirement. Type `docs` also creates
       `docs-plan.md` from its conditional template and does not treat the
       type-blind codemap and specs graph entries as obligations.
-    requires: []
+    requires: [instruction-integrity]
 
   - id: codemap
     generates: codemap.md
@@ -57,7 +70,17 @@ artifacts:
       checks from docs-plan.md and documentation tasks. Keep the shipped review
       and metrics lifecycle tasks open until those phases complete, so the
       pre-review lane check does not demand artifacts that do not exist yet.
-    requires: [specs]
+    requires: [specs, evidence-freeze]
+
+  - id: evidence-freeze
+    generates: evidence-freeze.md
+    description: Frozen instructions, requirements, evidence, non-goals, criteria, performance expectations, and decisions
+    template: evidence-freeze.md
+    instruction: |
+      Complete at the end of specification. It is the execution baseline.
+      Later instructions or evidence require a recorded delta consistency
+      check before affected work continues.
+    requires: [proposal]
 
   # Conditional files are not artifacts here: the graph has no per-type
   # artifact, so listing them makes `status` ask every change for all of them.
@@ -65,13 +88,14 @@ artifacts:
   # gate and the relevant phase or type body require them.
   - id: review
     generates: review.md
-    description: The agent review report, written in a fresh session
+    description: The risk-selected review verdict or recorded policy omission
     template: review.md
     instruction: |
-      Findings that affect correctness or violate a contract, ranked, and
-      anything the toolbox, the standard library, or a declared dependency
-      already provides. The reviewer writes the report but edits no code,
-      specification, or test.
+      Where risk requires it, a genuinely fresh isolated Reviewer records
+      ranked correctness and contract findings plus existing providers. Where
+      policy omits review, record that evidence without presenting Builder
+      self-review as independent. The Reviewer edits no code, specification,
+      or test.
     requires: [tasks]
 
   - id: metrics
@@ -90,5 +114,5 @@ apply:
   instruction: |
     Read the module's contract and the code-map slice before touching it, read
     a named symbol with `uv run --locked --group dev agent-ready codemap show
-    <pkg.mod.symbol>` rather than the file around it, and run the checks. After
-    two consecutive failures of the same check or test, stop and report.
+    <pkg.mod.symbol>` rather than the file around it, and run the checks. Stop
+    when the same failure repeats without new evidence or a changed hypothesis.
