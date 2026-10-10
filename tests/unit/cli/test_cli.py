@@ -23,11 +23,11 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 import pytest
-import tomllib
 from click.testing import CliRunner, Result
 
 import junoscfg
@@ -66,9 +66,11 @@ class TestVersion:
         assert junoscfg.__version__ == importlib.metadata.version("junoscfg")
 
     def test_the_package_version_is_the_project_version(self) -> None:
-        with open(PROJECT_ROOT / "pyproject.toml", "rb") as handle:
-            project = tomllib.load(handle)["project"]
-        assert junoscfg.__version__ == project["version"]
+        # Read by pattern, not tomllib: the package supports 3.10, which has none.
+        pyproject = (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        found = re.search(r'^\[project\]$.*?^version = "([^"]+)"$', pyproject, re.M | re.S)
+        assert found, "pyproject.toml declares no [project] version"
+        assert junoscfg.__version__ == found.group(1)
 
 
 def _commands(group: Any, prefix: str = "junoscfg") -> list[str]:

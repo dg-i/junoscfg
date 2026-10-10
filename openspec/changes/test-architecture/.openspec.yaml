@@ -1,0 +1,28 @@
+schema: agent-ready
+created: 2026-10-10
+type: refactor
+# The highest-tier zone whose paths this change edits: src/junoscfg/anonymize/__init__.py.
+zone: anonymize
+# Every domain whose declared paths a deliverable touches: convert/__init__.py,
+# validate/{set,json_yaml}_validator.py, anonymize/, validate/xsd_fixes.py (a test
+# reference in a comment), edityaml/__init__.py.
+domains: [conversion, validation, anonymization, schema-pipeline, ansible-vars]
+removes: "none, because every removed test is merged into a survivor or moved, each mapped in ledger/*.tsv and proved by check_ledger.py; no product behaviour is removed"
+# The owner lifted the test gates for this change and chose a lightweight record
+# (2026-10-10); no assurance level was asked for, so the lowest is recorded.
+assurance: economy
+skip_specs: true
+declared-break:
+  consumer:
+    why: >-
+      src/junoscfg/__init__.py changes only __version__ (0.15.2 to 0.15.3), the
+      bump AGENTS.md requires; no name or signature changes. The package doors
+      below the surface gain exports (convert, validate, anonymize, audit,
+      edityaml) and display gains build_from_artifact and
+      forget_loaded_artifacts; nothing is removed or renamed.
+    migration: None.
+  cli:
+    why: >-
+      cli.py's lazy imports go through the edityaml and audit doors instead of
+      their submodules; no command, option, output or exit code changes.
+    migration: None.

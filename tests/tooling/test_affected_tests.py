@@ -14,6 +14,9 @@ import pytest
 
 from tests.support.paths import PROJECT_ROOT
 
+# The tools read tach.toml with 3.11's tomllib, as the dev tooling they serve does.
+pytest.importorskip("tomllib")
+
 
 def _tool(name: str):
     spec = importlib.util.spec_from_file_location(name, PROJECT_ROOT / "tools" / f"{name}.py")

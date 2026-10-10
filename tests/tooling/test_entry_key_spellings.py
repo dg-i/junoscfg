@@ -13,13 +13,16 @@ from __future__ import annotations
 import ast
 import re
 
-import tomllib
+import pytest
 
 from tests.support.paths import PACKAGE_SRC, PROJECT_ROOT
 
 RETIRED_STRINGS = frozenset({"fe", "values-only", "community-name"})
 RETIRED_NAMES = frozenset({"FLAT_ENTRY_ELEMENTS", "ENTRY_KEY_OVERRIDES", "get_flat_entry_config"})
 POSITIONAL = re.compile(r"^_v\d+$")
+
+# Development tooling, like the checks it guards: it needs 3.11's tomllib.
+tomllib = pytest.importorskip("tomllib")
 
 
 def _docstrings(tree: ast.AST) -> set[int]:
