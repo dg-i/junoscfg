@@ -4,21 +4,21 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 ## Not for
 
-Not a place for a direct format-to-format shortcut. Every conversion goes
-through the dict IR, and a second path for a pair that already has one is the
-duplicate `ARCHITECTURE.md` section 1 calls a defect.
+Not a place for a format-to-format shortcut: every conversion goes through the
+dict IR; a second path for a pair is the duplicate `ARCHITECTURE.md` calls a defect.
 
 ## Invariants
 
 - Every supported pair round-trips through the IR without losing content —
-  enforced by
-  `tests/test_convert_consistency.py::TestJsonRoundTripConsistency::test_roundtrip_preserves_content`.
-- XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML
-  apply schema-backed leaf-list normalization at the common boundary, while
-  JSON retains its supplied value shapes without loading schema artifacts —
-  enforced by `tests/test_convert_api.py::TestLeafListPromotion`.
+  enforced by `tests/test_convert_consistency.py::TestJsonRoundTripConsistency::test_roundtrip_preserves_content`.
+- XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML apply
+  schema-backed leaf-list normalization at the common boundary, while JSON keeps
+  its supplied value shapes without loading schema artifacts — enforced by `tests/test_convert_api.py::TestLeafListPromotion`.
 - One configuration yields one IR whatever format it arrived in — enforced by
   `tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr`.
+- An incomplete set statement, a keyed entry without its key from JSON, YAML or
+  XML, and a meta command on a partial or surplus key are kept whole and reported
+  `UNPLACED` — enforced by `tests/test_field_validator.py::TestAnIncompleteStatementIsUnplaced::test_each_door_reports_it`, `tests/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it` and `tests/test_set_input.py::TestAMetaCommandIsNeverPartiallyApplied::test_a_partial_or_surplus_key_is_kept_whole`.
 
 ## Precedent
 

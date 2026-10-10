@@ -15,6 +15,8 @@ validator import an `xsd_*` module.
   `tests/test_xsd_fixes.py::TestFixRegistry::test_all_fixes_have_metadata`.
 - `ArtifactBuilder` and `JunosValidator` resolve lazily through `__getattr__`:
   importing this package must not pull lxml or the schema artifacts.
+- Any `maxOccurs` other than 1 makes a list, however the dump bounds it
+  — enforced by `tests/test_xsd_parser.py::TestCardinality::test_a_numeric_max_occurs_is_list`.
 
 ## Precedent
 

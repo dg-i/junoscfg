@@ -747,6 +747,29 @@ checkpoint:
    `corpus`, `grammar`, then `compare`): no file may gain unplaced statements
    unexplained, and every set-output difference is explained.
 
+#### Pre-review evidence by the paths a change touches
+
+The one full checkpoint before review is `AGENTS.md`'s Verification rule; it
+runs neither the schema, the corpus nor the device tier, so the paths a change
+touches select what runs beside it. The rows keep the bullets above and add the
+exact commands.
+
+| Paths touched | While editing | Once before review, beside the full checkpoint | The change record carries |
+|---|---|---|---|
+| XSD parser, schema model, fixes or artifact builder: `src/junoscfg/validate/xsd_parser.py`, `xsd_fixes.py`, `schema_node.py`, `artifact_builder.py`, `schema_generator.py`, `grammar_generator.py` | the affected nodes of `tests/test_xsd_parser.py`, `test_xsd_fixes.py`, `test_artifact_builder.py`, `test_schema_generator.py` and `test_grammar_generator.py`; while the generator still moves, regenerate in a throwaway `git worktree` and discard it | `uv run pytest tests/ -q --regen-schema` once, after the generator settles; `uv run pytest --schema tests/test_schema_data.py -q` for each dump under gitignored `private_test_data/schemas/`; reproducibility: a second `--regen-schema` on the committed tree leaves `git diff --stat -- src/junoscfg/validate/data` empty; `uv run pytest tests/test_device_truth.py -q` wherever capture pairs exist | the regeneration count and the reason for any run beyond the one official regeneration; the schema-tier and device-truth results |
+| Set reader, grammar or field validator: `src/junoscfg/convert/input/set_input.py`, the grammar rules in `grammar_generator.py`, `src/junoscfg/convert/field_validator.py` | the affected nodes of `tests/test_set_input.py`, `test_set_validator.py` and `test_field_validator.py`, and the three grammar guards listed above | items 1 and 2 above: the JVD corpus with `TestFieldWarningBudget`, and the comparison against an immutable baseline when the change carries one | the warning counts, and every set-output difference explained |
+| Cross-format IR, a reader or a writer: `src/junoscfg/convert/input/`, `convert/output/`, `display/to_yaml.py`, `display/config_store.py` | `tests/test_convert_consistency.py`, `test_convert_roundtrip.py` and the affected `test_characterization.py` classes | public-door semantic parity and round trip: `uv run pytest tests/test_characterization.py::TestKeyedEntriesAgreeAcrossReaders tests/test_characterization.py::TestXmlAndStructuredInputAgreeOnTheIr tests/test_convert_consistency.py tests/test_device_truth.py -q`; every door gives one IR and every pair round-trips | which doors the change touched and the parity result |
+| Anonymization, the red zone: `src/junoscfg/anonymize/` | `uv run pytest tests/test_anonymize -q` | the same suite, read for three probes by name: syntax values pass unchanged (`tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves`), the mapping is stable for the same input and the same salt (`tests/test_anonymize/test_ip_rule.py::TestIpRuleTransform::test_deterministic_with_same_salt`), and revert with the mapping restores the original (`tests/test_anonymize/test_integration.py::TestPipelineDumpMapIntegration::test_revert_map_restores_originals`); plus the fresh-agent review rule in [Solo review](../how-to/solo-review.md) | the three probe results |
+| Entry lookup or a schema-wide walk: `src/junoscfg/display/constants.py` (`entry_keys`), `display/config_store.py`, `convert/output/dict_walker.py`, `audit/walker.py`, `anonymize/walker.py` | the affected nodes | no committed timing guard covers these; the only committed bound, `tests/test_set_validator.py::TestTheShippedGrammarAcceptsMultipleSiblings::test_compact_siblings_keep_practical_parse_time`, times the grammar. Measure and explain: time the same large input (the largest configuration you hold under gitignored `private_test_data/`, and a synthetic list of tens of thousands of entries) at the base commit and at the head on the same machine, and explain the difference; the identifier-key-fields change record (its tasks 4.4 and 5.6) shows the shape. It is a record, never a gate over correctness: `ARCHITECTURE.md` section 1 ranks latency last | both timings, the input's size, and the explanation |
+
+`ARCHITECTURE.md` ranks the product's latency last; that ranking does not waive
+economy in the workflow. Run focused tests while editing; regenerate in scratch
+while the generator moves and once officially after it settles; reuse a corpus
+or baseline result only when corpus, configuration, tool version and commit
+match; and rerun an expensive tier only when an input that invalidates its
+result changed. How many full checkpoints run and where they sit is
+`AGENTS.md`'s Verification rule, not this page's.
+
 For the full list of development commands, see the project CLAUDE.md.
 
 ---

@@ -1,6 +1,6 @@
 # Settle a schema question
 
-Four rules for anyone — human or agent — changing what junoscfg accepts.
+Five rules for anyone — human or agent — changing what junoscfg accepts.
 They exist because each has already been broken here, at a cost.
 
 ## 1. Ask for a device artefact before inferring one
@@ -73,3 +73,29 @@ positive, and a validator that accepts everything passes every positive test
 there is. It now also runs against the artefact we ship, and
 `tests/test_set_corpus.py` records each rejection by name so a new false
 positive and a fixed one are both visible in the diff.
+
+## 5. Freeze device evidence once, sanitised
+
+One device-dependent change asks its device questions in one round and freezes
+the answers once, under Evidence in the change's `evidence-freeze.md`, before
+specification work resumes; a later agent reads the answer there instead of
+asking the device again. The identifier-key-fields pilot took five probe rounds
+relayed through chat before this form existed. The raw capture stays under
+gitignored `private_test_data/`; what the freeze carries is this form, with
+every operator value replaced by the synthetic ranges in `AGENTS.md`:
+
+- **Hierarchy and question:** the exact path (rule 2) and the one question the
+  probe answers.
+- **Forms tried:** each accepted and each rejected statement, the order and
+  surplus-token variants included, with the device's response quoted.
+- **Views requested:** `show configuration <path> | display set`,
+  `| display json` and `| display xml` (rule 1), each kept in the private
+  capture.
+- **Preflight and cleanup:** `show configuration <path>` was empty before the
+  probe, and the `rollback` or `delete <path>` that cleaned up afterwards.
+- **Family and release:** the platform family and the Junos release, nothing
+  that identifies the device or its operator.
+- **Observation, interpretation, unknowns:** three separate fields: what the
+  device printed, what the asker concludes from it, and what stays open.
+- **Approval:** the owner's one acceptance of this summary; after it, no agent
+  asks the device the same question again.

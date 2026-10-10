@@ -19,6 +19,8 @@ across calls.
 - `networks=["auto"]` needs `source_text` and says so rather than doing
   nothing — enforced by
   `tests/test_characterization.py::TestNetworksAutoNeedsSourceText`.
+- A schema enum value or the keyword of a key choice is syntax and passes every
+  rule unchanged — enforced by `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged` and `tests/test_anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`.
 
 ## Precedent
 
