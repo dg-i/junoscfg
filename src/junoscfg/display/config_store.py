@@ -140,13 +140,14 @@ class ConfigStore:
     Each node is a ConfigStore with an ordered dict of children.
     Supports push (add paths), deactivate (mark inactive), and
     string rendering to curly-brace format.
+
+    A tag leads the line of the node it marks, and no line joins a tagged
+    node onto the one above it: read back, a tag marks the node its line
+    starts, so `then inactive: accept;` would be a statement the device
+    rejects and `inactive: then accept;` would mark `then`.
     """
 
     OFFSET = "    "
-
-    # Compound keywords: parent merges with each child on the same line.
-    # E.g., "family inet {" instead of "family { inet { } }".
-    COMPOUND_KEYWORDS: frozenset[str] = frozenset({"family"})
 
     def __init__(self, depth: int = 0) -> None:
         """Create an empty node at *depth* in the configuration tree."""
@@ -155,6 +156,9 @@ class ConfigStore:
         self.deactivated = False
         self.replaced = False
         self.protected = False
+        # Written merged with each child, `family inet {`: the writer sets it
+        # from the schema's `homogeneous` flag (`mark_merged`).
+        self.merged = False
 
     def push(self, path_str: str) -> None:
         """Add a newline-separated hierarchical path to the tree."""
@@ -167,48 +171,38 @@ class ConfigStore:
 
     def deactivate(self, deactivated_line: str) -> None:
         """Mark a path as inactive (deactivated)."""
-        statement, store = self._match(deactivated_line)
-
-        if statement is not None and store is not None:
-            if statement == deactivated_line:
-                store.deactivated = True
-            else:
-                remaining = re.sub(f"^{re.escape(statement)} *", "", deactivated_line)
-                store.deactivate(remaining)
-        else:
-            statement, store = self._inverse_match(deactivated_line)
-            if statement is not None and store is not None:
-                store.deactivated = True
+        self._set(deactivated_line, "deactivated")
 
     def mark_replaced(self, path_str: str) -> None:
         """Mark a path as replaced."""
-        statement, store = self._match(path_str)
-
-        if statement is not None and store is not None:
-            if statement == path_str:
-                store.replaced = True
-            else:
-                remaining = re.sub(f"^{re.escape(statement)} *", "", path_str)
-                store.mark_replaced(remaining)
-        else:
-            statement, store = self._inverse_match(path_str)
-            if statement is not None and store is not None:
-                store.replaced = True
+        self._set(path_str, "replaced")
 
     def mark_protected(self, path_str: str) -> None:
         """Mark a path as protected."""
+        self._set(path_str, "protected")
+
+    def mark_merged(self, path_str: str) -> None:
+        """Mark a path as written merged with each child (`family inet {`)."""
+        self._set(path_str, "merged")
+
+    def _set(self, path_str: str, attribute: str) -> None:
+        """Set *attribute* on the node *path_str* names."""
         statement, store = self._match(path_str)
 
         if statement is not None and store is not None:
             if statement == path_str:
-                store.protected = True
+                setattr(store, attribute, True)
             else:
                 remaining = re.sub(f"^{re.escape(statement)} *", "", path_str)
-                store.mark_protected(remaining)
+                store._set(remaining, attribute)
         else:
             statement, store = self._inverse_match(path_str)
             if statement is not None and store is not None:
-                store.protected = True
+                setattr(store, attribute, True)
+
+    def tagged(self) -> bool:
+        """Whether a tag leads this node's line."""
+        return self.deactivated or self.replaced or self.protected
 
     def empty(self) -> bool:
         """Check if this node has no children."""
@@ -245,21 +239,19 @@ class ConfigStore:
                 elif self._is_collapsible(key, node):
                     # Single terminal child: render as oneliner
                     # e.g., "then accept;" instead of "then { accept; }"
-                    ckey, cchild = next(iter(node._children.items()))
-                    ckey = self._prefixed(ckey, cchild)
+                    ckey = next(iter(node._children))
                     parts.append(f"{indent}{display_key} {ckey};\n")
-                elif key in self.COMPOUND_KEYWORDS:
-                    # Compound keyword: merge parent with each child.
-                    # E.g., "family inet {" instead of "family { inet { }"
+                elif node.merged:
+                    # Merged with each child: "family inet {", never
+                    # "family { inet { } }". The child's tag leads the line;
+                    # the parent carries none (`passes_tag_to_child`).
                     for ckey, cchild in reversed(list(node._children.items())):
-                        dckey = self._prefixed(ckey, cchild)
-                        compound_key = f"{display_key} {dckey}"
+                        compound_key = self._prefixed(f"{key} {ckey}", cchild)
                         if cchild.empty():
                             stack.append(("leaf", depth, compound_key, cchild))
                         elif self._is_compound_collapsible(cchild):
                             gckey = next(iter(cchild._children))
                             gc = cchild._children[gckey]
-                            gckey = self._prefixed(gckey, gc)
                             stack.append(("leaf", depth, f"{compound_key} {gckey}", gc))
                         else:
                             # Open block with compound key, push grandchildren
@@ -295,7 +287,7 @@ class ConfigStore:
         if len(node._children) != 1:
             return False
         child = next(iter(node._children.values()))
-        if not child.empty():
+        if not child.empty() or child.tagged():
             return False
         # Only collapse plain Junos keywords (lowercase + hyphens)
         return bool(re.fullmatch(r"[a-z][a-z-]*", key))
@@ -313,7 +305,7 @@ class ConfigStore:
         if len(node._children) != 1:
             return False
         child_key, child_node = next(iter(node._children.items()))
-        if not child_node.empty():
+        if not child_node.empty() or child_node.tagged():
             return False
         return bool(re.fullmatch(r"[a-z][a-z-]*", child_key))
 
@@ -375,6 +367,7 @@ class ConfigStore:
         last.deactivated = node.deactivated
         last.replaced = node.replaced
         last.protected = node.protected
+        last.merged = node.merged
         current._children[path_tokens[-1]] = last
         return result
 
@@ -392,6 +385,7 @@ class ConfigStore:
         clone.deactivated = self.deactivated
         clone.replaced = self.replaced
         clone.protected = self.protected
+        clone.merged = self.merged
         for key, child in self._children.items():
             clone._children[key] = child._reroot_at(depth + 1)
         return clone

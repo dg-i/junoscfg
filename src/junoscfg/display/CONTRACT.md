@@ -4,14 +4,15 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 ## Not for
 
-Display rendering only in name. It is the shared kernel: six of the eight
-packages import from it, and `constants.py` and `config_store.py` are a schema
-flag table and a tree structure, not display logic.
+Display rendering only in name: the shared kernel six of the eight packages
+import; `constants.py` and `config_store.py` are a schema flag table and a tree.
+Nor for placing a tag: schema-free `SetConverter.to_set()` gives a one-line
+statement's tag to its last node; conversion reads `statements()` through the
+schema, where an entry ends (`tests/test_meta_tags.py`).
 
 ## Invariants
 
-- Nothing here imports from a higher layer; `display` and `input` are the
-  bottom of the DAG — enforced by `tach check`.
+- Nothing here imports from a higher layer; `display` and `input` are the bottom of the DAG — enforced by `tach check`.
 - Importing this package pulls in neither lxml nor the schema artifacts:
   `load_schema_tree()` is lazy and cached, and the XML path imports lxml on
   first use — enforced by
@@ -26,5 +27,4 @@ flag table and a tree structure, not display logic.
   supplies the formats its public contract permits it to infer.
 - `junoscfg.display.xml_to_dict` — the one XML walker; XML-to-YAML serialization
   and conversion input consume the same JSON-equivalent mapping.
-- `junoscfg.display.constants.load_schema_tree` — the lazy-cached accessor
-  pattern every artifact read should copy.
+- `junoscfg.display.load_schema_tree` — the lazy-cached accessor every artifact read copies.

@@ -214,6 +214,10 @@ _BOOL_FLAG_KEYS = {
     "pkf": "positional-key-flat",
     "fd": "flat-dict",
     "frnk": "freeform-nk",
+    # `homogeneous` on a container without a key -- `family` -- means the
+    # device never tags the container and writes it merged with each child:
+    # `inactive: family inet {`. See `junoscfg.display.passes_tag_to_child`.
+    "h": "homogeneous",
     # `universal` marks a statement Junos accepts at every hierarchy level --
     # the four `apply-*` meta-statements, which no NETCONF XSD models. They are
     # declared once, on the root, and the generators splice them in. Adding
@@ -301,6 +305,7 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         k: the entry's key fields in declared order, a choice of identifiers
            as a nested list; omitted where the one key is ``name``
         frnk: true if freeform nk key
+        h: true if the XSD marks the node ``homogeneous``
         u: true if the statement is valid at every hierarchy level
         e: index into root _enums dedup table
         r: index into root _patterns dedup table
@@ -443,7 +448,7 @@ def read_structure_tree(path: str | Path) -> SchemaNode:
       XSD; 25.2R2 has no such node. ``ArtifactBuilder`` builds the grammar
       through this function regardless, so the two cannot drift.
     - any flag the XSD carried verbatim that is not in the writer's tables
-      (``oneliner-plus``, ``homogeneous``, …). The tables are
+      (``oneliner-plus``, …). The tables are
       ``_BOOL_FLAG_KEYS`` and ``_VALUE_FLAG_KEYS``, and both directions read
       them, so what is dropped is exactly what is not in them.
     - ``oneliner`` on a node that is not a list with children, which the

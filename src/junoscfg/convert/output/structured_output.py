@@ -19,6 +19,7 @@ class StructuredWalkOutput(WalkOutput):
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
+        self._merged: list[str] = []
         self._diagnostic_sink = diagnostic_sink
 
     def emit(self, hierarchy: list[str]) -> None:
@@ -53,16 +54,34 @@ class StructuredWalkOutput(WalkOutput):
         # with an aggregated note in finalize()
         self._dropped_deletes.append(" ".join(hierarchy))
 
+    def mark_merged(self, hierarchy: list[str]) -> None:
+        """Defer writing *hierarchy* merged with each child until :meth:`finalize`."""
+        self._merged.append(" ".join(hierarchy))
+
     def finalize(self) -> None:
-        """Apply the deferred markers and warn about any dropped deletes."""
+        """Apply the deferred markers and note what structured output cannot write."""
+        merged = set(self._merged)
+        for path_str in self._merged:
+            self.config.mark_merged(path_str)
+        dropped_tags: list[str] = []
         for op, hierarchy in self._deferred:
             path_str = " ".join(hierarchy)
+            if path_str in merged:
+                # `family` takes no tag on the device, and `inactive: family
+                # inet {` would mark `inet`; field validation reports it.
+                dropped_tags.append(f"{op} {path_str}")
+                continue
             if op == "deactivate":
                 self.config.deactivate(path_str)
             elif op == "replace":
                 self.config.mark_replaced(path_str)
             elif op == "protect":
                 self.config.mark_protected(path_str)
+        if dropped_tags and self._diagnostic_sink is not None:
+            self._diagnostic_sink(
+                f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
+                f"tags ({'; '.join(dropped_tags)}): it is written merged with each child"
+            )
         if self._dropped_deletes and self._diagnostic_sink is not None:
             self._diagnostic_sink(
                 f"note: {len(self._dropped_deletes)} delete annotation(s) dropped: "

@@ -135,6 +135,22 @@ def is_flat_dict(schema_node: dict[str, Any] | None, key: str | None = None) -> 
     return key is not None and key in _FLAT_DICT_ELEMENTS
 
 
+def passes_tag_to_child(schema_node: dict[str, Any] | None) -> bool:
+    """Whether a tag on this node belongs to the child that follows it.
+
+    The XSD marks `family` `homogeneous`: a container without a key whose
+    children are the families. The device never tags it -- `deactivate …
+    family` and `protect … family` are rejected ("missing argument") -- and
+    writes it merged with each child, so `inactive: family inet {` marks
+    `inet` (`<inet inactive="inactive">`, device capture, 23.2R2). A keyed
+    `homogeneous` node, port-mirroring's `routing-instance`, and the 1,716
+    `homogeneous` lists take tags as any entry does.
+    """
+    if not schema_node or not schema_node.get("h") or schema_node.get("L"):
+        return False
+    return "k" not in schema_node and "name" not in schema_node.get("c", {})
+
+
 def entry_keys(schema_node: Any) -> tuple[str | tuple[str, ...], ...]:
     """The fields that key a list's entries, in declared order.
 

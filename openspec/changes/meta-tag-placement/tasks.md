@@ -5,11 +5,11 @@
 
 ## 2. Change
 
-- [ ] 2.1 Schema: `h` for `homogeneous` in `artifact_builder._BOOL_FLAG_KEYS`; one `--regen-schema`.
-- [ ] 2.2 Curly reader: `SetConverter` hands out statements with per-level tags; `set_input` applies them in `_merge_tokens`; `structured_input` uses it; `replace` pseudo command and `emit_replace` removed.
-- [ ] 2.3 Curly writer: a tag leads its line, no join past a tagged node, `homogeneous` replaces `COMPOUND_KEYWORDS`, a tag on an unkeyed `homogeneous` container dropped with a note.
-- [ ] 2.4 Validation: `UNPLACED` for a tag on an unkeyed `homogeneous` container; XML reads `protect`.
-- [ ] 2.5 `display/CONTRACT.md` (the `to_set()` limit), developer guide mentions of `emit_replace`, patch bump to 0.15.2, changelog fragment.
+- [x] 2.1 Schema: `h` for `homogeneous` in `artifact_builder._BOOL_FLAG_KEYS`; one `--regen-schema`.
+- [x] 2.2 Curly reader: `SetConverter` hands out statements with per-level tags; `set_input` applies them in `_merge_tokens`; `structured_input` uses it; `replace` pseudo command and `emit_replace` removed.
+- [x] 2.3 Curly writer: a tag leads its line, no join past a tagged node, `homogeneous` replaces `COMPOUND_KEYWORDS`, a tag on an unkeyed `homogeneous` container dropped with a note.
+- [x] 2.4 Validation: `UNPLACED` for a tag on an unkeyed `homogeneous` container; XML reads `protect`.
+- [x] 2.5 `display/CONTRACT.md` (the `to_set()` limit), developer guide mentions of `emit_replace`, patch bump to 0.15.2, changelog fragment.
 
 ## 3. Review and evidence
 

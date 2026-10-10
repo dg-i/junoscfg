@@ -29,11 +29,12 @@ class TestConfigStore:
     def test_deep_nesting(self) -> None:
         store = ConfigStore()
         store.push("interfaces\nge-0/0/0\nunit 0\nfamily\ninet\naddress 10.0.0.1/24")
+        store.mark_merged("interfaces ge-0/0/0 unit 0 family")
         result = str(store)
         assert "interfaces {" in result
         assert "ge-0/0/0 {" in result
         assert "unit 0 {" in result
-        # family is a compound keyword → merges with inet
+        # family is marked merged (the schema's `homogeneous`) → merges with inet
         assert "family inet {" in result
         assert "address 10.0.0.1/24;" in result
 
@@ -41,6 +42,7 @@ class TestConfigStore:
         store = ConfigStore()
         store.push("family\ninet\naddress 10.0.0.1/24")
         store.push("family\ninet6\naddress 2001:db8::1/64")
+        store.mark_merged("family")
         result = str(store)
         # family merges with each child on the same line
         assert "family inet {" in result
@@ -53,6 +55,7 @@ class TestConfigStore:
     def test_compound_keyword_single_child_collapses(self) -> None:
         store = ConfigStore()
         store.push("family\ninet\nunicast")
+        store.mark_merged("family")
         result = str(store)
         # family + inet + single terminal child → "family inet unicast;"
         assert "family inet unicast;" in result
@@ -213,3 +216,23 @@ class TestConfigStoreSubtree:
         sub = store.subtree([])
         result = str(sub)
         assert "host-name router1;" in result
+
+    def test_merging_comes_from_the_mark_not_the_name(self) -> None:
+        """`family` merged because the walker says so, from the schema flag."""
+        store = ConfigStore()
+        store.push("family\ninet\naddress 10.0.0.1/24")
+        assert "family {" in str(store)
+
+    def test_a_tag_leads_the_merged_line(self) -> None:
+        store = ConfigStore()
+        store.push("family\ninet\naddress 10.0.0.1/24")
+        store.mark_merged("family")
+        store.deactivate("family inet")
+        assert "inactive: family inet {" in str(store)
+        assert "family inactive:" not in str(store)
+
+    def test_a_tagged_child_is_not_collapsed(self) -> None:
+        store = ConfigStore()
+        store.push("then\naccept")
+        store.deactivate("then accept")
+        assert str(store) == "then {\n    inactive: accept;\n}\n"

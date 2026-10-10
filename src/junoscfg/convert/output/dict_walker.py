@@ -21,6 +21,7 @@ from junoscfg.display import (
     is_transparent_list_key,
     key_is_positional,
     load_schema_tree,
+    passes_tag_to_child,
     resolve_key_alias,
 )
 
@@ -55,6 +56,13 @@ class WalkOutput(ABC):
     @abstractmethod
     def emit_delete(self, hierarchy: list[str]) -> None:
         """Emit a delete operation."""
+
+    def mark_merged(self, hierarchy: list[str]) -> None:  # noqa: B027
+        """A container the schema says is written merged with each child.
+
+        Only structured output has layout to decide; `family inet {`. The
+        device never tags such a container (`passes_tag_to_child`).
+        """
 
     def finalize(self) -> None:  # noqa: B027
         """Called after all emit calls are complete."""
@@ -411,11 +419,14 @@ class DictWalker:
             else:
                 new_path = path + [f"{key} {formatted_name}"]
 
+            # One line only while no node after the first carries a tag: a
+            # tag leads the line of the node it marks.
             is_oneliner = (
                 self._is_structured_mode()
                 and not skip_key
                 and schema_node is not None
                 and schema_node.get("o")
+                and not _holds_a_tag(remaining)
             )
 
             if not has_content:
@@ -434,6 +445,8 @@ class DictWalker:
             self._emit_attrs(new_path, attrs)
         else:
             new_path = path if skip_key else path + [key]
+            if passes_tag_to_child(schema_node):
+                output.mark_merged(new_path)
 
             has_content = any(not k.startswith("@") for k in hash_)
 
@@ -544,3 +557,15 @@ class DictWalker:
             output.emit_activate(path)
         if "delete" in attrs:
             output.emit_delete(path)
+
+
+def _holds_a_tag(value: Any) -> bool:
+    """Whether a tag sits anywhere in *value*: an ``@`` or ``@key`` with content."""
+    if isinstance(value, dict):
+        return any(
+            (key.startswith("@") and bool(item)) or _holds_a_tag(item)
+            for key, item in value.items()
+        )
+    if isinstance(value, list):
+        return any(_holds_a_tag(item) for item in value)
+    return False

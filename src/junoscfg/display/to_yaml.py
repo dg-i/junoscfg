@@ -94,14 +94,21 @@ def _ensure_xml_imports() -> None:
 # ------------------------------------------------------------------
 
 
-def _get_inactive_attrs(element: etree._Element) -> dict[str, Any] | None:
-    """Check if element has inactive attribute, return @ dict if so."""
-    if element.get("inactive") == "inactive":
-        return {"inactive": True}
+def _get_tag_attrs(element: etree._Element) -> dict[str, Any] | None:
+    """The element's tags as an ``@`` dict, or None without one.
+
+    `inactive="inactive"` and `protect="protect"`, bare or namespaced; the
+    IR spells them as conversion's annotation normalizer does. `protect`
+    was dropped here without a word.
+    """
+    found: dict[str, Any] = {}
     for attr_name, attr_value in element.attrib.items():
-        if attr_name.endswith("}inactive") and attr_value == "inactive":
-            return {"inactive": True}
-    return None
+        name = attr_name.rsplit("}", 1)[-1]
+        if name == "inactive" and attr_value == "inactive":
+            found["inactive"] = True
+        elif name == "protect" and attr_value == "protect":
+            found["protect"] = "protect"
+    return found or None
 
 
 def _xml_element_to_dict(element: etree._Element, schema: dict[str, Any] | None) -> dict[str, Any]:
@@ -152,19 +159,19 @@ def _xml_single_as_array(
 ) -> list[dict[str, Any]]:
     """Convert a single XML element to a 1-element array of dicts."""
     children = _filtered_children(element)
-    inactive_attrs = _get_inactive_attrs(element)
+    tag_attrs = _get_tag_attrs(element)
     entry = _xml_children_to_dict(children, schema) if children else {}
-    if inactive_attrs:
-        entry["@"] = inactive_attrs
+    if tag_attrs:
+        entry["@"] = tag_attrs
     return [entry]
 
 
 def _xml_single_element(element: etree._Element, schema: dict[str, Any] | None) -> Any:
     """Convert a single XML container element to a Junos JSON-equivalent dict."""
     child_dict = _xml_children_to_dict(_filtered_children(element), schema)
-    inactive_attrs = _get_inactive_attrs(element)
-    if inactive_attrs:
-        child_dict["@"] = inactive_attrs
+    tag_attrs = _get_tag_attrs(element)
+    if tag_attrs:
+        child_dict["@"] = tag_attrs
     return child_dict
 
 
@@ -173,10 +180,10 @@ def _xml_multi_elements(elements: list[etree._Element], schema: dict[str, Any] |
     result: list[dict[str, Any]] = []
     for el in elements:
         children = _filtered_children(el)
-        inactive_attrs = _get_inactive_attrs(el)
+        tag_attrs = _get_tag_attrs(el)
         entry = _xml_children_to_dict(children, schema) if children else {}
-        if inactive_attrs:
-            entry["@"] = inactive_attrs
+        if tag_attrs:
+            entry["@"] = tag_attrs
         result.append(entry)
     return result
 
@@ -207,7 +214,7 @@ def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str,
     widening the tag would deactivate the untagged ones.
     """
     values = [_coerce_value(text) if (text := (el.text or "").strip()) else None for el in elements]
-    tags = [_get_inactive_attrs(el) for el in elements]
+    tags = [_get_tag_attrs(el) for el in elements]
     if any(tag != tags[0] for tag in tags):
         raise ValueError(
             f"Invalid XML: <{name}> tags some of its values and not others; "

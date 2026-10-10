@@ -20,19 +20,43 @@ class SetConverter:
 
     _PREFIX_TAGS = ("replace: ", "protect: ", "inactive: ", "delete: ")
 
-    def __init__(self, source: str | TextIO, *, emit_replace: bool = False) -> None:
-        """Convert *source*, optionally emitting ``replace:`` markers."""
+    def __init__(self, source: str | TextIO) -> None:
+        """Convert *source*."""
         self._input = source
-        self._emit_replace = emit_replace
 
     def to_set(self) -> str:
-        """Convert structured config to display set format."""
+        """Convert structured config to display set format.
+
+        A tag becomes a `deactivate`/`protect`/`delete` line for the whole of
+        the statement it leads, which is right for a block opener and wrong
+        for a one-line entry: `inactive: route 0.0.0.0/0 next-hop 10.0.0.1;`
+        marks the route, and `deactivate … route 0.0.0.0/0 next-hop 10.0.0.1`
+        marks `next-hop`. Where an entry ends is the schema's to say;
+        conversion reads `statements()` through the schema instead.
+        """
         result: list[str] = []
 
         for stack, text in self._process():
             result.append(self._transform_line(stack, text))
 
         return "\n".join(result) + "\n" if result else ""
+
+    def statements(self) -> list[list[tuple[str, frozenset[str]]]]:
+        """Each statement as its levels: the block openers above it, then itself.
+
+        A level is its text and the tags that lead it (``inactive``,
+        ``protect``, ``replace``, ``delete``). Which node a tag marks is the
+        schema's question, not this lexer's: the set reader's schema walk
+        answers it for set and structured input alike.
+        """
+        return [
+            [self._split_tags(level) for level in [*stack, text]] for stack, text in self._process()
+        ]
+
+    @classmethod
+    def _split_tags(cls, text: str) -> tuple[str, frozenset[str]]:
+        stripped, tags = cls._strip_prefixes(text)
+        return stripped, frozenset(tags)
 
     def _process(self) -> list[tuple[list[str], str]]:
         """Parse structured config into (stack, statement) pairs."""
@@ -132,9 +156,7 @@ class SetConverter:
 
         Strips operational prefixes (replace:, protect:, inactive:, delete:)
         and emits corresponding commands for prefixes that have set
-        equivalents. When ``emit_replace`` is set, ``replace:`` additionally
-        emits a pseudo ``replace <path>`` line for the structured-input
-        bridge (not part of the display-set format).
+        equivalents; ``replace:`` has none.
         """
         statements: list[str] = []
         current_statement = ""
@@ -146,8 +168,6 @@ class SetConverter:
                 statements.append(f"deactivate {path}")
             if "delete" in tags:
                 statements.append(f"delete {path}")
-            if "replace" in tags and self._emit_replace:
-                statements.append(f"replace {path}")
 
         for stack_entry in current_stack:
             entry, tags = self._strip_prefixes(stack_entry)

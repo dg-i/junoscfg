@@ -199,7 +199,7 @@ Each input module parses a format into the unwrapped dict IR (the content inside
 | `yaml_input.py` | `yaml_to_dict()` | Parses YAML, uses `find_configuration()` |
 | `xml_input.py` | `xml_to_dict()` | Reuses `display.xml_to_dict()` and returns its configuration mapping directly |
 | `set_input.py` | `set_to_dict()` | Tokenizes set commands, walks schema tree to build dict |
-| `structured_input.py` | `structured_to_dict()` | Two-hop: structured → set → dict |
+| `structured_input.py` | `structured_to_dict()` | `SetConverter.statements()` lexes levels and their tags; the set reader's schema walk (`statements_to_dict()`) builds the dict |
 
 ### Output converters (`convert/output/`)
 
@@ -269,7 +269,7 @@ The `display/` package provides shared utility modules used by the `convert/` pi
 | `constants.py` | Schema flag helpers, XML-compat constants, `KEY_ALIASES` (XML↔set name mapping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py`, `convert/input/set_input.py` |
 | `config_store.py` | Ordered tree for building structured output; supports operational prefixes | `convert/output/structured_output.py`, CLI filter |
 | `value_format.py` | Value formatting (quoting, escaping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py` |
-| `set_converter.py` | Structured → set command parsing | `convert/input/structured_input.py`, `validate/structured_validator.py` |
+| `set_converter.py` | Structured lexing: `statements()` for conversion, schema-free `to_set()` | `convert/input/structured_input.py`, `validate/structured_validator.py` |
 | `to_yaml.py` | XML→YAML bridge (`xml_to_yaml()`), YAML path filtering | `convert/input/xml_input.py`, CLI |
 | `to_json.py` | JSON path filtering (`filter_json_by_path()`) | CLI |
 | `xml_helpers.py` | XML element utilities | `to_yaml.py` |

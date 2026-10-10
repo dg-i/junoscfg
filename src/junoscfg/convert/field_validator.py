@@ -17,6 +17,7 @@ from junoscfg.display import (
     entry_key_names,
     entry_keys,
     enum_is_fragment,
+    passes_tag_to_child,
     statement_name_spellings,
     strip_type_prefix,
 )
@@ -331,6 +332,23 @@ class FieldValidator:
                     path.pop()
                 # Container — recurse
                 elif isinstance(value, dict):
+                    if passes_tag_to_child(child_schema) and (value.get("@") or obj.get(f"@{key}")):
+                        # `deactivate … family`: the device rejects it
+                        # ("missing argument"); it tags the family inside.
+                        entry = self._entry_label(schema_node, obj)
+                        where = f" under {path[-1]} {entry}" if entry and path else ""
+                        result.errors.append(
+                            FieldError(
+                                path=".".join(path),
+                                message=(
+                                    f"a tag on '{key}'{where} could not be placed in the "
+                                    f"schema: Junos tags what '{key}' holds, never '{key}' "
+                                    "itself; kept as written"
+                                ),
+                                value=key,
+                                expected=UNPLACED,
+                            )
+                        )
                     path.append(key)
                     self._walk(value, child_schema, path, result)
                     path.pop()

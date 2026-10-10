@@ -13,6 +13,7 @@ from junoscfg.display import (
     entry_keys,
     key_is_positional,
     load_schema_tree,
+    passes_tag_to_child,
     statement_children,
     statement_name_spellings,
 )
@@ -87,14 +88,70 @@ def set_to_dict(source: str) -> dict[str, Any]:
             tokens = _tokenize(line[9:])
             if tokens:
                 _apply_meta(config, tokens, schema, "active", "active", index)
-        elif line.startswith("replace "):
-            # Pseudo command emitted by the structured-input bridge
-            # (SetConverter with emit_replace=True); not display-set syntax.
-            tokens = _tokenize(line[8:])
-            if tokens:
-                _apply_meta(config, tokens, schema, "operation", "replace", index)
 
     return config
+
+
+def statements_to_dict(statements: list[list[tuple[str, frozenset[str]]]]) -> dict[str, Any]:
+    """Build the IR dict from curly statements, as `SetConverter.statements()` lexes them.
+
+    Each statement is its levels -- the block openers above it, then itself
+    -- with the tags that lead each one. The set reader's walk reads the
+    tokens and puts a level's tags on the node that level starts: a list
+    entry, which ends after its key; a leaf, never its value; a container.
+    `inactive: route 0.0.0.0/0 next-hop 10.0.0.1;` marks the route, as the
+    device's XML does (`<route inactive="inactive">`). The bridge used to
+    flatten curly text to `deactivate <whole statement>`, which marked
+    `next-hop`.
+    """
+    schema = load_schema_tree()
+    config: dict[str, Any] = {}
+    index: _EntryIndex = {}
+    for levels in statements:
+        tokens: list[str] = []
+        tags: dict[int, frozenset[str]] = {}
+        for text, level_tags in levels:
+            level = _tokenize(text)
+            if level and level_tags:
+                tags[len(tokens)] = level_tags
+            tokens += level
+        if tokens:
+            _merge_tokens(config, tokens, schema, index, tags)
+        if tags:
+            # A level boundary inside a key or a value: no node starts
+            # there, so the tag has nowhere to go. No device writes this.
+            raise ValueError(
+                "Invalid structured input: a tag inside a key or value in "
+                + " ".join(text for text, _ in levels)
+            )
+    return config
+
+
+# The IR spelling of each curly tag, as the set commands write it.
+_TAG_ATTRS: dict[str, tuple[str, Any]] = {
+    "inactive": ("inactive", True),
+    "protect": ("protect", "protect"),
+    "replace": ("operation", "replace"),
+    "delete": ("operation", "delete"),
+}
+
+
+def _mark(holder: dict[str, Any], tags: frozenset[str], key: str | None = None) -> None:
+    """Put *tags* on *holder* itself, or with *key* on its child *key* (``@key``)."""
+    if not tags:
+        return
+    attrs = holder.setdefault("@" if key is None else f"@{key}", {})
+    for tag in sorted(tags):
+        name, value = _TAG_ATTRS[tag]
+        attrs[name] = value
+
+
+def _tags_from(tags: dict[int, frozenset[str]], i: int) -> frozenset[str]:
+    """Every tag left at or after token *i*, taken: a statement kept whole holds them all."""
+    found: frozenset[str] = frozenset()
+    for at in [at for at in tags if at >= i]:
+        found |= tags.pop(at)
+    return found
 
 
 # ── Tokenizer ────────────────────────────────────────────────────────
@@ -243,13 +300,22 @@ def _read_key(
     return dict(found[field] for field in fields), j
 
 
-def _keep_whole(current: dict[str, Any], tokens: list[str], i: int) -> None:
+def _keep_whole(
+    current: dict[str, Any],
+    tokens: list[str],
+    i: int,
+    tags: dict[int, frozenset[str]] | None = None,
+) -> None:
     """Keep ``tokens[i:]`` as one statement the reader could not place.
 
     Field validation reports it `UNPLACED` and every writer reproduces it, so
-    nothing of a line the reader cannot complete is applied or dropped.
+    nothing of a line the reader cannot complete is applied or dropped. A
+    curly tag on any of those tokens goes with it, on the kept key.
     """
-    current.setdefault(" ".join(_parse_value(t) for t in tokens[i:]), True)
+    key = " ".join(_parse_value(t) for t in tokens[i:])
+    current.setdefault(key, True)
+    if tags:
+        _mark(current, _tags_from(tags, i), key)
 
 
 def _keep_meta_whole(
@@ -290,18 +356,28 @@ def _keep_meta_whole(
 
 
 def _merge_tokens(
-    config: dict[str, Any], tokens: list[str], schema: dict[str, Any], index: _EntryIndex
+    config: dict[str, Any],
+    tokens: list[str],
+    schema: dict[str, Any],
+    index: _EntryIndex,
+    tags: dict[int, frozenset[str]] | None = None,
 ) -> None:
-    """Walk tokens against the schema tree and merge into config dict."""
+    """Walk tokens against the schema tree and merge into config dict.
+
+    *tags* maps the token where a curly level starts to the tags leading it;
+    each lands on the node that token starts (`statements_to_dict`).
+    """
     current = config
     current_schema = schema
     i = 0
     # Where the statement holding `current` starts, and the node above it.
     owner, owner_i = config, 0
+    tags = tags if tags is not None else {}
 
     while i < len(tokens):
         token = tokens[i]
         children = statement_children(current_schema)
+        here = tags.pop(i, frozenset())
 
         # Apply-groups (not in the schema, handled specially). It takes one
         # group; `set apply-groups G1 G2` and a bare `set apply-groups` are
@@ -310,12 +386,14 @@ def _merge_tokens(
         if token in ("apply-groups", "apply-groups-except"):
             lst = current.get(token, [])
             if i + 2 != len(tokens) or not isinstance(lst, list):
-                _keep_whole(current, tokens, i)
+                tags[i] = here
+                _keep_whole(current, tokens, i, tags)
                 return
             val = _parse_value(tokens[i + 1])
             current[token] = lst
             if val not in lst:
                 lst.append(val)
+            _mark(current, here | _tags_from(tags, i), token)
             return
 
         # Apply-macro (not in the schema). It takes a name, then optionally a
@@ -325,10 +403,12 @@ def _merge_tokens(
         if token == "apply-macro" and i + 1 < len(tokens):
             lst = current.get("apply-macro", [])
             if len(tokens) - i > 4 or not isinstance(lst, list):
-                _keep_whole(current, tokens, i)
+                tags[i] = here
+                _keep_whole(current, tokens, i, tags)
                 return
             current["apply-macro"] = lst
             entry = _find_or_create_entry(lst, {"name": _parse_value(tokens[i + 1])}, index)
+            _mark(entry, here | _tags_from(tags, i))
             if i + 2 < len(tokens):
                 pair = dict(
                     zip(("name", "value"), map(_parse_value, tokens[i + 2 :]), strict=False)
@@ -347,6 +427,7 @@ def _merge_tokens(
                 name = _parse_value(token)
                 lst = current.setdefault(transparent, [])
                 entry = _find_or_create_entry(lst, {"name": name}, index)
+                _mark(entry, here)
                 owner, owner_i = current, i
                 i += 1
                 current = entry
@@ -367,16 +448,19 @@ def _merge_tokens(
                             break
                     if _is_statement_name(cname, cnode, token):
                         current[token] = [None]
+                        _mark(current, here, token)
                     elif current.get(cname, _parse_value(token)) != _parse_value(token):
                         # A second, different value: this node is no list, so
                         # writing it would replace the first without a word --
                         # three forwarding classes read as one, while the
                         # parser counted only `unbounded` as a list. Kept
                         # whole from the node's own keyword.
-                        _keep_whole(owner, tokens, owner_i)
+                        tags[i] = here
+                        _keep_whole(owner, tokens, owner_i, tags)
                         return
                     else:
                         current[cname] = _parse_value(token)
+                        _mark(current, here, cname)
                     i += 1
                     nk_found = True
                     break
@@ -395,6 +479,7 @@ def _merge_tokens(
                 name = _parse_value(token)
                 lst = current.setdefault(cname, [])
                 entry = _find_or_create_entry(lst, {"name": name}, index)
+                _mark(entry, here)
                 i += 1
                 if i < len(tokens):
                     owner, owner_i = current, i - 1
@@ -430,6 +515,7 @@ def _merge_tokens(
                         parent = current.setdefault(parent_key, {})
                         lst = parent.setdefault(tc_name, [])
                         entry = _find_or_create_entry(lst, {"name": name}, index)
+                        _mark(entry, here)
                         owner, owner_i = current, i
                         i += 1
                         current = entry
@@ -440,7 +526,8 @@ def _merge_tokens(
                 continue
 
             # Unknown token — join remaining as a single key
-            _keep_whole(current, tokens, i)
+            tags[i] = here
+            _keep_whole(current, tokens, i, tags)
             return
 
         child = children[schema_key]
@@ -456,15 +543,19 @@ def _merge_tokens(
                 # interfaces`); a list keyed otherwise has no key value, a
                 # statement the reader cannot complete, kept whole.
                 if entry_keys(child) != ("name",):
-                    _keep_whole(current, tokens, i)
-                elif statement_children(child):
+                    tags[i] = here
+                    _keep_whole(current, tokens, i, tags)
+                    return
+                if statement_children(child):
                     current.setdefault(token, [])
                 else:
                     current[token] = [None]
+                _mark(current, here, token)
                 return
             read = _read_key(child, tokens, i + 1)
             if read is None:
-                _keep_whole(current, tokens, i)
+                tags[i] = here
+                _keep_whole(current, tokens, i, tags)
                 return
             key, after = read
             entries = current.get(token, [])
@@ -473,10 +564,14 @@ def _merge_tokens(
             ):
                 # A surplus after an entry that has nothing but its key, or a
                 # full entry after a bare keyword kept whole under this key.
-                _keep_whole(current, tokens, i)
+                tags[i] = here
+                _keep_whole(current, tokens, i, tags)
                 return
             current[token] = entries
             entry = _find_or_create_entry(entries, key, index)
+            # The entry ends after its key: a tag on `route 0.0.0.0/0
+            # next-hop 10.0.0.1` is the route's.
+            _mark(entry, here)
             if after == len(tokens):
                 return
             owner, owner_i = current, i
@@ -485,8 +580,10 @@ def _merge_tokens(
             i = after
             continue
 
-        # Leaf node (accumulate repeated values)
+        # Leaf node (accumulate repeated values). A tag is the leaf's, never
+        # its value's: `inactive: vlan-id 751;` is `<vlan-id inactive=…>751`.
         if child.get("l"):
+            _mark(current, here, token)
             is_leaf_list = child.get("ll")
             if i + 1 < len(tokens):
                 # Check if token after the value is a schema sibling
@@ -517,6 +614,7 @@ def _merge_tokens(
         # Presence flag
         if child.get("p"):
             current[token] = [None]
+            _mark(current, here, token)
             i += 1
             if i < len(tokens):
                 continue  # Let main loop handle next token (sibling or nokeyword)
@@ -526,13 +624,20 @@ def _merge_tokens(
         if child.get("c"):
             owner, owner_i = current, i
             current = current.setdefault(token, {})
+            if here and passes_tag_to_child(child) and i + 1 < len(tokens):
+                # `inactive: family inet {` marks `inet`: the device never
+                # tags `family` (`deactivate … family` is rejected).
+                tags[i + 1] = tags.get(i + 1, frozenset()) | here
+            else:
+                _mark(current, here)
             current_schema = child
             i += 1
             continue
 
         # A schema node of no type the reader knows: keep the line whole from
         # here, as the unknown-token path does, rather than one token of it.
-        _keep_whole(current, tokens, i)
+        tags[i] = here
+        _keep_whole(current, tokens, i, tags)
         return
 
 

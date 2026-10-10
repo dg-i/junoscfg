@@ -414,5 +414,5 @@ class TestHomogeneousFlag:
             assert json.loads(Path(path).read_text())["c"]["family"]["h"] is True
             assert "homogeneous" in read_structure_tree(path).children["family"].flags
 
-        bundled = load_schema_tree()["c"]["configuration"]["c"]["interfaces"]["c"]["interface"]
+        bundled = load_schema_tree()["c"]["interfaces"]["c"]["interface"]
         assert bundled["c"]["unit"]["c"]["family"].get("h") is True
