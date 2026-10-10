@@ -1,14 +1,22 @@
-"""End-to-end integration tests for anonymization through the pipeline."""
+"""End-to-end integration tests for anonymization through the pipeline.
+
+The dump-map and revert-map round trip, for every rule and for rules
+together, is `tests/contract/test_every_rule.py`.
+"""
 
 from __future__ import annotations
 
+import hashlib
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
+from junoscfg.anonymize import AnonymizeConfig, anonymize, build_config_from_cli
 from tests.support.paths import EXAMPLES
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestPipelineIntegration:
@@ -197,185 +205,6 @@ class TestPipelineIntegration:
         assert addr != "10.1.2.3/24"
 
 
-class TestPipelineDumpMapIntegration:
-    """Test dump_map and revert_map through the full pipeline."""
-
-    def test_dump_map_writes_file(self, tmp_path) -> None:
-        """Pipeline writes a mapping file when dump_map is set."""
-        from junoscfg.convert import pipeline
-
-        source = json.dumps(
-            {
-                "configuration": {
-                    "system": {"name-server": [{"name": "8.8.8.8"}]},
-                },
-            }
-        )
-        map_file = tmp_path / "map.json"
-        cfg = AnonymizeConfig(ips=True, salt="dump-test", dump_map=str(map_file))
-        result = pipeline(
-            source, from_format="json", to_format="json", validate=False, anon_config=cfg
-        )
-
-        output = json.loads(result)
-        assert output["configuration"]["system"]["name-server"][0]["name"] != "8.8.8.8"
-
-        assert map_file.exists()
-        mapping = json.loads(map_file.read_text())
-        assert "ip" in mapping
-
-    def test_revert_map_restores_originals(self, tmp_path) -> None:
-        """Pipeline restores originals when revert_map is set."""
-        from junoscfg.convert import pipeline
-
-        source = json.dumps(
-            {
-                "configuration": {
-                    "system": {"name-server": [{"name": "8.8.8.8"}]},
-                },
-            }
-        )
-
-        # Step 1: anonymize and dump map
-        map_file = tmp_path / "map.json"
-        cfg_anon = AnonymizeConfig(ips=True, salt="revert-test", dump_map=str(map_file))
-        anon_result = pipeline(
-            source, from_format="json", to_format="json", validate=False, anon_config=cfg_anon
-        )
-        assert "8.8.8.8" not in anon_result
-
-        # Step 2: revert using the map
-        cfg_revert = AnonymizeConfig(revert_map=str(map_file))
-        reverted_result = pipeline(
-            anon_result,
-            from_format="json",
-            to_format="json",
-            validate=False,
-            anon_config=cfg_revert,
-        )
-        reverted = json.loads(reverted_result)
-        assert reverted["configuration"]["system"]["name-server"][0]["name"] == "8.8.8.8"
-
-    def test_multi_rule_revert_through_pipeline(self, tmp_path) -> None:
-        """Full round-trip with multiple rules through the pipeline."""
-        from junoscfg.convert import pipeline
-
-        source = json.dumps(
-            {
-                "configuration": {
-                    "system": {
-                        "host-name": "router1",
-                        "name-server": [{"name": "8.8.8.8"}],
-                        "login": {
-                            "user": [
-                                {
-                                    "name": "admin",
-                                    "full-name": "Admin User",
-                                    "authentication": {
-                                        "encrypted-password": "$6$abc$xyz",
-                                    },
-                                }
-                            ]
-                        },
-                    },
-                    "interfaces": {
-                        "interface": [
-                            {
-                                "name": "ge-0/0/0",
-                                "description": "Uplink",
-                                "unit": [
-                                    {
-                                        "name": "0",
-                                        "family": {"inet": {"address": [{"name": "10.1.2.3/24"}]}},
-                                    }
-                                ],
-                            }
-                        ]
-                    },
-                },
-            }
-        )
-
-        map_file = tmp_path / "map.json"
-        cfg_anon = AnonymizeConfig(
-            ips=True,
-            passwords=True,
-            identities=True,
-            descriptions=True,
-            salt="multi-test",
-            dump_map=str(map_file),
-        )
-        anon_output = pipeline(
-            source, from_format="json", to_format="json", validate=False, anon_config=cfg_anon
-        )
-
-        # Verify anonymization happened
-        anon_data = json.loads(anon_output)
-        assert anon_data["configuration"]["system"]["name-server"][0]["name"] != "8.8.8.8"
-        assert anon_data["configuration"]["system"]["login"]["user"][0]["name"] != "admin"
-
-        # Revert
-        cfg_revert = AnonymizeConfig(revert_map=str(map_file))
-        reverted_output = pipeline(
-            anon_output,
-            from_format="json",
-            to_format="json",
-            validate=False,
-            anon_config=cfg_revert,
-        )
-        reverted = json.loads(reverted_output)
-        assert reverted["configuration"]["system"]["name-server"][0]["name"] == "8.8.8.8"
-        assert reverted["configuration"]["system"]["login"]["user"][0]["name"] == "admin"
-        assert reverted["configuration"]["system"]["login"]["user"][0]["full-name"] == "Admin User"
-        assert reverted["configuration"]["interfaces"]["interface"][0]["description"] == "Uplink"
-
-
-class TestPublicApiIntegration:
-    """Test anonymization through the public convert_config API."""
-
-    def test_convert_config_with_anon(self) -> None:
-        from junoscfg import Format, convert_config
-
-        source = json.dumps(
-            {
-                "configuration": {
-                    "interfaces": {
-                        "interface": [
-                            {
-                                "name": "ge-0/0/0",
-                                "unit": [
-                                    {
-                                        "name": "0",
-                                        "family": {
-                                            "inet": {
-                                                "address": [{"name": "10.1.2.3/24"}],
-                                            },
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                },
-            }
-        )
-
-        cfg = AnonymizeConfig(ips=True, salt="api-test")
-        result = convert_config(
-            source,
-            from_format=Format.JSON,
-            to_format=Format.JSON,
-            validate=False,
-            anon_config=cfg,
-        )
-
-        output = json.loads(result)
-        addr = output["configuration"]["interfaces"]["interface"][0]["unit"][0]["family"]["inet"][
-            "address"
-        ][0]["name"]
-        assert addr != "10.1.2.3/24"
-
-
 class TestAsNumbersInStringsIntegration:
     """Test the as_numbers_in_strings second pass through anonymize()."""
 
@@ -454,12 +283,6 @@ class TestAsNumbersInStringsIntegration:
         assert result.ir["configuration"]["system"]["host-name"] == "router1"
 
 
-# ── identifier-key-fields: keyed entries survive anonymization ───────
-#
-# Spec: openspec/changes/identifier-key-fields/specs/anonymization/
-# keyed-entries, "An AS-list reference survives anonymization" and "No value
-# anonymized before escapes".
-
 _GROUPED = """\
 groups {
     SAMPLE-GROUP {
@@ -511,6 +334,13 @@ def _neighbor_lines(output: str) -> list[list[str]]:
 
 
 class TestKeyedEntriesSurvive:
+    """A keyed entry keeps its keys whole through every rule.
+
+    Spec: ``openspec/specs/anonymization/keyed-entries`` (from the
+    identifier-key-fields change), "An AS-list reference survives
+    anonymization" and "No value anonymized before escapes".
+    """
+
     @pytest.mark.parametrize(
         "line",
         [
@@ -561,7 +391,6 @@ class TestKeyedEntriesSurvive:
 
     def test_an_as_list_reference_survives_anonymize_all(self) -> None:
         from junoscfg import Format, convert_config
-        from junoscfg.anonymize.config import build_config_from_cli
 
         for source, fmt in ((_GROUPED, Format.STRUCTURED), (_GROUPED_SET, Format.SET)):
             cfg = build_config_from_cli(anonymize_all=True, anonymize_salt="keyed")
@@ -603,7 +432,6 @@ class TestKeyedEntriesSurvive:
 
     def test_the_other_keyed_lists_keep_their_keys(self) -> None:
         from junoscfg import Format, convert_config
-        from junoscfg.anonymize.config import build_config_from_cli
 
         term = "set policy-options policy-statement SAMPLE-POLICY term T1"
         source = (
@@ -638,18 +466,23 @@ class TestKeyedEntriesSurvive:
     )
     def test_a_value_from_its_leafs_enum_passes_every_rule(self, line: str, word: str) -> None:
         """A leaf's own enum value is configuration syntax: no rule rewrites it.
-        0.14.0 wrote `from protocol word_<hash>`, which the device rejects
-        (anonymizer-bugs rows 4 and 5)."""
+
+        The sensitive word matches the enum value, and the IR comes out as it
+        went in. Release 0.14.0 wrote `from protocol word_<hash>`, which the
+        device rejects (anonymizer-bugs rows 4 and 5).
+        """
         from junoscfg import Format, convert_config
 
         cfg = AnonymizeConfig(sensitive_words=[word], salt="keyed")
-        out = convert_config(
-            line + "\n", from_format=Format.SET, to_format=Format.SET, anon_config=cfg
+        anonymized = convert_config(
+            line + "\n", from_format=Format.SET, to_format=Format.JSON, anon_config=cfg
         )
-        assert out.strip() == line
+        plain = convert_config(line + "\n", from_format=Format.SET, to_format=Format.JSON)
+        assert json.loads(anonymized) == json.loads(plain)
+        assert word in plain
 
-    #: Every value 0.14.0 replaced in examples/router1.json with every rule
-    #: on, by rule. Measured before the change.
+    #: Every value release 0.14.0 replaced in examples/router1.json with every
+    #: rule on, by rule; measured before the identifier-key-fields change.
     BEFORE = {
         "password": ["$9$ExAmPlEhAsH.KEY"],
         "ip": [
@@ -700,28 +533,57 @@ class TestKeyedEntriesSurvive:
         )
 
     def test_no_value_anonymized_before_escapes(self) -> None:
-
+        """Every value 0.14.0 replaced is still replaced: a fix may add, never drop."""
         source = json.loads((EXAMPLES / "router1.json").read_text(encoding="utf-8"))
         mapping = anonymize(source, self._every_rule()).mapping
         for rule, values in self.BEFORE.items():
             missing = set(values) - set(mapping.get(rule, {}))
             assert not missing, f"{rule} no longer replaces {sorted(missing)}"
 
-    def test_name_keyed_output_is_unchanged(self) -> None:
-        """Pinned before the change; expected to hold across it."""
-        import hashlib
+    def test_name_keyed_output_is_unchanged(self, tmp_path: Path) -> None:
+        """For a fixed salt, every rule replaces the same values with the same values.
 
+        Pinned before the identifier-key-fields change touched the walker, as
+        a SHA-256 of the whole set output, and it held across the change. What
+        is kept here is the anonymizer's share of that output. The dumped
+        mapping is pinned byte for byte, because that is a requirement: the
+        same input and the same salt give the same replacements on every run
+        and every machine (`src/junoscfg/anonymize/CONTRACT.md`; a
+        configuration anonymized on one machine has to match one anonymized on
+        another, `rules/password.py`). The rest is meaning: the anonymized
+        configuration differs from the original only by those replacements,
+        so the mapping restores its IR.
+        """
         from junoscfg import Format, convert_config
 
         source = (EXAMPLES / "router1.json").read_text(encoding="utf-8")
+        dumped = tmp_path / "map.json"
+        config = self._every_rule()
+        config.dump_map = str(dumped)
         out = convert_config(
             source,
             from_format=Format.JSON,
             to_format=Format.SET,
             validate=False,
-            anon_config=self._every_rule(),
+            anon_config=config,
         )
+        mapping = json.loads(dumped.read_text(encoding="utf-8"))
         assert (
-            hashlib.sha256(out.encode()).hexdigest()
-            == "8cd6b3d38f7d82a2fdbb9dc1990dad6d9e880a4b2f76701afc47351409b000ad"
+            hashlib.sha256(json.dumps(mapping, sort_keys=True).encode()).hexdigest()
+            == "5d9e717aa62ad2c2939e7627991ec04ca0b62a529290591ddd0692794d94a8dd"
         )
+
+        plain = convert_config(
+            source, from_format=Format.JSON, to_format=Format.SET, validate=False
+        )
+        reverted = convert_config(
+            out,
+            from_format=Format.SET,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(revert_map=str(dumped)),
+        )
+        original = convert_config(
+            plain, from_format=Format.SET, to_format=Format.JSON, validate=False
+        )
+        assert json.loads(reverted) == json.loads(original)

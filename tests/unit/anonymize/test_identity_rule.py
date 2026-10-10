@@ -1,10 +1,13 @@
-"""Tests for the username/identity anonymization rule."""
+"""Tests for the username/identity anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+identity rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.identity import IdentityRule
+from junoscfg.anonymize import AnonymizeConfig, IdentityRule, anonymize
 
 
 class TestIdentityRuleMatches:
@@ -93,32 +96,6 @@ class TestIdentityRuleTransform:
         assert result.startswith("user_")
         assert result != "admin"
 
-    def test_deterministic(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("admin") == rule2.transform("admin")
-
-    def test_different_salt(self) -> None:
-        rule1 = self._make_rule(salt="a")
-        rule2 = self._make_rule(salt="b")
-        assert rule1.transform("admin") != rule2.transform("admin")
-
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("admin") == rule.transform("admin")
-
-    def test_different_users(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("admin") != rule.transform("operator")
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("admin")
-        rule.transform("operator")
-        mapping = rule.get_mapping()
-        assert "admin" in mapping
-        assert "operator" in mapping
-
 
 class TestIdentityAnonymizeIntegration:
     """Test the full anonymize() function with identity rule."""
@@ -193,35 +170,3 @@ class TestIdentityAnonymizeIntegration:
         user = result.ir["configuration"]["groups"][0]["system"]["login"]["user"][0]
         assert user["name"] != "rancid"
         assert user["full-name"] != "RANCID"
-
-    def test_identity_with_password_and_ip(self) -> None:
-        """Identity, password, and IP rules coexist without conflict."""
-        cfg = AnonymizeConfig(identities=True, passwords=True, ips=True, salt="test")
-        ir = {
-            "configuration": {
-                "system": {
-                    "login": {
-                        "user": [
-                            {
-                                "name": "admin",
-                                "authentication": {
-                                    "encrypted-password": "$6$abc$hash",
-                                },
-                            },
-                        ],
-                    },
-                    "name-server": [{"name": "8.8.8.8"}],
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        assert result.ir["configuration"]["system"]["login"]["user"][0]["name"] != "admin"
-        ep = result.ir["configuration"]["system"]["login"]["user"][0]["authentication"][
-            "encrypted-password"
-        ]
-        assert ep != "$6$abc$hash"
-        ns = result.ir["configuration"]["system"]["name-server"][0]["name"]
-        assert ns != "8.8.8.8"
-        assert "identity" in result.mapping
-        assert "password" in result.mapping
-        assert "ip" in result.mapping

@@ -1,4 +1,9 @@
-"""Tests for the sensitive word and pattern substring replacement rule."""
+"""Tests for the sensitive word and pattern substring replacement rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+sensitive word rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
@@ -6,9 +11,7 @@ import re
 
 import pytest
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.sensitive_word import SensitiveWordRule
+from junoscfg.anonymize import AnonymizeConfig, SensitiveWordRule, anonymize
 
 
 class TestSensitiveWordRuleMatches:
@@ -87,20 +90,6 @@ class TestSensitiveWordRuleTransform:
         assert "newyork" not in result.lower()
         assert "router" in result
 
-    def test_deterministic(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("acmecorp-router") == rule2.transform("acmecorp-router")
-
-    def test_different_salt(self) -> None:
-        rule1 = self._make_rule(salt="a")
-        rule2 = self._make_rule(salt="b")
-        assert rule1.transform("acmecorp") != rule2.transform("acmecorp")
-
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("acmecorp-x") == rule.transform("acmecorp-x")
-
     def test_same_word_same_replacement(self) -> None:
         """Same word in different contexts gets the same replacement."""
         rule = self._make_rule()
@@ -110,14 +99,6 @@ class TestSensitiveWordRuleTransform:
         # in both results (same word_ prefix hash)
         replacement = r1.replace("-router1", "")
         assert r2.startswith(replacement)
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("acmecorp-router1")
-        rule.transform("newyork-switch2")
-        mapping = rule.get_mapping()
-        assert "acmecorp-router1" in mapping
-        assert "newyork-switch2" in mapping
 
 
 class TestSensitiveWordAnonymizeIntegration:
@@ -158,79 +139,6 @@ class TestSensitiveWordAnonymizeIntegration:
         assert "Link to " in desc
         assert " DC" in desc
 
-    def test_sensitive_word_with_description_rule(self) -> None:
-        """When both description and sensitive_word rules are enabled,
-        description rule takes priority on 'description' fields."""
-        cfg = AnonymizeConfig(
-            descriptions=True,
-            sensitive_words=["newyork"],
-            salt="test",
-        )
-        ir = {
-            "configuration": {
-                "interfaces": {
-                    "interface": [
-                        {
-                            "name": "ge-0/0/0",
-                            "description": "Link to NewYork DC",
-                        },
-                    ],
-                },
-                "system": {
-                    "host-name": "newyork-router1",
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        # Description field should be handled by description rule (higher priority)
-        desc = result.ir["configuration"]["interfaces"]["interface"][0]["description"]
-        assert desc.startswith("descr_")
-        # Host-name should be handled by sensitive_word rule
-        hostname = result.ir["configuration"]["system"]["host-name"]
-        assert "newyork" not in hostname.lower()
-
-    def test_sensitive_word_with_all_rules(self) -> None:
-        """Sensitive word rule coexists with all other rules."""
-        cfg = AnonymizeConfig(
-            ips=True,
-            passwords=True,
-            descriptions=True,
-            sensitive_words=["acmecorp"],
-            salt="test",
-        )
-        ir = {
-            "configuration": {
-                "system": {
-                    "host-name": "acmecorp-gw01",
-                    "root-authentication": {
-                        "encrypted-password": "$6$abc$hash",
-                    },
-                    "name-server": [{"name": "8.8.8.8"}],
-                },
-                "interfaces": {
-                    "interface": [
-                        {
-                            "name": "ge-0/0/0",
-                            "description": "Link to acmecorp-core",
-                        },
-                    ],
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        # Sensitive word in host-name
-        assert "acmecorp" not in result.ir["configuration"]["system"]["host-name"].lower()
-        # Password anonymized
-        assert (
-            result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
-            != "$6$abc$hash"
-        )
-        # IP anonymized
-        assert result.ir["configuration"]["system"]["name-server"][0]["name"] != "8.8.8.8"
-        # Description field handled by description rule
-        desc = result.ir["configuration"]["interfaces"]["interface"][0]["description"]
-        assert desc.startswith("descr_")
-
 
 class TestSensitivePatternMatches:
     def _make_rule(
@@ -265,11 +173,6 @@ class TestSensitivePatternMatches:
     def test_pattern_invalid_regex_raises(self) -> None:
         with pytest.raises(re.error):
             self._make_rule(patterns=["[unclosed"])
-
-    def test_pattern_replacement_deterministic(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("LAX001-router") == rule2.transform("LAX001-router")
 
     def test_pattern_different_matches_different_hashes(self) -> None:
         rule = self._make_rule()

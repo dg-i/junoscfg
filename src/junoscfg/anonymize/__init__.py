@@ -20,12 +20,34 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli
+from junoscfg.anonymize.path_filter import PathFilter
 from junoscfg.anonymize.revert import apply_revert, export_mapping, load_mapping
-from junoscfg.anonymize.rules import build_rules
+from junoscfg.anonymize.rules import Rule, build_rules
 from junoscfg.anonymize.rules.as_number import AsNumberRule
+from junoscfg.anonymize.rules.community import CommunityRule
+from junoscfg.anonymize.rules.description import DescriptionRule
 from junoscfg.anonymize.rules.group import GroupRule
+from junoscfg.anonymize.rules.identity import IdentityRule
 from junoscfg.anonymize.rules.ip import IpRule
+from junoscfg.anonymize.rules.sensitive_word import SensitiveWordRule
+from junoscfg.anonymize.rules.ssh_key import SshKeyRule
 from junoscfg.anonymize.walker import walk
+
+if TYPE_CHECKING:
+    from junoscfg.anonymize.rules.password import PasswordRule
+
+
+def __getattr__(name: str) -> Any:
+    """Load `PasswordRule` on first use.
+
+    Its module imports netutils, which costs more than the rest of the
+    package together; `build_rules` imports it only when passwords are on.
+    """
+    if name == "PasswordRule":
+        from junoscfg.anonymize.rules.password import PasswordRule
+
+        return PasswordRule
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @dataclass
@@ -173,9 +195,22 @@ def _replace_as_in_strings(obj: Any, as_rule: AsNumberRule) -> None:
 __all__ = [
     "AnonymizeConfig",
     "AnonymizeResult",
+    "AsNumberRule",
+    "CommunityRule",
+    "DescriptionRule",
+    "GroupRule",
+    "IdentityRule",
+    "IpRule",
+    "PasswordRule",
+    "PathFilter",
+    "Rule",
+    "SensitiveWordRule",
+    "SshKeyRule",
     "anonymize",
     "apply_revert",
     "build_config_from_cli",
+    "build_rules",
     "export_mapping",
     "load_mapping",
+    "walk",
 ]

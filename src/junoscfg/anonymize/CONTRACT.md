@@ -11,8 +11,8 @@ across calls.
 ## Invariants
 
 - The same input and the same salt produce the same output, every run —
-  enforced by `tests/unit/anonymize/test_ip_rule.py::TestIpRuleTransform::test_deterministic_with_same_salt`
-  and the matching `test_deterministic` in each other rule's tests.
+  enforced for every rule by
+  `tests/contract/test_every_rule.py::TestEveryRule::test_the_same_salt_gives_the_same_output`.
 - No per-password field of the original survives: not the salt, and for `$8$`
   not the IV or the tag — enforced by
   `tests/unit/anonymize/test_password_rule.py::TestSaltIsNotCopied`.

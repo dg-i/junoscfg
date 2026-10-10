@@ -86,8 +86,10 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.anonymize"]
 expose = [
-    "AnonymizeConfig", "AnonymizeResult", "anonymize", "apply_revert",
-    "build_config_from_cli", "export_mapping", "load_mapping",
+    "AnonymizeConfig", "AnonymizeResult", "AsNumberRule", "CommunityRule", "DescriptionRule",
+    "GroupRule", "IdentityRule", "IpRule", "PasswordRule", "PathFilter", "Rule",
+    "SensitiveWordRule", "SshKeyRule", "anonymize", "apply_revert", "build_config_from_cli",
+    "build_rules", "export_mapping", "load_mapping", "walk",
 ]
 
 [[interfaces]]

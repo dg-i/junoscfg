@@ -1,12 +1,100 @@
-"""Tests for the IP anonymization rule."""
+"""Tests for the IP anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+IP rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
 import copy
+from typing import Any
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.ip import IpRule
+import pytest
+
+from junoscfg.anonymize import AnonymizeConfig, IpRule, anonymize
+
+# Minimal IR with IP addresses for unit testing
+SAMPLE_IR_WITH_IPS: dict[str, Any] = {
+    "configuration": {
+        "system": {"host-name": "router1"},
+        "interfaces": {
+            "interface": [
+                {
+                    "name": "ge-0/0/0",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [{"name": "10.1.2.3/24"}],
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+}
+
+# IR with multiple IP fields across different sections
+SAMPLE_IR_MULTI_IP: dict[str, Any] = {
+    "configuration": {
+        "system": {
+            "host-name": "router1",
+            "name-server": [{"name": "8.8.8.8"}, {"name": "8.8.4.4"}],
+        },
+        "interfaces": {
+            "interface": [
+                {
+                    "name": "ge-0/0/0",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [{"name": "10.1.2.3/24"}],
+                                },
+                            },
+                        },
+                    ],
+                },
+                {
+                    "name": "lo0",
+                    "unit": [
+                        {
+                            "name": "0",
+                            "family": {
+                                "inet": {
+                                    "address": [{"name": "192.168.1.1/32"}],
+                                },
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+    },
+}
+
+
+@pytest.fixture
+def ip_config() -> AnonymizeConfig:
+    """Config with only IP anonymization enabled and a fixed salt."""
+    return AnonymizeConfig(ips=True, salt="test-salt-42")
+
+
+@pytest.fixture
+def sample_ir_ips() -> dict[str, Any]:
+    """IR with IP addresses."""
+    return copy.deepcopy(SAMPLE_IR_WITH_IPS)
+
+
+@pytest.fixture
+def sample_ir_multi_ip() -> dict[str, Any]:
+    """IR with multiple IP addresses."""
+    return copy.deepcopy(SAMPLE_IR_MULTI_IP)
 
 
 class TestIpRuleMatches:
@@ -83,23 +171,6 @@ class TestIpRuleTransform:
         assert result.endswith("/24")
         assert result != "10.1.2.3/24"
 
-    def test_deterministic_with_same_salt(self) -> None:
-        rule1 = IpRule(AnonymizeConfig(ips=True, salt="same-salt"))
-        rule2 = IpRule(AnonymizeConfig(ips=True, salt="same-salt"))
-        assert rule1.transform("10.1.2.3") == rule2.transform("10.1.2.3")
-
-    def test_different_salt_different_output(self) -> None:
-        rule1 = IpRule(AnonymizeConfig(ips=True, salt="salt-a"))
-        rule2 = IpRule(AnonymizeConfig(ips=True, salt="salt-b"))
-        assert rule1.transform("10.1.2.3") != rule2.transform("10.1.2.3")
-
-    def test_consistency_same_ip_same_output(self) -> None:
-        """Same IP address should always produce the same output."""
-        rule = IpRule(AnonymizeConfig(ips=True, salt="test"))
-        first = rule.transform("10.1.2.3")
-        second = rule.transform("10.1.2.3")
-        assert first == second
-
     def test_private_range_preserved(self) -> None:
         """Private IPs stay in their original range (Cat A)."""
         rule = IpRule(AnonymizeConfig(ips=True, salt="test"))
@@ -112,14 +183,6 @@ class TestIpRuleTransform:
         rule = IpRule(AnonymizeConfig(ips=True, salt="test"))
         result = rule.transform("127.0.0.1")
         assert result == "127.0.0.1"
-
-    def test_get_mapping_tracks_transformations(self) -> None:
-        rule = IpRule(AnonymizeConfig(ips=True, salt="test"))
-        rule.transform("10.1.2.3")
-        rule.transform("10.4.5.6")
-        mapping = rule.get_mapping()
-        assert "10.1.2.3" in mapping
-        assert "10.4.5.6" in mapping
 
 
 class TestIpRuleOptions:
@@ -238,11 +301,6 @@ class TestIpAnonymizeIntegration:
         ][0]["name"]
         assert lo_addr != "192.168.1.1/32"
 
-    def test_mapping_returned(self, sample_ir_ips: dict, ip_config: AnonymizeConfig) -> None:
-        result = anonymize(sample_ir_ips, ip_config)
-        assert "ip" in result.mapping
-        assert "10.1.2.3/24" in result.mapping["ip"]
-
     def test_ips_in_strings_second_pass(self) -> None:
         """With ips_in_strings, IPs in URLs and host combos are replaced."""
         cfg = AnonymizeConfig(ips=True, salt="str-test", ips_in_strings=True)
@@ -295,11 +353,3 @@ class TestIpAnonymizeIntegration:
         host_val = result.ir["configuration"]["security"]["ssh-known-hosts"]["host"][0]["name"]
         # With ips_in_strings disabled, the embedded IP should still be there
         assert "10.1.2.3" in host_val
-
-    def test_no_rules_enabled_returns_unchanged(self) -> None:
-        cfg = AnonymizeConfig()
-        ir = {"configuration": {"system": {"host-name": "r1"}}}
-        original = copy.deepcopy(ir)
-        result = anonymize(ir, cfg)
-        assert result.ir == original
-        assert result.mapping == {}

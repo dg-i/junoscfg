@@ -1,16 +1,41 @@
-"""Tests for the password anonymization rule."""
+"""Tests for the password anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+password rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
-import copy
+import hashlib
+import hmac
 import re
+import subprocess
+import sys
 
+import pytest
 from netutils.password import JUNIPER_KEYS_STRING, decrypt_juniper_type9
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.password import PasswordRule
+import junoscfg.anonymize as anonymize_door
+from junoscfg.anonymize import AnonymizeConfig, PasswordRule, anonymize
 from tests.support.paths import PACKAGE_SRC
+
+#: The alphabet crypt salts and bodies are drawn from.
+_CRYPT64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
+def _body_stream(salt: str, value: str, length: int) -> str:
+    """HMAC-SHA256 of *value* keyed by *salt*, as hex, folded forward to *length*.
+
+    The derivation a crypt body is drawn from, written out here rather than
+    imported from the rule, so the tests that use it check the rule against an
+    independent statement of it: each fold appends the SHA-256 hex of
+    everything so far.
+    """
+    out = hmac.new(salt.encode(), value.encode(), hashlib.sha256).hexdigest()
+    while len(out) < length:
+        out += hashlib.sha256(out.encode()).hexdigest()
+    return out[:length]
 
 
 class TestPasswordRuleMatches:
@@ -196,28 +221,6 @@ class TestPasswordRuleTransform:
         assert r1 == "netconanRemoved0"
         assert r2 == "netconanRemoved1"
 
-    def test_deterministic_with_same_salt(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("$9$abc") == rule2.transform("$9$abc")
-
-    def test_different_salt_different_output(self) -> None:
-        rule1 = self._make_rule(salt="salt-a")
-        rule2 = self._make_rule(salt="salt-b")
-        assert rule1.transform("$9$abc") != rule2.transform("$9$abc")
-
-    def test_consistency_same_value_same_output(self) -> None:
-        rule = self._make_rule()
-        first = rule.transform("$9$secret123")
-        second = rule.transform("$9$secret123")
-        assert first == second
-
-    def test_plain_text_consistency(self) -> None:
-        rule = self._make_rule()
-        first = rule.transform("plaintext")
-        second = rule.transform("plaintext")
-        assert first == second
-
     def test_j9_output_contains_only_valid_chars(self) -> None:
         """Anonymized $9$ body must only contain characters from the Junos alphabet."""
         rule = self._make_rule()
@@ -246,20 +249,6 @@ class TestPasswordRuleTransform:
             assert isinstance(decrypted, str)
             assert len(decrypted) > 0
 
-    def test_j9_deterministic_same_salt(self) -> None:
-        """Same input + same salt must produce the same $9$ output."""
-        rule1 = self._make_rule(salt="fixed")
-        rule2 = self._make_rule(salt="fixed")
-        original = "$9$LxNdsYaJUjqfik5Qz6O1I"
-        assert rule1.transform(original) == rule2.transform(original)
-
-    def test_j9_different_inputs_different_output(self) -> None:
-        """Different $9$ passwords must produce different anonymized hashes."""
-        rule = self._make_rule()
-        r1 = rule.transform("$9$LxNdsYaJUjqfik5Qz6O1I")
-        r2 = rule.transform("$9$ExAmPlEhAsH.KEY")
-        assert r1 != r2
-
     def test_crypt_hash_valid_format(self) -> None:
         """Anonymized $6$ output must match the $6$salt$hash pattern."""
         rule = self._make_rule()
@@ -269,14 +258,6 @@ class TestPasswordRuleTransform:
         # Must be $6$<salt>$<hash> with valid crypt64 characters in the hash
         crypt64 = re.compile(r"^\$6\$[^$]+\$[./A-Za-z0-9]+$")
         assert crypt64.match(result), f"Invalid crypt format: {result!r}"
-
-    def test_get_mapping_tracks_transformations(self) -> None:
-        rule = self._make_rule()
-        rule.transform("$9$abc")
-        rule.transform("secretword")
-        mapping = rule.get_mapping()
-        assert "$9$abc" in mapping
-        assert "secretword" in mapping
 
 
 class TestPasswordAnonymizeIntegration:
@@ -339,36 +320,6 @@ class TestPasswordAnonymizeIntegration:
         result = anonymize(ir, cfg)
         assert result.ir["configuration"]["system"]["host-name"] == "router1"
 
-    def test_mapping_returned(self) -> None:
-        cfg = AnonymizeConfig(passwords=True, salt="test")
-        ir = {
-            "configuration": {
-                "system": {
-                    "root-authentication": {
-                        "encrypted-password": "$6$abc$hash",
-                    },
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        assert "password" in result.mapping
-        assert "$6$abc$hash" in result.mapping["password"]
-
-    def test_no_rules_enabled_unchanged(self) -> None:
-        cfg = AnonymizeConfig()
-        ir = {
-            "configuration": {
-                "system": {
-                    "root-authentication": {
-                        "encrypted-password": "$6$abc$hash",
-                    },
-                },
-            },
-        }
-        original = copy.deepcopy(ir)
-        result = anonymize(ir, cfg)
-        assert result.ir == original
-
     def test_bgp_authentication_key_anonymized(self) -> None:
         """BGP authentication-key should be anonymized (no tr in schema)."""
         cfg = AnonymizeConfig(passwords=True, salt="test")
@@ -422,29 +373,32 @@ class TestPasswordAnonymizeIntegration:
         assert secret != "$9$j1Hqf3nCO1ECApBI"
         assert secret.startswith("$9$")
 
-    def test_password_and_ip_together(self) -> None:
-        """Both rules enabled: password wins on unreadable, IP wins on ipaddr."""
-        cfg = AnonymizeConfig(passwords=True, ips=True, salt="test")
-        ir = {
-            "configuration": {
-                "system": {
-                    "root-authentication": {
-                        "encrypted-password": "$6$abc$hash",
-                    },
-                    "name-server": [{"name": "8.8.8.8"}],
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        # Password should be anonymized
-        ep = result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
-        assert ep != "$6$abc$hash"
-        # IP should be anonymized
-        ns = result.ir["configuration"]["system"]["name-server"][0]["name"]
-        assert ns != "8.8.8.8"
-        # Both mappings present
-        assert "password" in result.mapping
-        assert "ip" in result.mapping
+
+class TestThePasswordRuleLoadsOnFirstUse:
+    """The door hands out `PasswordRule` without importing netutils up front.
+
+    netutils costs more to import than the rest of the package together, and a
+    run without passwords on never needs it.
+    """
+
+    def test_importing_the_door_leaves_netutils_unloaded(self) -> None:
+        probe = (
+            "import sys, junoscfg.anonymize as door\n"
+            "before = 'netutils' in sys.modules\n"
+            "rule = door.PasswordRule\n"
+            "print(before, 'netutils' in sys.modules, rule.__name__)\n"
+        )
+        out = subprocess.run(
+            [sys.executable, "-c", probe], capture_output=True, text=True, check=True
+        ).stdout
+        assert out.split() == ["False", "True", "PasswordRule"]
+
+    def test_the_door_hands_out_the_rule_itself(self) -> None:
+        assert anonymize_door.PasswordRule is PasswordRule
+
+    def test_a_name_the_door_lacks_is_an_attribute_error(self) -> None:
+        with pytest.raises(AttributeError, match="NoSuchRule"):
+            getattr(anonymize_door, "NoSuchRule")  # noqa: B009 - the name is the case
 
 
 class TestCryptIndependence:
@@ -489,9 +443,6 @@ class TestCryptIndependence:
 
     @staticmethod
     def _make_rule() -> PasswordRule:
-        from junoscfg.anonymize.config import AnonymizeConfig
-        from junoscfg.anonymize.rules.password import PasswordRule
-
         config = AnonymizeConfig(passwords=True, salt="fixed-salt")
         config.expand_all()
         return PasswordRule(config)
@@ -508,9 +459,6 @@ class TestSaltIsNotCopied:
 
     @staticmethod
     def _make_rule() -> PasswordRule:
-        from junoscfg.anonymize.config import AnonymizeConfig
-        from junoscfg.anonymize.rules.password import PasswordRule
-
         config = AnonymizeConfig(passwords=True, salt="fixed-salt")
         config.expand_all()
         return PasswordRule(config)
@@ -526,10 +474,7 @@ class TestSaltIsNotCopied:
             assert salt not in out, f"{prefix} leaked its salt: {out}"
             new_salt = out.split("$")[2]
             assert len(new_salt) == len(salt)
-            assert all(
-                c in "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                for c in new_salt
-            )
+            assert all(c in _CRYPT64 for c in new_salt)
 
     def test_rounds_is_a_parameter_not_a_salt(self) -> None:
         """$5$rounds=N$ keeps the rounds field and still replaces the salt."""
@@ -579,14 +524,12 @@ class TestSaltIsNotCopied:
         leaks nothing, but it gives the output a self-consistency property
         that fingerprints it, and costs nothing to avoid.
         """
-        from junoscfg.anonymize.rules.password import _CRYPT64, _extend_hex, _hmac_hex
-
         original = "$6$s8chars.$" + "z" * 86
         out = self._make_rule().transform(original)
         salt, body = out.split("$")[2], out.split("$")[3]
 
         # What the salt would be if it shared the body's stream, as before.
-        shared = _extend_hex(_hmac_hex("fixed-salt", original), len(salt) * 2)
+        shared = _body_stream("fixed-salt", original, len(salt) * 2)
         recomputed = "".join(
             _CRYPT64[int(shared[i * 2 : i * 2 + 2], 16) % len(_CRYPT64)] for i in range(len(salt))
         )

@@ -1,21 +1,26 @@
-"""Tests for the revert dictionary: export, import, and apply."""
+"""Tests for the revert dictionary: export, import, and apply.
+
+That the dumped mapping restores the original for every rule, through
+``convert_config`` and the CLI, is `tests/contract/test_every_rule.py`; this
+file holds the three functions themselves.
+"""
 
 from __future__ import annotations
 
+import copy
 import json
 from typing import TYPE_CHECKING
 
-from junoscfg.anonymize import anonymize
-
-if TYPE_CHECKING:
-    from pathlib import Path
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.revert import (
-    _build_reverse_map,
+from junoscfg.anonymize import (
+    AnonymizeConfig,
+    anonymize,
     apply_revert,
     export_mapping,
     load_mapping,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestExportMapping:
@@ -62,22 +67,36 @@ class TestLoadMapping:
         assert loaded == mapping
 
 
-class TestBuildReverseMap:
+class TestRevertInvertsTheMapping:
+    """apply_revert reads ``{rule: {original: anonymized}}`` backwards, over every rule."""
+
     def test_single_rule(self) -> None:
-        mapping = {"ip": {"10.0.0.1": "10.200.50.3"}}
-        reverse = _build_reverse_map(mapping)
-        assert reverse == {"10.200.50.3": "10.0.0.1"}
+        ir = {"configuration": {"system": {"name-server": [{"name": "10.200.50.3"}]}}}
+        apply_revert(ir, {"ip": {"10.0.0.1": "10.200.50.3"}})
+        assert ir == {"configuration": {"system": {"name-server": [{"name": "10.0.0.1"}]}}}
 
     def test_multiple_rules(self) -> None:
         mapping = {
             "ip": {"10.0.0.1": "10.200.50.3"},
             "identity": {"admin": "user_a1b2c3d4"},
         }
-        reverse = _build_reverse_map(mapping)
-        assert reverse == {"10.200.50.3": "10.0.0.1", "user_a1b2c3d4": "admin"}
+        ir = {
+            "configuration": {
+                "system": {
+                    "name-server": [{"name": "10.200.50.3"}],
+                    "login": {"user": [{"name": "user_a1b2c3d4"}]},
+                }
+            }
+        }
+        apply_revert(ir, mapping)
+        assert ir["configuration"]["system"]["name-server"] == [{"name": "10.0.0.1"}]
+        assert ir["configuration"]["system"]["login"]["user"] == [{"name": "admin"}]
 
     def test_empty_mapping(self) -> None:
-        assert _build_reverse_map({}) == {}
+        ir = {"configuration": {"system": {"host-name": "user_a1b2c3d4"}}}
+        original = copy.deepcopy(ir)
+        assert apply_revert(ir, {}) is ir
+        assert ir == original
 
 
 class TestApplyRevert:
@@ -145,7 +164,12 @@ class TestApplyRevert:
 
 
 class TestAnonymizeRevertRoundTrip:
-    """Full round-trip: anonymize -> export -> revert -> compare to original."""
+    """Full round-trip: anonymize -> export -> revert -> compare to original.
+
+    One rule at a time, for every rule, is the contract test's
+    ``test_the_dumped_mapping_restores_the_original``; this one runs the
+    library functions with several rules at once.
+    """
 
     def _make_ir(self) -> dict:
         return {
@@ -182,92 +206,8 @@ class TestAnonymizeRevertRoundTrip:
             }
         }
 
-    def test_ip_round_trip(self, tmp_path: Path) -> None:
-        ir = self._make_ir()
-        original_ip = "10.1.2.3/24"
-
-        cfg = AnonymizeConfig(ips=True, salt="round-trip")
-        result = anonymize(ir, cfg)
-
-        # IP should be anonymized
-        addr = result.ir["configuration"]["interfaces"]["interface"][0]["unit"][0]["family"][
-            "inet"
-        ]["address"][0]["name"]
-        assert addr != original_ip
-
-        # Export and reload
-        map_path = tmp_path / "map.json"
-        export_mapping(result.mapping, str(map_path))
-        loaded = load_mapping(str(map_path))
-
-        # Revert
-        apply_revert(result.ir, loaded)
-        reverted_addr = result.ir["configuration"]["interfaces"]["interface"][0]["unit"][0][
-            "family"
-        ]["inet"]["address"][0]["name"]
-        assert reverted_addr == original_ip
-
-    def test_password_round_trip(self, tmp_path: Path) -> None:
-        ir = self._make_ir()
-        original_pw = "$6$abc123$xyzxyzxyz"
-
-        cfg = AnonymizeConfig(passwords=True, salt="round-trip")
-        result = anonymize(ir, cfg)
-
-        ep = result.ir["configuration"]["system"]["login"]["user"][0]["authentication"][
-            "encrypted-password"
-        ]
-        assert ep != original_pw
-
-        map_path = tmp_path / "map.json"
-        export_mapping(result.mapping, str(map_path))
-        loaded = load_mapping(str(map_path))
-        apply_revert(result.ir, loaded)
-
-        reverted = result.ir["configuration"]["system"]["login"]["user"][0]["authentication"][
-            "encrypted-password"
-        ]
-        assert reverted == original_pw
-
-    def test_description_round_trip(self, tmp_path: Path) -> None:
-        ir = self._make_ir()
-        original_desc = "Uplink to core"
-
-        cfg = AnonymizeConfig(descriptions=True, salt="round-trip")
-        result = anonymize(ir, cfg)
-
-        desc = result.ir["configuration"]["interfaces"]["interface"][0]["description"]
-        assert desc != original_desc
-
-        map_path = tmp_path / "map.json"
-        export_mapping(result.mapping, str(map_path))
-        loaded = load_mapping(str(map_path))
-        apply_revert(result.ir, loaded)
-
-        reverted = result.ir["configuration"]["interfaces"]["interface"][0]["description"]
-        assert reverted == original_desc
-
-    def test_identity_round_trip(self, tmp_path: Path) -> None:
-        ir = self._make_ir()
-
-        cfg = AnonymizeConfig(identities=True, salt="round-trip")
-        result = anonymize(ir, cfg)
-
-        username = result.ir["configuration"]["system"]["login"]["user"][0]["name"]
-        assert username != "admin"
-
-        map_path = tmp_path / "map.json"
-        export_mapping(result.mapping, str(map_path))
-        loaded = load_mapping(str(map_path))
-        apply_revert(result.ir, loaded)
-
-        assert result.ir["configuration"]["system"]["login"]["user"][0]["name"] == "admin"
-        assert result.ir["configuration"]["system"]["login"]["user"][0]["full-name"] == "Admin User"
-
     def test_multi_rule_round_trip(self, tmp_path: Path) -> None:
         """Full round-trip with multiple rules enabled."""
-        import copy
-
         ir = self._make_ir()
         original = copy.deepcopy(ir)
 

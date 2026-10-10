@@ -1,10 +1,13 @@
-"""Tests for the description/contact/location anonymization rule."""
+"""Tests for the description/contact/location anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+description rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.description import DescriptionRule
+from junoscfg.anonymize import AnonymizeConfig, DescriptionRule, anonymize
 
 
 class TestDescriptionRuleMatches:
@@ -60,32 +63,6 @@ class TestDescriptionRuleTransform:
         result = rule.transform("ExampleISP1 Transit")
         assert result.startswith("descr_")
         assert result != "ExampleISP1 Transit"
-
-    def test_deterministic(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("ExampleISP1") == rule2.transform("ExampleISP1")
-
-    def test_different_salt(self) -> None:
-        rule1 = self._make_rule(salt="a")
-        rule2 = self._make_rule(salt="b")
-        assert rule1.transform("ExampleISP1") != rule2.transform("ExampleISP1")
-
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("ExampleISP1") == rule.transform("ExampleISP1")
-
-    def test_different_values(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("ExampleISP1") != rule.transform("ExampleISP2")
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("ExampleISP1")
-        rule.transform("ExampleISP2")
-        mapping = rule.get_mapping()
-        assert "ExampleISP1" in mapping
-        assert "ExampleISP2" in mapping
 
 
 class TestDescriptionAnonymizeIntegration:
@@ -153,49 +130,3 @@ class TestDescriptionAnonymizeIntegration:
         assert snmp["location"] != "NYC-DC1-Rack42"
         assert snmp["contact"].startswith("descr_")
         assert snmp["location"].startswith("descr_")
-
-    def test_description_with_other_rules(self) -> None:
-        """Description rule coexists with IP and password rules."""
-        cfg = AnonymizeConfig(
-            descriptions=True,
-            ips=True,
-            passwords=True,
-            salt="test",
-        )
-        ir = {
-            "configuration": {
-                "interfaces": {
-                    "interface": [
-                        {
-                            "name": "ge-0/0/0",
-                            "description": "Link to core",
-                            "unit": [
-                                {
-                                    "name": "0",
-                                    "family": {
-                                        "inet": {
-                                            "address": [{"name": "10.1.2.3/24"}],
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                "system": {
-                    "root-authentication": {
-                        "encrypted-password": "$6$abc$hash",
-                    },
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        iface = result.ir["configuration"]["interfaces"]["interface"][0]
-        assert iface["description"].startswith("descr_")
-        addr = iface["unit"][0]["family"]["inet"]["address"][0]["name"]
-        assert addr != "10.1.2.3/24"
-        ep = result.ir["configuration"]["system"]["root-authentication"]["encrypted-password"]
-        assert ep != "$6$abc$hash"
-        assert "description" in result.mapping
-        assert "ip" in result.mapping
-        assert "password" in result.mapping

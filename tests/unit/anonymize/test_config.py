@@ -1,13 +1,26 @@
-"""Tests for AnonymizeConfig dataclass and builders."""
+"""Tests for AnonymizeConfig dataclass and builders.
+
+A YAML configuration file is read through its door, ``build_config_from_cli(
+anonymize_config=path)``, which starts from the file and adds nothing when no
+other flag is given.
+"""
 
 from __future__ import annotations
 
+import secrets
 from typing import TYPE_CHECKING
 
-from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli, load_config_file
+from junoscfg.anonymize import AnonymizeConfig, anonymize, build_config_from_cli
 
 if TYPE_CHECKING:
     import pytest
+
+
+def load_config_file(path: str) -> AnonymizeConfig:
+    """The configuration a YAML anonymize file describes, as the CLI reads it."""
+    cfg = build_config_from_cli(anonymize_config=path)
+    assert cfg is not None
+    return cfg
 
 
 class TestAnonymizeConfig:
@@ -296,11 +309,9 @@ class TestBlankSaltFallsThroughToAutoGeneration:
     """
 
     @staticmethod
-    def _load(body: str) -> object:
+    def _load(body: str) -> AnonymizeConfig:
         import tempfile
         from pathlib import Path
-
-        from junoscfg.anonymize.config import load_config_file
 
         path = Path(tempfile.mkdtemp()) / "anon.yaml"
         path.write_text(body, encoding="utf-8")
@@ -319,8 +330,6 @@ class TestBlankSaltFallsThroughToAutoGeneration:
         assert self._load("salt: s3cr3t\npasswords: true\n").salt == "s3cr3t"
 
     def test_a_blank_salt_uses_a_generated_salt(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from junoscfg.anonymize import anonymize
-
         generated = iter(("generated-one", "generated-two"))
         requested_sizes: list[int] = []
 
@@ -328,7 +337,7 @@ class TestBlankSaltFallsThroughToAutoGeneration:
             requested_sizes.append(size)
             return next(generated)
 
-        monkeypatch.setattr("junoscfg.anonymize.secrets.token_hex", generate_salt)
+        monkeypatch.setattr(secrets, "token_hex", generate_salt)
         for expected_salt in ("generated-one", "generated-two"):
             config = self._load("salt:\npasswords: true\n")
             source = {

@@ -1,10 +1,13 @@
-"""Tests for the SSH public key anonymization rule."""
+"""Tests for the SSH public key anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+SSH key rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.ssh_key import SshKeyRule
+from junoscfg.anonymize import AnonymizeConfig, SshKeyRule, anonymize
 
 
 class TestSshKeyRuleMatches:
@@ -90,35 +93,6 @@ class TestSshKeyRuleTransform:
         parts = result.split()
         orig_blob = "AAAAB3NzaC1yc2EAAAADAQABAAABAQDx"
         assert len(parts[1]) == len(orig_blob)
-
-    def test_deterministic_with_same_salt(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        key = "ssh-rsa AAAAB3NzaC1yc2EAAAA test"
-        assert rule1.transform(key) == rule2.transform(key)
-
-    def test_different_salt_different_output(self) -> None:
-        rule1 = self._make_rule(salt="salt-a")
-        rule2 = self._make_rule(salt="salt-b")
-        key = "ssh-rsa AAAAB3NzaC1yc2EAAAA test"
-        assert rule1.transform(key) != rule2.transform(key)
-
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        key = "ssh-rsa AAAAB3NzaC1yc2EAAAA test"
-        assert rule.transform(key) == rule.transform(key)
-
-    def test_different_keys_different_output(self) -> None:
-        rule = self._make_rule()
-        k1 = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQkey1 user1"
-        k2 = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQkey2 user2"
-        assert rule.transform(k1) != rule.transform(k2)
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("ssh-rsa AAAA test")
-        mapping = rule.get_mapping()
-        assert "ssh-rsa AAAA test" in mapping
 
 
 class TestSshKeyAnonymizeIntegration:
@@ -207,39 +181,3 @@ class TestSshKeyAnonymizeIntegration:
         ]["ssh-rsa"][0]["name"]
         assert "secret.local" not in key
         assert key.startswith("ssh-rsa ")
-
-    def test_ssh_key_with_password_rule(self) -> None:
-        """SSH key rule (priority 20) and password rule (priority 10) coexist."""
-        cfg = AnonymizeConfig(ssh_keys=True, passwords=True, salt="test")
-        ir = {
-            "configuration": {
-                "system": {
-                    "login": {
-                        "user": [
-                            {
-                                "name": "admin",
-                                "authentication": {
-                                    "encrypted-password": "$6$abc$hash",
-                                    "ssh-rsa": [
-                                        {"name": "ssh-rsa AAAA admin@host"},
-                                    ],
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        # Password should be anonymized by password rule
-        ep = result.ir["configuration"]["system"]["login"]["user"][0]["authentication"][
-            "encrypted-password"
-        ]
-        assert ep != "$6$abc$hash"
-        # SSH key should be anonymized by SSH key rule
-        key = result.ir["configuration"]["system"]["login"]["user"][0]["authentication"]["ssh-rsa"][
-            0
-        ]["name"]
-        assert "admin@host" not in key
-        assert "password" in result.mapping
-        assert "ssh_key" in result.mapping

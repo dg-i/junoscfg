@@ -1,10 +1,13 @@
-"""Tests for the group/view name anonymization rule."""
+"""Tests for the group/view name anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+group rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.group import GroupRule
+from junoscfg.anonymize import AnonymizeConfig, GroupRule, anonymize
 
 
 class TestGroupRuleMatches:
@@ -87,32 +90,6 @@ class TestGroupRuleTransform:
         assert result.startswith("group_")
         assert result != "global-settings"
 
-    def test_deterministic(self) -> None:
-        rule1 = self._make_rule(salt="same")
-        rule2 = self._make_rule(salt="same")
-        assert rule1.transform("PEERS") == rule2.transform("PEERS")
-
-    def test_different_salt(self) -> None:
-        rule1 = self._make_rule(salt="a")
-        rule2 = self._make_rule(salt="b")
-        assert rule1.transform("PEERS") != rule2.transform("PEERS")
-
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("PEERS") == rule.transform("PEERS")
-
-    def test_different_groups(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("group-a") != rule.transform("group-b")
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("group-a")
-        rule.transform("group-b")
-        mapping = rule.get_mapping()
-        assert "group-a" in mapping
-        assert "group-b" in mapping
-
 
 class TestGroupAnonymizeIntegration:
     """Test the full anonymize() function with group rule."""
@@ -183,49 +160,3 @@ class TestGroupAnonymizeIntegration:
         assert group["name"].startswith("group_")
         # Inner content should be untouched (groups rule only handles names)
         assert group["system"]["host-name"] == "router1"
-
-    def test_group_with_all_rules(self) -> None:
-        """Group rule coexists with password, IP, community, and identity rules."""
-        cfg = AnonymizeConfig(
-            groups=True,
-            passwords=True,
-            ips=True,
-            communities=True,
-            identities=True,
-            salt="test",
-        )
-        ir = {
-            "configuration": {
-                "protocols": {
-                    "bgp": {
-                        "group": [
-                            {
-                                "name": "PEERS",
-                                "authentication-key": "$9$abc123",
-                                "neighbor": [{"name": "10.0.0.1"}],
-                            },
-                        ],
-                    },
-                },
-                "system": {
-                    "login": {
-                        "user": [{"name": "admin"}],
-                    },
-                },
-                "snmp": {
-                    "community": [{"name": "public"}],
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        # BGP group name anonymized
-        bgp = result.ir["configuration"]["protocols"]["bgp"]["group"][0]
-        assert bgp["name"] != "PEERS"
-        # Auth key anonymized by password rule
-        assert bgp["authentication-key"] != "$9$abc123"
-        # Neighbor IP anonymized by IP rule
-        assert bgp["neighbor"][0]["name"] != "10.0.0.1"
-        # User anonymized by identity rule
-        assert result.ir["configuration"]["system"]["login"]["user"][0]["name"] != "admin"
-        # Community anonymized by community rule
-        assert result.ir["configuration"]["snmp"]["community"][0]["name"] != "public"

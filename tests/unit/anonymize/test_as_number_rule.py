@@ -1,12 +1,15 @@
-"""Tests for the AS number anonymization rule."""
+"""Tests for the AS number anonymization rule.
+
+What every rule keeps -- determinism, the salt, consistency, the mapping and
+revert -- is `tests/contract/test_every_rule.py`; this file keeps what is the
+AS number rule's own: which leaves it takes and the form of its replacements.
+"""
 
 from __future__ import annotations
 
 import warnings
 
-from junoscfg.anonymize import anonymize
-from junoscfg.anonymize.config import AnonymizeConfig
-from junoscfg.anonymize.rules.as_number import AsNumberRule
+from junoscfg.anonymize import AnonymizeConfig, AsNumberRule, anonymize
 
 
 class TestAsNumberRuleMatches:
@@ -86,14 +89,6 @@ class TestAsNumberRuleTransform:
         assert "64497" not in results
         assert "64498" not in results
 
-    def test_consistency(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("64496") == rule.transform("64496")
-
-    def test_different_values(self) -> None:
-        rule = self._make_rule()
-        assert rule.transform("64496") != rule.transform("64510")
-
     def test_explicit_mapping(self) -> None:
         """Explicit original:replacement pairs are used."""
         rule = self._make_rule(
@@ -116,14 +111,6 @@ class TestAsNumberRuleTransform:
         assert r2.isdigit()
         assert r3.isdigit()
         assert r2 != r3
-
-    def test_get_mapping(self) -> None:
-        rule = self._make_rule()
-        rule.transform("64496")
-        rule.transform("64510")
-        mapping = rule.get_mapping()
-        assert "64496" in mapping
-        assert "64510" in mapping
 
 
 class TestAsNumberConflictDetection:
@@ -308,33 +295,3 @@ class TestAsNumberAnonymizeIntegration:
         local_as = result.ir["configuration"]["protocols"]["bgp"]["group"][0]["local-as"]
         assert local_as["as-number"] != "64561"
         assert local_as["as-number"].isdigit()
-
-    def test_as_number_with_descriptions_and_ips(self) -> None:
-        """AS number rule coexists with description and IP rules."""
-        cfg = AnonymizeConfig(
-            as_numbers=[64496],
-            descriptions=True,
-            ips=True,
-            salt="test",
-        )
-        ir = {
-            "configuration": {
-                "protocols": {
-                    "bgp": {
-                        "group": [
-                            {
-                                "name": "peers",
-                                "description": "Transit provider",
-                                "peer-as": "64496",
-                                "neighbor": [{"name": "10.0.0.1"}],
-                            },
-                        ],
-                    },
-                },
-            },
-        }
-        result = anonymize(ir, cfg)
-        group = result.ir["configuration"]["protocols"]["bgp"]["group"][0]
-        assert group["peer-as"] != "64496"
-        assert group["description"].startswith("descr_")
-        assert group["neighbor"][0]["name"] != "10.0.0.1"

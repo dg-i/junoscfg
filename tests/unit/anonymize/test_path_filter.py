@@ -1,8 +1,8 @@
-"""Tests for the include/exclude path filter."""
+"""Tests for the include/exclude path filter: what `AnonymizeConfig.include` and `exclude` mean."""
 
 from __future__ import annotations
 
-from junoscfg.anonymize.path_filter import PathFilter
+from junoscfg.anonymize import PathFilter
 
 
 class TestPathFilterNoFilters:
