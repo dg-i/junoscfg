@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [master]
+  # The publish workflow runs these checks on the release's commit first.
+  workflow_call:
 
 env:
   OPENSPEC_TELEMETRY: "0"
@@ -51,8 +53,10 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(f"list={json.dumps(versions)}\n")
 
-  # The suite only. Cheap enough to run on every declared interpreter; the
-  # gates below are interpreter-independent and run once.
+  # The suite only, from the lock: the package, its `xml` extra and the `test`
+  # group, nothing of the dev tooling. Cheap enough to run on every declared
+  # interpreter, each held to the coverage floor in pyproject.toml; the gates
+  # below are interpreter-independent and run once.
   tests:
     needs: versions
     runs-on: ubuntu-latest
@@ -66,11 +70,14 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-      - run: uv run --python ${{ matrix.python }} --with pytest --with lxml --no-dev pytest tests/ -q
+      - run: >-
+          uv run --locked --python ${{ matrix.python }} --no-dev --group test --extra xml
+          pytest tests/ -q --cov --cov-report=term:skip-covered
 
   full:
     # Keep this job id stable for branch protection. The matrix owns the full
-    # application suite; governance starts only after every interpreter passes.
+    # application suite, so this job runs the governance checks (`--set fast`)
+    # and mypy, and starts only after every interpreter passes.
     needs: tests
     runs-on: ubuntu-latest
     steps:

@@ -150,16 +150,16 @@ exclude = [
 packages = ["src/junoscfg"]
 
 [dependency-groups]
-# What the suite needs and nothing else, so CI can run it on every declared
-# interpreter (3.10 included, which the dev tooling does not support) from the
-# lock. The dev group includes it.
+# What the suite needs beyond the package and its `xml` extra, so CI can run it
+# on every declared interpreter (3.10 included, which the dev tooling does not
+# support) from the lock. The dev group includes it.
 test = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0",
-    "lxml>=4.9",
 ]
 dev = [
     {include-group = "test"},
+    "lxml>=4.9",
     "ruff>=0.4",
     "mypy>=2.4",
     "types-PyYAML>=6.0",
