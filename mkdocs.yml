@@ -12,6 +12,7 @@ theme:
 
 not_in_nav: |
   /decisions/20*.md
+  /reviews/*.md
   /roadmaps/*.md
 
 plugins:
