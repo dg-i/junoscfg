@@ -5,11 +5,11 @@
 
 ## 2. Change
 
-- [ ] 2.1 `display/value_format.py`: `format_value(value, node=None)` writes a `policy-algebra` token the reader keeps as written as it is, quotes any other value where it must be and always escapes `"`; `policy_expression()` goes.
-- [ ] 2.2 `convert/output/dict_walker.py`: every call passes the leaf's schema node.
-- [ ] 2.3 `convert/input/set_input.py`: a quoted `policy-algebra` value whose text starts with `(` keeps its quotes.
-- [ ] 2.4 `validate/grammar_generator.py`: `QUOTED` takes `\"` and keeps a trailing backslash (SC2); schema tier regenerates `validate/data/`; `tools/device_grammar_corpus.py` and `tools/device_differences.py` rebuild their records.
-- [ ] 2.5 Changelog fragment, docs; before/after comparison over every capture.
+- [x] 2.1 `display/value_format.py`: `format_value(value, node=None)` writes a `policy-algebra` token the reader keeps as written as it is, quotes any other value where it must be and always escapes `"`; `policy_expression()` goes.
+- [x] 2.2 `convert/output/dict_walker.py`: every call passes the leaf's schema node.
+- [x] 2.3 `convert/input/set_input.py`: a quoted `policy-algebra` value whose text starts with `(` keeps its quotes.
+- [x] 2.4 `validate/grammar_generator.py`: `QUOTED` takes `\"` and keeps a trailing backslash (SC2); schema tier regenerates `validate/data/` (ef06855; second run byte-identical except `junos-schema-meta.json.gz`); `tools/device_grammar_corpus.py` (false rejections 66 -> 65) and `tools/device_differences.py` (928 -> 716 lines, four classes gone) rebuild their records.
+- [x] 2.5 Changelog fragments (bugfix, removal), docs (`design-decisions.md` Value Quoting, `guide/audit.md`), `display/CONTRACT.md` invariant; before/after comparison over every capture: plain 36 of 96 conversions differ, anonymized 432 of 1,152 (the same 36 under each of 12 rule sets), every changed line a policy-algebra token (DEV-4/5/6) or an escaped quote (DEV-7), no diagnostic, field-validation or exception difference.
 
 ## 3. Review and evidence
 
