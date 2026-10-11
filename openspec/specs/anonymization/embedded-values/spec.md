@@ -1,7 +1,7 @@
 # anonymization/embedded-values Specification
 
 ## Purpose
-A value written inside free text -- an address in a URL, a description or an annotation, a URL's user and password, a password hash in prose, an AS number in a name, a group named in an `apply-path` -- is the value of the rule that claims it, as it is where it stands alone. Anonymization replaces it by that rule, never rewrites what another rule wrote, and revert restores it exactly. Where a case is ambiguous, an anonymized run takes the safe side and replaces.
+A value written inside free text -- an address in a URL, a description or an annotation, a URL's user and password, a password hash in prose, an AS number in a name, a group named in an `apply-path` -- is the value of the rule that claims it, as it is where it stands alone. Anonymization replaces it by that rule, never rewrites what another rule wrote, and revert restores it exactly. Ambiguous IP spellings that share a flat-map replacement are rejected before output.
 
 ## Requirements
 
