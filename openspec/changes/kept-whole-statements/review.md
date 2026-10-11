@@ -75,4 +75,4 @@ is unprobed, and it is not one of this change's IDs.
 
 ## Verdict
 
-Pending the fresh Reviewer (phase 6, STOP-R).
+Pending the fresh Reviewer (phase 6, STOP-R) on f8ea357 against f0bb6aa.
