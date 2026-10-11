@@ -17,7 +17,9 @@
 - [x] 2.8 Historical first repair integration checkpoint (invalidated by F2 runtime/tests) at base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: affected tests, fast, full and refreshed device comparisons; old full checkpoint is historical.
 
 - [x] 2.9 Same-Reviewer F2 correction: reuse shared lexical primitive without canonical raw-record restrictions; preserve raw helper, F1 negatives and scoped interims; compact/nested five-reader catalogue rows and meaningful quoted-space row; settled focused tests 332 passed, 2 strict xfailed.
-- [ ] 2.10 F2 settled candidate: refreshed device comparison, fast and one new committed full checkpoint.
+- [x] 2.10 Historical e38 F2 checkpoint, superseded by F3: fresh device comparison and fast/full passed; full 8,641 passed/37 skipped/20 xfailed.
+- [x] 2.11 F3 omitted-negative correction: public quote-aware input bracket provider; 24 singleton/chain negatives and 12 quoted-bracket positives; settled focused 368 passed/2 strict xfailed.
+- [ ] 2.12 F3 settled committed candidate: refreshed device comparison, fast and new full, then same-Reviewer reconfirmation.
 
 ## 3. Review and evidence
 

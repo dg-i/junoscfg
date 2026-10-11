@@ -266,3 +266,105 @@ Carry-forward lexical limitation (synthetic, no device-invalidity claim): compac
 ## Owner disposition after F2 correction
 
 2026-10-11, owner interview relayed by the orchestrator: explicitly approve F1 reject-before-output for unrepresentable values while preserving complete expressions and quoted names. This authorizes the concrete structural-error correction under the existing invariant; it does not approve a rewritten requirement or extend generic merge permission. Original SC4 conditional wording and the original immutable review reports remain historical. Same-Reviewer reconfirmation of the final F2 candidate remains required.
+
+
+## Same-Reviewer ranked F3 report (immutable e38 candidate)
+
+# Done
+
+**CHANGES REQUIRED** for immutable code HEAD `e38bfa3b60e9ccd3434e46710c2c8778c751879b`, base/master `40173ba8ec6c0664ea3590b5a3b14786fcf22629`. This same independent Reviewer reconfirms F2 and the retained F1 protection, and identifies medium F3. Original `codex-review.md` and `codex-rereview.md` remain unchanged.
+
+F2 is fixed: both exact compact and nested quoted-name expressions now round-trip in both writers. F1's committed negatives and quoted-delimiter positives pass. The explicitly recorded owner decision approves rejecting unrepresentable values before output; no requirement rewrite or additional owner disposition is needed for this repair. F3 still prevents approval of the candidate.
+
+# Evidence
+
+## Ranked findings
+
+### F3 — Medium: an unquoted closing bracket passes the boundary guard
+
+**Requirement/invariant:** the delta's “A policy-algebra value is written as the device's token” conditions bypass on one device token and requires preservation; `display/CONTRACT.md` states that readers keep exactly the tokens written as they are, “so every value written reads back.” `conversion/writers` requires leaving the IR unchanged, and `ARCHITECTURE.md` §8 permits structural `ValueError`. Owner source `private_test_data/makeover-work/codex-resumption/owner-decisions.md` explicitly approves rejecting unrepresentable expression values before output while preserving complete expressions and quoted names.
+
+**Diff/provider:** `src/junoscfg/display/value_format.py:55–58` accepts every `word` from the curly `_TOKEN` lexer. That lexer deliberately treats `]` as a word outside an open bracket list. The set reader instead rejects any unquoted bracket through the existing public `junoscfg.input.find_unsupported_set_brackets` provider. The prior canonical helper invoked that provider, but the F2 correction removes the helper without retaining this independent boundary condition. Complete outer-parenthesis checking at `:59–75` does not detect `]`; `format_value` therefore returns these values bare at `:90–91`.
+
+**Executed counterexamples, isolated exact e38 source:** schema-valid JSON import values `( P-A ] P-B )` and `( P-A] )` are emitted by the set writer. Strict set read-back raises `ValueError: Unsupported bracket syntax in set input on line 1`. When either value is followed by `P-C` in the import list, structured output becomes respectively `import [ ( P-A ] P-B ) P-C ];` or `import [ ( P-A] ) P-C ];`. Strict structured read-back raises an invalid-structured-input error because the embedded bracket prematurely closes the list. No Junos-validity claim is made for these synthetic payloads: they must fail the writer's one-token precondition instead of producing unreadable configuration.
+
+**Baseline:** independently extracted source at exact base `40173ba8` quotes both single values in both command formats and reads back to the exact IR. Thus the unreadable set output is introduced by #8's bypass. The intermediate canonical guard correctly refused these values through the existing bracket provider; F2 reopens this gap. An expression with `&&` and an unquoted bracket was already a baseline reader limitation and is not necessary to establish the regression.
+
+**Positive controls:** `( "P]1" && P-B )` and the whole quoted token `"( P-A ] P-B )"` each retain exact single-value IR through set and structured output. Both F2 positives `("P 1" && P-B)` and `(("P 1") && P-B)` also retain exact IR. Do not reject quote-protected brackets or reintroduce canonical spacing. A bare expression inside a chain still has the separately owner-authorized SC1 reader split; this report does not extend or reverse that interim permission.
+
+Minimal reproduction:
+
+```python
+import json
+from junoscfg import Format, convert_config, validate_config
+ir = {"configuration": {"protocols": {"bgp": {"group": [
+    {"name": "G", "import": ["( P-A ] P-B )"]}
+]}}}}
+source = json.dumps(ir)
+assert validate_config(source, format=Format.JSON).valid
+written = convert_config(source, from_format=Format.JSON,
+                         to_format=Format.SET, strict=True)
+# e38 returns unreadable text here; the corrected writer must raise instead.
+back = convert_config(written, from_format=Format.SET,
+                      to_format=Format.JSON, strict=True)
+assert json.loads(back) == ir
+```
+
+**Recommendation:** keep the suitable shared lexer primitive and the complete-expression scan, and retain the set reader's quote-aware unquoted-bracket condition using the existing provider. Add standalone and word-attached closing-bracket negatives across the data-reader doors and both writers, with singleton and chain controls; retain F1/F2 and quoted-bracket positives. This is an omitted-negative implementation/test correction within the existing preservation/error obligation, not a specification challenge requiring a new promise.
+
+## Owner and new device evidence
+
+Read the explicit owner decision, immutable source provenance and narrow executed P11/P12/P13/P16 extracts. Provenance records vMX 23.2R2-S7.5, source SHA-256 `48e591da0c6dbde33d18ce21e92a83844ae876abf229564d2aace2f0a159747d`. No broad private configuration was read or copied.
+
+- P11 shows retained internal doubled backslashes and backslash-before-quote spellings in set/XML/decoded JSON; the supplied trailing-backslash form rejects. It does not authorize blanket normalization or removal of existing acceptance.
+- P12 shows canonical unquoted `P12-A`, while `P12 B` retains literal enclosing quotes in XML/decoded JSON. It does not authorize dropping arbitrary IR data or reversing SC3's interim.
+- P13 shows a complete expression plus `P-C` as two values in structured/JSON/XML. SC1's reader split is consequently a demonstrated carry-forward defect, rather than an unanswered device-acceptance question. Its existing scoped ownership and strict xfail remain intact.
+- P16 shows an accepted escaped-quote expression-shaped definition but an invalid BGP import name. The prior synthetic audit tokenizer limitation is not established as a valid device reference.
+
+The active delta and strict-xfail explanations still say these observed P11 spellings and P13 chain acceptance are unknown; the freeze's initial evidence also says no probe output exists. Preserve historical reviews and initial freeze evidence, and append a dated factual delta with narrow provenance. Update current-facing explanations without changing acceptance, xfail outcomes, requirement promises or their owner's scoped decisions. This record correction is distinct from F3's runtime blocker and is already assigned to the Builder by the orchestrator.
+
+SC4's original conditional wording remains historical. The existing one-token/preservation/error contract already permits F1/F3 structural rejection, and the owner explicitly selected this behavior. No unresolved material requirement challenge is added by this review. SC1–SC3 retain their original narrow permissions; new observations alone do not approve follow-up runtime changes.
+
+## Five review prompts
+
+1. **Trust-boundary input:** caller-controlled schema-valid JSON crosses the value-to-command boundary. F1 statements/comments now fail; F3 still lets `]` become command/list syntax or unsupported set syntax. Independent e38 and base execution establishes the counterexample.
+2. **Incompatible-but-valid input:** the complete compact/nested quoted-name expressions rejected by cf6 now work exactly, including a quote-protected bracket. No canonical-spacing promise is invented and no retired input is restored.
+3. **Shared blind spot:** F1 negatives covered opening brackets and complete-expression checks; the F2 tests preserve compact quoted names. Both can pass while the shared curly lexer and stricter set reader disagree about an unquoted closing bracket. The additional negative must exercise that existing boundary.
+4. **Second answer:** `_TOKEN` owns curly lexical tokens; `find_unsupported_set_brackets` owns the stricter set bracket rule. Reuse each at its proper scope, keeping `reads_as_one_statement`'s canonical raw-record invariant unchanged. Do not invent another global lexer or relax the provider.
+5. **Figures/non-goals:** final independent narrow run is 102 passed. Earlier independently reproduced schema/node/generated-record/corpus figures retain their original named heads; no new expensive-tier claim is made. F2 does not change generator inputs. New narrow device observations supersede the current “unknown” explanations but do not erase compatibility or approve a broader scope.
+
+## Verification and bounded finalization
+
+An isolated `git archive` source snapshot was used to avoid the Builder's full check. Its source identity was asserted before final probes. Exact e38/base probes establish the finding and F2 positive results. Independent isolated tests of `TestAPolicyValueOccupiesOneExpression` and `TestACompleteExpressionKeepsItsSpelling` pass: **102 passed**, covering all 72 committed F1 negatives, 24 quoted-delimiter positives and six F2 spelling pins. Passing tests omit F3.
+
+No full or expensive schema rerun was performed or claimed. The old cf6 fast/full cannot establish e38, and the Builder's e38 full was still running when this concrete finding was relayed; no passing checkpoint is inferred. The runtime repair must run regression/fast and its required committed full verification before the same isolated Reviewer reconfirms it.
+
+Main specs can be checked during bounded finalization **after F3 is corrected and approved**: synchronize only the reviewed deltas, validate their test references and record accurately that the observed narrow P11/P12/P13 facts do not authorize a changed promise. A record-only factual amendment needs no confirmation round under phase 6. Product/test/oracle changes require their normal review/verification; do not fix the chain reader, normalize backslashes or change quoted-plain-name semantics in finalization. F3 prevents entering finalization now.
+
+# Changed paths
+
+Only this private scratch report and isolated validation snapshots/test scratch under `roles/`. No governed file, code, test, spec or Git state was edited; the original reports remain preserved.
+
+# Commands and exit status
+
+- Read-only Git identity/status, corrected diff, contracts/deltas and evidence: **0**; HEAD remains e38 and checkout clean. A mistyped `evidence.md` lookup and an ignored-file `rg` lookup returned **1**; corrected to `evidence-freeze.md` and explicit private paths. A nonexistent `input/*.py` glob was corrected to the known public input provider; it does not affect executed results.
+- `git archive e38... src tests` and `git archive 40173... src` into private isolated snapshots: **0**, no Git mutations.
+- Independent exact source/base strict round-trip probes: **0**, expected failures captured and reported rather than hidden; final candidate source path asserted inside the isolated archive.
+- Isolated explicit-source pytest on the two correction classes, no cache provider and private `--basetemp`, with `PYTHONDONTWRITEBYTECODE=1`: **0**, 102 passed.
+- A broader four-file run was stopped when the concrete blocker was established; its launch omitted an explicit source override and could resolve the editable checkout. Its results are not independent candidate validation and are not used for the verdict. No cache or bytecode writes were permitted in the checkout. The final narrow run corrects that isolation setup.
+- `git diff --check 40173ba8..e38bfa3b`: **0**.
+
+# Open questions for the owner
+
+None required to repair F3. The owner explicitly selected fail-before-output, and this finding applies that decision without broadening it. SC1–SC3 remain under their existing scoped interim permissions; any future promise changes remain owner decisions. No question was sent and no unrelated #7 decision is approved here.
+
+# Deviations
+
+Scratch-only report follows the orchestrator's isolation restriction; the Builder can preserve it in tracked review records. No network, external systems, push, merge, branch mutation, full/schema rerun or other-session control. The accidentally editable-source broader run is excluded from review evidence. This bounded review is complete for e38/base40173; F3 requires correction and same-Reviewer reconfirmation.
+
+
+## Builder F3 correction and factual evidence delta
+
+Use public `junoscfg.input.find_unsupported_set_brackets` with the shared curly lexer and complete-parenthesis scan. No private cross-package import or global/raw-helper change. All 24 singleton/chain negatives failed before repair; settled focused run has 368 passed, 2 strict P11 xfailed. Quote-protected bracket and whole quoted-name controls remain exact, alongside compact/nested F2 controls and all F1 negatives. Source-only quoted-token LF concern is outside this bounded correction; no executed device-validity claim or acceptance change is made.
+
+2026-10-11 factual device delta: narrow executed P11/P12/P13 extracts in private `makeover-work/codex-resumption/device-evidence/`, bound by `provenance.json` to vMX 23.2R2-S7.5, `device-probe.out` SHA256 `48e591da0c6dbde33d18ce21e92a83844ae876abf229564d2aace2f0a159747d` (49,908 bytes/1,465 lines). Early paste echo is excluded. P11 retains the two supplied internal backslash spellings in XML/decoded JSON (source starts 917/921/940 and 956/960/979); its supplied trailing-backslash command rejects expecting data at 912–914, so absence in subsequent output is not a successful empty value. P12 (1022/1027/1054) canonicalizes quoted plain P12-A and retains literal enclosing quotes for the name with a space; arbitrary IR quote stripping is not authorized. P13 (1089/1095/1100/1126) writes expression plus P-C as structured bracket chain and two JSON/XML values; no commit-success claim is made. Existing SC1 strict xfail is a demonstrated owning-reader defect, SC2 base acceptance/round-trip compatibility and SC3 writer interim remain unchanged. P16's accepted definition/rejected BGP reference does not establish the synthetic audit tokenizer case as device-valid; audit defect and XSD-model limitation remain separate carry-forward items. No raw operator prompt/configuration is copied. Historical unknown/no-output statements above retain their original evidence date; these executed narrow facts supersede current unknown explanations without changing requirements or xfail outcomes.

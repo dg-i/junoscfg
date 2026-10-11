@@ -17,7 +17,8 @@ IR (`"P 1"`) is written `"\"P 1\""` and reads back as held (specification challe
 probe P12). The device writes `import ( P-A )` bare and keeps a quoted name's quotes in its own XML
 and JSON (`<import>"( P-A )"</import>`), vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5
 `junoscfg-oracle` and vMX `synthetic-probes` captures (DEV-4, DEV-6). Reading an expression
-inside a curly chain back is SC1 (probe P13).
+inside a curly chain back is SC1: executed P13 confirms device chain output, but the
+reader correction remains owned by change 13 under the existing scoped interim.
 Tests: `tests/unit/display/test_value_format.py::TestAValueIsSpelledByItsLeaf::test_a_policy_algebra_token_is_written_as_it_is`, `tests/unit/display/test_value_format.py::TestAValueIsSpelledByItsLeaf::test_a_plain_name_is_quoted_only_where_it_must_be`, `tests/unit/display/test_value_format.py::TestAValueIsSpelledByItsLeaf::test_any_other_policy_algebra_value_is_escaped`, `tests/unit/display/test_value_format.py::TestEveryValueReadsBackAsWritten::test_a_policy_algebra_value_reads_back`, `tests/unit/convert/test_convert_roundtrip.py::TestAPolicyChainIsWrittenAsTheDevicesTokens::test_an_expression_in_a_chain_is_written_bare`, `tests/unit/display/test_set_converter.py::TestStructuredBracketLists::test_an_expression_in_a_bracket_list_is_one_value`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/corpus/test_device_renderings.py::TestJunoscfgWritesTheDevicesSet::test_only_the_recorded_lines_differ`
 
 #### Scenario: A one-term expression
@@ -64,7 +65,10 @@ system SHALL write each inner `"` as `\"`, as the device writes `description "up
 `"...only.\nAll access is logged."` (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5
 `junoscfg-oracle.set.gz`); every value the writer writes reads back as that value through the
 reader of its format (DEV-7, NEW-C6, ANON-P4). A value holding `\` may not: how the device writes
-`\\`, a backslash before a quote, or a trailing backslash is open (probe P11, SC2).
+the full set of backslash spellings remains a compatibility follow-up (SC2). Executed
+P11 retains its supplied internal doubled-backslash and backslash-before-quote spellings,
+while its supplied trailing-backslash form rejects. This narrow evidence does not
+change the base-acceptance interim or approve normalization.
 Tests: `tests/unit/display/test_value_format.py::TestAValueIsSpelledByItsLeaf::test_a_quote_inside_a_value_is_escaped`, `tests/unit/display/test_value_format.py::TestAValueIsSpelledByItsLeaf::test_a_backslash_is_written_as_it_is`, `tests/unit/display/test_value_format.py::TestEveryValueReadsBackAsWritten::test_every_short_value_reads_back`, `tests/unit/display/test_value_format.py::TestEveryValueReadsBackAsWritten::test_a_value_holding_a_backslash_reads_back`, `tests/unit/audit/test_render.py::TestQuoting::test_a_name_is_written_as_a_value`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestASecondWriterKeepsTheIr::test_every_second_writer`, `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_mapping_restores_the_set_output`
 
 #### Scenario: A description with an escaped quote

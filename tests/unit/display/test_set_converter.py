@@ -44,8 +44,8 @@ class TestStructuredBracketLists:
         strict=True,
         reason="EVIDENCE_BLOCKED: specification challenge SC1 (change value-quoting-by-type, "
         "owned by change 13 one-ir-at-reader-boundary): the lexer splits a parenthesised "
-        "expression inside a bracket list into its words; whether the device takes an "
-        "expression in a policy chain, and how it prints one, is probe P13",
+        "expression inside a bracket list into its words; executed P13 confirms the "
+        "device writes the expression and P-C as two values; owning reader fix pending",
     )
     def test_an_expression_in_a_bracket_list_is_one_value(self) -> None:
         """`import [ ( P-A && P-B ) P-C ];` is two values, not six (Test/Challenge F1)."""

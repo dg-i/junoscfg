@@ -232,9 +232,9 @@ class TestEveryValueReadsBackAsWritten:
 
     @pytest.mark.xfail(
         strict=True,
-        reason="EVIDENCE_BLOCKED: probe P11: how the device writes `\\\\`, a backslash "
-        "before a quote and a trailing backslash is unknown; junoscfg writes `\\` as is, "
-        "so some values holding one do not read back (specification challenge SC2)",
+        reason="EVIDENCE_BLOCKED: SC2 compatibility follow-up remains: executed P11 retains "
+        "the supplied internal backslash spellings and rejects its trailing-backslash "
+        "form; the broad base-compatible value round trip remains unresolved",
     )
     @pytest.mark.parametrize("writer", [Format.SET, Format.STRUCTURED], ids=["set", "structured"])
     def test_a_value_holding_a_backslash_reads_back(self, writer: Format) -> None:
@@ -283,8 +283,9 @@ _BAD_EXPRESSIONS = [
 ]
 
 
-def _policy_source(value: str, source: Format) -> str:
-    ir = {"configuration": _imports([value])}
+def _policy_source(value: str, source: Format, *, chain: bool = False) -> str:
+    values = [value, "P-C"] if chain else [value]
+    ir = {"configuration": _imports(values)}
     if source == Format.JSON:
         return json.dumps(ir)
     if source == Format.YAML:
@@ -292,6 +293,7 @@ def _policy_source(value: str, source: Format) -> str:
     return (
         "<configuration><protocols><bgp><group><name>G0</name><import>"
         + escape(value)
+        + ("</import><import>P-C" if chain else "")
         + "</import></group></bgp></protocols></configuration>"
     )
 
@@ -320,6 +322,8 @@ class TestAPolicyValueOccupiesOneExpression:
         "value",
         [
             '( "P;1" && P-B )',
+            '( "P]1" && P-B )',
+            '"( P-A ] P-B )"',
             '( "P{1}#/*[2]" && P-B )',
             '( "P(1)" && ( P-B || P-C ) )',
             r'( "P \"1\"" && P-B )',
@@ -361,3 +365,20 @@ class TestACompleteExpressionKeepsItsSpelling:
     )
     def test_a_complete_expression_is_written_unchanged(self, value: str) -> None:
         assert format_value(value, _ALGEBRA) == value
+
+
+class TestAnUnquotedClosingBracketCannotBecomeSyntax:
+    """Review F3: the shared set boundary also applies inside expression words."""
+
+    @pytest.mark.parametrize("value", ["( P-A ] P-B )", "( P-A] )"])
+    @pytest.mark.parametrize("chain", [False, True], ids=["singleton", "chain"])
+    @pytest.mark.parametrize("source", [Format.JSON, Format.YAML, Format.XML])
+    @pytest.mark.parametrize("writer", [Format.SET, Format.STRUCTURED])
+    def test_the_writer_refuses_before_emitting_a_bracket(
+        self, value: str, chain: bool, source: Format, writer: Format
+    ) -> None:
+        text = _policy_source(value, source, chain=chain)
+        if source in (Format.JSON, Format.YAML):
+            assert validate_config(text, format=source).valid
+        with pytest.raises(ValueError, match="one complete policy-algebra expression"):
+            convert_config(text, from_format=source, to_format=writer, strict=True)

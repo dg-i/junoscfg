@@ -23,7 +23,7 @@ placing a tag: conversion reads the curly lexer's `statements()` through the sch
 
 ## Precedent
 
-- `junoscfg.display.detect_format` — the one content classifier; each caller
+- `junoscfg.input.find_unsupported_set_brackets` supplies the quote-aware policy-expression boundary; the curly lexer owns statement delimiters. `junoscfg.display.detect_format` — the one content classifier; each caller
   supplies the formats its public contract permits it to infer.
 - `junoscfg.display.xml_to_dict` — the one XML walker; XML-to-YAML serialization
   and conversion input consume the same JSON-equivalent mapping.

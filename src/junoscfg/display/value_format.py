@@ -16,6 +16,7 @@ import re
 from typing import Any
 
 from junoscfg.display.set_converter import _TOKEN
+from junoscfg.input import find_unsupported_set_brackets
 
 #: The XSD type of a leaf that holds a policy expression or a policy chain.
 POLICY_ALGEBRA = "policy-algebra"
@@ -45,7 +46,7 @@ def is_algebra_token(text: str) -> bool:
     value both ways, so whatever is written reads back as written.
     """
     if text.startswith("("):
-        if len(text.splitlines()) != 1:
+        if len(text.splitlines()) != 1 or find_unsupported_set_brackets(text):
             return False
         # The shared lexer owns actual syntax boundaries. Its canonical raw
         # statement helper also requires single spaces and separate quoted

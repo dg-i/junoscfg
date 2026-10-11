@@ -83,3 +83,14 @@
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
 
 Repair execution: negative regression before repair: 66 failed as expected (pytest status 1; logging command's tail status 0); focused after repair: 155 passed, 2 strict P11 xfailed (status 0). One fixture-construction retry: a Python string had stripped escaped quotes from the positive name, producing six expected refusals; corrected the fixture to a raw string and reran unchanged assertions. Original acceptance/full/schema/device figures above remain historical at their cited original heads; rebased candidate evidence will be recorded separately.
+| Context expansion: `src/junoscfg/input.py` | F3 existing public quote-aware square-bracket provider |
+| Context expansion: `src/junoscfg/input.CONTRACT.md` | F3 provider ownership and package door |
+| Context expansion: `private_test_data/makeover-work/value-quoting-by-type/roles/codex-rereview-final.md` | Immutable independent ranked F3 report and synthetic counterexamples |
+| Context expansion: `private_test_data/makeover-work/codex-resumption/owner-decisions.md` | Explicit owner #8 refusal disposition only; unrelated policies not adopted |
+| Context expansion: `private_test_data/makeover-work/codex-resumption/device-evidence/provenance.json` | Narrow executed device capture identity |
+| Context expansion: `private_test_data/makeover-work/codex-resumption/device-evidence/P11.json` | Supplied backslash acceptance and trailing form rejection |
+| Context expansion: `private_test_data/makeover-work/codex-resumption/device-evidence/P12.json` | Plain-name canonicalization and quote retention |
+| Context expansion: `private_test_data/makeover-work/codex-resumption/device-evidence/P13.json` | Expression chain device representation |
+| Context expansion: `private_test_data/device-probe.out` | Narrow prompt-delimited line context only; operator text kept private |
+| F3 initial environment correction | Unqualified python absent; initial launch exit 4 with class not created, no semantic evidence. Installed python3 used once; red 24 failed exit 1, then repair focused 368 passed/2 strict xfailed exit 0 |
+| e38 superseded full | Exit 0, every check passed, 8,641 passed/37 skipped/20 xfailed; completed before attempted stop signal. Independent F3 invalidates this checkpoint |
