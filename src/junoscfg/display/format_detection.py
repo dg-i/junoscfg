@@ -95,10 +95,13 @@ def _detect_full_policy(stripped: str) -> str:
 
 # A curly statement that opens a block: tags, then words, then `{`. A word may
 # hold a colon (`2001:db8::/32`) but not a YAML key's `: `, and the first word
-# no YAML sequence's `- `, so no YAML document matches.
+# is no YAML sequence's `- ` and no document marker (`---`, `...`), so no YAML
+# document matches.
 _TAGS = r"(?:(?:inactive|protect|replace|delete):\s+)*"
 _WORD = r'(?:"[^"\n]*"|(?:[^\s{};#":]|:(?!\s|$))+)'
-_OPENER = re.compile(rf"^{_TAGS}(?!-\s){_WORD}(?:[ \t]+{_WORD})*[ \t]*\{{")
+_OPENER = re.compile(
+    rf"^{_TAGS}(?!-\s|---(?:\s|$)|\.\.\.(?:\s|$)){_WORD}(?:[ \t]+{_WORD})*[ \t]*\{{"
+)
 
 
 def _opens_a_block(stripped: str) -> bool:

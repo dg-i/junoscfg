@@ -22,10 +22,16 @@ declared-break:
       one-line curly statement as conversion reads it, so the device's
       `hold-time up 2000 down 0;` and `protect:` lines validate, a statement
       whose last leaf has no value (`hold-time up 2000 down;`) is invalid, and a
-      one-line block is validated instead of passing as empty. Declared breaks on a
+      one-line block is validated instead of passing as empty. With
+      `artifacts_dir=X`, validate_structured (and validate_config for
+      structured input) now needs X's structure tree as well as its grammar,
+      and raises SchemaLoadError without it. In an anonymized conversion the
+      reader's warnings withhold the block's path. Declared breaks on a
       named surface raise the minor (AGENTS.md; instruction-integrity C7).
     migration: >-
-      None for input a device loads. A caller that passed malformed curly text
+      A custom artifacts directory built by `junoscfg schema generate` has
+      the tree; one assembled by hand adds junos-structure-tree.json. None for
+      input a device loads otherwise. A caller that passed malformed curly text
       gets ValueError (convert) or an invalid result (validate) and fixes the
       text.
   cli:

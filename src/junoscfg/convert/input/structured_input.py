@@ -21,17 +21,18 @@ if TYPE_CHECKING:
 
 
 def structured_to_dict(
-    source: str, diagnostic_sink: Callable[[str], None] | None = None
+    source: str, diagnostic_sink: Callable[[str, str], None] | None = None
 ) -> dict[str, Any]:
     """Parse structured configuration into the IR dict.
 
-    Each of the lexer's notes (`SetConverter.notes`) goes to *diagnostic_sink*.
+    Each of the lexer's notes (`SetConverter.notes`) goes to *diagnostic_sink*
+    as its block's path and its message.
     """
     lexer = SetConverter(source)
     ir = statements_to_dict(lexer.statements())
     if diagnostic_sink is not None:
         for note in lexer.notes():
-            diagnostic_sink(note)
+            diagnostic_sink(note.path, note.message)
     return ir
 
 
@@ -68,5 +69,5 @@ def structured_set_lines(source: str) -> StructuredSetLines:
     return StructuredSetLines(
         lines=tuple(f"set {line}" for line, _ in read),
         incomplete=tuple(f"set {line}" for line, whole in read if not whole),
-        notes=lexer.notes(),
+        notes=tuple(str(note) for note in lexer.notes()),
     )

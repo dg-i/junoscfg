@@ -11,7 +11,7 @@ _JCMD_PREFIX = "junos-configuration-metadata:"
 
 
 def to_dict(
-    source: str, fmt: str, diagnostic_sink: Callable[[str], None] | None = None
+    source: str, fmt: str, diagnostic_sink: Callable[[str, str], None] | None = None
 ) -> dict[str, Any]:
     """Dispatch to the appropriate input converter.
 
@@ -19,8 +19,9 @@ def to_dict(
         source: Configuration text.
         fmt: Format name (``"json"``, ``"yaml"``, ``"xml"``, ``"set"``,
              ``"structured"``).
-        diagnostic_sink: Receives each reader warning: what structured text
-            holds that yields no statement. Without one, nothing is reported.
+        diagnostic_sink: Receives each reader warning as the path it concerns
+            and its message: what structured text holds that yields no
+            statement. Without one, nothing is reported.
 
     Returns:
         The configuration content dict (without the ``"configuration"``

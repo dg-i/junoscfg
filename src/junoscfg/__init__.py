@@ -274,23 +274,34 @@ def validate_structured(source: str, artifacts_dir: str | None = None) -> Valida
 
     Returns:
         Validation result with any errors found.
+
+    Raises:
+        junoscfg.validate.SchemaLoadError: When the artifacts lack the set
+            grammar or the structure tree the walk reads.
     """
     from contextlib import nullcontext
 
     from junoscfg.convert import structured_set_lines
     from junoscfg.display import artifacts_dir as artifacts_scope
-    from junoscfg.validate import JunosValidator, ValidationError
+    from junoscfg.display import load_schema_tree
+    from junoscfg.validate import JunosValidator, SchemaLoadError, ValidationError
 
     validator = JunosValidator(artifacts_dir=artifacts_dir)
     scope = artifacts_scope(artifacts_dir) if artifacts_dir is not None else nullcontext()
-    try:
-        with scope:
+    with scope:
+        try:
+            # The walk needs the structure tree: its absence is the artifacts'
+            # failure, never a verdict on the configuration (ARCHITECTURE.md §8).
+            load_schema_tree()
+        except ValueError as e:
+            raise SchemaLoadError(str(e)) from e
+        try:
             read = structured_set_lines(source)
-    except ValueError as e:
-        return ValidationResult(
-            valid=False,
-            errors=(ValidationError(message=f"Failed to convert structured config: {e}"),),
-        )
+        except ValueError as e:
+            return ValidationResult(
+                valid=False,
+                errors=(ValidationError(message=f"Failed to convert structured config: {e}"),),
+            )
 
     notes = tuple(ValidationError(message=note) for note in read.notes)
     incomplete = tuple(

@@ -486,7 +486,21 @@ class TestWhatYieldsNoStatementIsReported:
             assert converter.statements() == []
         notes = converter.notes()
         assert len(notes) == 1
-        assert notes[0].startswith(note)
+        assert str(notes[0]).startswith(note)
+        assert str(notes[0]) == f"{notes[0].path}: {notes[0].message}"
+
+
+class TestAHashInsideAWordIsPartOfIt:
+    """Reviewer F4: `#` starts a comment only where a token starts.
+
+    The line reader read `host-name router#1;` as the value `router#1`; no
+    device evidence says otherwise, so the token lexer keeps it.
+    """
+
+    def test_it_stays_in_the_word(self) -> None:
+        assert SetConverter("system { host-name router#1; #note\n}").statements() == [
+            [("system", frozenset()), ("host-name router#1", frozenset())]
+        ]
 
 
 class TestAnEmptyStatementReadsAsNothing:

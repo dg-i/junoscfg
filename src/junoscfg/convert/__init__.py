@@ -115,13 +115,23 @@ def pipeline_result(
     if relative and not path:
         raise ValueError("relative=True requires path to be set.")
 
+    # The reader's warnings name a path of the input, values included; they
+    # join the result once it is known whether the conversion anonymizes.
+    read_notes: list[tuple[str, str]] = []
     ir = to_dict(
         source,
         from_format,
-        diagnostic_sink=lambda message: diagnostics.append(
-            Diagnostic(source="structured-input", message=message)
-        ),
+        diagnostic_sink=lambda where, what: read_notes.append((where, what)),
     )
+    anonymizing = bool(getattr(anon_config, "any_enabled", False))
+    for where, what in read_notes:
+        if anonymizing:
+            # A block that yields no statement never reaches the IR, so no
+            # rule sees its keys: the path is withheld rather than shown.
+            withheld = f"{what} (the block's path is withheld: the conversion anonymizes)"
+            diagnostics.append(Diagnostic(source="structured-input", message=withheld))
+        else:
+            diagnostics.append(Diagnostic(source="structured-input", path=where, message=what))
 
     if anon_config is not None:
         cfg: AnonymizeConfig = anon_config  # type: ignore[assignment]

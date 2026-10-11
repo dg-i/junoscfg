@@ -165,6 +165,7 @@ def cases(rows: tuple[Row, ...]) -> list[Any]:
             # A door named in `xfail_on` fails on the verdict, never by crashing
             # (Test/Challenge F5).
             assert set(row.xfail_on) <= {d.name for d in DOORS}, row.xfail_on
+            assert row.xfail or not row.xfail_on, f"{row.id}: xfail_on without xfail"
             failing = row.xfail and (not row.xfail_on or door.name in row.xfail_on)
             raises = AssertionError if row.xfail_on else None
             marks = (

@@ -18,7 +18,9 @@ through the set writer first. A statement whose last leaf the walk read without
 its value SHALL be invalid, whatever the set grammar says of the split line. A
 block on one line is validated, never passed as empty; what yields no
 statement is a warning on every door. The walk and the grammar both come from
-the `artifacts_dir` given, and none of these doors warns of a deprecation.
+the `artifacts_dir` given; a directory without the structure tree the walk
+reads raises `SchemaLoadError` (CLI exit 3), as a missing grammar does. None of
+these doors warns of a deprecation.
 Tests: `tests/contract/test_every_door.py::TestStructuredTextValidatesAsConversionReadsIt::test_every_door_agrees`, `tests/unit/convert/test_structured_input.py::TestTheSetLinesOfAStatement::test_the_walk_splits_at_each_sibling`, `tests/unit/convert/test_structured_input.py::TestTheRecommendedDoorsAreNotDeprecated::test_no_deprecation_reaches_their_caller`, `tests/unit/convert/test_structured_input.py::TestValidationReadsOneArtifactsDirectory::test_the_walk_and_the_grammar_come_from_it`
 
 #### Scenario: The device's one-line container statement

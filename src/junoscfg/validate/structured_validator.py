@@ -62,7 +62,7 @@ class StructuredValidator:
                 errors=(ValidationError(message=f"Failed to convert structured config: {e}"),),
             )
 
-        notes = tuple(ValidationError(message=note) for note in converter.notes())
+        notes = tuple(ValidationError(message=str(note)) for note in converter.notes())
         if not set_commands.strip():
             return ValidationResult(valid=True, warnings=notes)
 

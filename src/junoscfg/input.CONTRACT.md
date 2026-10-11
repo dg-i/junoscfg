@@ -15,8 +15,9 @@ line-continuations so a parser sees clean text; deciding which parser runs is
 
 ## Precedent
 
-- `junoscfg.input.normalize` — the single entry point every input path calls
-  before parsing.
+- `junoscfg.input.normalize` — the single entry point raw set input calls
+  before parsing; structured text has its own token lexer
+  (`junoscfg.display.SetConverter`), which handles comments itself.
 - `junoscfg.input.find_unsupported_set_brackets` — the shared lexical boundary
   for raw set conversion and validation; callers consume its line-numbered
   diagnostics instead of scanning independently.

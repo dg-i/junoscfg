@@ -101,7 +101,7 @@ class TestCorpusConverts:
         labels such as `AN3:`, and the `show configuration | no-more` prompt
         captured above a dump. Those are the file's shape, not junoscfg's bug.
         """
-        real = [(p, e) for p, e in corpus_run.failed if jvd_data.is_configuration(e)]
+        real = [(p, e) for p, e in corpus_run.failed if jvd_data.is_configuration(e, p)]
         assert not real, "configuration that should convert and does not:\n" + "\n".join(
             f"  {p.name}: {e}" for p, e in real[:15]
         )

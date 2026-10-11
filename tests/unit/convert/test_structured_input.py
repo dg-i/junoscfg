@@ -11,6 +11,7 @@ structured-one-line-blocks (OPEN-1, DEV-18, NEW-B5).
 
 from __future__ import annotations
 
+import re
 import warnings
 from typing import TYPE_CHECKING
 
@@ -18,8 +19,10 @@ import pytest
 from click.testing import CliRunner
 
 from junoscfg import Format, convert_config_result, validate_config, validate_structured
+from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.convert import pipeline_result, to_dict
+from junoscfg.validate import SchemaLoadError
 from tests.support.artifacts import make_artifacts_dir, write_minimal_tree
 
 if TYPE_CHECKING:
@@ -167,7 +170,9 @@ class TestWhatYieldsNoStatementIsReported:
     )
     def test_every_door_reports_it(self, text: str, warning: str, kept: str) -> None:
         heard: list[str] = []
-        ir = to_dict(text, "structured", diagnostic_sink=heard.append)
+        ir = to_dict(
+            text, "structured", diagnostic_sink=lambda where, what: heard.append(f"{where}: {what}")
+        )
         assert "OMITTED" not in repr(ir)
         assert [message for message in heard if message.startswith(warning)] == heard
         assert len(heard) == 1
@@ -178,7 +183,10 @@ class TestWhatYieldsNoStatementIsReported:
         reported = [d for d in result.diagnostics if d.source == "structured-input"]
         assert len(reported) == 1
         assert reported[0].severity == "warning"
-        assert reported[0].render().startswith(warning)
+        assert f"{reported[0].path}: {reported[0].message}".startswith(warning)
+        assert (
+            reported[0].render() == f"structured-input: {reported[0].path}: {reported[0].message}"
+        )
         assert not [
             d for d in result.diagnostics if "OMITTED" in d.render() and d is not reported[0]
         ]
@@ -309,11 +317,60 @@ class TestValidationReadsOneArtifactsDirectory:
         assert validate_structured(other).valid is True
 
         # And so is the walk: without X's tree the walk fails on X, not on
-        # the bundled tree.
+        # the bundled tree, and as the artifacts' failure, never a verdict on
+        # the configuration (Reviewer F2; ARCHITECTURE.md §8). The CLI gives
+        # it the artifacts' exit status, 3.
         (tmp_path / "no-tree").mkdir()
         bare = make_artifacts_dir(tmp_path / "no-tree").directory
-        without_tree = validate_structured(text, artifacts_dir=str(bare))
-        assert without_tree.valid is False
-        assert f"No junos-structure-tree.json in artifacts directory: {bare}" in (
-            without_tree.errors[0].message
+        missing = f"No junos-structure-tree.json in artifacts directory: {bare}"
+        with pytest.raises(SchemaLoadError, match=re.escape(missing)):
+            validate_structured(text, artifacts_dir=str(bare))
+        with pytest.raises(SchemaLoadError):
+            validate_config(text, format=Format.STRUCTURED, artifacts_dir=str(bare))
+        cli = CliRunner().invoke(
+            main, ["-v", "-i", "structured", "--artifacts", str(bare)], input=text
         )
+        assert cli.exit_code == 3, cli.output
+
+
+class TestAnAnonymizedConversionShowsNoInputPath:
+    """Spec: conversion/structured-input, "What yields no statement is reported, not
+    silently dropped" (Reviewer F1, challenge R1).
+
+    A block that yields no statement never reaches the IR, so no anonymize rule
+    sees its keys; its warning named the block's path, original addresses and
+    group names included, in an anonymized conversion meant for sharing.
+    """
+
+    TEXT = (
+        "protocols { bgp { group G1 { neighbor 203.0.114.5 { } "
+        "neighbor 203.0.114.6 { peer-as 64497; } } } } "
+        "groups { GR-SECRET { system { /* OMITTED */ }; } }"
+    )
+
+    def test_no_original_value_reaches_a_diagnostic(self) -> None:
+        anonymize = AnonymizeConfig(ips=True, groups=True, salt="s1")
+        result = convert_config_result(
+            self.TEXT, from_format=Format.STRUCTURED, to_format=Format.SET, anon_config=anonymize
+        )
+        assert "203.0.114.6" not in result.output
+        reported = [d for d in result.diagnostics if d.source == "structured-input"]
+        assert len(reported) == 2
+        for diagnostic in result.diagnostics:
+            for original in ("203.0.114.5", "203.0.114.6", "G1", "GR-SECRET"):
+                assert original not in diagnostic.render(), diagnostic.render()
+
+        flags = ["--anonymize-ips", "--anonymize-groups", "--anonymize-salt", "s1"]
+        cli = CliRunner().invoke(main, ["-i", "structured", "-e", "set", *flags], input=self.TEXT)
+        assert cli.exit_code == 0, cli.output
+        for original in ("203.0.114.5", "G1", "GR-SECRET"):
+            assert original not in cli.stderr
+            assert original not in cli.stdout
+        assert "the block's path is withheld" in cli.stderr
+
+        # Without anonymization the path is the point of the warning.
+        plain = convert_config_result(
+            self.TEXT, from_format=Format.STRUCTURED, to_format=Format.SET
+        )
+        paths = {d.path for d in plain.diagnostics if d.source == "structured-input"}
+        assert paths == {"protocols bgp group G1 neighbor 203.0.114.5", "groups GR-SECRET system"}

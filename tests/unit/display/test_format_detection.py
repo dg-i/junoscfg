@@ -40,6 +40,9 @@ class TestFormatDetection:
             ("system { inactive: host-name router1; }", "structured"),
             ("routing-options { protect: autonomous-system 64496; }", "structured"),
             ("routing-options { static { inactive: route 10.98.0.0/16 reject; } }", "structured"),
+            # Reviewer F5: a YAML document with an explicit start stays YAML.
+            ("--- {configuration: {system: {host-name: router1}}}\n", "yaml"),
+            ("---\nconfiguration:\n  system:\n    host-name: router1\n...\n", "yaml"),
         ],
     )
     def test_each_format_is_recognised(self, source: str, expected: str) -> None:

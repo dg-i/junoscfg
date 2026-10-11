@@ -859,7 +859,13 @@ def unused(
             sys.exit(2)
 
     try:
-        ir = to_dict(source, fmt, diagnostic_sink=lambda message: click.echo(message, err=True))
+        ir = to_dict(
+            source,
+            fmt,
+            diagnostic_sink=lambda where, what: click.echo(
+                f"structured-input: {where}: {what}", err=True
+            ),
+        )
     except (ValueError, NotImplementedError, yaml.YAMLError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(2)

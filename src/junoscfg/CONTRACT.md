@@ -4,9 +4,11 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 ## Not for
 
-Not an implementation module: every name here delegates to `convert` or
-`validate`. Logic added here is logic the Ansible collection cannot reach
-except through this one function signature.
+Not an implementation module: every name delegates to `convert` or `validate`,
+except `validate_structured`, which composes them (`convert.structured_set_lines`
+then set validation) because `validate` may not import `convert` (change
+structured-one-line-blocks, C4). Other logic here is logic the Ansible
+collection cannot reach except through one function signature.
 
 ## Invariants
 

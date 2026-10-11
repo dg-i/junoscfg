@@ -12,15 +12,16 @@ from __future__ import annotations
 import re
 import warnings
 from dataclasses import dataclass, field
-from typing import NoReturn, TextIO
+from typing import NamedTuple, NoReturn, TextIO
 
 # One alternative per token kind, tried in order at each position. A word
-# starts with anything but a quote and runs to whitespace, a delimiter, `#` or
-# `/*`; a quote inside a word is part of it, as the set reader's tokenizer
-# reads one, and so is a template's `${NAME}`, which Juniper's published
-# configuration snippets use. `[` opens a list only where a token starts
-# (`<[gx]e-*>` is one word), and `]` closes one only inside a list (see
-# `_Lexer._word`).
+# starts with anything but a quote or `#` and runs to whitespace, a delimiter
+# or `/*`: `#` starts a comment only where a token starts (`router#1` is one
+# word, as the line reader read it). A quote inside a word is part of it, as
+# the set reader's tokenizer reads one, and so is a template's `${NAME}`, which
+# Juniper's published configuration snippets use. `[` opens a list only where
+# a token starts (`<[gx]e-*>` is one word), and `]` closes one only inside a
+# list (see `_Lexer._word`).
 _TOKEN = re.compile(
     r"""
       (?P<space>\s+)
@@ -30,12 +31,27 @@ _TOKEN = re.compile(
     | (?P<quoted>"(?:[^"\\]|\\.)*")
     | (?P<open_quote>")
     | (?P<delimiter>[{};\[])
-    | (?P<word>(?:\$\{[^\s{};"]*\}|[^\s{};\#"/]|/(?!\*))(?:\$\{[^\s{};"]*\}|[^\s{};\#/]|/(?!\*))*)
+    | (?P<word>(?:\$\{[^\s{};"]*\}|[^\s{};\#"/]|/(?!\*))(?:\$\{[^\s{};"]*\}|[^\s{};/]|/(?!\*))*)
     """,
     re.VERBOSE | re.DOTALL,
 )
 
 _OMITTED = "OMITTED"
+
+
+class Note(NamedTuple):
+    """What a block holds that yields no statement: its path and what it is.
+
+    The path carries the block's keys, values of the configuration; a caller
+    that must not show them (an anonymized conversion) shows `message` alone.
+    """
+
+    path: str
+    message: str
+
+    def __str__(self) -> str:
+        """``"<path>: <message>"``."""
+        return f"{self.path}: {self.message}"
 
 
 @dataclass
@@ -53,7 +69,7 @@ class _Lexed:
     """What one pass over the text read."""
 
     statements: list[tuple[list[str], str]] = field(default_factory=list)
-    notes: list[str] = field(default_factory=list)
+    notes: list[Note] = field(default_factory=list)
 
 
 class SetConverter:
@@ -108,12 +124,13 @@ class SetConverter:
             for stack, text in self._lex().statements
         ]
 
-    def notes(self) -> tuple[str, ...]:
+    def notes(self) -> tuple[Note, ...]:
         """What the text holds that yields no statement, one warning per block.
 
         The device's `{ /* OMITTED */ }` placeholder, its curly rendering of a
         statement under `apply-flags omit`, and a block with nothing in it.
-        Each note starts with the block's path, its tags left out.
+        Each note names the block's path, its tags left out; `str(note)` is
+        ``"<path>: <message>"``.
         """
         return tuple(self._lex().notes)
 
@@ -320,11 +337,14 @@ class _Lexer:
             path = " ".join(SetConverter._split_tags(b.text)[0] for b in [*self._blocks, block])
             if block.omitted:
                 self._out.notes.append(
-                    f"{path}: `apply-flags omit` hides this block's content (the device's "
-                    "`/* OMITTED */` placeholder); nothing of it is converted"
+                    Note(
+                        path,
+                        "`apply-flags omit` hides this block's content (the device's "
+                        "`/* OMITTED */` placeholder); nothing of it is converted",
+                    )
                 )
             else:
-                self._out.notes.append(f"{path}: an empty block; it holds no statement")
+                self._out.notes.append(Note(path, "an empty block; it holds no statement"))
 
     # ── helpers ──
 

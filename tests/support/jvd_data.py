@@ -29,9 +29,7 @@ CLONE_URL = "https://github.com/Juniper/jvd.git"
 # captured above a dump. They are not junoscfg's to parse. The curly lexer
 # names such a line as a statement without `;` (it was `Unknown statement:`
 # before the token lexer of change structured-one-line-blocks; the same 35
-# files, measured 2026-10-11). An unmatched `}` is a file a device refuses to
-# load: one in the corpus, `p2_ptx10001-36mr.conf` of ewan_finance, closes
-# `routing-options` twice; the line reader passed it silently.
+# files, measured 2026-10-11).
 NOT_CONFIGURATION = (
     "show configuration",
     "statement 'AN",
@@ -40,8 +38,18 @@ NOT_CONFIGURATION = (
     "statement 'MEG",
     "lets ISIS hellos use the full",
     "## SECRET-DATA",
-    "'}' closes no block",
 )
+
+# Files of the corpus that are broken, keyed by their path under the corpus
+# root, with the failure each must give: a device refuses to load them. Keyed
+# by file, so the same failure anywhere else is still junoscfg's.
+# `p2_ptx10001-36mr.conf` of ewan_finance closes `routing-options` twice; the
+# line reader passed it silently (change structured-one-line-blocks).
+BROKEN_FILES = {
+    "enterprise_wan/ewan_finance/configuration/conf/p2_ptx10001-36mr.conf": (
+        "line 237: '}' closes no block"
+    ),
+}
 
 
 def corpus_root() -> Path | None:
@@ -79,6 +87,10 @@ def configs(root: Path | None = None) -> list[Path]:
     return sorted(root.rglob("*.conf"))
 
 
-def is_configuration(error_text: str) -> bool:
+def is_configuration(error_text: str, path: Path | None = None) -> bool:
     """False when a conversion failure is the file's fault, not junoscfg's."""
+    if path is not None:
+        for broken, failure in BROKEN_FILES.items():
+            if path.as_posix().endswith(f"/{broken}") and failure in error_text:
+                return False
     return not any(marker in error_text for marker in NOT_CONFIGURATION)
