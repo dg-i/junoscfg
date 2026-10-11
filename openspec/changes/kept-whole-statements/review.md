@@ -105,6 +105,26 @@ Carry-forwards: NEW-R5 (R1) and NEW-R4 (the set reader's bracket refusal prints
 the original line, also in an anonymized run; pre-existing), both change 5; the
 untyped-leaf gap of R3, change 18.
 
+#### Confirmation of the fixes (head 54cec40, fix commit a1b1928; diff f8ea357..54cec40)
+
+Executed with the same probes on 54cec40. Outputs are the `rv_*-54cec40.out` files. Error radius: `rv_all_errors_compare*.py`, run on f8ea357 (its `src` extracted with `git archive`) and on 54cec40.
+
+| Finding | Ruling | Confirmed |
+|---|---|---|
+| R1 | Carried forward as NEW-R5 (change 5), challenge recorded | **Still open, as ruled.** The public `anonymize()` still passes a 0.16.1 joined key and an unknown leaf with `203.0.114.9` and `G-SECRET` intact (`rv_public_anon-54cec40.out`). The claims were narrowed to the record in the CONTRACT, the freeze Non-goals and the delta log. This survives to archive as an owner decision. |
+| R2 | Fixed | The `consumer` and `cli` migration notes and the removal fragment name the XML `[null]` exception and how to migrate. Text verified. |
+| R3 | Fixed for typed leaves; untyped leaves carried to change 18 | The `""` skip is gone (`field_validator.py:511-515`). `<root-login/>` and `<host-name/>` are now reported as invalid values, and so is JSON `""` on `root-login`. `<mtu/>` and `<vlan-id/>` remain silent: these are the untyped leaves carried to change 18. Radius: the count of all field errors is unchanged on 37 device captures and 1,699 JVD files, so `description ""` and the other captures gain no false report. |
+| R4 | Fixed | Unquoted `]`, `a]` and `x]y` are refused, and quoted `"[x]"` is still accepted (`rv_record_fuzz-54cec40.out`). |
+| R5 | Fixed | An empty record and a tag naming no command (`{"@bogus": {}}`) are refused on read and by the set and structured writers. Residual nit: a hand-built empty record given to the JSON writer still becomes `[null]`. No reader can produce one, so this is not a finding. |
+| R6 | Fixed | `evidence-freeze.md` Resolved instructions and Non-goals now record DEV-16 as folded in. |
+| R7 | Fixed | One tagged statement gives "1 statement(s)". |
+
+Tests: `tests/unit/{convert,anonymize,edityaml,audit,cli}`, `tests/contract` and the device law give 6,206 passed and 18 xfailed.
+
+#### Verdict after the fixes
+
+**APPROVE.** R2 to R7 are resolved. Two items stay open by your rulings and need the owner's decision at archive: R1 (NEW-R5, change 5, specification challenge pending) and untyped empty leaves (change 18).
+
 ## Already provided
 
 - `display.set_converter._TOKEN`, the curly lexer, decides what reads back as one
@@ -132,4 +152,4 @@ untyped-leaf gap of R3, change 18.
 
 ## Verdict
 
-CHANGES REQUIRED at f8ea357 (fresh Reviewer); R2–R7 fixed and R1 carried forward with its challenge recorded, in the review-fix commit. Pending the same Reviewer's confirmation.
+APPROVE at 54cec40 (the same fresh Reviewer, after CHANGES REQUIRED at f8ea357). Open by ruling, for the owner at archive: R1 (NEW-R5, change 5, specification challenge pending) and untyped empty leaves (change 18); C5 pending the owner with its interim action.
