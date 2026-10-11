@@ -1901,6 +1901,76 @@ _add(
     ),
 )
 
+# ── Statements kept whole ────────────────────────────────────────────
+
+#: The key under which a level keeps the statements the reader could not
+#: place, each as its own tokens (spec conversion/entry-keys). A consumer sees
+#: it in JSON and YAML output, so the rows pin the literal.
+UNPLACED_RECORD = "junoscfg:unplaced"
+
+_BARE_BESIDE_PLACED = {"apply-groups": ["SAMPLE-GROUP"], UNPLACED_RECORD: {"apply-groups": [None]}}
+_LEAF_WITHOUT_VALUE = {"system": {"host-name": "router1", UNPLACED_RECORD: {"host-name": [None]}}}
+_QUOTED_MACRO = 'apply-macro 12345 "KADJBF KU!H" balks XXXXX'
+_QUOTED_UNKNOWN = 'nonsense "alpha beta" gamma'
+_KEPT_QUOTES = {
+    "groups": [{"name": "SAMPLE-GROUP", UNPLACED_RECORD: {_QUOTED_MACRO: [None]}}],
+    "interfaces": {"interface": [{"name": "ge-0/0/0", UNPLACED_RECORD: {_QUOTED_UNKNOWN: [None]}}]},
+}
+
+_add(
+    Shape(
+        "a-bare-keyword-beside-the-node-it-names",
+        {
+            SET: "set apply-groups SAMPLE-GROUP\nset apply-groups\n",
+            STRUCTURED: "apply-groups;\napply-groups SAMPLE-GROUP;\n",
+            JSON: _json(_BARE_BESIDE_PLACED),
+            YAML: "configuration:\n  apply-groups:\n  - SAMPLE-GROUP\n"
+            "  junoscfg:unplaced:\n    apply-groups:\n    - null\n",
+        },
+        ir=_BARE_BESIDE_PLACED,
+        set_output="set apply-groups SAMPLE-GROUP\nset apply-groups\n",
+        valid=False,
+        why="OPEN-2: the device rejects a bare `set apply-groups` (corpus CORRECTLY_REJECTED); "
+        "kept as its parent's key, it vanished after the valid one, and before it the valid "
+        "one was kept and reported too. Change kept-whole-statements.",
+    ),
+    Shape(
+        "a-leaf-without-its-value-beside-its-value",
+        {
+            SET: "set system host-name\nset system host-name router1\n",
+            STRUCTURED: "system {\n    host-name router1;\n    host-name;\n}\n",
+            JSON: _json(_LEAF_WITHOUT_VALUE),
+            YAML: "configuration:\n  system:\n    host-name: router1\n"
+            "    junoscfg:unplaced:\n      host-name:\n      - null\n",
+        },
+        ir=_LEAF_WITHOUT_VALUE,
+        set_output="set system host-name router1\nset system host-name\n",
+        valid=False,
+        why="NEW-C1: a leaf with no value is a statement the device rejects (corpus "
+        "CORRECTLY_REJECTED); it replaced router1 with null and was written back without a "
+        "word. Change kept-whole-statements.",
+    ),
+    Shape(
+        "a-kept-statement-keeps-its-quotes",
+        {
+            SET: f"set groups SAMPLE-GROUP {_QUOTED_MACRO}\n"
+            f"set interfaces ge-0/0/0 {_QUOTED_UNKNOWN}\n",
+            STRUCTURED: f"groups {{\n    SAMPLE-GROUP {{\n        {_QUOTED_MACRO};\n    }}\n}}\n"
+            f"interfaces {{\n    ge-0/0/0 {{\n        {_QUOTED_UNKNOWN};\n    }}\n}}\n",
+            JSON: _json(_KEPT_QUOTES),
+        },
+        ir=_KEPT_QUOTES,
+        set_output=f"set groups SAMPLE-GROUP {_QUOTED_MACRO}\n"
+        f"set interfaces ge-0/0/0 {_QUOTED_UNKNOWN}\n",
+        written={STRUCTURED: (f"{_QUOTED_MACRO};", f"{_QUOTED_UNKNOWN};")},
+        valid=False,
+        why="OPEN-3: a kept statement is its original tokens; joined after their quotes were "
+        'stripped, `"KADJBF KU!H"` became two words and read back as another statement. '
+        "The device rejects a fourth apply-macro value (vMX 23.2R2-S7.5). Change "
+        "kept-whole-statements.",
+    ),
+)
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"

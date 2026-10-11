@@ -20,10 +20,11 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from junoscfg import Format, convert_config_result
+from junoscfg import FieldValidationError, Format, convert_config_result
 from junoscfg.convert import from_dict, to_dict
 from tests.support.artifacts import using_tree
 from tests.support.keyed_entries import as_json, ir, set_ir, term_from, to_set
+from tests.support.shapes import UNPLACED_RECORD
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -48,9 +49,19 @@ def schema_tree(tmp_path: Path) -> Callable[[dict[str, Any]], Any]:
 
 _TERM = "set policy-options policy-statement SAMPLE-POLICY term T1"
 
-#: How `convert_config` renders a statement kept whole in JSON: the line as
-#: one key, the value a bare statement's.
+#: How `convert_config` renders a statement kept whole in JSON: a key of its
+#: level's `junoscfg:unplaced` record, the value a bare statement's.
 KEPT = [None]
+
+
+def kept(*statements: str, value: Any = KEPT) -> dict[str, Any]:
+    """A level's record of *statements*, kept whole, each as *value*."""
+    return {UNPLACED_RECORD: dict.fromkeys(statements, value)}
+
+
+def kept_in(parent: dict[str, Any]) -> dict[str, Any]:
+    """The record of the statements *parent* keeps whole, empty if none."""
+    return parent.get(UNPLACED_RECORD, {})
 
 
 def _from(line: str) -> dict:
@@ -523,7 +534,7 @@ class TestANonListNodeNeverReplacesAnEntry:
         second = "set access securid-server SAMPLE-SERVER-2 configuration-file sample-2"
         got = read_set(f"{first}\n{second}\n")["access"]
         assert got["securid-server"] == {"name": "SAMPLE-SERVER", "configuration-file": "sample-1"}
-        assert got["securid-server SAMPLE-SERVER-2 configuration-file sample-2"] is True
+        assert kept_in(got)["securid-server SAMPLE-SERVER-2 configuration-file sample-2"] is True
         assert _round_trip(f"{first}\n{second}") == [first, second]
         assert len(_unplaced(f"{first}\n{second}\n")) == 1
 
@@ -672,7 +683,7 @@ class TestKeyFieldsGivenByKeyword:
         line = f"set protocols ospf area 0.0.0.0 {statement}"
         area = read_set(line)["protocols"]["ospf"]["area"][0]
         assert "virtual-link" not in area
-        assert area[statement] is True
+        assert kept_in(area)[statement] is True
         assert _round_trip(line) == [line]
         assert len(_unplaced(line + "\n")) == 1
 
@@ -901,7 +912,7 @@ class TestAMetaCommandIsNeverPartiallyApplied:
 
         assert "@" not in from_
         assert "@" not in from_["as-path-neighbors"][0]
-        assert from_[suffix]["@"] == self._ATTRS[command]
+        assert kept_in(from_)[f"@{suffix}"] == self._ATTRS[command]
         assert len(_unplaced(f"{set_line}\n{meta_line}\n")) == 1
         assert meta_line in write_set(config).splitlines()
 
@@ -910,7 +921,8 @@ class TestAMetaCommandIsNeverPartiallyApplied:
         config = read_set(source)
 
         assert "@" not in config["system"]
-        assert config["system"]["bogus-thing"] == {"@": {"inactive": True}}
+        assert "bogus-thing" not in config["system"]
+        assert kept_in(config["system"]) == {"@bogus-thing": {"inactive": True}}
         assert len(_unplaced(source + "\n")) == 1
         assert write_set(config).splitlines() == source.splitlines()
 
@@ -919,8 +931,10 @@ class TestAMetaCommandIsNeverPartiallyApplied:
         config = read_set(source)
 
         assert "@" not in config["system"]
-        assert config["system"]["bogus-thing value"] is True
-        assert config["system"]["@bogus-thing"] == {"inactive": True}
+        assert kept_in(config["system"]) == {
+            "bogus-thing value": True,
+            "@bogus-thing": {"inactive": True},
+        }
         assert len(_unplaced(source + "\n")) == 1
         assert write_set(config).splitlines() == source.splitlines()
 
@@ -986,7 +1000,7 @@ class TestApplyGroups:
         for got, value in ((set_ir(line), KEPT), (read_set(line), True)):
             parent = got if prefix == "set" else got["policy-options"]["policy-statement"][0]
             assert keyword not in parent
-            assert parent[kept] == value
+            assert kept_in(parent)[kept] == value
         assert _round_trip(line) == [line]
 
     @pytest.mark.parametrize("keyword", ["apply-groups", "apply-groups-except"])
@@ -994,15 +1008,23 @@ class TestApplyGroups:
         """A bare `set apply-groups` names no group, a statement the device
         rejects (finding 6, phase-6 review of identifier-key-fields)."""
         line = f"set system {keyword}"
-        assert read_set(line) == {"system": {keyword: True}}
+        assert read_set(line) == {"system": kept(keyword, value=True)}
         assert _round_trip(line) == [line]
         assert len(_unplaced(line + "\n")) == 1
 
-    def test_a_group_after_a_bare_one_is_kept_too(self) -> None:
-        """Both statements survive; the reader used to raise on the second."""
+    def test_a_group_after_a_bare_one_is_placed(self) -> None:
+        """Both statements survive, and only the bare one is reported. The
+        reader used to raise on the second, then kept it whole as well, under
+        the bare one's key (OPEN-2, change kept-whole-statements)."""
         source = "set apply-groups\nset apply-groups SAMPLE-GROUP"
-        assert read_set(source) == {"apply-groups": True, "apply-groups SAMPLE-GROUP": True}
-        assert _round_trip(source) == source.splitlines()
+        assert read_set(source) == {
+            **kept("apply-groups", value=True),
+            "apply-groups": ["SAMPLE-GROUP"],
+        }
+        assert _round_trip(source) == ["set apply-groups SAMPLE-GROUP", "set apply-groups"]
+        assert _unplaced(source + "\n") == [
+            "'apply-groups' could not be placed in the schema: kept as written, not validated"
+        ]
 
 
 class TestApplyMacroTakesAtMostThreeValues:
@@ -1036,7 +1058,8 @@ class TestApplyMacroTakesAtMostThreeValues:
         line = f"set groups SAMPLE-GROUP {statement}"
         group = read_set(line)["groups"]["group"][0]
         assert "apply-macro" not in group
-        assert [k for k in group if k != "name"] == [statement.replace('"', "")]
+        assert group == {"name": "SAMPLE-GROUP", **kept(statement, value=True)}
+        assert _round_trip(line) == [line]
         assert len(_unplaced(line + "\n")) == 1
 
 
@@ -1062,7 +1085,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
     )
     def test_a_partial_key_creates_no_entry(self, statement: str) -> None:
         line = f"{_TERM} from {statement}"
-        assert _from(line) == {statement: KEPT}
+        assert _from(line) == kept(statement)
         assert _round_trip(line) == [line]
 
     @pytest.mark.parametrize("slot", ["as-path-neighbors", "as-path-origins", "as-path-transits"])
@@ -1071,7 +1094,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
         cannot complete: kept whole, as written, and reported like a partial
         key (owner decision, phase 5; the device rejects the bare line)."""
         line = f"{_TERM} from {slot}"
-        assert _from(line) == {slot: KEPT}
+        assert _from(line) == kept(slot)
         assert _round_trip(line) == [line]
         result = convert_config_result(
             line + "\n", from_format=Format.SET, to_format=Format.SET, validate=True
@@ -1082,13 +1105,18 @@ class TestTokensTheReaderCannotPlaceAreKept:
             f"'{slot}' could not be placed in the schema: kept as written, not validated"
         ]
 
-    def test_a_keyed_entry_after_a_bare_keyword_is_kept_too(self) -> None:
+    def test_a_keyed_entry_after_a_bare_keyword_is_placed(self) -> None:
+        """The bare keyword is kept and reported; the entry after it is placed.
+        It used to be kept whole as well, under the bare keyword's key (OPEN-2,
+        change kept-whole-statements)."""
         bare = f"{_TERM} from as-path-neighbors"
         full = f"{bare} as-list SAMPLE-AS-LIST"
         assert _from(f"{bare}\n{full}") == {
-            "as-path-neighbors": KEPT,
-            "as-path-neighbors as-list SAMPLE-AS-LIST": KEPT,
+            "as-path-neighbors": [{"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}],
+            **kept("as-path-neighbors"),
         }
+        assert _round_trip(f"{bare}\n{full}") == [full, bare]
+        assert len(_unplaced(f"{bare}\n{full}\n")) == 1
 
     def test_a_partial_attributes_match_creates_no_entry(self) -> None:
         line = (
@@ -1097,7 +1125,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
         policy = set_ir(line)["event-options"]["policy"][0]
         assert policy == {
             "name": "SAMPLE-EVENT-POLICY",
-            "attributes-match ping.test-owner matches": KEPT,
+            **kept("attributes-match ping.test-owner matches"),
         }
         assert _round_trip(line) == [line]
 
@@ -1114,7 +1142,7 @@ class TestTokensTheReaderCannotPlaceAreKept:
     ) -> None:
         line = f"{_TERM} {where} {statement}"
         term = set_ir(line)["policy-options"]["policy-statement"][0]["term"][0]
-        assert term[where] == {statement: KEPT}
+        assert term[where] == kept(statement)
         assert _round_trip(line) == [line]
 
     def test_a_surplus_after_attributes_match_keeps_the_line_whole(self) -> None:
@@ -1122,16 +1150,17 @@ class TestTokensTheReaderCannotPlaceAreKept:
         line = f"set event-options policy SAMPLE-EVENT-POLICY {statement}"
         policy = set_ir(line)["event-options"]["policy"][0]
         assert "attributes-match" not in policy
-        assert [k for k in policy if k != "name"] == [
-            "attributes-match ping.test-owner matches ^uptime$ SAMPLE-EXTRA"
-        ]
+        assert policy == {"name": "SAMPLE-EVENT-POLICY", **kept(statement)}
+        assert _round_trip(line) == [line]
 
     def test_an_unknown_token_in_an_entry_with_children_is_unchanged(self) -> None:
         """Pinned as it is: after a complete key the entry is open, and an
         unknown token stays in it, as `set interfaces ge-0/0/0 nonsense` does."""
         line = f"{_TERM} from route-filter 198.51.100.0/24 exact SAMPLE-EXTRA"
         assert _from(line) == {
-            "route-filter": [{"address": "198.51.100.0/24", "exact": [None], "SAMPLE-EXTRA": KEPT}]
+            "route-filter": [
+                {"address": "198.51.100.0/24", "exact": [None], **kept("SAMPLE-EXTRA")}
+            ]
         }
 
 
@@ -1151,7 +1180,7 @@ class TestAnUnmodelledStatementIsKeptWhole:
         entry = read_set("set interfaces ge-0/0/0 nonsense alpha beta gamma")["interfaces"][
             "interface"
         ][0]
-        assert entry == {"name": "ge-0/0/0", "nonsense alpha beta gamma": True}
+        assert entry == {"name": "ge-0/0/0", **kept("nonsense alpha beta gamma", value=True)}
 
     def test_it_round_trips_to_set(self) -> None:
         source = "set interfaces ge-0/0/0 nonsense alpha beta gamma"
@@ -1169,7 +1198,218 @@ class TestAnUnmodelledStatementIsKeptWhole:
     def test_a_schema_node_without_a_type_keeps_the_line_too(self, schema_tree: Any) -> None:
         """The last fallback took one token as the value and dropped the rest."""
         with schema_tree({"c": {"system": {"c": {"odd": {}}}}}):
-            assert read_set("set system odd a b") == {"system": {"odd a b": True}}
+            assert read_set("set system odd a b") == {"system": kept("odd a b", value=True)}
+
+
+_SAMPLE_AS_LIST = {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}
+
+
+def _in_from(**from_: Any) -> dict[str, Any]:
+    """Term T1 of SAMPLE-POLICY whose `from` holds *from_*, as JSON renders it."""
+    term = {"name": "T1", "from": from_}
+    return {"policy-options": {"policy-statement": [{"name": "SAMPLE-POLICY", "term": [term]}]}}
+
+
+class TestAKeptStatementHasARecordOfItsOwn:
+    """A statement the reader cannot place goes to its level's
+    `junoscfg:unplaced` record, as its own tokens, and never meets a node the
+    reader placed.
+
+    It used to be a key of its own at its parent's level, the tokens joined
+    after their quotes were stripped. A bare keyword had the key of the node
+    it names: `set apply-groups` after `set apply-groups G1` vanished, and
+    before it the valid `G1` was kept and reported too (OPEN-2). A leaf with no
+    value was not kept at all and replaced its value with `null` (NEW-C1). A
+    quoted token came back as several words (OPEN-3). Spec: conversion/entry-keys,
+    change kept-whole-statements; the device rejects every bare statement here
+    (corpus CORRECTLY_REJECTED, vMX 23.2R2-S7.5).
+    """
+
+    @pytest.mark.parametrize(
+        ("placed", "bare", "expected"),
+        [
+            (
+                "set apply-groups SAMPLE-GROUP",
+                "set apply-groups",
+                {"apply-groups": ["SAMPLE-GROUP"], **kept("apply-groups")},
+            ),
+            (
+                "set apply-groups-except SAMPLE-GROUP",
+                "set apply-groups-except",
+                {"apply-groups-except": ["SAMPLE-GROUP"], **kept("apply-groups-except")},
+            ),
+            (
+                "set system apply-groups SAMPLE-GROUP",
+                "set system apply-groups",
+                {"system": {"apply-groups": ["SAMPLE-GROUP"], **kept("apply-groups")}},
+            ),
+            (
+                "set apply-macro SAMPLE-MACRO",
+                "set apply-macro",
+                {"apply-macro": [{"name": "SAMPLE-MACRO"}], **kept("apply-macro")},
+            ),
+            (
+                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
+                f"{_TERM} from as-path-neighbors",
+                _in_from(**{"as-path-neighbors": [_SAMPLE_AS_LIST], **kept("as-path-neighbors")}),
+            ),
+        ],
+        ids=["apply-groups", "apply-groups-except", "inside-system", "apply-macro", "keyed-list"],
+    )
+    @pytest.mark.parametrize("bare_first", [False, True], ids=["placed-first", "bare-first"])
+    def test_a_bare_keyword_never_meets_its_placed_node(
+        self, placed: str, bare: str, expected: dict, bare_first: bool
+    ) -> None:
+        lines = [bare, placed] if bare_first else [placed, bare]
+        source = "\n".join(lines) + "\n"
+        assert set_ir(*lines) == expected
+        assert _round_trip(source.strip()) == [placed, bare]
+        statement = bare.split()[-1]
+        assert len(_unplaced(source)) == 1
+        assert _unplaced(source)[0].startswith(f"'{statement}'")
+
+    @pytest.mark.parametrize(
+        ("valued", "bare", "expected"),
+        [
+            (
+                "set system host-name router1",
+                "set system host-name",
+                {"system": {"host-name": "router1", **kept("host-name")}},
+            ),
+            (
+                "set policy-options community SAMPLE-COMM members 64496:1",
+                "set policy-options community SAMPLE-COMM members",
+                {
+                    "policy-options": {
+                        "community": [
+                            {"name": "SAMPLE-COMM", "members": ["64496:1"], **kept("members")}
+                        ]
+                    }
+                },
+            ),
+        ],
+        ids=["host-name", "members"],
+    )
+    @pytest.mark.parametrize("bare_first", [False, True], ids=["valued-first", "bare-first"])
+    def test_a_leaf_without_its_value_never_replaces_it(
+        self, valued: str, bare: str, expected: dict, bare_first: bool
+    ) -> None:
+        lines = [bare, valued] if bare_first else [valued, bare]
+        source = "\n".join(lines) + "\n"
+        assert set_ir(*lines) == expected
+        assert _round_trip(source.strip()) == [valued, bare]
+        assert len(_unplaced(source)) == 1
+        with pytest.raises(FieldValidationError):
+            convert_config_result(source, from_format=Format.SET, to_format=Format.SET, strict=True)
+
+    def test_a_lone_leaf_without_its_value_is_kept_and_reported(self) -> None:
+        line = "set system host-name"
+        assert set_ir(line) == {"system": kept("host-name")}
+        assert _round_trip(line) == [line]
+        assert _unplaced(line + "\n") == [
+            "'host-name' could not be placed in the schema: kept as written, not validated"
+        ]
+
+    def test_a_structured_leaf_without_its_value_never_replaces_it(self) -> None:
+        source = "system {\n    host-name router1;\n    host-name;\n}\n"
+        assert ir(source, Format.STRUCTURED) == {
+            "system": {"host-name": "router1", **kept("host-name")}
+        }
+        assert to_set(source, Format.STRUCTURED) == [
+            "set system host-name router1",
+            "set system host-name",
+        ]
+        assert len(_unplaced(source, "structured")) == 1
+
+    @pytest.mark.parametrize(
+        ("lines", "parent", "record"),
+        [
+            (
+                ['set groups SAMPLE-GROUP apply-macro 12345 "KADJBF KU!H" balks XXXXX'],
+                lambda got: got["groups"][0],
+                {'apply-macro 12345 "KADJBF KU!H" balks XXXXX': KEPT},
+            ),
+            (
+                ['set interfaces ge-0/0/0 nonsense "alpha beta" gamma'],
+                lambda got: got["interfaces"]["interface"][0],
+                {'nonsense "alpha beta" gamma': KEPT},
+            ),
+            (
+                [
+                    'set system bogus-thing "alpha beta"',
+                    'deactivate system bogus-thing "alpha beta"',
+                ],
+                lambda got: got["system"],
+                {
+                    'bogus-thing "alpha beta"': KEPT,
+                    '@bogus-thing "alpha beta"': {"inactive": True},
+                },
+            ),
+        ],
+        ids=["apply-macro", "unknown-statement", "tagged-statement"],
+    )
+    def test_a_kept_statement_keeps_its_quotes(
+        self, lines: list[str], parent: Callable[[dict], dict], record: dict
+    ) -> None:
+        """Every writer writes it as it was read, and it reads back the same."""
+        source = "\n".join(lines) + "\n"
+        got = set_ir(*lines)
+        assert kept_in(parent(got)) == record
+        assert _round_trip(source.strip()) == lines
+        for writer in (Format.STRUCTURED, Format.JSON, Format.YAML):
+            output = convert_config_result(
+                source, from_format=Format.SET, to_format=writer, validate=False
+            ).output
+            assert ir(output, writer) == got, writer.value
+        assert len(_unplaced(source)) == 1
+
+    @pytest.mark.parametrize(
+        ("lines", "record"),
+        [
+            (
+                ['deactivate system bogus-thing "alpha beta"'],
+                {'@bogus-thing "alpha beta"': {"inactive": True}},
+            ),
+            (
+                [
+                    'set system bogus-thing "alpha beta" gamma',
+                    'deactivate system bogus-thing "alpha beta"',
+                ],
+                {
+                    'bogus-thing "alpha beta" gamma': KEPT,
+                    '@bogus-thing "alpha beta"': {"inactive": True},
+                },
+            ),
+        ],
+        ids=["alone", "on-a-kept-prefix"],
+    )
+    def test_a_kept_meta_command_keeps_its_quotes(self, lines: list[str], record: dict) -> None:
+        """Set, JSON and YAML output carry it as read. Structured text can tag
+        only a statement it writes, so structured output leaves the command
+        out and says so, where it used to drop it without a word or move the
+        tag onto the longer statement."""
+        source = "\n".join(lines) + "\n"
+        got = set_ir(*lines)
+        assert kept_in(got["system"]) == record
+        assert _round_trip(source.strip()) == lines
+        for writer in (Format.JSON, Format.YAML):
+            output = convert_config_result(
+                source, from_format=Format.SET, to_format=writer, validate=False
+            ).output
+            assert ir(output, writer) == got, writer.value
+        assert len(_unplaced(source)) == 1
+        result = convert_config_result(
+            source, from_format=Format.SET, to_format=Format.STRUCTURED, validate=False
+        )
+        assert "inactive:" not in result.output
+        notes = [d.message for d in result.diagnostics if d.source == "structured-output"]
+        assert len(notes) == 1
+        assert "kept whole" in notes[0]
+
+    def test_the_display_door_names_the_record(self) -> None:
+        from junoscfg.display import UNPLACED_STATEMENTS
+
+        assert UNPLACED_STATEMENTS == UNPLACED_RECORD
 
 
 # ── Round trips ──────────────────────────────────────────────────────

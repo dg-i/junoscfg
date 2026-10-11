@@ -1224,6 +1224,77 @@ class TestAnIncompleteStatementIsUnplaced:
             convert_config(line, from_format=Format.SET, to_format=Format.JSON, strict=True)
 
 
+class TestALeafWithoutItsValueIsUnplaced:
+    """A leaf written without its value is a statement the device rejects
+    (corpus CORRECTLY_REJECTED, `set system host-name`). Every door wrote it
+    back as a bare line with no diagnostic, and the set reader let it replace
+    a value read before it (NEW-C1). The set and structured readers keep it in
+    the level's record; JSON, YAML and XML hold it where it stands, and field
+    validation reports it either way. Spec: conversion/entry-keys, change
+    kept-whole-statements."""
+
+    _SOURCES = {
+        "set": "set system host-name\n",
+        "structured": "system {\n    host-name;\n}\n",
+        "json": '{"configuration": {"system": {"host-name": null}}}',
+        "yaml": "configuration:\n  system:\n    host-name:\n",
+        "xml": "<configuration><system><host-name/></system></configuration>",
+    }
+
+    @pytest.mark.parametrize("fmt", list(_SOURCES))
+    def test_each_door_reports_it(self, fmt: str) -> None:
+        result = convert_config_result(
+            self._SOURCES[fmt], from_format=Format(fmt), to_format=Format.SET
+        )
+        assert result.output == "set system host-name\n"
+        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
+        assert len(messages) == 1, messages
+        assert messages[0].startswith("'host-name'")
+        assert messages[0].endswith(
+            "could not be placed in the schema: kept as written, not validated"
+        )
+
+    @pytest.mark.parametrize("fmt", list(_SOURCES))
+    def test_strict_and_anonymization_refuse_it(self, fmt: str) -> None:
+        source = self._SOURCES[fmt]
+        with pytest.raises(FieldValidationError):
+            convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
+        with pytest.raises(FieldValidationError, match="cannot anonymize"):
+            pipeline(
+                source,
+                from_format=fmt,
+                to_format="set",
+                anon_config=AnonymizeConfig(ips=True, salt="s"),
+                validate=False,
+            )
+
+    @pytest.mark.parametrize(
+        ("fmt", "source"),
+        [
+            ("set", "set system host-name router1\n"),
+            ("json", '{"configuration": {"system": {"host-name": "router1"}}}'),
+            (
+                "json",
+                '{"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", '
+                '"description": ""}]}}}',
+            ),
+            ("set", 'set interfaces ge-0/0/0 description ""\n'),
+            (
+                "json",
+                '{"configuration": {"policy-options": {"community": [{"name": "SAMPLE-COMM", '
+                '"members": ["64496:1"]}]}}}',
+            ),
+            ("json", '{"configuration": {"system": {"services": {"ssh": [null]}}}}'),
+        ],
+        ids=["set-value", "json-value", "json-empty-value", "set-empty-value", "leaf-list", "flag"],
+    )
+    def test_a_leaf_with_a_value_is_clean(self, fmt: str, source: str) -> None:
+        """The negative side: a value, an empty value, a leaf-list and a
+        presence flag report nothing."""
+        result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+        assert [d for d in result.diagnostics if "could not be placed" in d.message] == []
+
+
 class TestANameKeyIsOpen:
     """Closed-enum enforcement applies to the key fields the tree names in `k`
     only. A `name` key's enum is a fragment, open as it was before `name`
