@@ -1,0 +1,45 @@
+<!-- Complete before proposal work. Precedence decides what is effective, not whether it is correct. -->
+
+## Effective instruction stack
+
+| Source | Scope | Priority | Available | Effect on this change |
+|---|---|---|---|---|
+| Immutable platform constraints (harness, organisation policy DG-i) | every action; no credentials, personal or operator data in output | 1 | yes | tests use the `AGENTS.md` test-data values only; nothing from `private_test_data/` enters a tracked file |
+| Runtime (Claude Code, model `claude-opus-5-5`, unattended Builder subagent of the nightly orchestrator) | tool access; roles | 2 | partial: the Builder cannot be its own Test/Challenge or Reviewer | the orchestrator runs those roles as fresh agents at STOP-T and STOP-R (builder brief) |
+| Invoked skill `agent-ready-change` (`SKILL.md`, `batches.md`, phase files) | lanes, phases, roles, gates | 3 | yes | standard lane, type `bug` (C3) |
+| Repository `AGENTS.md`, `ARCHITECTURE.md` (§8), `tests/CONTRACT.md`, `src/junoscfg/anonymize/CONTRACT.md`, `src/junoscfg/convert/CONTRACT.md`, `tach.toml`, `pyproject.toml` `[tool.template.*]` | house rules, layering, stage `beta`, version rules | 4 | yes | `anonymize` is red; `convert` imports `anonymize`, never the reverse; a fix that breaks no named surface is a patch |
+| Owner instructions: `private_test_data/makeover-work/builder-brief.md` (intake answers 2026-10-11, lessons), the mission `private_test_data/niglty_makeover_propmt.md`, the plan `private_test_data/makeover-ledger.md` row 6, the orchestrator's task message ("a pattern whose literal text names no anonymized object passes, and a pattern whose literal fragment is part of an anonymized name must be handled consistently with that name, or reported. Record that decision as a specification challenge ... Check every rule ... Revert must be exact. Use the device captures") | ID ANON-P3 (= NEW-C12) | 5 | yes | assurance `balanced`; branch `change/group-wildcards-pass`; fast-forward into local `master`, archive, tag, never push |
+| Approved specifications: `openspec/specs/anonymization/placed-values` ("A group reference goes to the group rule once"; "No message of an anonymized run quotes the configuration"), `anonymization/keyed-entries` ("Key fields are leaves, and a leaf's own enum value is syntax"; "No value anonymized before escapes": the dumped mapping is pinned) | what the walker hands the rules, what a message may say | 6 | yes | C4, C5 |
+| Acceptance and contract tests: strict xfail `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_wildcard_group_name_passes_the_group_rule`; `test_no_value_anonymized_before_escapes` and `test_name_keyed_output_is_unchanged` (both filter out `<`-names as a workaround for this defect); `tests/contract/test_every_rule.py`, `tests/contract/test_every_message.py`, `tests/corpus/test_device_anonymization.py` | the oracle | 7 | yes | the workaround filters go once the defect is fixed (C6) |
+| Observed behaviour on `1ebeed9` (v0.20.0; `private_test_data/makeover-work/group-wildcards-pass/repro.py`, `repro-base.out`; `private_test_data/makeover-work/repro_anon_p3.py`) | every rule on wildcard names | 8 | yes | see the evidence freeze |
+| Knowledge graph `graphify-out/` | map only | below source | yes | no wildcard handling in `anonymize/`; confirmed in source: `walker.py::_Walker._try_rules` offers `<*>` to every rule as a name; `revert.py::_revert_value` |
+
+## Conflicts
+
+| ID | Sources and contradiction | Classification | Resolution owner and safe action | Effect |
+|---|---|---|---|---|
+| C1 | Mission prompt "dedicated `codex/` branches" versus owner intake 8 "`change/<slug>`" | automatically resolved by precedence | Builder: the later, explicit owner answer wins | branch `change/group-wildcards-pass` |
+| C2 | Skill phase approvals by the owner versus an unattended run | automatically resolved by precedence | Builder: each approval reads "approved under the owner's unattended-run instruction of 2026-10-11" | phases progress without a relay |
+| C3 | Ledger row 6 plans the fix lane versus its caps (two files, thirty lines, no delta): the repair touches `anonymize/walker.py`, `anonymize/revert.py`, `anonymize/__init__.py` (the report), `convert/__init__.py` (its warning), plus the patch version in two files, a changelog fragment and a delta (the decision the task asks to record is a requirement) | automatically resolved by precedence (`SKILL.md`: "A fix that exceeds those caps is retyped `bug`"; precedent: change 2 `json-writer-pure`) | Builder: type `bug`, standard lane | full artefact set |
+| C4 | Inventory G5 / the task ("owner decides wildcards with literal text", "record that decision as a specification challenge ... with the interim action") versus the unattended run | specification/test disagreement, owner decision pending | Builder: the interim rule below is the delta's requirement and challenge S1 in `review.md` (owner intake 3: merge with a recorded interim action). Interim: a wildcard name whose pattern is only `*` passes every rule; any other wildcard name has its text inside the brackets offered to the rules as a name of that place, the brackets kept; when the anonymized pattern selects other names among those the configuration holds at that place than the original did, or a rule claims its text and leaves it as written, its schema path is reported (`AnonymizeResult.patterns`, an `anonymize:` warning naming the path only) | the delta's requirement; reversible (no data loss, a report the caller can stop on) |
+| C5 | "No message of an anonymized run quotes the configuration" (placed-values) versus a report about a wildcard | consistent | Builder: the warning names the schema path and a count only; a door row in `tests/contract/test_every_message.py` proves it | one door row added |
+| C6 | `test_no_value_anonymized_before_escapes` and `test_name_keyed_output_is_unchanged` drop every mapping entry whose original starts with `<` (workaround for this defect) versus "never weaken an oracle" | automatically resolved by precedence (owner brief: the fix removes what the workaround hid) | Builder: the filters and their docstring references go; the pinned SHA `8e13d961…` is unchanged because the device example's only claimed wildcard (`<*>`) no longer reaches the mapping | stronger oracle |
+| C7 | The task names the IP, description and sensitive-word rules "inside `<...>` patterns" versus Junos: a wildcard selects names (statement identifiers) inside `groups`; a description or other free text written as `<...>` is data | automatically resolved by evidence (device captures hold wildcards only as entry names: vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 `junoscfg-oracle`, JVD `mdr1_acx7509`) | Builder: the rule applies to an entry's key field (a name the walker hands the rules), every rule alike; a description `<...>` stays data and is replaced as before (negative test) | scope of the rule |
+| C8 | NEW-A-N7 (`apply-path "protocols bgp group EBGP neighbor <*>"` keeps a renamed group's name) touches the same words | automatically resolved by precedence (the plan puts it in change 7 `anonymize-embedded-values`) | Builder: out of scope; carry-forward note that change 7 must keep `<*>` inside an `apply-path` as this change keeps a wildcard name | none here |
+| C9 | Stage `beta`, named surface `consumer`: `junoscfg.anonymize.AnonymizeResult` gains a field `patterns` with a default; anonymized output of a wildcard name changes | automatically resolved by precedence (AGENTS.md: a break raises the minor, everything else is a patch) | Builder: not a break (an added trailing field with a default; the output that changes was wrong configuration); `src/junoscfg/__init__.py` changes `__version__` only; patch 0.20.1; the `declared-break` entry records "Not a break", as `json-writer-pure` did | patch |
+
+## Assurance
+
+<!-- Also set the exact value as `assurance` in .openspec.yaml. -->
+- Owner-confirmed preference: balanced (owner intake answer 1, 2026-10-11)
+- Mandatory risk floor: high. The change edits the red zone `anonymize`, a trust boundary (what an anonymized run lets out), and crosses domains (`anonymization`, `conversion` for the warning). Required whatever the preference: independent Test/Challenge after phase 4 (STOP-T) and a fresh Reviewer at least as capable as the Builder after phase 5 (STOP-R); every acceptance test fails on the merge base `1ebeed9` unless named as a pin; one full check before review; `agent-ready lane`, `fields`, `reconcile`; OpenSpec strict validation; the timing record for `anonymize/`.
+
+## Owner decision batch
+
+None asked: the owner is asleep and the run is unattended. Intake answers 1–8 settle assurance, integration and challenges; C4 is recorded as specification challenge S1 with its interim action (intake 3); C1–C3 and C5–C9 are settled by precedence, evidence and repository rules.
+
+## Delta log
+
+<!-- Append later instructions or evidence and their consistency result. -->
+
+- Initial preflight: consistent; C1–C9 resolved, C4 pending owner with interim action. Approved under the owner's unattended-run instruction of 2026-10-11.
