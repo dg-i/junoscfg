@@ -19,5 +19,8 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: src/junoscfg/display/to_yaml.py | the owning XML walker; `display/` is in no `[tool.template.domains]` entry, so the conversion-domain slice does not list it |
+| Context expansion: tests/unit/display/test_to_yaml.py | the walker's unit tests, where the regression test belongs (`tests/CONTRACT.md`) |
+| Context expansion: tests/corpus/test_device_renderings.py, tools/device_differences.py, tests/data/device/known-differences.json | the device law and the class the fix removes |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
