@@ -18,5 +18,9 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | regeneration on the base (`junoscfg schema generate` from `25.2R2-S1.5_qfx5120.xsd`) | dd7c8c4: structure tree, grammar and both JSON schemas byte-identical to the committed artifacts (3 min 33 s) |
+| Context expansion: src/junoscfg/display/constants.py, src/junoscfg/display/to_yaml.py | the helper and the XML reader, kernel modules outside the slice |
+| Context expansion: src/junoscfg/convert/input/set_input.py, src/junoscfg/convert/input/normalization.py | readers that resolve a child by key |
+| Context expansion: src/junoscfg/convert/output/dict_walker.py, structured_output.py, json_output.py | writers that resolve a child by key; the Group-H helpers' one consumer |
+| Context expansion: src/junoscfg/validate/xsd_fixes.py | the apply-statements fix |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
