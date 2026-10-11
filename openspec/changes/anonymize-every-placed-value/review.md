@@ -1,6 +1,51 @@
 ## Findings
 
-<!-- Filled by the fresh Reviewer at STOP-R. -->
+A fresh, isolated Reviewer read the freeze, the delta, the touched contract, the
+Test/Challenge record and its rulings, the tests and the diff `3a0607f..3ac0fda`
+(`ab13794` a freeze reword); probes with synthetic values in
+`private_test_data/makeover-work/anonymize-every-placed-value/roles/review/`, the
+full report `roles/review.md`. Verdict at `ab13794`: **CHANGES REQUIRED**. Every
+ruling relayed by the orchestrator on 2026-10-11 was accepted; dispositions:
+
+1. HIGH, an address beside `:` or `_` (`http://203.0.114.9:8080/x`,
+   `203.0.114.9:179`, `host:203.0.114.9`, `lo_203.0.114.9`) left unplaced content
+   as written, where the base refused it. Fixed: one tokenizer,
+   `junoscfg.anonymize.rules.address_tokens`, IPv4 bounded by a digit or a dot
+   only, the `:` exclusion for IPv6 only; the strings pass's second regex is
+   retired (the pass now finds IPv6 too). Rows for the four shapes and four more,
+   as keys and values, in `_UNPLACED`.
+2. HIGH, revert missed an address inside a word of a key. Fixed: revert splits
+   a key as the walk does and restores each word, then each address token in it,
+   with the same tokenizer; values revert the same way before the substring pass.
+   Rows in `TestContentTheWalkCannotPlace::test_the_mapping_restores_it` and
+   `TestRevertRestoresKeys::test_an_address_inside_a_word_of_a_key_is_restored`.
+3. MEDIUM-HIGH, `ipv6-router-id` and BGP `cluster` keep the loopback beside the
+   router ID's pseudonym (pre-existing). Fixed as S4's interim: a leaf-name
+   allowance, only with types `string`/`areaid`, retirement with change 18. The
+   strengthened proof (S5) then found 75,279 JVD route distinguishers in address
+   form passing as written: the allowance covers `route-distinguisher rd-type` and
+   the `vrf-target` leaves too (the address anywhere in the value). Blast radius
+   `blast_s4.py`/`blast_s4.out`: 328 tree leaves; values changed: 75,279
+   route distinguishers, 40 clusters, 9 `ipv6-router-id`; 102,217 values without an
+   address (AS-form targets) unchanged; no integer, OID or `from area` touched.
+   `cluster` left the syntax exclusions of the spec, the corpus law and
+   `combos.py`.
+4. MEDIUM, the warning claimed replacements the active rules do not make.
+   Fixed: it names only the active rules' shapes, or says no active rule replaces
+   a word; asserted in `test_without_the_ip_rule_it_is_still_named`.
+5. MEDIUM-LOW, one rule per word. Fixed: the rules apply in turn to the same
+   word; a rule that keeps the text around its replacement (`Rule.keeps_text`: the
+   address and sensitive-word rules) lets the next look at it, on placed values
+   too. `test_every_shape_in_one_word_is_replaced`.
+6. LOW, a key spelled like a switch passed unannounced. Fixed: skipped only
+   when its value is `None`, `True` or `[None]`; row
+   `a-switch-spelling-holding-a-value`.
+7. LOW, routing-matrix group names. Fixed: `lcc<N>-re<N>`, `sfc<N>-re<N>` pass.
+8. LOW, stale texts. Fixed: the pin's docstring, the developer guide's rule
+   priorities.
+
+Carried forward: NEW-R9 (change 5b); the OpenConfig `router-id` leaves typed
+`string` (10 positions), change 18 with S4.
 
 ## Already provided
 
@@ -33,6 +78,22 @@
 - User impact: an anonymized configuration under that flag loses its backbone area.
 - Proposed correction: an area identifier is syntax (`areaid`) and passes the IP rule, or the area and every reference to it are rewritten alike; the owner decides.
 - Decision: Pending owner decision. Interim action: base behaviour kept, not extended; pinned by the strict xfail `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_the_backbone_area_is_unchanged_s3` (owner intake 2026-10-11: merge with recorded interim action).
+
+### S4: BGP `cluster`, `ipv6-router-id`, route distinguishers and VRF targets are data, not syntax
+
+- Artifact: `specs/anonymization/placed-values/spec.md`, scenario "Syntax shaped like an address" ("or a BGP `cluster` is anonymized ... THEN it is unchanged"); `tests/corpus/test_device_anonymization.py` `_SYNTAX_BEFORE`.
+- Counterexample: executed by the Reviewer (`roles/review/p_leaks.py` E): `set routing-options router-id 203.0.114.1`, `ipv6-router-id 203.0.114.1` and `bgp group IBGP cluster 203.0.114.1` with `--anonymize-ips`: the router ID becomes a pseudonym, the other two keep `203.0.114.1`; base and head alike. The strengthened proof (S5) found the same for route distinguishers (`10.255.0.1:100`, 75,279 JVD values).
+- User impact: the published output pairs each pseudonym with its original loopback.
+- Proposed correction: these leaves take an address; retype them in the schema model once a device artefact settles `cluster`'s accepted forms (change 18).
+- Decision: Pending owner decision. Interim action: a leaf-name allowance in the IP rule (`_ADDRESS_VALUED_LEAVES`: `ipv6-router-id`, `cluster`, `route-distinguisher rd-type`, `vrf-target` `community`/`import`/`export`), only for types `string`/`areaid`, retiring with change 18; measured in `blast_s4.out` (owner intake 2026-10-11: merge with recorded interim action).
+
+### S5: the proofs counted only whole-word addresses
+
+- Artifact: the evidence-freeze criterion "no address of the capture survives", as `combos.py` `addrs()` and the corpus law implemented it.
+- Counterexample: executed by the Reviewer: an address inside a word (`http://addr:port/`, `peer=addr`) was invisible to both, so finding 1 passed every gate.
+- User impact: a leak of that shape passes every gate.
+- Proposed correction: both proofs also scan each run of address characters inside a word with plain `ipaddress`, independent of the product's tokenizer.
+- Decision: Pending owner decision. Interim action: applied in `tests/corpus/test_device_anonymization.py` and `combos.py`; it revealed the route distinguishers, fixed under S4 (owner intake 2026-10-11: merge with recorded interim action).
 
 ## Verdict
 

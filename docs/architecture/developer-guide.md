@@ -636,9 +636,9 @@ Rules are checked in priority order; the first matching rule wins:
 | Rule | Priority | Category | Match criterion |
 |------|----------|----------|----------------|
 | Password | 10 | passwords | Schema type reference (secret/encrypted-password) |
+| SSH Key | 20 | ssh_keys | Schema path under `ssh-rsa`/`ssh-dsa`/`ssh-ecdsa`/`ssh-ed25519` |
 | IP | 30 | ips | A value that is an address on an address, host or untyped leaf; a key its list's name marks as an address where the tree types it as free text |
-| Community | 30 | communities | Schema path under `snmp.community` |
-| SSH Key | 40 | ssh_keys | Schema path under `ssh-rsa`/`ssh-dsa`/`ssh-ecdsa`/`ssh-ed25519` |
+| Community | 40 | communities | Schema path under `snmp.community` |
 | Identity | 50 | identities | Schema path for user/full-name/login fields |
 | Group | 60 | groups | Schema path for group/view name fields and `apply-groups[-except]`; Junos-reserved names pass |
 | Description | 70 | descriptions | Schema path for `description` leaf |

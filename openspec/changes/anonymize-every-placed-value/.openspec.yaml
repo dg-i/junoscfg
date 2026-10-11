@@ -29,7 +29,9 @@ declared-break:
       withheld. More values are replaced: nested apply-groups and apply-macro,
       interface-range and the other siblings of a transparent child, a list a
       container holds, leaves typed host, hostname, ipprefix-only or untyped
-      whose value is an address, and password hashes and sensitive words in
+      whose value is an address, ipv6-router-id, BGP cluster, route
+      distinguishers and VRF targets in address form, IPv6 inside strings under
+      ips-in-strings, and password hashes and sensitive words in
       unplaced content; a value holding no address is no longer handed to the
       address anonymizer (an interface name under `ipaddr-or-interface`
       crashed the run). Groups named re0, re1, node0, node1, member<N> or a `$`

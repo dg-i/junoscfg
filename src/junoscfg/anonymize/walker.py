@@ -119,7 +119,9 @@ class _Walker:
                 # A key field the tree holds no leaf for (`apply-macro`'s
                 # name): the rules see it with no type.
                 self._leaf(obj, key, value, {}, [*path, key])
-            elif not self._is_switch_spelling(key, schema_node):
+            elif not (value in (None, True, [None]) and self._is_switch_spelling(key, schema_node)):
+                # A folded switch's spelling (`disable`) holds no value; any
+                # other key the tree does not name is content it cannot place.
                 new_key = self.unknown(obj, key, path)
                 if new_key != key:
                     renamed[key] = new_key
@@ -213,12 +215,15 @@ class _Walker:
         rejects.
         """
         str_value = str(value)
-        for rule in self.rules:
+        for index, rule in enumerate(self.rules):
             if rule.matches(str_value, schema_node, path):
                 if str_value in _leaf_enum(schema_node):
                     return value
                 result = rule.transform(str_value)
                 self._debug(rule, path, str_value, result)
+                if rule.keeps_text:
+                    # The text around what it replaced may hold another shape.
+                    result = self._chain(result, self.rules[index + 1 :], path)
                 return result
         return value
 
@@ -286,11 +291,22 @@ class _Walker:
         return _WORD.sub(lambda match: self._word(match.group(), path), text)
 
     def _word(self, word: str, path: list[str]) -> str:
-        for rule in self.rules:
+        return self._chain(word, self.rules, path)
+
+    def _chain(self, word: str, rules: Sequence[Rule], path: list[str]) -> str:
+        """*word* through each rule that knows a shape in it, in turn.
+
+        A rule that keeps the text around its replacement (an address) lets the
+        next rule look at the rest (`acme-203.0.114.9`); one that replaces the
+        whole word (a password hash) ends the chain.
+        """
+        for rule in rules:
             replaced = rule.lexical(word)
             if replaced is not None and replaced != word:
                 self._debug(rule, path, word, replaced)
-                return replaced
+                word = replaced
+                if not rule.keeps_text:
+                    break
         return word
 
     def _debug(self, rule: Rule, path: list[str], before: str, after: str) -> None:

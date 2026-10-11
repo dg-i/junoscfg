@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from junoscfg import Format, convert_config
+from junoscfg import Format, convert_config, convert_config_result
 from junoscfg.anonymize import AnonymizeConfig, anonymize, build_config_from_cli
 from tests.support.devices import example, placed_only
 
@@ -681,7 +681,7 @@ class TestKeyedEntriesSurvive:
         The input is the example, re-pinned when it became the device's,
         without the statements junoscfg cannot place
         (`tests/support/devices.py` `UNPLACED_IN_THE_EXAMPLE`): anonymization
-        refuses a configuration holding one. The pin leaves out the wildcard
+        names each by its schema path. The pin leaves out the wildcard
         `<*>` the group rule replaces (`test_a_wildcard_group_name_passes_the_group_rule`).
         The IR is restored through JSON output here; through set output it is
         `test_the_mapping_restores_the_set_output`.
@@ -785,15 +785,16 @@ class TestGroupReferencesResolve:
 
 
 class TestAGroupJunosReservesKeepsItsName:
-    """`re0`, `re1`, `node0`, `node1`, `member<N>` name a group Junos applies to
-    that Routing Engine, cluster node or Virtual Chassis member, and `${node}`
+    """`re0`, `re1` (`lcc<N>-re<N>`, `sfc<N>-re<N>` in a routing matrix),
+    `node0`, `node1`, `member<N>` name a group Junos applies to that Routing
+    Engine, cluster node or Virtual Chassis member, and `${node}`
     is expanded by Junos at commit (Junos OS "Configuration Groups"
     documentation). Renamed, they apply nowhere: they pass the group rule as a
     group and as a reference (ruling on Test/Challenge finding 7). No committed
     device capture holds one."""
 
     def test_the_reserved_names_pass(self) -> None:
-        names = ["re0", "re1", "node0", "node1", "member0", "member1"]
+        names = ["re0", "re1", "node0", "node1", "member0", "member1", "lcc0-re0", "sfc0-re1"]
         ir = {
             "configuration": {
                 "groups": [{"name": name, "system": {"host-name": "router1"}} for name in names]
@@ -899,6 +900,71 @@ _UNPLACED: dict[str, tuple[dict[str, Any], tuple[str, ...], set[str]]] = {
         ("system",),
         {"bogus", "peer"},
     ),
+    "url-port-in-a-key": (
+        {"system": {"bogus http://203.0.114.9:8080/x": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "url-port-in-a-value": (
+        {"system": {"bogus": "http://203.0.114.9:8080/x"}},
+        ("system",),
+        {"bogus"},
+    ),
+    "address-port-in-a-key": (
+        {"system": {"bogus 203.0.114.9:179": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "address-port-in-a-value": ({"system": {"bogus": "203.0.114.9:179"}}, ("system",), {"bogus"}),
+    "host-address-in-a-key": (
+        {"system": {"bogus host:203.0.114.9": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "host-address-in-a-value": ({"system": {"bogus": "host:203.0.114.9"}}, ("system",), {"bogus"}),
+    "lo-address-in-a-key": (
+        {"system": {"bogus lo_203.0.114.9": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "lo-address-in-a-value": ({"system": {"bogus": "lo_203.0.114.9"}}, ("system",), {"bogus"}),
+    "peer-equals-in-a-key": (
+        {"system": {"bogus peer=203.0.114.9": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "peer-equals-in-a-value": ({"system": {"bogus": "peer=203.0.114.9"}}, ("system",), {"bogus"}),
+    "scp-url-in-a-key": (
+        {"system": {"bogus scp://u@203.0.114.9/f": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "scp-url-in-a-value": ({"system": {"bogus": "scp://u@203.0.114.9/f"}}, ("system",), {"bogus"}),
+    "address-rack-in-a-key": (
+        {"system": {"bogus 203.0.114.9/rack-4": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "address-rack-in-a-value": (
+        {"system": {"bogus": "203.0.114.9/rack-4"}},
+        ("system",),
+        {"bogus"},
+    ),
+    "bracketed-ipv6-port-in-a-key": (
+        {"system": {"bogus [3ffe:0b00::9]:179": [None]}},
+        ("system",),
+        {"bogus"},
+    ),
+    "bracketed-ipv6-port-in-a-value": (
+        {"system": {"bogus": "[3ffe:0b00::9]:179"}},
+        ("system",),
+        {"bogus"},
+    ),
+    "a-switch-spelling-holding-a-value": (
+        {"interfaces": {"interface": [{"name": "ge-0/0/0", "disable": "203.0.114.9"}]}},
+        ("interfaces",),
+        {"disable"},
+    ),
 }
 
 _ADDRESSES = ("203.0.114.9", "203.0.114.10", "3ffe:0b00::9", "203.0.114.0/24")
@@ -963,6 +1029,16 @@ class TestContentTheWalkCannotPlace:
         result = anonymize(self._source(shape), AnonymizeConfig(descriptions=True, salt="s"))
         assert result.ir == self._source(shape)
         assert result.unplaced == _UNPLACED[shape][1]
+        converted = convert_config_result(
+            json.dumps(self._source(shape)),
+            from_format=Format.JSON,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(descriptions=True, salt="s"),
+        )
+        warnings = [d.message for d in converted.diagnostics if d.source == "anonymize"]
+        assert warnings, "the conversion names what it could not place"
+        assert all("no active rule replaces a word" in w for w in warnings)
+        assert not any("address" in w for w in warnings), "it claimed a replacement"
 
     @pytest.mark.parametrize(
         "content",
@@ -989,6 +1065,34 @@ class TestContentTheWalkCannotPlace:
         assert "acme" not in text
         assert "bogus" in text
         assert result.unplaced == ("system",)
+        assert apply_revert(result.ir, result.mapping) == source
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            {"bogus": "acme-203.0.114.9"},
+            {"bogus": "203.0.114.9-acme"},
+            {"bogus acme-203.0.114.9": [None]},
+            {
+                "apply-macro": [
+                    {"name": "M", "data": [{"name": "peer", "value": "203.0.114.9-acme"}]}
+                ]
+            },
+        ],
+        ids=["value-word-address", "value-address-word", "key", "nested-apply-macro-value"],
+    )
+    def test_every_shape_in_one_word_is_replaced(self, content: dict[str, Any]) -> None:
+        """The rules apply in turn to the same word: the address rule keeps the
+        text around the address, so the sensitive-word rule still sees `acme`
+        (Reviewer finding 5)."""
+        from junoscfg.anonymize import apply_revert
+
+        source = {"configuration": {"system": content}}
+        config = AnonymizeConfig(ips=True, sensitive_words=["acme"], salt="s")
+        result = anonymize(json.loads(json.dumps(source)), config)
+        text = json.dumps(result.ir)
+        assert "acme" not in text
+        assert "203.0.114.9" not in text
         assert apply_revert(result.ir, result.mapping) == source
 
     def test_without_a_rule_nothing_changes(self) -> None:

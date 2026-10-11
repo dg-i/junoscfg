@@ -13,7 +13,8 @@ pass that rewrote every reference again after the walk is gone (ANON-P1,
 change anonymize-every-placed-value).
 
 A group name Junos gives a meaning of its own passes unchanged, as a group
-and as a reference: ``re0`` and ``re1`` apply to that Routing Engine,
+and as a reference: ``re0`` and ``re1`` apply to that Routing Engine (in a
+routing matrix ``lcc<N>-re<N>`` and ``sfc<N>-re<N>``),
 ``node0`` and ``node1`` to that chassis-cluster node, ``member<N>`` to that
 Virtual Chassis member, and ``${node}`` (any ``$`` variable) is expanded by
 Junos at commit (Junos OS "Configuration Groups" documentation: groups named
@@ -34,9 +35,10 @@ if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
 
 
-#: Group names Junos reserves for a Routing Engine, a cluster node or a
+#: Group names Junos reserves for a Routing Engine (of a routing-matrix LCC or
+#: SFC too), a cluster node or a
 #: Virtual Chassis member, and variables Junos expands (`${node}`).
-_RESERVED_GROUP = re.compile(r"^(?:re[01]|node[01]|member\d+|\$.*)$")
+_RESERVED_GROUP = re.compile(r"^(?:(?:(?:lcc|sfc)\d+-)?re[01]|node[01]|member\d+|\$.*)$")
 _REFERENCES = frozenset({"apply-groups", "apply-groups-except"})
 
 

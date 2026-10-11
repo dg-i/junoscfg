@@ -155,7 +155,7 @@ def pipeline_result(
                 ),
             )
             ir = anon_result.ir
-            diagnostics.extend(_unplaced_warnings(anon_result.unplaced))
+            diagnostics.extend(_unplaced_warnings(anon_result.unplaced, cfg))
 
             # Dump the revert mapping if requested
             if cfg.dump_map:
@@ -224,23 +224,37 @@ def validate_ir(config: dict[str, Any]) -> Any:
     return FieldValidator().validate(config)
 
 
-def _unplaced_warnings(unplaced: tuple[str, ...]) -> list[Diagnostic]:
+def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[Diagnostic]:
     """One warning per schema path the anonymizer could not place content at.
 
     The path holds schema names only; the content, its key and every entry
-    name are withheld (owner answer 5, spec anonymization/placed-values).
+    name are withheld (owner answer 5, spec anonymization/placed-values). The
+    message names only the shapes the active rules replace.
     """
     counts: dict[str, int] = {}
     for path in unplaced:
         counts[path] = counts.get(path, 0) + 1
+    shapes = [
+        shape
+        for shape, active in (
+            ("an address", cfg.ips),
+            ("a password hash", cfg.passwords),
+            ("a sensitive word", bool(cfg.sensitive_words or cfg.sensitive_patterns)),
+        )
+        if active
+    ]
+    replaced = (
+        f"each {' or '.join(shapes)} in it is replaced, every other word is left as written"
+        if shapes
+        else "no active rule replaces a word of it by its shape; every word is left as written"
+    )
     return [
         Diagnostic(
             source="anonymize",
             path=path or None,
             message=(
                 f"{count} statement(s) {'here' if path else 'at the top level'} the schema "
-                "does not place: a word a rule knows by its shape (an address, a password "
-                "hash, a sensitive word) is replaced, every other word is left as written"
+                f"does not place: {replaced}"
             ),
         )
         for path, count in counts.items()

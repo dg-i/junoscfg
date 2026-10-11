@@ -429,7 +429,8 @@ class TestTheLeafsTypeAnswers:
     the untyped `apply-macro` value as written. Free text and `areaid` are no
     address types: an SNMP OID and an area are syntax (Test/Challenge finding
     6, ruling); the list's name answers only for the keys of those 15 lists the
-    tree types as free text (`syslog host`). Change
+    tree types as free text (`syslog host`), and the leaf's name for
+    `ipv6-router-id` and BGP `cluster` (specification challenge S4). Change
     anonymize-every-placed-value; spec anonymization/placed-values.
     """
 
@@ -453,7 +454,7 @@ class TestTheLeafsTypeAnswers:
     def test_an_address_on_these_types_is_replaced(self, node: dict, value: str) -> None:
         assert self._rule().matches(value, node, ["x", "y"])
 
-    @pytest.mark.parametrize("value", ["tacacs.example.net", "router1", "203.0.114.49:49", "lo0.0"])
+    @pytest.mark.parametrize("value", ["tacacs.example.net", "router1", "lo0.0"])
     @pytest.mark.parametrize("node", [{"l": True, "tr": "hostname"}, {"l": True}])
     def test_a_name_on_a_host_type_is_not(self, node: dict, value: str) -> None:
         assert not self._rule().matches(value, node, ["x", "y"])
@@ -511,6 +512,14 @@ class TestTheLeafsTypeAnswers:
             ),
             (["set system syslog host 203.0.114.57 any any"], {"203.0.114.57"}),
             (["set system apply-macro M2 peer 203.0.114.8"], {"203.0.114.8"}),
+            (
+                [
+                    "set routing-options router-id 203.0.114.61",
+                    "set routing-options ipv6-router-id 203.0.114.61",
+                ],
+                {"203.0.114.61"},
+            ),
+            (["set protocols bgp group G cluster 203.0.114.60"], {"203.0.114.60"}),
         ],
         ids=[
             "tacplus-hostname",
@@ -519,6 +528,8 @@ class TestTheLeafsTypeAnswers:
             "nat-ipprefix-only",
             "syslog-host-free-text-key",
             "nested-apply-macro-untyped",
+            "ipv6-router-id-string-s4",
+            "bgp-cluster-areaid-s4",
         ],
     )
     def test_every_address_the_device_writes_there_is_replaced(
@@ -554,13 +565,14 @@ class TestTheLeafsTypeAnswers:
             "set snmp view V oid 1.3.6.1 include",
             "set policy-options policy-statement P term T from area 0.0.0.0",
             "set policy-options policy-statement P term T from area 198.0.2.1",
-            "set protocols bgp group G cluster 198.0.2.1",
+            "set protocols bgp group G cluster 64496",
         ],
-        ids=["snmp-oid", "from-area-backbone", "from-area", "bgp-cluster"],
+        ids=["snmp-oid", "from-area-backbone", "from-area", "bgp-cluster-integer"],
     )
     def test_syntax_shaped_like_an_address_is_unchanged(self, line: str) -> None:
         """An OID and an area are syntax, not addresses (ruling on Test/Challenge
-        finding 6): free text and `areaid` take no address."""
+        finding 6): free text and `areaid` take no address, but for
+        `ipv6-router-id` and BGP `cluster` (S4), and an integer cluster is none."""
         from junoscfg import Format, convert_config
 
         config = AnonymizeConfig(ips=True, ignore_reserved=True, salt="test")
@@ -605,3 +617,31 @@ class TestTheLeafsTypeAnswers:
         assert address not in (rule.lexical(f'"{text}"') or "")
         ir = {"configuration": {"system": {"bogus": f"peer {text}"}}}
         assert address not in json.dumps(anonymize(ir, AnonymizeConfig(ips=True, salt="t")).ir)
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set routing-instances VRF-A route-distinguisher 203.0.114.65:100",
+            "set routing-instances VRF-A vrf-target target:203.0.114.65:100",
+            "set routing-instances VRF-A vrf-target import target:203.0.114.65:100",
+        ],
+        ids=["route-distinguisher", "vrf-target", "vrf-target-import"],
+    )
+    def test_an_address_inside_a_route_distinguisher_or_target_is_replaced(self, line: str) -> None:
+        """A route distinguisher and a VRF target in their address form carry
+        the router's loopback; the tree types them as free text. 75,279 JVD
+        route distinguishers held one and passed `--anonymize-ips` as written
+        (the proof that counts addresses inside words, specification challenges
+        S4 and S5). The number after the address stays; an AS-form value
+        (`target:64496:100`) holds no address and is unchanged."""
+        from junoscfg import Format, convert_config
+
+        config = AnonymizeConfig(ips=True, salt="test")
+        out = convert_config(line, from_format=Format.SET, to_format=Format.SET, anon_config=config)
+        assert "203.0.114.65" not in out
+        assert out.strip().endswith(":100")
+        as_form = line.replace("203.0.114.65", "64496")
+        out = convert_config(
+            as_form, from_format=Format.SET, to_format=Format.SET, anon_config=config
+        )
+        assert out.strip() == as_form

@@ -2,11 +2,59 @@
 
 from __future__ import annotations
 
+import ipaddress
+import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from junoscfg.anonymize.config import AnonymizeConfig
+
+
+#: An address token, the one answer to "where is an address in this text" for
+#: the IP rule, content the walk cannot place, the strings pass and revert. An
+#: IPv4 address is bounded by anything but a digit or a dot (`:8080`, `lo_`,
+#: `host:`, `peer=` are text), an IPv6 address by anything but a word
+#: character, a dot or a colon. A prefix length in range follows it; anything
+#: else beside it (`/rack-4`, `,`, `/33`, `%ge-0/0/0.0`) is text and stays.
+_ADDRESS_TOKEN = re.compile(
+    r"(?<![\d.])(?P<v4>\d{1,3}(?:\.\d{1,3}){3})(?:/(?P<l4>\d{1,3}))?(?![\d.])"
+    r"|(?<![\w.:])(?P<v6>[0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}(?:\.\d{1,3}){0,3})"
+    r"(?:/(?P<l6>\d{1,3}))?(?![\w.:])"
+)
+
+
+def address_tokens(text: str) -> list[tuple[int, int, str]]:
+    """Each address or prefix in *text*: its start, its end, and the token. Never raises."""
+    found = []
+    for match in _ADDRESS_TOKEN.finditer(text):
+        group, length_group = ("v4", "l4") if match.group("v4") else ("v6", "l6")
+        try:
+            parsed = ipaddress.ip_address(match.group(group))
+        except ValueError:
+            continue
+        end = match.end(group)
+        length = match.group(length_group)
+        if length is not None and int(length) <= parsed.max_prefixlen:
+            end = match.end(length_group)
+        found.append((match.start(), end, text[match.start() : end]))
+    return found
+
+
+def replace_addresses(text: str, replace: Callable[[str], str]) -> str:
+    """*text* with each address token replaced by *replace*; the text around it stays."""
+    tokens = address_tokens(text)
+    if not tokens:
+        return text
+    parts: list[str] = []
+    last = 0
+    for start, end, token in tokens:
+        parts.extend((text[last:start], replace(token)))
+        last = end
+    parts.append(text[last:])
+    return "".join(parts)
 
 
 class Rule(ABC):
@@ -22,6 +70,12 @@ class Rule(ABC):
 
     #: Lower numbers run first. A leaf is processed by the first matching rule.
     priority: int = 100
+
+    #: Whether a replacement leaves the text around what it replaced, so a
+    #: later rule may still recognise a shape in it (`acme-203.0.114.9`: the
+    #: address, then the sensitive word). A rule that replaces a whole value
+    #: ends the chain.
+    keeps_text: bool = False
 
     @abstractmethod
     def matches(

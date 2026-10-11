@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import re
 import shlex
 import tempfile
 from dataclasses import dataclass
@@ -153,19 +154,35 @@ def _kept_by_design(word: str) -> bool:
     )
 
 
-#: Keywords whose value is syntax shaped like an address: an area or cluster
-#: identifier (`areaid`) and an SNMP OID (ruling on Test/Challenge finding 6).
-_SYNTAX_BEFORE = frozenset({"area", "cluster", "oid"})
+#: Keywords whose value is syntax shaped like an address: an area identifier
+#: (`areaid`) and an SNMP OID (ruling on Test/Challenge finding 6). A BGP
+#: `cluster` holds an address (specification challenge S4).
+_SYNTAX_BEFORE = frozenset({"area", "oid"})
+#: A run of characters an address is spelled with; an address inside a word
+#: (`http://203.0.114.9:8080/x`, `lo_203.0.114.9`) is one too (S5).
+_RUN = re.compile(r"[0-9A-Fa-f:.]+")
 
 
 def _addresses_in(lines: list[str]) -> set[str]:
-    """Every word of *lines* that is an address, but an area, a cluster or an OID."""
+    """Every address in *lines*, whole words and inside words, but an area or an OID.
+
+    A whole word keeps its prefix length; inside a word the scan is plain
+    `ipaddress` over each run of address characters, independent of the
+    product's tokenizer (specification challenge S5).
+    """
     found: set[str] = set()
     for line in lines:
         words = _split(line)
         for before, word in zip(["", *words], words, strict=False):
-            if before not in _SYNTAX_BEFORE and _is_address(word):
+            if before in _SYNTAX_BEFORE:
+                continue
+            if _is_address(word):
                 found.add(word)
+                continue
+            for run in _RUN.findall(word):
+                for candidate in (run.strip(".:"), *run.split(":")):
+                    if _is_address(candidate.strip(".")):
+                        found.add(candidate.strip("."))
     return found
 
 

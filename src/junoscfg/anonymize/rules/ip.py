@@ -2,27 +2,15 @@
 
 from __future__ import annotations
 
-import ipaddress
-import re
 from typing import TYPE_CHECKING, Any
 
 from ipanon import Anonymizer, NetworkRegistry
 
-from junoscfg.anonymize.rules import Rule
+from junoscfg.anonymize.rules import Rule, address_tokens, replace_addresses
 from junoscfg.display import strip_type_prefix
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
-
-# Regex for matching IPv4 addresses embedded in larger strings.
-# Uses word-boundary-like anchoring: not preceded/followed by a dot or digit
-# to avoid matching partial numbers (e.g., "1.2.3.4.5" or "x11.2.3.4").
-_IPV4_IN_STRING_RE = re.compile(
-    r"(?<!\d)(?<!\.)"  # Not preceded by digit or dot
-    r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # IPv4 address
-    r"(?:/(\d{1,2}))?"  # Optional CIDR prefix
-    r"(?![\d.])"  # Not followed by digit or dot
-)
 
 #: Leaf types that hold an address or a prefix: the IP families, and the host
 #: families, which hold a name or an address. The rule takes a value of such a
@@ -78,34 +66,29 @@ _ADDRESS_KEYED_LISTS: frozenset[str] = frozenset(
 )
 _KEY_TEXT_TYPES = frozenset({"string", "key-attribute-string-type", "areaid"})
 
-#: An address token: an IPv4 or IPv6 address, with a prefix length when one in
-#: range follows. A neighbour that continues a number, a word or an address
-#: (`1.2.3.4.5`, `x10.0.0.1`) is no boundary. Anything else beside it
-#: (`/rack-4`, `,`, `%ge-0/0/0.0`, `/33`, a trailing `/`) is text and stays.
-_ADDRESS_TOKEN = re.compile(
-    r"(?<![\w.:])"
-    r"(?:(?P<v4>\d{1,3}(?:\.\d{1,3}){3})|(?P<v6>[0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}"
-    r"(?:\.\d{1,3}){0,3}))"
-    r"(?:/(?P<length>\d{1,3})(?![\w.:]))?"
-    r"(?![\w.:])"
+#: Leaves the tree types only as free text or `areaid` although they hold an
+#: address: `routing-options ipv6-router-id` (`string`, the IPv4-shaped router
+#: ID), BGP `cluster` (`areaid`, usually the loopback), a route distinguisher
+#: (`route-distinguisher rd-type`, `<address>:<n>`) and a VRF target
+#: (`vrf-target` `community`/`import`/`export`, `target:<address>:<n>`). Matched
+#: by the leaf's own name (and its parent's), only with those types, where the
+#: value holds an address (specification challenges S4, S5). Retires with
+#: `_ADDRESS_KEYED_LISTS`, when change 18 retypes them on device evidence.
+_ADDRESS_VALUED_LEAVES = frozenset(
+    {
+        ("", "ipv6-router-id"),
+        ("", "cluster"),
+        ("route-distinguisher", "rd-type"),
+        ("vrf-target", "community"),
+        ("vrf-target", "import"),
+        ("vrf-target", "export"),
+    }
 )
 
 
-def _addresses(value: str) -> list[tuple[int, int, str]]:
-    """Each address token in *value*: its start, its end, and the token."""
-    found = []
-    for match in _ADDRESS_TOKEN.finditer(value):
-        address = match.group("v4") or match.group("v6")
-        try:
-            parsed = ipaddress.ip_address(address)
-        except ValueError:
-            continue
-        end = match.end("v4") if match.group("v4") else match.end("v6")
-        length = match.group("length")
-        if length is not None and int(length) <= parsed.max_prefixlen:
-            end = match.end("length")
-        found.append((match.start(), end, value[match.start() : end]))
-    return found
+def _address_valued(path: list[str]) -> bool:
+    parent = path[-2] if len(path) >= 2 else ""
+    return ("", path[-1]) in _ADDRESS_VALUED_LEAVES or (parent, path[-1]) in _ADDRESS_VALUED_LEAVES
 
 
 class IpRule(Rule):
@@ -113,6 +96,7 @@ class IpRule(Rule):
 
     name = "ip"
     priority = 30  # After passwords (10) and SSH keys (20)
+    keeps_text = True
 
     def __init__(self, config: AnonymizeConfig) -> None:
         """Build the rule from *config*, including its network registry."""
@@ -164,69 +148,55 @@ class IpRule(Rule):
         an address or host type, or none at all (a leaf the tree gives no
         type, content the walk cannot place). A list key the tree types only
         as free text or `areaid` answers by its list's name
-        (`_ADDRESS_KEYED_LISTS`). Any other type never takes an address, and
-        a value holding none never reaches the address anonymizer.
+        (`_ADDRESS_KEYED_LISTS`); a leaf of `_ADDRESS_VALUED_LEAVES` so typed
+        by its own name, wherever in the value the address stands. Any other
+        type never takes an address, and a value holding none never reaches
+        the address anonymizer.
         """
-        tokens = _addresses(value) if isinstance(value, str) else []
-        if not tokens or tokens[0][0] != 0:
+        tokens = address_tokens(value) if isinstance(value, str) else []
+        if not tokens:
+            return False
+        if path and _address_valued(path):
+            return self._types(schema_node) <= _KEY_TEXT_TYPES
+        if tokens[0][0] != 0:
             # An address inside other text is `ips_in_strings`' (`scp://...`).
             return False
-        types = {
+        types = self._types(schema_node)
+        if not types or types & _ADDRESS_TYPES:
+            return True
+        return (
+            types <= _KEY_TEXT_TYPES
+            and len(path) >= 2
+            and path[-1] == "name"
+            and path[-2] in _ADDRESS_KEYED_LISTS
+        )
+
+    @staticmethod
+    def _types(schema_node: dict[str, Any]) -> set[str]:
+        return {
             strip_type_prefix(str(ref)).lower()
             for ref in (schema_node.get("atr"), schema_node.get("tr"))
             if ref is not None
         }
-        if not types or types & _ADDRESS_TYPES:
-            return True
-        return (
-            len(path) >= 2
-            and path[-1] == "name"
-            and path[-2] in _ADDRESS_KEYED_LISTS
-            and types <= _KEY_TEXT_TYPES
-        )
 
     def transform(self, value: str) -> str:
         """Anonymize each address or prefix in *value*; the text around it stays."""
-        tokens = _addresses(value)
-        if not tokens:
-            return value
-        if len(tokens) == 1 and tokens[0][2] == value:
-            return self._anonymizer.anonymize(value)
-        parts: list[str] = []
-        last = 0
-        for start, end, token in tokens:
-            parts.extend((value[last:start], self._anonymizer.anonymize(token)))
-            last = end
-        parts.append(value[last:])
-        return "".join(parts)
+        return replace_addresses(value, self._anonymizer.anonymize)
 
     def lexical(self, word: str) -> str | None:
         """A word holding an address has the address replaced."""
-        return self.transform(word) if _addresses(word) else None
+        return self.transform(word) if address_tokens(word) else None
 
     def replace_ips_in_string(self, value: str, *, done: frozenset[str] = frozenset()) -> str:
-        """Replace all embedded IPv4 addresses in a string.
+        """Replace every address embedded in a string, IPv4 and IPv6.
 
-        Used for the ``ips_in_strings`` option to catch IPs inside URLs,
-        host+IP combos, and other non-standalone contexts. An address in
+        Used for the ``ips_in_strings`` option to catch addresses inside URLs,
+        host+address combos, and other non-standalone contexts. An address in
         *done* -- a replacement the walk already wrote -- is left as it is.
         """
-
-        def _replace(m: re.Match[str]) -> str:
-            addr_str = m.group(1)
-            cidr = m.group(2)
-            if m.group(0) in done or addr_str in done:
-                return m.group(0)
-            try:
-                ipaddress.ip_address(addr_str)
-            except ValueError:
-                return m.group(0)
-            if cidr:
-                anon = self._anonymizer.anonymize(f"{addr_str}/{cidr}")
-                return anon
-            return self._anonymizer.anonymize(addr_str)
-
-        return _IPV4_IN_STRING_RE.sub(_replace, value)
+        return replace_addresses(
+            value, lambda token: token if token in done else self._anonymizer.anonymize(token)
+        )
 
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized IP mapping."""

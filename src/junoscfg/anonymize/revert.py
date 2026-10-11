@@ -70,12 +70,44 @@ def apply_revert(ir: dict[str, Any], mapping: dict[str, dict[str, str]]) -> dict
     reverse = _build_reverse_map(mapping)
     if not reverse:
         return ir
-    _walk_revert(ir, reverse)
+    addresses = {anonymized: original for original, anonymized in mapping.get("ip", {}).items()}
+    _walk_revert(ir, _Reverse(reverse, addresses))
     return ir
 
 
-def _walk_revert(obj: Any, reverse: dict[str, str]) -> None:
-    """Recursively walk the IR and replace anonymized values, and the words of keys."""
+class _Reverse:
+    """The inverted mapping, and the inverted address mapping alone."""
+
+    def __init__(self, reverse: dict[str, str], addresses: dict[str, str]) -> None:
+        self.reverse = reverse
+        self.addresses = addresses
+
+    def addresses_in(self, text: str) -> str:
+        """*text* with each address token a replacement spells restored."""
+        from junoscfg.anonymize.rules import replace_addresses
+
+        return replace_addresses(text, lambda token: self.addresses.get(token, token))
+
+    def word(self, word: str) -> str:
+        """Undo the forward chain on one word: a whole-word replacement, then its addresses."""
+        if word in self.addresses:
+            return self.addresses[word]
+        return self.addresses_in(self.reverse.get(word, word))
+
+    def words(self, text: str) -> str:
+        """Undo the forward chain word by word, as the walk splits a word."""
+        return _WORD.sub(lambda match: self.word(match.group()), text)
+
+
+def _walk_revert(obj: Any, reverse: _Reverse) -> None:
+    """Recursively walk the IR and replace anonymized values, and the words of keys.
+
+    Content the anonymizer cannot place -- an unknown key, a 0.16.1 joined
+    key, a statement kept whole -- has the addresses, hashes and sensitive
+    words of its keys replaced word by word (spec anonymization/placed-values),
+    so revert restores a key the same way, with the same split. A key the
+    schema names is never a replacement.
+    """
     if isinstance(obj, dict):
         items = []
         for key, value in obj.items():
@@ -83,7 +115,7 @@ def _walk_revert(obj: Any, reverse: dict[str, str]) -> None:
                 value = _revert_value(value, reverse)
             elif isinstance(value, (dict, list)):
                 _walk_revert(value, reverse)
-            items.append((_revert_key(key, reverse), value))
+            items.append((reverse.words(key), value))
         obj.clear()
         obj.update(items)
     elif isinstance(obj, list):
@@ -94,36 +126,26 @@ def _walk_revert(obj: Any, reverse: dict[str, str]) -> None:
                 _walk_revert(item, reverse)
 
 
-#: A word of a key: anything between whitespace and quotes, past a tag's `@`.
-_KEY_WORD = re.compile(r'[^\s"@]+')
+#: A word as the anonymize walker splits text it cannot place.
+_WORD = re.compile(r'[^\s"]+')
 
 
-def _revert_key(key: str, reverse: dict[str, str]) -> str:
-    """Restore each word of *key* a replacement spells exactly.
-
-    Content the anonymizer cannot place -- an unknown key, a 0.16.1 joined
-    key, a statement kept whole -- has the addresses, hashes and sensitive
-    words of its keys replaced word by word (spec anonymization/placed-values),
-    so revert restores a key the same way. A key the schema names is never a
-    replacement.
-    """
-    return _KEY_WORD.sub(lambda match: reverse.get(match.group(), match.group()), key)
-
-
-def _revert_value(value: str, reverse: dict[str, str]) -> str:
+def _revert_value(value: str, reverse: _Reverse) -> str:
     """Revert a single string value.
 
-    First checks for an exact match in the reverse map.  If not found,
-    checks whether any anonymized token appears as a substring (handles
-    sensitive-word replacements embedded in larger strings).
+    An exact match first: a whole value a rule replaced, with any address the
+    chain replaced before it. Then word by word, as the walk rewrote content
+    it cannot place and the strings pass an embedded address; then any
+    anonymized token left as a substring (an AS number inside a word).
     """
-    # Exact match — covers most rules (IP, password, identity, group, etc.)
-    if value in reverse:
-        return reverse[value]
-
-    # Substring match — covers sensitive_word partial replacements
-    result = value
-    for anonymized, original in reverse.items():
+    if value in reverse.addresses:
+        return reverse.addresses[value]
+    if value in reverse.reverse:
+        return reverse.addresses_in(reverse.reverse[value])
+    # Word by word, then any token left as a substring -- an AS number inside
+    # a word, which the strings pass replaces beside an address.
+    result = reverse.words(value)
+    for anonymized, original in reverse.reverse.items():
         if anonymized in result:
             result = result.replace(anonymized, original)
     return result

@@ -11,6 +11,8 @@ import copy
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+
 from junoscfg.anonymize import (
     AnonymizeConfig,
     anonymize,
@@ -275,3 +277,28 @@ class TestRevertRestoresKeys:
             "203.0.114.9",
             "junoscfg:unplaced",
         ]
+
+    @pytest.mark.parametrize(
+        "word",
+        [
+            "http://{}:8080/x",
+            "{}:179",
+            "host:{}",
+            "lo_{}",
+            "peer={}",
+            "scp://u@{}/f",
+            "{}/rack-4",
+        ],
+    )
+    def test_an_address_inside_a_word_of_a_key_is_restored(self, word: str) -> None:
+        """The forward pass replaces the address inside the word, so revert
+        splits the key as the walk does and restores the address token, not
+        the word (Reviewer finding 2)."""
+        ir = {"configuration": {"system": {f"bogus {word.format('198.0.2.1')}": [None]}}}
+        apply_revert(ir, {"ip": {"203.0.114.9": "198.0.2.1"}})
+        assert ir == {"configuration": {"system": {f"bogus {word.format('203.0.114.9')}": [None]}}}
+
+    def test_an_ipv6_address_inside_a_word_of_a_key_is_restored(self) -> None:
+        ir = {"configuration": {"system": {"bogus [3ffe:b00::1]:179": [None]}}}
+        apply_revert(ir, {"ip": {"3ffe:0b00::9": "3ffe:b00::1"}})
+        assert ir == {"configuration": {"system": {"bogus [3ffe:0b00::9]:179": [None]}}}
