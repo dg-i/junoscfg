@@ -5,3 +5,26 @@ zone: schema
 domains: [schema-pipeline]
 assurance: economy
 removes: "none, because existing schema assertions and product APIs remain; manual evidence reporting becomes an executable adapter"
+verification:
+  state: parked
+  planned-paths:
+    - tools/schema_verification.py
+    - tools/schema_verification.CONTRACT.md
+    - tools/schema-verification/policy.json
+    - tools/schema-verification/schema-21.4.required.json
+    - tools/schema-verification/schema-21.4.stability.json
+    - tools/schema-verification/schema-23.2.required.json
+    - tools/schema-verification/schema-23.2.stability.json
+    - tools/schema-verification/schema-25.2.required.json
+    - tools/schema-verification/schema-25.2.stability.json
+    - tests/tooling/test_schema_verification.py
+    - pyproject.toml
+    - .gitignore
+    - mkdocs.yml
+    - docs/how-to/run-a-batch-of-changes.md
+    - changelog.d/schema-verification-evidence.misc
+    - .agent-ready/activation.json
+    - openspec/specs/schema-pipeline/verification-evidence/spec.md
+  dependencies: []
+  changelog: changelog.d/schema-verification-evidence.misc
+  generated-records: []

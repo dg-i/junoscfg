@@ -1,0 +1,430 @@
+"""Schema evidence reports execution and preserves the immutable candidate."""
+
+from __future__ import annotations
+
+import gzip
+import importlib
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+import tomllib
+
+from junoscfg.validate import ArtifactBuilder
+from tests.support.paths import PROJECT_ROOT
+
+PRODUCTS = (
+    "junos-json-schema.json.gz",
+    "junos-yaml-schema.json.gz",
+    "junos-structure-tree.json.gz",
+    "junos-set.lark.gz",
+)
+DUMP = "21.4R0-ex4600.xsd"
+SHARD = "schema-21.4"
+SUITE = "tests/corpus/test_schema_data.py"
+
+
+def adapter():
+    """A missing new behaviour is an executed failure, never a skip."""
+    return importlib.import_module("tools.schema_verification")
+
+
+def reports_for(nodeid, outcome="passed", reason=""):
+    return [
+        {"nodeid": nodeid, "when": "setup", "outcome": "passed", "reason": ""},
+        {"nodeid": nodeid, "when": "call", "outcome": outcome, "reason": reason},
+        {"nodeid": nodeid, "when": "teardown", "outcome": "passed", "reason": ""},
+    ]
+
+
+def write_products(directory, *, payload=b"generated artifact\n", generated_at="later"):
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in PRODUCTS:
+        (directory / name).write_bytes(gzip.compress(payload, mtime=0))
+    meta = {"junos_version": "21.4R0", "generated_at": generated_at, "stats": {"total_nodes": 3}}
+    (directory / "junos-schema-meta.json.gz").write_bytes(
+        gzip.compress(json.dumps(meta, sort_keys=True).encode(), mtime=0)
+    )
+
+
+def git(root, *arguments):
+    return subprocess.run(
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True
+    ).stdout
+
+
+def commit_fixture(root):
+    git(root, "add", ".")
+    git(
+        root,
+        "-c",
+        "user.name=Schema Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-m",
+        "fixture",
+    )
+
+
+def small_repository(tmp_path, *, fault=""):
+    """Exercise genuine small pytest sessions with immutable synthetic inputs."""
+    module = adapter()
+    root = tmp_path / "repo"
+    root.mkdir()
+    git(root, "init", "-q")
+    for package in ("tools", "tests", "tests/corpus", "tests/support"):
+        (root / package).mkdir(parents=True, exist_ok=True)
+        (root / package / "__init__.py").write_text("")
+    shutil.copyfile(
+        PROJECT_ROOT / "tools/schema_verification.py", root / "tools/schema_verification.py"
+    )
+    for name in ("paths.py", "schema_data.py"):
+        shutil.copyfile(PROJECT_ROOT / "tests/support" / name, root / "tests/support" / name)
+    dump = root / "private_test_data/schemas" / DUMP
+    dump.parent.mkdir(parents=True)
+    dump.write_text('<schema xmlns:junos="http://xml.juniper.net/junos/21.4R0/junos"/>')
+    nodeids = [
+        f"{SUITE}::test_generated[{DUMP}]",
+        f"{SUITE}::test_pass[{DUMP}]",
+        f"{SUITE}::TestIdentifierCounts::test_the_counts_are_the_proposals[{DUMP}]",
+    ]
+    required = {"tests": nodeids, "shards": [SHARD]}
+    manifests = root / "tools/schema-verification"
+    manifests.mkdir()
+    (manifests / "schema-21.4.required.json").write_text(json.dumps(required))
+    stable = [f".agent-ready/schema/{SHARD}/artifacts/{name}" for name in PRODUCTS]
+    (manifests / "schema-21.4.stability.json").write_text(json.dumps(stable))
+    policy = {
+        "runtime": ".agent-ready/schema/runtime.json",
+        "suite": SUITE,
+        "shipped": SHARD,
+        "shards": {
+            SHARD: {
+                "dump": f"private_test_data/schemas/{DUMP}",
+                "release": "21.4R0",
+                "required": "tools/schema-verification/schema-21.4.required.json",
+                "stability": "tools/schema-verification/schema-21.4.stability.json",
+                "result": f".agent-ready/schema/{SHARD}/result.json",
+                "outcomes": f".agent-ready/schema/{SHARD}/outcomes.json",
+                "artifacts": f".agent-ready/schema/{SHARD}/artifacts",
+                "allowed-skips": {nodeids[2]: "no pinned count for 21.4R0"},
+            }
+        },
+    }
+    (manifests / "policy.json").write_text(json.dumps(policy))
+    (root / ".gitignore").write_text(
+        ".agent-ready/\nprivate_test_data/\n__pycache__/\n.pytest_cache/\n"
+    )
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (root / "tests/conftest.py").write_text(
+        'def pytest_addoption(parser):\n    parser.addoption("--schema", action="store_true")\n'
+    )
+    extra = {
+        "failed": "assert False, 'actual failed call'",
+        "input": f"Path('private_test_data/schemas/{DUMP}').write_text('mutated')",
+        "tracked": "Path('pyproject.toml').write_text('mutated')",
+    }.get(fault, "assert True")
+    source = f"""import gzip, json
+from pathlib import Path
+import pytest
+@pytest.fixture(params=[{DUMP!r}])
+def schema_dump(request):
+    return request.param
+@pytest.fixture(scope="module")
+def real_artifacts(tmp_path_factory):
+    out = tmp_path_factory.mktemp("actual-generation")
+    for name in {PRODUCTS!r}:
+        (out / name).write_bytes(gzip.compress(b"generated artifact\\n", mtime=0))
+    meta = {{"junos_version": "21.4R0", "generated_at": "actual", "stats": {{"total_nodes": 3}}}}
+    metadata = gzip.compress(json.dumps(meta, sort_keys=True).encode(), mtime=0)
+    (out / "junos-schema-meta.json.gz").write_bytes(metadata)
+    return out
+@pytest.fixture
+def finalization():
+    yield
+    {"assert False, 'actual failed teardown'" if fault == "teardown" else "pass"}
+def test_generated(schema_dump, real_artifacts):
+    assert (real_artifacts / "junos-set.lark.gz").is_file()
+def test_pass(schema_dump, finalization):
+    {extra}
+class TestIdentifierCounts:
+    def test_the_counts_are_the_proposals(self, schema_dump):
+        pytest.skip("no pinned count for 21.4R0")
+"""
+    (root / SUITE).write_text(source)
+    write_products(root / "src/junoscfg/validate/data", generated_at="committed")
+    commit_fixture(root)
+    module.prepare_runtime(root)
+    return root, required, policy
+
+
+class TestExecutedCompletion:
+    def test_passed_reports_complete_exact_ids(self):
+        required = {"tests": ["test_a", "test_b"], "shards": [SHARD]}
+        actual, outcomes = adapter().completion(
+            required,
+            reports_for("test_b") + reports_for("test_a"),
+            0,
+            {},
+            collected=["test_b", "test_a"],
+        )
+        assert set(actual["tests"]) == {"test_a", "test_b"}
+        assert actual["shards"] == [SHARD]
+        assert all(row["outcome"] == "passed" for row in outcomes["tests"].values())
+
+    def test_allowed_skips_keep_identity_reason(self):
+        module = adapter()
+        required = {"tests": ["ordinary", "count"], "shards": [SHARD]}
+        reason = "no pinned count for 21.4R0"
+        observed = reports_for("ordinary") + reports_for("count", "skipped", reason)
+        actual, outcomes = module.completion(
+            required, observed, 0, {"count": reason}, collected=required["tests"]
+        )
+        assert set(actual["tests"]) == {"ordinary", "count"}
+        assert outcomes["tests"]["count"] == {"outcome": "skipped", "reason": reason}
+        for wrong in ("different release", "", reason + " extra"):
+            with pytest.raises(ValueError):
+                module.completion(
+                    required, observed, 0, {"count": wrong}, collected=required["tests"]
+                )
+
+    @pytest.mark.parametrize(
+        "fault",
+        [
+            "collection-only",
+            "missing-call",
+            "duplicate-report",
+            "unexpected-id",
+            "failed-call",
+            "failed-setup",
+            "failed-teardown",
+            "wrong-collection",
+            "duplicate-required",
+            "nonzero-exit",
+            "all-skipped",
+            "unexpected-skip",
+        ],
+    )
+    def test_incomplete_failed_or_wrong_reports_refuse(self, fault):
+        module = adapter()
+        required = {"tests": ["test_a"], "shards": [SHARD]}
+        observed = reports_for("test_a")
+        collected, status, allowed = ["test_a"], 0, {}
+        if fault == "collection-only":
+            observed = []
+        elif fault == "missing-call":
+            observed.pop(1)
+        elif fault == "duplicate-report":
+            observed.append(observed[1].copy())
+        elif fault == "unexpected-id":
+            observed += reports_for("test_extra")
+        elif fault.startswith("failed-"):
+            observed[{"failed-setup": 0, "failed-call": 1, "failed-teardown": 2}[fault]][
+                "outcome"
+            ] = "failed"
+        elif fault == "wrong-collection":
+            collected.append("test_extra")
+        elif fault == "duplicate-required":
+            required["tests"].append("test_a")
+        elif fault == "nonzero-exit":
+            status = 1
+        else:
+            observed = reports_for("test_a", "skipped", "permitted")
+            if fault == "all-skipped":
+                allowed = {"test_a": "permitted"}
+        with pytest.raises(ValueError):
+            module.completion(required, observed, status, allowed, collected=collected)
+
+
+class TestPhysicalInputs:
+    @pytest.mark.parametrize("fault", ["missing", "empty", "unknown", "symlink", "parent-symlink"])
+    def test_missing_empty_symlink_or_unknown_dump_refuses(self, tmp_path, fault):
+        module = adapter()
+        directory = tmp_path / "schemas"
+        directory.mkdir()
+        path = directory / DUMP
+        valid = '<schema xmlns:junos="http://xml.juniper.net/junos/21.4R0/junos"/>'
+        if fault != "missing":
+            path.write_text(
+                "" if fault == "empty" else "<schema/>" if fault == "unknown" else valid
+            )
+        if fault == "symlink":
+            real = tmp_path / "physical.xsd"
+            path.rename(real)
+            path.symlink_to(real)
+        elif fault == "parent-symlink":
+            real_dir = tmp_path / "physical"
+            directory.rename(real_dir)
+            directory.symlink_to(real_dir, target_is_directory=True)
+        with pytest.raises(ValueError):
+            module.validate_input(path, "21.4R0")
+
+    @pytest.mark.parametrize("fault", ["missing", "corrupt", "unknown", "mismatch"])
+    def test_unknown_or_changed_runtime_refuses(self, tmp_path, fault):
+        module = adapter()
+        path = tmp_path / "runtime.json"
+        values = module.observe_versions()
+        assert values and all(
+            isinstance(v, str) and v not in ("", "unknown") for v in values.values()
+        )
+        if fault == "corrupt":
+            path.write_text("{")
+        elif fault != "missing":
+            values[next(iter(values))] = "unknown" if fault == "unknown" else "changed version"
+            path.write_text(json.dumps(values))
+        with pytest.raises(ValueError):
+            module.verify_versions(path)
+
+
+class TestCandidateIntegrity:
+    def test_real_runner_exports_artifacts_without_mutation(self, tmp_path):
+        root, required, policy = small_repository(tmp_path)
+        before = git(root, "status", "--porcelain", "--untracked-files=no")
+        assert adapter().run_shard(root, SHARD) == 0
+        recipe = policy["shards"][SHARD]
+        assert json.loads((root / recipe["result"]).read_text()) == required
+        outcomes = json.loads((root / recipe["outcomes"]).read_text())
+        assert outcomes["tests"][required["tests"][2]] == {
+            "outcome": "skipped",
+            "reason": "no pinned count for 21.4R0",
+        }
+        for name in PRODUCTS:
+            assert (root / recipe["artifacts"] / name).read_bytes() == (
+                root / "src/junoscfg/validate/data" / name
+            ).read_bytes()
+        assert git(root, "status", "--porcelain", "--untracked-files=no") == before == ""
+
+    @pytest.mark.parametrize("fault", ["failed", "input", "tracked", "teardown", "dirty"])
+    def test_mutated_inputs_or_failed_execution_publish_no_success(self, tmp_path, fault):
+        root, _, policy = small_repository(tmp_path, fault=fault)
+        if fault == "dirty":
+            (root / "pyproject.toml").write_text("dirty")
+        result = root / policy["shards"][SHARD]["result"]
+        result.parent.mkdir(parents=True)
+        result.write_text('{"tests":["stale"],"shards":["stale"]}')
+        try:
+            status = adapter().run_shard(root, SHARD)
+        except ValueError:
+            status = 1
+        assert status != 0
+        assert not result.exists()
+
+
+class TestGenerationIntegrity:
+    def test_sentinel_executes_fresh_generation(self, tmp_path, monkeypatch):
+        root, _, _ = small_repository(tmp_path)
+        outputs = []
+
+        def generate(self, source, output):
+            assert Path(source) == root / "private_test_data/schemas" / DUMP
+            outputs.append(Path(output))
+            write_products(Path(output))
+            return {}
+
+        monkeypatch.setattr(ArtifactBuilder, "build", generate)
+        assert adapter().run_sentinel(root) == 0
+        assert adapter().run_sentinel(root) == 0
+        assert len(outputs) == 2 and outputs[0] != outputs[1]
+        assert all(".agent-ready/schema" not in str(path) for path in outputs)
+        assert git(root, "status", "--porcelain", "--untracked-files=no") == ""
+
+    @pytest.mark.parametrize(
+        "fault",
+        [
+            "protected-bytes",
+            "metadata-field",
+            "missing-product",
+            "generator-failure",
+        ],
+    )
+    def test_wrong_or_unstable_artifacts_refuse(self, tmp_path, monkeypatch, fault):
+        root, _, _ = small_repository(tmp_path)
+
+        def generate(self, source, output):
+            if fault == "generator-failure":
+                raise ValueError("actual generation failure")
+            out = Path(output)
+            write_products(
+                out, payload=b"different" if fault == "protected-bytes" else b"generated artifact\n"
+            )
+            if fault == "metadata-field":
+                (out / "junos-schema-meta.json.gz").write_bytes(
+                    gzip.compress(b'{"junos_version":"other","generated_at":"later"}', mtime=0)
+                )
+            elif fault == "missing-product":
+                (out / PRODUCTS[0]).unlink()
+            return {}
+
+        monkeypatch.setattr(ArtifactBuilder, "build", generate)
+        try:
+            status = adapter().run_sentinel(root)
+        except (ValueError, OSError):
+            status = 1
+        assert status != 0
+
+
+class TestEvidenceConfiguration:
+    def test_three_bound_shards_and_one_sentinel_are_declared(self):
+        config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
+        tiers = config["batch"]["expensive-tiers"]
+        assert len(tiers) == 3
+        assert len({tier["name"] for tier in tiers}) == 3
+        assert sum(bool(tier.get("sentinel-command")) for tier in tiers) == 1
+        dumps = set()
+        for tier in tiers:
+            required = json.loads((PROJECT_ROOT / tier["required-manifest"]).read_text())
+            assert len(required["tests"]) == len(set(required["tests"])) == 12
+            assert required["shards"] == [tier["name"]]
+            paths = [name for name in tier["inputs"] if name.endswith(".xsd")]
+            assert len(paths) == 1
+            dumps.update(paths)
+            assert tier["version-files"]
+            stable = json.loads((PROJECT_ROOT / tier["stability-manifest"]).read_text())
+            assert len(stable) == 4 and all(name.endswith(PRODUCTS) for name in stable)
+            assert "tools.schema_verification" in tier["command"]
+        assert len(dumps) == 3
+
+    def test_safe_seeds_preserve_policy_and_link_guides(self):
+        config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
+        assessment = PROJECT_ROOT / ".agent-ready/activation.json"
+        assert config["verification"]["policy"] == "strategy-a/1"
+        assert config["verification"]["enabled"] is assessment.exists()
+        if assessment.exists():
+            assert json.loads(assessment.read_text())["policy"] == "strategy-a/1"
+        assert config["stage"]["surfaces"] == ["consumer", "cli"]
+        assert config["always-loaded-budget"] == 4600
+        for pattern, count in (
+            (".agents/skills/agent-ready-*/SKILL.md", 300),
+            (".agents/skills/agent-ready-*/*.md", 100),
+            (".agents/skills/agent-ready-*/**/*.md", 100),
+        ):
+            assert config["caps-report-only"][pattern] == count
+        ignore = (PROJECT_ROOT / ".gitignore").read_text().splitlines()
+        assert ".agent-ready/verification/" in ignore and ".agent-ready/schema/" in ignore
+        nav = (PROJECT_ROOT / "mkdocs.yml").read_text()
+        assert "how-to/lifecycle-ledger.md" in nav and "how-to/verification-evidence.md" in nav
+
+    def test_rollback_retains_evidence_and_uncached_declarations(self, tmp_path, monkeypatch):
+        from agent_ready_checks import verification
+
+        config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
+        tiers = config["batch"]["expensive-tiers"]
+        assert len(tiers) == 3
+        store = tmp_path / ".agent-ready/verification"
+        store.mkdir(parents=True)
+        retained = store / "historical.json"
+        retained.write_text('{"historical":true}')
+        executions = []
+        monkeypatch.setattr(verification, "tiers", lambda root, base, selection: tiers)
+
+        def execute(root, command, base, declaration, *, reuse=True):
+            executions.append((command, reuse))
+            return 0
+
+        monkeypatch.setattr(verification, "execute", execute)
+        assert verification.run_tiers(tmp_path, None, enabled=False) == 0
+        assert len(executions) == 4 and all(reuse is False for _, reuse in executions)
+        assert retained.read_text() == '{"historical":true}'
