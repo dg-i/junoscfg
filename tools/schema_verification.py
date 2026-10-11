@@ -27,6 +27,7 @@ PRODUCTS = (
     "junos-set.lark.gz",
 )
 META = "junos-schema-meta.json.gz"
+NORMALIZED_META = "junos-schema-meta.normalized.json"
 
 
 def _json(path):
@@ -222,7 +223,7 @@ def _preflight(root, policy, shard):
     if required["shards"] != [shard]:
         raise ValueError("required shard identity differs")
     stable = _json(_path(root, recipe["stability"]))
-    expected = [f"{recipe['artifacts']}/{name}" for name in PRODUCTS]
+    expected = [f"{recipe['artifacts']}/{name}" for name in (*PRODUCTS, NORMALIZED_META)]
     if stable != expected:
         raise ValueError("stability manifest differs from protected products")
     return recipe, required
@@ -235,17 +236,18 @@ def _snapshot(root, policy, recipe):
     return {name: hashlib.sha256(_path(root, name).read_bytes()).hexdigest() for name in names}
 
 
+def _normalized_metadata(directory):
+    with gzip.open(directory / META, "rt") as handle:
+        value = json.load(handle)
+    value.pop("generated_at", None)
+    return value
+
+
 def _compare(generated, committed):
     for name in PRODUCTS:
         if (generated / name).read_bytes() != (committed / name).read_bytes():
             raise ValueError(f"protected generated artifact differs: {name}")
-    metadata = []
-    for directory in (generated, committed):
-        with gzip.open(directory / META, "rt") as handle:
-            value = json.load(handle)
-        value.pop("generated_at", None)
-        metadata.append(value)
-    if metadata[0] != metadata[1]:
+    if _normalized_metadata(generated) != _normalized_metadata(committed):
         raise ValueError("generated metadata differs beyond its timestamp")
 
 
@@ -324,6 +326,7 @@ class _Evidence:
         output.mkdir(parents=True, exist_ok=True)
         for name in (*PRODUCTS, META):
             shutil.copyfile(path / name, output / name)
+        _write(output / NORMALIZED_META, _normalized_metadata(path))
         self.generated = True
 
     def finish(self, exit_status):

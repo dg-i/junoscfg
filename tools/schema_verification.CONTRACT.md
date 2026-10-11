@@ -15,7 +15,9 @@ command identity, locking, caching and stability execution.
   survives failed execution or mutation. Historical verification evidence stays.
 - Products come from the existing real_artifacts temporary fixture; shipped
   protected bytes agree with committed artifacts. Metadata generated_at is the
-  sole semantic comparison exception.
+  sole semantic comparison exception. Every shard exports canonical metadata
+  excluding only that timestamp into the installed wrapper's double-pass
+  stability outputs, alongside the four unchanged protected raw products.
 - The sentinel performs public ArtifactBuilder work in a fresh temporary output
   with no application cache and never overwrites stable tier evidence.
 - Runtime preparation writes an ignored input before the immutable checkpoint;

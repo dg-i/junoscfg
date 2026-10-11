@@ -113,6 +113,7 @@ def small_repository(tmp_path, *, fault=""):
     manifests.mkdir()
     (manifests / "schema-21.4.required.json").write_text(json.dumps(required))
     stable = [f".agent-ready/schema/{SHARD}/artifacts/{name}" for name in PRODUCTS]
+    stable.append(f".agent-ready/schema/{SHARD}/artifacts/junos-schema-meta.normalized.json")
     (manifests / "schema-21.4.stability.json").write_text(json.dumps(stable))
     policy = {
         "runtime": ".agent-ready/schema/runtime.json",
@@ -432,7 +433,10 @@ class TestEvidenceConfiguration:
             dumps.update(paths)
             assert tier["version-files"]
             stable = json.loads((PROJECT_ROOT / tier["stability-manifest"]).read_text())
-            assert len(stable) == 4 and all(name.endswith(PRODUCTS) for name in stable)
+            assert len(stable) == 5 and all(name.endswith(PRODUCTS) for name in stable[:4])
+            assert stable[4] == (
+                f".agent-ready/schema/{tier['name']}/artifacts/junos-schema-meta.normalized.json"
+            )
             assert "tools.schema_verification" in tier["command"]
         assert len(dumps) == 3
 

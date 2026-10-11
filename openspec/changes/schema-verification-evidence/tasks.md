@@ -19,7 +19,7 @@
 
 - [ ] 3.1 Receive fresh isolated Reviewer verdict and apply accepted corrections with invalidated reruns.
 - [ ] 3.2 Complete bounded finalization and reviewed main specification.
-- [ ] 3.3 Capture truthful metrics and root-controlled activation/integration/archive/version/tag evidence.
+- [ ] 3.3 Capture truthful metrics and actual root-controlled activation evidence; record integration/archive/version/tag handoff for root release bookkeeping.
 
 Checkpoint: phase 5 implementation and focused acceptance are complete; immutable commit and independent application integration precede the canonical full. Activation has not started. Root owns activation and release bookkeeping. Last exact baseline red output is retained privately, with no test collection error and no weakened assertion.
 
