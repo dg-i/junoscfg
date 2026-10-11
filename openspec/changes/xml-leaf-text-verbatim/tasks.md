@@ -11,6 +11,8 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 5f93b36: every step passed except the application tests, 7,561 passed / 37 skipped / 18 xfailed / 2 failed; the two failures are the device law for the two XML captures, the four `xml-value-whitespace-lost` lines "recorded but gone", closed by task 2.3.
+
+- [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: not required, `economy` below the high-risk floor (`review.md`).
+- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head: captured for base 13719d9 and code head 5f93b36; recapture after task 2.3 moves the code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
