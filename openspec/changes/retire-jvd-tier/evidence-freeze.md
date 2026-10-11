@@ -73,3 +73,7 @@ None, because the decision record and the owner's request settle what is removed
 
 - Freeze established: base 284715b, commits cc5c121 (preflight), 53818cc (proposal); approved under
   the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, phases 4–7 (up to the merge): no new instruction or evidence; consistent with the
+  freeze. Implementation 9c9694f, full checkpoint passed there; main spec applied 6d8554b; review
+  omission recorded; metrics captured for 284715b..6d8554b. Resume point: the orchestrator's
+  rebase, version bump, archive (`archive retire-jvd-tier --yes --skip-specs`) and merge.

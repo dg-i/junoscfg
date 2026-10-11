@@ -9,9 +9,10 @@
 - [x] 2.2 Remove `tests/corpus/test_jvd_corpus.py`, `tests/support/jvd_data.py` (`BROKEN_FILES`) and `.github/workflows/corpus.yml` (its only job ran the tier).
 - [x] 2.3 Remove the tier from `docs/architecture/developer-guide.md` (tests/corpus row, CI nightly row, jvd tier row and paragraph), `docs/how-to/work-with-agents.md` (CI nightly row), `tests/CONTRACT.md` (corpus row).
 - [x] 2.4 Towncrier fragment `changelog.d/+retire-jvd-tier.removal.md`; no version bump (merge-time versioning).
+- [x] 2.5 Full checkpoint `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at HEAD 9c9694f: every check passed (7,558 passed, 37 skipped, 18 xfailed; coverage 92.95 %). The main-spec application (6d8554b) and change records after it do not invalidate it.
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
