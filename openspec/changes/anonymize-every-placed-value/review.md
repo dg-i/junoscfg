@@ -110,4 +110,19 @@ Carried forward: NEW-R9 (change 5b); the OpenConfig `router-id` leaves typed
 
 ## Verdict
 
-<!-- Filled by the fresh Reviewer at STOP-R. -->
+CHANGES REQUIRED at `ab13794` (findings 1–8, S4, S5), then CHANGES REQUIRED at
+`7173e75` (R1, MEDIUM, from the S4 extension), then **APPROVE at `bb0c86a`**, all
+from the same fresh Reviewer (full text `private_test_data/makeover-work/anonymize-every-placed-value/roles/review.md`).
+Re-review of `7173e75..bb0c86a`: the fix reaches exactly 4 tree leaves
+(`policy-options community members`, typed `string`, at the top, under `groups`
+and under `logical-systems`); `vrf-target` and `community C1 members` carry the
+same pseudonym under every rule combination, revert stays exact, two PEs with one
+salt give the same pseudonym; AS-form (`target:64496:100`, `target:64496L:1`) and
+regular-expression members are unchanged; `tests/unit/anonymize`,
+`tests/contract/test_every_rule.py` and the corpus law give 860 passed, 3 xfailed.
+No correctness challenge remains open. Specification challenges S1, S2, S3, S4 and
+S5 wait for the owner under their recorded interim actions.
+
+Carried forward (cosmetic, not blocking): the warning reads "each an address in
+it is replaced" where "each address" reads better; NEW-R9 (change 5b); the
+OpenConfig `router-id` leaves typed `string` (change 18, with S4).
