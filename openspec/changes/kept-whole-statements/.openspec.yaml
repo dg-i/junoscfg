@@ -1,3 +1,45 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# Every zone this change edits is yellow: src/junoscfg/convert/** (conversion, most of the diff),
+# src/junoscfg/display/constants.py and its door (kernel, one constant), src/junoscfg/__init__.py
+# (surface, __version__ only).
+zone: conversion
+domains: [conversion]
+removes:
+  - "the kept statement's key at its parent's level (`\"<tokens joined>\": true`, `[null]` in JSON), replaced by the `junoscfg:unplaced` record at the same level"
+  - "the false UNPLACED report of a valid `apply-groups` or keyed entry read after a bare keyword, which the reader used to keep whole as well"
+  - "the quote-stripping of kept tokens; nothing public is removed, because beta removes a door only after a deprecation and no door changes"
 assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      No name or signature changes; src/junoscfg/__init__.py changes only
+      `__version__` (0.16.1 to 0.17.0). Behind convert_config and
+      convert_config_result, a statement the set or structured reader cannot
+      place is no longer a key of its own at its parent's level
+      (`"apply-groups G1 G2": [null]` in JSON, `true` in YAML) but an entry of
+      the reserved mapping `"junoscfg:unplaced"` at that level, spelled with
+      its original tokens, quotes included. The old spelling could not hold a
+      bare keyword beside the node it names (`apply-groups`, `host-name`, a
+      keyed list's keyword), so a statement was lost or overwritten silently
+      (OPEN-2, NEW-C1), and it dropped quotes (OPEN-3). A leaf with no value
+      is now kept and reported UNPLACED instead of overwriting a value, so
+      strict conversion raises and anonymization refuses on it; a valid
+      statement after a bare keyword is placed instead of reported. Declared
+      breaks on a named surface raise the minor (AGENTS.md).
+    migration: >-
+      A caller that reads kept statements from JSON or YAML output reads the
+      keys of "junoscfg:unplaced" at the level where it looked for the joined
+      key; the `true`/`[null]` value is unchanged. JSON or YAML written by an
+      earlier release still reads: an old joined key is an unknown statement,
+      written back as before and reported UNPLACED. Input a device loads is
+      unaffected.
+  cli:
+    why: >-
+      `junoscfg convert` to JSON or YAML writes the new spelling above;
+      set and structured output keep the kept statements verbatim, quotes
+      included, possibly in another position at their level; a bare leaf now
+      prints an UNPLACED diagnostic and fails under --strict and when
+      anonymizing.
+    migration: None for input a device loads; fix the statements the diagnostics name.
