@@ -4,8 +4,11 @@ This page is for the Orchestrator, Builders and Reviewers of a batch of junoscfg
 changes. The process itself comes from the `agent-ready-change` skill and its
 `batches.md`. This page adds what is specific to this repository: which paths
 run one at a time, where each change works, how a change is checked against the
-devices' own output, and how it is versioned and merged. The reasons for
-dropping the JVD tier are in the
+devices' own output (the **device-evidence checks**), and how it is versioned
+and merged. Which tests a path selects, and the per-path extras beside them,
+are in the developer guide's
+[pre-review evidence table](../architecture/developer-guide.md#pre-review-evidence-by-the-paths-a-change-touches).
+The reasons for dropping the JVD tier are in the
 [decision record](../decisions/2026-10-11-retire-jvd-from-per-change-verification.md).
 
 ## Plan the batch
@@ -18,7 +21,8 @@ dropping the JVD tier are in the
    `private_test_data/makeover-probes.md`, with its answers in a matching
    `.out` file beside it. Read the `.out` before you mark an item
    EVIDENCE_BLOCKED.
-3. Run no more than three Builders at once, each on its own branch and worktree.
+3. Run no more than `max-builders` Builders at once (`pyproject.toml`
+   `[tool.template.batch]`; 3 today), each on its own branch and worktree.
 4. Changes that touch any of these paths run **one at a time**:
    - `src/junoscfg/validate/xsd_fixes.py`
    - `src/junoscfg/validate/grammar_generator.py`
@@ -47,10 +51,14 @@ done
 `README.md`. So you link each entry inside it, not the directory itself, and the
 worktree stays clean.
 
-`private_test_data/` is the only place for scratch work. Create the change's
-scratch directory in the main checkout before you link, for example
-`private_test_data/makeover-work/<slug>/`. A directory created later inside the
-worktree stays local to that worktree.
+`private_test_data/` is the only place for scratch work, for example
+`private_test_data/makeover-work/<slug>/`. Anything created inside a linked
+entry lands in the main checkout. A new top-level entry created later in the
+worktree's `private_test_data/` stays local to that worktree.
+
+A fresh worktree has no `.claude/skills` mirror (it is untracked), and the
+full check's `skills` step fails without it. Write it once:
+`uv run --locked --group dev agent-ready skills --regenerate`.
 
 Run Python with `export PYTHONDONTWRITEBYTECODE=1`. Tracked files hold
 synthetic values only (`AGENTS.md`, Test Data Conventions).
@@ -63,9 +71,10 @@ anonymizer runs these checks. That means paths under `src/junoscfg/validate/`,
 
 The evidence comes from one of two sources:
 
-- **(a)** `tests/data/device/`: every committed capture. This is the vMX and
-  QFX5120 renderings of `junoscfg-oracle` and the device-rendered JVD
-  configurations, each in conf, set, JSON and XML. It is the default source.
+- **(a)** `tests/data/device/`: every capture in its `manifest.json`. This is
+  the vMX and QFX5120 renderings of `junoscfg-oracle`, the vMX rendering of
+  `synthetic-probes` and the device-rendered JVD configurations, in conf, set,
+  JSON and XML. It is the default source.
 - **(b)** `examples/junoscfg-oracle.*`: the vMX rendering only. It is faster,
   but it is a subset of (a).
 
@@ -77,13 +86,13 @@ an example-based test exists:
 | 1 | Every rendering converts to every output format with no error and no new diagnostic | (a) | none | T1. Until it lands, use the before/after comparison below: no exception, and no diagnostic the base lacks |
 | 2 | Device law: set output equals the device's display set, except the lines in `known-differences.json` | (a) | `tests/corpus/test_device_renderings.py::TestJunoscfgWritesTheDevicesSet` | nothing |
 | 3 | Every format reads to one IR, and every (reader, writer) round trip keeps it | (a) | `test_device_renderings.py::TestEveryDoorReadsTheDevicesUniversalStatements` (universal statements only); `tests/contract/test_format_matrix.py` (shapes) | T2: the whole IR across the four renderings of a capture, and round trips over the captures |
-| 4 | Schema and field validation are as clean as `UNPLACED_IN_THE_EXAMPLE` records | (b) | `tests/contract/test_round_trip_validates.py::TestTheExampleRendersValid`, `tests/unit/convert/test_field_validator.py::TestTheExampleConfigurationValidates` | nothing |
+| 4 | Schema and field validation are as clean as `UNPLACED_IN_THE_EXAMPLE` records, plus the JSON shapes the strict xfails name | (b) | `tests/contract/test_round_trip_validates.py::TestTheExampleRendersValid`, `tests/unit/convert/test_field_validator.py::TestTheExampleConfigurationValidates` | nothing |
 | 5 | Anonymization law: every rule combination leaves no eligible original, revert is exact, references resolve | (a) | `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes` (all rules at once; addresses only) | T3: each rule and combination, and every eligible value, not only addresses |
 | 6 | A before/after comparison of every output from base and head, with every changed line explained | (a) | none: a per-change script | T4: commit the script as a shared tool. Until then, follow the steps below |
 
 The follow-ups T1–T4 are test-only or tooling changes, listed in the ledger.
 
-Checks 1 to 5 run in the default suite, so the full checkpoint runs them too.
+Checks 2 to 5 run in the default suite, so the full checkpoint runs them too.
 While you edit, run them on their own (about 18 seconds):
 
 ```sh
@@ -134,14 +143,16 @@ never write them back.
    template does both:
 
    ```sh
-   cd private_test_data/makeover-work/$slug/base-tree
-   PYTHONDONTWRITEBYTECODE=1 uv run --locked python ../compare.py record ../base.json [--anonymize]
-   cd -   # back to the change worktree
-   PYTHONDONTWRITEBYTECODE=1 uv run --locked python private_test_data/makeover-work/$slug/compare.py record private_test_data/makeover-work/$slug/head.json [--anonymize]
-   PYTHONDONTWRITEBYTECODE=1 uv run --locked python private_test_data/makeover-work/$slug/compare.py diff private_test_data/makeover-work/$slug/base.json private_test_data/makeover-work/$slug/head.json
+   w=$PWD/private_test_data/makeover-work/$slug   # from the change worktree
+   (cd "$w/base-tree" && PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" record "$w/base.json")
+   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" record "$w/head.json"
+   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" diff "$w/base.json" "$w/head.json"
    ```
 
-   The base takes about 3 seconds for 96 conversions, or 37 seconds for 1,056
+   For a change that touches anonymization, add `--anonymize` after the
+   output path in both `record` commands.
+
+   The base takes about 3 seconds for 96 conversions, or about 40 seconds for 1,152
    with every rule.
 5. Every difference is either intended, naming the ID it closes, or a
    regression. Record the counts, for example "N of M conversions differ, all
@@ -183,8 +194,9 @@ once, before review, never again for a review-fix round. It needs a dump under
 `private_test_data/schemas/`:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # regenerates (about 3 minutes), then runs the suite
-PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # a second run on the committed tree:
+PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # regenerates (about 5 minutes with the suite)
+git add src/junoscfg/validate/data && git commit                            # commit the regenerated artifacts
+PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # a second run on the committed tree
 git diff --stat -- src/junoscfg/validate/data                               # must print nothing
 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest --schema tests/corpus/test_schema_data.py -q
 ```
@@ -197,16 +209,19 @@ official regeneration once, at the end.
 The Orchestrator merges, in the main checkout:
 
 1. Rebase the branch onto the current `master`. Then run the affected tests and
-   the fast set again.
-2. Take the version from `master` at merge time. Bump the patch for a bug, a
-   fix or a docs change. Bump the minor for a break on `consumer` or `cli` that
-   the change declares. Builders do not bump, so two parallel branches never
-   claim the same number. The branch carries its Towncrier fragment,
+   the fast set again. If the rebase brought runtime changes into the branch,
+   run the full checkpoint again. Resolve a conflict in a generated artifact
+   (`src/junoscfg/validate/data/`, `known-differences.json`) only by
+   regenerating it from its sources.
+2. Take the version from `master` at merge time and bump it as `AGENTS.md`
+   Version Management says. Builders do not bump, so two parallel branches
+   never claim the same number. The branch carries its Towncrier fragment,
    `changelog.d/+<slug>.<type>.md`.
-3. Fast-forward `master` to the branch. Make the archive commit, which holds
-   the archive move and the version bump in `pyproject.toml` and
-   `src/junoscfg/__init__.py`. Tag that commit `v{version}`. Remove the
-   worktree.
+3. On the branch, make the archive commit: the archive move and the version
+   bump in `pyproject.toml` and `src/junoscfg/__init__.py`. Then fast-forward
+   `master` to it, tag it `v{version}` and remove the worktree. Committing on
+   the branch keeps anything staged in the main checkout out of the archive
+   commit.
 4. Never push without the owner's authorization.
 
 ## Rules every change keeps
@@ -231,10 +246,13 @@ The Orchestrator merges, in the main checkout:
 
 On 2026-10-11 the owner set this standing preference for review and testing:
 
-- **`economy`** for a yellow-zone change that declares no break, crosses no
-  trust boundary and does no cross-domain work.
-- **The high-risk floor** in every other case: a red zone, a declared break, a
-  trust boundary or cross-domain work. The floor means independent
-  Test/Challenge work and a fresh Reviewer at least as capable as the Builder.
+- **The high-risk floor** for every high-risk change, as the
+  `agent-ready-change` skill defines it: a red zone, security or
+  trust-boundary work, a data migration, a declared break, a change to a named
+  public surface (`consumer`, `cli`), or a cross-domain change. The floor means
+  independent Test/Challenge work and a fresh Reviewer at least as capable as
+  the Builder.
+- **`economy`** for every change below that floor, such as a yellow-zone
+  change with none of those traits.
 
 Phase 0 of every change applies this preference.

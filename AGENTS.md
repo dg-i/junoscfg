@@ -51,8 +51,8 @@ review, run one `uv run --locked --group dev --with griffe --with tach --with
 towncrier --with vulture agent-ready check --set full` (pre-commit, the whole
 suite, the coverage floor), never beside it on the same tree. After review fixes:
 focused tests plus the fast set; repeat full only when runtime-relevant files
-changed. Device-evidence checks, the schema tier, worktrees and parallel changes:
-[run a batch of changes](docs/how-to/run-a-batch-of-changes.md).
+changed. Per-path extras: developer guide, Testing Architecture. Device-evidence
+checks, schema tier, worktrees, parallel changes: [run a batch of changes](docs/how-to/run-a-batch-of-changes.md).
 
 ## Version Management
 

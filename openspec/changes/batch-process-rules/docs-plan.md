@@ -40,6 +40,6 @@
 - Links and anchors: `uv run --locked --group docs mkdocs build --strict` reports no broken link or anchor except the expected "not in nav" notice for the new page (nav lands in `batch-process-config`); every relative link in the changed files resolves (inspection).
 - Commands and examples: every command in the how-to runs at the checked head in this worktree, with its observed result recorded in `tasks.md`; `--schema` and `--regen-schema` need a dump under `private_test_data/schemas/` and are run once if one is present, otherwise recorded as not run.
 - Referenced paths: every `src/`, `tests/`, `tools/`, `examples/` path and test node named in the changed files exists (`ls` / `pytest --collect-only`).
-- Terminology: "oracle checks", "(a)/(b)", "serialized paths", "expensive tier", "Builder/Reviewer/Orchestrator" match `batches.md` and the device decision record; no "JVD tier" remains as per-change evidence (`grep -n -i jvd` on the changed files).
+- Terminology: "device-evidence checks", "(a)/(b)", "serialized paths", "expensive tier", "Builder/Reviewer/Orchestrator" match `batches.md` and the device decision record; no "JVD tier" remains as per-change evidence (`grep -n -i jvd` on the changed files).
 - Diátaxis placement: the new page is a how-to (steps and commands); rationale goes to the decision record; reference facts stay in the developer guide.
 - Rendered output: the strict MkDocs build renders the page; markdownlint passes on changed files; `AGENTS.md` ≤ 100 lines (`agent-ready caps`).

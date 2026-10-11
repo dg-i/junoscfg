@@ -13,7 +13,9 @@ briefs and the developer guide still sends set-reader changes to `--jvd`.
   their source ((a) `tests/data/device/` or (b) `examples/junoscfg-oracle.*`) and exact
   commands per check, the `--schema` tier, worktrees, merge-time versioning, the lessons every
   change keeps, ledger and probe conventions, and the assurance preference.
-- `AGENTS.md`: one Verification sentence and one "Where things are" row link the page.
+- `AGENTS.md`: one Verification sentence and one "Where things are" row link the page, and
+  Version Management moves the bump to merge time, in the archive commit (owner rule 5:
+  "the version is taken from the current `master` at merge time"), for every change.
 - `docs/architecture/developer-guide.md` Testing Architecture and `docs/how-to/solo-review.md`
   (the Reviewer's report): the JVD tier leaves per-change evidence; the oracle checks replace it.
 - New decision record (via `agent-ready scaffold decision`): the JVD tier is retired from the

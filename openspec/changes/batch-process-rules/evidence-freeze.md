@@ -30,7 +30,7 @@ passes once; the Reviewer finds no inaccurate claim or broken command left open.
 ## Performance expectations
 
 None, because no runtime code changes. Process effect: per-change corpus evidence falls from the
-owner's 45–90 minutes to about 70 seconds (17.6 s checks + 51 s loop per tree).
+owner's 45–90 minutes to about a minute (17.6 s checks; the comparison 3.4 s per tree, 37 s with every anonymize rule).
 
 ## Outstanding decisions
 
