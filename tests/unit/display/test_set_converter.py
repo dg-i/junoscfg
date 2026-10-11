@@ -40,6 +40,21 @@ class TestStructuredBracketLists:
             "set interfaces ge-0/0/0 unit 0 family ethernet-switching vlan members v20",
         ]
 
+    @pytest.mark.xfail(
+        strict=True,
+        reason="EVIDENCE_BLOCKED: specification challenge SC1 (change value-quoting-by-type, "
+        "owned by change 13 one-ir-at-reader-boundary): the lexer splits a parenthesised "
+        "expression inside a bracket list into its words; whether the device takes an "
+        "expression in a policy chain, and how it prints one, is probe P13",
+    )
+    def test_an_expression_in_a_bracket_list_is_one_value(self) -> None:
+        """`import [ ( P-A && P-B ) P-C ];` is two values, not six (Test/Challenge F1)."""
+        text = "protocols {\n    bgp {\n        import [ ( P-A && P-B ) P-C ];\n    }\n}\n"
+        assert [statement[-1][0] for statement in SetConverter(text).statements()] == [
+            "import ( P-A && P-B )",
+            "import P-C",
+        ]
+
 
 class TestSetConverter:
     def test_simple_structured(self) -> None:

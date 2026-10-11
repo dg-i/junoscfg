@@ -60,7 +60,7 @@ None blocking: P11 and P12 are device questions with safe interim actions (C3, C
 - Assurance preference: economy
 - Risk floor: high (declared break on `consumer` and `cli`; cross-domain: conversion, validation, schema-pipeline, display kernel)
 - Roles required: Builder; independent Test/Challenge (STOP-T after phase 4); fresh Reviewer at least as capable as the Builder (STOP-R after phase 5); Finalizer
-- Resume point: STOP-T after phase 4 (acceptance tests `e6efdb2`); after the orchestrator's ruling on the independent Test/Challenge, phase 5 (implementation, schema tier, record rebuilds, before/after comparison)
+- Resume point: phase 5 (implementation, schema tier, record rebuilds, before/after comparison), then STOP-R
 
 ## Delta log
 
@@ -68,3 +68,10 @@ None blocking: P11 and P12 are device questions with safe interim actions (C3, C
 
 - Freeze established: preflight `e03b220`, intent `6bb03f5`, this commit (deltas, code map, freeze). Approved under the owner's unattended-run instruction of 2026-10-11.
 - Phase 4: acceptance tests committed at `e6efdb2` (277 nodes fail on `50b0a10`, pins named above). The curly lexing row "statement across lines" became a refusal pin in `tests/unit/display/test_set_converter.py`: the reader refuses a statement across lines whatever it quotes (change 1, probe P7); consistent with the freeze, no criterion changes. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, independent Test/Challenge rulings: all accepted (`test-challenge.md`, F1-F10, SC1-SC3, relayed by the orchestrator), as below.
+  - F1: policy chains through every reader and writer (rows `a-policy-chain-holding-a-quoted-name`, `a-policy-chain-of-names`; `TestAPolicyChainIsWrittenAsTheDevicesTokens`); SC1 (curly splits an expression inside `[ ]`) is not this change's layer: pending owner, interim recorded in `review.md`, strict xfail, probe P13, ledgered under change 13.
+  - F2, F10: escaping never depends on a node: tests over entry names, apply-macro values and the audit's rendering; the audit output change is in the `cli` declared break.
+  - SC2 replaces C7's interim: no new rejection without device evidence; a quoted value ending in a lone backslash stays accepted (`QUOTED` takes an optional trailing backslash), pinned, and junoscfg's own set output validates; P11 strict xfail on the backslash round trip.
+  - SC3 changes C4's writer side: a policy-algebra value is written as it is only when the reader keeps it so (an expression starting with `(`, or a quoted token whose text starts with `(`); any other value is escaped, so every value written reads back.
+  - F5 over-acceptance negatives, F6 pins and signature-only failures recorded in `metrics.md`, F7 `$junos-` pin with a node, F8 the XML door on the description rows, F9 the empty value and a P11 strict xfail.
+  - Criteria affected: the acceptance list above (pins now as in `metrics.md`); the grammar criterion: no line the base grammar accepted is rejected except by the escape rule's design (`"a\\" b"`, still rejected as on the base). Work invalidated: none (no product code yet). Reruns: phase-4 base counts (404 failed). Approved under the owner's unattended-run instruction of 2026-10-11.

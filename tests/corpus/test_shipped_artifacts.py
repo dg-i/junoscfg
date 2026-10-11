@@ -15,10 +15,13 @@ set corpus is `test_set_corpus.py`.
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
 import pytest
+
+from junoscfg import Format, convert_config
 
 # The regeneration evidence needs the pipeline stages, which the named surfaces
 # expose only composed, as `schema generate` from an XSD the repository does
@@ -77,11 +80,15 @@ class TestTheShippedGrammarKeepsRejecting:
             "set policy-options policy-statement P term T from policy "
             "(( A && ! B ) || ( ! C && D ))",
             'set interfaces ge-0/0/0 description "uplink to sw1 \\"core\\""',
+            'set system host-name "abc\\"',
+            'set interfaces ge-0/0/0 description "a b\\"',
         ],
         ids=[
             "a-hostname-takes-a-plain-value",
             "a-policy-expression-is-one-value",
             "an-escaped-quote-is-part-of-its-value",
+            "a-word-ending-in-a-backslash",
+            "a-quoted-value-ending-in-a-backslash",
         ],
     )
     def test_accepted(self, bundled_set_validator: Any, line: str) -> None:
@@ -96,6 +103,7 @@ class TestTheShippedGrammarKeepsRejecting:
             "set system host-name",
             "set system host-name foo bar baz",
             'set interfaces ge-0/0/0 description "uplink to sw1 "core""',
+            'set system host-name "a\\\\" b"',
         ],
         ids=[
             "a-hostname-is-not-a-policy-expression",
@@ -104,10 +112,38 @@ class TestTheShippedGrammarKeepsRejecting:
             "a-leaf-with-no-value",
             "a-leaf-with-three-values",
             "bare-inner-quotes-end-the-value",
+            "an-escaped-backslash-ends-before-the-quote",
         ],
     )
     def test_rejected(self, bundled_set_validator: Any, line: str) -> None:
         assert bundled_set_validator.validate(line).valid is False, line
+
+
+class TestJunoscfgsOwnSetOutputValidates:
+    """Whatever junoscfg writes validates with the grammar it ships.
+
+    The set reader, the set writer and the shipped grammar agree on a quoted
+    value (Test/Challenge SC2, interim ruling): an inner `"` is escaped, a
+    backslash is written as is, a value ending in one stays accepted.
+    """
+
+    @pytest.mark.parametrize(
+        "value",
+        ['uplink to sw1 "core"', "abc\\", "a b\\", "Authorized use only.\\nAll", 'say "hi"; {x}'],
+        ids=[
+            "an-escaped-quote",
+            "a-word-ending-in-a-backslash",
+            "a-trailing-backslash",
+            "a-backslash-n",
+            "delimiters",
+        ],
+    )
+    def test_the_written_line_validates(self, bundled_set_validator: Any, value: str) -> None:
+        config = {"interfaces": {"interface": [{"name": "ge-0/0/0", "description": value}]}}
+        line = convert_config(
+            json.dumps({"configuration": config}), from_format=Format.JSON, to_format=Format.SET
+        )
+        assert bundled_set_validator.validate(line).valid is True, line
 
 
 class TestTheShippedArtifactsModelTheApplyStatements:

@@ -158,3 +158,24 @@ class TestQuoting:
         result = AuditResult(findings=(finding,), definitions_checked=1, types_audited=())
         output = render(result, "delete-script")
         assert output == 'delete policy-options policy-statement "my policy"\n'
+
+    @pytest.mark.parametrize(
+        ("name", "written"),
+        [('P "x" 1', '"P \\"x\\" 1"'), ("( A && B )", '"( A && B )"')],
+        ids=["an-inner-quote", "a-name-that-looks-like-an-expression"],
+    )
+    def test_a_name_is_written_as_a_value(self, name: str, written: str) -> None:
+        """An inner quote is escaped, and a name is never taken for an expression.
+
+        Test/Challenge F2, F10 (spec conversion/value-quoting): the rendering
+        passes no node, so a name is written as any value is.
+        """
+        finding = Finding(
+            type_name="policy-statement",
+            name=name,
+            path=("policy-options", "policy-statement", name),
+            confidence="unused",
+        )
+        result = AuditResult(findings=(finding,), definitions_checked=1, types_audited=())
+        output = render(result, "delete-script")
+        assert output == f"delete policy-options policy-statement {written}\n"

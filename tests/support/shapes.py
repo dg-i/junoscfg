@@ -34,6 +34,7 @@ import json
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
+from xml.sax.saxutils import escape as xml_escape
 
 from junoscfg import Format, convert_config
 
@@ -2152,6 +2153,10 @@ def _quoting_row(name: str, value: str, spelled: str, why: str, **sources: str) 
             JSON: _json(_description(value)),
             YAML: "configuration:\n  interfaces:\n    interface:\n    - name: ge-0/0/0\n"
             f"      description: {json.dumps(value)}\n",
+            XML: _xml(
+                "<interfaces><interface><name>ge-0/0/0</name>"
+                f"<description>{xml_escape(value)}</description></interface></interfaces>"
+            ),
         },
         ir=_description(value),
         set_output=line,
@@ -2218,6 +2223,42 @@ _add(
         set_output=f"{_NEIGHBOR_SET} import P-1\n",
         why="A quoted name that cannot read as an expression reads without its quotes, as "
         "before; what the device holds for it is probe P12.",
+    ),
+    Shape(
+        "a-policy-chain-holding-a-quoted-name",
+        {
+            SET: f'{_NEIGHBOR_SET} import "( P-A && P-B )"\n{_NEIGHBOR_SET} import P-C\n',
+            STRUCTURED: _nest(_NEIGHBOR, '                import [ "( P-A && P-B )" P-C ];\n'),
+            JSON: _json(_neighbor(**{"import": ['"( P-A && P-B )"', "P-C"]})),
+            YAML: _neighbor_yaml(
+                "          import:\n          - '\"( P-A && P-B )\"'\n          - P-C\n"
+            ),
+            XML: _xml(
+                _NEIGHBOR_XML.format(
+                    '<import>"( P-A &amp;&amp; P-B )"</import><import>P-C</import>'
+                )
+            ),
+        },
+        ir=_neighbor(**{"import": ['"( P-A && P-B )"', "P-C"]}),
+        set_output=f'{_NEIGHBOR_SET} import "( P-A && P-B )"\n{_NEIGHBOR_SET} import P-C\n',
+        written={STRUCTURED: ('import [ "( P-A && P-B )" P-C ];',)},
+        why="Test/Challenge F1: a policy chain is a leaf-list; curly writes it `[ ... ]` "
+        "with each value the device's token (dict_walker's bracket path), and reads the "
+        "quoted name inside it as the name. A chain holding a bare expression is "
+        "specification challenge SC1 (curly splits it; probe P13).",
+    ),
+    Shape(
+        "a-policy-chain-of-names",
+        {
+            SET: f'{_NEIGHBOR_SET} import P-A\n{_NEIGHBOR_SET} import "P 1"\n',
+            STRUCTURED: _nest(_NEIGHBOR, '                import [ P-A "P 1" ];\n'),
+            JSON: _json(_neighbor(**{"import": ["P-A", "P 1"]})),
+            XML: _xml(_NEIGHBOR_XML.format("<import>P-A</import><import>P 1</import>")),
+        },
+        ir=_neighbor(**{"import": ["P-A", "P 1"]}),
+        set_output=f'{_NEIGHBOR_SET} import P-A\n{_NEIGHBOR_SET} import "P 1"\n',
+        written={STRUCTURED: ('import [ P-A "P 1" ];',)},
+        why="Test/Challenge F1: a chain of plain names, one needing quotes (pin: as on the base).",
     ),
     _quoting_row(
         "a-value-holding-an-escaped-quote",

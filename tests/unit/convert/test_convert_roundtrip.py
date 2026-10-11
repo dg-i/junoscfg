@@ -275,3 +275,19 @@ class TestUnknownFormat:
     def test_unknown_output_format(self) -> None:
         with pytest.raises(ValueError, match="Unknown output format"):
             from_dict({}, "protobuf")
+
+
+class TestAPolicyChainIsWrittenAsTheDevicesTokens:
+    """Curly output of a policy chain writes each value as the device's token.
+
+    `dict_walker`'s bracket path passed no node, so an expression in a chain
+    was written as a quoted name, another policy (Test/Challenge F1; spec
+    conversion/value-quoting). Reading it back from curly is specification
+    challenge SC1 (`tests/unit/display/test_set_converter.py`).
+    """
+
+    def test_an_expression_in_a_chain_is_written_bare(self) -> None:
+        config = {"protocols": {"bgp": {"group": [{"name": "G", "import": ["( P-A )", "P-B"]}]}}}
+        output = from_dict(config, "structured")
+        assert "import [ ( P-A ) P-B ];" in output
+        assert '"( P-A )"' not in output

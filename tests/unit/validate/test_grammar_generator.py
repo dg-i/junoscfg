@@ -647,6 +647,24 @@ class TestAnyLeafValueMayBeQuoted:
         """Quotes that are not escaped end the value (pin: as on the base)."""
         assert not _parses(self._tree(), 'set system host-name "uplink to sw1 "core""')
 
+    @pytest.mark.parametrize("value", ['"abc\\"', '"a b\\"'], ids=["one-word", "two-words"])
+    def test_a_quoted_value_ending_in_a_backslash_parses(self, value: str) -> None:
+        """The set reader reads `"a b\\"` as `a b\\`, and junoscfg writes that value so.
+
+        Pin (as on the base): no new rejection without device evidence;
+        specification challenge SC2, interim ruling; probe P11 asks how the
+        device writes a trailing backslash.
+        """
+        assert _parses(self._tree(), f"set system host-name {value}")
+
+    def test_an_escaped_backslash_ends_before_the_quote(self) -> None:
+        """`"a\\\\"` is a value ending in `\\`; the `b"` after it is a second value.
+
+        Pin (as on the base): over-acceptance guard for the escape rule
+        (Test/Challenge F3).
+        """
+        assert not _parses(self._tree(), 'set system host-name "a\\\\" b"')
+
 
 class TestPolicyExpressionIsOneValue:
     """`from policy (( A && ! B ) || ( ! C && D ))` is a single value.

@@ -16,8 +16,13 @@ escaped quote outright (DEV-V1, escape half). 212 recorded device lines are wron
 - **BREAKING** (`consumer`, `cli`): set and curly input keep a quoted `policy-algebra` token's
   quotes where the bare text would read as an expression (`"( P-A )"`), as the device's XML and
   JSON hold it; JSON and YAML output change for such input only.
-- The set grammar's `QUOTED` terminal takes `\"` inside a quoted value, the curly lexer's rule;
-  `validate/data/` is regenerated. `known-differences.json` loses four classes (212 lines).
+- Escaping holds whatever the caller knows (entry names, apply-macro values, `apply-groups`, the
+  audit's rendering), and every value a writer writes reads back as written, curly chains
+  `[ … ]` included; a quoted plain policy name held in the IR is escaped (SC3, interim).
+- **BREAKING** (`cli`): `junoscfg audit` quotes a name that looks like an expression.
+- The set grammar's `QUOTED` terminal takes `\"` inside a quoted value and keeps a trailing
+  backslash (SC2, interim); `validate/data/` is regenerated. `known-differences.json` loses four
+  classes (212 lines).
 - ANON-P4's strict xfail goes: revert was right, the writer was not.
 
 ## Capabilities
@@ -34,7 +39,8 @@ escaped quote outright (DEV-V1, escape half). 212 recorded device lines are wron
 
 ## Non-goals
 
-- The backslash half of DEV-7 (probe P11), quoted plain policy names (probe P12), DEV-V7
+- The backslash half of DEV-7 (probe P11), quoted plain policy names (probe P12), an expression
+  inside a curly chain (SC1, probe P13, change 13), DEV-V7
   `$junos-…` quoting (intentional), DEV-V1 meta verbs (change 14), XML whitespace (change 9).
 
 ## Impact
@@ -43,4 +49,4 @@ escaped quote outright (DEV-V1, escape half). 212 recorded device lines are wron
 (conversion), `validate/grammar_generator.py` and `validate/data/` (schema), the device record,
 tests. Search for the formatter: `format_value|needs_quoting|policy_expression` over `src/`,
 `tools/`, `tests/` finds `dict_walker.py`, `structured_output.py`, `set_output.py`,
-`audit/render.py`. Reproduce: `private_test_data/makeover-work/value-quoting-by-type/repro.py`.
+`audit/render.py` output (not edited). Reproduce: `private_test_data/makeover-work/value-quoting-by-type/repro.py`.

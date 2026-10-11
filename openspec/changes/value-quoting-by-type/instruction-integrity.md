@@ -46,3 +46,4 @@ None asked: the run is unattended. Intake answers 1–8 settle assurance, integr
 <!-- Append later instructions or evidence and their consistency result. -->
 
 - Initial preflight: consistent; C1–C10 resolved, C4 and C7 pending device probes with interim actions. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, independent Test/Challenge rulings (orchestrator): C4's writer side and C7 are superseded by SC3 and SC2 interim rulings (`review.md`); SC1 recorded pending (change 13, P13). Approved under the owner's unattended-run instruction of 2026-10-11.

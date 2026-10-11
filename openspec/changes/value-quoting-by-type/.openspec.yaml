@@ -24,9 +24,13 @@ declared-break:
       it read to `( P-A && P-B )`, an expression over two policies, which is
       another configuration. Set and structured output of every input now
       write such a name quoted, a policy-algebra expression bare, and a value
-      holding `"` with `\"`. The set grammar (validate_set, validate_config)
-      accepts `\"` inside a quoted value and no longer accepts a quoted value
-      that ends in a lone backslash. Declared breaks on a named surface raise
+      holding `"` with `\"`; a policy-algebra value held in the IR with quotes
+      the reader would strip (`"P 1"` from JSON or XML) is written
+      `"\"P 1\""`, so it reads back as held. The set grammar (validate_set,
+      validate_config) accepts `\"` inside a quoted value; a quoted value
+      ending in a lone backslash stays accepted. junoscfg.audit's rendering
+      quotes a name that looks like an expression and escapes an inner `"`.
+      Declared breaks on a named surface raise
       the minor (AGENTS.md); owner intake 6 allows the IR change on device
       evidence (synthetic/vmx-23.2R2-S7.5/synthetic-probes.{xml,json}.gz).
     migration: >-
@@ -40,8 +44,12 @@ declared-break:
   cli:
     why: >-
       `junoscfg convert` writes the spellings above; `junoscfg validate`
-      accepts `\"` inside a quoted value and rejects a quoted value ending in a
-      lone backslash.
+      accepts `\"` inside a quoted value. `junoscfg audit` scripts and path
+      lines write a definition name as any value: one that looks like an
+      expression (`( A && B )`) is quoted, where it was written bare, and an
+      inner `"` is escaped, where it was written bare and did not load.
     migration: >-
       Regenerate JSON or YAML written from set or structured input that quotes
-      a policy name starting with `(`; nothing else to do.
+      a policy name starting with `(`. A tool that matches audit output
+      against a name strips one pair of quotes and unescapes `\"`; a script
+      the audit wrote with a bare inner quote did not load and is written again.
