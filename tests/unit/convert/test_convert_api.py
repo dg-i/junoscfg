@@ -151,6 +151,7 @@ class TestPathFiltering:
             *,
             wrap: bool = True,
             diagnostic_sink: object | None = None,
+            withhold_values: bool = False,
         ) -> str:
             rendered.append(config)
             return "rendered"

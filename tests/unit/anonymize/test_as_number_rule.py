@@ -117,7 +117,11 @@ class TestAsNumberConflictDetection:
     """Tests for collision warnings."""
 
     def test_explicit_map_collision_warns(self) -> None:
-        """Warn when an explicit replacement collides with a target AS."""
+        """Warn when an explicit replacement collides with a target AS.
+
+        The warning names neither AS: both are values of the run, an original
+        and its replacement (ruling F5 on the Test/Challenge of change
+        anonymized-run-messages; it named the replacement before)."""
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             AsNumberRule(
@@ -129,7 +133,8 @@ class TestAsNumberConflictDetection:
             )
             assert len(w) == 1
             assert "collides" in str(w[0].message)
-            assert "64497" in str(w[0].message)
+            assert "64496" not in str(w[0].message)
+            assert "64497" not in str(w[0].message)
 
     def test_explicit_map_no_collision_no_warn(self) -> None:
         """No warning when explicit replacement does not collide."""
@@ -157,10 +162,10 @@ class TestAsNumberConflictDetection:
             assert len(overflow_warnings) >= 1
 
     def test_no_warning_pairs_an_original_with_its_replacement(self) -> None:
-        """A warning of an anonymized run may name a replacement, never the
-        original AS it replaces: the pair is the mapping, and stderr would
-        publish it beside the output (NEW-R10, spec anonymization/placed-values).
-        The collision's replacement is the operator's own option."""
+        """A warning of an anonymized run names no AS of the run, neither an
+        original nor its replacement: the pair is the mapping, and stderr
+        would publish it beside the output (NEW-R10, spec
+        anonymization/placed-values; ruling F5)."""
         originals = [65000 + i for i in range(18)]
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -176,9 +181,11 @@ class TestAsNumberConflictDetection:
         messages = [str(x.message) for x in w]
         assert any("collides" in m for m in messages), messages
         assert any("exceeds" in m for m in messages), messages
+        replacements = [int(v) for v in rule.get_mapping().values()]
+        assert replacements, "the rule replaced nothing, so nothing was scanned"
         for message in messages:
             assert "→" not in message
-            for asn in originals:
+            for asn in (*originals, *replacements):
                 assert str(asn) not in message, message
 
 

@@ -14,12 +14,13 @@ entry names (NEW-R9, NEW-R10); the AS-number warnings pair an original with its 
   expected, and withholds the value; a refusal to read the input says it could not be read, with
   the line where the parser gives one, and is raised as `ValueError` (YAML: `yaml.YAMLError`); the
   CLI's `-v` prints each error's line, never its text or document path; the structured writer's
-  tag note gives its count. A run that does not anonymize, revert included, keeps every message.
+  tag note gives its count; a failure no handler expects prints its class, no traceback. A run
+  that does not anonymize, revert included, keeps every message.
 - The withholding of `UNPLACED` texts moves from the pipeline into the field validator, which
   owns its messages (`FieldValidator(withhold_values=True)`); `_withhold_unplaced` goes.
 - `anonymize()` copies its input once on entry and never changes it; `apply_revert` and `walk`
   keep their documented in-place contract (C7); the generated salt is still written back.
-- The AS-number warnings name no original AS; `ipanon`'s pass-through collision error is raised
+- The AS-number warnings name no AS of the run; `ipanon`'s pass-through collision error is raised
   without the address. `log_level="debug"` prints originals by design, now documented.
 - The `anonymize:` warning reads "each address or password hash ... in it is replaced".
 - No override, fallback or environment read is added; `withhold_values` is a keyword the
@@ -39,8 +40,8 @@ entry names (NEW-R9, NEW-R10); the AS-number warnings pair an original with its 
 
 ## Non-goals
 
-- Tracebacks of crashes, echoed options, the dump-map file and revert output (C12); `junoscfg
-  audit` has no anonymized run. Messages of a run that does not anonymize.
+- Echoed options, the dump-map file and revert output (C12); `junoscfg audit` has no
+  anonymized run. Messages of a run that does not anonymize.
 
 ## Impact
 

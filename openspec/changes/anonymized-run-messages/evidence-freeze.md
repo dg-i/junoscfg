@@ -41,13 +41,17 @@ Observed on `b8e6fc1` (v0.19.0), synthetic values, scripts and outputs in
 | `ipanon` pass-through collision (`PassThroughCollisionError`) | `Anonymized IP <x> (from <original>) collides with --pass-through prefix` | yes, not reached in 15,000 probes (`ptc.py`) (NEW-R10) |
 | Walker debug diagnostics, `ipanon` warnings | only at `log_level="debug"` | yes, by design (C11) |
 | `junoscfg audit` | no `--anonymize-*` option | no anonymized run |
+| CLI `-v -i xml --artifacts <dir>` with a user XSD (Test/Challenge F1) | `Element 'host-name': [facet 'pattern'] The value 'sw1-acme 203.0.114.9' is not accepted ...` | yes |
+| CLI pass-through collision (F1) | uncaught traceback naming the original | yes |
+| Structured reader: "tag inside a key or value", an open quote (F1) | the statement's words | yes |
+| CLI crash with a chain holding a value (F2, monkeypatched) | traceback | yes |
 
 - NEW-R3 (`repro.py`): after `anonymize({"configuration": ir}, cfg)` the caller's `ir` holds the pseudonym. Callers: `convert/__init__.py` reads `anon_result.ir`; README and `docs/getting-started.md` read `result.ir`; nothing in `src/` relies on the rewrite.
 - Contracts: `apply_revert` "Returns: The same *ir* dict (mutated in place)"; `walk` "ir: The full IR dict (mutated in-place)"; `anonymize/CONTRACT.md` "Not for": the generated salt is written back.
 
 ## Non-goals
 
-As `proposal.md`: tracebacks of crashes, echoed options, the dump-map file, revert output, audit (C12); the messages of a run that does not anonymize.
+As `proposal.md`: echoed options, the dump-map file, revert output, audit (C12, after ruling F2); the messages of a run that does not anonymize.
 
 ## Acceptance criteria
 
@@ -78,3 +82,5 @@ None, because C1–C12 are resolved by precedence, evidence and repository rules
 
 - Freeze established after the proposal commit `652a554` and the delta. Approved under the owner's unattended-run instruction of 2026-10-11.
 - 2026-10-11, phase 4: acceptance tests committed at `46ebcc1`, failing on `b8e6fc1` as measured above. Checkpoint: STOP-T, independent Test/Challenge next; then phase 5 (implementation). Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, Test/Challenge F1–F5 (`test-challenge.md`), rulings accepted (see `instruction-integrity.md`). The door law now has 38 doors (anonymized), 35 without anonymization, the crash class (2), debug (3), audit (1). Measured with the head's tests on `b8e6fc1`'s product code (`private_test_data/makeover-work/anonymized-run-messages/tests-on-base.out`): 32 of 38 doors fail; the 6 that pass quote nothing on the base and say what they exist to say (`field-validation-unplaced`, `unplaced-strict`, `read-note`, `cli-validate-only-schema-load`, `cli-validate-warning`, `cli-anonymize-warning`); the crash class fails both rows; the unit tests fail as before plus `test_explicit_map_collision_warns` (ruling F5). Acceptance criteria updated accordingly; pins as named. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, phase 5 timing (developer guide), `anonymize()` with the IP rule, median of 5, one machine: the largest configuration held (`private_test_data/jvd/.../mse1_mx304.conf`, 296,365 lines) 1.605 s at base, 2.113 s at head (+0.51 s: the copy on entry); a synthetic list of 50,000 `name-server` entries 2.736 s and 2.759 s. Explanation: `copy.deepcopy` of the IR once, as the JSON writer copies (change json-writer-pure); the pipeline passes its freshly read IR, so the copy is the only added cost. A record, never a gate (`timing-{base,head}.out`).

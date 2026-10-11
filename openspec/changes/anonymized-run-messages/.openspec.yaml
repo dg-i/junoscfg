@@ -27,7 +27,7 @@ declared-break:
       message, in the diagnostics and in FieldValidationError, keeps its path,
       reason and expected and withholds its value (FieldError.value is "");
       the structured writer's note on dropped tags gives their count without
-      their paths. Lesson #1 of the makeover run: no original value reaches a
+      their paths; an ipanon PassThroughCollisionError names neither address. Lesson #1 of the makeover run: no original value reaches a
       diagnostic, a warning, stderr or an error of an anonymized run. A
       conversion that does not anonymize is unchanged.
     migration: >-
@@ -42,8 +42,10 @@ declared-break:
       text and document path withheld; `--anonymize-*` without `-v` prints a
       read refusal as "Error: the input could not be read ..." (exit 2
       unchanged), field-validation lines and `--strict` failures without
-      values (exit codes unchanged). A run without `--anonymize-*`, and a
-      revert run, print as before.
+      values (exit codes unchanged); a failure no handler expects prints
+      "Error: the conversion failed (<class>); details withheld: the run
+      anonymizes" and exits 1 where it printed a traceback. A run without
+      `--anonymize-*`, and a revert run, print as before.
     migration: >-
       Run the same command without the `--anonymize-*` options to see each
       message's text; line numbers and schema paths are kept so the place can
