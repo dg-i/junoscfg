@@ -21,3 +21,7 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+| Context expansion: tests/corpus/test_schema_data.py and tests/conftest.py | Schema execution/reporting crosses into test-fixture ownership; preserve suite assertions |
+| Context expansion: tools/ and tests/tooling/ | Application-owned evidence adapter, not product runtime |
+| Context expansion: pyproject.toml, .gitignore, mkdocs.yml and docs/how-to/run-a-batch-of-changes.md | Binding, inactive seeds, navigation and executable recipe |
