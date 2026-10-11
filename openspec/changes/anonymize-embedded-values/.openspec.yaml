@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-11
+type: bug
+# The highest-tier zone this change edits is red: anonymize (walker.py, revert.py, __init__.py,
+# rules/). Also yellow: conversion (convert/__init__.py, only the anonymize warning's wording, if
+# the report names an apply-path).
+zone: anonymize
+domains: [anonymization, conversion]
+assurance: economy
