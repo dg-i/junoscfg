@@ -10,6 +10,8 @@
 
 ## 3. Review and evidence
 
+Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 5f9934f: every check passed, 6,516 passed / 45 skipped / 21 xfailed.
+
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
