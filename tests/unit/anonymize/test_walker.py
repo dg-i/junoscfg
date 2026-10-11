@@ -390,6 +390,8 @@ def _flags(options: dict[str, Any]) -> list[str]:
     for name, value in options.items():
         if name == "as_numbers":
             found += ["--anonymize-as-numbers", ",".join(str(asn) for asn in value)]
+        elif name == "preserve_prefixes":
+            found += ["--anonymize-preserve-prefixes", ",".join(value)]
         elif name == "sensitive_patterns":
             for pattern in value:
                 found += ["--anonymize-sensitive-patterns", pattern]
@@ -1208,15 +1210,36 @@ class TestAnApplyPathNamesConfiguration:
         ],
         ids=["sensitive-pattern", "as-in-strings", "ip-only-control"],
     )
+    @pytest.mark.parametrize(
+        ("address", "pattern", "asn", "preserved"),
+        [
+            ("203.0.114.7", "203.0.114.*", 211, []),
+            ("198.51.100.7", "198.51.100.*", 198, []),
+            ("203.0.113.7", "203.0.113.*", 203, []),
+            ("203.0.114.7", "203.0.114.*", 203, ["203.0.114.0/24"]),
+        ],
+        ids=["replaced", "reserved-198", "reserved-203", "explicit-preserve"],
+    )
     def test_an_ip_wildcard_replacement_is_protected(
-        self, fmt: Format, later: dict[str, Any], tmp_path: Path
+        self,
+        fmt: Format,
+        later: dict[str, Any],
+        tmp_path: Path,
+        address: str,
+        pattern: str,
+        asn: int,
+        preserved: list[str],
     ) -> None:
         """Fresh R1: evaluate actual target selection through every public door."""
-        text = "set protocols bgp group G neighbor 203.0.114.7\n" + _prefix_list(
-            "protocols bgp group G neighbor <203.0.114.*>"
+        text = f"set protocols bgp group G neighbor {address}\n" + _prefix_list(
+            f"protocols bgp group G neighbor <{pattern}>"
         )
-        assert fnmatchcase("203.0.114.7", "203.0.114.*")
+        assert fnmatchcase(address, pattern)
         options = {"ips": True, **later}
+        if "as_numbers" in options:
+            options["as_numbers"] = [asn]
+        if preserved:
+            options["preserve_prefixes"] = preserved
         source = _ir(text)
         unchanged = copy.deepcopy(source)
         result = anonymize(source, AnonymizeConfig(salt="s", **options))
@@ -1296,15 +1319,28 @@ class TestAnApplyPathNamesConfiguration:
         ]
         assert name == "<marker_*>"
 
-    def test_surrounding_original_text_still_reaches_later_rules(self) -> None:
+    @pytest.mark.parametrize(
+        ("address", "pattern", "preserved"),
+        [
+            ("203.0.114.7", "203.0.114.*", []),
+            ("198.51.100.7", "198.51.100.*", []),
+            ("203.0.113.7", "203.0.113.*", []),
+            ("203.0.114.7", "203.0.114.*", ["203.0.114.0/24"]),
+        ],
+        ids=["replaced", "reserved-198", "reserved-203", "explicit-preserve"],
+    )
+    def test_surrounding_original_text_still_reaches_later_rules(
+        self, address: str, pattern: str, preserved: list[str]
+    ) -> None:
         """Protect only the generated prefix; the original peer word is still sensitive."""
-        text = "set protocols bgp group peer-203.0.114.7 neighbor 198.51.100.1\n" + _prefix_list(
-            "protocols bgp group <peer-203.0.114.*> neighbor <*>"
+        text = f"set protocols bgp group peer-{address} neighbor 198.51.100.1\n" + _prefix_list(
+            f"protocols bgp group <peer-{pattern}> neighbor <*>"
         )
         result = anonymize(
             _ir(text),
             AnonymizeConfig(
                 ips=True,
+                preserve_prefixes=preserved,
                 sensitive_words=["peer"],
                 sensitive_patterns=[r"\d{3}"],
                 salt="s",

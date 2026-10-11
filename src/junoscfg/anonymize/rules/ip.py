@@ -218,21 +218,18 @@ class IpRule(Rule):
         return None
 
     def _wildcard_written(self, before: str, after: str) -> list[tuple[int, int]]:
-        """Protect generated address/prefix fragments, leaving original surrounding text."""
-        if before == after:
-            return []
+        """Protect owned address/prefix fragments, leaving original surrounding text."""
         if _ADDRESS_PATTERN.fullmatch(before):
-            return [(0, len(after))]
+            return [(0, len(after))] if self._octet_pattern(before) is not None else []
         patterns = [
             match.span()
             for match in ADDRESS_FRAGMENT.finditer(before)
-            if self._octet_pattern(match.group()) not in (None, match.group())
+            if self._octet_pattern(match.group()) is not None
         ]
         spans = patterns + [
             (start, end)
             for start, end in self.spans(before)
             if not any(start < stop and begin < end for begin, stop in patterns)
-            and self.transform(before[start:end]) != before[start:end]
         ]
         rewritten, written = rewrite(self, before, sorted(spans))
         assert rewritten == after
