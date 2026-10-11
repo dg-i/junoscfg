@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-11
+type: refactor
+# pyproject.toml, mkdocs.yml and one how-to: no zone owns these paths; "surface" follows the
+# earlier zone-less changes (document-local-installation, batch-process-rules).
+zone: surface
+domains: []
+removes: "the template's placeholder assurance record (pyproject.toml citing itself) and the empty serialized-paths and expensive-tiers lists"
+assurance: economy
+skip_specs: true

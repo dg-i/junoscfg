@@ -600,17 +600,35 @@ max-lines = 30
 # Builder limit. A path matched by serialized-paths admits only one active
 # Builder. Expensive tiers are inline tables shaped
 # { name = "corpus", paths = ["corpus/**"], command = ["uv", "run", "..."] }.
+# junoscfg: the regenerated schema artifacts, their two generator inputs and the
+# device-law record run one change at a time; the schema tier runs once per change
+# that touches the parser or a generator (docs/how-to/run-a-batch-of-changes.md).
+# The tier's regeneration steps come first and are written down in the how-to.
 [tool.template.batch]
 max-builders = 3
-serialized-paths = []
-expensive-tiers = []
+serialized-paths = [
+    "src/junoscfg/validate/xsd_fixes.py",
+    "src/junoscfg/validate/grammar_generator.py",
+    "src/junoscfg/validate/data/**",
+    "tests/data/device/known-differences.json",
+]
+expensive-tiers = [
+    { name = "schema", paths = [
+        "src/junoscfg/validate/xsd_*.py",
+        "src/junoscfg/validate/schema_node.py",
+        "src/junoscfg/validate/artifact_builder.py",
+        "src/junoscfg/validate/schema_generator.py",
+        "src/junoscfg/validate/grammar_generator.py",
+    ], command = ["uv", "run", "--locked", "pytest", "--schema", "tests/corpus/test_schema_data.py", "-q"] },
+]
 
 # Standing owner preference. Phase 0 selects the strongest matching value from
 # default, zones[<zone>], declared-break, and trust-boundary, copies it to the
 # change's assurance field, and cites record. The mandatory high-risk floor is
 # independent and cannot be lowered here.
+# The owner's preference of 2026-10-11: economy below the mandatory high-risk floor.
 [tool.template.assurance]
-record = "pyproject.toml#tool.template.assurance"
+record = "docs/how-to/run-a-batch-of-changes.md#assurance"
 default = "economy"
 declared-break = "economy"
 trust-boundary = "economy"

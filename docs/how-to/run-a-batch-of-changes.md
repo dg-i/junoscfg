@@ -30,7 +30,8 @@ The reasons for dropping the JVD tier are in the
      `junos-set.lark.gz` and the other generated files
    - `tests/data/device/known-differences.json`
 
-   Two changes that edit the same file never overlap. A change that depends on
+   `pyproject.toml` `[tool.template.batch] serialized-paths` carries the same
+   list. Two changes that edit the same file never overlap. A change that depends on
    another starts from `master` after that one has merged.
 
 ## Give each change a worktree
@@ -187,7 +188,8 @@ code, tests or generated artifacts changed.
 
 ## Run the schema tier when the generators change
 
-Run the schema tier only when a change touches `xsd_fixes.py`, the parser
+The schema tier is the expensive tier `schema` in `pyproject.toml`
+`[tool.template.batch]`. Run it only when a change touches `xsd_fixes.py`, the parser
 (`xsd_extractor.py`, `xsd_parser.py`, `schema_node.py`) or the generators
 (`artifact_builder.py`, `schema_generator.py`, `grammar_generator.py`). Run it
 once, before review, never again for a review-fix round. It needs a dump under
@@ -257,4 +259,5 @@ On 2026-10-11 the owner set this standing preference for review and testing:
 - **`economy`** for every change below that floor, such as a yellow-zone
   change with none of those traits.
 
-Phase 0 of every change applies this preference.
+Phase 0 of every change applies this preference: `pyproject.toml`
+`[tool.template.assurance]` holds it and cites this section as its record.

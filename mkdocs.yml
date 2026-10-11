@@ -57,6 +57,7 @@ nav:
       - Work with Agents: how-to/work-with-agents.md
       - Settle a Schema Question: how-to/settle-a-schema-question.md
       - Solo Review: how-to/solo-review.md
+      - Run a Batch of Changes: how-to/run-a-batch-of-changes.md
       - Capture Change Metrics: how-to/capture-change-metrics.md
       - Remove agent-ready: how-to/remove-agent-ready.md
 
