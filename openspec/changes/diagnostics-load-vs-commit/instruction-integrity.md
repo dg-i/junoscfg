@@ -46,3 +46,4 @@ None, because the owner asked for no questions (C1) and the evidence settles bot
 
 - Initial preflight, 2026-10-11: consistent; C1–C7 resolved. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 1.
 - Phase 1, 2026-10-11: proposal and lane fields approved under the owner's unattended-run instruction of 2026-10-11. `openspec validate` waits for the phase-2 delta (a bug carries one). Resume point: phase 2.
+- Phase 4, 2026-10-11: acceptance tests written (15 fail on the base `40173ba` for the reason the delta names, none passes there); test data moved to a capture line not touched by DEV-3 (evidence-freeze delta log). The high-risk floor requires independent Test/Challenge: STOP-T. Approved under the owner's unattended-run instruction of 2026-10-11.

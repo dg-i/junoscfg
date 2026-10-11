@@ -26,11 +26,12 @@ Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestDiagnosticRouting
 #### Scenario: A warning without an error
 
 - **WHEN** a configuration whose only field-validation finding is a warning
-  (`set access profile PROF-1 radius-server 192.168.50.10 timeout 10`, no
-  `secret`) is converted from set, structured, JSON, YAML or XML, with or
-  without `strict`
+  (`set access radius-server 192.168.50.10`, no `secret`, as the vMX
+  23.2R2-S7.5 loaded it in
+  `tests/data/device/synthetic/vmx-23.2R2-S7.5/synthetic-probes.set.gz`) is
+  converted from set, structured, JSON, YAML or XML, with or without `strict`
 - **THEN** the result carries the warning as a `field-validate` diagnostic at
-  `access.profile.radius-server.secret`, nothing is raised, and `junoscfg
+  `access.radius-server.secret`, nothing is raised, and `junoscfg
   convert` (with or without `--strict`) prints it on stderr and exits 0
 
 #### Scenario: A warning beside an error

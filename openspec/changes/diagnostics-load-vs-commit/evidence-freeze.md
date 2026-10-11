@@ -58,3 +58,4 @@ None, because all material decisions are resolved (C1–C7); the group question 
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established at the phase-2 commit on branch `change/diagnostics-load-vs-commit` (base `40173ba`); approved under the owner's unattended-run instruction of 2026-10-11.
+- Phase 4, 2026-10-11: the acceptance tests of the "warning without an error" scenario use the vMX's own line `set access radius-server 192.168.50.10` (`synthetic-probes.set.gz`) instead of the oracle's `access profile PROF-1 radius-server 192.168.50.10 timeout 10`: every writer drops `timeout` there (`set ... radius-server 192.168.50.10 10`), the mission's device-oracle defect 3, owned by ledger row 10 (DEV-3). The field-validator test keeps the oracle line (it asserts no output). Requirements and criteria unchanged; spec scenario text updated to name the line. No rerun beyond the phase-4 tests.
