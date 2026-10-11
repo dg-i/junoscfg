@@ -1,2 +1,52 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# The highest-tier zone this change edits is red: anonymize (walker, __init__, rules/ip.py,
+# rules/group.py, revert.py). Also yellow: conversion (convert/__init__.py, field_validator.py)
+# and surface (src/junoscfg/__init__.py, __version__ only).
+zone: anonymize
+domains: [anonymization, conversion, validation, schema-pipeline]
+removes:
+  - "`_replace_apply_groups` in `anonymize/__init__.py`: `GroupRule` claims `apply-groups` and `apply-groups-except` in the walk"
+  - "`_IP_NAMED_LIST_PARENTS` in `anonymize/rules/ip.py`: the IP rule answers by the leaf's type"
+  - "`_refuse_unplaced` in `convert/__init__.py` and the record refusal (`_count_kept_statements`) in `anonymize/__init__.py`: both doors apply owner rule 5 to content the walk cannot place"
+  - "nothing public: every name of the `junoscfg`, `junoscfg.anonymize` and `junoscfg.convert` doors stays"
+assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      No name or signature of the surface changes; src/junoscfg/__init__.py
+      changes only `__version__` (0.18.0 to 0.19.0). Behind convert_config and
+      convert_config_result with an `anon_config`, a configuration holding
+      content the schema does not place (an unknown key, a statement kept
+      whole in `junoscfg:unplaced`, a value of a shape its node does not take)
+      converts, where it raised FieldValidationError ("cannot anonymize"): its
+      address-shaped words are replaced, and a warning diagnostic from
+      `anonymize` names each such place by its schema path (owner answer 5).
+      A leaf without its value and an entry without its key field no longer
+      fail an anonymized run either; field validation still reports them. In
+      an anonymized run the text of an UNPLACED field-validation message is
+      withheld. More values are replaced: nested apply-groups and apply-macro,
+      interface-range and the other siblings of a transparent child, a list a
+      container holds, and leaves typed host, hostname, ipprefix-only, areaid,
+      free text or untyped whose value parses as an address; such a value on
+      any other type is no longer handed to the address anonymizer (an
+      interface name under `ipaddr-or-interface` crashed the run). Declared
+      breaks on a named surface raise the minor (AGENTS.md).
+    migration: >-
+      A caller that relied on FieldValidationError to stop an anonymized
+      conversion of unplaced content reads the `anonymize` warnings in
+      `ConversionResult.diagnostics` (or `AnonymizeResult.unplaced` from the
+      library) and stops on them. A mapping dumped by 0.18.0 still reverts the
+      output 0.18.0 wrote; output anonymized by 0.19.0 replaces more values, so
+      dump and revert with the same release.
+  cli:
+    why: >-
+      `junoscfg convert --anonymize-*` converts a configuration holding content
+      the schema does not place, printing an `anonymize:` warning per schema
+      path to stderr, where it exited 1 with "cannot anonymize"; under
+      `--strict` field validation still fails the run, its messages withheld.
+      More values are replaced, as for the consumer surface.
+    migration: >-
+      A script that relied on exit 1 to stop on unplaced content checks stderr
+      for `anonymize:` warnings, or adds `--strict`.
