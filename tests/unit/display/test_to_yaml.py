@@ -8,8 +8,10 @@ import sys
 
 import pytest
 import yaml
+from click.testing import CliRunner
 
 from junoscfg import Format, convert_config
+from junoscfg.cli import main
 from junoscfg.display import xml_to_dict, xml_to_yaml
 
 
@@ -552,3 +554,78 @@ class TestInactiveLeaf:
             )
         )["configuration"]["system"]
         assert xml == from_set == {"no-redirects": [None], "@no-redirects": {"inactive": True}}
+
+
+class TestALeafKeepsItsText:
+    """An XML leaf's text is its value as written, spaces included.
+
+    The device writes `<allow-commands>^show </allow-commands>` and displays
+    `allow-commands "^show "`
+    (`tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.{xml,set}.gz`,
+    vMX 23.2R2-S7.5; the QFX5120 25.2R2-S1.5 pair holds the same). The walker
+    stripped every leaf's text, so XML input wrote `"^show"`, another
+    configuration (DEV-17, change xml-leaf-text-verbatim). Only a flag or a
+    container written across lines needs its blank text ignored.
+    """
+
+    CLASS = (
+        "<configuration><system><login><class><name>OPS</name>"
+        "<allow-commands>^show </allow-commands></class></login></system></configuration>"
+    )
+    DEVICE_LINE = 'set system login class OPS allow-commands "^show "'
+
+    @staticmethod
+    def _class(ir: dict) -> dict:
+        return ir["configuration"]["system"]["login"]["class"][0]
+
+    def test_spaces_around_a_value_are_kept(self) -> None:
+        assert self._class(xml_to_dict(self.CLASS))["allow-commands"] == "^show "
+        community = xml_to_dict(
+            "<configuration><policy-options><community><name>C1</name>"
+            "<members> 64496:1</members><members>64496:2 </members>"
+            "</community></policy-options></configuration>"
+        )["configuration"]["policy-options"]["community"][0]
+        assert community["members"] == [" 64496:1", "64496:2 "]
+        named = xml_to_dict(
+            "<configuration><system><login><class><name> OPS </name>"
+            "<idle-timeout>5</idle-timeout></class></login></system></configuration>"
+        )
+        assert self._class(named)["name"] == " OPS "
+
+    def test_whitespace_alone_is_a_value_only_where_the_tree_takes_one(self) -> None:
+        interface = xml_to_dict(
+            "<configuration><interfaces><interface><name>ge-0/0/0</name>"
+            "<description> </description></interface></interfaces></configuration>"
+        )["configuration"]["interfaces"]["interface"][0]
+        assert interface["description"] == " "
+
+        pretty = (
+            "<configuration><system><services>\n  </services><unknown-thing>\n</unknown-thing>"
+            "</system><protocols><ospf><area><name>0.0.0.0</name><interface>"
+            "<name>ge-0/0/0.0</name><passive>\n    </passive></interface></area></ospf>"
+            "</protocols></configuration>"
+        )
+        compact = (
+            "<configuration><system><services/><unknown-thing/></system><protocols><ospf>"
+            "<area><name>0.0.0.0</name><interface><name>ge-0/0/0.0</name><passive/>"
+            "</interface></area></ospf></protocols></configuration>"
+        )
+        assert xml_to_dict(pretty) == xml_to_dict(compact)
+        ospf = xml_to_dict(pretty)["configuration"]["protocols"]["ospf"]
+        assert ospf["area"][0]["interface"][0]["passive"] == [None]
+
+    def test_every_door_writes_the_devices_line(self) -> None:
+        def convert(writer: Format) -> str:
+            return convert_config(self.CLASS, from_format=Format.XML, to_format=writer)
+
+        assert self._class(yaml.safe_load(xml_to_yaml(self.CLASS)))["allow-commands"] == "^show "
+        assert self._class(json.loads(convert(Format.JSON)))["allow-commands"] == "^show "
+        assert self._class(yaml.safe_load(convert(Format.YAML)))["allow-commands"] == "^show "
+        assert self.DEVICE_LINE in convert(Format.SET).splitlines()
+        structured = convert_config(
+            convert(Format.STRUCTURED), from_format=Format.STRUCTURED, to_format=Format.SET
+        )
+        assert self.DEVICE_LINE in structured.splitlines()
+        cli = CliRunner().invoke(main, ["convert", "-i", "xml", "-e", "set"], input=self.CLASS)
+        assert cli.exit_code == 0, cli.output
+        assert self.DEVICE_LINE in cli.stdout.splitlines()
