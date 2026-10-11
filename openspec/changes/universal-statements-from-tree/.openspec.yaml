@@ -1,3 +1,50 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# The highest-tier zone this change edits: every one is yellow. kernel (display/constants.py,
+# display/__init__.py, display/to_yaml.py: the helper), conversion (readers, writers, field
+# validation), schema (xsd_fixes.py, schema_generator.py, the regenerated artifacts), surface
+# (src/junoscfg/__init__.py, __version__ only). The helper is the change's centre: kernel.
+zone: kernel
+domains: [schema-pipeline, conversion, validation]
+removes:
+  - "the six name tables of `display/constants.py` (`TRANSPARENT_CONTAINERS`, `TRANSPARENT_LIST_KEYS`, `POSITIONAL_KEY_ELEMENTS`, `NON_NESTING_POSITIONAL_KEYS`, `ALL_POSITIONAL_KEYS`, `_FLAT_DICT_ELEMENTS`) and the name fallback (`key` argument) of `get_transparent_child`, `is_transparent_list_key`, `is_positional_key` and `is_flat_dict`"
+  - "the union of the `universal` flag and the kernel tuple in JSON-schema generation, and field validation's name exemption for the four statements"
+  - "`apply-flags` as a single leaf in the schema model, replaced by the device's container of presence flags; the unused `_APPLY_STATEMENTS` tuple of `xsd_fixes.py`"
+  - "nothing public: no name leaves the `junoscfg` or `junoscfg.display` doors; `UNIVERSAL_STATEMENTS` stays, now the compatibility floor"
 assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      No name or signature of the surface changes; src/junoscfg/__init__.py
+      changes only `__version__` (0.17.0 to 0.18.0). Behind convert_config and
+      convert_config_result, set and structured input read `apply-flags omit`
+      as the device writes it, `{"apply-flags": {"omit": [null]}}`, at every
+      level: below the root it was kept in the `junoscfg:unplaced` record and
+      reported UNPLACED (strict raised, anonymization refused), at the root it
+      was the leaf `"apply-flags": "omit"`. JSON and YAML output show the new
+      shape; JSON, YAML and XML input already read it so. `apply-flags
+      replace` reads the same way; any other word under `apply-flags` is
+      reported UNPLACED, and validate_config rejects the set line, where both
+      passed before. XML and YAML input hold a nested `apply-groups` with one
+      group as a list, as set input and the root already did. Declared breaks
+      on a named surface raise the minor (AGENTS.md).
+    migration: >-
+      A caller that reads `apply-flags` from JSON or YAML output reads the
+      flag as a key of the `apply-flags` mapping: `"apply-flags": {"omit":
+      [null]}` where 0.17.0 wrote `"apply-flags": "omit"` at the top level or
+      `"junoscfg:unplaced": {"apply-flags omit": [null]}` below it. JSON or
+      YAML that 0.17.0 wrote still reads: the old top-level leaf writes back
+      the same set line, and the old record is reported as before; regenerate
+      it from set or curly text to place it. A configuration a device loads
+      is otherwise unaffected.
+  cli:
+    why: >-
+      `junoscfg convert` to JSON or YAML writes the shape above for set and
+      curly input, and no longer prints an UNPLACED warning for `apply-flags
+      omit`, nor fails `--strict` or anonymization on it. `junoscfg validate`
+      rejects a set line with any word but `omit` or `replace` after
+      `apply-flags`.
+    migration: >-
+      None for configuration a device prints. A script that parsed the old
+      JSON or YAML spelling reads the mapping instead.
