@@ -23,9 +23,9 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.1 Complete the risk-required fresh isolated review: same independent Reviewer APPROVE exact a4f822/base40173, verbatim report in `review.md`; candidate fast/full green as recorded above.
+- [x] 3.2 Capture and review `metrics.md` and `metrics.json` for immutable base `40173ba8ec6c0664ea3590b5a3b14786fcf22629` and code head `a4f822b4e131c75d667022218dd868003df985aa`; unsupported usage remains UNMEASURED.
+- [x] 3.3 Finalizer completes bounded pre-merge spec application, evidence, and archive-readiness housekeeping without product edits. Actual post-merge live-folder archive is reserved to the orchestrator, per the explicit phase-7 handoff scope.
 
 ## Repair checkpoint and handoff
 
@@ -39,3 +39,11 @@ Resume at same independent Reviewer reconfirmation (F1/conditional SC4 on unchan
 Final committed F3 checkpoint at code head `a4f822b4e131c75d667022218dd868003df985aa`, immutable integration base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: focused 368 passed/2 strict P11 xfailed; all commit hooks passed; fast and full both exit 0 with every check passed. Full application result 8,677 passed/37 skipped/20 strict xfailed; coverage floor passed. Commands used `UV_OFFLINE=1 npm_config_offline=true PYTHONDONTWRITEBYTECODE=1 uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set fast` and the same command with `--set full`. Private logs: `roles/repair-f3-{focused,fast,full}.out`. Fresh device-head comparison covers 1,152 runs, all exactly equal F2 head; against unchanged 40173 baseline 36/96 plain and 432/1,152 total differ, output only through DEV-4/5/6/7 (bare expression, retained expression-shaped quoted name, no doubled enclosing quotes, escaped inner quote); no diagnostic/field-validation/exception differences. Baseline reuse is bound to unchanged SHA, manifest/captures, recipe, dependencies and configuration. No generation input changed; historical expensive-schema evidence retained and no retired JVD tier repeated.
 
 Same independent Reviewer APPROVE exact a4f822/base40173; no blocking owner question for this correction. Owner explicitly selected reject-before-output. No runtime/test/generation changes after the approved code head; this evidence-only record preserves checkpoint validity. Finish lifecycle records and bounded main-spec application under the Finalizer; Builder does not tick 3.1–3.3, archive, bump, merge, rebase, switch branches, push or contact external systems.
+
+## Bounded phase-7 pre-merge checkpoint
+
+Main-spec application commit `c3ce39a`: supported OpenSpec 1.13.0 archive in a disposable tracked-tree copy produced four conversion/value-quoting requirements and one validation/set-command-validation requirement. Only those two main specs returned to this live branch. Exact-body assertions confirmed the reviewed delta was copied without meaning changes and the existing validation requirements were preserved; both strict change validation and all 21 main specs passed. The live change folder remains present.
+
+Metrics capture/review binds the full immutable base/code-head above: own-file diff 25 files, +932/-331 and 2 binary files; declared runtime dependencies 6/6 and locked packages 63/63. Native session/workflow/human timing evidence was not supplied, so its fields stay UNMEASURED. Context-expansion and measured behavioral-evidence rows survive. Owner F1 refusal and executed P11/P13 facts are already recorded in the freeze and review; SC1–SC3 keep their existing scoped interims. No blanket approval or requirement/oracle change is introduced.
+
+Next action: orchestrator's bounded main-spec inspection and integration, then merge-time version/tag and supported post-merge `archive --yes --skip-specs`. The approved a4f822 runtime/test/generation inputs and their final full checkpoint are unchanged. No full, expensive schema or retired JVD tier is repeated for these records.
