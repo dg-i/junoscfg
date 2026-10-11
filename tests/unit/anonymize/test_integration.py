@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from junoscfg import Format, convert_config, convert_config_result
-from junoscfg.anonymize import AnonymizeConfig, anonymize, build_config_from_cli
+from junoscfg.anonymize import AnonymizeConfig, anonymize, apply_revert, build_config_from_cli
 from tests.support.devices import example, placed_only
 
 if TYPE_CHECKING:
@@ -910,7 +910,7 @@ class TestAWildcardNameIsAPattern:
             (old, new)
             for pairs in result.mapping.values()
             for old, new in pairs.items()
-            if "<" in old or "<" in new
+            if "<" in old or "<" in new or old.strip("*") == ""
         ]
 
     @pytest.mark.parametrize(
@@ -946,17 +946,32 @@ class TestAWildcardNameIsAPattern:
             ("login-user", "<adm*>", {"identities": True}, "adm"),
             ("snmp-community", "<public-*>", {"communities": True}, "public"),
             ("bgp-group", "<[A-E]BGP*>", {"sensitive_words": ["ebgp"]}, None),
-            ("bgp-neighbor", "<203.0.114.*>", {"ips": True}, None),
+            ("bgp-group", "<ebgp-*>", {"sensitive_words": ["ebgp"]}, None),
+            ("bgp-neighbor", "<203.0.11*>", {"ips": True}, None),
+            ("bgp-neighbor", "<3ffe:b00:*>", {"ips": True}, None),
         ],
-        ids=["group", "snmp-view", "identity", "community", "sensitive-word-class", "ip"],
+        ids=[
+            "group",
+            "snmp-view",
+            "identity",
+            "community",
+            "sensitive-word-class",
+            "sensitive-word-other-case",
+            "ip-not-whole-octets",
+            "ip-v6",
+        ],
     )
     def test_a_wildcard_that_selects_other_names_is_reported(
         self, place: str, wildcard: str, options: dict[str, Any], gone: str | None
     ) -> None:
         """No pseudonym of a whole name keeps a wildcard's literal text: the
         wildcard keeps its brackets, its text a rule renames leaves, and its
-        place is reported (S1). A class around a sensitive word and an address
-        pattern stay as written and are reported too."""
+        place is reported (S1). A class around a sensitive word stays as
+        written and is reported (S3); so is `<ebgp-*>`, which Junos matches by
+        case and so selected no `EBGP-A`, while the rule folds case and the
+        replacement selects its pseudonym (Test/Challenge F3). An address
+        pattern that is no pattern of whole octets is left as written and
+        reported (S2)."""
         text, where, _ = _WILDCARD_SOURCES[place]
         result = anonymize(
             _set_ir(text.format(f'"{wildcard}"')), AnonymizeConfig(salt="s", **options)
@@ -1066,6 +1081,124 @@ class TestAWildcardNameIsAPattern:
         [interface] = _at(result.ir["configuration"], "groups", "interfaces", "interface")
         assert interface["name"] == "<ge-*>"
         assert interface["description"].startswith("descr_")
+
+    @pytest.mark.parametrize("neighbour", [True, False], ids=["beside-a-neighbour", "alone"])
+    @pytest.mark.parametrize("wildcard", ["<203.0.114.*>", "<203.0.*>"])
+    def test_an_address_pattern_takes_its_prefixs_replacement(
+        self, wildcard: str, neighbour: bool
+    ) -> None:
+        """Replacements keep their prefixes, so a pattern of whole octets
+        becomes the pattern of its prefix's replacement, and selects the
+        replacement of every address it selected; nothing of the original
+        prefix is left, whether or not an address stands at its place
+        (ruling on Test/Challenge F1, specification challenge S2)."""
+        text = (
+            f"set groups GR-BGP protocols bgp group IBGP neighbor {wildcard} description pattern\n"
+        )
+        if neighbour:
+            text += "set protocols bgp group IBGP neighbor 203.0.114.7\n"
+        result = anonymize(_set_ir(text), AnonymizeConfig(ips=True, salt="s"))
+        cfg = result.ir["configuration"]
+        [anonymized] = _at(cfg, "groups", "protocols", "bgp", "group", "neighbor", "name")
+        prefix = wildcard[1:-3]
+        assert anonymized.startswith("<203.") and anonymized.endswith(".*>")
+        assert prefix not in json.dumps(result.ir)
+        assert anonymized.count(".") == wildcard.count(".")
+        for name in _at(cfg, "protocols", "bgp", "group", "neighbor", "name"):
+            assert fnmatch.fnmatchcase(name, anonymized[1:-1])
+        assert result.patterns == ()
+
+    @pytest.mark.parametrize("wildcard", ["<198.51.100.1>", "<198.51.100.*>"])
+    def test_a_preserved_address_is_not_reported(self, wildcard: str) -> None:
+        """An address the IP rule keeps by design (RFC 5737) leaks nothing and
+        selects the same names: unchanged and not reported (Test/Challenge F7)."""
+        text = (
+            f"set groups GR-BGP protocols bgp group IBGP neighbor {wildcard} description pattern\n"
+            "set protocols bgp group IBGP neighbor 198.51.100.1\n"
+        )
+        result = anonymize(_set_ir(text), AnonymizeConfig(ips=True, salt="s"))
+        cfg = result.ir["configuration"]
+        assert _at(cfg, "groups", "protocols", "bgp", "group", "neighbor", "name") == [wildcard]
+        assert result.patterns == ()
+
+    def test_a_sensitive_word_behind_a_class_is_reported(self) -> None:
+        """`<[Aa]cme-*>` (the usual way to match either case) can select a name
+        holding `acme`, which no substring search finds: left as written and
+        reported, with no name at its place (ruling on Test/Challenge F2,
+        specification challenge S3)."""
+        text = 'set groups GR-BGP protocols bgp group "<[Aa]cme-*>" hold-time 30\n'
+        result = anonymize(_set_ir(text), AnonymizeConfig(sensitive_words=["acme"], salt="s"))
+        assert result.patterns == ("groups.protocols.bgp.group",)
+
+    @pytest.mark.parametrize(
+        ("text", "reported"),
+        [
+            (
+                "set groups GR-A protocols bgp group <EBGP-*> hold-time 30\n"
+                "set groups GR-B protocols bgp group EBGP-B hold-time 30\n",
+                True,
+            ),
+            (
+                "set groups GR-A routing-instances <*> protocols bgp group <EBGP-*> hold-time 30\n"
+                "set routing-instances R1 protocols bgp group EBGP-A hold-time 30\n",
+                True,
+            ),
+            (
+                "set groups GR-A protocols bgp group <EBGP-*> hold-time 30\n"
+                "set routing-instances R1 protocols bgp group EBGP-A hold-time 30\n",
+                False,
+            ),
+            (
+                "set groups GR-A protocols bgp group <EBGP-*> hold-time 30\n"
+                "set groups GR-B protocols bgp group <*BGP*> hold-time 30\n",
+                False,
+            ),
+        ],
+        ids=[
+            "a-name-in-another-group",
+            "a-routing-instance",
+            "not-the-routing-instances-names",
+            "a-wildcard-is-no-name",
+        ],
+    )
+    def test_the_names_are_those_at_the_same_place(self, text: str, reported: bool) -> None:
+        """The names a wildcard selects are those at its place in any group and
+        outside them (a name inherited from another group: probe P10), under a
+        routing instance its own, and never another wildcard (Test/Challenge F4)."""
+        result = anonymize(_set_ir(text), AnonymizeConfig(groups=True, salt="s"))
+        paths = [path for path in result.patterns if path.endswith("protocols.bgp.group")]
+        assert bool(paths) is reported
+
+    def test_each_wildcard_is_counted(self) -> None:
+        """Two wildcards at one place: the place twice, one warning that says 2
+        (Test/Challenge F5)."""
+        text = (
+            "set groups GR-BGP protocols bgp group <EBGP-*> hold-time 30\n"
+            "set groups GR-BGP protocols bgp group <EBGP-A?> hold-time 30\n"
+            "set protocols bgp group EBGP-A1 neighbor 203.0.114.7\n"
+        )
+        config = AnonymizeConfig(groups=True, salt="s")
+        assert anonymize(_set_ir(text), config).patterns == ("groups.protocols.bgp.group",) * 2
+        result = convert_config_result(
+            text, from_format=Format.SET, to_format=Format.SET, anon_config=config
+        )
+        warned = [d for d in result.diagnostics if d.source == "anonymize"]
+        assert [d.path for d in warned] == ["groups.protocols.bgp.group"]
+        assert warned[0].message.startswith("2 wildcard name(s) ")
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="NEW-R13, change anonymize-embedded-values (7): the sensitive-word rule folds "
+        "case, so `ebgp` and `EBGP` get one pseudonym and revert restores one case for both",
+    )
+    def test_a_word_in_two_cases_reverts_to_each(self) -> None:
+        text = (
+            "set groups GR-BGP protocols bgp group <ebgp> hold-time 30\n"
+            "set protocols bgp group EBGP neighbor 203.0.114.7\n"
+        )
+        source = _set_ir(text)
+        result = anonymize(source, AnonymizeConfig(sensitive_words=["ebgp"], salt="s"))
+        assert apply_revert(result.ir, result.mapping) == source
 
     def test_the_warning_names_the_path_and_no_value(self) -> None:
         text, _, _ = _WILDCARD_SOURCES["bgp-group"]

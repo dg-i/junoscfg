@@ -43,3 +43,4 @@ None asked: the owner is asleep and the run is unattended. Intake answers 1–8 
 <!-- Append later instructions or evidence and their consistency result. -->
 
 - Initial preflight: consistent; C1–C9 resolved, C4 pending owner with interim action. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, Test/Challenge findings F1–F9 (`test-challenge.md`), rulings relayed by the orchestrator, all accepted: C4's interim rule widens to address patterns (S2) and sensitive words behind wildcard syntax (S3), both pending the owner with interim actions; the matcher is `fnmatchcase`, its agreement with Junos unverified; device probe P10 asks whether a wildcard selects a name another group defines. Approved under the owner's unattended-run instruction of 2026-10-11.

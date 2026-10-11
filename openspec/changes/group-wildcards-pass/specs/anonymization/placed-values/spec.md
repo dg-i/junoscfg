@@ -5,18 +5,26 @@
 WHEN the anonymize walker meets an entry's key field whose value is a Junos wildcard, the whole
 value in angle brackets (`<*>`, `<ge-*>`, `<[gx]e-*>`, `<VRF-*>`), THEN a pattern of `*` alone
 SHALL pass every rule unchanged, because it selects every name; any other wildcard SHALL keep its
-brackets while the text inside them is offered to the rules as a value of that key field, so text
-that spells a name is replaced as that name is (`<EBGP>` as BGP group `EBGP`, `<203.0.114.7>` as
-neighbour `203.0.114.7`). WHEN the anonymized wildcard selects, among the names the configuration
-holds at that key field inside and outside `groups`, other names than the original selected
-(Junos wildcard characters `*`, `?`, `[...]`, `[!...]`), or a rule claims its text and leaves it
-as written, THEN its place SHALL be named by schema path in `AnonymizeResult.patterns`, once per
-wildcard, and in one `anonymize` warning per path that names the path and a count and withholds
-every value. Revert SHALL restore every wildcard exactly. A value that is no key field (a
-description written `<...>`) is data and SHALL be replaced as before. This is the interim rule of
-specification challenge S1 (owner decision pending: pseudonyms that keep a wildcard's literal
-text selecting the same names).
-Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_wildcard_group_name_passes_the_group_rule`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_match_all_wildcard_passes_every_rule`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_text_of_a_wildcard_is_replaced_as_the_name_it_spells`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_wildcard_that_selects_other_names_is_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_wildcard_that_selects_the_same_names_is_not_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_mapping_restores_every_wildcard`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_description_written_as_a_wildcard_is_data`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_warning_names_the_path_and_no_value`, `tests/contract/test_every_rule.py::TestEveryRule::test_a_match_all_wildcard_name_passes`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`, `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes::test_every_wildcard_name_passes`
+brackets while the text inside them goes, rule by rule in the walker's order, to a rule that knows
+patterns of its values or else is offered as a value of that key field, so text that spells a name
+is replaced as that name is (`<EBGP>` as BGP group `EBGP`, `<203.0.114.7>` as neighbour
+`203.0.114.7`). Where an address stands, an IPv4 pattern of whole octets (`<203.0.114.*>`,
+`<203.0.*>`) SHALL become the pattern of its prefix's replacement (`203.0.114.0/24`), which selects
+the replacement of every address it selected; any other address pattern SHALL be left as written
+(specification challenge S2). A sensitive word the text holds literally SHALL be replaced as in a
+name; a word it can spell only through a class or `?` in either case (`<[Aa]cme-*>`), and any class
+or `?` while a sensitive pattern is on, SHALL leave the text as written (S3). WHEN the anonymized
+wildcard selects, among the names the configuration holds at that key field in any group and
+outside them, a wildcard being no name, other names than the original selected (Python's
+`fnmatchcase`: `*`, `?`, `[...]`, `[!...]`), or its text was left as written by a rule that
+claims it (S2, S3), or a rule claims text holding a wildcard character and leaves it as written,
+THEN its place SHALL be named by the entry's schema path in `AnonymizeResult.patterns`, once per
+wildcard, and in one `anonymize` warning per path that gives the count and withholds every value.
+Revert SHALL restore every wildcard exactly, but a sensitive word written in two cases (NEW-R13,
+change 7). A value that is no key field (a description written `<...>`) is data and SHALL be
+replaced as before. This is the interim rule of specification challenges S1-S3 (owner decisions
+pending).
+Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_a_wildcard_group_name_passes_the_group_rule`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_match_all_wildcard_passes_every_rule`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_text_of_a_wildcard_is_replaced_as_the_name_it_spells`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_wildcard_that_selects_other_names_is_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_wildcard_that_selects_the_same_names_is_not_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_mapping_restores_every_wildcard`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_description_written_as_a_wildcard_is_data`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_an_address_pattern_takes_its_prefixs_replacement`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_preserved_address_is_not_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_sensitive_word_behind_a_class_is_reported`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_names_are_those_at_the_same_place`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_each_wildcard_is_counted`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_a_word_in_two_cases_reverts_to_each`, `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern::test_the_warning_names_the_path_and_no_value`, `tests/contract/test_every_rule.py::TestEveryRule::test_a_match_all_wildcard_name_passes`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`, `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes::test_every_wildcard_name_passes`
 
 #### Scenario: The device example's BGP wildcard
 
@@ -47,6 +55,24 @@ Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_
 
 #### Scenario: An address pattern
 
-- **WHEN** `groups GR-BGP protocols bgp group IBGP neighbor <203.0.114.*>` and a neighbour
-  `203.0.114.7` are anonymized with `--anonymize-ips`
-- **THEN** the wildcard is left as written and its path is reported
+- **WHEN** `groups GR-BGP protocols bgp group IBGP neighbor <203.0.114.*>`, with or without a
+  neighbour `203.0.114.7`, is anonymized with `--anonymize-ips`
+- **THEN** it becomes `<a.b.c.*>` of the replacement of `203.0.114.0/24`, selects the neighbour's
+  replacement, no `203.0.114` survives, and nothing is reported; `<203.0.11*>` and `<3ffe:b00:*>`
+  are left as written and reported, and `<198.51.100.*>`, a block kept by design, is unchanged
+  and not reported
+
+#### Scenario: A sensitive word behind a class, or in another case
+
+- **WHEN** `"<[Aa]cme-*>"` is anonymized with `--anonymize-sensitive-words acme`, or `<ebgp-*>`
+  beside `EBGP-A` with `--anonymize-sensitive-words ebgp`
+- **THEN** the first is left as written and reported; the second becomes `<word_…-*>`, which now
+  selects `word_…-A` where Junos, matching case, selected nothing, and is reported
+
+#### Scenario: Where the names are
+
+- **WHEN** `<EBGP-*>` in group `GR-A` meets `EBGP-B` defined only in group `GR-B`, or
+  `routing-instances <*> protocols bgp group <EBGP-*>` meets `routing-instances R1 protocols bgp
+  group EBGP-A`, under `--anonymize-groups`
+- **THEN** both are reported; a top-level `<EBGP-*>` beside `EBGP-A` only in `R1` is not, and
+  another wildcard (`<*BGP*>`) is no name it selects

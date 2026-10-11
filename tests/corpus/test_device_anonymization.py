@@ -40,6 +40,8 @@ CASES = [
     for suffix in FORMATS
 ]
 _GROUP_REFERENCES = frozenset({"apply-groups", "apply-groups-except"})
+#: The `anonymize:` warning on wildcard names (`AnonymizeResult.patterns`).
+_PATTERN_WARNING = re.compile(r"\d+ wildcard name\(s\) ")
 #: The renderings of the captures that hold a wildcard name (`<...>` in a group).
 WILDCARD_CASES = [
     pytest.param(capture.key, suffix, id=f"{capture.key}.{suffix}")
@@ -77,7 +79,6 @@ class Run:
     written: str
     mapping: dict[str, dict[str, str]]
     reverted: dict[str, Any]
-    warnings: tuple[str, ...]
 
 
 @cache
@@ -87,14 +88,13 @@ def _run(key: str, suffix: str) -> Run:
     plain = convert_config(text, from_format=fmt, to_format=Format.JSON, validate=False)
     with tempfile.TemporaryDirectory() as scratch:
         dumped = Path(scratch) / "map.json"
-        result = convert_config_result(
+        anonymized = convert_config(
             text,
             from_format=fmt,
             to_format=Format.JSON,
             validate=False,
             anon_config=_every_rule(dump_map=str(dumped)),
         )
-        anonymized = result.output
         mapping = json.loads(dumped.read_text(encoding="utf-8"))
         reverted = convert_config(
             anonymized,
@@ -106,10 +106,7 @@ def _run(key: str, suffix: str) -> Run:
     written = convert_config(
         text, from_format=fmt, to_format=Format.SET, validate=False, anon_config=_every_rule()
     )
-    warned = tuple(d.render() for d in result.diagnostics if d.source == "anonymize")
-    return Run(
-        json.loads(plain), json.loads(anonymized), written, mapping, json.loads(reverted), warned
-    )
+    return Run(json.loads(plain), json.loads(anonymized), written, mapping, json.loads(reverted))
 
 
 def _is_address(word: str) -> bool:
@@ -288,4 +285,16 @@ class TestEveryCaptureAnonymizes:
         wildcards = _wildcards(run.source)
         assert wildcards, "the capture holds no wildcard name: the law would pass on nothing"
         assert _wildcards(run.anonymized) == wildcards
-        assert [w for w in run.warnings if "wildcard" in w] == []
+        result = convert_config_result(
+            json.dumps(run.source),
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=_every_rule(),
+        )
+        # Its form is pinned by `TestAWildcardNameIsAPattern::test_each_wildcard_is_counted`.
+        assert not [
+            d
+            for d in result.diagnostics
+            if d.source == "anonymize" and _PATTERN_WARNING.match(d.message)
+        ]

@@ -428,7 +428,11 @@ class TestEveryRule:
         assert json.dumps(wild).count('"<*>"') == json.dumps(_WILD).count('"<*>"') == 8
         assert set(run.mapping[row.key]) - row.replaces <= {"acme-wild"}
         assert row.replaces <= set(run.mapping[row.key])
-        assert not [old for old, new in run.replacements.items() if "<" in old or "<" in new]
+        assert not [
+            old
+            for old, new in run.replacements.items()
+            if "<" in old or "<" in new or old.strip("*") == ""
+        ]
         assert run.reverted == json.loads(_convert(_WILDCARD_SOURCE))
 
     def test_the_cli_flags_keep_the_same_law(self, row: RuleRow, tmp_path: Path) -> None:
