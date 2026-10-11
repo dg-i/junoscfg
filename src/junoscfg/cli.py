@@ -955,7 +955,7 @@ def _run_validation(
         message = warning.message
         if anonymizing and warning.path:
             message = message.removeprefix(f"{warning.path}: ")
-            message += " (the block's path is withheld: the conversion anonymizes)"
+            message += " (the block's path is withheld: the run anonymizes)"
         click.echo(f"Warning: {message}", err=True)
     if result.valid:
         click.echo("Validation: OK", err=True)

@@ -257,6 +257,50 @@ Carry-forward, not this change's: under `-v` with anonymization a validation *er
 values (`Invalid syntax: set system bogus-statement 203.0.114.9`), as on the merge base; ledgered as
 NEW-R1 under change 5.
 
+### Second re-review (same Reviewer, 2026-10-11): APPROVE
+
+Same Reviewer. Read `git diff bcb03ce..7facd71` and ran the checks below on the working tree, with
+synthetic values only.
+
+#### Verdict
+
+**APPROVE.** F1b is resolved and nothing regressed.
+
+#### Evidence (executed)
+
+- **No original value on any `-v` warning path.** I ran `convert -v` with anonymization in four setups:
+  - `-i structured -e set --anonymize-all`;
+  - `--anonymize-ips --anonymize-groups`;
+  - `-e set` with no `-i` (format auto-detected);
+  - `-v` with no `-e` (validate only).
+
+  None printed `203.0.114.x`, `G1` or `GR-SECRET` on stdout or stderr. The empty-block warning and the
+  `OMITTED` warning both print with the path withheld, as the conversion's own warnings do. The new test
+  asserts the `-v` case.
+- **Paths are still shown when the run does not anonymize.** That holds for plain `-v`, and for
+  `--anonymize-revert-map` used alone (`any_enabled` is false there).
+- **Moving the validation step after the anonymize config is built changed nothing visible.** Validation
+  still runs on the original source before conversion. An invalid configuration still exits 1 with the
+  same messages. Validate-only still returns before converting. `build_config_from_cli` has one side
+  effect, `load_config_file`, and Click already checks that the `--anonymize-config` path exists, so a
+  missing file exits 2 in both orders. The only difference: a malformed but existing anonymize config
+  file now fails a validate-only run, where before it was never read. Negligible.
+- **The withholding keys off a structured field, not text.** It strips the path through
+  `ValidationError.path`, which the structured notes now carry (the facade and the deprecated validator).
+  No other validator in `validate/` emits warnings, so no other message is touched.
+- **Focused tests pass:** 1,062 passed, 14 xfailed (structured input, CLI unit tests, every door,
+  structured validator, set converter, anonymize unit tests).
+
+#### Notes, not blocking
+
+- In validate-only runs the suffix says "the conversion anonymizes", although nothing is converted.
+- Carry-forward, unchanged: validation errors under `-v` with anonymization still print original values.
+  The merge base does the same, so it belongs in the ledger, not in this change.
+- `StructuredSetLines.notes` now holds `(path, message)` pairs. That type is new in this change, so it
+  breaks nothing.
+
+Builder, on the first note: the validate-only wording is corrected, the CLI now says "the run anonymizes".
+
 ## Specification challenges
 
 ### F1: a sibling split must not create an acceptance
@@ -301,4 +345,4 @@ NEW-R1 under change 5.
 
 ## Verdict
 
-Fresh Reviewer: CHANGES REQUIRED (F1, F2 blocking); re-review: CHANGES REQUIRED on F1b only. F1b corrected; awaiting the Reviewer's confirmation.
+Fresh Reviewer: CHANGES REQUIRED (F1, F2 blocking); re-review: CHANGES REQUIRED on F1b only; second re-review: **APPROVE** (mergeable). R1 and R2 stay pending the owner with their interim actions.
