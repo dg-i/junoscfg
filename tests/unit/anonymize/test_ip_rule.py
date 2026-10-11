@@ -135,10 +135,13 @@ class TestIpRuleMatches:
         assert not rule.matches("hello", {"l": True}, ["x"])
 
     def test_matches_qualified_next_hop_ipv4(self) -> None:
-        """qualified-next-hop named-list key with an IPv4 address."""
+        """qualified-next-hop named-list key with an IPv4 address, offered as the
+        leaf the tree declares for it (`atr` `ipaddr-or-interface`): the type
+        answers, not the list's name (change anonymize-every-placed-value)."""
         rule = self._make_rule()
         path = ["routing-options", "static", "route", "qualified-next-hop", "name"]
-        assert rule.matches("10.0.0.1", {"L": True, "tr": "qualified-nh-obj"}, path)
+        leaf = {"l": True, "nk": True, "atr": "ipaddr-or-interface"}
+        assert rule.matches("10.0.0.1", leaf, path)
 
     def test_matches_qualified_next_hop_ipv6(self) -> None:
         """qualified-next-hop named-list key with an IPv6 address."""
@@ -154,7 +157,7 @@ class TestIpRuleMatches:
             "name",
         ]
         ipv6 = "3ffe:0b00:0002:0::901:ffff"
-        assert rule.matches(ipv6, {"L": True, "tr": "qualified-nh-obj"}, path)
+        assert rule.matches(ipv6, {"l": True, "nk": True, "atr": "ipaddr-or-interface"}, path)
 
 
 class TestIpRuleTransform:
@@ -412,3 +415,151 @@ class TestNetworksAutoNeedsSourceText:
         names = {f.name for f in dataclasses.fields(AnonymizeConfig)}
         assert "source_text" in names
         assert "_source_text" not in names
+
+
+class TestTheLeafsTypeAnswers:
+    """The IP rule takes a value that parses as an address or prefix on a leaf
+    whose type can hold one, and nothing else.
+
+    It ignored `host`, `hostname` and `ipprefix-only` (the tacplus-server
+    addresses of the device example, ANON-P2, NEW-A-N6), decided some keys by
+    the name of their list (`_IP_NAMED_LIST_PARENTS`), handed any value of an
+    address type to the address anonymizer, which crashes on an interface name
+    (NEW-R8), and left areas, BGP clusters, `ipv6-router-id` and the untyped
+    `apply-macro` value as written. Measured over the device captures and the
+    JVD corpus (change anonymize-every-placed-value, evidence freeze). Spec
+    anonymization/placed-values.
+    """
+
+    @staticmethod
+    def _rule() -> IpRule:
+        return IpRule(AnonymizeConfig(ips=True, salt="test"))
+
+    @pytest.mark.parametrize(
+        "node",
+        [
+            {"l": True, "tr": "host"},
+            {"l": True, "tr": "hostname"},
+            {"l": True, "nk": True, "atr": "hostname"},
+            {"l": True, "atr": "ipprefix-only"},
+            {"l": True, "nk": True, "atr": "areaid"},
+            {"l": True, "tr": "string"},
+            {"l": True, "tr": "xsd:string"},
+            {"l": True, "nk": True, "atr": "key-attribute-string-type"},
+            {"l": True},
+            {},
+        ],
+        ids=lambda node: str(node.get("atr", node.get("tr", "untyped"))),
+    )
+    @pytest.mark.parametrize("value", ["203.0.114.49", "203.0.114.0/26", "3ffe:0b00::1"])
+    def test_an_address_on_these_types_is_replaced(self, node: dict, value: str) -> None:
+        assert self._rule().matches(value, node, ["x", "y"])
+
+    @pytest.mark.parametrize("value", ["tacacs.example.net", "router1", "203.0.114.49:49", "lo0.0"])
+    @pytest.mark.parametrize("node", [{"l": True, "tr": "hostname"}, {"l": True}])
+    def test_a_name_on_a_host_type_is_not(self, node: dict, value: str) -> None:
+        assert not self._rule().matches(value, node, ["x", "y"])
+
+    @pytest.mark.parametrize(
+        "node",
+        [
+            {"l": True, "tr": "interface-name"},
+            {"l": True, "tr": "xsd:unsignedInt"},
+            {"l": True, "tr": "mac-addr"},
+            {"l": True, "tr": "unreadable"},
+            {"l": True, "tr": "policy-algebra"},
+        ],
+        ids=lambda node: node["tr"],
+    )
+    @pytest.mark.parametrize("parent", ["host", "route", "server", "neighbor"])
+    def test_no_other_type_takes_an_address(self, node: dict, parent: str) -> None:
+        """Not even as the key of a list whose name used to decide."""
+        assert not self._rule().matches("203.0.114.49", node, ["x", parent, "name"])
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set policy-options policy-statement P term T from interface ge-0/0/0.0",
+            "set routing-options static route 198.51.100.0/24 next-hop ge-0/0/0.0",
+        ],
+    )
+    def test_an_interface_name_never_reaches_the_address_anonymizer(self, line: str) -> None:
+        """`ipaddr-or-interface` holds an interface name too; the run crashed."""
+        from junoscfg import Format, convert_config
+
+        out = convert_config(
+            line,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, salt="test"),
+        )
+        assert "ge-0/0/0.0" in out
+
+    @pytest.mark.parametrize(
+        ("lines", "addresses"),
+        [
+            (
+                ["set system tacplus-server 203.0.114.49 source-address 203.0.114.50"],
+                {"203.0.114.49", "203.0.114.50"},
+            ),
+            (
+                ['set system radius-server 203.0.114.51 secret "$9$ExAmPlEhAsH.KEY"'],
+                {"203.0.114.51"},
+            ),
+            (["set snmp trap-group TG targets 203.0.114.53"], {"203.0.114.53"}),
+            (
+                ["set services nat rule R1 term T1 then translated source-prefix 203.0.114.0/26"],
+                {"203.0.114.0/26"},
+            ),
+            (["set system syslog host 203.0.114.57 any any"], {"203.0.114.57"}),
+            (
+                [
+                    "set protocols ospf area 198.0.2.1 interface ge-0/0/0.0",
+                    "set policy-options policy-statement P term T from area 198.0.2.1",
+                ],
+                {"198.0.2.1"},
+            ),
+            (["set protocols bgp group G cluster 203.0.114.60"], {"203.0.114.60"}),
+            (["set routing-options ipv6-router-id 203.0.114.61"], {"203.0.114.61"}),
+            (["set system apply-macro M2 peer 203.0.114.8"], {"203.0.114.8"}),
+        ],
+        ids=[
+            "tacplus-hostname",
+            "radius-hostname",
+            "trap-group-hostname",
+            "nat-ipprefix-only",
+            "syslog-host-free-text",
+            "area-and-its-reference",
+            "bgp-cluster-areaid",
+            "ipv6-router-id-string",
+            "nested-apply-macro-untyped",
+        ],
+    )
+    def test_every_address_the_device_writes_there_is_replaced(
+        self, lines: list[str], addresses: set[str]
+    ) -> None:
+        """Through the conversion, each address is replaced, alike everywhere,
+        and the mapping names it."""
+        import json
+
+        from junoscfg import Format, convert_config
+        from junoscfg.convert import to_dict
+
+        config = AnonymizeConfig(ips=True, salt="test")
+        source = "\n".join(lines) + "\n"
+        ir = {"configuration": to_dict(source, "set")}
+        result = anonymize(ir, config)
+        assert addresses <= set(result.mapping.get("ip", {}))
+        assert all(result.mapping["ip"][a] != a for a in addresses)
+        out = convert_config(
+            source,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, salt="test"),
+        )
+        words = {word for line in out.splitlines() for word in line.split()}
+        assert not addresses & words, out
+        assert {result.mapping["ip"][a] for a in addresses} <= words
+        assert json.dumps(result.ir).count(result.mapping["ip"][next(iter(addresses))]) >= len(
+            lines
+        )

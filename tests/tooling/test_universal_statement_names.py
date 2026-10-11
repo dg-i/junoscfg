@@ -12,8 +12,9 @@ tables of element names where a universal statement below the root met no node
 
 The names may appear where they are declared or given a meaning the tree does
 not hold: the kernel's compatibility floor, the schema fix that declares them,
-and the anonymize and audit walkers, which read `apply-groups` as a reference
-to a group (their traversal is change 5's). The scan reads string constants
+the anonymizer's group rule and the audit walker, which read `apply-groups` as
+a reference to a group. The anonymize walker and its second pass kept them
+too until change anonymize-every-placed-value. The scan reads string constants
 whole: a name, or a prefix of one (`startswith("apply-")`, the literal part of
 `f"apply-{kind}"`). A name hidden inside a regular expression or assembled
 from parts that are no prefix is beyond it.
@@ -40,7 +41,7 @@ FLOOR = "UNIVERSAL_STATEMENTS"
 
 # Where a name may stand, by path under the package.
 DECLARED = ("display/constants.py", "validate/xsd_fixes.py")
-GIVEN_A_MEANING = ("anonymize/", "audit/")
+GIVEN_A_MEANING = ("anonymize/rules/group.py", "audit/")
 # Where the floor may be read: the kernel that holds it and its door.
 FLOOR_READERS = ("display/constants.py", "display/__init__.py")
 

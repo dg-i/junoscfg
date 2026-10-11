@@ -7,6 +7,8 @@ group rule's own: which leaves it takes and the form of its replacements.
 
 from __future__ import annotations
 
+import pytest
+
 from junoscfg.anonymize import AnonymizeConfig, GroupRule, anonymize
 
 
@@ -160,3 +162,19 @@ class TestGroupAnonymizeIntegration:
         assert group["name"].startswith("group_")
         # Inner content should be untouched (groups rule only handles names)
         assert group["system"]["host-name"] == "router1"
+
+
+class TestApplyGroupsIsAReference:
+    """`apply-groups` and `apply-groups-except` name a group wherever they
+    stand, so the group rule claims them in the walk, ahead of the
+    sensitive-word rule. A second pass rewrote every reference again after
+    the walk, so with both rules on the root's reference named no group
+    (ANON-P1, NEW-C13). Spec anonymization/placed-values."""
+
+    @pytest.mark.parametrize("statement", ["apply-groups", "apply-groups-except"])
+    @pytest.mark.parametrize(
+        "where", [(), ("system",), ("interfaces",), ("protocols", "bgp", "group")]
+    )
+    def test_the_rule_claims_both_statements(self, statement: str, where: tuple) -> None:
+        rule = GroupRule(AnonymizeConfig(groups=True, salt="s"))
+        assert rule.matches("SAMPLE-GROUP", {"l": True, "ll": True, "u": True}, [*where, statement])

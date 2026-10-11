@@ -561,15 +561,14 @@ class TestKeyedEntriesSurvive:
         "as_number": {"64496", "64497", "64498", "64499", "64511"},
         "sensitive_word": {"CM-CUSTOMER"},
     }
-    #: What a rule leaves in the output today. PRODUCT DEFECT, no
-    #: known-differences class (the record is of set renderings): the IP rule
-    #: skips an address in a leaf the schema types `hostname` (`system
-    #: tacplus-server 203.0.114.49 source-address 10.255.0.1`) and in the
-    #: inactive port-mirroring `routing-instance VRF-A ip-address 10.0.0.1`,
-    #: which the JSON reader keeps as a one-entry list; the walker enters a
-    #: transparent container's own child only, so nothing under `interfaces
-    #: interface-range` is seen.
-    MISSED = {
+    #: What a rule left in the output until change anonymize-every-placed-value
+    #: (ANON-P2, NEW-C11): the IP rule skipped an address in a leaf the schema
+    #: types `hostname` (`system tacplus-server 203.0.114.49 source-address
+    #: 10.255.0.1`) and in the inactive port-mirroring `routing-instance VRF-A
+    #: ip-address 10.0.0.1`, which the JSON reader keeps as a one-entry list;
+    #: the walker entered a transparent container's own child only, so nothing
+    #: under `interfaces interface-range` was seen. Now a regression row.
+    ONCE_MISSED = {
         "ip": {"203.0.114.49", "10.255.0.1", "10.0.0.1"},
         "description": {"access range", "access ports"},
     }
@@ -621,22 +620,21 @@ class TestKeyedEntriesSurvive:
         assert all(must.values()), "a rule has nothing to replace in the example"
         result = anonymize(source, self._every_rule())
         for rule, values in must.items():
-            missing = values - self.MISSED.get(rule, set()) - set(result.mapping.get(rule, {}))
+            missing = values - set(result.mapping.get(rule, {}))
             assert not missing, f"{rule} does not replace {sorted(missing)}"
         left = _strings(result.ir)
         for rule, replaced in result.mapping.items():
             kept = {
                 value for value, by in replaced.items() if by != value and not value.startswith("<")
             }
-            kept = (kept & left) - self.MISSED.get(rule, set())
+            kept = kept & left
             assert not kept, f"{rule} leaves {sorted(kept)} in the output"
 
-    @pytest.mark.xfail(strict=True, reason="PRODUCT DEFECT: no known-differences class; see MISSED")
     @pytest.mark.parametrize("rule", ["ip", "description"])
-    def test_what_a_rule_misses_today_is_replaced(self, rule: str, json_config: str) -> None:
+    def test_what_a_rule_once_missed_is_replaced(self, rule: str, json_config: str) -> None:
         result = anonymize(json.loads(json_config), self._every_rule())
-        assert self.MISSED[rule] <= set(result.mapping.get(rule, {}))
-        assert not self.MISSED[rule] & _strings(result.ir)
+        assert self.ONCE_MISSED[rule] <= set(result.mapping.get(rule, {}))
+        assert not self.ONCE_MISSED[rule] & _strings(result.ir)
 
     @pytest.mark.xfail(
         strict=True,
@@ -723,78 +721,290 @@ class TestKeyedEntriesSurvive:
         assert self._reverted(out, Format.SET, tmp_path / "map.json") == json.loads(original)
 
 
-class TestAKeptStatementIsRefused:
-    """A statement the reader kept whole (`junoscfg:unplaced`) is text no
-    rule rewrites: anonymized, its addresses and names would leave
-    unchanged. `anonymize()` refuses an IR whose record holds one, and the
-    conversion pipeline refuses it too; neither refusal names the statement.
-    Only the record: any other key the walk cannot place (a 0.16 joined key,
-    an unknown leaf) still passes the public `anonymize()`, the open gap
-    NEW-R5 that change 5 closes (owner answer 5). Test/Challenge F2, change
-    kept-whole-statements."""
+class TestGroupReferencesResolve:
+    """A group and every `apply-groups` or `apply-groups-except` naming it get
+    one replacement, at every level and whichever rules are on.
 
-    _LINE = "set protocols bgp group G1 nonsense 203.0.114.9 SAMPLE-SECRET-GROUP\n"
+    A second pass rewrote every reference after the walk, so with the group
+    and sensitive-word rules on the root's reference named no group and revert
+    failed (ANON-P1, NEW-C13); below the root the walker never saw a
+    reference, so a sensitive word survived there (NEW-A-N1). Spec
+    anonymization/placed-values.
+    """
+
+    _IR: dict[str, Any] = {
+        "configuration": {
+            "apply-groups": ["acme-base"],
+            "groups": [{"name": "acme-base", "system": {"host-name": "router1"}}],
+            "system": {"apply-groups": ["acme-base"]},
+            "interfaces": {
+                "apply-groups-except": ["acme-base"],
+                "interface": [{"name": "ge-0/0/0", "apply-groups": ["acme-base"]}],
+            },
+            "protocols": {"bgp": {"group": [{"name": "EBGP", "apply-groups": ["acme-base"]}]}},
+        }
+    }
+
+    @staticmethod
+    def _references(ir: dict[str, Any]) -> list[str]:
+        cfg = ir["configuration"]
+        return [
+            *cfg["apply-groups"],
+            *cfg["system"]["apply-groups"],
+            *cfg["interfaces"]["apply-groups-except"],
+            *cfg["interfaces"]["interface"][0]["apply-groups"],
+            *cfg["protocols"]["bgp"]["group"][0]["apply-groups"],
+        ]
+
+    @pytest.mark.parametrize(
+        "options",
+        [
+            {"groups": True},
+            {"sensitive_words": ["acme"]},
+            {"groups": True, "sensitive_words": ["acme"]},
+        ],
+        ids=["groups", "sensitive-words", "both"],
+    )
+    def test_every_reference_names_the_renamed_group(self, options: dict[str, Any]) -> None:
+        from junoscfg.anonymize import apply_revert
+
+        source = json.loads(json.dumps(self._IR))
+        result = anonymize(json.loads(json.dumps(self._IR)), AnonymizeConfig(salt="s", **options))
+        group = result.ir["configuration"]["groups"][0]["name"]
+        assert group != "acme-base"
+        assert self._references(result.ir) == [group] * 5
+        assert apply_revert(result.ir, result.mapping) == source
+
+
+#: Content the walk cannot place, as the library door meets it: the IR, the
+#: schema path the warning names ("" for the top level), and the words other
+#: than addresses that stay as written.
+_UNPLACED: dict[str, tuple[dict[str, Any], str, set[str]]] = {
+    "unknown-leaf": (
+        {"protocols": {"bgp": {"group": [{"name": "G1", "unknown-knob": "203.0.114.9"}]}}},
+        "protocols.bgp.group",
+        {"unknown-knob"},
+    ),
+    "unknown-container": (
+        {
+            "protocols": {
+                "bgp": {
+                    "group": [
+                        {"name": "G1", "unknown-box": {"peer": "203.0.114.9", "note": "G-SECRET"}}
+                    ]
+                }
+            }
+        },
+        "protocols.bgp.group",
+        {"unknown-box", "peer", "G-SECRET"},
+    ),
+    "unknown-top-level": ({"made-up": {"x": ["203.0.114.9"]}}, "", {"made-up"}),
+    "joined-key-0.16.1": (
+        {"system": {"bogus 203.0.114.9 G-SECRET": [None]}},
+        "system",
+        {"bogus", "G-SECRET"},
+    ),
+    "address-as-key": ({"system": {"203.0.114.9": {"peer": "x"}}}, "system", {"peer"}),
+    "kept-statement": (
+        {
+            "system": {
+                "junoscfg:unplaced": {
+                    'nonsense 203.0.114.9 "G-SECRET"': True,
+                    '@nonsense 203.0.114.9 "G-SECRET"': {"inactive": True},
+                }
+            }
+        },
+        "system",
+        {"nonsense", "G-SECRET"},
+    ),
+    "scalar-on-a-container": ({"system": {"services": "203.0.114.9"}}, "system.services", set()),
+    "scalar-in-a-keyed-list": (
+        {"protocols": {"bgp": {"group": [{"name": "G1", "neighbor": ["203.0.114.9"]}]}}},
+        "protocols.bgp.group.neighbor",
+        set(),
+    ),
+    "ipv6-and-prefix": (
+        {"system": {"bogus": ["3ffe:0b00::9", "peer 203.0.114.0/24"]}},
+        "system",
+        {"bogus", "peer"},
+    ),
+}
+
+_ADDRESSES = ("203.0.114.9", "3ffe:0b00::9", "203.0.114.0/24")
+
+
+class TestContentTheWalkCannotPlace:
+    """Owner answer 5: under a path the schema does not know, the addresses
+    are replaced by their shape (never a keyword) and the path is named.
+
+    The walker returned at a key its node did not name, so `anonymize()`
+    passed an unknown key's addresses with no word (ARCH-C05, NEW-R5: a
+    0.16.1 joined key, an unknown leaf), and refused a statement kept whole
+    (`junoscfg:unplaced`), which the same statement from JSON is not
+    (specification challenge S1 of change anonymize-every-placed-value). The
+    path is the schema's names from the root: the unknown key, entry names
+    and values are withheld (lesson #1 of the makeover run). Spec
+    anonymization/placed-values.
+    """
+
+    @staticmethod
+    def _source(shape: str) -> dict[str, Any]:
+        content = json.loads(json.dumps(_UNPLACED[shape][0]))
+        content["routing-options"] = {"router-id": "203.0.114.9"}
+        return {"configuration": content}
+
+    @pytest.mark.parametrize("shape", list(_UNPLACED))
+    def test_its_addresses_are_replaced(self, shape: str) -> None:
+        result = anonymize(self._source(shape), AnonymizeConfig(ips=True, salt="s"))
+        text = json.dumps(result.ir)
+        for address in _ADDRESSES:
+            assert address not in text
+        assert "203.0.114.9" in result.mapping["ip"]
+        pseudonym = result.mapping["ip"]["203.0.114.9"]
+        assert pseudonym == result.ir["configuration"]["routing-options"]["router-id"]
+        if "203.0.114.9" in json.dumps(_UNPLACED[shape][0]):
+            assert text.count(pseudonym) >= 2, "the unplaced address took another pseudonym"
+
+    @pytest.mark.parametrize("shape", list(_UNPLACED))
+    def test_its_schema_path_is_named(self, shape: str) -> None:
+        result = anonymize(self._source(shape), AnonymizeConfig(ips=True, salt="s"))
+        assert set(result.unplaced) == {_UNPLACED[shape][1]}
+        named = " ".join(result.unplaced)
+        for original in (*_ADDRESSES, "G-SECRET", "G1", "unknown", "bogus", "nonsense", "made-up"):
+            assert original not in named
+
+    @pytest.mark.parametrize("shape", list(_UNPLACED))
+    def test_every_other_word_is_left_as_written(self, shape: str) -> None:
+        result = anonymize(self._source(shape), AnonymizeConfig(ips=True, salt="s"))
+        text = json.dumps(result.ir)
+        for word in _UNPLACED[shape][2]:
+            assert word in text
+
+    @pytest.mark.parametrize("shape", list(_UNPLACED))
+    def test_the_mapping_restores_it(self, shape: str) -> None:
+        from junoscfg.anonymize import apply_revert
+
+        result = anonymize(self._source(shape), AnonymizeConfig(ips=True, salt="s"))
+        assert apply_revert(result.ir, result.mapping) == self._source(shape)
+
+    @pytest.mark.parametrize("shape", list(_UNPLACED))
+    def test_without_the_ip_rule_it_is_still_named(self, shape: str) -> None:
+        result = anonymize(self._source(shape), AnonymizeConfig(descriptions=True, salt="s"))
+        assert result.ir == self._source(shape)
+        assert set(result.unplaced) == {_UNPLACED[shape][1]}
+
+    def test_without_a_rule_nothing_changes(self) -> None:
+        source = self._source("kept-statement")
+        result = anonymize(self._source("kept-statement"), AnonymizeConfig())
+        assert result.ir == source
+        assert result.unplaced == ()
+
+
+#: One statement the schema does not place, through every input door: the
+#: format, the source, and the schema path the warning names.
+_SECRET_LEAF = "203.0.114.9 G-SECRET"
+_DOORS: dict[str, tuple[Format, str, str]] = {
+    "set": (
+        Format.SET,
+        "set protocols bgp group SAMPLE-PEERS unknown-knob 203.0.114.9 G-SECRET\n",
+        "protocols.bgp.group",
+    ),
+    "structured": (
+        Format.STRUCTURED,
+        "protocols {\n    bgp {\n        group SAMPLE-PEERS {\n"
+        "            unknown-knob 203.0.114.9 G-SECRET;\n        }\n    }\n}\n",
+        "protocols.bgp.group",
+    ),
+    "json": (
+        Format.JSON,
+        json.dumps(
+            {
+                "configuration": {
+                    "protocols": {
+                        "bgp": {"group": [{"name": "SAMPLE-PEERS", "unknown-knob": _SECRET_LEAF}]}
+                    }
+                }
+            }
+        ),
+        "protocols.bgp.group",
+    ),
+    "yaml": (
+        Format.YAML,
+        "configuration:\n  protocols:\n    bgp:\n      group:\n        - name: SAMPLE-PEERS\n"
+        f"          unknown-knob: {_SECRET_LEAF}\n",
+        "protocols.bgp.group",
+    ),
+    "xml": (
+        Format.XML,
+        "<configuration><protocols><bgp><group><name>SAMPLE-PEERS</name>"
+        f"<unknown-knob>{_SECRET_LEAF}</unknown-knob></group></bgp></protocols></configuration>",
+        "protocols.bgp.group",
+    ),
+    "json-joined-key": (
+        Format.JSON,
+        json.dumps({"configuration": {"system": {"bogus 203.0.114.9 G-SECRET": [None]}}}),
+        "system",
+    ),
+}
+
+
+class TestEveryDoorGivesOneAnswer:
+    """Every input door and both anonymizing doors give owner rule 5's answer.
+
+    The conversion refused every statement the schema could not place, the
+    library passed it unchanged (NEW-R5). Now both replace its addresses and
+    name its schema path in a warning; no message of the run -- the warning,
+    field validation's `UNPLACED` report, the `--strict` error -- carries the
+    address, the word beside it, the group's name or the unknown key, since
+    the text no rule rewrote is original (lesson #1 of the makeover run).
+    Spec anonymization/placed-values.
+    """
 
     @staticmethod
     def _config() -> AnonymizeConfig:
-        return AnonymizeConfig(ips=True, groups=True, ips_in_strings=True, salt="s")
+        return AnonymizeConfig(ips=True, groups=True, salt="s")
 
-    def test_anonymize_refuses_a_set_reader_record(self) -> None:
-        from junoscfg.convert import to_dict
+    @pytest.mark.parametrize("to_format", [Format.SET, Format.JSON])
+    @pytest.mark.parametrize("door", list(_DOORS))
+    def test_no_address_passes_and_a_warning_names_the_path(
+        self, door: str, to_format: Format
+    ) -> None:
+        from junoscfg import convert_config_result
 
-        ir = {"configuration": to_dict(self._LINE, "set")}
-        with pytest.raises(ValueError, match="cannot anonymize") as caught:
-            anonymize(ir, self._config())
-        assert "203.0.114.9" not in str(caught.value)
-        assert "SAMPLE-SECRET-GROUP" not in str(caught.value)
-
-    def test_anonymize_refuses_a_record_from_json(self) -> None:
-        from junoscfg.convert import to_dict
-
-        source = json.dumps(
-            {
-                "configuration": {
-                    "system": {
-                        "host-name": "router1",
-                        "junoscfg:unplaced": {"nonsense 203.0.114.9": [None]},
-                    }
-                }
-            }
+        fmt, source, path = _DOORS[door]
+        result = convert_config_result(
+            source, from_format=fmt, to_format=to_format, anon_config=self._config()
         )
-        with pytest.raises(ValueError, match="cannot anonymize") as caught:
-            anonymize({"configuration": to_dict(source, "json")}, self._config())
-        assert "203.0.114.9" not in str(caught.value)
+        assert "203.0.114.9" not in result.output
+        assert "SAMPLE-PEERS" not in result.output
+        assert "G-SECRET" in result.output, "a word that is no address is left as written"
+        warnings = [d for d in result.diagnostics if d.source == "anonymize"]
+        assert [(d.path, d.severity) for d in warnings] == [(path, "warning")]
 
-    def test_without_a_rule_nothing_is_refused(self) -> None:
-        ir = {"configuration": {"system": {"junoscfg:unplaced": {"nonsense 203.0.114.9": True}}}}
-        assert anonymize(ir, AnonymizeConfig()).ir == ir
+    @pytest.mark.parametrize("door", list(_DOORS))
+    def test_no_message_carries_an_original_value(self, door: str) -> None:
+        from junoscfg import FieldValidationError, convert_config_result
 
-    def test_the_conversion_refusal_withholds_the_statement(self) -> None:
-        from junoscfg import FieldValidationError
-
-        with pytest.raises(FieldValidationError) as caught:
-            convert_config(
-                self._LINE,
-                from_format=Format.SET,
+        fmt, source, _ = _DOORS[door]
+        originals = ("203.0.114.9", "G-SECRET", "SAMPLE-PEERS", "unknown-knob", "bogus")
+        result = convert_config_result(
+            source, from_format=fmt, to_format=Format.SET, anon_config=self._config()
+        )
+        assert result.diagnostics, "the run reports what it could not place"
+        for diagnostic in result.diagnostics:
+            for original in originals:
+                assert original not in diagnostic.render()
+        with pytest.raises(FieldValidationError) as raised:
+            convert_config_result(
+                source,
+                from_format=fmt,
                 to_format=Format.SET,
                 anon_config=self._config(),
+                strict=True,
             )
-        message = str(caught.value)
-        assert "cannot anonymize" in message
-        assert "203.0.114.9" not in message
-        assert "SAMPLE-SECRET-GROUP" not in message
-        assert "G1" not in message
-
-    def test_a_tagged_statement_counts_once(self) -> None:
-        ir = {
-            "configuration": {
-                "system": {
-                    "junoscfg:unplaced": {
-                        "nonsense 203.0.114.9": True,
-                        "@nonsense 203.0.114.9": {"inactive": True},
-                    }
-                }
-            }
-        }
-        with pytest.raises(ValueError, match="cannot anonymize: 1 statement"):
-            anonymize(ir, self._config())
+        messages = [str(raised.value)] + [
+            f"{e.path} {e.message} {e.value}" for e in raised.value.result.errors
+        ]
+        for message in messages:
+            for original in originals:
+                assert original not in message

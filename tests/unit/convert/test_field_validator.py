@@ -1080,14 +1080,24 @@ class TestThePipelineAppliesFieldValidation:
         with pytest.raises(FieldValidationError):
             pipeline(source, from_format="set", to_format="json", strict=True)
 
-    def test_anonymization_refuses_what_it_cannot_see(self) -> None:
+    def test_anonymization_replaces_the_addresses_it_cannot_place(self) -> None:
         """A kept statement would leave verbatim, address and all, where the
-        reader used to drop it: the anonymizer never rewrites a key the
-        schema does not name. So it fails, whatever validate and strict say."""
+        reader used to drop it, and the conversion refused it. Owner answer 5
+        (change anonymize-every-placed-value): its addresses are replaced, its
+        schema path is warned about, its text reaches no message, whatever
+        validate and strict say."""
         cfg = AnonymizeConfig(ips=True, salt="s")
         source = "set protocols bgp neighbor 203.0.114.9 description peer"
-        with pytest.raises(FieldValidationError, match="cannot anonymize"):
-            pipeline(source, from_format="set", to_format="set", anon_config=cfg, validate=False)
+        for validate in (False, True):
+            result = pipeline_result(
+                source, from_format="set", to_format="set", anon_config=cfg, validate=validate
+            )
+            assert "203.0.114.9" not in result.output
+            assert "description peer" in result.output
+            assert [(d.source, d.path) for d in result.diagnostics if d.source == "anonymize"] == [
+                ("anonymize", "protocols.bgp")
+            ]
+            assert all("203.0.114.9" not in d.render() for d in result.diagnostics)
         modelled = "set protocols bgp group G neighbor 203.0.114.9 description peer"
         out = pipeline(modelled, from_format="set", to_format="set", anon_config=cfg)
         assert "203.0.114.9" not in out
@@ -1260,19 +1270,27 @@ class TestALeafWithoutItsValueIsUnplaced:
         )
 
     @pytest.mark.parametrize("door", list(_SOURCES))
-    def test_strict_and_anonymization_refuse_it(self, door: str) -> None:
+    def test_strict_refuses_it_and_an_anonymized_run_converts_it(self, door: str) -> None:
+        """It holds no value a rule could miss, so an anonymized run converts it
+        as a plain one does, its report's text withheld; it was refused while
+        the conversion refused every `UNPLACED` statement (owner answer 5,
+        change anonymize-every-placed-value)."""
         fmt = door.split("-")[0]
         source = self._SOURCES[door]
         with pytest.raises(FieldValidationError):
             convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
-        with pytest.raises(FieldValidationError, match="cannot anonymize"):
-            pipeline(
-                source,
-                from_format=fmt,
-                to_format="set",
-                anon_config=AnonymizeConfig(ips=True, salt="s"),
-                validate=False,
-            )
+        plain = pipeline(source, from_format=fmt, to_format="set", validate=False)
+        result = pipeline_result(
+            source,
+            from_format=fmt,
+            to_format="set",
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert result.output == plain
+        reports = [d for d in result.diagnostics if d.source == "field-validate"]
+        assert len(reports) == 1
+        assert "host-name" not in reports[0].message
+        assert "withheld" in reports[0].message
 
     @pytest.mark.parametrize(
         ("fmt", "source"),
@@ -1480,9 +1498,80 @@ class TestAnEntryWithoutItsKeyIsUnplaced:
                 source, from_format=Format(fmt), to_format=Format.SET, strict=True
             )
 
+    def test_an_anonymized_run_replaces_its_addresses(self) -> None:
+        """Its fields are walked like any entry's; the conversion refused it
+        while it refused every `UNPLACED` statement (owner answer 5, change
+        anonymize-every-placed-value)."""
+        neighbor = {"local-address": "203.0.114.9", "description": "SAMPLE-PEER"}
+        group = {"name": "G1", "neighbor": [neighbor]}
+        source = json.dumps({"configuration": {"protocols": {"bgp": {"group": [group]}}}})
+        result = convert_config_result(
+            source,
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            anon_config=AnonymizeConfig(ips=True, descriptions=True, salt="s"),
+        )
+        assert "203.0.114.9" not in result.output
+        assert "SAMPLE-PEER" not in result.output
+        reports = [d for d in result.diagnostics if d.source == "field-validate"]
+        assert [d.path for d in reports] == ["protocols.bgp.group.neighbor"]
+        assert all("G1" not in d.render() for d in result.diagnostics)
+
     def test_a_complete_entry_is_clean(self) -> None:
         entry = {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}
         ir = _policy("from", {"as-path-neighbors": [entry]})
+        assert validate_ir({"configuration": ir}).errors == []
+
+
+class TestATransparentContainersOtherChildren:
+    """A transparent container's other children are validated against the
+    container, its transparent child's entries against the child.
+
+    Field validation replaced the container by its transparent child: beside
+    `interface` the siblings were never walked, so an unknown key passed
+    unreported; without it they were walked as an interface, so a valid
+    `interface-range` or `traceoptions` was reported and `--strict` raised. A
+    list held by a container that is no list passed unvalidated (NEW-A-S2,
+    the field-validation half of NEW-A-N3; change anonymize-every-placed-value).
+    """
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set interfaces interface-range R1 member-range xe-0/0/0 to xe-0/0/3",
+            "set interfaces interface-range R1 member ge-0/0/1",
+            "set interfaces traceoptions file f1",
+            "set interfaces interface-set IS1 interface ge-0/0/1",
+        ],
+    )
+    def test_a_sibling_alone_is_placed(self, line: str) -> None:
+        result = convert_config_result(line, from_format=Format.SET, to_format=Format.JSON)
+        assert [d.message for d in result.diagnostics] == []
+        convert_config(line, from_format=Format.SET, to_format=Format.JSON, strict=True)
+
+    @pytest.mark.parametrize("with_interface", [True, False], ids=["beside-interface", "alone"])
+    def test_an_unknown_key_among_them_is_reported(self, with_interface: bool) -> None:
+        member_range = [{"name": "xe-0/0/0", "to": "xe-0/0/3"}]
+        interfaces: dict[str, Any] = {
+            "interface-range": [{"name": "R1", "member-range": member_range, "bogus-key": "x"}],
+            "traceoptions": {"bogus-trace": "y"},
+        }
+        if with_interface:
+            interfaces = {"interface": [{"name": "ge-0/0/0"}], **interfaces}
+        errors = validate_ir({"configuration": {"interfaces": interfaces}}).errors
+        assert sorted((e.path, e.value) for e in errors if e.expected == UNPLACED) == [
+            ("interfaces.interface-range", "bogus-key"),
+            ("interfaces.traceoptions", "bogus-trace"),
+        ]
+
+    def test_each_entry_of_a_list_a_container_holds_is_validated(self) -> None:
+        """The port-mirroring `routing-instance`, which JSON holds as the device
+        wrote it, a list of one entry."""
+        output = {"routing-instance": [{"name": "VRF-A", "ip-address": "not-an-address"}]}
+        ir = {"forwarding-options": {"port-mirroring": {"family": {"inet": {"output": output}}}}}
+        errors = validate_ir({"configuration": ir}).errors
+        assert [e.value for e in errors] == ["not-an-address"]
+        output["routing-instance"][0]["ip-address"] = "198.51.100.1"
         assert validate_ir({"configuration": ir}).errors == []
 
 
@@ -1601,18 +1690,21 @@ class TestAUniversalStatementIsValidatedWithItsNode:
         self, fmt: str, source: str
     ) -> None:
         """Nothing resolves a universal statement inside another: it is unplaced,
-        strict conversion raises, and an anonymized run refuses rather than pass
-        the address through (Reviewer finding 1: the head let it through where
-        0.17.0 refused)."""
+        strict conversion raises, and no address passes an anonymized run
+        (Reviewer finding 1 of change universal-statements-from-tree). Owner
+        answer 5 (change anonymize-every-placed-value): the run converts it, the
+        address replaced and the path named, where it refused."""
         assert self._messages(source, Format(fmt)), "reported"
         with pytest.raises(FieldValidationError):
             convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
-        with pytest.raises(FieldValidationError) as refused:
-            pipeline(
-                source,
-                from_format=fmt,
-                to_format="set",
-                anon_config=AnonymizeConfig(ips=True, salt="s"),
-                validate=False,
-            )
-        assert "203.0.114.7" not in str(refused.value)
+        result = pipeline_result(
+            source,
+            from_format=fmt,
+            to_format="set",
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert "203.0.114.7" not in result.output
+        assert [(d.source, d.path) for d in result.diagnostics if d.source == "anonymize"] == [
+            ("anonymize", "system.apply-flags")
+        ]
+        assert all("203.0.114.7" not in d.render() for d in result.diagnostics)

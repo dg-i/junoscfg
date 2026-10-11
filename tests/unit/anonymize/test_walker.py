@@ -269,3 +269,72 @@ class TestKeyFieldsAreLeaves:
         ]["as-path-neighbors"][0]
         assert entry["list-type"] == "as-list-group"
         assert set(entry) == {"list-type", "list-name"}
+
+
+class TestTheWalkerReachesEveryPlacedValue:
+    """Every value the tree places is offered to the rules, wherever it stands.
+
+    The walker returned at a key its node's children did not name, so a
+    universal statement below the root was never seen (NEW-A-N1, NEW-A-N2);
+    it replaced a transparent container by its transparent child, so
+    `interface-range` beside `interface` was never seen (NEW-A-N3, ANON-P2,
+    NEW-C11); and it entered only a dict under a container that is no list, so
+    the port-mirroring `routing-instance` JSON holds as a one-entry list was
+    never seen (ANON-P2). Spec anonymization/placed-values. Through `walk`
+    against the bundled tree.
+    """
+
+    @staticmethod
+    def _offered(ir: dict[str, Any]) -> dict[tuple[str, ...], Any]:
+        return {path: value for value, _, path in _walked(ir).seen}
+
+    def test_a_universal_statement_below_the_root(self) -> None:
+        offered = self._offered(
+            {
+                "system": {
+                    "apply-groups": ["SAMPLE-GROUP"],
+                    "apply-macro": [
+                        {"name": "M2", "data": [{"name": "peer", "value": "203.0.114.8"}]}
+                    ],
+                },
+                "interfaces": {"apply-groups-except": ["SAMPLE-GROUP"]},
+            }
+        )
+        assert offered[("system", "apply-groups")] == "SAMPLE-GROUP"
+        assert offered[("interfaces", "apply-groups-except")] == "SAMPLE-GROUP"
+        assert offered[("system", "apply-macro", "data", "value")] == "203.0.114.8"
+        assert offered[("system", "apply-macro", "data", "name")] == "peer"
+
+    def test_a_transparent_containers_other_children(self) -> None:
+        """With and without the transparent child beside them."""
+        siblings = {
+            "interface-range": [{"name": "IR1", "description": "access range"}],
+            "interface-set": [{"name": "IS1", "description": "access set"}],
+        }
+        for interfaces in (siblings, {"interface": [{"name": "ge-0/0/0"}], **siblings}):
+            offered = self._offered({"interfaces": interfaces})
+            assert offered[("interfaces", "interface-range", "description")] == "access range"
+            assert offered[("interfaces", "interface-set", "description")] == "access set"
+        offered = self._offered({"interfaces": {"interface": [{"name": "ge-0/0/0"}], **siblings}})
+        assert offered[("interfaces", "name")] == "ge-0/0/0"
+
+    def test_each_entry_of_a_list_a_container_holds(self) -> None:
+        """`routing-instance` is a container the tree marks homogeneous, no
+        list; JSON holds it as the device wrote it, a list of one entry."""
+        assert not _schema_at(
+            "forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"
+        ).get("L")
+        output = {"routing-instance": [{"name": "VRF-A", "ip-address": "203.0.114.10"}]}
+        offered = self._offered(
+            {"forwarding-options": {"port-mirroring": {"family": {"inet": {"output": output}}}}}
+        )
+        path = ("forwarding-options", "port-mirroring", "family", "inet", "output")
+        assert offered[(*path, "routing-instance", "ip-address")] == "203.0.114.10"
+
+    def test_a_key_field_the_tree_holds_no_leaf_for(self) -> None:
+        """`apply-macro` is keyed `name`, which the tree holds no leaf for: the
+        rules see the name with no type, never a leaf built from the list node."""
+        assert "name" not in _schema_at("apply-macro").get("c", {})
+        rule = _walked({"apply-macro": [{"name": "SAMPLE-MACRO", "data": [{"name": "k"}]}]})
+        offered = [(schema, path) for value, schema, path in rule.seen if value == "SAMPLE-MACRO"]
+        assert offered == [({}, ("apply-macro", "name"))]

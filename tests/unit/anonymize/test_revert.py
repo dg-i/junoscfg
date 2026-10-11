@@ -232,18 +232,46 @@ class TestAnonymizeRevertRoundTrip:
         assert result.ir == original
 
 
-class TestARecordOfKeptStatementsPassesRevert:
-    """A record of kept statements (`junoscfg:unplaced`) holds text, not
-    values: revert leaves it as it is, and does not fail on it (change
-    kept-whole-statements)."""
+class TestRevertRestoresKeys:
+    """Content the anonymizer cannot place has the addresses in its keys
+    replaced too -- a 0.16.1 joined key, a statement kept whole in the record
+    `junoscfg:unplaced`, its tag -- so revert restores a key's words as it
+    restores a value; a word no pseudonym spells stays. The record used to be
+    refused by anonymization and passed revert unchanged (change
+    kept-whole-statements); owner answer 5, spec anonymization/placed-values,
+    specification challenge S1 of change anonymize-every-placed-value."""
 
-    def test_the_record_is_unchanged(self) -> None:
-        record = {"nonsense 198.0.2.1": True, "@nonsense 198.0.2.1": {"inactive": True}}
+    def test_an_address_in_a_key_is_restored(self) -> None:
         ir = {
             "configuration": {
-                "system": {"name-server": ["198.0.2.1"], "junoscfg:unplaced": dict(record)}
+                "system": {
+                    "name-server": ["198.0.2.1"],
+                    "bogus 198.0.2.1 G-SECRET": [None],
+                    "198.0.2.1": {"peer": "198.0.2.1"},
+                    "junoscfg:unplaced": {
+                        "nonsense 198.0.2.1": True,
+                        '@nonsense "198.0.2.1" x': {"inactive": True},
+                    },
+                }
             }
         }
         apply_revert(ir, {"ip": {"203.0.114.9": "198.0.2.1"}})
-        assert ir["configuration"]["system"]["name-server"] == ["203.0.114.9"]
-        assert ir["configuration"]["system"]["junoscfg:unplaced"] == record
+        assert ir == {
+            "configuration": {
+                "system": {
+                    "name-server": ["203.0.114.9"],
+                    "bogus 203.0.114.9 G-SECRET": [None],
+                    "203.0.114.9": {"peer": "203.0.114.9"},
+                    "junoscfg:unplaced": {
+                        "nonsense 203.0.114.9": True,
+                        '@nonsense "203.0.114.9" x': {"inactive": True},
+                    },
+                }
+            }
+        }
+        assert list(ir["configuration"]["system"]) == [
+            "name-server",
+            "bogus 203.0.114.9 G-SECRET",
+            "203.0.114.9",
+            "junoscfg:unplaced",
+        ]

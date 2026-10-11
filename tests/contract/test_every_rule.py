@@ -45,7 +45,11 @@ _RSA = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDx admin@acme"
 _ED25519 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExAmPlE operator@sw1"
 
 #: One configuration with a value for every rule. "acme" and "LAX" appear in
-#: values other rules own, so the sensitive-word rows contest them.
+#: values other rules own, so the sensitive-word rows contest them. The group
+#: is applied at the root, in `system` and beside the interfaces, so each rule
+#: is checked where the walker reaches a universal statement and a transparent
+#: container's other child (change anonymize-every-placed-value: below the root
+#: the walker saw no reference, and a second pass rewrote the root's again).
 CONFIGURATION: dict[str, Any] = {
     "configuration": {
         "apply-groups": ["acme-base"],
@@ -72,6 +76,7 @@ CONFIGURATION: dict[str, Any] = {
             }
         ],
         "system": {
+            "apply-groups": ["acme-base"],
             "host-name": "acme-router1",
             "domain-name": "lax001.example.net",
             "root-authentication": {
@@ -100,6 +105,7 @@ CONFIGURATION: dict[str, Any] = {
             "ntp": {"server": [{"name": "203.0.114.53"}]},
         },
         "interfaces": {
+            "apply-groups-except": ["acme-base"],
             "interface": [
                 {
                     "name": "ge-0/0/0",
@@ -110,7 +116,7 @@ CONFIGURATION: dict[str, Any] = {
                 },
                 {"name": "ge-0/0/1", "description": "acme uplink"},
                 {"name": "ge-0/0/2", "description": "LAX002 core"},
-            ]
+            ],
         },
         "snmp": {
             "location": "LAX001 rack 4",
@@ -252,15 +258,6 @@ RULES: tuple[RuleRow, ...] = (
 
 _SOURCE = json.dumps(CONFIGURATION)
 _PRECEDENCE = {row.id: n for n, row in enumerate(RULES)}
-
-_APPLY_GROUPS_DEFECT = pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "PRODUCT DEFECT: the apply-groups pass re-anonymizes a value the walker already "
-        "replaced; with groups and sensitive words on, apply-groups names a group that "
-        "no longer exists and revert cannot restore it"
-    ),
-)
 
 
 @dataclass(frozen=True)
@@ -414,20 +411,18 @@ class TestEveryRule:
         assert json.loads(reverted.stdout) == json.loads(_baseline())
 
 
-def _pairs(*, defect: bool = False) -> list[Any]:
-    """Every pair of rules; *defect* marks the pair the apply-groups defect breaks."""
-    pairs = []
-    for first, second in itertools.combinations(RULES, 2):
-        broken = defect and {first.id, second.id} == {"group", "sensitive-word"}
-        marks = [_APPLY_GROUPS_DEFECT] if broken else []
-        pairs.append(pytest.param(first, second, marks=marks, id=f"{first.id}+{second.id}"))
-    return pairs
+def _pairs() -> list[Any]:
+    """Every pair of rules."""
+    return [
+        pytest.param(first, second, id=f"{first.id}+{second.id}")
+        for first, second in itertools.combinations(RULES, 2)
+    ]
 
 
 class TestRulesDoNotOverlap:
     """Two rules on together: each value is replaced once, by the first that takes it."""
 
-    @pytest.mark.parametrize(("first", "second"), _pairs(defect=True))
+    @pytest.mark.parametrize(("first", "second"), _pairs())
     def test_a_value_goes_to_the_first_rule_that_takes_it(
         self, first: RuleRow, second: RuleRow
     ) -> None:
@@ -459,7 +454,7 @@ class TestEveryRuleTogether:
                 tuple(row for row in RULES if not row.id.startswith("sensitive")),
                 id="every-rule-but-sensitive-words",
             ),
-            pytest.param(RULES, id="every-rule", marks=_APPLY_GROUPS_DEFECT),
+            pytest.param(RULES, id="every-rule"),
         ],
     )
     def test_every_rule_together_reverts(self, rows: tuple[RuleRow, ...]) -> None:

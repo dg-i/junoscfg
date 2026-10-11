@@ -277,8 +277,8 @@ class TestFieldValidationOptions:
 
 class TestAKeptStatementOnTheCommandLine:
     """`junoscfg convert` writes a bare statement beside the node it names,
-    reports it, fails under `--strict`, and refuses to anonymize it without
-    printing it. Change kept-whole-statements (OPEN-2, NEW-C1)."""
+    reports it, fails under `--strict`, and anonymizes it without printing it.
+    Change kept-whole-statements (OPEN-2, NEW-C1)."""
 
     _SOURCE = "set system host-name router1\nset system host-name\n"
 
@@ -296,16 +296,22 @@ class TestAKeptStatementOnTheCommandLine:
         assert result.exit_code == 1
         assert result.stdout == ""
 
-    def test_anonymizing_refuses_without_the_statement(self) -> None:
-        source = "set system nonsense 203.0.114.9\n"
+    def test_anonymizing_warns_without_the_statement(self) -> None:
+        """Owner answer 5 (change anonymize-every-placed-value): the statement's
+        address is replaced and its schema path named on stderr, where the run
+        exited 1; no line of stderr carries the statement."""
+        source = "set system nonsense 203.0.114.9 SAMPLE-WORD\n"
         result = run(
             ["convert", "-i", "set", "-e", "set", "--anonymize-ips", "--anonymize-salt", "s"],
             source,
         )
-        assert result.exit_code != 0
-        assert result.stdout == ""
-        assert "203.0.114.9" not in result.stderr
+        assert result.exit_code == 0
+        assert result.stdout.startswith("set system nonsense ")
+        assert "SAMPLE-WORD" in result.stdout
         assert "203.0.114.9" not in result.output
+        assert "anonymize: system: " in result.stderr
+        assert "nonsense" not in result.stderr
+        assert "SAMPLE-WORD" not in result.stderr
 
 
 class TestValidateOption:
