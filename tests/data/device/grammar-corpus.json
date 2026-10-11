@@ -1,7 +1,7 @@
 {
  "about": "Device set lines covering every grammar rule the captured devices' lines use (tools/device_grammar_corpus.py), and every device line the shipped grammar rejects. A rejection is a false rejection of valid configuration. Each line names the capture it was first seen in.",
  "device_lines": 8713,
- "rules": 408,
+ "rules": 409,
  "accepted": {
   "set access address-assignment neighbor-discovery-router-advertisement pppv6-pool": "jvd_derived_data/bng1_mx304",
   "set access address-assignment pool pppv6-pool family inet6 range ndra-range prefix-length 64": "jvd_derived_data/bng1_mx304",
@@ -71,6 +71,7 @@
   "set groups GR-CORE-INTF-LAG-MEMBER interfaces <*> optics-options warning low-light-warning syslog": "jvd_derived_data/an4_acx710",
   "set groups GR-ISIS-BCP protocols isis overload advertise-high-metrics": "jvd_derived_data/mdr1_acx7509",
   "set groups GR-MACRO protocols ospf apply-macro GR-PARAMS bfd": "jvd_derived_data/junoscfg-oracle",
+  "set groups GR-OMIT system apply-flags omit": "jvd_derived_data/junoscfg-oracle",
   "set groups GR-OMIT system location building \"omit probe\"": "jvd_derived_data/junoscfg-oracle",
   "set groups GR-SYSTEM system ntp server 198.51.100.123 prefer": "jvd_derived_data/junoscfg-oracle",
   "set interfaces ae22 apply-groups GR-CORE-INTF": "jvd_derived_data/mdr1_acx7509",
@@ -197,7 +198,6 @@
   "set chassis dump-on-panic": "jvd_derived_data/ap1_mx304",
   "set forwarding-options port-mirroring family inet output routing-instance VRF-A ip-address 10.0.0.1": "jvd_derived_data/junoscfg-oracle",
   "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "jvd_derived_data/junoscfg-oracle",
-  "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "jvd_derived_data/junoscfg-oracle",
   "set protocols isis interface ae22.1 level 2 application-specific attribute-group ASLA admin-group blue": "jvd_derived_data/mdr1_acx7509",
   "set protocols isis interface ae22.1 level 2 application-specific attribute-group ASLA admin-group green": "jvd_derived_data/mdr1_acx7509",
   "set protocols isis interface ae22.1 level 2 application-specific attribute-group ASLA advertise-delay-metric": "jvd_derived_data/mdr1_acx7509",
