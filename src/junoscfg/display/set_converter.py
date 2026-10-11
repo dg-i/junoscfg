@@ -43,13 +43,19 @@ def reads_as_one_statement(text: str) -> bool:
     """Whether *text* is one statement's words, as both readers read it back.
 
     Words and quoted strings split by single spaces on one line, nothing this
-    lexer takes as structure (`{`, `}`, `;`, `[`, a comment, an open quote)
-    and no quote inside a word: written as one set line or one curly statement, such text
-    reads back as the same tokens. A record of kept statements holds only such
-    text (`unplaced_record_problem`).
+    lexer takes as structure (`{`, `}`, `;`, `[`, a comment, an open quote),
+    no unquoted `[` or `]` the set reader refuses
+    (`junoscfg.input.find_unsupported_set_brackets`) and no quote inside a
+    word: written as one set line or one curly statement, such text reads back
+    as the same tokens. A record of kept statements holds only such text
+    (`unplaced_record_problem`).
     """
+    from junoscfg.input import find_unsupported_set_brackets
+
     if not text or any(char in text for char in "\n\r\t\v\f"):
         return False
+    if find_unsupported_set_brackets(text):
+        return False  # the set reader refuses an unquoted `[` or `]` anywhere
     position = 0
     expect_word = True
     while position < len(text):

@@ -726,9 +726,12 @@ class TestKeyedEntriesSurvive:
 class TestAKeptStatementIsRefused:
     """A statement the reader kept whole (`junoscfg:unplaced`) is text no
     rule rewrites: anonymized, its addresses and names would leave
-    unchanged. `anonymize()` refuses an IR that holds one, as the conversion
-    pipeline does, and neither refusal names the statement. Test/Challenge
-    F2, change kept-whole-statements."""
+    unchanged. `anonymize()` refuses an IR whose record holds one, and the
+    conversion pipeline refuses it too; neither refusal names the statement.
+    Only the record: any other key the walk cannot place (a 0.16 joined key,
+    an unknown leaf) still passes the public `anonymize()`, the open gap
+    NEW-R5 that change 5 closes (owner answer 5). Test/Challenge F2, change
+    kept-whole-statements."""
 
     _LINE = "set protocols bgp group G1 nonsense 203.0.114.9 SAMPLE-SECRET-GROUP\n"
 
@@ -781,3 +784,17 @@ class TestAKeptStatementIsRefused:
         assert "203.0.114.9" not in message
         assert "SAMPLE-SECRET-GROUP" not in message
         assert "G1" not in message
+
+    def test_a_tagged_statement_counts_once(self) -> None:
+        ir = {
+            "configuration": {
+                "system": {
+                    "junoscfg:unplaced": {
+                        "nonsense 203.0.114.9": True,
+                        "@nonsense 203.0.114.9": {"inactive": True},
+                    }
+                }
+            }
+        }
+        with pytest.raises(ValueError, match="cannot anonymize: 1 statement"):
+            anonymize(ir, self._config())

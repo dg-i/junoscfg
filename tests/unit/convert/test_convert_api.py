@@ -513,6 +513,8 @@ class TestARecordOfKeptStatementsIsInput:
             " bogus",
             "bogus  two",
             "",
+            "bogus ]",
+            "bogus <[gx]e-*>",
         ],
         ids=[
             "newline",
@@ -528,6 +530,8 @@ class TestARecordOfKeptStatementsIsInput:
             "leading-space",
             "double-space",
             "empty",
+            "close-bracket",
+            "unquoted-bracket-word",
         ],
     )
     @pytest.mark.parametrize("fmt", ["json", "yaml"])
@@ -552,11 +556,26 @@ class TestARecordOfKeptStatementsIsInput:
             {"host-name": "router1"},
             {"host-name": ["router1"]},
             {"@host-name": True},
+            {},
+            {"@bogus": {}},
+            {"@bogus": {"inactive": False}},
         ],
-        ids=["string", "list", "number", "a-value", "a-list-value", "a-tag-not-a-mapping"],
+        ids=[
+            "string",
+            "list",
+            "number",
+            "a-value",
+            "a-list-value",
+            "a-tag-not-a-mapping",
+            "empty",
+            "an-empty-tag",
+            "a-tag-no-writer-writes",
+        ],
     )
     @pytest.mark.parametrize("fmt", ["json", "yaml"])
     def test_a_record_of_the_wrong_shape_is_refused_on_read(self, record: object, fmt: str) -> None:
+        """An empty record would be written as `[null]`, a tag that names no
+        meta command by no writer: neither reads back (Reviewer R5)."""
         config = {"system": {self._RECORD: record}}
         source = (
             json.dumps({"configuration": config})

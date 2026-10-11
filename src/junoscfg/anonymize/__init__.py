@@ -59,12 +59,19 @@ class AnonymizeResult:
 
 
 def _count_kept_statements(node: Any) -> int:
-    """How many entries the IR's records of statements kept whole hold."""
+    """How many statements the IR's records keep whole; a tag is not one more.
+
+    A record holding only meta commands counts each, so it is never zero.
+    """
     from junoscfg.display import UNPLACED_STATEMENTS
 
     if isinstance(node, dict):
         return sum(
-            (len(value) if isinstance(value, dict) else 1)
+            (
+                sum(1 for text in value if not str(text).startswith("@")) or len(value)
+                if isinstance(value, dict)
+                else 1
+            )
             if key == UNPLACED_STATEMENTS
             else _count_kept_statements(value)
             for key, value in node.items()

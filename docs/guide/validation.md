@@ -228,8 +228,10 @@ output, as the words it was written with, quotes included:
 
 It never replaces or hides a statement placed beside it, and every writer writes it back
 as read. JSON or YAML input may carry the record; one whose text is not one line of
-words (a line break, an unquoted `;`, `{` or `}`) is refused with `ValueError`. A leaf
-without its value from JSON or YAML (`"host-name": null`) is reported the same way. A
+words (a line break, an unquoted `;`, `{`, `}`, `[` or `]`) is refused with `ValueError`.
+A leaf without its value from JSON or YAML (`"host-name": null`) is reported the same
+way. An empty value is checked like any other: `description ""` is valid, as the device
+writes it, while `""` on an enum, an integer or a pattern it fails is an invalid value. A
 list entry's key fields are the ones the schema declares (`name` for most,
 `list-type` and `list-name` for an AS-list reference) and are validated as the leaves
 they are; a key field's closed enum is enforced. Not reported: `@` attributes, the

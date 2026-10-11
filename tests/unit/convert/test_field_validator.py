@@ -703,18 +703,19 @@ class TestStructuralValidation:
             result = validate(schema, {"system": {"flag": flag}})
             assert result.valid is True, flag
 
-    def test_empty_value_skipped(self, validate: Validate) -> None:
+    def test_an_empty_value_is_checked_by_its_type(self, validate: Validate) -> None:
+        """`""` takes its leaf's type: a string leaf takes it, a `uint16` does
+        not. This test used to pin that every `""` was skipped (Reviewer R3,
+        change kept-whole-statements: `TestAnEmptyValueIsCheckedLikeAnyOther`)."""
         schema = _make_schema(
             tree=_container(
                 configuration=_container(
-                    system=_container(
-                        name=_leaf(tr="uint16"),
-                    )
+                    system=_container(name=_leaf(tr="uint16"), text=_leaf(tr="xsd:string"))
                 )
             ),
         )
-        result = validate(schema, {"system": {"name": ""}})
-        assert result.valid is True
+        assert validate(schema, {"system": {"text": ""}}).valid is True
+        assert validate(schema, {"system": {"name": ""}}).valid is False
 
     def test_attribute_keys_skipped(self, validate: Validate) -> None:
         schema = _make_schema(
@@ -1352,6 +1353,69 @@ class TestALeafWithoutItsValueIsUnplaced:
         )
         assert 'description ""' in anonymized
         assert "203.0.114.1" not in anonymized
+
+
+class TestAnEmptyValueIsCheckedLikeAnyOther:
+    """`""` is a value: the device writes `description ""` (a string leaf), so
+    it is clean there, and on an enum, an integer type or a pattern it fails it
+    is a value the device rejects. Field validation skipped `""` on every leaf,
+    so an empty XML element of such a leaf, read as `""` since DEV-16, and the
+    same value from JSON or set, passed silently (Reviewer R3, change
+    kept-whole-statements). A leaf the tree gives no type (`interfaces
+    interface mtu`) is not checked: a schema-model gap, carried forward."""
+
+    _UNIT = (
+        "<interfaces><interface><name>ge-0/0/0</name><unit><name>0</name>{}</unit>"
+        "</interface></interfaces>"
+    )
+
+    @pytest.mark.parametrize(
+        ("fmt", "source", "expected"),
+        [
+            ("xml", "<configuration><system><host-name/></system></configuration>", "pattern"),
+            (
+                "xml",
+                f"<configuration>{_UNIT.format('<family><inet><mtu/></inet></family>')}"
+                "</configuration>",
+                "integer",
+            ),
+            (
+                "xml",
+                "<configuration><system><services><ssh><root-login/></ssh></services></system>"
+                "</configuration>",
+                "one of",
+            ),
+            ("json", '{"configuration": {"system": {"host-name": ""}}}', "pattern"),
+            ("set", 'set system host-name ""\n', "pattern"),
+            (
+                "set",
+                'set interfaces ge-0/0/0 unit 0 family inet mtu ""\n',
+                "integer",
+            ),
+        ],
+        ids=["xml-host-name", "xml-mtu", "xml-enum", "json-host-name", "set-host-name", "set-mtu"],
+    )
+    def test_an_empty_value_the_type_refuses_is_reported(
+        self, fmt: str, source: str, expected: str
+    ) -> None:
+        result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+        messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
+        assert len(messages) == 1, messages
+        assert messages[0].startswith("Invalid value ''")
+        assert expected in messages[0]
+        with pytest.raises(FieldValidationError):
+            convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
+
+    @pytest.mark.parametrize("fmt", ["xml", "json", "set"])
+    def test_an_empty_description_is_clean(self, fmt: str) -> None:
+        source = {
+            "xml": f"<configuration>{self._UNIT.format('<description/>')}</configuration>",
+            "json": '{"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", '
+            '"unit": [{"name": "0", "description": ""}]}]}}}',
+            "set": 'set interfaces ge-0/0/0 unit 0 description ""\n',
+        }[fmt]
+        result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
+        assert [d for d in result.diagnostics if d.source == "field-validate"] == []
 
 
 class TestANameKeyIsOpen:

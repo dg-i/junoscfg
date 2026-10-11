@@ -22,8 +22,8 @@ is written as five words (OPEN-3).
   folded in by the Test/Challenge ruling; `xml-empty-value-lost` leaves the record).
 - A valid statement after a bare keyword is placed; only the bare one is kept.
 - Every writer prints a kept statement verbatim; field validation reports each
-  one `UNPLACED`; conversion and the public `anonymize()` refuse it, naming no
-  statement. A record that is not one line of words, or no record, is refused
+  one `UNPLACED`; conversion and the public `anonymize()` refuse the record,
+  naming no statement (other unknown keys at `anonymize()`: NEW-R5, change 5). A record that is not one line of words, or no record, is refused
   on read and by the writers; `edityaml` wildcards pass it by.
 - `junoscfg.display.UNPLACED_STATEMENTS` names the key; minor bump to 0.17.0.
 

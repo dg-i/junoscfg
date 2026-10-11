@@ -508,8 +508,11 @@ class FieldValidator:
         fragment of a wider union; False takes a `name` key's enum as a
         fragment, so a value outside it passes the enum check.
         """
-        # Presence flags or empty values — skip
-        if value is None or value is True or value == "":
+        # Presence flags carry no value. An empty value is checked like any
+        # other: the device writes `description ""` (a string leaf, which
+        # takes it), and `""` on an enum, an integer or a pattern it fails is
+        # a value the device rejects -- an empty XML element read so, too.
+        if value is None or value is True:
             return
 
         # List values: validate each element individually

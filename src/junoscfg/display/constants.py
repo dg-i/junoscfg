@@ -531,9 +531,19 @@ UNPLACED_STATEMENTS = "junoscfg:unplaced"
 
 _NOT_ONE_STATEMENT = (
     f"a statement in '{UNPLACED_STATEMENTS}' that is not one line of words: it holds a line "
-    "break, a tab, a stray space, an unbalanced or inner quote, an unquoted ';', '{', '}' or "
-    "'[', or a comment"
+    "break, a tab, a stray space, an unbalanced or inner quote, an unquoted ';', '{', '}', "
+    "'[' or ']', or a comment"
 )
+
+
+def _writes_a_tag(attrs: dict[str, Any]) -> bool:
+    """Whether *attrs* holds a tag the set writer writes as a meta command."""
+    return (
+        attrs.get("inactive") is True
+        or attrs.get("operation") in ("replace", "delete")
+        or attrs.get("protect") == "protect"
+        or attrs.get("active") == "active"
+    )
 
 
 def unplaced_record_problem(record: object) -> str | None:
@@ -548,12 +558,17 @@ def unplaced_record_problem(record: object) -> str | None:
 
     if not isinstance(record, dict):
         return f"'{UNPLACED_STATEMENTS}' is not a mapping of statements"
+    if not record:
+        # The JSON writer would write `[null]`, which no reader takes back.
+        return f"'{UNPLACED_STATEMENTS}' holds no statement"
     for key, value in record.items():
         if not isinstance(key, str):
             return f"'{UNPLACED_STATEMENTS}' holds a key that is not a statement"
         if key.startswith("@"):
             if not isinstance(value, dict):
                 return f"a tag in '{UNPLACED_STATEMENTS}' that is not a mapping of attributes"
+            if not _writes_a_tag(value):
+                return f"a tag in '{UNPLACED_STATEMENTS}' that names no command a writer writes"
             key = key[1:]
         elif not (value is True or value is None or value == [None]):
             return f"a statement in '{UNPLACED_STATEMENTS}' carries a value; it is its own text"

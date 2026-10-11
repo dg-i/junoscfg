@@ -41,8 +41,14 @@ declared-break:
       keys of "junoscfg:unplaced" at the level where it looked for the joined
       key; the `true`/`[null]` value is unchanged. JSON or YAML written by an
       earlier release still reads: an old joined key is an unknown statement,
-      written back as before and reported UNPLACED. Input a device loads is
-      unaffected.
+      written back as before and reported UNPLACED. One exception: an empty
+      value that 0.16.x read from XML (`<description></description>`) is
+      `[null]` in the JSON or YAML it wrote, and is now reported as a leaf
+      without its value (fatal under strict, refused when anonymizing);
+      regenerate that JSON or YAML from the XML, or write `""` in its place.
+      An empty value on a leaf whose type refuses it (an enum, an integer, a
+      pattern `""` fails) is now reported too. Input a device loads is
+      otherwise unaffected.
   cli:
     why: >-
       `junoscfg convert` to JSON or YAML writes the new spelling above;
@@ -50,4 +56,7 @@ declared-break:
       included, possibly in another position at their level; a bare leaf now
       prints an UNPLACED diagnostic and fails under --strict and when
       anonymizing.
-    migration: None for input a device loads; fix the statements the diagnostics name.
+    migration: >-
+      Fix the statements the diagnostics name. JSON or YAML that 0.16.x wrote
+      from XML holding an empty value carries `[null]` for it and is now
+      reported; regenerate it from the XML, or write `""` in its place.

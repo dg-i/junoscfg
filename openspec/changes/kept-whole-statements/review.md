@@ -56,6 +56,55 @@ keyed by `name`, so its bare keyword takes the generic bare-list path (the
 device's own `snmp filter-interfaces interfaces`); whether the device rejects it
 is unprobed, and it is not one of this change's IDs.
 
+### Fresh Reviewer (phase 6, STOP-R)
+
+A fresh, isolated Reviewer read the freeze, the delta, the touched contracts, the
+Test/Challenge record, the tests and the diff `f0bb6aa..f8ea357` (`f52838a`
+records only), with base runs from a `git archive` of `f0bb6aa`; probes `rv_*` in
+`private_test_data/makeover-work/kept-whole-statements/roles/`. Verdict:
+**CHANGES REQUIRED** (R1 and R2 blocking, R3 fix or carry-forward, R4–R7 low).
+Every figure reran and matched: `known-differences.json` regenerated
+byte-identical (928 lines, 17 to 16 classes); the reproductions fixed on head;
+the value-less-leaf radius 12 to 0; identical `UNPLACED` counts on base and head
+over 37 device captures and 1,699 JVD files (79,873 each); the 57 delta test ids
+collect. Rulings relayed by the orchestrator on 2026-10-11, dispositions:
+
+1. R1 (high), second answer at the anonymization boundary: the pipeline refuses
+   every `UNPLACED` statement, the public `anonymize()` only a non-empty record, so
+   a 0.16.1 joined key (`"bogus 203.0.114.9 G-SECRET": [null]`) or an unknown leaf
+   from JSON passes it with its values (`rv_public_anon.out`; the base has the same
+   gap). Ruling: carried forward, not fixed here; owner answer 5 governs unknown
+   paths (anonymize IP-shaped values by pattern and warn), change 5
+   `anonymize-every-placed-value`, ledgered NEW-R5. The claims are narrowed to the
+   record (proposal, delta, `anonymize/CONTRACT.md`, the test class docstring);
+   the specification challenge is below.
+2. R2 (medium), the migration note was false for JSON and YAML 0.16.x wrote from
+   XML (`"description": [null]` is now reported): fixed in `.openspec.yaml`
+   (`consumer` and `cli` migrations) and the removal changelog fragment: regenerate
+   from the XML or write `""`.
+3. R3 (medium), `""` on a leaf whose type refuses it passed silently on every door
+   (`<host-name/>`, `<mtu/>`, `<root-login/>`; the skip in `_validate_leaf`): fixed
+   at field validation, which now checks `""` like any value. `TestAnEmptyValueIsCheckedLikeAnyOther`
+   (XML host-name, family-inet mtu, enum; JSON and set) and `description ""` clean
+   on three doors; `TestStructuralValidation::test_empty_value_skipped`, which pinned
+   the skip with a `uint16` leaf, became `test_an_empty_value_is_checked_by_its_type`.
+   Radius (`empty_radius.py`, 1,775 device and JVD files): no new error. Not
+   covered: a leaf the tree gives no type (`interfaces interface mtu`, 103,217 such
+   leaves), carried forward as a schema-model gap (change 18).
+4. R4 (low), the record accepted an unquoted `]` the set reader refuses: the record
+   check now applies `junoscfg.input.find_unsupported_set_brackets`, one rule with
+   the set reader; negative texts `bogus ]` and `bogus <[gx]e-*>`. Refusal radius
+   over 1,716 files still 0.
+5. R5 (low), an empty record (written `[null]`, refused on read) and a tag with no
+   meta command were accepted: both refused (`unplaced_record_problem`), with tests.
+6. R6 (low), stale freeze lines on DEV-16: amended, recorded in the delta log.
+7. R7 (nit), a tagged statement counted twice in the `anonymize()` refusal: the
+   count is of statements now (`test_a_tagged_statement_counts_once`).
+
+Carry-forwards: NEW-R5 (R1) and NEW-R4 (the set reader's bracket refusal prints
+the original line, also in an anonymized run; pre-existing), both change 5; the
+untyped-leaf gap of R3, change 18.
+
 ## Already provided
 
 - `display.set_converter._TOKEN`, the curly lexer, decides what reads back as one
@@ -73,6 +122,14 @@ is unprobed, and it is not one of this change's IDs.
 - Proposed correction: the delta places the valid statement and keeps only the bare one, in either order; the two tests are renamed `..._is_placed` and assert one report; the main spec's `Tests:` line names the new ids.
 - Decision: Pending owner decision. Interim action: the delta and tests as proposed (the valid statement is placed, the bare one kept and reported), which is reversible by restoring the two tests and the shared key (owner intake 2026-10-11: merge with recorded interim action).
 
+### R1: the public `anonymize()` refuses only the record
+
+- Artifact: delta `specs/conversion/entry-keys/spec.md`, "`junoscfg.anonymize.anonymize()` SHALL refuse an IR whose record holds a statement".
+- Counterexample: executed by the Reviewer (`rv_public_anon.out`): a 0.16.1 joined key `"bogus 203.0.114.9 G-SECRET": [null]` and an unknown leaf `"bogus-peer": "203.0.114.9"` read from JSON pass `anonymize(ir, AnonymizeConfig(ips=True, groups=True))` with `203.0.114.9` and `G-SECRET` intact; the pipeline refuses both. The base behaves the same.
+- User impact: a library caller who anonymizes migrated or hand-written JSON or YAML publishes original addresses and names.
+- Proposed correction: "`anonymize()` SHALL refuse an IR holding any statement that field validation reports `UNPLACED`, naming none."
+- Decision: Pending owner decision. Interim action: the record is refused by anonymize(); the general unknown-key rule is change 5 (NEW-R5) per owner answer 5.
+
 ## Verdict
 
-Pending the fresh Reviewer (phase 6, STOP-R) on f8ea357 against f0bb6aa.
+CHANGES REQUIRED at f8ea357 (fresh Reviewer); R2–R7 fixed and R1 carried forward with its challenge recorded, in the review-fix commit. Pending the same Reviewer's confirmation.
