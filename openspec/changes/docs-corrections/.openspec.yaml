@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-11
+type: docs
+# docs/guide/ only: no zone owns these paths; "surface" follows the earlier zone-less docs
+# changes (batch-process-rules).
+zone: surface
+domains: []
+removes: "the device-invalid `system location dc-a` example from the validation and annotations guides, and the validation guide's claim that it is a merged-rule over-rejection"
+assurance: economy
+skip_specs: true
