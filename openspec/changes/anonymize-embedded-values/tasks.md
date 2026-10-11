@@ -15,7 +15,7 @@
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
 
 ## Supplemental resumption checkpoint — 2026-10-11
 
@@ -125,4 +125,8 @@ All preceding stop/resume prose and exact-head results remain historical provena
 - [x] Fresh isolated Reviewer APPROVE on exact runtime `48f8a858153696809ff1cd6496a84feed9a4b557`, private `roles/codex-fresh-review/kept-correction/report.md`; original 2fa6c604 and b162444 NEEDS CORRECTION verdicts remain unchanged. Own 372 focused tests and 13 extra controls pass; independent challenge, full, device and timing hashes audited.
 - [x] Supported disposable OpenSpec archive applied exactly the frozen three capability deltas; copied only main-spec results to the live branch, commit `dea7fc7a353f4086317b3bddfd60210192f34fd6`. Strict change validation and all 23 main specs pass. Live change remains. Independent main-spec review is pending at this checkpoint.
 - [x] Supported immutable metrics capture uses integration base `0438299772819f24c871d4cb2b8768f9233f9318` and reviewed runtime `48f8a858153696809ff1cd6496a84feed9a4b557`; 28 own substantive files, +2,508/-519, zero binary files, 6 direct dependencies and 63 root-lock packages unchanged. Later +99/-27 main-spec application and lifecycle records are outside this source-head capture. Runtime usage and Strategy A workflow efficiency stay UNMEASURED.
-- [ ] Complete independent main-spec review, bounded final checks and root-owned archive/version/integration housekeeping. Finalizer does not archive, bump, merge or tag.
+- [x] Complete independent main-spec review, bounded final checks and root-owned archive/version/integration housekeeping. Finalizer does not archive, bump, merge or tag.
+
+### Final bounded prearchive delivery
+
+Independent main-spec APPROVE exact `67c37324e5db8e1a8155ec3ab813641419e2b391`, private `roles/codex-fresh-review/main-spec/correction/review.md`; original dea7fc7 NEEDS CORRECTION finding retained. Only the new capability Purpose sentence was corrected to the already-approved flat-map rejection policy; requirement/scenario bytes remain unchanged. All historical boxes now reflect final closure, with original execution prose retained. Task 3.3 marks this bounded prearchive delivery: root remains executor of archive, version, integration and tag; none executed by Finalizer. Next incomplete lifecycle action is root-owned archive/version/integration after final bounded fast/checkpoint.
