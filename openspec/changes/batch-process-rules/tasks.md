@@ -19,7 +19,7 @@
 ## 3. Review and metrics
 
 - [x] 3.1 Fresh isolated Reviewer report in `review.md`; accepted fixes applied and re-confirmed
-- [ ] 3.2 Metrics captured in `metrics.md` and `metrics.json`
+- [x] 3.2 Metrics captured in `metrics.md` and `metrics.json`
 
 ## Evidence
 
