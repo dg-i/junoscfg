@@ -14,6 +14,7 @@
 ## 3. Review and evidence
 
 Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 87d4d7d: every check passed, 6,128 passed / 45 skipped / 21 xfailed. JVD tier (`--jvd`): 8 passed, 93 s (base 98 s).
+After the review corrections: full check at 3d88a43, every check passed, 6,132 passed / 45 skipped / 21 xfailed; `check --set fast` passed; JVD tier 8 passed, 93 s, per-file outcomes identical to the pre-review head.
 
 
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
