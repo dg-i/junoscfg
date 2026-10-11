@@ -42,8 +42,8 @@ Tests: `tests/unit/anonymize/test_walker.py::TestValuesInsideFreeText::test_each
   `oid 1.3.6.1` and `from area 0.0.0.0` are anonymized with `--anonymize-ips`, and
   `description "via 10.100.0.1 AS100"` with `--anonymize-as-numbers 100` and its in-strings option
 - **THEN** each address inside a word is replaced and its text stays; the OID and the area stay
-  (with `--anonymize-ips-in-strings` the OID is rewritten: NEW-R17, change 18); `AS100` is
-  replaced and `10.100.0.1` stays whole (NEW-R16); a URL under an excluded path stays as written
+  (with `--anonymize-ips-in-strings` the OID is rewritten: NEW-R18, change 18); `AS100` is
+  replaced and `10.100.0.1` stays whole (NEW-R17); a URL under an excluded path stays as written
 
 ### Requirement: An apply-path names configuration
 

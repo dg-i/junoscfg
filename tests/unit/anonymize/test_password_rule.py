@@ -546,7 +546,7 @@ class TestSaltIsNotCopied:
 
 class TestAUrlPasswordIsASecret:
     """A URL's password (`ftp://user:secret@...`) is a secret: it survived
-    `--anonymize-passwords` (NEW-R15, found by change anonymize-embedded-values).
+    `--anonymize-passwords` (NEW-R16, found by change anonymize-embedded-values).
     It is replaced as a plain-text secret is; the user, host and path stay.
     Spec anonymization/embedded-values.
     """

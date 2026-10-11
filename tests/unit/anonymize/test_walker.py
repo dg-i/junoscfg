@@ -455,9 +455,9 @@ class TestValuesInsideFreeText:
     it, as it is standing alone: under `--anonymize-ips` an address in a URL or
     a description survived unless `--anonymize-ips-in-strings` was on
     (ANON-P5); a URL's user survived `--anonymize-identities` (NEW-A-N4) and
-    its password `--anonymize-passwords` (NEW-R15). The strings passes after
+    its password `--anonymize-passwords` (NEW-R16). The strings passes after
     the walk rewrote digits inside an address or another rule's replacement
-    and ignored `include`/`exclude` (NEW-R16). One chain now rewrites each
+    and ignored `include`/`exclude` (NEW-R17). One chain now rewrites each
     shape inside a value, rule by rule, never offering one rule's text to
     another; a shape that is the whole value is its rule's to take
     (specification challenge S1 of change anonymize-embedded-values). Spec
@@ -544,7 +544,7 @@ class TestValuesInsideFreeText:
         assert "203.0.114.9" not in out
 
     def test_an_address_is_no_as_number(self) -> None:
-        """`AS100` is the AS number; `10.100.0.1` stays whole (NEW-R16)."""
+        """`AS100` is the AS number; `10.100.0.1` stays whole (NEW-R17)."""
         out = convert_config(
             'set interfaces ge-0/0/0 description "via 10.100.0.1 AS100"\n',
             from_format=Format.SET,
@@ -557,7 +557,7 @@ class TestValuesInsideFreeText:
     def test_text_one_rule_wrote_is_never_rewritten(self) -> None:
         """A replaced address is no text for a sensitive pattern, and a group's
         pseudonym none for an AS number: each keeps the replacement its rule
-        gives it everywhere (NEW-R16; the base chained a sensitive pattern over
+        gives it everywhere (NEW-R17; the base chained a sensitive pattern over
         the address the IP rule wrote, and the AS strings pass rewrote digits
         in any pseudonym)."""
         text = (
@@ -594,7 +594,7 @@ class TestValuesInsideFreeText:
 
     def test_the_filters_apply_inside_free_text(self) -> None:
         """`exclude` keeps a path's free text as written, the in-strings options
-        included; the strings pass after the walk ignored it (NEW-R16)."""
+        included; the strings pass after the walk ignored it (NEW-R17)."""
         text = (
             'set system archival configuration archive-sites "scp://admin@203.0.114.5/path"\n'
             "set routing-options router-id 203.0.114.6\n"

@@ -3,7 +3,7 @@
 A value written inside free text survives the rule that claims it. Under `--anonymize-ips` an
 address in `archive-sites "scp://admin@203.0.114.5/path"` or a description stays (ANON-P5); the
 user of a URL survives `--anonymize-identities` (NEW-A-N4) and its password `--anonymize-passwords`
-(NEW-R15); `apply-path "protocols bgp group EBGP neighbor <*>"` keeps a renamed group's name, so the
+(NEW-R16); `apply-path "protocols bgp group EBGP neighbor <*>"` keeps a renamed group's name, so the
 prefix list selects nothing (NEW-A-N7). Revert of an embedded AS number is order-dependent and blind
 to digit boundaries (NEW-A-N5); `ebgp` and `EBGP` share one pseudonym, so revert restores one case
 (NEW-R13); and `<ge-0/0/1?>` is reported under `--anonymize-as-numbers-in-strings` though no AS
@@ -19,9 +19,9 @@ number can match (NEW-R14).
   SNMP OID `1.3.6.1` and `from area 0.0.0.0` stay. `ips_in_strings` keeps one effect: an address
   that is a whole value on any leaf.
 - The post-walk strings passes go: they move into that chain, so `include`/`exclude` now apply to
-  them and an AS number is no longer replaced inside an address or a pseudonym (NEW-R16).
+  them and an AS number is no longer replaced inside an address or a pseudonym (NEW-R17).
 - **BREAKING** A sensitive word's pseudonym is keyed by its spelling (`ebgp` and `EBGP` get two);
-  the mapping records each spelling, not each whole value.
+  the mapping still records each whole value the rule rewrote.
 - An `apply-path` is read against the schema tree: each name in it is offered to the rules as the
   value of the key field it names; `<*>` passes; another wildcard is treated as change 6 treats a
   wildcard name; keywords are never rewritten. A path the tree cannot place is content the walk
@@ -46,7 +46,7 @@ number can match (NEW-R14).
 
 ## Non-goals
 
-- An SNMP OID rewritten under `ips_in_strings` (NEW-R17, change 18). AS replacements that equal a
+- An SNMP OID rewritten under `ips_in_strings` (NEW-R18, change 18). AS replacements that equal a
   number the configuration already holds. Hostnames in URLs (no rule claims hostnames).
 
 ## Impact
