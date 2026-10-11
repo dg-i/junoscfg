@@ -368,3 +368,84 @@ Scratch-only report follows the orchestrator's isolation restriction; the Builde
 Use public `junoscfg.input.find_unsupported_set_brackets` with the shared curly lexer and complete-parenthesis scan. No private cross-package import or global/raw-helper change. All 24 singleton/chain negatives failed before repair; settled focused run has 368 passed, 2 strict P11 xfailed. Quote-protected bracket and whole quoted-name controls remain exact, alongside compact/nested F2 controls and all F1 negatives. Source-only quoted-token LF concern is outside this bounded correction; no executed device-validity claim or acceptance change is made.
 
 2026-10-11 factual device delta: narrow executed P11/P12/P13 extracts in private `makeover-work/codex-resumption/device-evidence/`, bound by `provenance.json` to vMX 23.2R2-S7.5, `device-probe.out` SHA256 `48e591da0c6dbde33d18ce21e92a83844ae876abf229564d2aace2f0a159747d` (49,908 bytes/1,465 lines). Early paste echo is excluded. P11 retains the two supplied internal backslash spellings in XML/decoded JSON (source starts 917/921/940 and 956/960/979); its supplied trailing-backslash command rejects expecting data at 912–914, so absence in subsequent output is not a successful empty value. P12 (1022/1027/1054) canonicalizes quoted plain P12-A and retains literal enclosing quotes for the name with a space; arbitrary IR quote stripping is not authorized. P13 (1089/1095/1100/1126) writes expression plus P-C as structured bracket chain and two JSON/XML values; no commit-success claim is made. Existing SC1 strict xfail is a demonstrated owning-reader defect, SC2 base acceptance/round-trip compatibility and SC3 writer interim remain unchanged. P16's accepted definition/rejected BGP reference does not establish the synthetic audit tokenizer case as device-valid; audit defect and XSD-model limitation remain separate carry-forward items. No raw operator prompt/configuration is copied. Historical unknown/no-output statements above retain their original evidence date; these executed narrow facts supersede current unknown explanations without changing requirements or xfail outcomes.
+
+
+## Same-Reviewer final immutable approval
+
+# Done
+
+**APPROVE** the bounded corrections on exact code HEAD `a4f822b4e131c75d667022218dd868003df985aa`, integration base/master `40173ba8ec6c0664ea3590b5a3b14786fcf22629`. This is the same independent Reviewer, without Builder private reasoning. The three previous immutable reports remain preserved. No blocking implementation finding remains in the reviewed scope.
+
+F1 statement boundaries remain protected, F2 complete compact/nested expressions remain supported, and F3 unquoted closing brackets now fail before either writer returns output. This technical verdict does not substitute for the required Builder fast/new-full checkpoint, which was still running or unavailable when this report was written. Bounded finalization may proceed once those required checks are recorded green for this candidate or an evidence-only descendant.
+
+# Evidence
+
+## Ranked findings and dispositions
+
+- **High F1: fixed and retained.** Complete-parenthesis, quote, comment, statement and line checks remain. Caller values cannot use the bypass to emit extra statements. Independent singleton/chain probes capture only the static `ValueError`, before output is returned.
+- **Medium F2: fixed and retained.** `("P 1" && P-B)` and `(("P 1") && P-B)` retain exact IR in set and structured round trips. The correction does not reinstate the raw-statement helper's canonical-space/no-embedded-quote restrictions.
+- **Medium F3: fixed.** `src/junoscfg/display/value_format.py` now calls the existing public `junoscfg.input.find_unsupported_set_brackets` alongside the shared curly lexer and complete-expression scan. It rejects standalone and word-attached unquoted closing brackets while retaining quote-protected brackets. The provider's owner contract and public package door were checked; no global lexer/helper behavior changed.
+- **Factual record correction: completed for the reviewed P11/P13 explanations.** Dated narrow capture references supersede historical unknown/no-output entries without erasing them. Current conversion delta and strict-xfail explanations accurately distinguish demonstrated device behavior from the unresolved compatibility/reader work. Test outcomes, strictness and requirement promises are unchanged.
+
+No new material specification challenge is required. Original SC4 was omitted-negative implementation coverage under the existing one-token/preservation/structural-error contract. The explicit owner “Reject before output” decision in private `codex-resumption/owner-decisions.md` supplies disposition; this report does not approve or rewrite that decision. SC1–SC3 retain their originally authorized scoped interims.
+
+## Independent execution
+
+An immutable `git archive a4f822... src tests` snapshot was created in private scratch, with the installed environment used only for dependencies. Every test/probe process used an explicit isolated `PYTHONPATH`, `PYTHONDONTWRITEBYTECODE=1`, no pytest cache provider and private test scratch. The final probe asserts that `junoscfg.__file__` points inside the isolated snapshot. No tests were run against the shared Builder tree in this round.
+
+- Four targeted files: `test_value_format.py`, `test_set_converter.py`, `test_convert_roundtrip.py` and the entire `test_format_matrix.py`: **5,061 passed, 6 strict xfailed**. This covers all F1 negatives, F2 five-reader/every-writer/second-hop catalogue rows, all 24 new F3 singleton/chain data-reader negatives, quoted-bracket controls, raw-helper pins and the existing conversion preservation laws.
+- Separate independent probes: **20** singleton/chain refusals covering `( P-A ] P-B )`, `( P-A] )`, original semicolon injection, comment suffix and an extra physical command line through both writers. Every call raises exactly `value is not one complete policy-algebra expression` rather than returning output.
+- Separate independent probes: **12** exact single-value round trips across both writers, covering F2 compact/nested expressions, spaced and compact quote-protected `]`, a whole quoted expression-shaped name containing `]`, and an escaped quote inside an expression name. A whole quoted expression-shaped name plus `P-C` also round-trips exactly as a chain.
+- Refreshed stored device results for a4f822 were independently compared with F2 results and are **exactly equal**. The summary names base40173/head a4f822 and records **36/96** plain and **432/1,152** total changed runs, output only; diagnostic, field-validation and exception changes remain zero. These are verification of refreshed stored results, not a claim to have rerun all conversions. Earlier independent original-head and baseline evidence remains valid at its original identities.
+- Diff whitespace check passes; checkout identity remains a4f822. No full, expensive schema tier or retired JVD tier was repeated by this Reviewer.
+
+The six strict xfails are the retained SC2 backslash cases, SC1 expression-chain reader defect and three existing deprecated `SetConverter.to_set` tag cases. They remain carry-forward limitations, not newly failing correction tests.
+
+## Device facts, migration and limitations
+
+The factual delta names vMX 23.2R2-S7.5 and narrow executed P11/P12/P13 provenance, source SHA-256 `48e591da0c6dbde33d18ce21e92a83844ae876abf229564d2aace2f0a159747d`. The observations were checked against the narrow private extracts in the previous round and retained source records here. No broad private operator data was copied.
+
+P11 establishes retention of the two supplied internal backslash spellings and rejection of the supplied trailing-backslash command; it does not authorize blanket normalization or removal of baseline acceptance. P12 establishes plain-name canonicalization and literal quote retention for the spaced name; it does not authorize deleting arbitrary IR quotes or reversing SC3. P13 establishes the expression/P-C representation as two device values, so SC1 is a demonstrated reader defect owned by change13; the scope/interim does not change. P16's accepted definition and rejected BGP reference do not establish the separate synthetic audit tokenizer case as a valid device reference.
+
+Consumer/CLI break declarations and migration now truthfully describe structural `ValueError` before returning/printing configuration, preserving complete supported expressions and quoted names. They distinguish schema validity from lexical representability. The compact quoted-delimiter reader limitation remains explicitly described: `("P;1" && P-B)` is not currently carried by the curly lexer, while the spaced spelling is supported. No device-invalidity claim or compatibility retirement is inferred. The separate audit tokenizer and XML/XSD-model limitations remain recorded carry-forward items.
+
+## Five review prompts
+
+1. **Trust-boundary input:** data-reader values cross the command emission boundary. Independently executed F1/F3 synthetics now refuse singleton and chain output. Quoted control data remains data.
+2. **Incompatible-but-valid input:** complete compact/nested expressions no longer encounter the inappropriate canonical-spelling guard; five-reader catalogue coverage and independent exact round trips confirm their preservation. Compact quoted brackets also remain accepted.
+3. **Shared blind spot:** the formerly omitted unquoted closing bracket is now tested independently across data doors, singleton/chain values and both writers. Quote-protected controls prevent fixing the negative by rejecting all brackets. No assertions or oracles were weakened.
+4. **Second answer:** the formatter reuses curly `_TOKEN` for statement/comment delimiters and the public input bracket provider for the stricter set boundary. Neither is globally loosened, and `reads_as_one_statement` retains its owning canonical raw-record invariant. No new override or separate lexer answer was introduced.
+5. **Figures/non-goals:** current independent counts and stored result equality are stated above; original generated/schema/node/corpus evidence retains its original heads. Narrow device facts are now distinguished from missing evidence. Backslash compatibility, quoted-plain-name interim, SC1 reader repair, XML whitespace and validation meta verbs remain outside the correction.
+
+## Bounded finalization
+
+After the required candidate fast/full checkpoints pass, the Finalizer may apply the **reviewed** value-quoting and escaped-quote validation deltas to main specs, check their test references and reconcile the final records. The factual P11/P13 edits reviewed here may be retained in that application. This approval permits a bounded main-spec application review; it does not permit another implementation, acceptance change or requirement decision.
+
+Keep existing SC1–SC3 interim permission and all historical evidence identities. Do not repair the chain reader, normalize backslashes, reinterpret arbitrary quoted-name IR or retire baseline grammar acceptance during finalization. Any product/test/oracle change requires the corresponding verification and same-Reviewer reconfirmation; an evidence-only amendment needs no new correction round under phase6. Final metrics must distinguish the new committed checkpoint from superseded cf6/e38 runs.
+
+# Changed paths
+
+Only `roles/codex-rereview-approved.md`, the isolated a4f822 validation snapshot and private pytest scratch. No tracked file, specification, test, product code or Git state was changed by this Reviewer. Previous reports remain unchanged.
+
+# Commands and exit status
+
+- Read-only identity/status, e38-to-a4f822 diff, freeze/delta/contracts/tests/records, and `git diff --check 40173ba8..a4f822`: **0**.
+- `git archive a4f822... src tests` into private scratch: **0**.
+- Explicit-isolated-source pytest on the four files listed above: **0**, 5,061 passed/6 strict xfailed.
+- Explicit-isolated-source independent refusal/preservation probes with source identity assertion: **0**.
+- Independent equality assertion over `repair-f3-head.json` and `repair-f2-head.json`: **0**; reviewed current comparison summary. Candidate fast log had no final result at read time; no pass is inferred.
+
+# Open questions for the owner
+
+None blocking this bounded correction. Future decisions about SC1–SC3 or unrelated #7 policy remain separate. No owner question was sent and no new requirement decision was made by this Reviewer.
+
+# Deviations
+
+The orchestrator's scratch-only isolation rule replaces tracked review edits; the Builder/Finalizer can preserve this report in governed records. Shared-tree checks were avoided while the Builder ran its checkpoint. No network, external systems, session control, push/merge/branch mutation or full/schema rerun. Review is complete for the exact named code/base; required Builder checkpoint completion remains a handoff gate.
+
+
+## Builder final verification checkpoint
+
+Final committed F3 checkpoint at code head `a4f822b4e131c75d667022218dd868003df985aa`, immutable integration base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: focused 368 passed/2 strict P11 xfailed; all commit hooks passed; fast and full both exit 0 with every check passed. Full application result 8,677 passed/37 skipped/20 strict xfailed; coverage floor passed. Commands used `UV_OFFLINE=1 npm_config_offline=true PYTHONDONTWRITEBYTECODE=1 uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set fast` and the same command with `--set full`. Private logs: `roles/repair-f3-{focused,fast,full}.out`. Fresh device-head comparison covers 1,152 runs, all exactly equal F2 head; against unchanged 40173 baseline 36/96 plain and 432/1,152 total differ, output only through DEV-4/5/6/7 (bare expression, retained expression-shaped quoted name, no doubled enclosing quotes, escaped inner quote); no diagnostic/field-validation/exception differences. Baseline reuse is bound to unchanged SHA, manifest/captures, recipe, dependencies and configuration. No generation input changed; historical expensive-schema evidence retained and no retired JVD tier repeated.
+
+This final record amendment is evidence-only: the approved runtime/tests and generation inputs remain exactly a4f822. Phase-5 Builder leaves lifecycle tasks 3.1–3.3 for the orchestrator/Finalizer; approval is recorded, not inferred. No blocking owner question remains for F1/F2/F3. Existing SC1–SC3 interims and separately owned follow-ups remain unchanged.

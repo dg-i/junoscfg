@@ -94,3 +94,10 @@ Repair execution: negative regression before repair: 66 failed as expected (pyte
 | Context expansion: `private_test_data/device-probe.out` | Narrow prompt-delimited line context only; operator text kept private |
 | F3 initial environment correction | Unqualified python absent; initial launch exit 4 with class not created, no semantic evidence. Installed python3 used once; red 24 failed exit 1, then repair focused 368 passed/2 strict xfailed exit 0 |
 | e38 superseded full | Exit 0, every check passed, 8,641 passed/37 skipped/20 xfailed; completed before attempted stop signal. Independent F3 invalidates this checkpoint |
+| Context expansion: `private_test_data/makeover-work/value-quoting-by-type/roles/codex-rereview-approved.md` | Same independent immutable approval and isolated F1/F2/F3 verification |
+| Final F3 checkpoint code/base | a4f822b4e131c75d667022218dd868003df985aa / 40173ba8ec6c0664ea3590b5a3b14786fcf22629 |
+| Final F3 fast/full | Both exit 0, every check passed; full 8,677 passed/37 skipped/20 strict xfailed, coverage floor passed; roles/repair-f3-fast.out and repair-f3-full.out |
+| Final F3 device comparison | 1,152 fresh head conversions exact-equal e38/F2 results; baseline output-only 36/96 plain, 432/1,152 all rule runs, DEV-4/5/6/7; no diagnostic/field-validation/exception difference; roles/repair-f3-head.json and repair-f3-device-summary.json |
+| Same-Reviewer approval | APPROVE exact a4f822/base40173; independent 5,061 passed/6 strict xfailed, 20 refusal probes and 12 exact positive round trips; no blocker |
+| Required expensive tier | No relevant generation input changed in repair rounds; original schema evidence retains historical identity, no repeated tier |
+| Evidence-only final amendment | Approved runtime/tests/generation input unchanged; checkpoint remains valid, lifecycle metrics/main-spec tasks left open |
