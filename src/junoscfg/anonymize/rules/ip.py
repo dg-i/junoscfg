@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import ipaddress
 import re
 from typing import TYPE_CHECKING, Any
 
 from ipanon import Anonymizer, NetworkRegistry, PassThroughCollisionError
+from ipanon.ranges import CATEGORY_A_V4, CATEGORY_B_V4
 
 from junoscfg.anonymize.rules import (
+    ADDRESS_FRAGMENT,
     Rule,
     address_pattern_prefix,
     address_tokens,
@@ -124,6 +127,7 @@ class IpRule(Rule):
             quiet=config.log_level != "debug",
             network_registry=registry,
         )
+        self._treated_apart = _treated_apart(config)
 
     @staticmethod
     def _build_network_registry(config: AnonymizeConfig) -> NetworkRegistry | None:
@@ -208,9 +212,55 @@ class IpRule(Rule):
             and self._takes_address(schema_node, path)
         ):
             return None
-        prefix = address_pattern_prefix(text)
-        pattern = prefix_pattern(self.transform(prefix), text) if prefix else None
+        pattern = self._octet_pattern(text)
         return (text, False) if pattern is None else (pattern, True)
+
+    def _octet_pattern(self, text: str) -> str | None:
+        """*text*, a pattern of whole octets, as the pattern of its prefix's
+        replacement, or ``None`` when it is no such pattern or its prefix is
+        partly kept as written (a preserved prefix or a block the address
+        anonymizer keeps or treats apart cuts it): then its addresses are
+        replaced by different rules (Reviewer R5)."""
+        prefix = address_pattern_prefix(text)
+        if prefix is None:
+            return None
+        network = ipaddress.ip_network(prefix)
+        if any(
+            network.overlaps(block) and not network.subnet_of(block)  # type: ignore[arg-type]
+            for block in self._treated_apart
+        ):
+            return None
+        return prefix_pattern(self.transform(prefix), text)
+
+    def pattern_in_string(self, text: str, *, done: frozenset[str]) -> tuple[str, bool]:
+        """The text of a wildcard name in the strings pass, and whether it is vouched for.
+
+        An address in it is replaced as in any string; a pattern of whole
+        octets of at least two octets (`peer-203.0.114.*`) becomes the pattern
+        of its prefix's replacement, unless the walk wrote it already (its
+        prefix is a replacement); any other address fragment beside a
+        wildcard character (`peer-203.0.11*`, `203.0.114.7*`) is left as
+        written and not vouched for (Reviewer R2, specification challenge S4).
+        """
+        vouched = True
+
+        def fragment(match: re.Match[str]) -> str:
+            nonlocal vouched
+            whole = match.group(0)
+            if match.group(2) != ".*" or whole.count(".") > 3:
+                vouched = False
+                return whole
+            prefix = address_pattern_prefix(whole)
+            if prefix is not None and prefix in done:
+                return whole
+            pattern = self._octet_pattern(whole)
+            if pattern is None:
+                vouched = False
+                return whole
+            return pattern
+
+        text = ADDRESS_FRAGMENT.sub(fragment, text)
+        return self.replace_ips_in_string(text, done=done), vouched
 
     @staticmethod
     def _types(schema_node: dict[str, Any]) -> set[str]:
@@ -262,3 +312,22 @@ class IpRule(Rule):
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized IP mapping."""
         return self._anonymizer.get_mapping()
+
+
+def _treated_apart(config: AnonymizeConfig) -> tuple[ipaddress.IPv4Network, ...]:
+    """The IPv4 blocks the address anonymizer keeps or replaces by their own rule:
+    the preserved prefixes, and `ipanon`'s kept and range-preserved blocks as
+    the flags leave them."""
+    blocks: list[ipaddress.IPv4Network] = []
+    for prefix in config.preserve_prefixes or ():
+        network = ipaddress.ip_network(prefix, strict=False)
+        if isinstance(network, ipaddress.IPv4Network):
+            blocks.append(network)
+    if not config.ignore_reserved:
+        blocks.extend(block for block in CATEGORY_B_V4 if isinstance(block, ipaddress.IPv4Network))
+        blocks.extend(
+            entry.network
+            for entry in CATEGORY_A_V4
+            if not config.ignore_subnets or entry.locked_bits == 8
+        )
+    return tuple(blocks)

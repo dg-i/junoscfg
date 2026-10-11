@@ -13,6 +13,7 @@ Public API::
 from __future__ import annotations
 
 import copy
+import re
 import secrets
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
 from junoscfg.anonymize.config import AnonymizeConfig, build_config_from_cli
 from junoscfg.anonymize.path_filter import PathFilter
 from junoscfg.anonymize.revert import apply_revert, export_mapping, load_mapping
-from junoscfg.anonymize.rules import Rule, build_rules
+from junoscfg.anonymize.rules import Rule, build_rules, wildcard_text
 from junoscfg.anonymize.rules.as_number import AsNumberRule
 from junoscfg.anonymize.rules.community import CommunityRule
 from junoscfg.anonymize.rules.description import DescriptionRule
@@ -123,19 +124,24 @@ def anonymize(
     if not rules:
         return AnonymizeResult(ir=ir)
 
-    unplaced, patterns = walk_with_patterns(ir, rules, config, diagnostic_sink=diagnostic_sink)
+    unplaced, report = walk_with_patterns(ir, rules, config, diagnostic_sink=diagnostic_sink)
+    #: Wildcard names a strings pass could not rewrite, by `(id(entry), key)`.
+    unvouched: set[tuple[int, str]] = set()
 
     # Second pass: replace IPs embedded in larger strings (URLs, host+IP, etc.)
     if config.ips_in_strings:
         ip_rule = next((r for r in rules if isinstance(r, IpRule)), None)
         if ip_rule:
-            _replace_ips_in_strings(ir, ip_rule)
+            _replace_ips_in_strings(ir, ip_rule, unvouched)
 
     # Second pass: replace AS numbers embedded in larger strings
     if config.as_numbers_in_strings and config.as_numbers:
         as_rule = next((r for r in rules if isinstance(r, AsNumberRule)), None)
         if as_rule:
-            _replace_as_in_strings(ir, as_rule)
+            _replace_as_in_strings(ir, as_rule, unvouched)
+
+    # Read from the final values, after every pass (Reviewer R2).
+    patterns = report(unvouched)
 
     # Collect mappings from all rules, keyed by rule name
     mapping: dict[str, dict[str, str]] = {}
@@ -147,19 +153,27 @@ def anonymize(
     return AnonymizeResult(ir=ir, mapping=mapping, unplaced=unplaced, patterns=patterns)
 
 
-def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:
+def _replace_ips_in_strings(obj: Any, ip_rule: IpRule, unvouched: set[tuple[int, str]]) -> None:
     """Walk all string values and replace embedded IP addresses.
 
     A replacement the walk already wrote -- a whole value, or an address
     inside one -- is left as it is: re-anonymized, it would break the network
-    registry's host-bit locking and leave the mapping unable to revert it.
+    registry's host-bit locking and leave the mapping unable to revert it. A
+    wildcard name's text is a pattern (`IpRule.pattern_in_string`); one it
+    cannot rewrite is added to *unvouched*.
     """
     done = frozenset(ip_rule.get_mapping().values())
 
     def _walk(obj: Any) -> None:
         if isinstance(obj, dict):
             for key, value in obj.items():
-                if isinstance(value, str):
+                text = wildcard_text(value)
+                if text is not None:
+                    rewritten, vouched = ip_rule.pattern_in_string(text, done=done)
+                    obj[key] = f"<{rewritten}>"
+                    if not vouched:
+                        unvouched.add((id(obj), key))
+                elif isinstance(value, str):
                     if value not in done:
                         replaced = ip_rule.replace_ips_in_string(value, done=done)
                         if replaced != value:
@@ -179,16 +193,26 @@ def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:
     _walk(obj)
 
 
-def _replace_as_in_strings(obj: Any, as_rule: AsNumberRule) -> None:
-    """Walk all string values and replace embedded AS numbers."""
+def _replace_as_in_strings(
+    obj: Any, as_rule: AsNumberRule, unvouched: set[tuple[int, str]]
+) -> None:
+    """Walk all string values and replace embedded AS numbers.
+
+    A wildcard name whose digits a `?` or a class touches (`<AS6449?-*>`)
+    may select an AS number the pass replaces where it cannot replace it: it
+    is added to *unvouched* (Reviewer R3, specification challenge S3).
+    """
     if isinstance(obj, dict):
         for key, value in obj.items():
             if isinstance(value, str):
+                text = wildcard_text(value)
+                if text is not None and _DIGITS_BESIDE_SYNTAX.search(text):
+                    unvouched.add((id(obj), key))
                 replaced = as_rule.replace_as_in_string(value)
                 if replaced != value:
                     obj[key] = replaced
             elif isinstance(value, (dict, list)):
-                _replace_as_in_strings(value, as_rule)
+                _replace_as_in_strings(value, as_rule, unvouched)
     elif isinstance(obj, list):
         for i, item in enumerate(obj):
             if isinstance(item, str):
@@ -196,7 +220,11 @@ def _replace_as_in_strings(obj: Any, as_rule: AsNumberRule) -> None:
                 if replaced != item:
                     obj[i] = replaced
             elif isinstance(item, (dict, list)):
-                _replace_as_in_strings(item, as_rule)
+                _replace_as_in_strings(item, as_rule, unvouched)
+
+
+#: Digits a `?` or a class stands beside, in a wildcard's text.
+_DIGITS_BESIDE_SYNTAX = re.compile(r"\d[?\[]|[?\]]\d")
 
 
 __all__ = [

@@ -82,11 +82,15 @@ class SensitiveWordRule(Rule):
         """
         if self._pattern is None:
             return None
-        replaced = self.transform(text) if self._pattern.search(text) else text
         hidden = bool(self._raw_patterns) and bool(re.search(r"[?\[]", text))
-        if hidden or any(_spells_through_syntax(text, word) for word in self._words):
-            return replaced, False
-        return None
+        hidden = hidden or any(_spells_through_syntax(text, word) for word in self._words)
+        if not hidden and not self._pattern.search(text):
+            return None
+        # Keyed by the whole spelling, as a name is: a text that equals another
+        # value but for case would share its key and revert to its case (R1).
+        whole = self.transform(f"<{text}>")
+        replaced = whole[1:-1] if whole[:1] == "<" and whole[-1:] == ">" else self.transform(text)
+        return replaced, not hidden
 
     def transform(self, value: str) -> str:
         """Replace all occurrences of sensitive words in the value."""

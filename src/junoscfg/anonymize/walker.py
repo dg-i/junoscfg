@@ -35,7 +35,7 @@ from junoscfg.anonymize.path_filter import PathFilter
 from junoscfg.anonymize.rules import has_wildcard_characters, wildcard_text
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Collection, Sequence
 
     from junoscfg.anonymize.config import AnonymizeConfig
     from junoscfg.anonymize.rules import Rule
@@ -73,14 +73,19 @@ def walk_with_patterns(
     config: AnonymizeConfig,
     *,
     diagnostic_sink: Callable[[str], None] | None = None,
-) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """`walk`, and the schema path of each wildcard name it could not keep
-    selecting the same names (the entry's path, once per wildcard, in tree order)."""
+) -> tuple[tuple[str, ...], Callable[[Collection[tuple[int, str]]], tuple[str, ...]]]:
+    """`walk`, and the report on its wildcard names, to be read once every pass is done.
+
+    The report gives the schema path of each wildcard name that selects other
+    names than it did among the final values, or that a rule (or a later pass,
+    by ``(id(entry), key)``) could not rewrite as a pattern: the entry's path,
+    once per wildcard, in tree order.
+    """
     from junoscfg.display import load_schema_tree
 
     schema = load_schema_tree()
     if not schema:
-        return (), ()
+        return (), lambda _unvouched: ()
 
     walker = _Walker(
         schema,
@@ -94,7 +99,7 @@ def walk_with_patterns(
     # The IR is {"configuration": {...}}; an unwrapped IR is walked as its content.
     cfg = ir.get("configuration")
     walker.node(ir if cfg is None else cfg, schema_root, [])
-    return tuple(walker.unplaced), walker.patterns()
+    return tuple(walker.unplaced), walker.patterns
 
 
 class _Walker:
@@ -114,11 +119,12 @@ class _Walker:
         self.log_debug = log_debug
         self.sink = diagnostic_sink
         self.unplaced: list[str] = []
-        #: Each entry name the rules saw: its place, as written, as rewritten.
-        self.names: list[tuple[tuple[str, ...], str, str]] = []
-        #: Each wildcard name: its place, its path, its text before and after,
-        #: and whether the rule that rewrote it vouches for the pattern.
-        self.wildcards: list[tuple[tuple[str, ...], str, str, str, bool]] = []
+        #: Each entry name the rules saw: its place, as written, and its entry
+        #: and key, where the final value is read.
+        self.names: list[tuple[tuple[str, ...], str, dict[str, Any], str]] = []
+        #: Each wildcard name: its place, its path, its text as written, its
+        #: entry and key, and whether the rule that rewrote it vouches for it.
+        self.wildcards: list[tuple[tuple[str, ...], str, str, dict[str, Any], str, bool]] = []
 
     # -- placed content ------------------------------------------------------
 
@@ -148,7 +154,7 @@ class _Walker:
             elif child is not None:
                 self._child(obj, key, value, child, path)
                 if name and isinstance(value, str):
-                    self.names.append((_place([*path, key]), value, str(obj[key])))
+                    self.names.append((_place([*path, key]), value, obj, key))
             elif name:
                 # A key field the tree holds no leaf for (`apply-macro`'s
                 # name): the rules see it with no type.
@@ -237,29 +243,42 @@ class _Walker:
             elif item is None or item is True:
                 replaced.append(item)
             else:
-                replaced.append(self._try_rules(item, schema_node, path))
+                replaced.append(self._try_rules(item, schema_node, path)[0])
         parent[key] = replaced if isinstance(value, list) else replaced[0]
 
-    def _try_rules(self, value: Any, schema_node: dict[str, Any], path: list[str]) -> Any:
-        """Apply the first matching rule to *value* and return the result.
+    def _try_rules(
+        self, value: Any, schema_node: dict[str, Any], path: list[str], *, pattern: bool = False
+    ) -> tuple[Any, bool]:
+        """Apply the first matching rule to *value*: the result, and whether it is vouched for.
 
         A value from the leaf's own enum -- `as-list-group` for `list-type`,
         `bgp` for `from protocol` -- is configuration syntax, not data: a
         matching rule leaves it as it is. Replaced, it is a value the device
         rejects.
+
+        The text of a wildcard name (*pattern*) goes first to a rule that
+        knows patterns of its values (`Rule.wildcard`), else is taken as a
+        name; a rule that takes text holding a wildcard character and leaves
+        it as written does not vouch for it.
         """
         str_value = str(value)
         for index, rule in enumerate(self.rules):
-            if rule.matches(str_value, schema_node, path):
+            answer = rule.wildcard(str_value, schema_node, path) if pattern else None
+            if answer is None:
+                if not rule.matches(str_value, schema_node, path):
+                    continue
                 if str_value in _leaf_enum(schema_node):
-                    return value
+                    return value, True
                 result = rule.transform(str_value)
-                self._debug(rule, path, str_value, result)
-                if rule.keeps_text:
-                    # The text around what it replaced may hold another shape.
-                    result = self._chain(result, self.rules[index + 1 :], path)
-                return result
-        return value
+                vouched = result != str_value or not (pattern and has_wildcard_characters(result))
+                answer = (result, vouched)
+            result, vouched = answer
+            self._debug(rule, path, str_value, result)
+            if rule.keeps_text:
+                # The text around what it replaced may hold another shape.
+                result = self._chain(result, self.rules[index + 1 :], path)
+            return result, vouched
+        return value, True
 
     # -- wildcard names -------------------------------------------------------
 
@@ -270,53 +289,36 @@ class _Walker:
         text = str(wildcard_text(obj[key]))
         if not text.strip("*") or not self.path_filter.matches(path):
             return  # `*` alone selects every name and holds no value.
-        rewritten, vouched = self._pattern(text, schema_node, path)
+        rewritten, vouched = self._try_rules(text, schema_node, path, pattern=True)
         obj[key] = f"<{rewritten}>"
-        self.wildcards.append((_place(path), ".".join(path[:-1]), text, rewritten, vouched))
+        self.wildcards.append((_place(path), ".".join(path[:-1]), text, obj, key, vouched))
 
-    def _pattern(self, text: str, schema_node: dict[str, Any], path: list[str]) -> tuple[str, bool]:
-        """*text* through the first rule that takes it, as `_try_rules` takes a name.
-
-        A rule that knows patterns of its values answers for itself; any
-        other rewrites the text as a name. A rule that takes text holding a
-        wildcard character and leaves it as written does not vouch for it.
-        """
-        vouched = True
-        rules = list(self.rules)
-        while rules:
-            rule = rules.pop(0)
-            answer = rule.wildcard(text, schema_node, path)
-            if answer is None:
-                if not rule.matches(text, schema_node, path) or text in _leaf_enum(schema_node):
-                    continue
-                replaced = rule.transform(text)
-                answer = (replaced, replaced != text or not has_wildcard_characters(text))
-            self._debug(rule, path, text, answer[0])
-            text, vouched = answer[0], vouched and answer[1]
-            if not rule.keeps_text:
-                break
-        return text, vouched
-
-    def patterns(self) -> tuple[str, ...]:
-        """The path of each wildcard that selects other names once rewritten, or
-        that a rule did not vouch for, in tree order.
+    def patterns(self, unvouched: Collection[tuple[int, str]] = ()) -> tuple[str, ...]:
+        """The path of each wildcard that selects other names than it did, or
+        that no rule or pass vouched for, in tree order, from the final values.
 
         The names are those the rules saw at the wildcard's place, in any
         group and outside them (`groups` left out of the place); a wildcard is
-        no name. Junos's wildcard characters are `fnmatchcase`'s.
+        no name. Junos's wildcard characters are read as `fnmatchcase` reads
+        them. *unvouched* names, by ``(id(entry), key)``, a wildcard a later
+        pass could not rewrite.
         """
         names: dict[tuple[str, ...], list[tuple[str, str]]] = {}
-        for place, before, after in self.names:
-            names.setdefault(place, []).append((before, after))
-        return tuple(
-            path
-            for place, path, before, after, vouched in self.wildcards
-            if not vouched
-            or any(
-                fnmatchcase(old, before) != fnmatchcase(new, after)
-                for old, new in names.get(place, ())
-            )
-        )
+        for place, before, entry, key in self.names:
+            names.setdefault(place, []).append((before, str(entry[key])))
+        report = []
+        for place, path, before, entry, key, vouched in self.wildcards:
+            after = wildcard_text(entry[key]) or ""
+            if (
+                not vouched
+                or (id(entry), key) in unvouched
+                or any(
+                    fnmatchcase(old, before) != fnmatchcase(new, after)
+                    for old, new in names.get(place, ())
+                )
+            ):
+                report.append(path)
+        return tuple(report)
 
     def _is_key_field(self, key: str, schema_node: dict[str, Any]) -> bool:
         from junoscfg.display import entry_key_names

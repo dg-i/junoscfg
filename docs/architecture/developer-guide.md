@@ -662,8 +662,8 @@ that selects names: `*` alone passes every rule; any other keeps its brackets
 while its text goes to the rules as a name, or to a rule that knows patterns of
 its values (`Rule.wildcard`: the IP rule's whole-octet address patterns, the
 sensitive-word rule's words behind a class). A wildcard that selects other names
-once rewritten, among those at its place, or that no rule could rewrite, is
-named in `AnonymizeResult.patterns` and an `anonymize:` warning (ANON-P3,
+once rewritten, among those at its place, or that no rule or strings pass could
+rewrite, judged after every pass, is named in `AnonymizeResult.patterns` and an `anonymize:` warning (ANON-P3,
 specification challenges S1-S3). Revert restores the text inside the brackets.
 Two supplementary passes follow:
 

@@ -159,10 +159,18 @@ def _revert_value(value: str, reverse: _Reverse) -> str:
 
 def _revert_wildcard(text: str, reverse: _Reverse) -> str:
     """The text of a wildcard name as written: a pattern of whole octets through
-    its prefix's mapping (`203.211.226.*` by `203.211.226.0/24`), else as a value."""
-    from junoscfg.anonymize.rules import address_pattern_prefix, prefix_pattern
+    its prefix's mapping (`203.211.226.*` by `203.211.226.0/24`), alone or
+    inside the text (`peer-203.211.226.*`), the rest as a value."""
+    from junoscfg.anonymize.rules import ADDRESS_FRAGMENT, address_pattern_prefix, prefix_pattern
 
-    prefix = address_pattern_prefix(text)
-    if prefix is not None and prefix in reverse.addresses:
-        return prefix_pattern(reverse.addresses[prefix], text) or text
-    return _revert_value(text, reverse)
+    def octets(pattern: str) -> str | None:
+        prefix = address_pattern_prefix(pattern)
+        if prefix is None or prefix not in reverse.addresses:
+            return None
+        return prefix_pattern(reverse.addresses[prefix], pattern)
+
+    whole = octets(text)
+    if whole is not None:
+        return whole
+    restored = ADDRESS_FRAGMENT.sub(lambda match: octets(match.group(0)) or match.group(0), text)
+    return _revert_value(restored, reverse)

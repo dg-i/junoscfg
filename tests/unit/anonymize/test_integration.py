@@ -875,6 +875,18 @@ _WILDCARD_SOURCES = {
         ("groups", "protocols", "bgp", "group", "neighbor", "name"),
         ("protocols", "bgp", "group", "neighbor", "name"),
     ),
+    "bgp-group-address": (
+        "set groups GR-BGP protocols bgp group {} hold-time 30\n"
+        "set protocols bgp group peer-203.0.114.7 hold-time 30\n",
+        ("groups", "protocols", "bgp", "group", "name"),
+        ("protocols", "bgp", "group", "name"),
+    ),
+    "bgp-group-as": (
+        "set groups GR-BGP protocols bgp group {} hold-time 30\n"
+        "set protocols bgp group AS64496-A hold-time 30\n",
+        ("groups", "protocols", "bgp", "group", "name"),
+        ("protocols", "bgp", "group", "name"),
+    ),
     "interface": (
         "set groups GR-IF interfaces {} mtu 9192\n"
         "set interfaces ge-0/0/0 unit 0 family inet address 198.0.2.1/24\n",
@@ -949,6 +961,20 @@ class TestAWildcardNameIsAPattern:
             ("bgp-group", "<ebgp-*>", {"sensitive_words": ["ebgp"]}, None),
             ("bgp-neighbor", "<203.0.11*>", {"ips": True}, None),
             ("bgp-neighbor", "<3ffe:b00:*>", {"ips": True}, None),
+            ("bgp-neighbor", "<203.0.*>", {"ips": True}, None),
+            (
+                "bgp-neighbor",
+                "<203.0.114.*>",
+                {"ips": True, "preserve_prefixes": ["203.0.114.0/25"]},
+                None,
+            ),
+            ("bgp-group-address", "<peer-203.0.11*>", {"ips": True, "ips_in_strings": True}, None),
+            (
+                "bgp-group-as",
+                "<AS6449?-*>",
+                {"as_numbers": [64496], "as_numbers_in_strings": True},
+                None,
+            ),
         ],
         ids=[
             "group",
@@ -959,6 +985,10 @@ class TestAWildcardNameIsAPattern:
             "sensitive-word-other-case",
             "ip-not-whole-octets",
             "ip-v6",
+            "ip-prefix-cut-by-a-kept-block",
+            "ip-prefix-cut-by-a-preserved-prefix",
+            "ip-in-string",
+            "as-number-class",
         ],
     )
     def test_a_wildcard_that_selects_other_names_is_reported(
@@ -970,8 +1000,11 @@ class TestAWildcardNameIsAPattern:
         written and is reported (S3); so is `<ebgp-*>`, which Junos matches by
         case and so selected no `EBGP-A`, while the rule folds case and the
         replacement selects its pseudonym (Test/Challenge F3). An address
-        pattern that is no pattern of whole octets is left as written and
-        reported (S2)."""
+        pattern that is no pattern of whole octets, or whose prefix a kept
+        block or a preserved prefix cuts (`203.0.0.0/16` holds `203.0.113.0/24`;
+        Reviewer R5), is left as written and reported (S2); so is one inside a
+        name the strings pass rewrites (Reviewer R2, S4), and an AS number
+        behind `?` (Reviewer R3)."""
         text, where, _ = _WILDCARD_SOURCES[place]
         result = anonymize(
             _set_ir(text.format(f'"{wildcard}"')), AnonymizeConfig(salt="s", **options)
@@ -989,8 +1022,15 @@ class TestAWildcardNameIsAPattern:
             ("interface", "<ge-*>", _EVERY_RULE),
             ("interface", "<[gx]e-*>", _EVERY_RULE),
             ("snmp-view", "<EBGP-*>", {"groups": True}),
+            ("bgp-group-address", "<peer-203.0.114.*>", {"ips": True, "ips_in_strings": True}),
         ],
-        ids=["sensitive-word", "no-rule-claims-it", "a-class-no-rule-claims", "selects-nothing"],
+        ids=[
+            "sensitive-word",
+            "no-rule-claims-it",
+            "a-class-no-rule-claims",
+            "selects-nothing",
+            "ip-in-string",
+        ],
     )
     def test_a_wildcard_that_selects_the_same_names_is_not_reported(
         self, place: str, wildcard: str, options: dict[str, Any]
@@ -998,7 +1038,9 @@ class TestAWildcardNameIsAPattern:
         """A sensitive word is replaced inside a name as inside the wildcard,
         so `<word_…-*>` selects `word_…-A` and not `word_…`; an interface name
         no rule renames keeps its wildcard; a wildcard that selected no name
-        selects none."""
+        selects none; the strings pass rewrites a whole-octet pattern inside a
+        name's wildcard as it rewrites the address in the name (Reviewer R2),
+        and the selection is judged after every pass."""
         text, where, names = _WILDCARD_SOURCES[place]
         source = _set_ir(text.format(f'"{wildcard}"'))
         result = anonymize(source, AnonymizeConfig(salt="s", **options))
@@ -1011,6 +1053,8 @@ class TestAWildcardNameIsAPattern:
         after = [fnmatch.fnmatchcase(name, anonymized[1:-1]) for name in _at(cfg, *names)]
         assert before == after
         assert "ebgp" not in json.dumps(result.ir).lower()
+        if options.get("ips_in_strings"):
+            assert "203.0.114" not in json.dumps(result.ir)
         assert result.patterns == ()
 
     @pytest.mark.parametrize(
@@ -1022,6 +1066,12 @@ class TestAWildcardNameIsAPattern:
             {"ips": True},
             {"sensitive_words": ["ebgp", "ge"]},
             {"descriptions": True},
+            {
+                "ips": True,
+                "ips_in_strings": True,
+                "as_numbers": [64496],
+                "as_numbers_in_strings": True,
+            },
             {**_EVERY_RULE, "sensitive_words": ["ebgp", "ge"]},
         ],
         ids=[
@@ -1031,6 +1081,7 @@ class TestAWildcardNameIsAPattern:
             "ips",
             "sensitive-words",
             "descriptions",
+            "strings-passes",
             "all",
         ],
     )
@@ -1044,7 +1095,16 @@ class TestAWildcardNameIsAPattern:
             source.format(f'"{wildcard}"')
             for (source, _, _), wildcard in zip(
                 _WILDCARD_SOURCES.values(),
-                ["<EBGP-*>", "<RO-*>", "<public-*>", "<adm*>", "<203.0.114.*>", "<[gx]e-*>"],
+                [
+                    "<EBGP-*>",
+                    "<RO-*>",
+                    "<public-*>",
+                    "<adm*>",
+                    "<203.0.114.*>",
+                    "<peer-203.0.114.*>",
+                    "<AS6449?-*>",
+                    "<[gx]e-*>",
+                ],
                 strict=True,
             )
         )
@@ -1083,9 +1143,11 @@ class TestAWildcardNameIsAPattern:
         assert interface["description"].startswith("descr_")
 
     @pytest.mark.parametrize("neighbour", [True, False], ids=["beside-a-neighbour", "alone"])
-    @pytest.mark.parametrize("wildcard", ["<203.0.114.*>", "<203.0.*>"])
+    @pytest.mark.parametrize(
+        ("wildcard", "address"), [("<203.0.114.*>", "203.0.114.7"), ("<198.0.*>", "198.0.2.7")]
+    )
     def test_an_address_pattern_takes_its_prefixs_replacement(
-        self, wildcard: str, neighbour: bool
+        self, wildcard: str, address: str, neighbour: bool
     ) -> None:
         """Replacements keep their prefixes, so a pattern of whole octets
         becomes the pattern of its prefix's replacement, and selects the
@@ -1096,12 +1158,12 @@ class TestAWildcardNameIsAPattern:
             f"set groups GR-BGP protocols bgp group IBGP neighbor {wildcard} description pattern\n"
         )
         if neighbour:
-            text += "set protocols bgp group IBGP neighbor 203.0.114.7\n"
+            text += f"set protocols bgp group IBGP neighbor {address}\n"
         result = anonymize(_set_ir(text), AnonymizeConfig(ips=True, salt="s"))
         cfg = result.ir["configuration"]
         [anonymized] = _at(cfg, "groups", "protocols", "bgp", "group", "neighbor", "name")
         prefix = wildcard[1:-3]
-        assert anonymized.startswith("<203.") and anonymized.endswith(".*>")
+        assert anonymized.startswith(wildcard[:5]) and anonymized.endswith(".*>")
         assert prefix not in json.dumps(result.ir)
         assert anonymized.count(".") == wildcard.count(".")
         for name in _at(cfg, "protocols", "bgp", "group", "neighbor", "name"):
@@ -1186,16 +1248,23 @@ class TestAWildcardNameIsAPattern:
         assert [d.path for d in warned] == ["groups.protocols.bgp.group"]
         assert warned[0].message.startswith("2 wildcard name(s) ")
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="NEW-R13, change anonymize-embedded-values (7): the sensitive-word rule folds "
-        "case, so `ebgp` and `EBGP` get one pseudonym and revert restores one case for both",
-    )
-    def test_a_word_in_two_cases_reverts_to_each(self) -> None:
-        text = (
+    @pytest.mark.parametrize(
+        "text",
+        [
             "set groups GR-BGP protocols bgp group <ebgp> hold-time 30\n"
-            "set protocols bgp group EBGP neighbor 203.0.114.7\n"
-        )
+            "set protocols bgp group EBGP neighbor 203.0.114.7\n",
+            "set groups GR-BGP protocols bgp group <EBGP> hold-time 30\n"
+            "set protocols bgp group IBGP description ebgp\n",
+            "set groups GR-BGP protocols bgp group <EBGP-*> hold-time 30\n"
+            "set protocols bgp group EBGP-A neighbor 203.0.114.7\n",
+        ],
+        ids=["P1-wildcard-lower", "P1b-another-value-lower", "same-case"],
+    )
+    def test_a_word_in_two_cases_reverts_to_each(self, text: str) -> None:
+        """The sensitive-word rule folds case, so `ebgp` and `EBGP` get one
+        pseudonym; a wildcard's rewrite is keyed by its whole spelling, as a
+        name is, so it reverts to its own case (Reviewer R1). Two plain values
+        that differ only in case still revert to one (NEW-R13, change 7)."""
         source = _set_ir(text)
         result = anonymize(source, AnonymizeConfig(sensitive_words=["ebgp"], salt="s"))
         assert apply_revert(result.ir, result.mapping) == source

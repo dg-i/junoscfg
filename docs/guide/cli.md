@@ -148,7 +148,7 @@ group `EBGP`, and with `--anonymize-ips` `<203.0.114.*>` becomes the pattern of 
 prefix's replacement. A rule that renames whole names cannot keep `<EBGP-*>` selecting
 `EBGP-A`: such a wildcard, and one whose text no rule could rewrite (an address pattern
 that is no pattern of whole octets, a sensitive word behind a class such as
-`<[Aa]cme-*>`), is named by its schema path in an `anonymize:` warning, never by its
+`<[Aa]cme-*>`, an AS number behind `?`), is named by its schema path in an `anonymize:` warning, never by its
 text. Stop on that warning when the group must keep applying to the same names.
 
 No message of an anonymized run quotes the configuration, original or replaced: a

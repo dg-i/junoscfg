@@ -59,6 +59,9 @@ def replace_addresses(text: str, replace: Callable[[str], str]) -> str:
 
 #: Junos's wildcard characters in a wildcard name: `*`, `?` and a class `[...]`.
 _WILDCARD_CHARACTERS = re.compile(r"[*?\[]")
+#: Inside a wildcard's text: two or more octets that a wildcard character
+#: follows (`peer-203.0.114.*`, `203.0.11*`, `203.0.114.7?`).
+ADDRESS_FRAGMENT = re.compile(r"(?<![\w.])(\d{1,3}(?:\.\d{1,3})+)(\.\*|[*?\[])")
 #: An IPv4 pattern of whole octets: `203.0.114.*`, `203.0.*`, `203.*`.
 _OCTET_PATTERN = re.compile(r"((?:\d{1,3}\.){1,3})\*")
 

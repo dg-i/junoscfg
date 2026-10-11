@@ -329,8 +329,8 @@ def _pattern_warnings(patterns: tuple[str, ...]) -> list[Diagnostic]:
             source="anonymize",
             path=path,
             message=(
-                f"{count} wildcard name(s) here select other names once anonymized, or hold "
-                "text no rule could rewrite as a pattern, which is left as written"
+                f"{count} wildcard name(s) here select other names once anonymized, "
+                "or could not be rewritten as a pattern"
             ),
         )
         for path, count in counts.items()
