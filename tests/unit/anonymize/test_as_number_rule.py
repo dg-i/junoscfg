@@ -156,6 +156,31 @@ class TestAsNumberConflictDetection:
             overflow_warnings = [x for x in w if "exceeds" in str(x.message)]
             assert len(overflow_warnings) >= 1
 
+    def test_no_warning_pairs_an_original_with_its_replacement(self) -> None:
+        """A warning of an anonymized run may name a replacement, never the
+        original AS it replaces: the pair is the mapping, and stderr would
+        publish it beside the output (NEW-R10, spec anonymization/placed-values).
+        The collision's replacement is the operator's own option."""
+        originals = [65000 + i for i in range(18)]
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            rule = AsNumberRule(
+                AnonymizeConfig(
+                    as_numbers=[*originals, 64497],
+                    as_number_map={65017: 64497},
+                    salt="test",
+                )
+            )
+            for asn in originals:
+                rule.transform(str(asn))
+        messages = [str(x.message) for x in w]
+        assert any("collides" in m for m in messages), messages
+        assert any("exceeds" in m for m in messages), messages
+        for message in messages:
+            assert "→" not in message
+            for asn in originals:
+                assert str(asn) not in message, message
+
 
 class TestAsNumberRuleReplaceAsInString:
     """Tests for replace_as_in_string (embedded AS number replacement)."""

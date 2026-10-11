@@ -1041,6 +1041,37 @@ class TestContentTheWalkCannotPlace:
         assert not any("address" in w for w in warnings), "it claimed a replacement"
 
     @pytest.mark.parametrize(
+        ("options", "replaced"),
+        [
+            ({"ips": True}, "each address in it is replaced"),
+            ({"passwords": True}, "each password hash in it is replaced"),
+            ({"sensitive_words": ["acme"]}, "each sensitive word in it is replaced"),
+            (
+                {"ips": True, "passwords": True, "sensitive_words": ["acme"]},
+                "each address or password hash or sensitive word in it is replaced",
+            ),
+        ],
+        ids=["address", "password-hash", "sensitive-word", "all-three"],
+    )
+    def test_the_warning_names_each_shape_it_replaces(
+        self, options: dict[str, Any], replaced: str
+    ) -> None:
+        """The warning reads "each address ... in it is replaced", not "each an
+        address" (cosmetic carry-forward of change anonymize-every-placed-value,
+        its review)."""
+        converted = convert_config_result(
+            json.dumps({"configuration": {"system": {"bogus-knob": "x"}}}),
+            from_format=Format.JSON,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(salt="s", **options),
+        )
+        warnings = [d.message for d in converted.diagnostics if d.source == "anonymize"]
+        assert warnings == [
+            "1 statement(s) here the schema does not place: "
+            f"{replaced}, every other word is left as written"
+        ]
+
+    @pytest.mark.parametrize(
         "content",
         [
             {"bogus": "$9$ExAmPlEhAsH.KEY acme-site"},
@@ -1230,3 +1261,73 @@ class TestEveryDoorGivesOneAnswer:
         for message in messages:
             for original in originals:
                 assert original not in message
+
+
+def _containers(node: Any) -> dict[int, Any]:
+    """Every dict and list in *node*, by identity."""
+    found: dict[int, Any] = {}
+    if isinstance(node, (dict, list)):
+        found[id(node)] = node
+        for item in node.values() if isinstance(node, dict) else node:
+            found |= _containers(item)
+    return found
+
+
+class TestAnonymizeLeavesItsInputAlone:
+    """`anonymize()` copies its input once on entry and rewrites only the copy.
+
+    It rewrote the caller's IR in place, which no document said (NEW-R3): a
+    caller who kept the IR held the pseudonyms and lost the original. The
+    writers copy once for the same reason (change json-writer-pure).
+    `apply_revert` and `walk` document that they rewrite their argument and
+    keep doing so: a copy would make a documented call whose result is
+    ignored a silent no-op. Spec anonymization/placed-values.
+    """
+
+    _CONFIGS = {
+        "no-rule": AnonymizeConfig(salt="s"),
+        "ips": AnonymizeConfig(ips=True, salt="s"),
+        "every-rule": AnonymizeConfig(
+            ips=True,
+            passwords=True,
+            communities=True,
+            ssh_keys=True,
+            identities=True,
+            groups=True,
+            descriptions=True,
+            ips_in_strings=True,
+            as_numbers=[64496, 64497],
+            as_numbers_in_strings=True,
+            sensitive_words=["acme"],
+            salt="s",
+        ),
+    }
+
+    @staticmethod
+    def _source() -> dict[str, Any]:
+        source = json.loads(example().rendering("json"))
+        source["configuration"]["system"]["bogus-knob 203.0.114.9"] = None
+        return source
+
+    @pytest.mark.parametrize("name", list(_CONFIGS))
+    def test_the_callers_ir_is_unchanged(self, name: str) -> None:
+        ir = self._source()
+        result = anonymize(ir, self._CONFIGS[name])
+        assert ir == self._source()
+        if name != "no-rule":
+            assert result.ir != ir, "the run anonymized nothing, so nothing was tested"
+
+    @pytest.mark.parametrize("name", list(_CONFIGS))
+    def test_the_result_shares_nothing_with_it(self, name: str) -> None:
+        ir = self._source()
+        result = anonymize(ir, self._CONFIGS[name])
+        shared = _containers(ir).keys() & _containers(result.ir).keys()
+        assert not shared, f"{len(shared)} dicts or lists are the caller's own"
+
+    def test_revert_still_rewrites_in_place(self) -> None:
+        from junoscfg.anonymize import apply_revert
+
+        result = anonymize(self._source(), self._CONFIGS["ips"])
+        restored = apply_revert(result.ir, result.mapping)
+        assert restored is result.ir
+        assert result.ir == self._source()

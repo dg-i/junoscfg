@@ -367,6 +367,31 @@ def _addresses(*addresses: str) -> dict[str, Any]:
     return {"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", "unit": [unit]}]}}}
 
 
+class TestAPassThroughCollision:
+    """An address whose replacement falls inside a preserved prefix is refused,
+    and the refusal names neither address.
+
+    `ipanon`'s `PassThroughCollisionError` read "Anonymized IP <replacement>
+    (from <original>) collides with --pass-through prefix ...": the pair the
+    mapping holds, on stderr beside the output (NEW-R10, spec
+    anonymization/placed-values). The error keeps its class.
+    """
+
+    def test_the_error_names_no_address(self) -> None:
+        from ipanon import PassThroughCollisionError
+
+        replacement = IpRule(AnonymizeConfig(ips=True, salt="test")).transform("203.0.114.9")
+        rule = IpRule(
+            AnonymizeConfig(ips=True, salt="test", preserve_prefixes=[f"{replacement}/32"])
+        )
+        with pytest.raises(PassThroughCollisionError) as raised:
+            rule.transform("203.0.114.9")
+        message = str(raised.value)
+        assert "collides" in message
+        assert "203.0.114.9" not in message
+        assert replacement not in message
+
+
 class TestNetworksAutoNeedsSourceText:
     """``networks=["auto"]`` scans the configuration text for subnets.
 
@@ -474,6 +499,33 @@ class TestTheLeafsTypeAnswers:
     def test_no_other_type_takes_an_address(self, node: dict, parent: str) -> None:
         """Not even as the key of a list whose name used to decide."""
         assert not self._rule().matches("203.0.114.49", node, ["x", parent, "name"])
+
+    def test_an_address_on_an_enum_only_leaf_is_replaced(self) -> None:
+        """An enum-only leaf (`ssh protocol-version`, ``{"l": True, "e": ...}``)
+        names no type, so an address there is replaced, and no message of the
+        run quotes it, `--strict` included (Test/Challenge finding 9 of change
+        anonymize-every-placed-value, NEW-R9: fixed there by owner rule 5; this
+        pins it)."""
+        from junoscfg import FieldValidationError, Format, convert_config_result
+
+        source = "set system services ssh protocol-version 203.0.114.9\n"
+        config = AnonymizeConfig(ips=True, salt="test")
+        assert self._rule().matches("203.0.114.9", {"l": True, "e": 16}, ["ssh", "x"])
+        result = convert_config_result(
+            source, from_format=Format.SET, to_format=Format.SET, anon_config=config
+        )
+        assert "203.0.114.9" not in result.output
+        assert result.diagnostics, "the enum mismatch is reported"
+        assert not any("203.0.114.9" in d.render() for d in result.diagnostics)
+        with pytest.raises(FieldValidationError) as raised:
+            convert_config_result(
+                source,
+                from_format=Format.SET,
+                to_format=Format.SET,
+                anon_config=config,
+                strict=True,
+            )
+        assert "203.0.114.9" not in str(raised.value)
 
     @pytest.mark.parametrize(
         "line",
