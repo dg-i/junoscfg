@@ -686,6 +686,33 @@ class TestTheLeafsTypeAnswers:
     @pytest.mark.parametrize(
         "line",
         [
+            "set interfaces ge-0/0/0 description "
+            '"nat64 64:ff9b::203.0.114.5 mapped ::ffff:203.0.114.5"',
+            "set routing-options static route 198.51.100.0/24 next-hop ::ffff:203.0.114.5",
+            "set routing-options static route 198.51.100.0/24 next-hop ::203.0.114.5",
+        ],
+        ids=["prose", "mapped-next-hop", "compatible-next-hop"],
+    )
+    def test_an_ipv4_address_inside_an_ipv6_form_is_replaced(self, line: str) -> None:
+        """The address anonymizer keeps the IPv4-mapped, -compatible and NAT64
+        blocks as they are, so `::ffff:203.0.114.5` kept the IPv4 address it
+        names; the IPv4 address takes its own replacement and the IPv6 form
+        stays (Test/Challenge T3, specification challenge S5)."""
+        from junoscfg import Format, convert_config
+        from junoscfg.anonymize import apply_revert
+        from junoscfg.convert import to_dict
+
+        source = {"configuration": to_dict(line, "set")}
+        result = anonymize(json.loads(json.dumps(source)), AnonymizeConfig(ips=True, salt="test"))
+        out = json.dumps(result.ir)
+        assert "203.0.114.5" not in out
+        assert result.mapping["ip"]["203.0.114.5"] in out
+        assert apply_revert(result.ir, result.mapping) == source
+        assert convert_config(line, from_format=Format.SET, to_format=Format.SET).strip() == line
+
+    @pytest.mark.parametrize(
+        "line",
+        [
             "set routing-instances VRF-A route-distinguisher 203.0.114.65:100",
             "set routing-instances VRF-A vrf-target target:203.0.114.65:100",
             "set routing-instances VRF-A vrf-target import target:203.0.114.65:100",

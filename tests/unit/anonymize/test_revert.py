@@ -349,3 +349,26 @@ class TestRevertUndoesEachReplacementOnce:
         ir = _described("scp://user_9d7736b55bab1f75da2d5868@host.example/x")
         apply_revert(ir, {"identity": {"operator": "user_9d7736b55bab1f75da2d5868"}})
         assert _description(ir) == "scp://operator@host.example/x"
+
+    @pytest.mark.parametrize("reverse", [False, True], ids=["in-order", "reversed"])
+    def test_replacements_sharing_a_prefix_revert_longest_first(self, reverse: bool) -> None:
+        """`netconanRemoved1` is the start of `netconanRemoved10`; URL
+        passwords put such replacements inside free text (Test/Challenge T5)."""
+        pairs = [("first-secret", "netconanRemoved1"), ("tenth-secret", "netconanRemoved10")]
+        ir = _described("ftp://operator:netconanRemoved10@198.51.100.1/x")
+        apply_revert(ir, {"password": dict(pairs[::-1] if reverse else pairs)})
+        assert _description(ir) == "ftp://operator:tenth-secret@198.51.100.1/x"
+
+    @pytest.mark.parametrize("reverse", [False, True], ids=["in-order", "reversed"])
+    def test_a_number_inside_a_pseudonym_is_no_number(self, reverse: bool) -> None:
+        """An AS replacement spelled inside another rule's pseudonym belongs to
+        the pseudonym (Test/Challenge T5)."""
+        mapping = {
+            "identity": {"operator": "user_ab64497cd0123456789abcde"},
+            "as_number": {"64496": "64497"},
+        }
+        if reverse:
+            mapping = dict(reversed(list(mapping.items())))
+        ir = _described("scp://user_ab64497cd0123456789abcde@198.51.100.1/x AS64497")
+        apply_revert(ir, mapping)
+        assert _description(ir) == "scp://operator@198.51.100.1/x AS64496"

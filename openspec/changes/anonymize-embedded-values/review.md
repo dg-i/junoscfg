@@ -1,6 +1,7 @@
 ## Findings
 
-None yet: the fresh Reviewer runs at STOP-R.
+None yet: the fresh Reviewer runs at STOP-R. Test/Challenge findings T1-T12 and their rulings:
+`test-challenge.md` and the evidence freeze's delta log.
 
 ## Already provided
 
@@ -55,6 +56,74 @@ None yet: the fresh Reviewer runs at STOP-R.
 - Decision: Pending owner decision. Interim action: the proposed correction; an analyst loses the
   link between two spellings of one word, nothing leaks, and revert becomes exact (owner intake
   2026-10-11: merge with recorded interim action).
+
+### S3: annotations are free text
+
+- Artifact: `specs/anonymization/embedded-values/spec.md` (as frozen at STOP-T it named placed values
+  and content the walk cannot place, not annotations); `walker.py` skips every `@` key.
+- Counterexample (executed by Test/Challenge, `roles/probe_annotations{,2}.py`): the vMX
+  23.2R2-S7.5 `junoscfg-oracle.json.gz` annotation edited to hold `203.0.114.77`, and a synthetic
+  `"@": {"comment": ...}` holding an address, a URL user and password and a `$9$` hash, survive
+  every rule through JSON and YAML output.
+- User impact: an anonymized Junos JSON export publishes what its comments say.
+- Proposed correction: an annotation's text goes through the same chain as free text; revert
+  restores it. Alternative: drop annotations from an anonymized run with one value-free warning.
+- Decision: Pending owner decision. Interim action: annotations are treated as free text and
+  anonymized by the chain at every door that keeps them (JSON, YAML; orchestrator ruling T1)
+  (owner intake 2026-10-11: merge with recorded interim action).
+
+### S4: an address alone in a free-text leaf
+
+- Artifact: placed-values "The IP rule answers by the leaf's type" ("no other free text is one").
+- Counterexample (executed, Test/Challenge): `description 203.0.114.9`, `snmp location 203.0.114.9`,
+  `snmp contact 3ffe:b00::9` pass `--anonymize-ips` unchanged with no warning, while `description
+  "to 203.0.114.9"` is replaced under S1; the SNMP OID key and `description` are both `xsd:string`.
+- User impact: an address written alone in a description is published.
+- Proposed correction: under `ips` an address that is the whole value of a free-text leaf is
+  replaced, but for the SNMP OID (`snmp view V oid`); `areaid` references stay; `ips_in_strings`
+  adds those. Alternative: report the path instead.
+- Decision: Pending owner decision. Interim action: the proposed correction, replace (orchestrator
+  ruling: the safe side) (owner intake 2026-10-11: merge with recorded interim action).
+
+### S5: address forms the tokenizer or the address anonymizer kept
+
+- Artifact: `anonymize/rules/__init__.py::_ADDRESS_TOKEN`, `IpRule`.
+- Counterexample (executed, `roles/probe_lexical.py`, `probe_revert_and_v6.py`): `see 203.0.114.6.`,
+  `lo_3ffe:b00::1`, `host:3ffe:b00::1`, `3ffe:b00::1.`, `203.000.114.006` give no token;
+  `::ffff:203.0.114.5`, `::203.0.114.5`, `64:ff9b::203.0.114.5` come back unchanged.
+- User impact: an IPv4 address survives `--anonymize-ips` because of how it is written.
+- Proposed correction: a dot not followed by a digit ends an address; an IPv6 address may follow
+  `_` or a non-hex word and a colon; the IPv4 inside a mapped, compatible or NAT64 form takes its
+  own replacement, the IPv6 prefix kept; a zero-padded dotted quad is replaced, its spelling
+  recorded in the mapping (revert restores the spelling unless the same address is also written
+  plainly). Not covered: an IPv4 address written as hex groups inside an IPv6 form
+  (`64:ff9b::cb00:7205`), which the address anonymizer keeps.
+- Decision: Pending owner decision. Interim action: the proposed correction (orchestrator ruling
+  T2, T3) (owner intake 2026-10-11: merge with recorded interim action).
+
+### S6: where a URL's userinfo ends
+
+- Artifact: `specs/anonymization/embedded-values/spec.md`, `scheme://user[:password]@`.
+- Counterexample (constructed, Test/Challenge T9): `ftp://operator:p@ss:w0rd@203.0.114.6/x`; split
+  at the first `@`, `ss:w0rd` is published as host text; `FTP://` unspecified.
+- User impact: part of a password is published.
+- Proposed correction: any scheme in any case; the userinfo runs from `//` to the last `@` before
+  the host (RFC 3986); the user ends at its first `:`. A template user (`scp://${user}@...`) is a
+  user too and is renamed; revert restores it (Test/Challenge T12).
+- Decision: Pending owner decision. Interim action: the proposed correction (owner intake
+  2026-10-11: merge with recorded interim action).
+
+### S7: which filter governs a name inside an `apply-path`
+
+- Artifact: `specs/anonymization/embedded-values/spec.md`, "An apply-path names configuration".
+- Counterexample (constructed, Test/Challenge T10): `exclude=["protocols.bgp"]` keeps group `EBGP`;
+  read at the apply-path, the path's `EBGP` is renamed and the prefix list selects nothing.
+- User impact: a filtered run can break the configuration it was meant to keep, or, filtered at the
+  named place, leak the name the path holds.
+- Proposed correction (Test/Challenge): rewrite only where both places are in scope.
+- Decision: Pending owner decision. Interim action: the filter at the `apply-path` leaf itself
+  decides, so a name in a path in scope is replaced (orchestrator ruling: the safe side) (owner
+  intake 2026-10-11: merge with recorded interim action).
 
 ## Verdict
 

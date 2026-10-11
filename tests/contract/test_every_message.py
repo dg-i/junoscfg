@@ -224,6 +224,20 @@ _WILDCARD = (
     f"set protocols bgp group ACME-PEERS neighbor {ADDRESS}\n"
 )
 _WILDCARD_SHOWN = ("groups.protocols.bgp.group", "wildcard")
+#: An apply-path the tree cannot read to its end, and one whose wildcard the
+#: group rule cannot keep (NEW-A-N7, change anonymize-embedded-values): each
+#: reported by the apply-path's schema path, never by its words.
+_APPLY_PATH = (
+    "set policy-options prefix-list PL-ACME apply-path "
+    f'"protocols bgp bogus-acme EBGP-ACME {ADDRESS}"\n'
+)
+_APPLY_PATH_SHOWN = ("policy-options.prefix-list.apply-path", "1 statement(s)")
+_APPLY_PATH_WILDCARD = (
+    "set policy-options prefix-list PL-ACME apply-path "
+    '"protocols bgp group <ACME-*> neighbor <*>"\n'
+    f"set protocols bgp group ACME-PEERS neighbor {ADDRESS}\n"
+)
+_APPLY_PATH_WILDCARD_SHOWN = ("policy-options.prefix-list.apply-path", "wildcard")
 _READ = ("could not be read",)
 _WITHHELD = "; details withheld: the run anonymizes"
 _YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"
@@ -263,6 +277,12 @@ DOORS: dict[str, Door] = {
     ),
     "anonymize-pattern-warning": Door(
         _library(_WILDCARD, Format.SET, groups=True), _WILDCARD_SHOWN, None
+    ),
+    "anonymize-apply-path-warning": Door(
+        _library(_APPLY_PATH, Format.SET), _APPLY_PATH_SHOWN, None, ("EBGP",)
+    ),
+    "anonymize-apply-path-pattern-warning": Door(
+        _library(_APPLY_PATH_WILDCARD, Format.SET, groups=True), _APPLY_PATH_WILDCARD_SHOWN, None
     ),
     "read-set-bracket": Door(_library(_BRACKET, Format.SET), (*_READ, "(line 1)"), "sw1-acme"),
     "read-structured": Door(
@@ -378,6 +398,17 @@ DOORS: dict[str, Door] = {
     ),
     "cli-anonymize-pattern-warning": Door(
         _cli(_WILDCARD, ["-i", "set", "-e", "set"], "--anonymize-groups"), _WILDCARD_SHOWN, None
+    ),
+    "cli-anonymize-apply-path-warning": Door(
+        _cli(_APPLY_PATH, ["-i", "set", "-e", "set"]),
+        ("anonymize: policy-options.prefix-list.apply-path: 1 statement(s)",),
+        None,
+        ("EBGP",),
+    ),
+    "cli-anonymize-apply-path-pattern-warning": Door(
+        _cli(_APPLY_PATH_WILDCARD, ["-i", "set", "-e", "set"], "--anonymize-groups"),
+        _APPLY_PATH_WILDCARD_SHOWN,
+        None,
     ),
     "cli-pass-through-collision": Door(
         _cli_collision,
