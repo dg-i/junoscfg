@@ -7,3 +7,42 @@ type: bug
 zone: anonymize
 domains: [anonymization, conversion]
 assurance: economy
+removes:
+  - "`_replace_ips_in_strings` and `_replace_as_in_strings` in `anonymize/__init__.py`, the passes after the walk: the walk's one chain rewrites the shapes inside a value, `ips_in_strings` and `as_numbers_in_strings` select which"
+  - "the substring loop of `anonymize/revert.py::_revert_value`, order-dependent and blind to digit boundaries: revert undoes every replacement in one pass"
+  - "the route-distinguisher, VRF-target and community-member entries of `anonymize/rules/ip.py::_ADDRESS_VALUED_LEAVES`: an address beside other text is replaced on every leaf"
+  - "the `unvouched` argument of the walk's wildcard report: no pass runs after the walk"
+  - "nothing public: every name of the `junoscfg`, `junoscfg.anonymize` and `junoscfg.cli` doors and every CLI option stays; `Rule.spans` is added, `Rule.lexical` stays"
+declared-break:
+  consumer:
+    why: >-
+      No name or signature of the surface changes; src/junoscfg/__init__.py is
+      not edited (the orchestrator bumps `__version__` at merge). Behind
+      convert_config and convert_config_result with an `anon_config`, more
+      values are replaced: under `ips` an address beside other text in any
+      value (a URL, a description, an apply-path), under `identities` and
+      `passwords` a URL's user and password, under `groups` and the other
+      naming rules a name inside an apply-path. A sensitive word's pseudonym
+      is keyed by its spelling, so `ACME` and `acme` get two, and the dumped
+      mapping records each spelling instead of each whole value.
+      `include`/`exclude` now apply to the in-strings options, and an AS
+      number is no longer replaced inside an address or another rule's
+      pseudonym. A configuration anonymized with the same salt by 0.20.x
+      differs in those values. Declared breaks on a named surface raise the
+      minor (AGENTS.md).
+    migration: >-
+      Dump and revert with the same release: a mapping dumped by 0.20.x still
+      reverts the output 0.20.x wrote (a whole value it recorded is matched
+      first), but compare anonymized outputs only within one release. A caller
+      that relied on `--anonymize-ips` leaving addresses inside free text
+      excludes those paths with `exclude`.
+  cli:
+    why: >-
+      `junoscfg convert --anonymize-*` replaces the same additional values as
+      the consumer surface, and `--anonymize-dump-map` writes word pairs for
+      sensitive words. No option is added, removed or renamed;
+      `--anonymize-ips-in-strings` now only adds an address that is a whole
+      value on any leaf.
+    migration: >-
+      Re-dump the revert map with the new release; use
+      `--anonymize-exclude` to keep a path's free text as written.
