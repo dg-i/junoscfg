@@ -41,8 +41,8 @@ NEW-C2). That message also hides the boundary: the vMX and the QFX5120 loaded th
 ## Impact
 
 `src/junoscfg/convert/__init__.py`, `src/junoscfg/convert/field_validator.py`, their unit tests,
-`src/junoscfg/convert/CONTRACT.md`, `docs/guide/validation.md`, `docs/guide/cli.md`, a changelog
-fragment, the `conversion/diagnostics` delta. More diagnostics, no output change: measured with
+`src/junoscfg/convert/CONTRACT.md`, `docs/guide/validation.md` (`docs/guide/cli.md` already says
+warnings are printed, and is change #7's path), a changelog fragment, the `conversion/diagnostics` delta. More diagnostics, no output change: measured with
 `private_test_data/makeover-work/diagnostics-load-vs-commit/compare.py` over
 `tests/data/device/manifest.json` (96 conversions) and `probe_mandatory.py` (mandatory warnings per
 rendering).
