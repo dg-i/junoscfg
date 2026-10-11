@@ -49,6 +49,6 @@ declared-break:
     migration: >-
       Re-dump the revert map with the new release; use
       `--anonymize-exclude` to keep a path's free text as written. Keep one
-      spelling per IPv4 when a flat map would be ambiguous; ambiguous old maps
+      spelling per IP address when a flat map would be ambiguous; ambiguous old maps
       require re-anonymizing the original. Apply-path selector-risk warnings
       identify only the schema path, including excluded selectors.

@@ -327,7 +327,7 @@ class IpRule(Rule):
         )
 
     def get_mapping(self) -> dict[str, str]:
-        """Return the original -> anonymized IP mapping."""
+        """Return the IP mapping, refusing any replacement shared by distinct originals."""
         mapping = self._anonymizer.get_mapping()
         for spelled in self._spelled:
             bare, slash, length = spelled.partition("/")
@@ -336,7 +336,7 @@ class IpRule(Rule):
                 # Only the spelling was written: revert restores the spelling.
                 mapping.pop(canonical, None)
         mapping = {**mapping, **self._spelled}
-        if self._spelled and len(set(mapping.values())) != len(mapping):
+        if len(set(mapping.values())) != len(mapping):
             raise self.AmbiguousMappingError
         return mapping
 

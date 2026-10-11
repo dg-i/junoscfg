@@ -698,11 +698,20 @@ class TestValuesInsideFreeText:
 
     @pytest.mark.parametrize("fmt", list(Format))
     @pytest.mark.parametrize("reverse_order", [False, True])
+    @pytest.mark.parametrize(
+        "spellings",
+        [
+            ("203.0.114.6", "203.000.114.006"),
+            ("3ffe:b00::9", "3ffe:0b00:0:0:0:0:0:9"),
+            ("3ffe:b00::a", "3FFE:B00::A"),
+        ],
+        ids=["padded-ipv4", "expanded-ipv6", "case-ipv6"],
+    )
     def test_ambiguous_spellings_are_rejected_before_output(
-        self, fmt: Format, reverse_order: bool, tmp_path: Path
+        self, fmt: Format, reverse_order: bool, spellings: tuple[str, str], tmp_path: Path
     ) -> None:
-        """S5 final owner decision, independent repeated-field impossibility proof."""
-        values = ["203.0.114.6", "203.000.114.006"]
+        """S5 decision and independent final IPv6-alias counterexamples."""
+        values = list(spellings)
         if reverse_order:
             values.reverse()
         text = f'set interfaces ge-0/0/0 description "via {values[0]} and {values[1]}"\n'
@@ -789,7 +798,17 @@ class TestValuesInsideFreeText:
         assert not any(value in cli.stderr for value in values)
 
     @pytest.mark.parametrize("fmt", list(Format))
-    @pytest.mark.parametrize("address", ["203.0.114.6", "203.000.114.006"])
+    @pytest.mark.parametrize(
+        "address",
+        [
+            "203.0.114.6",
+            "203.000.114.006",
+            "3ffe:b00::9",
+            "3ffe:0b00:0:0:0:0:0:9",
+            "3ffe:b00::a",
+            "3FFE:B00::A",
+        ],
+    )
     def test_an_unambiguous_spelling_restores_exactly(
         self, fmt: Format, address: str, tmp_path: Path
     ) -> None:

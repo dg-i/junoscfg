@@ -132,3 +132,11 @@ Source: `private_test_data/makeover-work/codex-resumption/owner-decisions.md`, e
 ## Verdict
 
 Pending: the fresh Reviewer's verdict at STOP-R.
+
+### S5 supplemental: IPv6 spelling aliases evade the forward collision guard
+
+- Artifact: existing exact-successful-reversal and flat-map ambiguity-refusal invariant; `IpRule.get_mapping`.
+- Counterexample: independent final Test/Challenge report on `074736b`/`0438299` executes compressed/expanded (`3ffe:b00::9`, `3ffe:0b00:0:0:0:0:0:9`) and case (`3ffe:b00::a`, `3FFE:B00::A`) aliases in both orders/all readers. Forward output and flat map succeed; reverse rejects duplicate replacement values.
+- User impact: a successful anonymized output cannot be restored with the map it just dumped.
+- Proposed correction: extend the existing fixed value-free forward collision refusal to every IP mapping entry, rather than only the padded-IPv4 bookkeeping case; retain successful one-spelling controls and the flat format.
+- Decision: orchestrator explicitly accepts this minimal correction under the already approved exact-successful-reversal policy; no new owner policy inferred or Builder approval. Independent verdict remains NEEDS CORRECTION until re-challenged.

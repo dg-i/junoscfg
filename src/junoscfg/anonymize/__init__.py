@@ -109,7 +109,7 @@ def anonymize(
             ``config.source_text``. Auto-detection scans the configuration
             text for subnets, so it needs that text; asking for it without
             supplying the text used to do nothing at all. Also when different
-            IPv4 spellings share a replacement: a flat mapping cannot restore
+            IP spellings share a replacement: a flat mapping cannot restore
             each exactly. Use one spelling per address before anonymizing.
 
     Content the walk cannot place, a statement kept whole

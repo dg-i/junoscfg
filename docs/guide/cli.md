@@ -339,7 +339,8 @@ The mapping file is JSON with the structure:
 Each key is the rule name; values are `{original: anonymized}` pairs.
 Unambiguous mappings from earlier releases still work. A configuration using
 plain and zero-padded spellings of the same IPv4 address can produce one
-replacement for both; this unsupported case is rejected before output with a
+replacement for both. Equivalent compressed, expanded or differently cased IPv6
+spellings can also share a replacement; ambiguity is rejected before output with a
 value-free error. Use one spelling per address in the original configuration
 and anonymize again. An old map with multiple originals for one IP replacement
 is also rejected before restoration: it cannot recover the lost occurrences.
