@@ -142,3 +142,7 @@ Pending: the fresh Reviewer's verdict at STOP-R.
 - Decision: orchestrator explicitly accepts this minimal correction under the already approved exact-successful-reversal policy; no new owner policy inferred or Builder approval. Independent verdict remains NEEDS CORRECTION until re-challenged.
 
 Independent correction verification: APPROVE on exact source `574b55ef9895f88a9f417e9480eb017b6055d133`, report `private_test_data/makeover-work/anonymize-embedded-values/roles/codex-final-challenge/correction/report.md`. Executed 167 focused passes, 103 probe records/zero losses, 20 CLI safe refusals and 3 exact single-spelling controls. This resolves the preceding S5 IPv6 counterexample; original evidence remains. Fresh Reviewer verdict is still pending.
+
+## Fresh isolated review — original candidate
+
+Verdict: NEEDS CORRECTION on `2fa6c60466a5232df8257b0dff101100bec38cf0`, private `roles/codex-fresh-review.md`. R2 (high, privacy): original URL credentials lose identity ownership after password delimiters or nested address rewrites; original URL/login users must share the identity pseudonym. R1 (high, forward correctness): wildcard continuation lacks generated-span protection and later rules corrupt an IP selector. Exact independent public-door probes/controls retained under `roles/codex-fresh-review/`. Orchestrator accepts correction under existing approved invariants; no new owner policy or Builder approval. Original full/device/timing checkpoint remains scoped to 2fa; corrected fresh verdict is pending.

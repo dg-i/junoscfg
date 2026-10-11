@@ -334,6 +334,14 @@ class Rule(ABC):
         """
         return None
 
+    def _wildcard_written(self, before: str, after: str) -> list[tuple[int, int]]:
+        """Generated spans for continuation; unknown custom answers are protected whole.
+
+        Existing subclasses need no new implementation or return shape. Rules
+        preserving surrounding text can supply their precise generated spans.
+        """
+        return [] if before == after else [(0, len(after))]
+
 
 def rewrite(
     rule: Rule, text: str, spans: list[tuple[int, int]]

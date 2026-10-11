@@ -166,6 +166,10 @@ class AsNumberRule(Rule):
             return None
         return self.replace_as_in_string(text), False
 
+    def _wildcard_written(self, before: str, after: str) -> list[tuple[int, int]]:
+        """Protect the AS replacement while later rules process surrounding text."""
+        return [] if before == after else rewrite(self, before, self.spans(before))[1]
+
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized AS number mapping."""
         return dict(self._mapping)

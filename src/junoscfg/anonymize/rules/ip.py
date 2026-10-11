@@ -19,6 +19,7 @@ from junoscfg.anonymize.rules import (
     parse_address,
     prefix_pattern,
     replace_addresses,
+    rewrite,
 )
 from junoscfg.display import strip_type_prefix
 
@@ -185,7 +186,9 @@ class IpRule(Rule):
         return [(start, end) for start, end, _ in address_tokens(text)]
 
     def replace(self, fragment: str) -> str:
-        """An address's replacement."""
+        """Replace an address or a supported whole-octet wildcard fragment."""
+        if address_pattern_prefix(fragment) is not None:
+            return self._octet_pattern(fragment) or fragment
         return self._anonymize(fragment)
 
     def wildcard(
@@ -213,6 +216,27 @@ class IpRule(Rule):
             # An address inside the text (`<peer-203.0.114.*>`), as in free text.
             return self.pattern_in_string(text, done=frozenset())
         return None
+
+    def _wildcard_written(self, before: str, after: str) -> list[tuple[int, int]]:
+        """Protect generated address/prefix fragments, leaving original surrounding text."""
+        if before == after:
+            return []
+        if _ADDRESS_PATTERN.fullmatch(before):
+            return [(0, len(after))]
+        patterns = [
+            match.span()
+            for match in ADDRESS_FRAGMENT.finditer(before)
+            if self._octet_pattern(match.group()) not in (None, match.group())
+        ]
+        spans = patterns + [
+            (start, end)
+            for start, end in self.spans(before)
+            if not any(start < stop and begin < end for begin, stop in patterns)
+            and self.transform(before[start:end]) != before[start:end]
+        ]
+        rewritten, written = rewrite(self, before, sorted(spans))
+        assert rewritten == after
+        return written
 
     def _octet_pattern(self, text: str) -> str | None:
         """*text*, a pattern of whole octets, as the pattern of its prefix's

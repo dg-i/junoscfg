@@ -39,7 +39,7 @@ from fnmatch import fnmatchcase
 from typing import TYPE_CHECKING, Any
 
 from junoscfg.anonymize.path_filter import PathFilter
-from junoscfg.anonymize.rules import has_wildcard_characters, rewrite, wildcard_text
+from junoscfg.anonymize.rules import has_wildcard_characters, rewrite, url_userinfo, wildcard_text
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -283,7 +283,12 @@ class _Walker:
                 if answer is not None:
                     result, vouched = answer
                     self._debug(rule, path, str_value, result)
-                    return self._chain(result, path, self.rules[index + 1 :]), vouched
+                    return self._chain(
+                        result,
+                        path,
+                        self.rules[index + 1 :],
+                        written=rule._wildcard_written(str_value, result),
+                    ), vouched
         enum = _leaf_enum(schema_node)
         for rule in self.rules:
             if not rule.keeps_text and rule.matches(str_value, schema_node, path):
@@ -495,6 +500,8 @@ class _Walker:
         path: list[str],
         rules: Sequence[Rule],
         whole: dict[str, Any] | None = None,
+        *,
+        written: list[tuple[int, int]] | None = None,
     ) -> str:
         """*text* with each part a rule recognises by its shape replaced, rule by rule.
 
@@ -503,13 +510,38 @@ class _Walker:
         never reaches into the address's replacement). For a placed value
         (*whole* is its node), a part that is the whole value is replaced only
         where its rule takes the value (`matches`): an address alone where its
-        type says syntax, an SNMP OID, stays.
+        type says syntax, an SNMP OID, stays. Original URL credentials belong
+        to their active identity/password rule before nested shapes are matched;
+        all spans are read before replacements can introduce URL delimiters.
         """
-        written: list[tuple[int, int]] = []
-        for rule in rules:
+        written = list(written or ())
+        credentials = url_userinfo(text)
+        owners = {
+            "identity": [user for user, _ in credentials if user is not None],
+            "password": [password for _, password in credentials if password is not None],
+        }
+        active = {rule.name for rule in rules}
+        pending = [
+            (
+                rule,
+                [
+                    (start, end)
+                    for start, end in rule.spans(text)
+                    if not any(
+                        start < stop and begin < end
+                        for owner, spans in owners.items()
+                        if owner in active and owner != rule.name
+                        for begin, stop in spans
+                    )
+                ],
+            )
+            for rule in rules
+        ]
+        while pending:
+            rule, found = pending.pop(0)
             spans = [
                 (start, end)
-                for start, end in rule.spans(text)
+                for start, end in found
                 if not any(start < stop and begin < end for begin, stop in written)
             ]
             if (
@@ -523,6 +555,17 @@ class _Walker:
             before = text
             text, wrote = rewrite(rule, text, spans)
             self._debug(rule, path, before, text)
+            pending = [
+                (
+                    later,
+                    [
+                        _shifted((start, end), spans, wrote)
+                        for start, end in found
+                        if not any(start < stop and begin < end for begin, stop in spans)
+                    ],
+                )
+                for later, found in pending
+            ]
             written = [_shifted(span, spans, wrote) for span in written] + wrote
         return text
 

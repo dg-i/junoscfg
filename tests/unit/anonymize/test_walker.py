@@ -390,6 +390,9 @@ def _flags(options: dict[str, Any]) -> list[str]:
     for name, value in options.items():
         if name == "as_numbers":
             found += ["--anonymize-as-numbers", ",".join(str(asn) for asn in value)]
+        elif name == "sensitive_patterns":
+            for pattern in value:
+                found += ["--anonymize-sensitive-patterns", pattern]
         else:
             found += flags[name]
     return found
@@ -555,6 +558,88 @@ class TestValuesInsideFreeText:
     (specification challenge S1 of change anonymize-embedded-values). Spec
     anonymization/embedded-values.
     """
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    @pytest.mark.parametrize(
+        ("user", "password"),
+        [
+            ("operator", "$9$ExAmPlEhAsH.KEY"),
+            ("admin203.0.114.6", "secret99"),
+            ("operator", "secret99"),
+        ],
+        ids=["hash-delimiter", "address-in-user", "ordinary-control"],
+    )
+    def test_original_url_credentials_keep_their_ownership(
+        self, fmt: Format, user: str, password: str, tmp_path: Path
+    ) -> None:
+        """Fresh R2: original URL/login identity survives nested shapes and generated slashes."""
+        text = (
+            f"set system login user {user} class super-user\n"
+            f'set interfaces ge-0/0/0 description "scp://{user}:{password}@198.51.100.1/path"\n'
+        )
+        options = {"passwords": True, "identities": True, "ips": True}
+        source = _ir(text)
+        unchanged = copy.deepcopy(source)
+        result = anonymize(source, AnonymizeConfig(salt="s", **options))
+        cfg = result.ir["configuration"]
+        login = cfg["system"]["login"]["user"][0]["name"]
+        description = cfg["interfaces"]["interface"][0]["description"]
+        assert description.startswith(f"scp://{login}:")
+        assert login == result.mapping["identity"][user]
+        assert user not in json.dumps(result.ir) and password not in description
+        assert source == unchanged
+        restored = copy.deepcopy(result.ir)
+        apply_revert(restored, result.mapping)
+        assert restored == source
+        rendered = _reader_source(text, fmt)
+        dumped = tmp_path / "map.json"
+        converted = convert_config_result(
+            rendered,
+            from_format=fmt,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(salt="s", dump_map=str(dumped), **options),
+        )
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                fmt.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                *_flags(options),
+                "--anonymize-salt",
+                "s",
+                "--anonymize-dump-map",
+                str(dumped),
+            ],
+            input=rendered,
+        )
+        assert cli.exit_code == 0, cli.output
+        for output in (converted.output, cli.stdout):
+            cfg = json.loads(output)["configuration"]
+            login = cfg["system"]["login"]["user"][0]["name"]
+            assert cfg["interfaces"]["interface"][0]["description"].startswith(f"scp://{login}:")
+            assert user not in output and password not in output
+            restored_text = convert_config(
+                output,
+                from_format=Format.JSON,
+                to_format=Format.JSON,
+                validate=False,
+                anon_config=AnonymizeConfig(revert_map=str(dumped)),
+            )
+            assert json.loads(restored_text) == json.loads(
+                convert_config(
+                    rendered,
+                    from_format=fmt,
+                    to_format=Format.JSON,
+                    validate=False,
+                )
+            )
+        assert not any(value in cli.stderr for value in (user, password))
+        assert not any(value in str(converted.diagnostics) for value in (user, password))
 
     @pytest.mark.parametrize("door", ["conversion", "json-to-yaml", "cli"])
     @pytest.mark.parametrize("row", list(_FREE_TEXT))
@@ -1112,6 +1197,127 @@ class TestAnApplyPathNamesConfiguration:
     `apply-path "protocols bgp group <*> neighbor <*>"`. Spec
     anonymization/embedded-values.
     """
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    @pytest.mark.parametrize(
+        "later",
+        [
+            {"sensitive_patterns": [r"\d{3}"]},
+            {"as_numbers": [211], "as_numbers_in_strings": True},
+            {},
+        ],
+        ids=["sensitive-pattern", "as-in-strings", "ip-only-control"],
+    )
+    def test_an_ip_wildcard_replacement_is_protected(
+        self, fmt: Format, later: dict[str, Any], tmp_path: Path
+    ) -> None:
+        """Fresh R1: evaluate actual target selection through every public door."""
+        text = "set protocols bgp group G neighbor 203.0.114.7\n" + _prefix_list(
+            "protocols bgp group G neighbor <203.0.114.*>"
+        )
+        assert fnmatchcase("203.0.114.7", "203.0.114.*")
+        options = {"ips": True, **later}
+        source = _ir(text)
+        unchanged = copy.deepcopy(source)
+        result = anonymize(source, AnonymizeConfig(salt="s", **options))
+        assert source == unchanged
+        target = result.ir["configuration"]["protocols"]["bgp"]["group"][0]["neighbor"][0]["name"]
+        assert fnmatchcase(target, _apply_path(result).split()[-1][1:-1])
+        assert result.patterns == ()
+        restored = copy.deepcopy(result.ir)
+        apply_revert(restored, result.mapping)
+        assert restored == source
+        rendered = _reader_source(text, fmt)
+        dumped = tmp_path / "map.json"
+        converted = convert_config_result(
+            rendered,
+            from_format=fmt,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(salt="s", dump_map=str(dumped), **options),
+        )
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                fmt.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                *_flags(options),
+                "--anonymize-salt",
+                "s",
+                "--anonymize-dump-map",
+                str(dumped),
+            ],
+            input=rendered,
+        )
+        assert cli.exit_code == 0, cli.output
+        for output in (converted.output, cli.stdout):
+            cfg = json.loads(output)["configuration"]
+            target = cfg["protocols"]["bgp"]["group"][0]["neighbor"][0]["name"]
+            selector = cfg["policy-options"]["prefix-list"][0]["apply-path"].split()[-1][1:-1]
+            assert fnmatchcase(target, selector)
+            restored_text = convert_config(
+                output,
+                from_format=Format.JSON,
+                to_format=Format.JSON,
+                validate=False,
+                anon_config=AnonymizeConfig(revert_map=str(dumped)),
+            )
+            assert json.loads(restored_text) == json.loads(
+                convert_config(
+                    rendered,
+                    from_format=fmt,
+                    to_format=Format.JSON,
+                    validate=False,
+                )
+            )
+        assert converted.diagnostics == () and cli.stderr == ""
+
+    def test_an_existing_custom_wildcard_rule_needs_no_new_hook(self) -> None:
+        """An inherited default protects a custom rule's old two-item wildcard answer."""
+
+        class Custom(StubRule):
+            def wildcard(
+                self, text: str, schema_node: dict[str, Any], path: list[str]
+            ) -> tuple[str, bool] | None:
+                return "marker_*", True
+
+        class Later(StubRule):
+            def spans(self, text: str) -> list[tuple[int, int]]:
+                return [(0, 6)] if text.startswith("marker") else []
+
+        source = _ir("set groups GR protocols bgp group G neighbor <203.0.114.*>\n")
+        walk(source, [Custom(), Later()], AnonymizeConfig())
+        name = source["configuration"]["groups"][0]["protocols"]["bgp"]["group"][0]["neighbor"][0][
+            "name"
+        ]
+        assert name == "<marker_*>"
+
+    def test_surrounding_original_text_still_reaches_later_rules(self) -> None:
+        """Protect only the generated prefix; the original peer word is still sensitive."""
+        text = "set protocols bgp group peer-203.0.114.7 neighbor 198.51.100.1\n" + _prefix_list(
+            "protocols bgp group <peer-203.0.114.*> neighbor <*>"
+        )
+        result = anonymize(
+            _ir(text),
+            AnonymizeConfig(
+                ips=True,
+                sensitive_words=["peer"],
+                sensitive_patterns=[r"\d{3}"],
+                salt="s",
+            ),
+        )
+        name = result.ir["configuration"]["protocols"]["bgp"]["group"][0]["name"]
+        selector = _apply_path(result).split()[3][1:-1]
+        assert "peer" not in name and "peer" not in selector
+        assert fnmatchcase(name, selector)
+        assert result.patterns == ()
+        restored = copy.deepcopy(result.ir)
+        apply_revert(restored, result.mapping)
+        assert restored == _ir(text)
 
     @pytest.mark.parametrize(
         ("text", "path", "options", "rule", "original"),

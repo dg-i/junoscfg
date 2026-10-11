@@ -82,3 +82,13 @@ All candidate writes transfer to the orchestrator after this evidence-only hando
 - [ ] Candidate-only device comparison after full green against frozen integration-base.json; classify every output/diagnostic/validation/exception difference without normalization.
 - [ ] Current bounded performance measurement if frozen inputs exist; otherwise precise UNMEASURED reason, historical figures scoped to their earlier source.
 - [ ] Fresh Reviewer, immutable metrics and bounded Finalizer remain root-owned incomplete lifecycle.
+
+### Fresh review corrections — R2 and R1
+
+- [x] Original-candidate full/device and frozen bounded timing completed on `2fa6c604`; historical evidence retained, not attributed to future corrected runtime.
+- [x] Public-door red regression for original URL credential ownership, hash delimiter and same URL/login pseudonym; wildcard generated-prefix protection plus untouched surrounding text. Original red and helper setup failure provenance retained.
+- [x] Bounded owning-chain correction using existing rewrite/shift helpers; unchanged wildcard return shape and no new consumer obligation. Targeted 31 passed; focused 1,120 passed/one existing xfail, exit 0.
+- [ ] Focused/fast/normal clean source checkpoint, independent exact-head correction verification, then required released full/device rerun.
+- [ ] Fresh corrected Reviewer verdict, lifecycle metrics and Finalizer remain open.
+
+Focused R1/R2 command: `uv run --offline --locked --group dev pytest -q tests/unit/anonymize/test_walker.py tests/unit/anonymize/test_ip_rule.py tests/unit/anonymize/test_as_number_rule.py tests/unit/anonymize/test_identity_rule.py tests/unit/anonymize/test_password_rule.py tests/unit/anonymize/test_sensitive_word_rule.py tests/unit/anonymize/test_revert.py tests/unit/anonymize/test_integration.py tests/contract/test_every_rule.py tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration tests/contract/test_every_message.py::TestTheLibraryRaisesAFailureByItsClassOnly --tb=short`. Raw private evidence: review-correction-focused.out. Source hooks/fast and independent exact-head verification remain pending; no corrected full checkpoint claimed.
