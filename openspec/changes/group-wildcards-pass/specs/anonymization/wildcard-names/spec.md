@@ -1,3 +1,9 @@
+## Purpose
+
+A Junos wildcard name in a configuration group (`<*>`, `<ge-*>`) is a pattern that selects
+names, not a name. Anonymization keeps it selecting the replacements of the names it selected,
+or names its place in a report that carries no value, and revert restores it exactly.
+
 ## ADDED Requirements
 
 ### Requirement: A wildcard name is a pattern, not a name
@@ -40,25 +46,12 @@ Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_
 - **THEN** it stays `<*>`, the group selects every BGP group as before, the mapping holds no
   wildcard, and nothing is reported
 
-#### Scenario: A wildcard that spells one name
+#### Scenario: A renaming rule
 
-- **WHEN** `groups GR-BGP protocols bgp group <EBGP>` and `protocols bgp group EBGP` are
-  anonymized with `--anonymize-groups`
-- **THEN** the wildcard becomes `<` + the group's pseudonym + `>`, selects the renamed group, and
-  nothing is reported
-
-#### Scenario: A wildcard with literal text under a renaming rule
-
-- **WHEN** `groups GR-BGP protocols bgp group <EBGP-*>` and `protocols bgp group EBGP-A` are
-  anonymized with `--anonymize-groups`
-- **THEN** the wildcard is `<group_…>`, no `EBGP` survives, `groups.protocols.bgp.group` is
-  reported, and revert restores `<EBGP-*>`
-
-#### Scenario: A sensitive word inside a wildcard
-
-- **WHEN** the same configuration is anonymized with `--anonymize-sensitive-words ebgp`
-- **THEN** the wildcard is `<word_…-*>`, it selects the renamed `word_…-A`, and nothing is reported;
-  `"<[A-E]BGP*>"`, which no longer selects `word_…`, is reported
+- **WHEN** `groups GR-BGP protocols bgp group <EBGP>` and `<EBGP-*>` beside `protocols bgp group
+  EBGP` and `EBGP-A` are anonymized with `--anonymize-groups`
+- **THEN** `<EBGP>` becomes `<` + the pseudonym of `EBGP` + `>` and is not reported; `<EBGP-*>`
+  becomes `<group_…>`, no `EBGP` survives, its path is reported, and revert restores it
 
 #### Scenario: An address pattern
 
@@ -69,12 +62,13 @@ Tests: `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_
   are left as written and reported, and `<198.51.100.*>`, a block kept by design, is unchanged
   and not reported
 
-#### Scenario: A sensitive word behind a class, or in another case
+#### Scenario: Sensitive words
 
-- **WHEN** `"<[Aa]cme-*>"` is anonymized with `--anonymize-sensitive-words acme`, or `<ebgp-*>`
-  beside `EBGP-A` with `--anonymize-sensitive-words ebgp`
-- **THEN** the first is left as written and reported; the second becomes `<word_…-*>`, which now
-  selects `word_…-A` where Junos, matching case, selected nothing, and is reported
+- **WHEN** `<EBGP-*>`, `"<[A-E]BGP*>"` and `<ebgp-*>` beside `EBGP-A` and `EBGP` are anonymized
+  with `--anonymize-sensitive-words ebgp`
+- **THEN** `<EBGP-*>` becomes `<word_…-*>`, selects `word_…-A` and is not reported; the class,
+  which no longer selects `word_…`, is left as written and reported; `<ebgp-*>` now selects
+  `word_…-A` where Junos, matching case, selected nothing, and is reported
 
 #### Scenario: The strings passes
 

@@ -24,11 +24,12 @@ their names, and the IP rule leaves `<203.0.114.7>` as written beside the neighb
 
 ### New Capabilities
 
-- None.
+- `anonymization/wildcard-names`: requirement "A wildcard name is a pattern, not a name" (split
+  from `anonymization/placed-values` in phase 7: that spec would pass its 200-line cap).
 
 ### Modified Capabilities
 
-- `anonymization/placed-values`: added requirement "A wildcard name is a pattern, not a name".
+- None.
 
 ## Non-goals
 

@@ -61,7 +61,7 @@ a key field outside `groups` (the change treats it as a wildcard everywhere).
 
 ### S1: a wildcard name with literal text cannot keep selecting the same names under a renaming rule
 
-- Artifact: the inventory's sketch for ANON-P3 (`private_test_data/makeover-work/inventory-a.md`, G5: "owner decides wildcards with literal text (`<EBGP-*>`): keep verbatim (leaks the literal) or rewrite the literal part with the same pseudonym table the referenced names use"); this change's requirement "A wildcard name is a pattern, not a name" (`specs/anonymization/placed-values/spec.md`), whose reporting half is the interim rule.
+- Artifact: the inventory's sketch for ANON-P3 (`private_test_data/makeover-work/inventory-a.md`, G5: "owner decides wildcards with literal text (`<EBGP-*>`): keep verbatim (leaks the literal) or rewrite the literal part with the same pseudonym table the referenced names use"); this change's requirement "A wildcard name is a pattern, not a name" (`specs/anonymization/wildcard-names/spec.md`; first frozen under `anonymization/placed-values`), whose reporting half is the interim rule.
 - Counterexample: executed on `1ebeed9` (`private_test_data/makeover-work/group-wildcards-pass/repro.py`, `repro-base.out`): `groups GR-BGP protocols bgp group <EBGP-*>` with `protocols bgp group EBGP-A` under `--anonymize-groups`. The group rule replaces each name by a hash of the whole name (`group_<24 hex>`), so no pseudonym of `EBGP-A` shares a prefix with a pseudonym of anything: kept verbatim, `<EBGP-*>` leaks `EBGP` and selects nothing; rewritten (`group_…` on the base, `<group_…>` here) it leaks nothing and selects nothing. The same holds for the identity and community rules (address patterns are S2, a sensitive word behind a class S3). Device evidence holds no such wildcard: the captures' wildcards are `<*>` at a BGP group and patterns at interface, unit and routing-instance names no rule renames (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 `junoscfg-oracle`, JVD vMX `mdr1_acx7509`).
 - User impact: an anonymized configuration whose group applies a wildcard with literal text to renamed names applies it to nothing; it loads, and the group silently stops contributing its statements.
 - Proposed correction, for the owner to choose: (a) the interim rule below, permanently; (b) prefix-keeping pseudonyms (`EBGP-A` to `<p>-A` where `<p>` replaces the literal `EBGP`) for every name a wildcard with literal text selects, which keeps the selection but leaks the structure of names; (c) refuse to anonymize such a configuration unless the caller opts in. Tests to follow the choice: `TestAWildcardNameIsAPattern::test_a_wildcard_that_selects_other_names_is_reported` and its scenarios in the delta.
@@ -93,4 +93,14 @@ a key field outside `groups` (the change treats it as a wildcard everywhere).
 
 ## Verdict
 
-CHANGES REQUIRED at `a4eb20e` (R1-R7, all accepted and applied). Confirmation by the same Reviewer next.
+CHANGES REQUIRED at `a4eb20e` (R1-R7, all accepted and applied at `79b44a3`).
+
+Confirmation by the same Reviewer at `b2bc5d3` (code `79b44a3`; `roles/review.md`, probes
+`roles/review_probe{,2,3}.b2bc5d3.out`, `roles/review_probe4.out`, suites `roles/tests.b2bc5d3.out`):
+R1-R7 fixed, executed (P1 and P1b revert exactly; P2/P2b keep the selection with nothing leaked;
+P11 and P3b reported; P8, P8c and P5 reported under R5; one rule loop; the warning reworded).
+One new residual, low, carried forward: under `--anonymize-as-numbers-in-strings`, `<ge-0/0/1?>`
+is reported although no AS number is selected (`_DIGITS_BESIDE_SYNTAX`): noise on the safe side,
+not a leak; report only when a configured AS number can match the digits (NEW-R14, change 7).
+
+**APPROVE** at `b2bc5d3`. S1-S4 stay pending the owner, with their interim actions.

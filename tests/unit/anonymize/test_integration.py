@@ -909,7 +909,7 @@ class TestAWildcardNameIsAPattern:
     <ge-*>`, `"<[gx]e-*>"` and `routing-instances <VRF-*>`. A wildcard with
     literal text under a rule that renames whole names cannot keep selecting
     the same names: it is reported, the interim rule of specification
-    challenge S1. Spec anonymization/placed-values.
+    challenge S1. Spec anonymization/wildcard-names.
     """
 
     @pytest.mark.parametrize("place", list(_WILDCARD_SOURCES))

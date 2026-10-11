@@ -7,7 +7,7 @@
 
 ## Requirements
 
-- `specs/anonymization/placed-values/spec.md`: ADDED "A wildcard name is a pattern, not a name".
+- `specs/anonymization/wildcard-names/spec.md` (new capability; first frozen as an ADDED requirement of `anonymization/placed-values`, moved in phase 7 because that main spec would pass its 200-line document cap): ADDED "A wildcard name is a pattern, not a name".
 - Unchanged and binding: `anonymization/placed-values` "A group reference goes to the group rule once" (reserved group names pass), "No message of an anonymized run quotes the configuration", "anonymize() leaves its input alone"; `anonymization/keyed-entries` "Key fields are leaves, and a leaf's own enum value is syntax" (the text inside a wildcard is offered as that key field's value, enum check included) and "No value anonymized before escapes" (the dumped mapping of the device example stays pinned at `8e13d961…`; the `<*>` entry the pin left out no longer exists).
 
 ## Evidence
