@@ -44,6 +44,19 @@ ruling relayed by the orchestrator on 2026-10-11 was accepted; dispositions:
 8. LOW, stale texts. Fixed: the pin's docstring, the developer guide's rule
    priorities.
 
+Re-review (same Reviewer, at `7173e75`): findings 1–8, S4 and S5 confirmed fixed,
+the extension accepted; one new finding, ruled and fixed:
+
+- R1, MEDIUM: with `--anonymize-ips` alone, `vrf-target target:<address>:100`
+  was replaced but `policy-options community C1 members target:<address>:100`
+  was not, so a `vrf-import`/`vrf-export` policy stopped matching. Fixed:
+  `("community", "members")` joins `_ADDRESS_VALUED_LEAVES` (`target:` and
+  `origin:` address forms); AS-form, regular-expression and well-known members
+  hold no address and stay. `test_a_policy_community_matches_its_renamed_target`
+  asserts the same pseudonym on both and an exact revert. Blast radius (the
+  Reviewer's grep over 1,535 JVD files): 0 address-form members, 25,953 AS-form
+  members unchanged.
+
 Carried forward: NEW-R9 (change 5b); the OpenConfig `router-id` leaves typed
 `string` (10 positions), change 18 with S4.
 

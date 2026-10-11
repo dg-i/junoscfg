@@ -34,12 +34,12 @@ starts with an IPv4 or IPv6 address or prefix and the leaf's type is an address
 type, a host type (`host`, `hostname`), `ipprefix-only`, or none at all; a key
 of one of the lists the tree types only as free text or `areaid`
 (`syslog host`, `ospf area`, ...) answers by its list's name; `ipv6-router-id`,
-BGP `cluster`, a route distinguisher and a VRF target by their own, the address
-anywhere in the value (S4, S5); no other free text or `areaid` value is one. Text beside the address in the same word
+`cluster`, a route distinguisher, a VRF target, community `members` by their
+own, the address anywhere in the value (S4, S5, R1); no other free text is one. Text beside the address in the same word
 (`/rack-4`, `,`, `:8080`, `/33`, `%ge-0/0/0.0`, a trailing `/`) SHALL stay as text and
 never fail the run; no value without an address SHALL reach the address
 anonymizer.
-Tests: `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_address_on_these_types_is_replaced`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_a_name_on_a_host_type_is_not`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_no_other_type_takes_an_address`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_interface_name_never_reaches_the_address_anonymizer`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_every_address_the_device_writes_there_is_replaced`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_syntax_shaped_like_an_address_is_unchanged`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_a_malformed_value_never_crashes`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_address_inside_a_route_distinguisher_or_target_is_replaced`
+Tests: `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_address_on_these_types_is_replaced`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_a_name_on_a_host_type_is_not`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_no_other_type_takes_an_address`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_interface_name_never_reaches_the_address_anonymizer`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_every_address_the_device_writes_there_is_replaced`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_syntax_shaped_like_an_address_is_unchanged`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_a_malformed_value_never_crashes`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_an_address_inside_a_route_distinguisher_or_target_is_replaced`, `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_a_policy_community_matches_its_renamed_target`
 
 #### Scenario: Syntax shaped like an address
 

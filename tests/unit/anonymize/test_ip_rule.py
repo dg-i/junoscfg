@@ -645,3 +645,37 @@ class TestTheLeafsTypeAnswers:
             as_form, from_format=Format.SET, to_format=Format.SET, anon_config=config
         )
         assert out.strip() == as_form
+
+    def test_a_policy_community_matches_its_renamed_target(self) -> None:
+        """`policy-options community ... members target:<address>:<n>` takes the
+        pseudonym the `vrf-target` takes, so a `vrf-import` policy still matches
+        the route target; AS-form, regular-expression and well-known members
+        hold no address and stay (Reviewer R1)."""
+        from junoscfg.anonymize import apply_revert
+        from junoscfg.convert import to_dict
+
+        source = (
+            "set routing-instances VRF-A vrf-target target:203.0.114.1:100\n"
+            "set policy-options community C1 members target:203.0.114.1:100\n"
+            "set policy-options community C2 members origin:203.0.114.1:7\n"
+            "set policy-options community C3 members target:64496:100\n"
+            'set policy-options community C4 members "^target:10\\.0\\..*$"\n'
+            "set policy-options community C5 members no-export\n"
+        )
+        ir = {"configuration": to_dict(source, "set")}
+        original = json.loads(json.dumps(ir))
+        result = anonymize(ir, AnonymizeConfig(ips=True, salt="test"))
+        cfg = result.ir["configuration"]
+        pseudonym = result.mapping["ip"]["203.0.114.1"]
+        target = f"target:{pseudonym}:100"
+        assert cfg["routing-instances"]["instance"][0]["vrf-target"]["community"] == target
+        members = {c["name"]: c["members"] for c in cfg["policy-options"]["community"]}
+        assert members["C1"] == [target]
+        assert members["C2"] == [f"origin:{pseudonym}:7"]
+        before = {
+            c["name"]: c["members"]
+            for c in original["configuration"]["policy-options"]["community"]
+        }
+        for name in ("C3", "C4", "C5"):
+            assert members[name] == before[name]
+        assert apply_revert(result.ir, result.mapping) == original

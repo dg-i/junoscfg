@@ -70,7 +70,10 @@ _KEY_TEXT_TYPES = frozenset({"string", "key-attribute-string-type", "areaid"})
 #: address: `routing-options ipv6-router-id` (`string`, the IPv4-shaped router
 #: ID), BGP `cluster` (`areaid`, usually the loopback), a route distinguisher
 #: (`route-distinguisher rd-type`, `<address>:<n>`) and a VRF target
-#: (`vrf-target` `community`/`import`/`export`, `target:<address>:<n>`). Matched
+#: (`vrf-target` `community`/`import`/`export`, `target:<address>:<n>`), and
+#: the policy community that matches it (`policy-options community <c> members
+#: target:<address>:<n>`, `origin:<address>:<n>`), so a `vrf-import` policy
+#: still matches the target (Reviewer R1). Matched
 #: by the leaf's own name (and its parent's), only with those types, where the
 #: value holds an address (specification challenges S4, S5). Retires with
 #: `_ADDRESS_KEYED_LISTS`, when change 18 retypes them on device evidence.
@@ -82,6 +85,7 @@ _ADDRESS_VALUED_LEAVES = frozenset(
         ("vrf-target", "community"),
         ("vrf-target", "import"),
         ("vrf-target", "export"),
+        ("community", "members"),
     }
 )
 
