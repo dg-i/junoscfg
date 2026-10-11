@@ -12,7 +12,7 @@
 - [x] 2.3 Implement fresh shipped-release sentinel and protected artifact comparison/stability outputs.
 - [x] 2.4 Execute actual scaffold template and caps --homes; retain output and resolve only authorized ownership/inactive seeds.
 - [x] 2.5 Add delivered-guide navigation and executable schema recipe plus release fragment.
-- [ ] 2.6 Provision physical private inputs, capture actual outcomes/durations, complete focused tests and fast gates.
+- [x] 2.6 Provision physical private inputs, capture actual outcomes/durations, complete focused tests and fast gates.
 - [ ] 2.7 Commit immutable candidate and run one canonical full plus real schema/stability/sentinel evidence; report STOP-R.
 
 ## 3. Review and evidence
@@ -30,3 +30,5 @@ Phase-5 focused acceptance: `uv run --locked --group dev pytest tests/tooling/te
 Git hook isolation repair: the original normal-hook run failed in fixture setup (16 failed / 9087 passed / 37 existing skips / 20 strict xfails, 64.58s); root restored and verified shared metadata. An additional parent-context nonmutation regression and explicit repository-context isolation preserve all prior behavioral assertions and protocol authorization. Focused rerun: 43 passed, zero errors/skips, exit 0; actual duration and raw output/XML retained in schema-adapter-isolation-implementation.*. No full has run.
 
 The isolated normal-hook affected suite passed; its test-door gate rejected private helper access only. The corrected regression uses public run_shard and passed in 4.88s (1 selected node, exit 0); test doors now pass. Original 42 assertions remain, with one additional hook-context regression. Exact focused isolation suite before the public-call correction: 43 passed in 62.01s. Normal-hook commit retry remains required and no full exists yet.
+
+Pre-full phase-5 preparation at 3757577e4ce75d4518d76fd831e7ee3972715718: independent application controls accepted, focused 43 passed in 75.06s. Initial fast set failed only missing generated .claude/skills in this worktree; installed offline agent-ready skills --regenerate restored that ignored mirror with no tracked edits, focused skills passed, and the corrected exact fast command passed every gate (raw schema-adapter-pre-full-fast-corrected.out). Physical inputs, focused outcomes/durations and fast gates are complete; actual real-schema outcomes belong to pending task 2.7. Normal implementation commit passed all hooks without exemptions. Final record-only commit and inactive readiness precede the one immutable canonical full. Installed wrapper execute applies actual second-pass stability with reuse=False, so inactive full runs both passes for each declared physical shard and the shipped sentinel uncached. No generation, activation or performance claim is made by this preparation.
