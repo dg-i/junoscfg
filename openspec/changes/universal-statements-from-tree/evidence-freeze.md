@@ -56,7 +56,7 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
 - 2026-10-11, phase 4: acceptance tests written. On the merge base `dd7c8c4`: `tests/unit/display/test_universal_statements.py` fails to import (`schema_child`, `universal_statements` do not exist), so its nine tests fail; over the other eight files and `tests/contract/`, 111 failed, 4,891 passed. Every new acceptance node fails except these guards, which pass on both sides by design: `test_another_word_is_kept_whole_and_reported[system,group]` (the nested line was already kept), `TestAUniversalStatementIsValidatedWithItsNode::test_nested_statements_are_clean` and `::test_a_bare_nested_statement_is_unplaced` (the exemption hid both), `TestUnplacedContentKeepsItsKeywords::test_it_is_still_reported`, the two new valid lines of `test_an_apply_statement_validates` (the old grammar took any value), and the rows' JSON and YAML readers of `apply-flags-omit-as-the-device-writes-it` (JSON, YAML and XML already read the device's shape). Corrected by the delta (C5, C9): `test_apply_statements_are_modelled_once_on_the_root` loses its two single-leaf assertions on `apply-flags`, now `test_apply_flags_is_the_devices_container_of_flags`; `TestUniversalStatementsReachEveryContainer._tree` declares the four statements as the fixed tree does, and its docstrings no longer say the shipped tree lacks them. No other assertion changed. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: STOP-T, independent Test/Challenge.
 - 2026-10-11, Test/Challenge (`test-challenge.md`, findings 1–7), rulings relayed by the orchestrator, all applied (`review.md`).
   - Consistency: C5 narrowed. `replace` stays a flag, so the grammar keeps the base's acceptance, but its JSON/XML shape is EVIDENCE_BLOCKED on P8. The delta says so; the cases are `[replace-P8]` and `test_replace_is_clean_p8`. Specification challenge S1 is pending the owner.
-  - New criteria:
+  - New criteria, each pinned by a test, follow.
     - every capture's set, curly and XML door reads the device JSON's universal statements (`TestEveryDoorReadsTheDevicesUniversalStatements`: 5 of 18 fail on the base, 0 at the head);
     - a poisoned floor leaves both catalogue rows converting;
     - 0.17.0's scalar `"apply-flags": "omit"` is reported (field validation reports a value on a non-presence, non-list container) and written back;
@@ -69,7 +69,7 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
   - Golden `tests/data/name-keyed.lark` regenerated from the generator (the `apply-flags` rule only), its docstring updated.
   - Invalidated: `test_another_word_is_kept_whole_and_reported` now asserts the general container rule (the unknown word is kept from itself, inside `apply-flags`) where it asserted the record at the parent.
   - No assertion weakened. Approved under the owner's unattended-run instruction of 2026-10-11.
-- 2026-10-11, phase 5, measurements at the head (uncommitted tree before the phase-5 commit):
+- 2026-10-11, phase 5, measurements at the head, taken on the tree before the phase-5 commit.
   - Artifacts regenerated with `junoscfg schema generate` from `25.2R2-S1.5_qfx5120.xsd`; a second regeneration is byte-identical (tree, grammar, both JSON schemas).
   - Diff against the base: the structure tree changes only `apply-flags` (`{l,u}` to `{u, c: {omit: p, replace: p}}`). The grammar changes only the `universal_statement` `apply-flags` alternative and the new `apply_flags` rule. The JSON schema changes the top-level `apply-flags` property to an object with `omit`/`replace` (nested ones keep the `patternProperties` entry).
   - Device outputs (`outputs.py`, 236 conversions, `diff-device.txt`): 18 differ, every one explained.
@@ -82,7 +82,7 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
     - First head: 5.38/5.73/1.93/2.17 s, against base 4.94/5.27/1.44/1.67 s. Cause: `universal_statements` passed over the root's children for every token a node's children miss, which in the set reader means every value and entry name.
     - Fix: the answer is kept per structure tree (by identity, with the root's child count as a guard, cleared by `forget_loaded_artifacts`; a `SchemaNode` tree under construction is not cached).
     - Head after the fix: 5.01/5.35/1.52/1.75 s, within 2–6 % of the base.
-  - Tiers:
+  - The tiers pass.
     - Schema tier (`pytest --schema tests/corpus/test_schema_data.py`): 34 passed, 2 skipped (no pinned count for 21.4R0); the one warning is the pre-existing DEV-V5 `FutureWarning`.
     - JVD tier (`pytest --jvd tests/corpus/test_jvd_corpus.py`, the field-warning budget included): 8 passed.
     - Unit, contract, tooling and corpus (device law included): 6,989 passed, 45 skipped, 22 xfailed (one new strict xfail, the ARCH-C10 carry-forward).
