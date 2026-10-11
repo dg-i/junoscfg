@@ -15,5 +15,5 @@ After the review corrections: `check --set fast` passed at 879ef61 (no runtime f
 Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 5f9934f: every check passed, 6,516 passed / 45 skipped / 21 xfailed.
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: fresh Reviewer (`review.md`), CHANGES REQUIRED at 8145e1d, APPROVE at 879ef61.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head: base d1e804e, code head 5f9934f.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits: main spec applied (1d0d967) before merge; run by the Builder under the owner's unattended-run brief, no product edit.
