@@ -60,10 +60,11 @@ None blocking: P11 and P12 are device questions with safe interim actions (C3, C
 - Assurance preference: economy
 - Risk floor: high (declared break on `consumer` and `cli`; cross-domain: conversion, validation, schema-pipeline, display kernel)
 - Roles required: Builder; independent Test/Challenge (STOP-T after phase 4); fresh Reviewer at least as capable as the Builder (STOP-R after phase 5); Finalizer
-- Resume point: phase 3 is not required (type `bug`); next phase 4 (acceptance tests)
+- Resume point: STOP-T after phase 4 (acceptance tests `e6efdb2`); after the orchestrator's ruling on the independent Test/Challenge, phase 5 (implementation, schema tier, record rebuilds, before/after comparison)
 
 ## Delta log
 
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established: preflight `e03b220`, intent `6bb03f5`, this commit (deltas, code map, freeze). Approved under the owner's unattended-run instruction of 2026-10-11.
+- Phase 4: acceptance tests committed at `e6efdb2` (277 nodes fail on `50b0a10`, pins named above). The curly lexing row "statement across lines" became a refusal pin in `tests/unit/display/test_set_converter.py`: the reader refuses a statement across lines whatever it quotes (change 1, probe P7); consistent with the freeze, no criterion changes. Approved under the owner's unattended-run instruction of 2026-10-11.
