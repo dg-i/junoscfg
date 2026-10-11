@@ -17,7 +17,7 @@
 Observed on `b8e6fc1` (v0.19.0), synthetic values, scripts and outputs in
 `private_test_data/makeover-work/anonymized-run-messages/` (`*-base.out`):
 
-- Message doors and what each printed in an anonymized run (`repro.py`, `v_doors.py`, `notes.py`, `r9.py`, `as_warn.py`):
+- Message doors and what each printed in an anonymized run (`repro.py`, `v_doors.py`, `notes.py`, `r9.py`, `as_warn.py`), in the table below.
 
 | Door | Base output (anonymized run) | Quotes the configuration |
 |---|---|---|
