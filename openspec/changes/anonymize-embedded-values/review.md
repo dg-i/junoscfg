@@ -140,3 +140,5 @@ Pending: the fresh Reviewer's verdict at STOP-R.
 - User impact: a successful anonymized output cannot be restored with the map it just dumped.
 - Proposed correction: extend the existing fixed value-free forward collision refusal to every IP mapping entry, rather than only the padded-IPv4 bookkeeping case; retain successful one-spelling controls and the flat format.
 - Decision: orchestrator explicitly accepts this minimal correction under the already approved exact-successful-reversal policy; no new owner policy inferred or Builder approval. Independent verdict remains NEEDS CORRECTION until re-challenged.
+
+Independent correction verification: APPROVE on exact source `574b55ef9895f88a9f417e9480eb017b6055d133`, report `private_test_data/makeover-work/anonymize-embedded-values/roles/codex-final-challenge/correction/report.md`. Executed 167 focused passes, 103 probe records/zero losses, 20 CLI safe refusals and 3 exact single-spelling controls. This resolves the preceding S5 IPv6 counterexample; original evidence remains. Fresh Reviewer verdict is still pending.
