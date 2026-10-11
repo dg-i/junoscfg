@@ -18,7 +18,7 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
-| Base SHA | 50b0a10 |
+| Base SHA (historical phase 4) | 50b0a10 |
 | Acceptance tests on base product code (phase 4, after the Test/Challenge rulings) | 404 failed, 3,852 passed, 3 xfailed (strict: SC1, P11 x2) over the named files and nodes. Every new test or row fails except the pins (base behaviour kept): row `a-quoted-plain-policy-name`, row `a-policy-chain-of-names`, `test_a_backslash_is_written_as_it_is`, `test_bare_inner_quotes_are_not_one_value`, `test_a_quoted_value_ending_in_a_backslash_parses`, `test_an_escaped_backslash_ends_before_the_quote`, shipped-grammar rows `bare-inner-quotes-end-the-value`, `an-escaped-backslash-ends-before-the-quote`, `a-word-ending-in-a-backslash`, `a-quoted-value-ending-in-a-backslash`, `TestJunoscfgsOwnSetOutputValidates` rows other than `an-escaped-quote` and `delimiters`, `a-statement-across-lines-holding-an-escaped-quote`, `test_a_policy_algebra_value_reads_back` for `( P-A )`, `( P-A && P-B )`, `( "P 1" && ! P-B )`, `P-1`, `P 1`. Signature-only base failures (fail on the new `node` argument alone; pins in substance, Test/Challenge F6): `test_a_plain_name_is_quoted_only_where_it_must_be` (3), `test_a_policy_algebra_token_is_written_as_it_is[two-terms, nested]`, `test_a_junos_variable_stays_quoted` (2) |
 | Device record (`tools/device_differences.py`) | 928 -> 716 lines; classes `policy-expression-quoted` (176), `escaped-quote-lost` (16), `policy-name-unquoted` (14), `policy-expression-double-quoted` (6) gone; no other line changes |
 | Device grammar corpus (`tools/device_grammar_corpus.py`, 8,713 device lines) | false rejections 66 -> 65 (the escaped-quote line); covering lines 189 -> 190 (`set groups GR-OMIT system apply-flags omit`, rules 408 -> 409, a rule the corpus did not yet cover) |
@@ -60,6 +60,12 @@
 | Repair affected and device tests | 7,993 passed, 1 skipped (device grammar tier flag absent), 20 strict xfailed; offline --locked --no-sync pytest; scratch roles/repair-affected.out |
 | Repair device comparison at integration base | 36/96 plain and 432/1,152 all rule runs differ, output only; diagnostics, field validation and exceptions unchanged. DEV-4 bare expression, DEV-5 retained expression-shaped quoted name, DEV-6 no doubled quotes, DEV-7 escaped inner quote. Every repair-head output and result field equals the original independent review-head result. Scratch repair-base-40173ba.json, repair-head.json, repair-device-diff.out, repair-device-summary.json |
 | Repair check ordering failure | First fast invocation exited 1 at snapshot: uncommitted governed changes. Code/tests/evidence committed before the single permitted corrected run; no semantic failure or weakened check |
+
+
+| Repair immutable code head SHA | cf6aa270b506c90ce527c3cfa45dca1d91c07a77 |
+| Repair fast checkpoint | every check passed, exit 0; committed code head above; scratch roles/repair-fast-committed.out |
+| Repair full checkpoint | every check passed, exit 0; 8,443 passed, 37 skipped, 20 strict xfailed, coverage floor passed; immutable code head above; prescribed full command; scratch roles/repair-full.out |
+| Repair commit environment retry | First commit attempt exited 1: scratch uv cache lacked hatchling for build isolation. Populated default cache reused offline; retry exited 0 with all hooks passed. No network or check bypass |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
 

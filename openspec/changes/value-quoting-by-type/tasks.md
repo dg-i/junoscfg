@@ -14,10 +14,16 @@
 - [x] 2.6 Historical full checkpoint (invalidated for the current candidate by rebase and runtime/test repair): `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at `4fafc72`: every check passed; application tests 8,351 passed, 37 skipped, 20 xfailed.
 
 - [x] 2.7 Repair independent review F1 without changing the spec: one complete lexical expression, shared statement-boundary helper, fail-before-emission when quoting cannot preserve IR, JSON/YAML/XML negatives and quoted-name delimiter positives. Focused tests: 155 passed, 2 strict P11 xfailed.
-- [ ] 2.8 New integration checkpoint at base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: affected tests, fast, full and refreshed device comparisons; old full checkpoint is historical.
+- [x] 2.8 New integration checkpoint at base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: affected tests, fast, full and refreshed device comparisons; old full checkpoint is historical.
 
 ## 3. Review and evidence
 
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+
+## Repair checkpoint and handoff
+
+Immutable integration base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`; runtime/test code head `cf6aa270b506c90ce527c3cfa45dca1d91c07a77`. Focused: 155 passed, 2 strict P11 xfailed. Affected/device: 7,993 passed, 1 skipped, 20 strict xfailed. Fast check: every check passed. New full command `UV_OFFLINE=1 npm_config_offline=true PYTHONDONTWRITEBYTECODE=1 uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`: exit 0, every check passed; 8,443 passed, 37 skipped, 20 strict xfailed, coverage floor passed. Logs are in private scratch `roles/repair-{affected,fast-committed,full}.out`. Tree clean after full. No expensive schema-tier rerun: repair and integration diff changed no relevant generation input.
+
+Resume at same independent Reviewer reconfirmation (F1/conditional SC4 on unchanged governing requirements), then the owner disposition and bounded Finalizer; tasks 3.1–3.3 stay open. This evidence-only commit changes no runtime/test/generation input and does not invalidate the full checkpoint. Owner interview has no received answer for F1; do not infer approval. Orchestrator performed the rebase; Builder performed no branch switch, rebase, push, merge, archive or version bump.
