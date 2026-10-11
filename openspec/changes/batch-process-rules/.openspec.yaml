@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-11
+type: docs
+# AGENTS.md and docs/ only: no zone owns these paths; "surface" follows the earlier
+# zone-less docs changes (define-openspec-readership-observation, document-local-installation).
+zone: surface
+domains: []
+removes: "the JVD corpus tier from the agent instructions and from per-change verification; the tier itself stays an opt-in manual tool"
+assurance: economy
+skip_specs: true
