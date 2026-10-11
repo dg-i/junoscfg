@@ -62,6 +62,21 @@ class TestTheRecordExplainsItself:
         }
         assert labels <= classes, sorted(labels - classes)
 
+    def test_every_defined_class_has_a_recorded_line(self) -> None:
+        """A class whose lines a fix removed leaves the record with them.
+
+        Test/Challenge F9 (change structured-one-line-blocks): `labels <= classes`
+        alone let `omitted-block-emitted` stay defined after its lines went.
+        """
+        classes = set(known_differences()["classes"])
+        labels = {
+            label
+            for entry in known_differences()["differences"].values()
+            for lines in entry.values()
+            for label in lines.values()
+        }
+        assert classes <= labels, sorted(classes - labels)
+
     def test_every_recorded_rendering_is_a_capture(self) -> None:
         keys = {f"{c.key}.{suffix}" for c in captures() for suffix in FORMATS}
         assert set(known_differences()["differences"]) <= keys

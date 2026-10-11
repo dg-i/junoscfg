@@ -7,6 +7,7 @@ directory via constructor arg, JUNOSCFG_ARTIFACTS env var, or bundled defaults.
 from __future__ import annotations
 
 import json
+import warnings
 from typing import TYPE_CHECKING
 
 from junoscfg.display import find_artifact, read_artifact_text, resolve_artifacts_dir
@@ -122,9 +123,11 @@ class JunosValidator:
         return self._set_validator.validate(source)
 
     def validate_structured(self, source: str) -> ValidationResult:
-        """Validate structured (curly-brace) configuration.
+        """Validate structured (curly-brace) configuration. Deprecated.
 
-        Converts to set commands first, then validates.
+        Converts to set commands with the schema-free `SetConverter.to_set()`,
+        then validates; use `junoscfg.validate_structured()`, which reads each
+        statement as the conversion walk does. Removed in the next minor release.
 
         Args:
             source: Structured configuration as a string.
@@ -132,6 +135,8 @@ class JunosValidator:
         Returns:
             ValidationResult with errors if invalid.
         """
+        from junoscfg.validate.structured_validator import DEPRECATION
+
         if self._structured_validator is None:
             from junoscfg.validate.structured_validator import StructuredValidator
 
@@ -144,7 +149,12 @@ class JunosValidator:
                     raise SchemaLoadError(f"Lark grammar not found in {self._artifacts_dir}")
                 self._set_validator = SetValidator(grammar_path)
             self._structured_validator = StructuredValidator(self._set_validator)
-        return self._structured_validator.validate(source)
+        warnings.warn(
+            DEPRECATION.format(door="JunosValidator.validate_structured()"),
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._structured_validator._validate(source)
 
     def _ensure_json_yaml_validator(self) -> None:
         """Lazy-load JSON/YAML validator."""

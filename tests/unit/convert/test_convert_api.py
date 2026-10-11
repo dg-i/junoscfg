@@ -18,6 +18,7 @@ import yaml
 from junoscfg import FieldValidationError, Format, convert_config, validate_config
 from junoscfg.convert import pipeline, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.artifacts import write_minimal_tree
 from tests.support.shapes import read_ir
 
 if TYPE_CHECKING:
@@ -286,6 +287,9 @@ class TestValidateConfig:
         assert result.valid is True
 
     def test_validate_auto_detect_structured(self, artifacts_dir: str) -> None:
+        # Structured validation reads the structure tree for the conversion
+        # walk that splits curly statements (change structured-one-line-blocks).
+        write_minimal_tree(artifacts_dir)
         source = "system {\n    host-name r1;\n}"
         result = validate_config(source, format=None, artifacts_dir=artifacts_dir)
         assert result.valid is True

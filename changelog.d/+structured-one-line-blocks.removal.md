@@ -1,0 +1,1 @@
+Deprecated, to be removed in the next minor release: `SetConverter.to_set()` (it tags a one-line statement's last node; use `convert_config(..., from_format=Format.STRUCTURED, to_format=Format.SET)`), and `StructuredValidator` and `JunosValidator.validate_structured()` (they cannot reach the schema walk; use `junoscfg.validate_structured()`). Each emits a `DeprecationWarning`.

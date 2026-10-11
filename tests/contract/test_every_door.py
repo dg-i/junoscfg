@@ -47,10 +47,11 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class Verdict:
-    """What a door said: valid or not, and every message it gave."""
+    """What a door said: valid or not, every message it gave, and its warnings."""
 
     valid: bool
     report: str
+    warnings: str = ""
 
 
 @dataclass(frozen=True)
@@ -67,6 +68,8 @@ class Row:
     document: dict[str, Any] | None = None
     structured: str | None = None
     messages: tuple[str, ...] = ()
+    # Each must appear in the warnings of every door that takes the row.
+    warnings: tuple[str, ...] = ()
     xfail: str | None = None
     # The doors the xfail holds for; empty, every door.
     xfail_on: tuple[str, ...] = ()
@@ -90,7 +93,11 @@ class Door:
 
 
 def _result(result: Any) -> Verdict:
-    return Verdict(result.valid, "\n".join(error.message for error in result.errors))
+    return Verdict(
+        result.valid,
+        "\n".join(error.message for error in result.errors),
+        "\n".join(warning.message for warning in result.warnings),
+    )
 
 
 def _deprecated(call: Callable[[], Any]) -> Any:
@@ -110,7 +117,7 @@ def _cli(fmt: str) -> Callable[[str, Any], Verdict]:
         # 0 is valid and 1 invalid; anything else (3: the artifacts did not
         # load, or a traceback) is neither, and fails the case.
         assert result.exit_code in (0, 1), result.output
-        return Verdict(result.exit_code == 0, result.output)
+        return Verdict(result.exit_code == 0, result.output, result.output)
 
     return call
 
@@ -155,8 +162,14 @@ def cases(rows: tuple[Row, ...]) -> list[Any]:
         for door in DOORS:
             if row.text(door.fmt) is None:
                 continue
+            # A door named in `xfail_on` fails on the verdict, never by crashing
+            # (Test/Challenge F5).
+            assert set(row.xfail_on) <= {d.name for d in DOORS}, row.xfail_on
             failing = row.xfail and (not row.xfail_on or door.name in row.xfail_on)
-            marks = [pytest.mark.xfail(strict=True, reason=row.xfail)] if failing else []
+            raises = AssertionError if row.xfail_on else None
+            marks = (
+                [pytest.mark.xfail(strict=True, raises=raises, reason=row.xfail)] if failing else []
+            )
             found.append(pytest.param(row, door, id=f"{row.id}-{door.name}", marks=marks))
     return found
 
@@ -174,6 +187,8 @@ def _check(row: Row, door: Door, validators: Any) -> None:
     assert verdict.valid is row.valid, verdict.report
     for message in row.messages:
         assert message in verdict.report, verdict.report
+    for warning in row.warnings:
+        assert warning in verdict.warnings, verdict.warnings
 
 
 # ── A keyed entry takes exactly its key values ───────────────────────
@@ -612,6 +627,16 @@ STRUCTURED_AS_READ = (
         "the-omitted-placeholder",
         True,
         structured="groups {\n    GR-OMIT {\n        system { /* OMITTED */ };\n    }\n}\n",
+        warnings=("groups GR-OMIT system: `apply-flags omit` hides this block's content",),
+    ),
+    # Test/Challenge F1: split at `down`, the set grammar takes `hold-time
+    # down` as `hold-time` with the value `down`; the walk read `down` without
+    # its value, an unsignedInt the device requires (inferred from the
+    # schema; no capture holds a value-less `down`).
+    Row(
+        "a-sibling-without-its-value",
+        False,
+        structured=_curly_interface("hold-time up 2000 down"),
     ),
     # Guards against validating the writer's output instead of the input: the
     # walk joins `a b c` into one quoted value, and the writer drops `timeout`.

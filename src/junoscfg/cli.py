@@ -859,7 +859,7 @@ def unused(
             sys.exit(2)
 
     try:
-        ir = to_dict(source, fmt)
+        ir = to_dict(source, fmt, diagnostic_sink=lambda message: click.echo(message, err=True))
     except (ValueError, NotImplementedError, yaml.YAMLError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(2)
@@ -936,6 +936,8 @@ def _run_validation(source: str, input_format: str | None, artifacts_dir: str | 
         click.echo(f"Error loading validation artifacts: {e}", err=True)
         sys.exit(3)
 
+    for warning in result.warnings:
+        click.echo(f"Warning: {warning.message}", err=True)
     if result.valid:
         click.echo("Validation: OK", err=True)
     else:

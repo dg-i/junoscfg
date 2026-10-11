@@ -20,7 +20,8 @@ from junoscfg import convert_config, validate_json
 ## Convert Module
 
 The [`junoscfg.convert`](convert.md) module implements the unified conversion
-pipeline. It provides `pipeline()`, `pipeline_result()`, `to_dict()`, `from_dict()`, and `validate_ir()` for
+pipeline. It provides `pipeline()`, `pipeline_result()`, `to_dict()`, `from_dict()`, `validate_ir()`, and
+`structured_set_lines()` for
 converting between any format pair through a JSON dict intermediate representation (IR).
 
 ## Display Module

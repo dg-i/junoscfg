@@ -38,6 +38,7 @@ from junoscfg.convert.field_validator import (
     FieldValidationResult,
 )
 from junoscfg.convert.input import to_dict
+from junoscfg.convert.input.structured_input import StructuredSetLines, structured_set_lines
 from junoscfg.convert.ir import find_configuration
 from junoscfg.convert.output import from_dict
 
@@ -114,7 +115,13 @@ def pipeline_result(
     if relative and not path:
         raise ValueError("relative=True requires path to be set.")
 
-    ir = to_dict(source, from_format)
+    ir = to_dict(
+        source,
+        from_format,
+        diagnostic_sink=lambda message: diagnostics.append(
+            Diagnostic(source="structured-input", message=message)
+        ),
+    )
 
     if anon_config is not None:
         cfg: AnonymizeConfig = anon_config  # type: ignore[assignment]
@@ -240,10 +247,12 @@ __all__ = [
     "FieldError",
     "FieldValidationError",
     "FieldValidationResult",
+    "StructuredSetLines",
     "find_configuration",
     "from_dict",
     "pipeline",
     "pipeline_result",
+    "structured_set_lines",
     "to_dict",
     "validate_ir",
 ]

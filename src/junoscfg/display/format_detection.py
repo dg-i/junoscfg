@@ -88,9 +88,30 @@ def _detect_full_policy(stripped: str) -> str:
             return "json"
         return "json"
 
-    if _load_yaml_collection(stripped) is not None:
+    if not _opens_a_block(stripped) and _load_yaml_collection(stripped) is not None:
         return "yaml"
     return "structured"
+
+
+# A curly statement that opens a block: tags, then words, then `{`. A word may
+# hold a colon (`2001:db8::/32`) but not a YAML key's `: `, and the first word
+# no YAML sequence's `- `, so no YAML document matches.
+_TAGS = r"(?:(?:inactive|protect|replace|delete):\s+)*"
+_WORD = r'(?:"[^"\n]*"|(?:[^\s{};#":]|:(?!\s|$))+)'
+_OPENER = re.compile(rf"^{_TAGS}(?!-\s){_WORD}(?:[ \t]+{_WORD})*[ \t]*\{{")
+
+
+def _opens_a_block(stripped: str) -> bool:
+    """Whether the first line that is not a comment opens a curly block.
+
+    A one-line curly statement with a tag, `system { inactive: host-name r1; }`,
+    is also a YAML mapping (`system { inactive` to `host-name r1; }`).
+    """
+    for line in stripped.splitlines():
+        line = line.strip()
+        if line and not line.startswith(("#", "/*")):
+            return _OPENER.match(line) is not None
+    return False
 
 
 def _load_yaml_collection(source: str) -> dict[object, object] | list[object] | None:

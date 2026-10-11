@@ -1,7 +1,7 @@
 ## 1. Verification
 
 - [x] 1.1 Acceptance tests, all failing on the merge base `a19e978` except the guard parameters named in the freeze: `tests/unit/display/test_set_converter.py` (`TestTheLexerReadsTokensNotLines`, `TestACommentIsNeverPartOfAStatement`, `TestMalformedTextIsRefused`, `TestWhatYieldsNoStatementIsReported`, `TestToSetIsDeprecated`), `tests/unit/convert/test_structured_input.py` (new: every conversion door, the CLI, `junoscfg audit`, `validate_structured`, `structured_set_lines`), `tests/contract/test_every_door.py::TestStructuredTextValidatesAsConversionReadsIt` (seven rows; the deprecated `JunosValidator.validate_structured` door strict-xfails on two), `tests/unit/validate/test_structured_validator.py::TestTheStructuredDoorsAreDeprecated`.
-- [ ] 1.2 Independent Test/Challenge on these tests (high risk floor): `test-challenge.md`; findings and interim actions in `review.md`.
+- [x] 1.2 Independent Test/Challenge on these tests (high risk floor): `test-challenge.md`; findings, rulings and interim actions in `review.md`; the accepted tests added with phase 5.
 
 ## 2. Change
 

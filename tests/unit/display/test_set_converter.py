@@ -12,7 +12,9 @@ from tests.support.devices import example, recorded_lines
 
 
 def struct_to_set(config: str) -> str:
-    return SetConverter(config).to_set()
+    """`to_set()`, deprecated since the change structured-one-line-blocks."""
+    with pytest.deprecated_call():
+        return SetConverter(config).to_set()
 
 
 class TestStructuredBracketLists:
@@ -195,8 +197,10 @@ class TestTheExampleConfigurationConvertsToSet:
 
     @pytest.mark.xfail(
         strict=True,
-        reason="PRODUCT DEFECT: no known-differences class (the device law reads curly "
-        "through SetConverter.statements, not to_set): to_set() writes the tag of a "
+        reason="PRODUCT DEFECT of a deprecated door, removed in the next minor release "
+        "(follow-up of change structured-one-line-blocks): no known-differences class (the "
+        "device law reads curly through SetConverter.statements, not to_set): to_set() "
+        "writes the tag of a "
         "one-line statement on the whole line, `inactive: route 10.98.0.0/16 reject;` as "
         "`deactivate ... route 10.98.0.0/16 reject` and `protect: autonomous-system 64496;` "
         "as `protect ... autonomous-system 64496`",
@@ -226,8 +230,10 @@ class TestATagOnAOneLineStatementCoversTheStatement:
 
     @pytest.mark.xfail(
         strict=True,
-        reason="PRODUCT DEFECT: no known-differences class: SetConverter.to_set() writes "
-        "the tag on the whole line (see TestTheExampleConfigurationConvertsToSet)",
+        reason="PRODUCT DEFECT of a deprecated door, removed in the next minor release "
+        "(follow-up of change structured-one-line-blocks): no known-differences class: "
+        "SetConverter.to_set() writes the tag on the whole line (see "
+        "TestTheExampleConfigurationConvertsToSet)",
     )
     @pytest.mark.parametrize(
         ("curly", "tag_line"),
@@ -311,6 +317,46 @@ class TestTheLexerReadsTokensNotLines:
         assert statements, "the one-line text read as nothing"
         assert statements == SetConverter(laid_out).statements()
 
+    @pytest.mark.parametrize(
+        ("text", "statements"),
+        [
+            (
+                "routing-options { static { inactive: route 10.98.0.0/16 reject; } }",
+                [
+                    [
+                        ("routing-options", frozenset()),
+                        ("static", frozenset()),
+                        ("route 10.98.0.0/16 reject", frozenset({"inactive"})),
+                    ]
+                ],
+            ),
+            (
+                'interfaces { protect: ge-0/0/0 { description "a; b { c } # d /* e */"; } }',
+                [
+                    [
+                        ("interfaces", frozenset()),
+                        ("ge-0/0/0", frozenset({"protect"})),
+                        ('description "a; b { c } # d /* e */"', frozenset()),
+                    ]
+                ],
+            ),
+            (
+                'snmp { inactive: apply-groups [ G1 "G 2" ]; }',
+                [
+                    [("snmp", frozenset()), ("apply-groups G1", frozenset({"inactive"}))],
+                    [("snmp", frozenset()), ('apply-groups "G 2"', frozenset({"inactive"}))],
+                ],
+            ),
+        ],
+        ids=["a-tagged-entry", "a-quoted-value-holding-delimiters", "a-tagged-bracket-list"],
+    )
+    def test_tags_and_quoted_values_read_exactly(
+        self, text: str, statements: list[list[tuple[str, frozenset[str]]]]
+    ) -> None:
+        """F7 (Test/Challenge): comparing two layouts lets a lexer that drops
+        tags and ignores quotes pass; these name the statements."""
+        assert SetConverter(text).statements() == statements
+
 
 class TestACommentIsNeverPartOfAStatement:
     """Spec: conversion/structured-input, "A comment is never part of a statement".
@@ -327,8 +373,21 @@ class TestACommentIsNeverPartOfAStatement:
             "system {\n    host-name /* a; { b } */ router1;\n}\n",
             "system {\n    /* a note;\n       over two lines } */\n    host-name router1;\n}\n",
             "system { # a; b {\n    host-name router1;\n}\n",
+            'system {\n    host-name router1; ## say "hi\n}\n',
+            "system {\n    ## Warning: missing mandatory statement(s): 'secret'\n"
+            "    host-name router1;\n}\n",
+            'system {\n    /* a "quoted; } comment */ host-name router1;\n}\n',
         ],
-        ids=["hash", "block", "between-tokens", "over-two-lines", "after-an-opening-brace"],
+        ids=[
+            "hash",
+            "block",
+            "between-tokens",
+            "over-two-lines",
+            "after-an-opening-brace",
+            "an-open-quote-in-a-comment",
+            "the-devices-warning-comment",
+            "a-quote-in-a-block-comment",
+        ],
     )
     def test_a_comment_holding_a_delimiter(self, text: str) -> None:
         assert SetConverter(text).statements() == [
@@ -373,12 +432,15 @@ class TestMalformedTextIsRefused:
 
 
 class TestWhatYieldsNoStatementIsReported:
-    """Spec: conversion/structured-input, "What yields no statement is reported, never written".
+    """Spec: conversion/structured-input, "What yields no statement is reported, not
+    silently dropped".
 
     DEV-18: the device's curly prints a statement under `apply-flags omit` as
     `{ /* OMITTED */ }` (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5,
     `tests/data/device/synthetic/*/junoscfg-oracle.conf.gz`, group `GR-OMIT`);
-    the line reader wrote the placeholder as a statement.
+    the line reader wrote the placeholder as a statement. What the device makes
+    of an empty block is evidence-blocked (probe P6, Test/Challenge F2): the
+    test asserts the report, not what is read for it.
     """
 
     @pytest.mark.parametrize(
@@ -394,10 +456,35 @@ class TestWhatYieldsNoStatementIsReported:
     )
     def test_the_lexer_names_the_block(self, text: str, note: str) -> None:
         converter = SetConverter(text)
-        assert converter.statements() == []
+        if "OMITTED" in text:
+            assert converter.statements() == []
         notes = converter.notes()
         assert len(notes) == 1
         assert notes[0].startswith(note)
+
+
+class TestAnEmptyStatementReadsAsNothing:
+    """Test/Challenge F10: a `;` with no statement before it carries nothing.
+
+    The device prints one after its `{ /* OMITTED */ }` placeholder (`};`);
+    the line reader wrote `set system }` for `};` after a block and
+    `host-name "router1;"` for `;;`.
+    """
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "system {\n    host-name router1;;\n}\n",
+            "system {\n    host-name router1;\n};\n",
+            ";\nsystem {\n    ;\n    host-name router1;\n}\n",
+        ],
+        ids=["a-doubled-semicolon", "after-a-closing-brace", "a-lone-semicolon"],
+    )
+    def test_a_stray_semicolon(self, text: str) -> None:
+        assert SetConverter(text).statements() == [
+            [("system", frozenset()), ("host-name router1", frozenset())]
+        ]
+        assert SetConverter(text).notes() == ()
 
 
 class TestToSetIsDeprecated:

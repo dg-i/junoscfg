@@ -101,7 +101,13 @@ result = validate_set("set system host-name router1\nset system domain-name exam
 
 ### Structured (Curly-Brace)
 
-Converts to set commands and validates those, so the limitations above apply here too.
+Each curly statement is validated as the set line conversion reads it, in the
+input's own tokens: a one-line statement such as `hold-time up 2000 down 0;` is
+split where each sibling starts, and a leaf read without its value
+(`hold-time up 2000 down;`) is an error. The limitations above apply to the
+lines. Malformed curly text (an unmatched brace, a statement without `;`) is
+invalid, and a block that holds no statement, such as the device's
+`{ /* OMITTED */ }` placeholder for `apply-flags omit`, is a warning.
 
 ```python
 from junoscfg import validate_structured

@@ -3,7 +3,10 @@
 The minimal set is enough for a validator to load and to tell a known element
 from an unknown one, and nothing else: a JSON and a YAML schema that know
 `system host-name`, a grammar that knows `system host-name`, `system services
-ssh` and `interfaces description`, and an XSD that knows `system host-name`. A
+ssh` and `interfaces description`, and an XSD that knows `system host-name`.
+The set carries no structure tree, so conversion against it is refused;
+`write_minimal_tree` adds one that knows what the grammar knows, for
+structured validation, which splits curly text with the conversion walk. A
 test that needs the shipped artifacts uses the session fixtures in
 ``tests/conftest.py``, or `shipped` and `shipped_text` here for the files
 themselves.
@@ -98,6 +101,13 @@ MINIMAL_XSD = """\
 </xsd:schema>
 """
 
+MINIMAL_TREE = {
+    "c": {
+        "system": {"c": {"host-name": {"l": True}, "services": {"c": {"ssh": {"p": True}}}}},
+        "interfaces": {"c": {"description": {"l": True}}},
+    }
+}
+
 MINIMAL_META = {
     "junos_version": "21.4R0",
     "generated_at": "2026-01-01T00:00:00Z",
@@ -130,6 +140,13 @@ def make_artifacts_dir(path: Path) -> MinimalArtifacts:
     written.grammar.write_text(MINIMAL_GRAMMAR, encoding="utf-8")
     written.meta.write_text(json.dumps(MINIMAL_META), encoding="utf-8")
     return written
+
+
+def write_minimal_tree(directory: str | Path) -> Path:
+    """Add the structure tree that knows what `MINIMAL_GRAMMAR` knows."""
+    tree = Path(directory) / "junos-structure-tree.json"
+    tree.write_text(json.dumps(MINIMAL_TREE), encoding="utf-8")
+    return tree
 
 
 def shipped(name: str) -> Path:

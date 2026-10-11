@@ -35,6 +35,11 @@ class TestFormatDetection:
             ("protect system\n", "set"),
             ("activate system\n", "set"),
             ("system {\n    host-name r1;\n}\n", "structured"),
+            # A tagged one-liner is also a YAML mapping (`system { inactive`):
+            # Test/Challenge F3, change structured-one-line-blocks.
+            ("system { inactive: host-name router1; }", "structured"),
+            ("routing-options { protect: autonomous-system 64496; }", "structured"),
+            ("routing-options { static { inactive: route 10.98.0.0/16 reject; } }", "structured"),
         ],
     )
     def test_each_format_is_recognised(self, source: str, expected: str) -> None:

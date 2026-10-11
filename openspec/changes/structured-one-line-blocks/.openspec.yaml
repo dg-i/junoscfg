@@ -20,8 +20,9 @@ declared-break:
       device's `{ /* OMITTED */ }` placeholder and an empty block as warnings
       instead of writing them. validate_config and validate_structured check a
       one-line curly statement as conversion reads it, so the device's
-      `hold-time up 2000 down 0;` and `protect:` lines validate, and a one-line
-      block is validated instead of passing as empty. Declared breaks on a
+      `hold-time up 2000 down 0;` and `protect:` lines validate, a statement
+      whose last leaf has no value (`hold-time up 2000 down;`) is invalid, and a
+      one-line block is validated instead of passing as empty. Declared breaks on a
       named surface raise the minor (AGENTS.md; instruction-integrity C7).
     migration: >-
       None for input a device loads. A caller that passed malformed curly text
@@ -31,7 +32,9 @@ declared-break:
     why: >-
       `junoscfg convert -i structured` gives the corrected results above and
       prints the reader's warnings; `-v` validates as validate_config does;
-      `junoscfg audit unused` prints the reader's warnings to stderr.
+      `junoscfg audit unused` prints the reader's warnings to stderr; `-v`
+      prints validation warnings as `Warning:` lines; a tagged one-line curly
+      input without `-i` is detected as structured, where it was read as YAML.
       Malformed curly input now exits with the conversion error status instead
       of succeeding.
     migration: None for input a device loads; fix malformed input.

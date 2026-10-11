@@ -13,7 +13,7 @@ from typing import TextIO
 from junoscfg.convert import ConversionResult, FieldValidationError  # noqa: TC001
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.15.3"
+__version__ = "0.16.0"
 
 __all__ = [
     "Format",
@@ -259,19 +259,52 @@ def validate_set(source: str, artifacts_dir: str | None = None) -> ValidationRes
 def validate_structured(source: str, artifacts_dir: str | None = None) -> ValidationResult:
     """Validate structured (curly-brace) configuration against the Junos schema.
 
-    Converts to set commands internally, then validates.
+    Each statement is checked as the conversion walk reads it: one set line
+    in the input's own tokens per statement, a one-line statement the walk
+    reads as siblings split where each sibling starts
+    (:func:`junoscfg.convert.structured_set_lines`). A leaf read without its
+    value is an error; what the text holds that yields no statement (the
+    device's ``/* OMITTED */`` placeholder, an empty block) is a warning.
 
     Args:
         source: Structured configuration as a string.
         artifacts_dir: Path to custom validation artifacts directory.
             Falls back to ``JUNOSCFG_ARTIFACTS`` env var, then bundled defaults.
+            The schema walk and the set grammar both come from it.
 
     Returns:
         Validation result with any errors found.
     """
-    from junoscfg.validate import JunosValidator
+    from contextlib import nullcontext
 
-    return JunosValidator(artifacts_dir=artifacts_dir).validate_structured(source)
+    from junoscfg.convert import structured_set_lines
+    from junoscfg.display import artifacts_dir as artifacts_scope
+    from junoscfg.validate import JunosValidator, ValidationError
+
+    validator = JunosValidator(artifacts_dir=artifacts_dir)
+    scope = artifacts_scope(artifacts_dir) if artifacts_dir is not None else nullcontext()
+    try:
+        with scope:
+            read = structured_set_lines(source)
+    except ValueError as e:
+        return ValidationResult(
+            valid=False,
+            errors=(ValidationError(message=f"Failed to convert structured config: {e}"),),
+        )
+
+    notes = tuple(ValidationError(message=note) for note in read.notes)
+    incomplete = tuple(
+        ValidationError(message=f"Invalid syntax: {line}: the statement has no value")
+        for line in read.incomplete
+    )
+    if not read.lines:
+        return ValidationResult(valid=True, warnings=notes)
+    result = validator.validate_set("\n".join(read.lines))
+    return ValidationResult(
+        valid=result.valid and not incomplete,
+        errors=(*result.errors, *incomplete),
+        warnings=(*result.warnings, *notes),
+    )
 
 
 def validate_config(

@@ -6,6 +6,7 @@ a Junos JSON dict using the schema tree for type inference.
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 from junoscfg.display import (
@@ -92,7 +93,10 @@ def set_to_dict(source: str) -> dict[str, Any]:
     return config
 
 
-def statements_to_dict(statements: list[list[tuple[str, frozenset[str]]]]) -> dict[str, Any]:
+def statements_to_dict(
+    statements: list[list[tuple[str, frozenset[str]]]],
+    set_lines: list[tuple[str, bool]] | None = None,
+) -> dict[str, Any]:
     """Build the IR dict from curly statements, as `SetConverter.statements()` lexes them.
 
     Each statement is its levels -- the block openers above it, then itself
@@ -103,6 +107,12 @@ def statements_to_dict(statements: list[list[tuple[str, frozenset[str]]]]) -> di
     device's XML does (`<route inactive="inactive">`). The bridge used to
     flatten curly text to `deactivate <whole statement>`, which marked
     `next-hop`.
+
+    *set_lines*, when given, receives each set statement the walk read, in the
+    input's own tokens and without tags, with whether it is complete: a
+    one-line statement the walk reads as siblings (`hold-time up 2000 down
+    0`) gives one line per sibling, and a leaf read without its value gives
+    an incomplete line.
     """
     schema = load_schema_tree()
     config: dict[str, Any] = {}
@@ -118,7 +128,12 @@ def statements_to_dict(statements: list[list[tuple[str, frozenset[str]]]]) -> di
                 tags[len(tokens)] = level_tags
             tokens += level
         if tokens:
-            _merge_tokens(config, tokens, schema, index, tags)
+            reading = _Reading() if set_lines is not None else None
+            _merge_tokens(config, tokens, schema, index, tags, reading)
+            if set_lines is not None and reading is not None:
+                read = _split_at_cuts(tokens, reading.cuts)
+                set_lines.extend((" ".join(line), True) for line in read[:-1])
+                set_lines.append((" ".join(read[-1]), not reading.incomplete))
         if any(tags.values()):
             # A level boundary inside a key or a value: no node starts
             # there, so the tag has nowhere to go. No device writes this.
@@ -362,23 +377,64 @@ def _keep_meta_whole(
 # ── Core token walking ──────────────────────────────────────────────
 
 
+@dataclasses.dataclass
+class _Reading:
+    """Where one statement's walk started a sibling, and whether it ended whole.
+
+    A cut ``(base, at)`` says the sibling starting at token ``at`` belongs to
+    the node whose children start at token ``base``.
+    """
+
+    cuts: list[tuple[int, int]] = dataclasses.field(default_factory=list)
+    incomplete: bool = False
+
+
+def _cut(reading: _Reading | None, base: int, at: int) -> int:
+    """Record a sibling starting at *at*; its node's children now start there."""
+    if reading is not None:
+        reading.cuts.append((base, at))
+    return at
+
+
+def _split_at_cuts(tokens: list[str], cuts: list[tuple[int, int]]) -> list[list[str]]:
+    """One token list per statement: the path to the node, then the sibling.
+
+    The walk only descends, so the path to each cut's node is the path to the
+    previous one plus the tokens between that sibling's start and this node's
+    children.
+    """
+    lines: list[list[str]] = []
+    path: list[str] = []
+    start = 0
+    for base, at in cuts:
+        lines.append(path + tokens[start:at])
+        path = path + tokens[start:base]
+        start = at
+    lines.append(path + tokens[start:])
+    return lines
+
+
 def _merge_tokens(
     config: dict[str, Any],
     tokens: list[str],
     schema: dict[str, Any],
     index: _EntryIndex,
     tags: dict[int, frozenset[str]] | None = None,
+    reading: _Reading | None = None,
 ) -> None:
     """Walk tokens against the schema tree and merge into config dict.
 
     *tags* maps the token where each curly level starts to the tags leading
     it; each lands on the node that token starts (`statements_to_dict`).
-    Set input passes none.
+    Set input passes none. *reading*, when given, records where the walk
+    starts a sibling statement and whether a leaf went without its value.
     """
     curly = tags is not None
     current = config
     current_schema = schema
     i = 0
+    # Where the children of `current` start among the tokens.
+    base = 0
     # Where the statement holding `current` starts, and the node above it.
     owner, owner_i = config, 0
     tags = tags if tags is not None else {}
@@ -449,6 +505,7 @@ def _merge_tokens(
                 _mark(entry, here)
                 owner, owner_i = current, i
                 i += 1
+                base = i
                 current = entry
                 current_schema = tc_child
                 continue
@@ -485,6 +542,7 @@ def _merge_tokens(
                     break
             if nk_found:
                 if i < len(tokens):
+                    base = _cut(reading, base, i)
                     continue  # Process sibling tokens
                 return
 
@@ -502,6 +560,7 @@ def _merge_tokens(
                 i += 1
                 if i < len(tokens):
                     owner, owner_i = current, i - 1
+                    base = i
                     current = entry
                     current_schema = cnode
                     tk_matched = True
@@ -537,6 +596,7 @@ def _merge_tokens(
                         _mark(entry, here)
                         owner, owner_i = current, i
                         i += 1
+                        base = i
                         current = entry
                         current_schema = tc_node
                         tc_matched = True
@@ -608,7 +668,7 @@ def _merge_tokens(
             owner, owner_i = current, i
             current = entry
             current_schema = child
-            i = after
+            i = base = after
             continue
 
         # Leaf node (accumulate repeated values). A tag is the leaf's, never
@@ -635,6 +695,7 @@ def _merge_tokens(
                     val = _parse_value(tokens[i + 1])
                     current[token] = [val] if is_leaf_list else val
                     i = next_idx
+                    base = _cut(reading, base, i)
                     continue
                 # No sibling — join all remaining tokens as the value
                 val = _parse_value(" ".join(tokens[i + 1 :]))
@@ -648,6 +709,8 @@ def _merge_tokens(
                     current[token] = [val] if is_leaf_list else val
             else:
                 current[token] = None
+                if reading is not None:
+                    reading.incomplete = True
             return
 
         # Presence flag
@@ -656,6 +719,7 @@ def _merge_tokens(
             _mark(current, here, token)
             i += 1
             if i < len(tokens):
+                base = _cut(reading, base, i)
                 continue  # Let main loop handle next token (sibling or nokeyword)
             return
 
@@ -673,6 +737,7 @@ def _merge_tokens(
                 _mark(current, here)
             current_schema = child
             i += 1
+            base = i
             continue
 
         # A schema node of no type the reader knows: keep the line whole from

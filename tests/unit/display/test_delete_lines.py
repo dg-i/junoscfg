@@ -9,6 +9,8 @@ delete is `tests/unit/convert/test_delete_operation.py` and the delete rows of
 
 from __future__ import annotations
 
+import pytest
+
 from junoscfg.display import (
     SetConverter,
     filter_set_by_path,
@@ -23,14 +25,16 @@ class TestSetConverterWritesADeletePrefix:
     def test_delete_prefix_to_set(self) -> None:
         """'delete: services { ssh; }' → 'delete services' (marks the container)."""
         input_text = "delete: services {\n    ssh;\n}"
-        result = SetConverter(input_text).to_set()
+        with pytest.deprecated_call():  # to_set() is deprecated (structured-one-line-blocks)
+            result = SetConverter(input_text).to_set()
         assert "delete services" in result
         assert "set services ssh" in result
 
     def test_delete_prefix_leaf(self) -> None:
         """'system { delete: host-name router1; }' → 'delete system host-name router1'."""
         input_text = "system {\n    delete: host-name router1;\n}"
-        result = SetConverter(input_text).to_set()
+        with pytest.deprecated_call():  # to_set() is deprecated (structured-one-line-blocks)
+            result = SetConverter(input_text).to_set()
         assert "delete system host-name router1" in result
 
 

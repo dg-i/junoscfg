@@ -197,13 +197,6 @@ CLASSES = (
         ),
     ),
     Class(
-        "omitted-block-emitted",
-        "defect",
-        "from curly input, the device's `{ /* OMITTED */ }` placeholder is written as a set "
-        "line instead of being reported",
-        lambda line, side, suffix, c: suffix == "conf" and side == "extra" and "OMITTED" in line,
-    ),
-    Class(
         "trigger-after-split",
         "device-quirk",
         "the device's display set prints `within N trigger after 1` as two lines, `... trigger "

@@ -20,10 +20,6 @@
    "definition": "junoscfg quotes `$junos-...` variables the device prints bare; the device loads both as the same configuration",
    "kind": "equivalent"
   },
-  "omitted-block-emitted": {
-   "definition": "from curly input, the device's `{ /* OMITTED */ }` placeholder is written as a set line instead of being reported",
-   "kind": "defect"
-  },
   "omitted-curly": {
    "definition": "the device's curly prints a group with `apply-flags omit` as `/* OMITTED */`, so the curly rendering lacks that group's content; XML, JSON and set carry it",
    "kind": "device-quirk"
@@ -716,7 +712,6 @@
     "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-OMIT system { /* OMITTED */ }": "omitted-block-emitted",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
@@ -884,7 +879,6 @@
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-OMIT system { /* OMITTED */ }": "omitted-block-emitted",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",

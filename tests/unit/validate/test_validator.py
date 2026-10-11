@@ -42,7 +42,8 @@ class TestJunosValidator:
 
     def test_validate_structured(self, artifacts_dir):
         v = JunosValidator(artifacts_dir=artifacts_dir)
-        result = v.validate_structured("system {\n    host-name r1;\n}\n")
+        with pytest.deprecated_call():
+            result = v.validate_structured("system {\n    host-name r1;\n}\n")
         assert result.valid is True
 
     def test_schema_version(self, artifacts_dir):

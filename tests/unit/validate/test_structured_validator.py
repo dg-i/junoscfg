@@ -26,7 +26,8 @@ system {
     host-name router1;
 }
 """
-        result = structured_validator.validate(config)
+        with pytest.deprecated_call():
+            result = structured_validator.validate(config)
         assert result.valid is True
 
     def test_valid_nested(self, structured_validator):
@@ -37,7 +38,8 @@ system {
     }
 }
 """
-        result = structured_validator.validate(config)
+        with pytest.deprecated_call():
+            result = structured_validator.validate(config)
         assert result.valid is True
 
     def test_invalid_structured(self, structured_validator):
@@ -46,11 +48,13 @@ bogus {
     nonexistent value;
 }
 """
-        result = structured_validator.validate(config)
+        with pytest.deprecated_call():
+            result = structured_validator.validate(config)
         assert result.valid is False
 
     def test_empty_config(self, structured_validator):
-        result = structured_validator.validate("")
+        with pytest.deprecated_call():
+            result = structured_validator.validate("")
         assert result.valid is True
 
 
@@ -64,7 +68,7 @@ class TestTheStructuredDoorsAreDeprecated:
     change structured-one-line-blocks (NEW-B5, OPEN-10).
     """
 
-    def test_each_warns_and_keeps_its_verdict(
+    def test_each_warns_and_keeps_its_schema_free_route(
         self, structured_validator: StructuredValidator, artifacts_dir: str
     ) -> None:
         from junoscfg.validate import JunosValidator
@@ -79,3 +83,12 @@ class TestTheStructuredDoorsAreDeprecated:
             assert (
                 structured_validator.validate("bogus {\n    nonexistent value;\n}\n").valid is False
             )
+
+    def test_the_new_lexer_changes_a_verdict(
+        self, structured_validator: StructuredValidator
+    ) -> None:
+        """Test/Challenge F6: the route stays schema-free and the lexer is the
+        new one. A block on one line read as nothing and validated; now its
+        statement is read, and the grammar rejects it."""
+        with pytest.deprecated_call(match="junoscfg.validate_structured"):
+            assert structured_validator.validate("system { bogus-statement 1; }").valid is False

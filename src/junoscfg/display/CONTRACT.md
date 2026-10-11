@@ -6,9 +6,9 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 Display rendering only in name: the shared kernel six of the eight packages
 import; `constants.py` and `config_store.py` are a schema flag table and a tree.
-Nor for placing a tag: schema-free `SetConverter.to_set()` gives a one-line
-statement's tag to its last node; conversion reads `statements()` through the
-schema, where an entry ends (`tests/unit/convert/test_meta_tags.py`).
+Nor for placing a tag: conversion reads the curly lexer's `statements()` through
+the schema, where an entry ends (`tests/unit/convert/test_meta_tags.py`); the
+schema-free `SetConverter.to_set()`, which tags a last node, is deprecated.
 
 ## Invariants
 

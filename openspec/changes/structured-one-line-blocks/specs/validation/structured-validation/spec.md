@@ -11,16 +11,26 @@ what the device accepts in curly form.
 WHEN structured text is validated through `validate_structured()`,
 `validate_config()` (format given or detected), or `junoscfg -v -i structured`
 THEN each statement the conversion walk reads SHALL be validated as one set
-line spelled in the input's own tokens: a one-line statement the walk reads as
-several sibling statements is split where each sibling starts, a tag is not a
-line of its own, and no token passes through the set writer first. A block on
-one line is validated, never passed as empty.
-Tests: `tests/contract/test_every_door.py::TestStructuredTextValidatesAsConversionReadsIt::test_every_door_agrees`, `tests/unit/convert/test_structured_input.py::TestTheSetLinesOfAStatement::test_the_walk_splits_at_each_sibling`
+line spelled in the input's own tokens (`junoscfg.convert.structured_set_lines()`):
+a one-line statement the walk reads as several sibling statements is split
+where each sibling starts, a tag is not a line of its own, and no token passes
+through the set writer first. A statement whose last leaf the walk read without
+its value SHALL be invalid, whatever the set grammar says of the split line. A
+block on one line is validated, never passed as empty; what yields no
+statement is a warning on every door. The walk and the grammar both come from
+the `artifacts_dir` given, and none of these doors warns of a deprecation.
+Tests: `tests/contract/test_every_door.py::TestStructuredTextValidatesAsConversionReadsIt::test_every_door_agrees`, `tests/unit/convert/test_structured_input.py::TestTheSetLinesOfAStatement::test_the_walk_splits_at_each_sibling`, `tests/unit/convert/test_structured_input.py::TestTheRecommendedDoorsAreNotDeprecated::test_no_deprecation_reaches_their_caller`, `tests/unit/convert/test_structured_input.py::TestValidationReadsOneArtifactsDirectory::test_the_walk_and_the_grammar_come_from_it`
 
 #### Scenario: The device's one-line container statement
 
 - **WHEN** curly `hold-time up 2000 down 0;` under an interface is validated (vMX curly prints it so; its display set prints two lines)
 - **THEN** every door reports it valid, as it reports the two set lines valid
+
+#### Scenario: A sibling without its value
+
+- **WHEN** curly `hold-time up 2000 down;` is validated
+- **THEN** every door reports it invalid, although the set grammar takes the
+  split line `hold-time down` as `hold-time` with the value `down`
 
 #### Scenario: No acceptance or rejection the writer would add
 
@@ -38,9 +48,14 @@ Tests: `tests/contract/test_every_door.py::TestStructuredTextValidatesAsConversi
 WHEN a caller uses `StructuredValidator.validate()` or
 `JunosValidator.validate_structured()` THEN each SHALL emit a
 `DeprecationWarning` naming `junoscfg.validate_structured()` and removal in the
-next minor release, and give the verdict it gave before: the `validate` package
-cannot reach the conversion walk, so these doors keep the schema-free route.
-Tests: `tests/unit/validate/test_structured_validator.py::TestTheStructuredDoorsAreDeprecated::test_each_warns_and_keeps_its_verdict`
+next minor release. They keep their schema-free route through
+`SetConverter.to_set()`, because the `validate` package cannot reach the
+conversion walk, but they read with the token lexer, so their verdict changes
+where it reads differently: a block on one line is validated (`system {
+bogus-statement 1; }` becomes invalid), a brace too many is invalid, and the
+device's `/* OMITTED */` placeholder is valid with a warning. A one-line
+statement of siblings and a `protect:` line stay rejected there.
+Tests: `tests/unit/validate/test_structured_validator.py::TestTheStructuredDoorsAreDeprecated::test_each_warns_and_keeps_its_schema_free_route`, `tests/unit/validate/test_structured_validator.py::TestTheStructuredDoorsAreDeprecated::test_the_new_lexer_changes_a_verdict`
 
 #### Scenario: The facade's structured door
 

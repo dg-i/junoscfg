@@ -1,44 +1,96 @@
-"""Convert Junos structured (curly-brace) configuration to display set commands."""
+"""Lex Junos structured (curly-brace) configuration into statements.
+
+One token lexer reads the text: `{`, `}`, `;` and a bracket list are tokens
+wherever they stand outside quotes, and a comment is never part of a token, so
+a configuration means the same whatever its layout. What the text holds but
+yields no statement is reported (`SetConverter.notes`), and malformed text
+raises `ValueError` naming the fault and its line.
+"""
 
 from __future__ import annotations
 
 import re
-from typing import TextIO
+import warnings
+from dataclasses import dataclass, field
+from typing import NoReturn, TextIO
 
-from junoscfg.input import normalize
+# One alternative per token kind, tried in order at each position. A word
+# starts with anything but a quote and runs to whitespace, a delimiter, `#` or
+# `/*`; a quote inside a word is part of it, as the set reader's tokenizer
+# reads one. `[` opens a list only where a token starts (`<[gx]e-*>` is one
+# word), and `]` closes one only inside a list (see `_Lexer._word`).
+_TOKEN = re.compile(
+    r"""
+      (?P<space>\s+)
+    | (?P<line_comment>\#[^\n]*)
+    | (?P<block_comment>/\*(?P<comment_text>.*?)\*/)
+    | (?P<open_comment>/\*)
+    | (?P<quoted>"(?:[^"\\]|\\.)*")
+    | (?P<open_quote>")
+    | (?P<delimiter>[{};\[])
+    | (?P<word>(?:[^\s{};\#"/]|/(?!\*))(?:[^\s{};\#/]|/(?!\*))*)
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
+_OMITTED = "OMITTED"
+
+
+@dataclass
+class _Block:
+    """An open block: its opener, where it opened, and what it has held."""
+
+    text: str
+    position: int
+    holds: bool = False
+    omitted: bool = False
+
+
+@dataclass
+class _Lexed:
+    """What one pass over the text read."""
+
+    statements: list[tuple[list[str], str]] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
 
 class SetConverter:
-    """Convert structured Junos config to 'set' commands.
+    """Lex structured Junos configuration into statements.
 
     Usage::
 
         converter = SetConverter('interfaces { ge-0/0/0 { description uplink; } }')
-        print(converter.to_set())
-        # set interfaces ge-0/0/0 description uplink
+        converter.statements()
+        # [[('interfaces', frozenset()), ('ge-0/0/0', frozenset()),
+        #   ('description uplink', frozenset())]]
     """
 
     _PREFIX_TAGS = ("replace: ", "protect: ", "inactive: ", "delete: ")
 
     def __init__(self, source: str | TextIO) -> None:
-        """Convert *source*."""
+        """Lex *source*, a string or a readable text stream."""
         self._input = source
+        self._lexed: _Lexed | None = None
 
     def to_set(self) -> str:
-        """Convert structured config to display set format.
+        """Convert structured config to display set format. Deprecated.
 
         A tag becomes a `deactivate`/`protect`/`delete` line for the whole of
         the statement it leads, which is right for a block opener and wrong
         for a one-line entry: `inactive: route 0.0.0.0/0 next-hop 10.0.0.1;`
         marks the route, and `deactivate … route 0.0.0.0/0 next-hop 10.0.0.1`
         marks `next-hop`. Where an entry ends is the schema's to say;
-        conversion reads `statements()` through the schema instead.
+        `convert_config(..., from_format=Format.STRUCTURED, to_format=Format.SET)`
+        reads `statements()` through the schema instead.
         """
-        result: list[str] = []
-
-        for stack, text in self._process():
-            result.append(self._transform_line(stack, text))
-
+        warnings.warn(
+            "SetConverter.to_set() is deprecated and will be removed in the next minor "
+            "release: it tags a one-line statement's last node. Use junoscfg.convert_config"
+            "(..., from_format=Format.STRUCTURED, to_format=Format.SET).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        result = [self._transform_line(stack, text) for stack, text in self._lex().statements]
         return "\n".join(result) + "\n" if result else ""
 
     def statements(self) -> list[list[tuple[str, frozenset[str]]]]:
@@ -50,87 +102,29 @@ class SetConverter:
         answers it for set and structured input alike.
         """
         return [
-            [self._split_tags(level) for level in [*stack, text]] for stack, text in self._process()
+            [self._split_tags(level) for level in [*stack, text]]
+            for stack, text in self._lex().statements
         ]
+
+    def notes(self) -> tuple[str, ...]:
+        """What the text holds that yields no statement, one warning per block.
+
+        The device's `{ /* OMITTED */ }` placeholder, its curly rendering of a
+        statement under `apply-flags omit`, and a block with nothing in it.
+        Each note starts with the block's path, its tags left out.
+        """
+        return tuple(self._lex().notes)
 
     @classmethod
     def _split_tags(cls, text: str) -> tuple[str, frozenset[str]]:
         stripped, tags = cls._strip_prefixes(text)
         return stripped, frozenset(tags)
 
-    def _process(self) -> list[tuple[list[str], str]]:
-        """Parse structured config into (stack, statement) pairs."""
-        stack: list[str] = []
-        results: list[tuple[list[str], str]] = []
-
-        content = normalize(self._input)
-        for line in content.split("\n"):
-            stripped = line.strip()
-            if not stripped:
-                continue
-
-            # Strip inline comments (respecting quoted strings)
-            clean = self._strip_inline_comments(stripped)
-
-            # Line ending with opening brace
-            if clean.endswith("{"):
-                stack.append(clean[:-1].strip())
-                continue
-
-            # Line ending with closing brace
-            if clean.endswith("}"):
-                if stack:
-                    stack.pop()
-                continue
-
-            # Bracket expansion: text [items];
-            bracket = _parse_bracket_expansion(clean)
-            if bracket:
-                prefix, items = bracket
-                for item in items:
-                    results.append((list(stack), f"{prefix} {item}"))
-                continue
-
-            # Simple statement ending with ;
-            m_stmt = re.match(r"(.*);", line)
-            if m_stmt:
-                results.append((list(stack), m_stmt.group(1)))
-                continue
-
-            raise ValueError(f"Unknown statement: {line}")
-
-        return results
-
-    @staticmethod
-    def _strip_inline_comments(line: str) -> str:
-        """Strip inline comments (/* */ and #) while respecting quoted strings."""
-        result: list[str] = []
-        i = 0
-        n = len(line)
-        while i < n:
-            if line[i] == '"':
-                # Quoted string — keep everything including quotes
-                j = i + 1
-                while j < n and line[j] != '"':
-                    if line[j] == "\\" and j + 1 < n:
-                        j += 2
-                    else:
-                        j += 1
-                if j < n:
-                    j += 1  # include closing quote
-                result.append(line[i:j])
-                i = j
-            elif line[i : i + 2] == "/*":
-                # Block comment — skip to */
-                end = line.find("*/", i + 2)
-                i = end + 2 if end >= 0 else n
-            elif line[i] == "#":
-                # Line comment — skip rest of line
-                break
-            else:
-                result.append(line[i])
-                i += 1
-        return "".join(result).strip()
+    def _lex(self) -> _Lexed:
+        if self._lexed is None:
+            text = self._input.read() if hasattr(self._input, "read") else str(self._input)
+            self._lexed = _Lexer(re.sub(r"\r\n?", "\n", text)).run()
+        return self._lexed
 
     @classmethod
     def _strip_prefixes(cls, text: str) -> tuple[str, set[str]]:
@@ -181,76 +175,156 @@ class SetConverter:
         return "\n".join(statements)
 
 
-def _parse_bracket_expansion(line: str) -> tuple[str, list[str]] | None:
-    """Parse a bracket expansion like ``prefix [item1 item2];``.
+class _Lexer:
+    """One pass over structured text: tokens, then statements and notes."""
 
-    Handles ``[`` and ``]`` inside quoted strings correctly.
-    Returns ``(prefix, [items])`` or ``None`` if no bracket expansion found.
-    """
-    if not line.endswith(";"):
-        return None
+    def __init__(self, text: str) -> None:
+        self._text = text
+        self._out = _Lexed()
+        self._blocks: list[_Block] = []
+        self._pending: list[str] = []
+        self._pending_position = 0
+        self._items: list[str] | None = None  # the open bracket list
+        self._list_position = 0
+        self._after_list = False  # a list closed; only `;` may follow
 
-    # Find first unquoted '['
-    in_quote = False
-    bracket_start = -1
-    i = 0
-    n = len(line)
-    while i < n:
-        ch = line[i]
-        if ch == '"':
-            in_quote = not in_quote
-        elif ch == "[" and not in_quote:
-            bracket_start = i
-            break
-        i += 1
+    def run(self) -> _Lexed:
+        for match in _TOKEN.finditer(self._text):
+            kind = match.lastgroup
+            if kind == "comment_text":  # `lastgroup` names the innermost group
+                kind = "block_comment"
+            position = match.start()
+            if kind in ("space", "line_comment"):
+                continue
+            if kind == "block_comment":
+                if self._blocks and match.group("comment_text").strip() == _OMITTED:
+                    self._blocks[-1].omitted = True
+                continue
+            if kind == "open_comment":
+                self._fail(position, "a comment is never closed")
+            if kind == "open_quote":
+                self._fail(position, "a quoted value is never closed")
+            token = match.group()
+            if kind == "quoted":
+                self._value(token, position)
+            elif kind == "word":
+                self._word(token, position)
+            elif token == "[":
+                self._open_list(position)
+            elif token == ";":
+                self._end_statement(position)
+            elif token == "{":
+                self._open_block(position)
+            else:
+                self._close_block(position)
+        if self._in_list:
+            self._fail(self._list_position, "'[' is never closed by ']'")
+        if self._pending:
+            self._unterminated()
+        if self._blocks:
+            block = self._blocks[-1]
+            self._fail(block.position, f"block '{block.text}' is never closed")
+        return self._out
 
-    if bracket_start < 0:
-        return None
+    # ── tokens ──
 
-    # Find matching unquoted ']'
-    in_quote = False
-    bracket_end = -1
-    i = bracket_start + 1
-    while i < n:
-        ch = line[i]
-        if ch == '"':
-            in_quote = not in_quote
-        elif ch == "]" and not in_quote:
-            bracket_end = i
-            break
-        i += 1
+    @property
+    def _in_list(self) -> bool:
+        return self._items is not None and not self._after_list
 
-    if bracket_end < 0:
-        return None
+    def _word(self, word: str, position: int) -> None:
+        items = self._items
+        if items is not None and not self._after_list and "]" in word:
+            head, _, rest = word.partition("]")
+            if head:
+                items.append(head)
+            self._close_list(position)
+            if rest:
+                self._value(rest, position)
+            return
+        self._value(word, position)
 
-    prefix = line[:bracket_start].strip()
-    inner = line[bracket_start + 1 : bracket_end].strip()
+    def _value(self, token: str, position: int) -> None:
+        if self._items is not None and self._in_list:
+            self._items.append(token)
+            return
+        if self._after_list:
+            self._fail(position, f"'{token}' after a bracket list; only ';' may follow")
+        if not self._pending:
+            self._pending_position = position
+        self._pending.append(token)
 
-    # Split inner on whitespace, respecting quoted strings
-    items: list[str] = []
-    i = 0
-    m = len(inner)
-    while i < m:
-        while i < m and inner[i] == " ":
-            i += 1
-        if i >= m:
-            break
-        if inner[i] == '"':
-            j = i + 1
-            while j < m and inner[j] != '"':
-                if inner[j] == "\\" and j + 1 < m:
-                    j += 2
-                else:
-                    j += 1
-            if j < m:
-                j += 1
-            items.append(inner[i:j])
-            i = j
+    def _open_list(self, position: int) -> None:
+        if self._in_list:
+            self._fail(position, "'[' inside a bracket list")
+        if not self._pending or self._after_list:
+            self._fail(position, "'[' opens a list with no statement")
+        self._items = []
+        self._list_position = position
+
+    def _close_list(self, position: int) -> None:
+        if not self._items:
+            self._fail(position, "an empty bracket list")
+        self._after_list = True
+
+    def _end_statement(self, position: int) -> None:
+        if self._in_list:
+            self._fail(position, "'[' is never closed by ']'")
+        if not self._pending:
+            return  # an empty statement, as the device's `};` after a placeholder
+        stack = [block.text for block in self._blocks]
+        statement = " ".join(self._pending)
+        if self._after_list and self._items is not None:
+            for item in self._items:
+                self._out.statements.append((list(stack), f"{statement} {item}"))
         else:
-            j = i
-            while j < m and inner[j] != " ":
-                j += 1
-            items.append(inner[i:j])
-            i = j
+            self._out.statements.append((stack, statement))
+        for block in self._blocks:
+            block.holds = True
+        self._reset()
 
-    return (prefix, items) if items else None
+    def _open_block(self, position: int) -> None:
+        if self._items is not None:
+            self._fail(
+                position,
+                "'{' after a bracket list" if self._after_list else "'{' inside a bracket list",
+            )
+        if not self._pending:
+            self._fail(position, "'{' opens a block with no name")
+        if self._blocks:
+            self._blocks[-1].holds = True
+        self._blocks.append(_Block(" ".join(self._pending), self._pending_position))
+        self._reset()
+
+    def _close_block(self, position: int) -> None:
+        if self._in_list:
+            self._fail(position, "'}' inside a bracket list")
+        if self._pending:
+            self._unterminated()
+        if not self._blocks:
+            self._fail(position, "'}' closes no block")
+        block = self._blocks.pop()
+        if not block.holds:
+            path = " ".join(SetConverter._split_tags(b.text)[0] for b in [*self._blocks, block])
+            if block.omitted:
+                self._out.notes.append(
+                    f"{path}: `apply-flags omit` hides this block's content (the device's "
+                    "`/* OMITTED */` placeholder); nothing of it is converted"
+                )
+            else:
+                self._out.notes.append(f"{path}: an empty block; it holds no statement")
+
+    # ── helpers ──
+
+    def _reset(self) -> None:
+        self._pending = []
+        self._items = None
+        self._after_list = False
+
+    def _unterminated(self) -> NoReturn:
+        statement = " ".join(self._pending)
+        self._fail(self._pending_position, f"statement '{statement}' has no ';'")
+
+    def _fail(self, position: int, fault: str) -> NoReturn:
+        line = self._text.count("\n", 0, position) + 1
+        raise ValueError(f"Invalid structured input on line {line}: {fault}")

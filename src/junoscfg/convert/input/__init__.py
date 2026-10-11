@@ -2,18 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _JCMD_PREFIX = "junos-configuration-metadata:"
 
 
-def to_dict(source: str, fmt: str) -> dict[str, Any]:
+def to_dict(
+    source: str, fmt: str, diagnostic_sink: Callable[[str], None] | None = None
+) -> dict[str, Any]:
     """Dispatch to the appropriate input converter.
 
     Args:
         source: Configuration text.
         fmt: Format name (``"json"``, ``"yaml"``, ``"xml"``, ``"set"``,
              ``"structured"``).
+        diagnostic_sink: Receives each reader warning: what structured text
+            holds that yields no statement. Without one, nothing is reported.
 
     Returns:
         The configuration content dict (without the ``"configuration"``
@@ -40,7 +47,7 @@ def to_dict(source: str, fmt: str) -> dict[str, Any]:
     elif fmt == "structured":
         from junoscfg.convert.input.structured_input import structured_to_dict
 
-        ir = structured_to_dict(source)
+        ir = structured_to_dict(source, diagnostic_sink)
     else:
         raise ValueError(f"Unknown input format: {fmt}")
 
