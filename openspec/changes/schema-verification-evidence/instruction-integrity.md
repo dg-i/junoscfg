@@ -38,3 +38,5 @@ None: exact inactive adoption, bounded application scope, physical shards, count
 - Resume point: phase 1 after committed preflight; no product code or tests yet.
 
 - Phase 1: proposal follows root-approved qualified preparation; resume phase 2 after this commit.
+
+- Phase 2/3: seven ADDED reporting/integrity requirements and bounded reuse design approved under the owner scoped unattended authorization; no existing assertion removed; resume red acceptance then STOP-T.
