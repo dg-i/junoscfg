@@ -13,6 +13,7 @@ from junoscfg.display.constants import (
     INTEGER_TYPES,
     KEY_ALIASES,
     UNIVERSAL_STATEMENTS,
+    UNPLACED_STATEMENTS,
     UNQUOTABLE_TYPES,
     artifacts_dir,
     build_from_artifact,
@@ -37,6 +38,7 @@ from junoscfg.display.constants import (
     statement_children,
     statement_name_spellings,
     strip_type_prefix,
+    unplaced_record_problem,
 )
 from junoscfg.display.format_detection import (
     AUDIT_FORMATS,
@@ -55,6 +57,7 @@ __all__ = [
     "INTEGER_TYPES",
     "KEY_ALIASES",
     "UNIVERSAL_STATEMENTS",
+    "UNPLACED_STATEMENTS",
     "UNQUOTABLE_TYPES",
     "AUDIT_FORMATS",
     "CONVERSION_FORMATS",
@@ -92,6 +95,7 @@ __all__ = [
     "statement_children",
     "statement_name_spellings",
     "strip_type_prefix",
+    "unplaced_record_problem",
     "xml_to_dict",
     "xml_to_yaml",
 ]

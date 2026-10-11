@@ -241,8 +241,15 @@ def _refuse_unplaced(ir: dict[str, Any]) -> None:
         FieldValidator,
     )
 
+    # The statement's text is withheld: a kept statement is what no rule
+    # rewrites, so its words are the original values.
     unplaced = [
-        FieldError(path=e.path, message=f"cannot anonymize: {e.message}", value=e.value)
+        FieldError(
+            path=e.path,
+            message="cannot anonymize: a statement could not be placed in the schema "
+            "(its text is withheld: the conversion anonymizes)",
+            value="",
+        )
         for e in FieldValidator().validate(ir).errors
         if e.expected == UNPLACED
     ]

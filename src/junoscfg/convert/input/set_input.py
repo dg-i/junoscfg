@@ -11,12 +11,14 @@ from typing import Any
 
 from junoscfg.display import (
     KEY_ALIASES,
+    UNPLACED_STATEMENTS,
     entry_keys,
     key_is_positional,
     load_schema_tree,
     passes_tag_to_child,
     statement_children,
     statement_name_spellings,
+    unplaced_record_problem,
 )
 from junoscfg.input import find_unsupported_set_brackets, normalize
 
@@ -322,6 +324,20 @@ def _read_key(
     return dict(found[field] for field in fields), j
 
 
+def _kept_record(current: dict[str, Any], tokens: list[str]) -> tuple[dict[str, Any], str]:
+    """The record *current* keeps unplaced statements in, and *tokens* as one of them.
+
+    The tokens are the input's own, quotes included: the joined text is what
+    every writer prints. A statement no writer could print as one line --
+    a word holding an unquoted `;` or brace -- is refused, as bracket syntax is.
+    """
+    text = " ".join(tokens)
+    problem = unplaced_record_problem({text: True})
+    if problem is not None:
+        raise ValueError(f"Invalid set input: {problem}")
+    return current.setdefault(UNPLACED_STATEMENTS, {}), text
+
+
 def _keep_whole(
     current: dict[str, Any],
     tokens: list[str],
@@ -330,14 +346,17 @@ def _keep_whole(
 ) -> None:
     """Keep ``tokens[i:]`` as one statement the reader could not place.
 
-    Field validation reports it `UNPLACED` and every writer reproduces it, so
+    It goes to the level's record (`UNPLACED_STATEMENTS`), never to a key of
+    its own: a bare `apply-groups` beside `apply-groups G1`, or a bare
+    `host-name` beside its value, would have the placed node's key. Field
+    validation reports it `UNPLACED` and every writer reproduces it, so
     nothing of a line the reader cannot complete is applied or dropped. A
-    curly tag on any of those tokens goes with it, on the kept key.
+    curly tag on any of those tokens goes with it, as ``@<statement>``.
     """
-    key = " ".join(_parse_value(t) for t in tokens[i:])
-    current.setdefault(key, True)
+    record, text = _kept_record(current, tokens[i:])
+    record.setdefault(text, True)
     if tags:
-        _mark(current, _tags_from(tags, i), key)
+        _mark(record, _tags_from(tags, i), text)
 
 
 def _keep_meta_whole(
@@ -347,31 +366,25 @@ def _keep_meta_whole(
     attr_key: str,
     attr_value: Any,
 ) -> None:
-    """Keep a meta command's unresolved suffix without annotating its prefix."""
-    key = " ".join(_parse_value(token) for token in tokens[i:])
-    # When an ordinary command already kept this exact unknown statement, or
-    # a statement below it, retain the meta command as its sibling attribute.
-    # That preserves both commands and leaves the existing unknown statement
-    # as the single UNPLACED diagnostic instead of inventing a second child.
-    if any(
-        isinstance(existing, str)
-        and not existing.startswith("@")
-        and (existing == key or existing.startswith(f"{key} "))
-        for existing in current
-    ):
-        current.setdefault(f"@{key}", {})[attr_key] = attr_value
-        return
-    if " " not in key and any(
-        isinstance(value, str | int | float) and str(value) == key
+    """Keep a meta command's unresolved suffix without annotating its prefix.
+
+    A node or positional value the reader placed under that one word -- a
+    folded switch's `disable`, a nokeyword leaf's value -- carries it as
+    ``@<word>``; any other
+    suffix is kept in the level's record as ``@<statement>``, beside a kept
+    statement it names or one below it, which stays the single report.
+    """
+    value_text = " ".join(_parse_value(token) for token in tokens[i:])
+    if " " not in value_text and any(
+        existing == value_text
+        or (isinstance(value, str | int | float) and str(value) == value_text)
         for existing, value in current.items()
-        if not existing.startswith("@")
+        if not existing.startswith("@") and existing != UNPLACED_STATEMENTS
     ):
-        current.setdefault(f"@{key}", {})[attr_key] = attr_value
+        current.setdefault(f"@{value_text}", {})[attr_key] = attr_value
         return
-    kept = current.get(key)
-    if not isinstance(kept, dict):
-        kept = current[key] = {}
-    kept.setdefault("@", {})[attr_key] = attr_value
+    record, text = _kept_record(current, tokens[i:])
+    record.setdefault(f"@{text}", {})[attr_key] = attr_value
 
 
 # ── Core token walking ──────────────────────────────────────────────
@@ -446,11 +459,10 @@ def _merge_tokens(
 
         # Apply-groups (not in the schema, handled specially). It takes one
         # group; `set apply-groups G1 G2` and a bare `set apply-groups` are
-        # statements the device rejects. A group after a bare one, which is
-        # kept whole under the same key, is kept whole as well.
+        # statements the device rejects, kept in the record beside the groups.
         if token in ("apply-groups", "apply-groups-except"):
             lst = current.get(token, [])
-            if i + 2 != len(tokens) or not isinstance(lst, list):
+            if i + 2 != len(tokens):
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
@@ -477,7 +489,7 @@ def _merge_tokens(
             # A tag on one data line has no place in the IR's `data` pairs:
             # the line is kept whole and reported, never widened to the macro.
             data_tagged = any(tags.get(k) for k in range(i + 2, len(tokens)))
-            if len(tokens) - i > 4 or not isinstance(lst, list) or data_tagged:
+            if len(tokens) - i > 4 or data_tagged:
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
@@ -638,11 +650,8 @@ def _merge_tokens(
                 return
             key, after = read
             entries = current.get(token, [])
-            if (after < len(tokens) and not statement_children(child)) or not isinstance(
-                entries, list
-            ):
-                # A surplus after an entry that has nothing but its key, or a
-                # full entry after a bare keyword kept whole under this key.
+            if after < len(tokens) and not statement_children(child):
+                # A surplus after an entry that has nothing but its key.
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
@@ -674,6 +683,15 @@ def _merge_tokens(
         # Leaf node (accumulate repeated values). A tag is the leaf's, never
         # its value's: `inactive: vlan-id 751;` is `<vlan-id inactive=…>751`.
         if child.get("l"):
+            if i + 1 == len(tokens):
+                # A leaf without its value is a statement the device rejects
+                # (`set system host-name`). It used to replace a value read
+                # before it with `null`, without a word (NEW-C1).
+                tags[i] = here
+                _keep_whole(current, tokens, i, tags)
+                if reading is not None:
+                    reading.incomplete = True
+                return
             if curly and token in current and current.get(f"@{token}", {}) != _tag_attrs(here):
                 # `members 64496:1; inactive: members 64496:2;`: the device
                 # rejects a tag on one value (`deactivate … members 64496:2`
@@ -684,33 +702,28 @@ def _merge_tokens(
                 )
             _mark(current, here, token)
             is_leaf_list = child.get("ll")
-            if i + 1 < len(tokens):
-                # Check if token after the value is a schema sibling
-                next_idx = i + 2
-                if next_idx < len(tokens) and (
-                    tokens[next_idx] in children
-                    or KEY_ALIASES.get(tokens[next_idx], tokens[next_idx]) in children
-                ):
-                    # Sibling follows — take only one token as value
-                    val = _parse_value(tokens[i + 1])
-                    current[token] = [val] if is_leaf_list else val
-                    i = next_idx
-                    base = _cut(reading, base, i)
-                    continue
-                # No sibling — join all remaining tokens as the value
-                val = _parse_value(" ".join(tokens[i + 1 :]))
-                existing = current.get(token)
-                if existing is not None:
-                    if isinstance(existing, list):
-                        existing.append(val)
-                    else:
-                        current[token] = [existing, val]
+            # Check if token after the value is a schema sibling
+            next_idx = i + 2
+            if next_idx < len(tokens) and (
+                tokens[next_idx] in children
+                or KEY_ALIASES.get(tokens[next_idx], tokens[next_idx]) in children
+            ):
+                # Sibling follows — take only one token as value
+                val = _parse_value(tokens[i + 1])
+                current[token] = [val] if is_leaf_list else val
+                i = next_idx
+                base = _cut(reading, base, i)
+                continue
+            # No sibling — join all remaining tokens as the value
+            val = _parse_value(" ".join(tokens[i + 1 :]))
+            existing = current.get(token)
+            if existing is not None:
+                if isinstance(existing, list):
+                    existing.append(val)
                 else:
-                    current[token] = [val] if is_leaf_list else val
+                    current[token] = [existing, val]
             else:
-                current[token] = None
-                if reading is not None:
-                    reading.incomplete = True
+                current[token] = [val] if is_leaf_list else val
             return
 
         # Presence flag

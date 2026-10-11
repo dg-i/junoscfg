@@ -39,6 +39,35 @@ _TOKEN = re.compile(
 _OMITTED = "OMITTED"
 
 
+def reads_as_one_statement(text: str) -> bool:
+    """Whether *text* is one statement's words, as both readers read it back.
+
+    Words and quoted strings split by single spaces on one line, nothing this
+    lexer takes as structure (`{`, `}`, `;`, `[`, a comment, an open quote)
+    and no quote inside a word: written as one set line or one curly statement, such text
+    reads back as the same tokens. A record of kept statements holds only such
+    text (`unplaced_record_problem`).
+    """
+    if not text or any(char in text for char in "\n\r\t\v\f"):
+        return False
+    position = 0
+    expect_word = True
+    while position < len(text):
+        match = _TOKEN.match(text, position)
+        kind = match.lastgroup if match is not None else None
+        if expect_word:
+            # A word or a quoted string, with no quote inside a word.
+            if match is None or kind not in ("word", "quoted"):
+                return False
+            if kind == "word" and '"' in match.group():
+                return False
+        elif kind != "space" or match is None or match.group() != " ":
+            return False  # a word glued to a quoted string, or other whitespace
+        expect_word = not expect_word
+        position = match.end()
+    return not expect_word  # it ends on a word, not on a space
+
+
 class Note(NamedTuple):
     """What a block holds that yields no statement: its path and what it is.
 

@@ -484,3 +484,126 @@ class TestLeafListPromotion:
         assert parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"] == [
             "3001000-3001100"
         ]
+
+
+class TestARecordOfKeptStatementsIsInput:
+    """JSON and YAML carry a level's record of kept statements
+    (`junoscfg:unplaced`), as junoscfg writes it or as anyone writes it by hand.
+    The set and structured writers print its statements verbatim, so a record
+    whose text would write a second line or close a block, or whose shape is
+    no record, is refused where it is read, and a writer handed one by hand
+    refuses it too. The messages name no statement. Test/Challenge F3 and F4,
+    change kept-whole-statements."""
+
+    _RECORD = "junoscfg:unplaced"
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "bogus\nset system root-authentication encrypted-password $9$ExAmPlEhAsH.KEY",
+            "bogus; } snmp { community public",
+            "bogus a;b",
+            "bogus {",
+            "bogus }",
+            "# bogus",
+            "bogus /* note */",
+            'bogus "open',
+            'bogus a"b',
+            "bogus\ttab",
+            " bogus",
+            "bogus  two",
+            "",
+        ],
+        ids=[
+            "newline",
+            "brace-escape",
+            "semicolon",
+            "open-brace",
+            "close-brace",
+            "hash",
+            "comment",
+            "open-quote",
+            "inner-quote",
+            "tab",
+            "leading-space",
+            "double-space",
+            "empty",
+        ],
+    )
+    @pytest.mark.parametrize("fmt", ["json", "yaml"])
+    def test_text_no_writer_can_print_is_refused_on_read(self, statement: str, fmt: str) -> None:
+        config = {"system": {"host-name": "router1", self._RECORD: {statement: [None]}}}
+        source = (
+            json.dumps({"configuration": config})
+            if fmt == "json"
+            else yaml.safe_dump({"configuration": config})
+        )
+        with pytest.raises(ValueError, match="not one line of words") as caught:
+            to_dict(source, fmt)
+        assert "bogus" not in str(caught.value)
+        assert "ExAmPlE" not in str(caught.value)
+
+    @pytest.mark.parametrize(
+        "record",
+        [
+            "host-name",
+            ["host-name"],
+            7,
+            {"host-name": "router1"},
+            {"host-name": ["router1"]},
+            {"@host-name": True},
+        ],
+        ids=["string", "list", "number", "a-value", "a-list-value", "a-tag-not-a-mapping"],
+    )
+    @pytest.mark.parametrize("fmt", ["json", "yaml"])
+    def test_a_record_of_the_wrong_shape_is_refused_on_read(self, record: object, fmt: str) -> None:
+        config = {"system": {self._RECORD: record}}
+        source = (
+            json.dumps({"configuration": config})
+            if fmt == "json"
+            else yaml.safe_dump({"configuration": config})
+        )
+        with pytest.raises(ValueError, match=self._RECORD):
+            to_dict(source, fmt)
+
+    @pytest.mark.parametrize("writer", ["set", "structured"])
+    def test_a_writer_refuses_a_record_it_cannot_print(self, writer: str) -> None:
+        from junoscfg.convert import from_dict
+
+        ir = {"system": {self._RECORD: {"bogus; } snmp { community public": True}}}
+        with pytest.raises(ValueError, match="not one line of words"):
+            from_dict(ir, writer)
+
+    def test_validation_reports_a_malformed_record_once(self) -> None:
+        from junoscfg.convert import UNPLACED, validate_ir
+
+        ir = {"system": {self._RECORD: {"bogus\nsecond": True, "other": "value"}}}
+        errors = validate_ir({"configuration": ir}).errors
+        assert len(errors) == 1
+        assert errors[0].expected == UNPLACED
+        assert "bogus" not in errors[0].message
+
+    def test_set_output_writes_one_line_per_statement(self) -> None:
+        """The line-count bound: every record entry is one set line, no more."""
+        record = {
+            'nonsense "alpha beta" gamma': [None],
+            'apply-macro 12345 "KADJBF KU!H" balks XXXXX': [None],
+            "host-name": [None],
+            "@nonsense other": {"inactive": True},
+        }
+        config = {"system": {"host-name": "router1", self._RECORD: record}}
+        source = json.dumps({"configuration": config})
+        output = convert_config(source, from_format=Format.JSON, to_format=Format.SET)
+        assert sorted(output.splitlines()) == sorted(
+            [
+                "set system host-name router1",
+                'set system nonsense "alpha beta" gamma',
+                'set system apply-macro 12345 "KADJBF KU!H" balks XXXXX',
+                "set system host-name",
+                "deactivate system nonsense other",
+            ]
+        )
+        structured = convert_config(source, from_format=Format.JSON, to_format=Format.STRUCTURED)
+        assert read_ir(structured, Format.STRUCTURED)["system"][self._RECORD] == {
+            k: v for k, v in record.items() if not k.startswith("@")
+        }

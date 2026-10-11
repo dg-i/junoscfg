@@ -401,7 +401,7 @@ class TestPartialConfigTransparentLookup:
     def test_unknown_token_still_flattens(self) -> None:
         """Truly unknown tokens still get the flat-key fallback."""
         result = read_set("set xyzzy-nonexistent-thing some-value")
-        assert "xyzzy-nonexistent-thing some-value" in result
+        assert kept_in(result) == {"xyzzy-nonexistent-thing some-value": True}
 
 
 class TestTransparentListKey:
@@ -1244,17 +1244,12 @@ class TestAKeptStatementHasARecordOfItsOwn:
                 {"system": {"apply-groups": ["SAMPLE-GROUP"], **kept("apply-groups")}},
             ),
             (
-                "set apply-macro SAMPLE-MACRO",
-                "set apply-macro",
-                {"apply-macro": [{"name": "SAMPLE-MACRO"}], **kept("apply-macro")},
-            ),
-            (
                 f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
                 f"{_TERM} from as-path-neighbors",
                 _in_from(**{"as-path-neighbors": [_SAMPLE_AS_LIST], **kept("as-path-neighbors")}),
             ),
         ],
-        ids=["apply-groups", "apply-groups-except", "inside-system", "apply-macro", "keyed-list"],
+        ids=["apply-groups", "apply-groups-except", "inside-system", "keyed-list"],
     )
     @pytest.mark.parametrize("bare_first", [False, True], ids=["placed-first", "bare-first"])
     def test_a_bare_keyword_never_meets_its_placed_node(
@@ -1263,10 +1258,76 @@ class TestAKeptStatementHasARecordOfItsOwn:
         lines = [bare, placed] if bare_first else [placed, bare]
         source = "\n".join(lines) + "\n"
         assert set_ir(*lines) == expected
-        assert _round_trip(source.strip()) == [placed, bare]
+        assert sorted(_round_trip(source.strip())) == sorted(lines)
         statement = bare.split()[-1]
         assert len(_unplaced(source)) == 1
         assert _unplaced(source)[0].startswith(f"'{statement}'")
+
+    @pytest.mark.parametrize(
+        ("placed", "kept_line", "expected"),
+        [
+            (
+                "set apply-macro SAMPLE-MACRO a",
+                "set apply-macro SAMPLE-MACRO a b c d",
+                {
+                    "apply-macro": [{"name": "SAMPLE-MACRO", "data": [{"name": "a"}]}],
+                    **kept("apply-macro SAMPLE-MACRO a b c d"),
+                },
+            ),
+            (
+                "set apply-groups SAMPLE-GROUP",
+                "set apply-groups SAMPLE-GROUP-1 SAMPLE-GROUP-2",
+                {
+                    "apply-groups": ["SAMPLE-GROUP"],
+                    **kept("apply-groups SAMPLE-GROUP-1 SAMPLE-GROUP-2"),
+                },
+            ),
+        ],
+        ids=["apply-macro-fourth-value", "apply-groups-two-names"],
+    )
+    def test_a_kept_sibling_leaves_the_placed_node_alone(
+        self, placed: str, kept_line: str, expected: dict
+    ) -> None:
+        """The negative side: a kept statement whose text never had the
+        placed node's key changes nothing beside it, as before the record."""
+        assert set_ir(placed, kept_line) == expected
+        assert sorted(_round_trip(f"{placed}\n{kept_line}")) == sorted([placed, kept_line])
+        assert len(_unplaced(f"{placed}\n{kept_line}\n")) == 1
+
+    def test_each_kept_statement_is_reported(self) -> None:
+        """Two statements in one record are two reports, each naming its own."""
+        source = "set system bogus-a 1\nset system bogus-b 2\n"
+        assert set_ir(*source.split("\n")[:2]) == {"system": kept("bogus-a 1", "bogus-b 2")}
+        assert sorted(_unplaced(source)) == [
+            f"'{statement}' could not be placed in the schema: kept as written, not validated"
+            for statement in ("bogus-a 1", "bogus-b 2")
+        ]
+
+    def test_the_record_name_in_the_input_forges_nothing(self) -> None:
+        """`junoscfg:unplaced` written in a set line is a word like any other:
+        the statement it starts is kept in the record, never taken as one.
+        A schema statement whose name holds a colon is placed as before."""
+        line = "set system junoscfg:unplaced host-name"
+        assert set_ir(line) == {"system": kept("junoscfg:unplaced host-name")}
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+        placed = "set ietf-netconf-acm:nacm enable-nacm true"
+        assert read_set(placed) == {"ietf-netconf-acm:nacm": {"enable-nacm": "true"}}
+        assert _unplaced(placed + "\n") == []
+
+    @pytest.mark.parametrize(
+        "statement",
+        ["nonsense a;b", "nonsense }", "nonsense {", 'nonsense a"b'],
+        ids=["semicolon", "close-brace", "open-brace", "inner-quote"],
+    )
+    def test_a_statement_no_writer_can_print_is_refused(self, statement: str) -> None:
+        """Kept whole, the words are printed as written; one that curly text
+        reads as structure would close or open a block there. Refused, as
+        bracket syntax is, with a message that names no word."""
+        line = f"set interfaces ge-0/0/0 {statement}"
+        with pytest.raises(ValueError, match="not one line of words") as caught:
+            read_set(line)
+        assert "nonsense" not in str(caught.value)
 
     @pytest.mark.parametrize(
         ("valued", "bare", "expected"),
@@ -1297,7 +1358,7 @@ class TestAKeptStatementHasARecordOfItsOwn:
         lines = [bare, valued] if bare_first else [valued, bare]
         source = "\n".join(lines) + "\n"
         assert set_ir(*lines) == expected
-        assert _round_trip(source.strip()) == [valued, bare]
+        assert sorted(_round_trip(source.strip())) == sorted(lines)
         assert len(_unplaced(source)) == 1
         with pytest.raises(FieldValidationError):
             convert_config_result(source, from_format=Format.SET, to_format=Format.SET, strict=True)
@@ -1315,9 +1376,9 @@ class TestAKeptStatementHasARecordOfItsOwn:
         assert ir(source, Format.STRUCTURED) == {
             "system": {"host-name": "router1", **kept("host-name")}
         }
-        assert to_set(source, Format.STRUCTURED) == [
-            "set system host-name router1",
+        assert sorted(to_set(source, Format.STRUCTURED)) == [
             "set system host-name",
+            "set system host-name router1",
         ]
         assert len(_unplaced(source, "structured")) == 1
 
@@ -1329,10 +1390,19 @@ class TestAKeptStatementHasARecordOfItsOwn:
                 lambda got: got["groups"][0],
                 {'apply-macro 12345 "KADJBF KU!H" balks XXXXX': KEPT},
             ),
-            (
-                ['set interfaces ge-0/0/0 nonsense "alpha beta" gamma'],
-                lambda got: got["interfaces"]["interface"][0],
-                {'nonsense "alpha beta" gamma': KEPT},
+            *(
+                (
+                    [f"set interfaces ge-0/0/0 {statement}"],
+                    lambda got: got["interfaces"]["interface"][0],
+                    {statement: KEPT},
+                )
+                for statement in (
+                    'nonsense "alpha beta" gamma',
+                    'nonsense "abc" gamma',
+                    'nonsense "" gamma',
+                    'nonsense "alpha  beta"',
+                    'nonsense "say \\"hi\\""',
+                )
             ),
             (
                 [
@@ -1346,7 +1416,15 @@ class TestAKeptStatementHasARecordOfItsOwn:
                 },
             ),
         ],
-        ids=["apply-macro", "unknown-statement", "tagged-statement"],
+        ids=[
+            "apply-macro",
+            "spaced",
+            "no-space",
+            "empty",
+            "two-spaces",
+            "escaped-quote",
+            "tagged-statement",
+        ],
     )
     def test_a_kept_statement_keeps_its_quotes(
         self, lines: list[str], parent: Callable[[dict], dict], record: dict

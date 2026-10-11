@@ -60,10 +60,6 @@
    "definition": "from XML or JSON, an element the CLI hides appears in the set path (rf_list, server-group server-group, other-variables, bridge-domains domain, dynamic-tunnels dynamic-tunnel, hello-padding-type); the same statements curly input reports as not placed in the schema",
    "kind": "defect"
   },
-  "xml-empty-value-lost": {
-   "definition": "from XML, `description \"\"` is written as a bare `description`",
-   "kind": "defect"
-  },
   "xml-value-whitespace-lost": {
    "definition": "from XML, leading or trailing spaces in a value are stripped (`\"^show \"` becomes `\"^show\"`)",
    "kind": "defect"
@@ -823,7 +819,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set interfaces ge-0/0/6 unit 0 description": "xml-empty-value-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -849,7 +844,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set interfaces ge-0/0/6 unit 0 description \"\"": "xml-empty-value-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -1029,7 +1023,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set interfaces ge-0/0/6 unit 0 description": "xml-empty-value-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -1068,7 +1061,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
     "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set interfaces ge-0/0/6 unit 0 description \"\"": "xml-empty-value-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",

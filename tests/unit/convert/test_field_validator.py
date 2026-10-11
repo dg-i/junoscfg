@@ -693,18 +693,15 @@ class TestStructuralValidation:
         assert result.valid is False
 
     def test_presence_flag_skipped(self, validate: Validate) -> None:
+        """A presence flag carries no value to check. A value-taking leaf
+        written as one is no flag: `TestALeafWithoutItsValueIsUnplaced`
+        (change kept-whole-statements; this test used a `uint16` leaf)."""
         schema = _make_schema(
-            tree=_container(
-                configuration=_container(
-                    system=_container(
-                        flag=_leaf(tr="uint16"),
-                    )
-                )
-            ),
+            tree=_container(configuration=_container(system=_container(flag={"p": True}))),
         )
-        # Presence flags (True or None) should be skipped
-        result = validate(schema, {"system": {"flag": True}})
-        assert result.valid is True
+        for flag in (True, None, [None]):
+            result = validate(schema, {"system": {"flag": flag}})
+            assert result.valid is True, flag
 
     def test_empty_value_skipped(self, validate: Validate) -> None:
         schema = _make_schema(
@@ -1229,24 +1226,31 @@ class TestALeafWithoutItsValueIsUnplaced:
     (corpus CORRECTLY_REJECTED, `set system host-name`). Every door wrote it
     back as a bare line with no diagnostic, and the set reader let it replace
     a value read before it (NEW-C1). The set and structured readers keep it in
-    the level's record; JSON, YAML and XML hold it where it stands, and field
-    validation reports it either way. Spec: conversion/entry-keys, change
-    kept-whole-statements."""
+    the level's record; JSON and YAML hold it where it stands, and field
+    validation reports it either way. XML has no such spelling: an empty
+    element of a leaf is the empty value, as the device writes it
+    (`test_an_empty_xml_leaf_is_the_empty_value`). Spec: conversion/entry-keys,
+    change kept-whole-statements."""
 
     _SOURCES = {
         "set": "set system host-name\n",
         "structured": "system {\n    host-name;\n}\n",
         "json": '{"configuration": {"system": {"host-name": null}}}',
+        "json-flag": '{"configuration": {"system": {"host-name": [null]}}}',
+        "json-true": '{"configuration": {"system": {"host-name": true}}}',
+        "json-empty-list": '{"configuration": {"system": {"host-name": []}}}',
         "yaml": "configuration:\n  system:\n    host-name:\n",
-        "xml": "<configuration><system><host-name/></system></configuration>",
     }
 
-    @pytest.mark.parametrize("fmt", list(_SOURCES))
-    def test_each_door_reports_it(self, fmt: str) -> None:
+    @pytest.mark.parametrize("door", list(_SOURCES))
+    def test_each_door_reports_it(self, door: str) -> None:
+        fmt = door.split("-")[0]
         result = convert_config_result(
-            self._SOURCES[fmt], from_format=Format(fmt), to_format=Format.SET
+            self._SOURCES[door], from_format=Format(fmt), to_format=Format.SET
         )
-        assert result.output == "set system host-name\n"
+        # An empty list writes nothing, as before; it is reported now.
+        written = "" if door == "json-empty-list" else "set system host-name\n"
+        assert result.output == written
         messages = [d.message for d in result.diagnostics if d.source == "field-validate"]
         assert len(messages) == 1, messages
         assert messages[0].startswith("'host-name'")
@@ -1254,9 +1258,10 @@ class TestALeafWithoutItsValueIsUnplaced:
             "could not be placed in the schema: kept as written, not validated"
         )
 
-    @pytest.mark.parametrize("fmt", list(_SOURCES))
-    def test_strict_and_anonymization_refuse_it(self, fmt: str) -> None:
-        source = self._SOURCES[fmt]
+    @pytest.mark.parametrize("door", list(_SOURCES))
+    def test_strict_and_anonymization_refuse_it(self, door: str) -> None:
+        fmt = door.split("-")[0]
+        source = self._SOURCES[door]
         with pytest.raises(FieldValidationError):
             convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
         with pytest.raises(FieldValidationError, match="cannot anonymize"):
@@ -1285,14 +1290,68 @@ class TestALeafWithoutItsValueIsUnplaced:
                 '"members": ["64496:1"]}]}}}',
             ),
             ("json", '{"configuration": {"system": {"services": {"ssh": [null]}}}}'),
+            ("json", '{"configuration": {"system": {"no-redirects": null}}}'),
+            ("json", '{"configuration": {"system": {"no-redirects": [null]}}}'),
+            ("json", '{"configuration": {"system": {"no-redirects": true}}}'),
+            ("set", "set system no-redirects\n"),
         ],
-        ids=["set-value", "json-value", "json-empty-value", "set-empty-value", "leaf-list", "flag"],
+        ids=[
+            "set-value",
+            "json-value",
+            "json-empty-value",
+            "set-empty-value",
+            "leaf-list",
+            "container",
+            "presence-null",
+            "presence-flag",
+            "presence-true",
+            "presence-set",
+        ],
     )
     def test_a_leaf_with_a_value_is_clean(self, fmt: str, source: str) -> None:
-        """The negative side: a value, an empty value, a leaf-list and a
-        presence flag report nothing."""
+        """The negative side: a value, an empty value, a leaf-list, a
+        container and a presence leaf (`no-redirects`, schema `p`) in every
+        spelling report nothing."""
         result = convert_config_result(source, from_format=Format(fmt), to_format=Format.SET)
         assert [d for d in result.diagnostics if "could not be placed" in d.message] == []
+
+    _UNIT = (
+        "<configuration><interfaces><interface><name>ge-0/0/0</name><unit><name>0</name>"
+        "{}<family><inet><address><name>203.0.114.1/24</name></address></inet></family>"
+        "</unit></interface></interfaces></configuration>"
+    )
+
+    @pytest.mark.parametrize(
+        "element", ["<description></description>", "<description/>"], ids=["empty", "self-closed"]
+    )
+    def test_an_empty_xml_leaf_is_the_empty_value(self, element: str) -> None:
+        """The device writes `description ""` as `<description></description>`
+        in XML and `"description" : ""` in JSON
+        (`tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.{set,json,xml}.gz`).
+        XML read it as the flag `[null]` and wrote a bare `description` the
+        device rejects (DEV-16, folded into change kept-whole-statements). The
+        unit carries an address, so strict conversion and anonymization of a
+        device-like document both run to the end."""
+        source = self._UNIT.format(element)
+        result = convert_config_result(source, from_format=Format.XML, to_format=Format.SET)
+        assert 'set interfaces ge-0/0/0 unit 0 description ""\n' in result.output
+        assert [d for d in result.diagnostics if "could not be placed" in d.message] == []
+        as_json = convert_config(source, from_format=Format.XML, to_format=Format.JSON)
+        assert (
+            json.loads(as_json)["configuration"]["interfaces"]["interface"][0]["unit"][0][
+                "description"
+            ]
+            == ""
+        )
+        convert_config(source, from_format=Format.XML, to_format=Format.SET, strict=True)
+        anonymized = pipeline(
+            source,
+            from_format="xml",
+            to_format="set",
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert 'description ""' in anonymized
+        assert "203.0.114.1" not in anonymized
 
 
 class TestANameKeyIsOpen:

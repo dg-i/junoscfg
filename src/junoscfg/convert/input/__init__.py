@@ -57,7 +57,31 @@ def to_dict(
 
         normalize_leaf_lists(ir)
     _normalize_annotations(ir)
+    _refuse_malformed_records(ir)
     return ir
+
+
+def _refuse_malformed_records(node: Any) -> None:
+    """Refuse a record of kept statements no writer could print as it stands.
+
+    JSON and YAML can carry the record (`UNPLACED_STATEMENTS`) as written by
+    junoscfg or by hand; the writers print its statements verbatim, so one
+    with a line break or an unquoted brace would write lines or blocks the
+    input never held. The message names no statement.
+    """
+    from junoscfg.display import UNPLACED_STATEMENTS, unplaced_record_problem
+
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == UNPLACED_STATEMENTS:
+                problem = unplaced_record_problem(value)
+                if problem is not None:
+                    raise ValueError(f"Invalid input: {problem}")
+            else:
+                _refuse_malformed_records(value)
+    elif isinstance(node, list):
+        for item in node:
+            _refuse_malformed_records(item)
 
 
 def _normalize_annotation(attrs: dict[str, Any]) -> None:

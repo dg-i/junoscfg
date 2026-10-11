@@ -49,6 +49,11 @@ XML = Format.XML
 #: Every format junoscfg writes; XML output is not implemented.
 WRITERS: tuple[Format, ...] = (SET, STRUCTURED, JSON, YAML)
 
+#: The key under which a level keeps the statements the reader could not
+#: place, each as its own tokens (spec conversion/entry-keys). A consumer sees
+#: it in JSON and YAML output, so the rows pin the literal.
+UNPLACED_RECORD = "junoscfg:unplaced"
+
 
 def read_ir(text: str, fmt: Format) -> Any:
     """The IR *text* reads as: the ``configuration`` object of its JSON rendering."""
@@ -634,7 +639,10 @@ _add(
         {JSON: _json({"system": {"location": "dc-a"}})},
         ir={"system": {"location": "dc-a"}},
         set_output="set system location dc-a\n",
-        read_back={w: {"system": {"location": {"dc-a": [None]}}} for w in (SET, STRUCTURED)},
+        read_back={
+            w: {"system": {"location": {UNPLACED_RECORD: {"dc-a": [None]}}}}
+            for w in (SET, STRUCTURED)
+        },
         valid=False,
         why="`location` is a container and `dc-a` none of its statements: set and "
         "structured input keep the word as written rather than drop it. The annotation "
@@ -1903,11 +1911,6 @@ _add(
 
 # ── Statements kept whole ────────────────────────────────────────────
 
-#: The key under which a level keeps the statements the reader could not
-#: place, each as its own tokens (spec conversion/entry-keys). A consumer sees
-#: it in JSON and YAML output, so the rows pin the literal.
-UNPLACED_RECORD = "junoscfg:unplaced"
-
 _BARE_BESIDE_PLACED = {"apply-groups": ["SAMPLE-GROUP"], UNPLACED_RECORD: {"apply-groups": [None]}}
 _LEAF_WITHOUT_VALUE = {"system": {"host-name": "router1", UNPLACED_RECORD: {"host-name": [None]}}}
 _QUOTED_MACRO = 'apply-macro 12345 "KADJBF KU!H" balks XXXXX'
@@ -1928,7 +1931,7 @@ _add(
             "  junoscfg:unplaced:\n    apply-groups:\n    - null\n",
         },
         ir=_BARE_BESIDE_PLACED,
-        set_output="set apply-groups SAMPLE-GROUP\nset apply-groups\n",
+        written={SET: ("set apply-groups SAMPLE-GROUP\n", "set apply-groups\n")},
         valid=False,
         why="OPEN-2: the device rejects a bare `set apply-groups` (corpus CORRECTLY_REJECTED); "
         "kept as its parent's key, it vanished after the valid one, and before it the valid "
@@ -1944,7 +1947,7 @@ _add(
             "    junoscfg:unplaced:\n      host-name:\n      - null\n",
         },
         ir=_LEAF_WITHOUT_VALUE,
-        set_output="set system host-name router1\nset system host-name\n",
+        written={SET: ("set system host-name router1\n", "set system host-name\n")},
         valid=False,
         why="NEW-C1: a leaf with no value is a statement the device rejects (corpus "
         "CORRECTLY_REJECTED); it replaced router1 with null and was written back without a "
@@ -1958,11 +1961,19 @@ _add(
             STRUCTURED: f"groups {{\n    SAMPLE-GROUP {{\n        {_QUOTED_MACRO};\n    }}\n}}\n"
             f"interfaces {{\n    ge-0/0/0 {{\n        {_QUOTED_UNKNOWN};\n    }}\n}}\n",
             JSON: _json(_KEPT_QUOTES),
+            YAML: "configuration:\n  groups:\n  - name: SAMPLE-GROUP\n    junoscfg:unplaced:\n"
+            f"      '{_QUOTED_MACRO}': [null]\n"
+            "  interfaces:\n    interface:\n    - name: ge-0/0/0\n      junoscfg:unplaced:\n"
+            f"        '{_QUOTED_UNKNOWN}': [null]\n",
         },
         ir=_KEPT_QUOTES,
-        set_output=f"set groups SAMPLE-GROUP {_QUOTED_MACRO}\n"
-        f"set interfaces ge-0/0/0 {_QUOTED_UNKNOWN}\n",
-        written={STRUCTURED: (f"{_QUOTED_MACRO};", f"{_QUOTED_UNKNOWN};")},
+        written={
+            SET: (
+                f"set groups SAMPLE-GROUP {_QUOTED_MACRO}\n",
+                f"set interfaces ge-0/0/0 {_QUOTED_UNKNOWN}\n",
+            ),
+            STRUCTURED: (f"{_QUOTED_MACRO};", f"{_QUOTED_UNKNOWN};"),
+        },
         valid=False,
         why="OPEN-3: a kept statement is its original tokens; joined after their quotes were "
         'stripped, `"KADJBF KU!H"` became two words and read back as another statement. '

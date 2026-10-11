@@ -203,7 +203,9 @@ def _holds_a_value(element: etree._Element, node: dict[str, Any] | None) -> bool
     return not (node and node.get("c") and not node.get("l") and not node.get("p"))
 
 
-def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str, Any] | None]:
+def _xml_leaf(
+    name: str, elements: list[etree._Element], node: dict[str, Any] | None = None
+) -> tuple[Any, dict[str, Any] | None]:
     """A leaf's IR value and the attributes its sibling ``@<name>`` carries.
 
     Junos JSON keeps a leaf's value where an untagged leaf's would be and
@@ -212,8 +214,18 @@ def _xml_leaf(name: str, elements: list[etree._Element]) -> tuple[Any, dict[str,
     64496:2`, and after `deactivate … members` the device's XML tags every
     value. Values tagged unevenly are no configuration Junos writes, and
     widening the tag would deactivate the untagged ones.
+
+    An empty element of a leaf the tree says takes a value is the empty
+    value: the device writes `description ""` as `<description></description>`
+    in XML and `"description" : ""` in JSON
+    (`tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.*`). It used
+    to read as the presence flag `[null]`, written back as a bare line the
+    device rejects (DEV-16).
     """
-    values = [_coerce_value(text) if (text := (el.text or "").strip()) else None for el in elements]
+    empty = "" if node and node.get("l") and not node.get("p") else None
+    values = [
+        _coerce_value(text) if (text := (el.text or "").strip()) else empty for el in elements
+    ]
     tags = [_get_tag_attrs(el) for el in elements]
     if any(tag != tags[0] for tag in tags):
         raise ValueError(
@@ -254,7 +266,7 @@ def _xml_children_to_dict(
         if not any(_filtered_children(el) for el in elements) and (
             len(elements) > 1 or _holds_a_value(elements[0], node)
         ):
-            result[name], attrs = _xml_leaf(name, elements)
+            result[name], attrs = _xml_leaf(name, elements, node)
             if attrs:
                 result[f"@{name}"] = attrs
         elif len(elements) == 1:

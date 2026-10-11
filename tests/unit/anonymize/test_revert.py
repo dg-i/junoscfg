@@ -230,3 +230,20 @@ class TestAnonymizeRevertRoundTrip:
 
         # Compare — should match original
         assert result.ir == original
+
+
+class TestARecordOfKeptStatementsPassesRevert:
+    """A record of kept statements (`junoscfg:unplaced`) holds text, not
+    values: revert leaves it as it is, and does not fail on it (change
+    kept-whole-statements)."""
+
+    def test_the_record_is_unchanged(self) -> None:
+        record = {"nonsense 198.0.2.1": True, "@nonsense 198.0.2.1": {"inactive": True}}
+        ir = {
+            "configuration": {
+                "system": {"name-server": ["198.0.2.1"], "junoscfg:unplaced": dict(record)}
+            }
+        }
+        apply_revert(ir, {"ip": {"203.0.114.9": "198.0.2.1"}})
+        assert ir["configuration"]["system"]["name-server"] == ["203.0.114.9"]
+        assert ir["configuration"]["system"]["junoscfg:unplaced"] == record

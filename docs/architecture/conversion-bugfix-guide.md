@@ -166,9 +166,12 @@ name of its own.
   transit-area ...`, those fields in any order among themselves), and a key
   choice as its keyword. A statement it cannot complete -- a key that runs
   out, a key value without its keyword, a token after an entry that has
-  nothing but its key -- is kept whole, from its keyword, and field validation
-  reports it `UNPLACED`, as it reports an entry from JSON, YAML or XML that
-  lacks a key field.
+  nothing but its key -- is kept whole, from its keyword, in its level's
+  record (`display.UNPLACED_STATEMENTS`, `junoscfg:unplaced`) as the input's
+  own tokens, and field validation reports it `UNPLACED`, as it reports an
+  entry from JSON, YAML or XML that lacks a key field. The record never shares
+  a key with a placed node, so a bare keyword beside the node it names, or a
+  leaf without its value beside its value, loses and hides nothing.
 - Writers put the key values in declared order, a keyword field with its
   keyword, then each other child.
 - The grammar takes exactly the key values; a key value takes its own leaf's

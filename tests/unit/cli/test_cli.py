@@ -275,6 +275,39 @@ class TestFieldValidationOptions:
         assert lines[11:] == ["  ... and 1 more errors"]
 
 
+class TestAKeptStatementOnTheCommandLine:
+    """`junoscfg convert` writes a bare statement beside the node it names,
+    reports it, fails under `--strict`, and refuses to anonymize it without
+    printing it. Change kept-whole-statements (OPEN-2, NEW-C1)."""
+
+    _SOURCE = "set system host-name router1\nset system host-name\n"
+
+    def test_json_output_holds_the_record_and_stderr_the_report(self) -> None:
+        result = run(["convert", "-i", "set", "-e", "json"], self._SOURCE)
+        assert result.exit_code == 0
+        assert json.loads(result.stdout)["configuration"]["system"] == {
+            "host-name": "router1",
+            "junoscfg:unplaced": {"host-name": [None]},
+        }
+        assert "'host-name' could not be placed in the schema" in result.stderr
+
+    def test_strict_fails(self) -> None:
+        result = run(["convert", "-i", "set", "-e", "set", "--strict"], self._SOURCE)
+        assert result.exit_code == 1
+        assert result.stdout == ""
+
+    def test_anonymizing_refuses_without_the_statement(self) -> None:
+        source = "set system nonsense 203.0.114.9\n"
+        result = run(
+            ["convert", "-i", "set", "-e", "set", "--anonymize-ips", "--anonymize-salt", "s"],
+            source,
+        )
+        assert result.exit_code != 0
+        assert result.stdout == ""
+        assert "203.0.114.9" not in result.stderr
+        assert "203.0.114.9" not in result.output
+
+
 class TestValidateOption:
     """`-v` beside `-e` validates, then converts; the artifacts it reads can fail."""
 

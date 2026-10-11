@@ -214,8 +214,23 @@ line and dropped the rest without a word. Anonymization refuses such a configura
 outright, since it cannot rewrite what the schema does not name and the statement would
 otherwise leave verbatim. A set statement the reader cannot complete is kept and reported
 the same way: a list entry whose key values run out (`as-path-neighbors as-list`), a
-further token after an entry that is nothing but its key, or `apply-groups` with two
-names. A list entry's key fields are the ones the schema declares (`name` for most,
+further token after an entry that is nothing but its key, `apply-groups` with two
+names or none, or a leaf without its value (`set system host-name`). Such a statement
+is kept in its level's record, the reserved key `junoscfg:unplaced` in JSON and YAML
+output, as the words it was written with, quotes included:
+
+```json
+"system": {
+    "host-name": "router1",
+    "junoscfg:unplaced": {"host-name": [null]}
+}
+```
+
+It never replaces or hides a statement placed beside it, and every writer writes it back
+as read. JSON or YAML input may carry the record; one whose text is not one line of
+words (a line break, an unquoted `;`, `{` or `}`) is refused with `ValueError`. A leaf
+without its value from JSON or YAML (`"host-name": null`) is reported the same way. A
+list entry's key fields are the ones the schema declares (`name` for most,
 `list-type` and `list-name` for an AS-list reference) and are validated as the leaves
 they are; a key field's closed enum is enforced. Not reported: `@` attributes, the
 `apply-*` statements, and `enable` or `disable` written for a folded switch.

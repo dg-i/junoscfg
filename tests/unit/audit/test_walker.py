@@ -409,3 +409,30 @@ class TestNonStringValues:
     def test_bool_presence_value_not_collected(self, occs: Occs) -> None:
         ir: dict[str, Any] = {"protocols": {"bgp": {"damping": True}}}
         assert occs(ir) == []
+
+
+class TestARecordOfKeptStatements:
+    """A level's record of kept statements (`junoscfg:unplaced`) holds text,
+    not configuration: the walk names nothing in it. A group placed beside a
+    bare `apply-groups` is still found, in either order; it used to be kept
+    whole too when the bare line came first (OPEN-2, change
+    kept-whole-statements)."""
+
+    @pytest.mark.parametrize(
+        "lines",
+        [
+            ["set apply-groups SAMPLE-GROUP", "set apply-groups"],
+            ["set apply-groups", "set apply-groups SAMPLE-GROUP"],
+        ],
+        ids=["placed-first", "bare-first"],
+    )
+    def test_the_placed_group_is_found_beside_a_bare_one(
+        self, occs: Occs, lines: list[str]
+    ) -> None:
+        ir = to_dict("\n".join(lines) + "\n", "set")
+        assert one(occs(ir), "SAMPLE-GROUP").kind == "apply-groups"
+
+    def test_the_record_names_nothing(self, occs: Occs) -> None:
+        ir = to_dict("set system nonsense SAMPLE-NAME\n", "set")
+        assert by_value(occs(ir), "SAMPLE-NAME") == []
+        assert by_value(occs(ir), "nonsense SAMPLE-NAME") == []

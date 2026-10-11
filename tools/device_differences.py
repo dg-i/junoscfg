@@ -177,12 +177,6 @@ CLASSES = (
         ),
     ),
     Class(
-        "xml-empty-value-lost",
-        "defect",
-        'from XML, `description ""` is written as a bare `description`',
-        lambda line, side, suffix, c: suffix == "xml" and _re(r'\bdescription( "")?$')(line),
-    ),
-    Class(
         "xml-value-whitespace-lost",
         "defect",
         'from XML, leading or trailing spaces in a value are stripped (`"^show "` becomes '

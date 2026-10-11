@@ -367,3 +367,41 @@ class TestDiscriminators:
         data = {"groups": [{"name": "ansible-managed", "items": [{"name": "10.0.0.1"}]}]}
         host_vars, _ = ansibilize(data, "groups[ansible-managed].items[*].name", "p")
         assert host_vars == {"p_0": "10.0.0.1"}
+
+
+class TestAWildcardSkipsTheRecordOfKeptStatements:
+    """A level's record of kept statements (`junoscfg:unplaced`) is no
+    configuration node: `*` and a glob segment pass it by, so a rule never
+    writes into it a statement the writers would print verbatim
+    (Test/Challenge F5, change kept-whole-statements)."""
+
+    _DATA: dict[str, Any] = {
+        "configuration": {
+            "system": {
+                "services": {"ssh": {"root-login": "deny"}},
+                "junoscfg:unplaced": {"host-name": True},
+            }
+        }
+    }
+
+    @pytest.mark.parametrize("path", ["configuration.system.*", "configuration.system.junos*"])
+    def test_the_record_is_not_selected(self, path: str) -> None:
+        selected = resolve_path(self._DATA, path)
+        assert {"host-name": True} not in selected
+        if path.endswith("*") and not path.endswith("junos*"):
+            assert selected == [{"ssh": {"root-login": "deny"}}]
+
+    def test_a_static_rule_over_a_wildcard_leaves_the_record_alone(self) -> None:
+        from junoscfg.edityaml import apply_rules
+
+        ruleset = {
+            "rules": [
+                {
+                    "path": "configuration.system.*",
+                    "transforms": [{"type": "static", "target": "_new", "value": True}],
+                }
+            ]
+        }
+        result = apply_rules(self._DATA, ruleset)
+        assert result["configuration"]["system"]["junoscfg:unplaced"] == {"host-name": True}
+        assert result["configuration"]["system"]["services"]["_new"] is True

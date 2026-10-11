@@ -721,3 +721,63 @@ class TestKeyedEntriesSurvive:
             plain, from_format=Format.SET, to_format=Format.JSON, validate=False
         )
         assert self._reverted(out, Format.SET, tmp_path / "map.json") == json.loads(original)
+
+
+class TestAKeptStatementIsRefused:
+    """A statement the reader kept whole (`junoscfg:unplaced`) is text no
+    rule rewrites: anonymized, its addresses and names would leave
+    unchanged. `anonymize()` refuses an IR that holds one, as the conversion
+    pipeline does, and neither refusal names the statement. Test/Challenge
+    F2, change kept-whole-statements."""
+
+    _LINE = "set protocols bgp group G1 nonsense 203.0.114.9 SAMPLE-SECRET-GROUP\n"
+
+    @staticmethod
+    def _config() -> AnonymizeConfig:
+        return AnonymizeConfig(ips=True, groups=True, ips_in_strings=True, salt="s")
+
+    def test_anonymize_refuses_a_set_reader_record(self) -> None:
+        from junoscfg.convert import to_dict
+
+        ir = {"configuration": to_dict(self._LINE, "set")}
+        with pytest.raises(ValueError, match="cannot anonymize") as caught:
+            anonymize(ir, self._config())
+        assert "203.0.114.9" not in str(caught.value)
+        assert "SAMPLE-SECRET-GROUP" not in str(caught.value)
+
+    def test_anonymize_refuses_a_record_from_json(self) -> None:
+        from junoscfg.convert import to_dict
+
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "host-name": "router1",
+                        "junoscfg:unplaced": {"nonsense 203.0.114.9": [None]},
+                    }
+                }
+            }
+        )
+        with pytest.raises(ValueError, match="cannot anonymize") as caught:
+            anonymize({"configuration": to_dict(source, "json")}, self._config())
+        assert "203.0.114.9" not in str(caught.value)
+
+    def test_without_a_rule_nothing_is_refused(self) -> None:
+        ir = {"configuration": {"system": {"junoscfg:unplaced": {"nonsense 203.0.114.9": True}}}}
+        assert anonymize(ir, AnonymizeConfig()).ir == ir
+
+    def test_the_conversion_refusal_withholds_the_statement(self) -> None:
+        from junoscfg import FieldValidationError
+
+        with pytest.raises(FieldValidationError) as caught:
+            convert_config(
+                self._LINE,
+                from_format=Format.SET,
+                to_format=Format.SET,
+                anon_config=self._config(),
+            )
+        message = str(caught.value)
+        assert "cannot anonymize" in message
+        assert "203.0.114.9" not in message
+        assert "SAMPLE-SECRET-GROUP" not in message
+        assert "G1" not in message

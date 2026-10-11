@@ -11,6 +11,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from junoscfg.display import (
+    UNPLACED_STATEMENTS,
     entry_key_names,
     entry_keys,
     format_value,
@@ -24,6 +25,7 @@ from junoscfg.display import (
     load_schema_tree,
     passes_tag_to_child,
     resolve_key_alias,
+    unplaced_record_problem,
 )
 
 
@@ -63,6 +65,12 @@ class WalkOutput(ABC):
 
         A list whose tag is on the list itself is written as its keyword's
         block; joined to one entry's line, the tag would read as that entry's.
+        """
+
+    def drop_kept_tag(self) -> None:  # noqa: B027
+        """A meta command on a statement kept whole that the output cannot write.
+
+        Only structured output has one: curly text tags a statement it writes.
         """
 
     def mark_merged(self, hierarchy: list[str]) -> None:  # noqa: B027
@@ -208,14 +216,14 @@ class DictWalker:
         output = self._output
 
         for key, value in obj.items():
-            if key.startswith("@"):
+            if key.startswith("@") or key == UNPLACED_STATEMENTS:
                 continue
 
             set_key = resolve_key_alias(key)
             child_schema = children.get(set_key)
 
             if isinstance(value, dict):
-                if is_flat_dict(child_schema, set_key):
+                if is_flat_dict(child_schema, set_key) and UNPLACED_STATEMENTS not in value:
                     self._emit_flat_dict(value, path, set_key, child_schema)
                     continue
 
@@ -401,10 +409,9 @@ class DictWalker:
             elif value is None:
                 output.emit(path + [set_key])
 
-        # A meta command can target an unknown statement that is already kept
-        # whole only through longer descendant statements.  Its sibling
-        # attribute therefore has no exact data key to trigger the branches
-        # above; emit that command without inventing a corresponding `set`.
+        # A meta command on a value or a whole list the level holds has no
+        # data key of its own to trigger the branches above; emit that
+        # command without inventing a corresponding `set`.
         for attr_key, attr in obj.items():
             if not attr_key.startswith("@") or attr_key == "@":
                 continue
@@ -421,6 +428,37 @@ class DictWalker:
             attrs = self._read_leaf_attrs(attr)
             if attrs:
                 self._emit_attrs(path + [resolve_key_alias(key)], attrs)
+
+        if UNPLACED_STATEMENTS in obj:
+            self._emit_unplaced(obj[UNPLACED_STATEMENTS], path)
+
+    def _emit_unplaced(self, record: Any, path: list[str]) -> None:
+        """Write the statements a level keeps whole, as written, after its placed nodes.
+
+        A statement is its own text; a tag or meta command on it follows it,
+        and one on a statement the record does not hold whole is written
+        alone. Structured text tags only a statement it writes, so it leaves
+        such a command out and notes it. A record no writer could print as it
+        stands is refused rather than written (`unplaced_record_problem`).
+        """
+        problem = unplaced_record_problem(record)
+        if problem is not None:
+            raise ValueError(f"Cannot write the IR: {problem}")
+        for text in record:
+            if not text.startswith("@"):
+                self._output.emit(path + [text])
+                self._emit_attrs(path + [text], self._read_leaf_attrs(record.get(f"@{text}", {})))
+        for key, attr in record.items():
+            text = key[1:]
+            if not key.startswith("@") or text in record:
+                continue
+            attrs = self._read_leaf_attrs(attr)
+            if not attrs:
+                continue
+            if self._is_structured_mode():
+                self._output.drop_kept_tag()
+            else:
+                self._emit_attrs(path + [text], attrs)
 
     def _process_hash(
         self,

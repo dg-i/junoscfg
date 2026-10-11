@@ -1,15 +1,17 @@
 schema: agent-ready
 created: 2026-10-11
 type: bug
-# Every zone this change edits is yellow: src/junoscfg/convert/** (conversion, most of the diff),
-# src/junoscfg/display/constants.py and its door (kernel, one constant), src/junoscfg/__init__.py
-# (surface, __version__ only).
-zone: conversion
+# The highest-tier zone this change edits: src/junoscfg/anonymize/__init__.py (anonymize, red:
+# anonymize() refuses a kept statement). Also conversion (most of the diff), kernel
+# (display/constants.py, set_converter.py, to_yaml.py), edityaml (path_walker.py), surface
+# (src/junoscfg/__init__.py, __version__ only), all yellow.
+zone: anonymize
 domains: [conversion]
 removes:
   - "the kept statement's key at its parent's level (`\"<tokens joined>\": true`, `[null]` in JSON), replaced by the `junoscfg:unplaced` record at the same level"
   - "the false UNPLACED report of a valid `apply-groups` or keyed entry read after a bare keyword, which the reader used to keep whole as well"
   - "the quote-stripping of kept tokens; nothing public is removed, because beta removes a door only after a deprecation and no door changes"
+  - "the known-differences class `xml-empty-value-lost` (4 lines), whose lines the XML empty-value fix removes, through tools/device_differences.py"
 assurance: balanced
 declared-break:
   consumer:
@@ -26,8 +28,14 @@ declared-break:
       (OPEN-2, NEW-C1), and it dropped quotes (OPEN-3). A leaf with no value
       is now kept and reported UNPLACED instead of overwriting a value, so
       strict conversion raises and anonymization refuses on it; a valid
-      statement after a bare keyword is placed instead of reported. Declared
-      breaks on a named surface raise the minor (AGENTS.md).
+      statement after a bare keyword is placed instead of reported. From XML an
+      empty element of a value-taking leaf is now `""` (the device's
+      spelling), not the flag `[null]`. JSON or YAML input whose record is not
+      one line of words, or no record, raises ValueError, and a set statement
+      that would be kept with an unquoted `;`, `{` or `}` raises too.
+      junoscfg.anonymize.anonymize() raises ValueError on an IR that keeps a
+      statement whole, and the conversion's refusal no longer prints it.
+      Declared breaks on a named surface raise the minor (AGENTS.md).
     migration: >-
       A caller that reads kept statements from JSON or YAML output reads the
       keys of "junoscfg:unplaced" at the level where it looked for the joined

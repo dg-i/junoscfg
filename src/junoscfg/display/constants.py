@@ -518,6 +518,50 @@ def statement_name_spellings(name: str, enums: Sequence[str]) -> tuple[str, ...]
 UNIVERSAL_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
 
 
+#: The IR key under which a level keeps the statements a reader could not
+#: place: each statement's own tokens, quotes included, joined by one space and
+#: mapped to ``true`` (``[null]`` once through JSON), and a tag or meta command
+#: on one as ``@<statement>``. One reserved key, so a kept statement never takes
+#: the key of a node the reader placed -- a bare ``apply-groups`` beside
+#: ``apply-groups G1`` -- and every layer finds them in one place. It carries no
+#: ``@``: the generated JSON schema accepts any ``@`` key, and would accept the
+#: record. The ``junoscfg:`` prefix is a module prefix no Junos YANG module uses;
+#: no schema statement has this name (spec conversion/entry-keys).
+UNPLACED_STATEMENTS = "junoscfg:unplaced"
+
+_NOT_ONE_STATEMENT = (
+    f"a statement in '{UNPLACED_STATEMENTS}' that is not one line of words: it holds a line "
+    "break, a tab, a stray space, an unbalanced or inner quote, an unquoted ';', '{', '}' or "
+    "'[', or a comment"
+)
+
+
+def unplaced_record_problem(record: object) -> str | None:
+    """Why *record* cannot be a level's record of statements kept whole, or None.
+
+    Writers print a kept statement as written, so a record that arrives as
+    JSON or YAML could otherwise write lines it never held: a line break makes
+    a second statement, an unquoted brace closes a curly block. The answer
+    names no statement, so it can be shown in an anonymized run.
+    """
+    from junoscfg.display.set_converter import reads_as_one_statement
+
+    if not isinstance(record, dict):
+        return f"'{UNPLACED_STATEMENTS}' is not a mapping of statements"
+    for key, value in record.items():
+        if not isinstance(key, str):
+            return f"'{UNPLACED_STATEMENTS}' holds a key that is not a statement"
+        if key.startswith("@"):
+            if not isinstance(value, dict):
+                return f"a tag in '{UNPLACED_STATEMENTS}' that is not a mapping of attributes"
+            key = key[1:]
+        elif not (value is True or value is None or value == [None]):
+            return f"a statement in '{UNPLACED_STATEMENTS}' carries a value; it is its own text"
+        if not reads_as_one_statement(key):
+            return _NOT_ONE_STATEMENT
+    return None
+
+
 def enum_is_fragment(name: str, enums: Sequence[str]) -> bool:
     """Whether *enums* is a fragment of a wider union rather than the whole type.
 

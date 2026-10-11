@@ -58,6 +58,22 @@ class AnonymizeResult:
     mapping: dict[str, dict[str, str]] = field(default_factory=dict)
 
 
+def _count_kept_statements(node: Any) -> int:
+    """How many entries the IR's records of statements kept whole hold."""
+    from junoscfg.display import UNPLACED_STATEMENTS
+
+    if isinstance(node, dict):
+        return sum(
+            (len(value) if isinstance(value, dict) else 1)
+            if key == UNPLACED_STATEMENTS
+            else _count_kept_statements(value)
+            for key, value in node.items()
+        )
+    if isinstance(node, list):
+        return sum(_count_kept_statements(item) for item in node)
+    return 0
+
+
 def anonymize(
     ir: dict[str, Any],
     config: AnonymizeConfig,
@@ -79,6 +95,11 @@ def anonymize(
             ``config.source_text``. Auto-detection scans the configuration
             text for subnets, so it needs that text; asking for it without
             supplying the text used to do nothing at all.
+        ValueError: If the IR keeps a statement whole (a non-empty
+            `junoscfg.display.UNPLACED_STATEMENTS` record). The rules rewrite
+            values the schema places, never a kept statement's text, so its
+            addresses and names would leave unchanged. The message names no
+            statement.
     """
     # Auto-generate a random salt when none is provided to prevent
     # trivially reversible HMAC outputs (empty-string key).
@@ -88,6 +109,12 @@ def anonymize(
     rules = build_rules(config)
     if not rules:
         return AnonymizeResult(ir=ir)
+    kept = _count_kept_statements(ir)
+    if kept:
+        raise ValueError(
+            f"cannot anonymize: {kept} statement(s) kept whole, which no rule can see; "
+            "fix or remove what the conversion reports as not placed in the schema"
+        )
 
     walk(ir, rules, config, diagnostic_sink=diagnostic_sink)
 

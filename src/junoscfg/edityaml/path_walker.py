@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from fnmatch import fnmatch
 
+from junoscfg.display import UNPLACED_STATEMENTS
+
 _BRACKET_RE = re.compile(r"^(.+)\[(.+)\]$")
 
 
@@ -68,12 +70,12 @@ def resolve_path(data: dict, path: str) -> list[dict]:
         next_nodes: list[dict] = []
         for node in current:
             if kind == "dict":
-                for v in node.values():
-                    if isinstance(v, dict):
+                for k, v in node.items():
+                    if isinstance(v, dict) and k != UNPLACED_STATEMENTS:
                         next_nodes.append(v)
             elif kind == "dictglob":
                 for k, v in node.items():
-                    if isinstance(v, dict) and fnmatch(k, key):
+                    if isinstance(v, dict) and k != UNPLACED_STATEMENTS and fnmatch(k, key):
                         next_nodes.append(v)
             elif kind.startswith("glob:"):
                 pattern = kind[5:]
@@ -135,11 +137,11 @@ def resolve_path_with_context(data: dict, path: str, leaf_key: str) -> list[tupl
         for node, discs in current:
             if kind == "dict":
                 for k, v in node.items():
-                    if isinstance(v, dict):
+                    if isinstance(v, dict) and k != UNPLACED_STATEMENTS:
                         next_entries.append((v, discs + [k]))
             elif kind == "dictglob":
                 for k, v in node.items():
-                    if isinstance(v, dict) and fnmatch(k, key):
+                    if isinstance(v, dict) and k != UNPLACED_STATEMENTS and fnmatch(k, key):
                         next_entries.append((v, discs + [k]))
             elif kind.startswith("glob:"):
                 pattern = kind[5:]

@@ -14,6 +14,7 @@ from typing import Any
 from junoscfg.display import (
     INTEGER_TYPES,
     UNIVERSAL_STATEMENTS,
+    UNPLACED_STATEMENTS,
     entry_key_names,
     entry_keys,
     enum_is_fragment,
@@ -21,6 +22,7 @@ from junoscfg.display import (
     passes_tag_to_child,
     statement_name_spellings,
     strip_type_prefix,
+    unplaced_record_problem,
 )
 
 
@@ -246,9 +248,13 @@ class FieldValidator:
                 if key.startswith("@"):
                     continue
 
+                if key == UNPLACED_STATEMENTS:
+                    self._report_unplaced(value, schema_node, obj, path, result)
+                    continue
+
                 # Valid at every level; the reader shapes them, not the tree.
-                # Bare, as `true` or `[null]`, one is a statement the set
-                # reader kept whole: `set apply-groups` names no group.
+                # Bare, as `true` or `[null]` from JSON or YAML (the set
+                # reader keeps it in the record), one names no group.
                 if key in UNIVERSAL_STATEMENTS and value not in (True, None, [None]):
                     continue
 
@@ -275,8 +281,8 @@ class FieldValidator:
                         continue
 
                 # A keyed list holding something other than entries: its
-                # keyword was written with no key value, a statement the set
-                # reader keeps whole (`true`, or `[null]` once through JSON).
+                # keyword was written with no key value, as JSON or YAML may
+                # hold it (`[null]`); the set reader keeps it in the record.
                 items = value if isinstance(value, list) else [value]
                 incomplete = (
                     child_schema is not None
@@ -285,22 +291,12 @@ class FieldValidator:
                 ) or key in UNIVERSAL_STATEMENTS
                 if child_schema is None or incomplete:
                     # A key the schema does not name and no reader writes by
-                    # rule is configuration junoscfg could not model. The set
-                    # reader keeps such a statement whole as one key; it used
-                    # to pass here without a word, which is how a defective
-                    # artifact set went unnoticed for five months.
+                    # rule is configuration junoscfg could not model, from
+                    # JSON, YAML or XML (the set reader keeps it in the
+                    # record); it used to pass here without a word, which is
+                    # how a defective artifact set went unnoticed for months.
                     if not self._is_structural_key(key, schema_node):
-                        entry = self._entry_label(schema_node, obj)
-                        where = f" under {path[-1]} {entry}" if entry and path else ""
-                        message = (
-                            f"'{key}'{where} could not be placed in the schema: "
-                            "kept as written, not validated"
-                        )
-                        result.errors.append(
-                            FieldError(
-                                path=".".join(path), message=message, value=key, expected=UNPLACED
-                            )
-                        )
+                        self._unplaced(f"'{key}'", schema_node, obj, path, result, value=key)
                     continue
 
                 # Named list (L flag)
@@ -321,6 +317,16 @@ class FieldValidator:
 
                 # Leaf node — validate the value
                 if child_schema.get("l"):
+                    if not (schema_node.get("L") and key in entry_key_names(schema_node)) and (
+                        value is None or value is True or value == [] or value == [None]
+                    ):
+                        # A leaf written without its value, from JSON, YAML
+                        # or XML (`"host-name": null`): a line the device
+                        # rejects, written back as it stands (NEW-C1).
+                        self._unplaced(
+                            f"'{key}' without its value", schema_node, obj, path, result, value=key
+                        )
+                        continue
                     path.append(key)
                     # A key value takes its own leaf's type. A key field the
                     # tree names in `k` is closed to its enum, as the grammar
@@ -362,6 +368,57 @@ class FieldValidator:
         elif isinstance(obj, list):
             for item in obj:
                 self._walk(item, schema_node, path, result)
+
+    def _report_unplaced(
+        self,
+        record: Any,
+        schema_node: dict[str, Any],
+        obj: dict[str, Any],
+        path: list[str],
+        result: FieldValidationResult,
+    ) -> None:
+        """Report each statement a level keeps whole (`UNPLACED_STATEMENTS`).
+
+        A statement is reported once; a meta command kept beside it, or beside
+        a statement below it, adds no report, and one with neither is reported
+        on its own. A record no writer could print is one report, its reason
+        naming no statement.
+        """
+        problem = unplaced_record_problem(record)
+        if problem is not None:
+            result.errors.append(
+                FieldError(path=".".join(path), message=problem, value="", expected=UNPLACED)
+            )
+            return
+        texts = [key for key in record if not key.startswith("@")]
+        for key in record:
+            text = key[1:] if key.startswith("@") else key
+            if key.startswith("@") and any(t == text or t.startswith(f"{text} ") for t in texts):
+                continue
+            self._unplaced(f"'{text}'", schema_node, obj, path, result, value=text)
+
+    def _unplaced(
+        self,
+        what: str,
+        schema_node: dict[str, Any],
+        obj: dict[str, Any],
+        path: list[str],
+        result: FieldValidationResult,
+        *,
+        value: str,
+    ) -> None:
+        """Report *what* as a statement the schema could not place, kept as written."""
+        entry = self._entry_label(schema_node, obj)
+        where = f" under {path[-1]} {entry}" if entry and path else ""
+        result.errors.append(
+            FieldError(
+                path=".".join(path),
+                message=f"{what}{where} could not be placed in the schema: kept as written, "
+                "not validated",
+                value=value,
+                expected=UNPLACED,
+            )
+        )
 
     @staticmethod
     def _check_key_fields(

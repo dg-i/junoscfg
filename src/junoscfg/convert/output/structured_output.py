@@ -19,6 +19,7 @@ class StructuredWalkOutput(WalkOutput):
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
+        self._dropped_kept_tags = 0
         self._merged: list[str] = []
         self._blocks: list[str] = []
         self._diagnostic_sink = diagnostic_sink
@@ -55,6 +56,14 @@ class StructuredWalkOutput(WalkOutput):
         # with an aggregated note in finalize()
         self._dropped_deletes.append(" ".join(hierarchy))
 
+    def drop_kept_tag(self) -> None:
+        """Count a tag on a statement kept whole that this output does not write.
+
+        Curly text tags a statement it writes; a meta command on a kept
+        statement it does not hold whole, or on part of one, has none.
+        """
+        self._dropped_kept_tags += 1
+
     def keep_block(self, hierarchy: list[str]) -> None:
         """Defer writing *hierarchy* as a block until :meth:`finalize`."""
         self._blocks.append(" ".join(hierarchy))
@@ -88,6 +97,11 @@ class StructuredWalkOutput(WalkOutput):
             self._diagnostic_sink(
                 f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
                 f"tags ({'; '.join(dropped_tags)}): it is written merged with each child"
+            )
+        if self._dropped_kept_tags and self._diagnostic_sink is not None:
+            self._diagnostic_sink(
+                f"note: {self._dropped_kept_tags} meta command(s) on a statement kept whole "
+                "dropped: structured output tags only a statement it writes"
             )
         if self._dropped_deletes and self._diagnostic_sink is not None:
             self._diagnostic_sink(
