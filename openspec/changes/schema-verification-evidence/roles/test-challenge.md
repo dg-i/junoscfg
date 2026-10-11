@@ -80,3 +80,58 @@ changes invalidate prior evidence; preactivation full remains preactivation.
 No unresolved material criterion question remains after root's explicit
 rulings. Actual implementation and integration outcomes remain unexecuted;
 STOP-R cannot be granted from this report. Efficiency remains UNMEASURED.
+
+## Independent postimplementation control verdict
+
+Released implementation `bbfab6f23e5a1c2838d60ac17b5e81e755b0e209` was clean before
+and after independent execution. All 43 focused acceptance cases actually
+passed in 75.06s, exit zero, zero failures/errors/skips. Genuine small-session
+internal release skips remain explicitly skipped in the application outcomes;
+the enclosing acceptance cases pass because they assert that distinction.
+
+Private `postimplementation-provenance.json` binds exact probe source, raw logs,
+JSON summaries and focused JUnit hashes to this immutable implementation.
+`application-probes.json` and `coverage-prerequisite-probes.json` record the
+asserted outcomes; all initial STOP-T evidence remains retained.
+
+- Actual adapter fixture preparation and pytest execution under inherited
+  GIT_DIR/WORK_TREE/COMMON_DIR/INDEX and core.bare configuration overrides kept
+  the synthetic parent's entire file inventory byte-identical. The application
+  common config still matches root's restoration SHA256
+  `92211d1e0eef6eba29bd1e27700b029399caafa69ca34c6a342d3fae05779982`, core.bare=false.
+  No parent refs, candidate or configuration was rewritten by these probes.
+- Installed wrapper ran actual small application commands twice, then reused
+  without running generation. Committed adapter source, suite and lock changes,
+  and changed ignored dump bytes, each required two actual new sessions.
+  Runtime mismatch and dirty candidate refused without launching pytest.
+  Corrupt, incomplete/legacy and failed evidence forced actual reruns.
+- Actual disabled run_tiers dispatch executed the adapter uncached twice;
+  retained historical evidence bytes remained. This is actual application
+  rollback dispatch, while the declared sentinel's fresh public call/failure
+  controls are covered by the focused tests. It does not claim a real-XSD
+  sentinel execution.
+- Missing/unknown/symlink dump and missing runtime refused before pytest.
+  Actual plugin collection rejected missing and unexpected required IDs;
+  duplicated IDs failed preflight. No successful result/outcomes survived.
+  Focused actual failed-call/failed-teardown/input/tracked mutation cases and
+  the stale successful outcomes case all passed their rejection assertions.
+- Actual application double-pass products matched; the retained installed
+  template probe independently rejects genuinely changing second-pass bytes.
+  Focused protected-product, non-timestamp metadata, missing-product and
+  generator-failure sentinel controls passed. No stability or schema oracle
+  assertion was relaxed.
+
+The first private probe used macOS's symlinked /var temporary path and correctly
+refused before application execution. Its raw failure is retained as
+`application-probes-initial-symlink-refusal.out`; resolving only the private
+fixture's physical root allowed the intended probe. This is a corrected probe
+setup, not a product failure or suppressed test.
+
+TC-01 and TC-02 are closed by executed focused acceptance. TC-04's bounded
+application integration/cache/rollback controls are now satisfied. TC-03's
+synthetic controls pass, but the canonical immutable full and actual shipped
+public ArtifactBuilder sentinel plus three real shard double-pass evidence
+remain required before STOP-R. No independent material correctness finding or
+criteria amendment remains. This report authorizes proceeding to that evidence
+checkpoint and fresh Reviewer, not claiming it already passed. Strategy A
+activation remains root-owned; efficiency remains UNMEASURED.
