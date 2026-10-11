@@ -19,4 +19,8 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
+| Context expansion: `src/junoscfg/anonymize/walker.py` | Builder: below the code-map cut; the owning module of the wildcard rule |
+| Context expansion: `src/junoscfg/anonymize/rules/{group,identity,sensitive_word,__init__}.py` | Builder: which rules claim an entry name, and the lexical chain |
+| Context expansion: `tests/contract/test_every_rule.py`, `tests/contract/test_every_message.py`, `tests/corpus/test_device_anonymization.py` | Builder: where the law, the door row and the capture row belong |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
