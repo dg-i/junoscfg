@@ -134,9 +134,12 @@ junoscfg -i set -e json config.set 2>validation.log
 
 Replace sensitive data with deterministic pseudonyms.
 
-Anonymization refuses a configuration with a statement the schema cannot place, exiting
-1 with the statement named, since it cannot rewrite what the schema does not name and
-the statement would otherwise leave as written. See [validation](validation.md).
+A statement the schema cannot place is still anonymized: each word a rule knows by its
+shape alone (an address, a password hash, a sensitive word) is replaced, every other
+word is left as written, and an `anonymize:` warning on stderr names its schema path,
+never its text. Stop on that warning, or add `--strict`, when no such word may be
+published. Groups named `re0`, `re1`, `node0`, `node1`, `member<N>` or a `$` variable
+keep their names. See [validation](validation.md).
 
 #### Examples — Anonymization
 

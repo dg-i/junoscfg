@@ -947,7 +947,8 @@ class TestTheExampleConfigurationValidates:
         strict=True,
         reason="PRODUCT DEFECT: no known-differences class (set renderings keep them): the "
         "shipped 25.2R0 schema cannot place five statements both devices loaded, and the "
-        "JSON reader keeps `ieee-802.3ad`; tests/support/devices.py UNPLACED_IN_THE_EXAMPLE",
+        "JSON reader keeps `ieee-802.3ad` and `end-range`; tests/support/devices.py "
+        "UNPLACED_IN_THE_EXAMPLE",
     )
     def test_the_example_validates_clean(self, json_config: str) -> None:
         result = validate_ir(to_dict(json_config, "json"))

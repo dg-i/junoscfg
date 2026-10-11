@@ -40,6 +40,17 @@ class Rule(ABC):
         """Return the mapping of original -> anonymized values."""
         return {}
 
+    def lexical(self, word: str) -> str | None:
+        """Replace *word* by its shape alone, or ``None`` when the shape is not this rule's.
+
+        Content the walk cannot place carries no type and no path a rule can
+        read, so only a rule that recognises a value by its shape -- an
+        address, a password hash, a sensitive word -- rewrites it, word by
+        word, never by a keyword (owner answer 5). The default recognises
+        nothing.
+        """
+        return None
+
 
 def build_rules(config: AnonymizeConfig) -> list[Rule]:
     """Build an ordered list of active rules from *config*.

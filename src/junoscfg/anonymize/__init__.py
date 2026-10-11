@@ -52,33 +52,20 @@ def __getattr__(name: str) -> Any:
 
 @dataclass
 class AnonymizeResult:
-    """Result of anonymization."""
+    """Result of anonymization.
+
+    ``unplaced`` names, by schema path (dot-joined schema names, ``""`` for the
+    top level), each piece of content the walk could not place -- a key the
+    schema does not name, a value of a shape its node does not take, a
+    statement kept whole -- once per piece. Its addresses, password hashes and
+    sensitive words are replaced by their shape; every other word is left as
+    written, so a caller who must not publish one stops on a non-empty tuple.
+    No path holds the unplaced key, an entry name or a value (owner answer 5).
+    """
 
     ir: dict[str, Any]
     mapping: dict[str, dict[str, str]] = field(default_factory=dict)
-
-
-def _count_kept_statements(node: Any) -> int:
-    """How many statements the IR's records keep whole; a tag is not one more.
-
-    A record holding only meta commands counts each, so it is never zero.
-    """
-    from junoscfg.display import UNPLACED_STATEMENTS
-
-    if isinstance(node, dict):
-        return sum(
-            (
-                sum(1 for text in value if not str(text).startswith("@")) or len(value)
-                if isinstance(value, dict)
-                else 1
-            )
-            if key == UNPLACED_STATEMENTS
-            else _count_kept_statements(value)
-            for key, value in node.items()
-        )
-    if isinstance(node, list):
-        return sum(_count_kept_statements(item) for item in node)
-    return 0
+    unplaced: tuple[str, ...] = ()
 
 
 def anonymize(
@@ -102,11 +89,11 @@ def anonymize(
             ``config.source_text``. Auto-detection scans the configuration
             text for subnets, so it needs that text; asking for it without
             supplying the text used to do nothing at all.
-        ValueError: If the IR keeps a statement whole (a non-empty
-            `junoscfg.display.UNPLACED_STATEMENTS` record). The rules rewrite
-            values the schema places, never a kept statement's text, so its
-            addresses and names would leave unchanged. The message names no
-            statement.
+
+    Content the walk cannot place, a statement kept whole
+    (`junoscfg.display.UNPLACED_STATEMENTS`) included, is not refused: its
+    words are rewritten by their shape and its place named in
+    ``AnonymizeResult.unplaced``.
     """
     # Auto-generate a random salt when none is provided to prevent
     # trivially reversible HMAC outputs (empty-string key).
@@ -116,14 +103,8 @@ def anonymize(
     rules = build_rules(config)
     if not rules:
         return AnonymizeResult(ir=ir)
-    kept = _count_kept_statements(ir)
-    if kept:
-        raise ValueError(
-            f"cannot anonymize: {kept} statement(s) kept whole, which no rule can see; "
-            "fix or remove what the conversion reports as not placed in the schema"
-        )
 
-    walk(ir, rules, config, diagnostic_sink=diagnostic_sink)
+    unplaced = walk(ir, rules, config, diagnostic_sink=diagnostic_sink)
 
     # Second pass: replace IPs embedded in larger strings (URLs, host+IP, etc.)
     if config.ips_in_strings:
@@ -137,14 +118,6 @@ def anonymize(
         if as_rule:
             _replace_as_in_strings(ir, as_rule)
 
-    # Second pass: anonymize apply-groups / apply-groups-except values.
-    # The schema walker cannot reach these because their schema nodes are
-    # empty (``{}``), so we handle them with a brute-force IR walk.
-    if config.groups:
-        group_rule = next((r for r in rules if isinstance(r, GroupRule)), None)
-        if group_rule:
-            _replace_apply_groups(ir, group_rule)
-
     # Collect mappings from all rules, keyed by rule name
     mapping: dict[str, dict[str, str]] = {}
     for rule in rules:
@@ -152,43 +125,24 @@ def anonymize(
         if rule_map:
             mapping[rule.name] = rule_map
 
-    return AnonymizeResult(ir=ir, mapping=mapping)
-
-
-_APPLY_GROUPS_KEYS = frozenset({"apply-groups", "apply-groups-except"})
-
-
-def _replace_apply_groups(obj: Any, group_rule: GroupRule) -> None:
-    """Walk the IR and anonymize values in apply-groups arrays."""
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if key in _APPLY_GROUPS_KEYS and isinstance(value, list):
-                for i, item in enumerate(value):
-                    if isinstance(item, str):
-                        value[i] = group_rule.transform(item)
-            elif isinstance(value, (dict, list)):
-                _replace_apply_groups(value, group_rule)
-    elif isinstance(obj, list):
-        for item in obj:
-            if isinstance(item, (dict, list)):
-                _replace_apply_groups(item, group_rule)
+    return AnonymizeResult(ir=ir, mapping=mapping, unplaced=unplaced)
 
 
 def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:
     """Walk all string values and replace embedded IP addresses.
 
-    Values that are already in the anonymizer's output mapping are skipped —
-    those were already transformed by the schema walker and must not be
-    re-anonymized (which would break network-registry host-bit locking).
+    A replacement the walk already wrote -- a whole value, or an address
+    inside one -- is left as it is: re-anonymized, it would break the network
+    registry's host-bit locking and leave the mapping unable to revert it.
     """
-    already_done = set(ip_rule.get_mapping().values())
+    done = frozenset(ip_rule.get_mapping().values())
 
     def _walk(obj: Any) -> None:
         if isinstance(obj, dict):
             for key, value in obj.items():
                 if isinstance(value, str):
-                    if value not in already_done:
-                        replaced = ip_rule.replace_ips_in_string(value)
+                    if value not in done:
+                        replaced = ip_rule.replace_ips_in_string(value, done=done)
                         if replaced != value:
                             obj[key] = replaced
                 elif isinstance(value, (dict, list)):
@@ -196,8 +150,8 @@ def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
                 if isinstance(item, str):
-                    if item not in already_done:
-                        replaced = ip_rule.replace_ips_in_string(item)
+                    if item not in done:
+                        replaced = ip_rule.replace_ips_in_string(item, done=done)
                         if replaced != item:
                             obj[i] = replaced
                 elif isinstance(item, (dict, list)):

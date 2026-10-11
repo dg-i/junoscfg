@@ -614,11 +614,8 @@ flowchart TD
     IPS -->|No| AS
     IPS_PASS --> AS{"as_numbers_in_strings?"}
     AS -->|Yes| AS_PASS["AS-in-strings pass"]
-    AS -->|No| AG
-    AS_PASS --> AG{"groups enabled?"}
-    AG -->|Yes| AG_PASS["apply-groups pass"]
-    AG -->|No| RESULT
-    AG_PASS --> RESULT["AnonymizeResult\n(ir + mapping)"]
+    AS -->|No| RESULT
+    AS_PASS --> RESULT["AnonymizeResult\n(ir + mapping + unplaced)"]
 ```
 
 ### Module reference
@@ -639,26 +636,34 @@ Rules are checked in priority order; the first matching rule wins:
 | Rule | Priority | Category | Match criterion |
 |------|----------|----------|----------------|
 | Password | 10 | passwords | Schema type reference (secret/encrypted-password) |
-| IP | 20 | ips | Schema type reference (ipaddr/ipprefix/ipv6addr) |
+| IP | 30 | ips | A value that is an address on an address, host or untyped leaf; a key its list's name marks as an address where the tree types it as free text |
 | Community | 30 | communities | Schema path under `snmp.community` |
 | SSH Key | 40 | ssh_keys | Schema path under `ssh-rsa`/`ssh-dsa`/`ssh-ecdsa`/`ssh-ed25519` |
 | Identity | 50 | identities | Schema path for user/full-name/login fields |
-| Group | 60 | groups | Schema path for group/view name fields |
+| Group | 60 | groups | Schema path for group/view name fields and `apply-groups[-except]`; Junos-reserved names pass |
 | Description | 70 | descriptions | Schema path for `description` leaf |
 | AS Number | 80 | as_numbers | Numeric value matching user-provided AS list |
 | Sensitive Word | 90 | sensitive_words/patterns | Literal or regex match against user-provided strings |
 
 ### Multi-pass architecture
 
-The primary `walk()` pass handles leaves reachable through the schema tree. Three
-supplementary passes handle cases the schema walker cannot reach:
+The primary `walk()` pass offers every value the structure tree places to the
+rules: it resolves a key through `junoscfg.display.schema_child` (a universal
+statement below the root, so `apply-groups` at every level reaches the group
+rule), walks a transparent container's other children against the container,
+and each entry of a list a container holds. What it cannot place -- a key the
+tree does not name, a value of a shape its node does not take, a statement kept
+whole -- is rewritten word by word by the rules that know a word by its shape
+alone (`Rule.lexical`: an address, a password hash, a sensitive word) and named
+by its schema path in `AnonymizeResult.unplaced`; the conversion turns each path
+into an `anonymize:` warning (owner answer 5, spec anonymization/placed-values).
+Two supplementary passes follow:
 
 1. **IPs-in-strings** — Replaces IP addresses embedded in larger string values
-   (e.g., `"server.example.com,10.1.2.3"`) using the IP rule's replacement map
+   (e.g., `"server.example.com,10.1.2.3"`) using the IP rule's replacement map;
+   an address the walk already wrote is left alone
 2. **AS-in-strings** — Replaces AS numbers embedded in string values (e.g.,
    `"inet-Upstream-AS64497"`) using the AS rule's replacement map
-3. **apply-groups** — Anonymizes group names in `apply-groups` / `apply-groups-except`
-   arrays, which have empty schema nodes
 
 ---
 

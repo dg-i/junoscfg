@@ -64,6 +64,10 @@ class SensitiveWordRule(Rule):
             return False
         return isinstance(value, str) and bool(self._pattern.search(value))
 
+    def lexical(self, word: str) -> str | None:
+        """A word holding a sensitive word or pattern has it replaced."""
+        return self.transform(word) if self.matches(word, {}, []) else None
+
     def transform(self, value: str) -> str:
         """Replace all occurrences of sensitive words in the value."""
         if value in self._mapping:

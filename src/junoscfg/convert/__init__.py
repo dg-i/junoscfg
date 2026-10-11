@@ -136,9 +136,6 @@ def pipeline_result(
     if anon_config is not None:
         cfg: AnonymizeConfig = anon_config  # type: ignore[assignment]
 
-        if cfg.any_enabled:
-            _refuse_unplaced(ir)
-
         # Revert mode: apply a saved mapping to restore originals
         if cfg.revert_map:
             from junoscfg.anonymize import apply_revert, load_mapping
@@ -158,6 +155,7 @@ def pipeline_result(
                 ),
             )
             ir = anon_result.ir
+            diagnostics.extend(_unplaced_warnings(anon_result.unplaced))
 
             # Dump the revert mapping if requested
             if cfg.dump_map:
@@ -169,6 +167,8 @@ def pipeline_result(
         from junoscfg.convert.field_validator import FieldValidationError, FieldValidator
 
         result = FieldValidator().validate(ir)
+        if anonymizing:
+            result = _withhold_unplaced(result)
         if not result.valid:
             if strict:
                 raise FieldValidationError(result)
@@ -224,37 +224,51 @@ def validate_ir(config: dict[str, Any]) -> Any:
     return FieldValidator().validate(config)
 
 
-def _refuse_unplaced(ir: dict[str, Any]) -> None:
-    """Fail anonymization on a statement the schema could not place.
+def _unplaced_warnings(unplaced: tuple[str, ...]) -> list[Diagnostic]:
+    """One warning per schema path the anonymizer could not place content at.
 
-    The anonymizer is schema-guided and never rewrites a key the schema does
-    not name, so a statement kept as written would leave verbatim -- with the
-    address in `set protocols bgp neighbor 10.11.12.13 ...` in it -- where the
-    reader used to drop it. Refusing is the one answer that neither loses nor
-    leaks; it holds whatever ``validate`` and ``strict`` say.
+    The path holds schema names only; the content, its key and every entry
+    name are withheld (owner answer 5, spec anonymization/placed-values).
     """
-    from junoscfg.convert.field_validator import (
-        UNPLACED,
-        FieldError,
-        FieldValidationError,
-        FieldValidationResult,
-        FieldValidator,
-    )
-
-    # The statement's text is withheld: a kept statement is what no rule
-    # rewrites, so its words are the original values.
-    unplaced = [
-        FieldError(
-            path=e.path,
-            message="cannot anonymize: a statement could not be placed in the schema "
-            "(its text is withheld: the conversion anonymizes)",
-            value="",
+    counts: dict[str, int] = {}
+    for path in unplaced:
+        counts[path] = counts.get(path, 0) + 1
+    return [
+        Diagnostic(
+            source="anonymize",
+            path=path or None,
+            message=(
+                f"{count} statement(s) {'here' if path else 'at the top level'} the schema "
+                "does not place: a word a rule knows by its shape (an address, a password "
+                "hash, a sensitive word) is replaced, every other word is left as written"
+            ),
         )
-        for e in FieldValidator().validate(ir).errors
-        if e.expected == UNPLACED
+        for path, count in counts.items()
     ]
-    if unplaced:
-        raise FieldValidationError(FieldValidationResult(errors=unplaced))
+
+
+def _withhold_unplaced(result: FieldValidationResult) -> FieldValidationResult:
+    """*result* with the text of each `UNPLACED` report withheld.
+
+    In an anonymized run a statement the schema could not place keeps every
+    word no rule recognises by its shape, so its report would print original
+    values; the schema path stays.
+    """
+    return FieldValidationResult(
+        errors=[
+            FieldError(
+                path=error.path,
+                message="a statement could not be placed in the schema: kept as written, not "
+                "validated (its text is withheld: the conversion anonymizes)",
+                value="",
+                expected=UNPLACED,
+            )
+            if error.expected == UNPLACED
+            else error
+            for error in result.errors
+        ],
+        warnings=result.warnings,
+    )
 
 
 __all__ = [

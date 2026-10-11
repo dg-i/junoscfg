@@ -109,8 +109,8 @@ def example() -> Capture:
 #: loaded that junoscfg cannot place in the shipped schema, by their path in
 #: the IR, with the reason. PRODUCT DEFECT, and none of them a class of
 #: `known-differences.json`: the set rendering keeps them as written, so the
-#: device law sees nothing, but field validation reports each, the JSON
-#: schemas reject them, and anonymization refuses the whole configuration.
+#: device law sees nothing, but field validation reports each and the JSON
+#: schemas reject them; an anonymized run names each by its schema path.
 #: Found when the example became the device's (openspec/changes/device-oracle).
 UNPLACED_IN_THE_EXAMPLE: tuple[tuple[tuple[str, ...], str], ...] = (
     (("system", "login", "user", "shell"), "the 25.2R0 schema model has no `shell`"),
@@ -136,6 +136,13 @@ UNPLACED_IN_THE_EXAMPLE: tuple[tuple[tuple[str, ...], str], ...] = (
     (
         ("protocols", "bgp", "group", "family", "inet6", "labeled-unicast", "per-prefix-label"),
         "the 25.2R0 schema model has no inet6 labeled-unicast `per-prefix-label`",
+    ),
+    (
+        ("interfaces", "interface-range", "member-range"),
+        "the JSON reader keeps the element name `end-range`, so `member-range` lacks its "
+        "mandatory `to`; the set reader and the schema say `to` (ARCH-C09, change 13). Unseen "
+        "until change anonymize-every-placed-value walked the children of `interfaces` "
+        "beside `interface`",
     ),
     (
         ("interfaces", "interface", "ether-options", "ieee-802.3ad"),

@@ -19,7 +19,8 @@ from typing import Any
 from junoscfg.audit.algebra import extract_names
 from junoscfg.audit.model import Occurrence, OccurrenceKind
 
-# Group references handled outside the schema (see anonymize/__init__.py).
+# Group references: the audit reads them as references to a group, a meaning
+# the tree's universal `apply-groups` leaf does not carry.
 _APPLY_GROUPS_KEYS: dict[str, OccurrenceKind] = {
     "apply-groups": "apply-groups",
     "apply-groups-except": "apply-groups-except",
@@ -41,7 +42,7 @@ def collect_occurrences(config: dict[str, Any], schema_root: dict[str, Any]) -> 
         All occurrences in tree order.
     """
     collector: list[Occurrence] = []
-    _walk_dict(config, schema_root, (), (), frozenset(), collector)
+    _walk_dict(config, schema_root, (), (), frozenset(), collector, schema_root)
     return collector
 
 
@@ -88,11 +89,14 @@ def _walk_dict(
     cli_path: tuple[str, ...],
     skip_keys: frozenset[str],
     collector: list[Occurrence],
+    root: dict[str, Any],
 ) -> None:
-    """Walk one IR dict level against its schema node, past *skip_keys*."""
-    from junoscfg.display import resolve_key_alias
+    """Walk one IR dict level against its schema node, past *skip_keys*.
 
-    children = schema_node.get("c", {})
+    A key resolves through `junoscfg.display.schema_child`, so a universal
+    statement below the root is walked against the root's node (*root*).
+    """
+    from junoscfg.display import resolve_key_alias, schema_child
 
     for key, value in obj.items():
         if key.startswith("@") or key in skip_keys:
@@ -114,7 +118,7 @@ def _walk_dict(
             _walk_unknown(value, match_path + (key,), cli_path + (key,), collector)
             continue
 
-        child_schema = children.get(resolve_key_alias(key))
+        child_schema = schema_child(schema_node, resolve_key_alias(key), root)
         if child_schema is None:
             _walk_unknown(value, match_path + (key,), cli_path + (key,), collector)
             continue
@@ -135,6 +139,7 @@ def _walk_dict(
                         match_path + (key, transparent_child),
                         cli_path + (key,),
                         collector,
+                        root,
                     )
                 siblings = {k: v for k, v in value.items() if k != transparent_child}
                 if siblings:
@@ -145,6 +150,7 @@ def _walk_dict(
                         cli_path + (key,),
                         frozenset(),
                         collector,
+                        root,
                     )
             elif isinstance(value, list):
                 # Native JSON keeps the entries as a bare list (no wrapper).
@@ -154,6 +160,7 @@ def _walk_dict(
                     match_path + (key, transparent_child),
                     cli_path + (key,),
                     collector,
+                    root,
                 )
             else:
                 _walk_unknown(value, match_path + (key,), cli_path + (key,), collector)
@@ -166,6 +173,7 @@ def _walk_dict(
                 match_path + (key,),
                 cli_path + (key,),
                 collector,
+                root,
             )
             continue
 
@@ -183,7 +191,13 @@ def _walk_dict(
         # Plain container
         if isinstance(value, dict):
             _walk_dict(
-                value, child_schema, match_path + (key,), cli_path + (key,), frozenset(), collector
+                value,
+                child_schema,
+                match_path + (key,),
+                cli_path + (key,),
+                frozenset(),
+                collector,
+                root,
             )
         elif isinstance(value, list):
             for item in value:
@@ -195,6 +209,7 @@ def _walk_dict(
                         cli_path + (key,),
                         frozenset(),
                         collector,
+                        root,
                     )
                 else:
                     _emit(collector, item, cli_path + (key,), match_path + (key,), "unknown")
@@ -210,12 +225,13 @@ def _walk_container_child(
     match_path: tuple[str, ...],
     cli_path: tuple[str, ...],
     collector: list[Occurrence],
+    root: dict[str, Any],
 ) -> None:
     """Walk the transparent child of a transparent container."""
     if inner_schema is None:
         _walk_unknown(value, match_path, cli_path, collector)
     else:
-        _walk_entries(value, inner_schema, match_path, cli_path, collector)
+        _walk_entries(value, inner_schema, match_path, cli_path, collector, root)
 
 
 def _walk_entries(
@@ -224,6 +240,7 @@ def _walk_entries(
     match_path: tuple[str, ...],
     cli_path: tuple[str, ...],
     collector: list[Occurrence],
+    root: dict[str, Any],
 ) -> None:
     """Walk the entries of a named list (or transparent container content).
 
@@ -281,7 +298,13 @@ def _walk_entries(
                         collector,
                     )
         _walk_dict(
-            entry, list_schema, match_path, entry_cli_path, entry_key_names(list_schema), collector
+            entry,
+            list_schema,
+            match_path,
+            entry_cli_path,
+            entry_key_names(list_schema),
+            collector,
+            root,
         )
 
 

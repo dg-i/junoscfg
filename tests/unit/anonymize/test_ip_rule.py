@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import json
 from typing import Any
 
 import pytest
@@ -422,13 +423,14 @@ class TestTheLeafsTypeAnswers:
     whose type can hold one, and nothing else.
 
     It ignored `host`, `hostname` and `ipprefix-only` (the tacplus-server
-    addresses of the device example, ANON-P2, NEW-A-N6), decided some keys by
-    the name of their list (`_IP_NAMED_LIST_PARENTS`), handed any value of an
-    address type to the address anonymizer, which crashes on an interface name
-    (NEW-R8), and left areas, BGP clusters, `ipv6-router-id` and the untyped
-    `apply-macro` value as written. Measured over the device captures and the
-    JVD corpus (change anonymize-every-placed-value, evidence freeze). Spec
-    anonymization/placed-values.
+    addresses of the device example, ANON-P2, NEW-A-N6), decided every key of
+    15 lists by the list's name, handed any value of an address type to the
+    address anonymizer, which crashes on an interface name (NEW-R8), and left
+    the untyped `apply-macro` value as written. Free text and `areaid` are no
+    address types: an SNMP OID and an area are syntax (Test/Challenge finding
+    6, ruling); the list's name answers only for the keys of those 15 lists the
+    tree types as free text (`syslog host`). Change
+    anonymize-every-placed-value; spec anonymization/placed-values.
     """
 
     @staticmethod
@@ -442,10 +444,6 @@ class TestTheLeafsTypeAnswers:
             {"l": True, "tr": "hostname"},
             {"l": True, "nk": True, "atr": "hostname"},
             {"l": True, "atr": "ipprefix-only"},
-            {"l": True, "nk": True, "atr": "areaid"},
-            {"l": True, "tr": "string"},
-            {"l": True, "tr": "xsd:string"},
-            {"l": True, "nk": True, "atr": "key-attribute-string-type"},
             {"l": True},
             {},
         ],
@@ -512,15 +510,6 @@ class TestTheLeafsTypeAnswers:
                 {"203.0.114.0/26"},
             ),
             (["set system syslog host 203.0.114.57 any any"], {"203.0.114.57"}),
-            (
-                [
-                    "set protocols ospf area 198.0.2.1 interface ge-0/0/0.0",
-                    "set policy-options policy-statement P term T from area 198.0.2.1",
-                ],
-                {"198.0.2.1"},
-            ),
-            (["set protocols bgp group G cluster 203.0.114.60"], {"203.0.114.60"}),
-            (["set routing-options ipv6-router-id 203.0.114.61"], {"203.0.114.61"}),
             (["set system apply-macro M2 peer 203.0.114.8"], {"203.0.114.8"}),
         ],
         ids=[
@@ -528,10 +517,7 @@ class TestTheLeafsTypeAnswers:
             "radius-hostname",
             "trap-group-hostname",
             "nat-ipprefix-only",
-            "syslog-host-free-text",
-            "area-and-its-reference",
-            "bgp-cluster-areaid",
-            "ipv6-router-id-string",
+            "syslog-host-free-text-key",
             "nested-apply-macro-untyped",
         ],
     )
@@ -540,8 +526,6 @@ class TestTheLeafsTypeAnswers:
     ) -> None:
         """Through the conversion, each address is replaced, alike everywhere,
         and the mapping names it."""
-        import json
-
         from junoscfg import Format, convert_config
         from junoscfg.convert import to_dict
 
@@ -563,3 +547,61 @@ class TestTheLeafsTypeAnswers:
         assert json.dumps(result.ir).count(result.mapping["ip"][next(iter(addresses))]) >= len(
             lines
         )
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set snmp view V oid 1.3.6.1 include",
+            "set policy-options policy-statement P term T from area 0.0.0.0",
+            "set policy-options policy-statement P term T from area 198.0.2.1",
+            "set protocols bgp group G cluster 198.0.2.1",
+        ],
+        ids=["snmp-oid", "from-area-backbone", "from-area", "bgp-cluster"],
+    )
+    def test_syntax_shaped_like_an_address_is_unchanged(self, line: str) -> None:
+        """An OID and an area are syntax, not addresses (ruling on Test/Challenge
+        finding 6): free text and `areaid` take no address."""
+        from junoscfg import Format, convert_config
+
+        config = AnonymizeConfig(ips=True, ignore_reserved=True, salt="test")
+        out = convert_config(line, from_format=Format.SET, to_format=Format.SET, anon_config=config)
+        assert out.strip() == line
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="SPECIFICATION CHALLENGE S3 (pending the owner): under --anonymize-ignore-reserved "
+        "`protocols ospf area 0.0.0.0` is rewritten through the list name `area`, as the base "
+        "did; interim: base behaviour kept, not extended to `from area`",
+    )
+    def test_the_backbone_area_is_unchanged_s3(self) -> None:
+        from junoscfg import Format, convert_config
+
+        line = "set protocols ospf area 0.0.0.0 interface ge-0/0/0.0"
+        config = AnonymizeConfig(ips=True, ignore_reserved=True, salt="test")
+        out = convert_config(line, from_format=Format.SET, to_format=Format.SET, anon_config=config)
+        assert out.strip() == line
+
+    @pytest.mark.parametrize(
+        ("text", "address"),
+        [
+            ("203.0.114.9/rack-4", "203.0.114.9"),
+            ("203.0.114.0/24,", "203.0.114.0/24"),
+            ("203.0.114.9/33", "203.0.114.9"),
+            ("3ffe:0b00::1/129", "3ffe:0b00::1"),
+            ("3ffe:0b00::1%ge-0/0/0.0", "3ffe:0b00::1"),
+            ("203.0.114.9/", "203.0.114.9"),
+        ],
+    )
+    def test_a_malformed_value_never_crashes(self, text: str, address: str) -> None:
+        """Text beside an address is text: the address is replaced and the run
+        goes on, on an untyped leaf, a typed leaf and content the walk cannot
+        place (Test/Challenge finding 5); the address anonymizer raised on each."""
+        rule = self._rule()
+        for node in ({}, {"l": True, "tr": "ipaddr"}):
+            assert rule.matches(text, node, ["x"])
+            replaced = rule.transform(text)
+            assert address not in replaced
+            assert replaced.endswith(text[len(address) :])
+        assert address not in (rule.lexical(f'"{text}"') or "")
+        ir = {"configuration": {"system": {"bogus": f"peer {text}"}}}
+        assert address not in json.dumps(anonymize(ir, AnonymizeConfig(ips=True, salt="t")).ir)

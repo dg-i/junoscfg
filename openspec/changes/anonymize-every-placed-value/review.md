@@ -18,6 +18,22 @@
 - Proposed correction: the record is content the walk cannot place, under rule 5: its address-shaped words are replaced (tags alike), its parent's schema path is warned about, nothing is refused, and no message carries its text. Delta `specs/conversion/entry-keys/spec.md`; tests `TestContentTheWalkCannotPlace`, `TestEveryDoorGivesOneAnswer`, `test_anonymizing_warns_without_the_statement`.
 - Decision: Pending owner decision. Interim action: the proposed correction, reversible by restoring the record's refusal in `anonymize()` and the pipeline (owner intake 2026-10-11: merge with recorded interim action).
 
+### S2: password hashes and sensitive words in content the walk cannot place are rewritten by shape
+
+- Artifact: owner answer 5 ("anonymize IPv4/IPv6/prefix-shaped values by lexical pattern, never keywords"); C13 of `instruction-integrity.md` as first frozen (addresses only).
+- Counterexample: executed by the Test/Challenge role (`private_test_data/makeover-work/anonymize-every-placed-value/roles/probe_shapes.py`): under an unknown key `$9$ExAmPlEhAsH.KEY` survives `passwords=True` and `acme` survives `sensitive_words=["acme"]`, while both rules recognise such a word by its shape alone, as the address rule does.
+- User impact: an anonymized run publishes a secret or a protected word from a statement junoscfg cannot place, with only a warning.
+- Proposed correction: every rule that knows a word by its shape alone (`Rule.lexical`: address, password hash, sensitive word) rewrites it in content the walk cannot place; `TestContentTheWalkCannotPlace::test_a_password_hash_and_a_sensitive_word_are_replaced_by_shape`.
+- Decision: Pending owner decision. Interim action: the proposed correction, applied by the orchestrator's ruling on finding 8; reversible by restricting `Rule.lexical` to the IP rule (owner intake 2026-10-11: merge with recorded interim action).
+
+### S3: `protocols ospf area 0.0.0.0` is rewritten under `--anonymize-ignore-reserved`
+
+- Artifact: `openspec/changes/anonymize-every-placed-value/evidence-freeze.md` acceptance "syntax values (enum values, keywords, key choices) are unchanged"; `anonymize/rules/ip.py` `_ADDRESS_KEYED_LISTS` (`area`), unchanged from the base's `_IP_NAMED_LIST_PARENTS`.
+- Counterexample: executed (`roles/probe_area.py`): with `ignore_reserved=True`, `set protocols ospf area 0.0.0.0 interface ge-0/0/0.0` becomes `area 233.113.141.75`; the backbone is lost. Base behaviour, unchanged here; `from area` is left as written (ruling 6), so a policy naming a non-zero area no longer matches its rewritten area under `--anonymize-ips`, as on the base.
+- User impact: an anonymized configuration under that flag loses its backbone area.
+- Proposed correction: an area identifier is syntax (`areaid`) and passes the IP rule, or the area and every reference to it are rewritten alike; the owner decides.
+- Decision: Pending owner decision. Interim action: base behaviour kept, not extended; pinned by the strict xfail `tests/unit/anonymize/test_ip_rule.py::TestTheLeafsTypeAnswers::test_the_backbone_area_is_unchanged_s3` (owner intake 2026-10-11: merge with recorded interim action).
+
 ## Verdict
 
 <!-- Filled by the fresh Reviewer at STOP-R. -->

@@ -17,8 +17,7 @@ generated salt back into the config you pass, so a reused config keeps one salt.
   `tests/unit/anonymize/test_password_rule.py::TestSaltIsNotCopied`.
 - `networks=["auto"]` needs `source_text` and says so rather than doing
   nothing — enforced by `tests/unit/anonymize/test_ip_rule.py::TestNetworksAutoNeedsSourceText`.
-- A record of statements kept whole (`junoscfg:unplaced`) is refused; other unknown
-  keys are NEW-R5 — enforced by `tests/unit/anonymize/test_integration.py::TestAKeptStatementIsRefused`.
+- Unplaced content is never refused nor passed unannounced: words known by shape are replaced, its path is in `AnonymizeResult.unplaced` — enforced by `tests/unit/anonymize/test_integration.py::TestContentTheWalkCannotPlace`.
 - A schema enum value or the keyword of a key choice is syntax and passes the
   rules unchanged — enforced by `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged` and `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`.
 

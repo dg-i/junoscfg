@@ -24,9 +24,10 @@ _IPV4_IN_STRING_RE = re.compile(
     r"(?![\d.])"  # Not followed by digit or dot
 )
 
-# Type references from the schema that indicate IP address fields.
-# Matches the sets in field_validator.py plus additional variants from the plan.
-_IP_TYPE_REFS: frozenset[str] = frozenset(
+#: Leaf types that hold an address or a prefix: the IP families, and the host
+#: families, which hold a name or an address. The rule takes a value of such a
+#: leaf where it holds an address (spec anonymization/placed-values).
+_ADDRESS_TYPES: frozenset[str] = frozenset(
     {
         "ipaddr",
         "ipv4addr",
@@ -37,18 +38,26 @@ _IP_TYPE_REFS: frozenset[str] = frozenset(
         "ipaddr-or-interface",
         "ipprefix-optional",
         "ipprefix-mandatory",
+        "ipprefix-only",
         "ipv4prefix-only",
         "ipv6prefix-mandatory",
         "ipv4addr-or-interface",
-        # Include the *address variants from field_validator
         "ipv4address",
         "ipv6address",
+        "host",
+        "hostname",
     }
 )
 
-# Schema path segments whose named-list key ("name" field) is known
-# to be an IP address, even when the schema has no tr on the list node.
-_IP_NAMED_LIST_PARENTS: frozenset[str] = frozenset(
+#: Lists whose key the 25.2R2 tree types only as free text (`string`,
+#: `key-attribute-string-type`) or as `areaid` although it holds an address:
+#: `system syslog host`, `... server`, `... route`, `... source-address`,
+#: `protocols ospf area`. For those keys alone the list's name decides, as it
+#: did for every key until change anonymize-every-placed-value; a typed key
+#: answers by its type. Retires when the schema model types these keys
+#: (schema-model gaps, change 18). An SNMP OID (`oid 1.3.6.1`) and a `from
+#: area` reference are free text and `areaid` beyond these keys, and stay.
+_ADDRESS_KEYED_LISTS: frozenset[str] = frozenset(
     {
         "address",
         "area",
@@ -67,17 +76,36 @@ _IP_NAMED_LIST_PARENTS: frozenset[str] = frozenset(
         "static-route",
     }
 )
+_KEY_TEXT_TYPES = frozenset({"string", "key-attribute-string-type", "areaid"})
+
+#: An address token: an IPv4 or IPv6 address, with a prefix length when one in
+#: range follows. A neighbour that continues a number, a word or an address
+#: (`1.2.3.4.5`, `x10.0.0.1`) is no boundary. Anything else beside it
+#: (`/rack-4`, `,`, `%ge-0/0/0.0`, `/33`, a trailing `/`) is text and stays.
+_ADDRESS_TOKEN = re.compile(
+    r"(?<![\w.:])"
+    r"(?:(?P<v4>\d{1,3}(?:\.\d{1,3}){3})|(?P<v6>[0-9A-Fa-f]{0,4}(?::[0-9A-Fa-f]{0,4}){2,7}"
+    r"(?:\.\d{1,3}){0,3}))"
+    r"(?:/(?P<length>\d{1,3})(?![\w.:]))?"
+    r"(?![\w.:])"
+)
 
 
-def _looks_like_ip(value: str) -> bool:
-    """Return True if *value* parses as an IP address or CIDR prefix."""
-    # Strip CIDR suffix for validation
-    addr_part = value.split("/")[0] if "/" in value else value
-    try:
-        ipaddress.ip_address(addr_part)
-        return True
-    except ValueError:
-        return False
+def _addresses(value: str) -> list[tuple[int, int, str]]:
+    """Each address token in *value*: its start, its end, and the token."""
+    found = []
+    for match in _ADDRESS_TOKEN.finditer(value):
+        address = match.group("v4") or match.group("v6")
+        try:
+            parsed = ipaddress.ip_address(address)
+        except ValueError:
+            continue
+        end = match.end("v4") if match.group("v4") else match.end("v6")
+        length = match.group("length")
+        if length is not None and int(length) <= parsed.max_prefixlen:
+            end = match.end("length")
+        found.append((match.start(), end, value[match.start() : end]))
+    return found
 
 
 class IpRule(Rule):
@@ -129,47 +157,66 @@ class IpRule(Rule):
         schema_node: dict[str, Any],
         path: list[str],
     ) -> bool:
-        """Match leaf values whose schema type_ref indicates an IP field.
+        """Match a value that is an address on a leaf whose type can hold one.
 
-        For named-list key fields without a type_ref, falls back to checking
-        if the parent path segment is a known IP-keyed list and the value
-        parses as an IP address.
+        The value starts with an address or prefix; what follows it in the
+        same word (`/rack-4`, `,`, `%ge-0/0/0.0`) is text. The type answers:
+        an address or host type, or none at all (a leaf the tree gives no
+        type, content the walk cannot place). A list key the tree types only
+        as free text or `areaid` answers by its list's name
+        (`_ADDRESS_KEYED_LISTS`). Any other type never takes an address, and
+        a value holding none never reaches the address anonymizer.
         """
-        anonymization_type = schema_node.get("atr")
-        if (
-            anonymization_type is not None
-            and strip_type_prefix(anonymization_type).lower() in _IP_TYPE_REFS
-            and _looks_like_ip(str(value))
-        ):
+        tokens = _addresses(value) if isinstance(value, str) else []
+        if not tokens or tokens[0][0] != 0:
+            # An address inside other text is `ips_in_strings`' (`scp://...`).
+            return False
+        types = {
+            strip_type_prefix(str(ref)).lower()
+            for ref in (schema_node.get("atr"), schema_node.get("tr"))
+            if ref is not None
+        }
+        if not types or types & _ADDRESS_TYPES:
             return True
-
-        type_ref = schema_node.get("tr")
-        if type_ref is not None and type_ref.lower() in _IP_TYPE_REFS:
-            return True
-
-        # Fallback for named-list key fields: check parent path + value shape.
-        # path is like [..., "address", "name"] — check the segment before "name".
-        if len(path) >= 2 and path[-1] == "name":
-            parent_key = path[-2]
-            if parent_key in _IP_NAMED_LIST_PARENTS and _looks_like_ip(str(value)):
-                return True
-
-        return False
+        return (
+            len(path) >= 2
+            and path[-1] == "name"
+            and path[-2] in _ADDRESS_KEYED_LISTS
+            and types <= _KEY_TEXT_TYPES
+        )
 
     def transform(self, value: str) -> str:
-        """Anonymize an IP address or CIDR prefix string."""
-        return self._anonymizer.anonymize(value)
+        """Anonymize each address or prefix in *value*; the text around it stays."""
+        tokens = _addresses(value)
+        if not tokens:
+            return value
+        if len(tokens) == 1 and tokens[0][2] == value:
+            return self._anonymizer.anonymize(value)
+        parts: list[str] = []
+        last = 0
+        for start, end, token in tokens:
+            parts.extend((value[last:start], self._anonymizer.anonymize(token)))
+            last = end
+        parts.append(value[last:])
+        return "".join(parts)
 
-    def replace_ips_in_string(self, value: str) -> str:
+    def lexical(self, word: str) -> str | None:
+        """A word holding an address has the address replaced."""
+        return self.transform(word) if _addresses(word) else None
+
+    def replace_ips_in_string(self, value: str, *, done: frozenset[str] = frozenset()) -> str:
         """Replace all embedded IPv4 addresses in a string.
 
         Used for the ``ips_in_strings`` option to catch IPs inside URLs,
-        host+IP combos, and other non-standalone contexts.
+        host+IP combos, and other non-standalone contexts. An address in
+        *done* -- a replacement the walk already wrote -- is left as it is.
         """
 
         def _replace(m: re.Match[str]) -> str:
             addr_str = m.group(1)
             cidr = m.group(2)
+            if m.group(0) in done or addr_str in done:
+                return m.group(0)
             try:
                 ipaddress.ip_address(addr_str)
             except ValueError:

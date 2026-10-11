@@ -354,6 +354,10 @@ class PasswordRule(Rule):
         self._plain_cache[value] = result
         return result
 
+    def lexical(self, word: str) -> str | None:
+        """A word that starts with a known hash prefix (``$9$``, ``$6$``...) is a secret."""
+        return self.transform(word) if _HASH_VALUE_RE.match(word) else None
+
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized password mapping."""
         return dict(self._mapping)

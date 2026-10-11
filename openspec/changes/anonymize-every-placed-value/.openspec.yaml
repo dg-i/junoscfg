@@ -3,14 +3,14 @@ created: 2026-10-11
 type: bug
 # The highest-tier zone this change edits is red: anonymize (walker, __init__, rules/ip.py,
 # rules/group.py, revert.py). Also yellow: conversion (convert/__init__.py, field_validator.py)
-# and surface (src/junoscfg/__init__.py, __version__ only).
+# audit (audit/walker.py adopts schema_child) and surface (src/junoscfg/__init__.py, __version__ only).
 zone: anonymize
-domains: [anonymization, conversion, validation, schema-pipeline]
+domains: [anonymization, conversion, validation, schema-pipeline, audit]
 removes:
   - "`_replace_apply_groups` in `anonymize/__init__.py`: `GroupRule` claims `apply-groups` and `apply-groups-except` in the walk"
-  - "`_IP_NAMED_LIST_PARENTS` in `anonymize/rules/ip.py`: the IP rule answers by the leaf's type"
+  - "the list-name answer of `anonymize/rules/ip.py` (`_IP_NAMED_LIST_PARENTS`) for every key but those its lists type as free text or `areaid`: the IP rule answers by the leaf's type"
   - "`_refuse_unplaced` in `convert/__init__.py` and the record refusal (`_count_kept_statements`) in `anonymize/__init__.py`: both doors apply owner rule 5 to content the walk cannot place"
-  - "nothing public: every name of the `junoscfg`, `junoscfg.anonymize` and `junoscfg.convert` doors stays"
+  - "nothing public: every name of the `junoscfg`, `junoscfg.anonymize` and `junoscfg.convert` doors stays; `AnonymizeResult.unplaced`, `Rule.lexical`, the return value of `walk` and `IpRule.replace_ips_in_string(done=...)` are added"
 assurance: balanced
 declared-break:
   consumer:
@@ -28,11 +28,13 @@ declared-break:
       an anonymized run the text of an UNPLACED field-validation message is
       withheld. More values are replaced: nested apply-groups and apply-macro,
       interface-range and the other siblings of a transparent child, a list a
-      container holds, and leaves typed host, hostname, ipprefix-only, areaid,
-      free text or untyped whose value parses as an address; such a value on
-      any other type is no longer handed to the address anonymizer (an
-      interface name under `ipaddr-or-interface` crashed the run). Declared
-      breaks on a named surface raise the minor (AGENTS.md).
+      container holds, leaves typed host, hostname, ipprefix-only or untyped
+      whose value is an address, and password hashes and sensitive words in
+      unplaced content; a value holding no address is no longer handed to the
+      address anonymizer (an interface name under `ipaddr-or-interface`
+      crashed the run). Groups named re0, re1, node0, node1, member<N> or a `$`
+      variable keep their names. Declared breaks on a named surface raise the
+      minor (AGENTS.md).
     migration: >-
       A caller that relied on FieldValidationError to stop an anonymized
       conversion of unplaced content reads the `anonymize` warnings in

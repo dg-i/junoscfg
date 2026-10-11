@@ -309,12 +309,12 @@ class TestTheWalkerReachesEveryPlacedValue:
         """With and without the transparent child beside them."""
         siblings = {
             "interface-range": [{"name": "IR1", "description": "access range"}],
-            "interface-set": [{"name": "IS1", "description": "access set"}],
+            "interface-set": [{"name": "IS1", "interface": [{"name": "ge-0/0/1"}]}],
         }
         for interfaces in (siblings, {"interface": [{"name": "ge-0/0/0"}], **siblings}):
             offered = self._offered({"interfaces": interfaces})
             assert offered[("interfaces", "interface-range", "description")] == "access range"
-            assert offered[("interfaces", "interface-set", "description")] == "access set"
+            assert offered[("interfaces", "interface-set", "interface", "name")] == "ge-0/0/1"
         offered = self._offered({"interfaces": {"interface": [{"name": "ge-0/0/0"}], **siblings}})
         assert offered[("interfaces", "name")] == "ge-0/0/0"
 

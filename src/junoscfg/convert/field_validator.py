@@ -274,23 +274,26 @@ class FieldValidator:
                     )
                     continue
 
-                # Handle transparent containers
-                if child_schema and child_schema.get("t"):
+                # A transparent container: its transparent child's entries
+                # against the child, its other children (`interface-range`
+                # beside `interface`) against the container itself. Replaced
+                # by its child, the container hid every sibling, or walked
+                # them as an entry when the child was absent (NEW-A-S2).
+                if child_schema and child_schema.get("t") and isinstance(value, dict | list):
                     transparent_child = child_schema["t"]
-                    tc_children = child_schema.get("c", {})
-                    inner_schema = tc_children.get(transparent_child)
-                    if isinstance(value, dict) and transparent_child in value:
-                        value = value[transparent_child]
-                    if isinstance(value, list) and inner_schema:
-                        for item in value:
-                            path.append(key)
-                            self._check_key_fields(item, inner_schema, path, result)
-                            self._walk(item, inner_schema, path, result)
-                            path.pop()
-                        continue
-                    elif isinstance(value, dict) and inner_schema:
+                    inner_schema = child_schema.get("c", {}).get(transparent_child)
+                    if inner_schema is not None:
+                        entries = value.get(transparent_child) if isinstance(value, dict) else value
                         path.append(key)
-                        self._walk(value, inner_schema, path, result)
+                        for item in entries if isinstance(entries, list) else [entries]:
+                            if isinstance(item, dict):
+                                if isinstance(entries, list):
+                                    self._check_key_fields(item, inner_schema, path, result)
+                                self._walk(item, inner_schema, path, result)
+                        if isinstance(value, dict):
+                            siblings = {k: v for k, v in value.items() if k != transparent_child}
+                            if siblings:
+                                self._walk(siblings, child_schema, path, result)
                         path.pop()
                         continue
 
@@ -377,6 +380,15 @@ class FieldValidator:
                         )
                     path.append(key)
                     self._walk(value, child_schema, path, result)
+                    path.pop()
+                elif isinstance(value, list) and any(isinstance(item, dict) for item in value):
+                    # A list a container holds -- the port-mirroring
+                    # `routing-instance`, a list of one in JSON: each entry
+                    # is validated against the container.
+                    path.append(key)
+                    for item in value:
+                        if isinstance(item, dict):
+                            self._walk(item, child_schema, path, result)
                     path.pop()
                 elif (
                     isinstance(value, str | int | float)

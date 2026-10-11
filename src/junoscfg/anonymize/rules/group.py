@@ -1,23 +1,31 @@
 """Group and view name anonymization rule.
 
-Matches configuration group names (``groups[*].name``), BGP peer group
-names (``*.bgp.group[*].name``), and SNMP view names
-(``snmp.view[*].name``).  Produces hash-based pseudonyms with
-type-appropriate prefixes.
+Matches configuration group names (``groups[*].name``), the references to them
+(``apply-groups`` and ``apply-groups-except`` at every level), BGP peer group
+names (``*.bgp.group[*].name``), and SNMP view names (``snmp.view[*].name``).
+Produces hash-based pseudonyms with type-appropriate prefixes.
 
-``apply-groups`` and ``apply-groups-except`` values are handled by a
-second pass in :func:`junoscfg.anonymize.anonymize` because their schema
-nodes are empty (``{}``), making them invisible to the schema-guided walker.
-``xsd_fixes._fix_apply_statements`` declares both on the root with the
-``universal`` flag, but only the grammar and JSON-schema generators read
-that flag, and the bundled artifacts predate the fix in any case. Teaching
-the walker to read it would retire this pass.
+The walker reaches a reference at every level: the tree declares both
+statements on its root, flagged universal, and `junoscfg.display.schema_child`
+resolves them below it. The rule claims them in the walk, so a group and every
+reference to it get one replacement whichever other rules are on; the second
+pass that rewrote every reference again after the walk is gone (ANON-P1,
+change anonymize-every-placed-value).
+
+A group name Junos gives a meaning of its own passes unchanged, as a group
+and as a reference: ``re0`` and ``re1`` apply to that Routing Engine,
+``node0`` and ``node1`` to that chassis-cluster node, ``member<N>`` to that
+Virtual Chassis member, and ``${node}`` (any ``$`` variable) is expanded by
+Junos at commit (Junos OS "Configuration Groups" documentation: groups named
+for a Routing Engine, cluster node or member are applied to it alone).
+Renamed, the group would apply nowhere.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 from typing import TYPE_CHECKING, Any
 
 from junoscfg.anonymize.rules import Rule
@@ -26,12 +34,19 @@ if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
 
 
+#: Group names Junos reserves for a Routing Engine, a cluster node or a
+#: Virtual Chassis member, and variables Junos expands (`${node}`).
+_RESERVED_GROUP = re.compile(r"^(?:re[01]|node[01]|member\d+|\$.*)$")
+_REFERENCES = frozenset({"apply-groups", "apply-groups-except"})
+
+
 class GroupRule(Rule):
     """Replace group and view names with deterministic pseudonyms.
 
     Detects group-related fields by schema path:
 
-    - Configuration groups: ``groups[*].name``
+    - Configuration groups: ``groups[*].name``, and every ``apply-groups`` and
+      ``apply-groups-except`` naming one
     - BGP peer groups: ``*.bgp.group[*].name``
     - SNMP views: ``snmp.view[*].name``
     - SNMP access groups: ``snmp.v3.vacm.*.group-name``
@@ -51,11 +66,22 @@ class GroupRule(Rule):
         schema_node: dict[str, Any],
         path: list[str],
     ) -> bool:
-        """Match group/view name fields by path pattern."""
+        """Match group/view name fields and group references by path pattern."""
         if not path:
             return False
 
         key = path[-1]
+
+        if (
+            isinstance(value, str)
+            and _RESERVED_GROUP.match(value)
+            and (key in _REFERENCES or (key == "name" and len(path) >= 2 and path[-2] == "groups"))
+        ):
+            return False
+
+        # A reference to a configuration group, at any level.
+        if key in _REFERENCES:
+            return True
 
         # Configuration group names: groups.name (named-list key in
         # the transparent container's inner node)

@@ -14,13 +14,17 @@ ANON-P2, NEW-C11, NEW-A-N1/N2/N3/N6, NEW-A-S2, NEW-R8).
 - The walker resolves children through `junoscfg.display.schema_child`, walks a
   transparent container's other children against the container, and each entry
   of a list a container holds.
-- The IP rule answers by type: an address, host, `areaid`, free-text or untyped
-  leaf takes a value that parses as an address; `_IP_NAMED_LIST_PARENTS` goes.
+- The IP rule answers by type: an address, host, `ipprefix-only` or untyped leaf
+  takes a value that is an address; the list name answers only for keys typed
+  free text or `areaid` (`syslog host`, as before); text beside an address is
+  text, never a crash.
 - `GroupRule` claims `apply-groups` and `apply-groups-except` wherever they
-  stand; `_replace_apply_groups` goes.
+  stand, passing names Junos reserves (`re0`, `node0`, `${node}`);
+  `_replace_apply_groups` goes.
 - **BREAKING** (`consumer`, `cli`), owner answer 5: content the walk cannot place
   (an unknown key, a value of a shape its node does not take, a statement kept
-  whole) has its address-shaped words replaced and is named, by schema path, in
+  whole) has each word a rule knows by its shape (address, password hash,
+  sensitive word: `Rule.lexical`) replaced and is named, by schema path, in
   `AnonymizeResult.unplaced` and a conversion warning. Neither door refuses it
   any more; an anonymized run withholds the text of `UNPLACED` messages.
 - Field validation walks transparent siblings against their container and each

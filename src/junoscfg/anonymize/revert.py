@@ -9,6 +9,7 @@ matching string value in the IR is replaced.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 
@@ -74,20 +75,39 @@ def apply_revert(ir: dict[str, Any], mapping: dict[str, dict[str, str]]) -> dict
 
 
 def _walk_revert(obj: Any, reverse: dict[str, str]) -> None:
-    """Recursively walk the IR and replace anonymized values."""
+    """Recursively walk the IR and replace anonymized values, and the words of keys."""
     if isinstance(obj, dict):
-        for key in list(obj.keys()):
-            value = obj[key]
+        items = []
+        for key, value in obj.items():
             if isinstance(value, str):
-                obj[key] = _revert_value(value, reverse)
+                value = _revert_value(value, reverse)
             elif isinstance(value, (dict, list)):
                 _walk_revert(value, reverse)
+            items.append((_revert_key(key, reverse), value))
+        obj.clear()
+        obj.update(items)
     elif isinstance(obj, list):
         for i, item in enumerate(obj):
             if isinstance(item, str):
                 obj[i] = _revert_value(item, reverse)
             elif isinstance(item, (dict, list)):
                 _walk_revert(item, reverse)
+
+
+#: A word of a key: anything between whitespace and quotes, past a tag's `@`.
+_KEY_WORD = re.compile(r'[^\s"@]+')
+
+
+def _revert_key(key: str, reverse: dict[str, str]) -> str:
+    """Restore each word of *key* a replacement spells exactly.
+
+    Content the anonymizer cannot place -- an unknown key, a 0.16.1 joined
+    key, a statement kept whole -- has the addresses, hashes and sensitive
+    words of its keys replaced word by word (spec anonymization/placed-values),
+    so revert restores a key the same way. A key the schema names is never a
+    replacement.
+    """
+    return _KEY_WORD.sub(lambda match: reverse.get(match.group(), match.group()), key)
 
 
 def _revert_value(value: str, reverse: dict[str, str]) -> str:

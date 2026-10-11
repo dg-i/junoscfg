@@ -685,6 +685,14 @@ class TestKeyedEntriesSurvive:
         `<*>` the group rule replaces (`test_a_wildcard_group_name_passes_the_group_rule`).
         The IR is restored through JSON output here; through set output it is
         `test_the_mapping_restores_the_set_output`.
+
+        Re-pinned by change anonymize-every-placed-value (`b8c3da05…` to
+        `8e13d961…`): 92 entries became 95, none dropped or altered. Added:
+        `description` `access range` and `access ports`, the `interface-range`
+        descriptions beside `interface` the walker never saw (NEW-C11); `ip`
+        `203.0.114.49`, the `tacplus-server` key the tree types `hostname`
+        (NEW-A-N6). `10.255.0.1` and `10.0.0.1`, also once missed, were mapped
+        already from their other occurrences.
         """
         source = json.dumps(placed_only(json.loads(json_config)))
         self._anonymized(source, Format.SET, tmp_path / "map.json")
@@ -695,7 +703,7 @@ class TestKeyedEntriesSurvive:
         }
         assert (
             hashlib.sha256(json.dumps(pinned, sort_keys=True).encode()).hexdigest()
-            == "b8c3da0573385b58ec1f9a156d3e2ad62f279e92084beaf6dd3b36ee26aace99"
+            == "8e13d961b885c80dae3cdbad1e999012b81af51c9ea7eda3cd1148570974cb93"
         )
 
         out = self._anonymized(source, Format.JSON, tmp_path / "json-map.json")
@@ -776,13 +784,37 @@ class TestGroupReferencesResolve:
         assert apply_revert(result.ir, result.mapping) == source
 
 
+class TestAGroupJunosReservesKeepsItsName:
+    """`re0`, `re1`, `node0`, `node1`, `member<N>` name a group Junos applies to
+    that Routing Engine, cluster node or Virtual Chassis member, and `${node}`
+    is expanded by Junos at commit (Junos OS "Configuration Groups"
+    documentation). Renamed, they apply nowhere: they pass the group rule as a
+    group and as a reference (ruling on Test/Challenge finding 7). No committed
+    device capture holds one."""
+
+    def test_the_reserved_names_pass(self) -> None:
+        names = ["re0", "re1", "node0", "node1", "member0", "member1"]
+        ir = {
+            "configuration": {
+                "groups": [{"name": name, "system": {"host-name": "router1"}} for name in names]
+                + [{"name": "SAMPLE-GROUP", "system": {"host-name": "router1"}}],
+                "apply-groups": [*names, "${node}", "SAMPLE-GROUP"],
+            }
+        }
+        result = anonymize(json.loads(json.dumps(ir)), AnonymizeConfig(groups=True, salt="s"))
+        cfg = result.ir["configuration"]
+        assert [group["name"] for group in cfg["groups"]][:-1] == names
+        assert cfg["apply-groups"][:-1] == [*names, "${node}"]
+        assert cfg["apply-groups"][-1] == cfg["groups"][-1]["name"] != "SAMPLE-GROUP"
+
+
 #: Content the walk cannot place, as the library door meets it: the IR, the
-#: schema path the warning names ("" for the top level), and the words other
-#: than addresses that stay as written.
-_UNPLACED: dict[str, tuple[dict[str, Any], str, set[str]]] = {
+#: schema paths `AnonymizeResult.unplaced` names, one per piece ("" for the top
+#: level), and the words other than addresses that stay as written.
+_UNPLACED: dict[str, tuple[dict[str, Any], tuple[str, ...], set[str]]] = {
     "unknown-leaf": (
         {"protocols": {"bgp": {"group": [{"name": "G1", "unknown-knob": "203.0.114.9"}]}}},
-        "protocols.bgp.group",
+        ("protocols.bgp.group",),
         {"unknown-knob"},
     ),
     "unknown-container": (
@@ -795,16 +827,28 @@ _UNPLACED: dict[str, tuple[dict[str, Any], str, set[str]]] = {
                 }
             }
         },
-        "protocols.bgp.group",
+        ("protocols.bgp.group",),
         {"unknown-box", "peer", "G-SECRET"},
     ),
-    "unknown-top-level": ({"made-up": {"x": ["203.0.114.9"]}}, "", {"made-up"}),
+    "unknown-top-level": ({"made-up": {"x": ["203.0.114.9"]}}, ("",), {"made-up"}),
     "joined-key-0.16.1": (
         {"system": {"bogus 203.0.114.9 G-SECRET": [None]}},
-        "system",
+        ("system",),
         {"bogus", "G-SECRET"},
     ),
-    "address-as-key": ({"system": {"203.0.114.9": {"peer": "x"}}}, "system", {"peer"}),
+    "joined-key-inactive": (
+        {
+            "system": {
+                "bogus 203.0.114.9 G-SECRET": [None],
+                "@bogus 203.0.114.9 G-SECRET": {"inactive": True},
+            }
+        },
+        ("system",),
+        {"bogus", "G-SECRET", "inactive"},
+    ),
+    "address-as-key": ({"system": {"203.0.114.9": {"peer": "x"}}}, ("system",), {"peer"}),
+    "ipv6-as-key": ({"system": {"3ffe:0b00::9": {"peer": "x"}}}, ("system",), {"peer"}),
+    "prefix-as-key": ({"system": {"203.0.114.0/24": [None]}}, ("system",), set()),
     "kept-statement": (
         {
             "system": {
@@ -814,23 +858,50 @@ _UNPLACED: dict[str, tuple[dict[str, Any], str, set[str]]] = {
                 }
             }
         },
-        "system",
+        ("system",),
         {"nonsense", "G-SECRET"},
     ),
-    "scalar-on-a-container": ({"system": {"services": "203.0.114.9"}}, "system.services", set()),
+    "kept-statement-quoted": (
+        {
+            "system": {
+                "junoscfg:unplaced": {
+                    'bogus "203.0.114.9"': True,
+                    'bogus "peer 203.0.114.10"': True,
+                }
+            }
+        },
+        ("system", "system"),
+        {"bogus", "peer"},
+    ),
+    "scalar-on-a-container": ({"system": {"services": "203.0.114.9"}}, ("system.services",), set()),
     "scalar-in-a-keyed-list": (
         {"protocols": {"bgp": {"group": [{"name": "G1", "neighbor": ["203.0.114.9"]}]}}},
-        "protocols.bgp.group.neighbor",
+        ("protocols.bgp.group.neighbor",),
         set(),
+    ),
+    "dict-on-a-leaf": (
+        {"system": {"host-name": {"203.0.114.9": "203.0.114.10"}}},
+        ("system.host-name",),
+        set(),
+    ),
+    "list-of-dicts-on-a-leaf": (
+        {"system": {"host-name": [{"peer": "203.0.114.9"}]}},
+        ("system.host-name",),
+        {"peer"},
+    ),
+    "unknown-list-of-dicts": (
+        {"system": {"bogus": [{"peer": "203.0.114.9"}, {"peer": "203.0.114.10"}]}},
+        ("system",),
+        {"bogus", "peer"},
     ),
     "ipv6-and-prefix": (
         {"system": {"bogus": ["3ffe:0b00::9", "peer 203.0.114.0/24"]}},
-        "system",
+        ("system",),
         {"bogus", "peer"},
     ),
 }
 
-_ADDRESSES = ("203.0.114.9", "3ffe:0b00::9", "203.0.114.0/24")
+_ADDRESSES = ("203.0.114.9", "203.0.114.10", "3ffe:0b00::9", "203.0.114.0/24")
 
 
 class TestContentTheWalkCannotPlace:
@@ -868,7 +939,7 @@ class TestContentTheWalkCannotPlace:
     @pytest.mark.parametrize("shape", list(_UNPLACED))
     def test_its_schema_path_is_named(self, shape: str) -> None:
         result = anonymize(self._source(shape), AnonymizeConfig(ips=True, salt="s"))
-        assert set(result.unplaced) == {_UNPLACED[shape][1]}
+        assert result.unplaced == _UNPLACED[shape][1]
         named = " ".join(result.unplaced)
         for original in (*_ADDRESSES, "G-SECRET", "G1", "unknown", "bogus", "nonsense", "made-up"):
             assert original not in named
@@ -891,7 +962,34 @@ class TestContentTheWalkCannotPlace:
     def test_without_the_ip_rule_it_is_still_named(self, shape: str) -> None:
         result = anonymize(self._source(shape), AnonymizeConfig(descriptions=True, salt="s"))
         assert result.ir == self._source(shape)
-        assert set(result.unplaced) == {_UNPLACED[shape][1]}
+        assert result.unplaced == _UNPLACED[shape][1]
+
+    @pytest.mark.parametrize(
+        "content",
+        [
+            {"bogus": "$9$ExAmPlEhAsH.KEY acme-site"},
+            {"junoscfg:unplaced": {'bogus "$9$ExAmPlEhAsH.KEY" acme-site': True}},
+        ],
+        ids=["unknown-key", "kept-statement"],
+    )
+    def test_a_password_hash_and_a_sensitive_word_are_replaced_by_shape(
+        self, content: dict[str, Any]
+    ) -> None:
+        """The rules that know a word by its shape alone -- a password hash, a
+        sensitive word -- rewrite it as the address rule does; a keyword
+        never (ruling on Test/Challenge finding 8, specification challenge S2
+        of change anonymize-every-placed-value)."""
+        from junoscfg.anonymize import apply_revert
+
+        source = {"configuration": {"system": content}}
+        config = AnonymizeConfig(passwords=True, sensitive_words=["acme"], salt="s")
+        result = anonymize(json.loads(json.dumps(source)), config)
+        text = json.dumps(result.ir)
+        assert "ExAmPlEhAsH" not in text
+        assert "acme" not in text
+        assert "bogus" in text
+        assert result.unplaced == ("system",)
+        assert apply_revert(result.ir, result.mapping) == source
 
     def test_without_a_rule_nothing_changes(self) -> None:
         source = self._source("kept-statement")
@@ -906,7 +1004,8 @@ _SECRET_LEAF = "203.0.114.9 G-SECRET"
 _DOORS: dict[str, tuple[Format, str, str]] = {
     "set": (
         Format.SET,
-        "set protocols bgp group SAMPLE-PEERS unknown-knob 203.0.114.9 G-SECRET\n",
+        "set protocols bgp group SAMPLE-PEERS unknown-knob 203.0.114.9 G-SECRET\n"
+        "deactivate protocols bgp group SAMPLE-PEERS unknown-knob 203.0.114.9 G-SECRET\n",
         "protocols.bgp.group",
     ),
     "structured": (
@@ -945,7 +1044,23 @@ _DOORS: dict[str, tuple[Format, str, str]] = {
         json.dumps({"configuration": {"system": {"bogus 203.0.114.9 G-SECRET": [None]}}}),
         "system",
     ),
+    "json-joined-key-inactive": (
+        Format.JSON,
+        json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "bogus 203.0.114.9 G-SECRET": [None],
+                        "@bogus 203.0.114.9 G-SECRET": {"inactive": True},
+                    }
+                }
+            }
+        ),
+        "system",
+    ),
 }
+#: The doors whose statement is deactivated: their output keeps the tag.
+_DEACTIVATED = ("set", "json-joined-key-inactive")
 
 
 class TestEveryDoorGivesOneAnswer:
@@ -964,7 +1079,7 @@ class TestEveryDoorGivesOneAnswer:
     def _config() -> AnonymizeConfig:
         return AnonymizeConfig(ips=True, groups=True, salt="s")
 
-    @pytest.mark.parametrize("to_format", [Format.SET, Format.JSON])
+    @pytest.mark.parametrize("to_format", [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML])
     @pytest.mark.parametrize("door", list(_DOORS))
     def test_no_address_passes_and_a_warning_names_the_path(
         self, door: str, to_format: Format
@@ -980,6 +1095,9 @@ class TestEveryDoorGivesOneAnswer:
         assert "G-SECRET" in result.output, "a word that is no address is left as written"
         warnings = [d for d in result.diagnostics if d.source == "anonymize"]
         assert [(d.path, d.severity) for d in warnings] == [(path, "warning")]
+        if door in _DEACTIVATED and to_format == Format.SET:
+            # The tag follows the rewritten statement: still deactivated.
+            assert [line for line in result.output.splitlines() if line.startswith("deactivate")]
 
     @pytest.mark.parametrize("door", list(_DOORS))
     def test_no_message_carries_an_original_value(self, door: str) -> None:

@@ -105,14 +105,75 @@ def _is_address(word: str) -> bool:
     return not length or length.isdigit()
 
 
-def _words(text: str) -> set[str]:
-    words: set[str] = set()
-    for line in text.splitlines():
-        try:
-            words.update(shlex.split(line))
-        except ValueError:
-            words.update(word.strip('"') for word in line.split())
-    return words
+#: Blocks the address anonymizer keeps by design, decided here and not by the
+#: run (Test/Challenge finding 1): documentation and private blocks keep what
+#: their own prefix length covers, so `10.0.0.0/8` stays and `10.1.0.0/16` does not.
+_KEPT_BLOCKS = tuple(
+    ipaddress.ip_network(block)
+    for block in (
+        "0.0.0.0/8",
+        "192.0.2.0/24",
+        "198.51.100.0/24",
+        "203.0.113.0/24",
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+    )
+)
+_FULLY_KEPT = _KEPT_BLOCKS[:4]
+
+
+def _kept_by_design(word: str) -> bool:
+    """Whether the address anonymizer keeps *word* whatever the salt."""
+    address = ipaddress.ip_address(word.partition("/")[0])
+    network = ipaddress.ip_network(word, strict=False)
+    if (
+        address.is_unspecified
+        or address.is_loopback
+        or address.is_multicast
+        or address.is_reserved
+        or network.prefixlen == 0
+        or (isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None)
+    ):
+        return True
+    if any(address in block for block in _FULLY_KEPT if block.version == address.version):
+        return True
+    # An aggregate: the anonymizer keeps the first octet of IPv4 and passes an
+    # IPv6 prefix shorter than /32 as written.
+    if "/" in word and (
+        (network.version == 4 and network.prefixlen <= 8 and network.network_address == address)
+        or (network.version == 6 and network.prefixlen < 32)
+    ):
+        return True
+    return any(
+        block.version == network.version
+        and network.prefixlen <= block.prefixlen
+        and block.subnet_of(network)  # type: ignore[arg-type]
+        for block in _KEPT_BLOCKS
+    )
+
+
+#: Keywords whose value is syntax shaped like an address: an area or cluster
+#: identifier (`areaid`) and an SNMP OID (ruling on Test/Challenge finding 6).
+_SYNTAX_BEFORE = frozenset({"area", "cluster", "oid"})
+
+
+def _addresses_in(lines: list[str]) -> set[str]:
+    """Every word of *lines* that is an address, but an area, a cluster or an OID."""
+    found: set[str] = set()
+    for line in lines:
+        words = _split(line)
+        for before, word in zip(["", *words], words, strict=False):
+            if before not in _SYNTAX_BEFORE and _is_address(word):
+                found.add(word)
+    return found
+
+
+def _split(line: str) -> list[str]:
+    try:
+        return shlex.split(line)
+    except ValueError:
+        return [word.strip('"') for word in line.split()]
 
 
 def _references(node: Any) -> list[str]:
@@ -141,11 +202,11 @@ class TestEveryCaptureAnonymizes:
     @pytest.mark.parametrize(("key", "suffix"), CASES)
     def test_no_address_of_the_capture_survives(self, key: str, suffix: str) -> None:
         capture = next(capture for capture in captures() if capture.key == key)
-        addresses = {word for word in _words("\n".join(capture.device_set())) if _is_address(word)}
-        assert addresses, "the capture holds no address: the law would pass on nothing"
+        addresses = {a for a in _addresses_in(capture.device_set()) if not _kept_by_design(a)}
+        assert addresses, "the capture holds no address to replace: the law would pass on nothing"
         run = _run(key, suffix)
-        kept_by_design = {a for a, b in run.mapping.get("ip", {}).items() if a == b}
-        assert sorted((addresses & _words(run.written)) - kept_by_design) == []
+        assert sorted(addresses & _addresses_in(run.written.splitlines())) == []
+        assert addresses <= set(run.mapping.get("ip", {})), "an address was never replaced"
 
     @pytest.mark.parametrize(("key", "suffix"), CASES)
     def test_the_mapping_restores_the_canonical_ir(self, key: str, suffix: str) -> None:
@@ -156,13 +217,16 @@ class TestEveryCaptureAnonymizes:
 
     @pytest.mark.parametrize(("key", "suffix"), CASES)
     def test_every_group_reference_resolves(self, key: str, suffix: str) -> None:
+        """Every reference names a group the output defines, or is unchanged: a
+        name Junos reserves (`re0`, `node0`, `${node}`) passes the group rule
+        (ruling on Test/Challenge finding 7)."""
         run = _run(key, suffix)
         before, after = _references(run.source), _references(run.anonymized)
         assert len(before) == len(after)
-        defined_before, defined_after = _groups(run.source), _groups(run.anonymized)
+        defined = _groups(run.anonymized)
         dangling = [
             (old, new)
             for old, new in zip(before, after, strict=True)
-            if old in defined_before and new not in defined_after
+            if new not in defined and new != old
         ]
         assert dangling == []

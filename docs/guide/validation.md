@@ -210,9 +210,10 @@ flat-dict elements, since these children are functionally optional in the config
 runs another release or platform, or because the set reader takes one value where the
 line carries two, is kept whole in the output and reported as an *error*: printed by
 default, fatal under `--strict`. Before 0.9.0 the set reader kept one token of such a
-line and dropped the rest without a word. Anonymization refuses such a configuration
-outright, since it cannot rewrite what the schema does not name and the statement would
-otherwise leave verbatim. A set statement the reader cannot complete is kept and reported
+line and dropped the rest without a word. Anonymization replaces each word of such a
+statement that a rule knows by its shape alone (an address, a password hash, a sensitive
+word), leaves the others as written, and names its schema path in an `anonymize:`
+warning; until 0.19.0 it refused the configuration. A set statement the reader cannot complete is kept and reported
 the same way: a list entry whose key values run out (`as-path-neighbors as-list`), a
 further token after an entry that is nothing but its key, `apply-groups` with two
 names or none, or a leaf without its value (`set system host-name`). Such a statement
