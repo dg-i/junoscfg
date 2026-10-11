@@ -129,8 +129,7 @@ _IN_BRACKET_SPELLING = {**_POSIX_CLASSES, "[": r"\["}
 
 
 def _posix_to_python_re(pattern: str) -> str:
-    """Spell each POSIX bracket expression in Python's dialect: a class becomes its
-    ranges, and a literal `[`, to Python a possible nested set, is escaped."""
+    """Python's spelling of *pattern*'s POSIX bracket expressions; a literal `[` is escaped."""
 
     def bracket(m: re.Match[str]) -> str:
         if m[1] is None:  # an escape outside a bracket expression

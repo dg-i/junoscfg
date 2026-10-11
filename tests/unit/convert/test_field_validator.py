@@ -13,6 +13,7 @@ The keyed-entry cases validate against the shipped tree.
 from __future__ import annotations
 
 import json
+import warnings
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -447,13 +448,15 @@ class TestPatternValidation:
         result = validate(schema, {"system": {"tag": "goodprefix-stuff"}})
         assert result.valid is True
 
-    @pytest.mark.filterwarnings("error::FutureWarning")
     def test_a_literal_bracket_in_a_posix_bracket_expression(self, validate: Validate) -> None:
         """The shape of shipped patterns #49 and #83: `[` inside `[...]` is a literal."""
         pattern = r"^([[[:alnum:]]*[[:alpha:]][[:alpha:]_.-]*]*[[:alnum:]_.-]*)$"
         tree = _container(configuration=_container(n=_leaf(r=0)))
         schema = _make_schema(patterns=[pattern], tree=tree)
-        verdicts = {v: validate(schema, {"n": v}).valid for v in ("[a", "a]]b", "1", "a b")}
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            verdicts = {v: validate(schema, {"n": v}).valid for v in ("[a", "a]]b", "1", "a b")}
+        assert [str(w.message) for w in caught] == []
         assert verdicts == {"[a": True, "a]]b": True, "1": False, "a b": False}
 
 
