@@ -40,3 +40,4 @@ None, because the owner asked for no questions (C1) and the accepted decision re
 ## Delta log
 
 - Initial preflight, 2026-10-11: consistent with the decision record; approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 1.
+- Phase 1, 2026-10-11: proposal and metadata approved under the owner's unattended-run instruction of 2026-10-11. `openspec validate` reports only the missing delta, which a `bug` cannot skip; phase 2 writes it. Resume point: phase 2.
