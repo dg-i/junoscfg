@@ -18,6 +18,6 @@ After the review corrections: full check at 3d88a43, every check passed, 6,132 p
 After the re-review correction (F1b): full check at 5257981, every check passed, 6,132 passed / 45 skipped / 21 xfailed; `check --set fast` passed.
 
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: fresh Reviewer (`review.md`), two re-reviews; verdict APPROVE at 7facd71, wording fix eb9dc5c.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head: base a19e978, code head eb9dc5c.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits: main specs applied (fb19d84) before merge; run by the Builder under the owner's unattended-run brief, no product edit.
