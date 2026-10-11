@@ -103,3 +103,15 @@ Focused R1/R2 command: `uv run --offline --locked --group dev pytest -q tests/un
 - [ ] Corrected fresh Reviewer closure, lifecycle metrics and Finalizer remain root-owned open.
 
 Kept-prefix focused command: `UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run --offline --locked --group dev pytest -q tests/unit/anonymize/test_walker.py tests/unit/anonymize/test_ip_rule.py tests/unit/anonymize/test_as_number_rule.py tests/unit/anonymize/test_identity_rule.py tests/unit/anonymize/test_password_rule.py tests/unit/anonymize/test_sensitive_word_rule.py tests/unit/anonymize/test_revert.py tests/unit/anonymize/test_integration.py tests/contract/test_every_rule.py tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration tests/contract/test_every_message.py::TestTheLibraryRaisesAFailureByItsClassOnly --tb=short`: 1,168 passed/one existing xfail, exit 0.
+
+### Final phase-5 evidence handoff
+
+This latest checkpoint supersedes earlier execution/resume states; all historical stops and results above remain provenance.
+
+- [x] Final runtime source `48f8a858153696809ff1cd6496a84feed9a4b557`: focused 1,168 passed/one existing xfail, targeted 64 passed, normal source hooks and fast passed; clean immutable source.
+- [x] Independent exact-head Test/Challenge APPROVE (kept-prefix/correction/report.md): 252 focused passes; all kept/generated selectors, URL/alias and ambiguity/error probes satisfy their original invariants.
+- [x] Root-owned required final full on clean source: 9,064 passed/37 skipped/20 strict xfails, every gate/exit 0. Full log/provenance/coverage retained; actual durations 119.32 seconds application and 171.53 seconds whole command. Coverage 92.92812349252291%, exported from retained data without test rerun.
+- [x] Sequential final device record/diff/classification: 1,440 conversions/96 plain unchanged/132 approved output changes; zero diagnostics/field-validation/exceptions, byte-identical to prior candidates. Separate exact raw evidence retained.
+- [x] Sequential final candidate-only benchmark: all three inputs measured with unchanged frozen script/options/inputs/IR/lock and retained baseline timing; no duplicate baseline run. Exact samples/hashes/medians recorded in freeze/metrics and private benchmark-final-48f8a858/.
+- [ ] Evidence-only normal record hooks/fast and clean handoff; no source/test/spec changes invalidate the final full.
+- [ ] Root-owned fresh corrected Reviewer closure, lifecycle metrics and bounded Finalizer remain open; Builder does not approve them.
