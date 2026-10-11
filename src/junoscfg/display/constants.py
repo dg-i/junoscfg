@@ -303,6 +303,7 @@ def forget_loaded_artifacts() -> None:
     """
     _schema_trees.clear()
     _built_artifacts.clear()
+    _universal_cache.clear()
 
 
 @contextmanager
@@ -479,6 +480,11 @@ UNIVERSAL_STATEMENTS: Mapping[str, dict[str, Any]] = MappingProxyType(
 )
 
 
+# A structure tree's universal statements, by the tree's id; the tree is held,
+# so its id is not reused while the entry stands.
+_universal_cache: dict[int, tuple[dict[str, Any], int, Mapping[str, Any]]] = {}
+
+
 def _children_of(schema_node: Any) -> Mapping[str, Any]:
     """A structure-tree node's children, or a `SchemaNode`'s."""
     if isinstance(schema_node, dict):
@@ -504,8 +510,18 @@ def universal_statements(root: Any) -> Mapping[str, Any]:
     """
     if root is None:
         return {}
-    declared = {name: node for name, node in _children_of(root).items() if _is_universal(node)}
-    return declared if declared else UNIVERSAL_STATEMENTS
+    children = _children_of(root)
+    # Asked for every key a node's children miss, so a structure tree's answer
+    # is kept: such a tree is read once and never changed. A `SchemaNode` tree
+    # is still being built by the fixes; it is asked afresh.
+    cached = _universal_cache.get(id(root)) if isinstance(root, dict) else None
+    if cached is not None and cached[0] is root and cached[1] == len(children):
+        return cached[2]
+    declared = {name: node for name, node in children.items() if _is_universal(node)}
+    answer: Mapping[str, Any] = declared if declared else UNIVERSAL_STATEMENTS
+    if isinstance(root, dict):
+        _universal_cache[id(root)] = (root, len(children), answer)
+    return answer
 
 
 def schema_child(schema_node: Any, key: str, root: Any) -> Any:
