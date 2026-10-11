@@ -17,7 +17,6 @@ module is not for. Import through the package door — `tach check` and
 |---|---|
 | `pre-commit`, on commit | ruff format and check, deptry, document caps, markdownlint, the test door check, and the tests the staged files affect (`tools/affected_tests.py`) |
 | CI, on push and pull request | the complete suite from the lock on every interpreter the classifiers declare, derived from `pyproject.toml`, held to the branch-coverage floor; after every matrix job passes, `agent-ready check --set fast --base origin/<pull-request-target>` and blocking mypy checks run once |
-| CI, nightly | the jvd corpus tier (`.github/workflows/corpus.yml`) |
 | CI, on release | the same checks on the release commit before anything is built |
 
 Locally, agent-ready derives the live change's branch point against local

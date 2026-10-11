@@ -8,7 +8,7 @@ Where a test goes, which door it uses, and what it asserts.
 |---|---|---|
 | `unit/<package>/` | one file per source module of `src/junoscfg/<package>/` (`cli/` for `cli.py`, `input/` for `input.py`) | any package door in `tach.toml` |
 | `contract/` | a law every member of a family keeps — every reader, writer, anonymize rule, validation door — parametrised over a catalogue | `junoscfg`, `junoscfg.cli` |
-| `corpus/` | evidence, strongest first: device captures, the set corpus, jvd (`--jvd`), schema dumps (`--schema`), goldens | `junoscfg`, `junoscfg.cli` |
+| `corpus/` | evidence, strongest first: device captures, the set corpus, schema dumps (`--schema`), goldens | `junoscfg`, `junoscfg.cli` |
 | `tooling/` | CI, regeneration, generated documents | as needed |
 | `support/` | helpers, paths and catalogues; no tests | any package door |
 

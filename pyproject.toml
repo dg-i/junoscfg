@@ -56,7 +56,6 @@ addopts = ["--strict-markers", "--strict-config", "-ra"]
 xfail_strict = true
 markers = [
     "schema: needs a device XSD dump in private_test_data/schemas/; run with --schema",
-    "jvd: needs Juniper's jvd corpus; run with --jvd",
     "device_grammar: every device set line through the grammar, by hand; run with --device-grammar",
 ]
 

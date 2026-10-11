@@ -1,0 +1,1 @@
+Removed the retired JVD test tier: the `--jvd` pytest option and `jvd` marker, the JVD corpus tests and their clone helper, and the nightly CI workflow that ran them. The committed device captures under `tests/data/device/` are the corpus evidence.

@@ -684,7 +684,7 @@ what it asserts. The layout carries the map from code to tests:
 |---|---|
 | `tests/unit/<package>/` | one file per module of `src/junoscfg/<package>/` (`cli/` for `cli.py`, `input/` for `input.py`), through package doors |
 | `tests/contract/` | laws a whole family keeps, parametrised over catalogues: the format matrix over `tests/support/shapes.py`, every anonymize rule, every validation door |
-| `tests/corpus/` | evidence, strongest first: device captures (`tests/data/device/`, judged by `test_device_renderings.py`), the grammar against device lines, the shipped artifacts, jvd (`--jvd`), schema dumps (`--schema`) |
+| `tests/corpus/` | evidence, strongest first: device captures (`tests/data/device/`, judged by `test_device_renderings.py`), the grammar against device lines, the shipped artifacts, schema dumps (`--schema`) |
 | `tests/tooling/` | CI, regeneration, generated documents, the selector and the door check |
 | `tests/support/` | paths, minimal artifacts, catalogues and helpers; no tests |
 
@@ -705,7 +705,6 @@ moments and what each runs:
 | Commit | pre-commit, which the fast set inherits | the door check, then `tools/affected_tests.py --run` on the staged files: `tests/unit/` of each package touched and of every package importing it (read from the source), plus `tests/contract/`; `tests/support/`, `conftest.py`, the artifacts or the lock run the whole default suite |
 | Full set | `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` | the whole default suite with branch coverage, held to the floor in `[tool.coverage.report] fail_under`, which only rises |
 | CI, pull request | `.github/workflows/ci.yml` | the default suite from the lock on every declared interpreter, coverage gate included |
-| CI, nightly | `.github/workflows/corpus.yml` | `tests/corpus/ --jvd` |
 | CI, release | `.github/workflows/publish.yml` | the pull-request checks on the release commit, before the build |
 
 The shipped grammar compiles once per process (`display.build_from_artifact`
@@ -719,14 +718,6 @@ single CLI run still compiles it once.
 |---|---|---|
 | **Regen** | add `--regen-schema` | the one dump of the shipped release under `private_test_data/schemas/`, or the dump `JUNOSCFG_XSD_SOURCE` names; with none, two, or an unusable override the run stops with exit code 7. It rebuilds the artifacts before collection, then runs the suite |
 | **Schema** | `uv run pytest --schema tests/corpus/test_schema_data.py -q` | each NETCONF dump under `private_test_data/schemas/`; about ten minutes per dump |
-| **jvd** | `uv run pytest --jvd tests/corpus/ -q` | Juniper's jvd corpus, cloned into `private_test_data/jvd/`, or `JUNOSCFG_JVD_PATH` naming a clone. Retired, not run by any change; its code goes in a change of its own ([decision](../decisions/2026-10-11-retire-jvd-from-per-change-verification.md)) |
-
-`github.com/Juniper/jvd` is Juniper's own Validated Designs: roughly 1,500
-configurations and five million lines across QFX, ACX, MX, PTX and SRX, the
-only broad, independent Junos corpus this project can reach. It is **cloned at
-test time, never vendored** — someone else's repository, large, and worse stale
-than absent — and `tests/corpus/test_jvd_corpus.py` asserts thresholds, not
-exact counts, with one guard per defect the corpus found.
 
 The device-truth tier needs no flag. A capture pairs a subtree as `show
 configuration <path>` prints it with the same subtree as the device rendered it
