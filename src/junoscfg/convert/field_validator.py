@@ -122,11 +122,22 @@ _POSIX_CLASSES: dict[str, str] = {
 }
 
 
+#: An escape, or a bracket expression (body: group 1); in a body, a class, an escape or `[`.
+_BRACKET = re.compile(r"\\.|\[(\^?\]?(?:\[:[a-z]+:\]|\\.|[^\]])*)\]", re.DOTALL)
+_IN_BRACKET = re.compile(r"\[:[a-z]+:\]|\\.|\[", re.DOTALL)
+_IN_BRACKET_SPELLING = {**_POSIX_CLASSES, "[": r"\["}
+
+
 def _posix_to_python_re(pattern: str) -> str:
-    """Convert POSIX character classes in a regex to Python equivalents."""
-    for posix, python in _POSIX_CLASSES.items():
-        pattern = pattern.replace(posix, python)
-    return pattern
+    """Spell each POSIX bracket expression in Python's dialect: a class becomes its
+    ranges, and a literal `[`, to Python a possible nested set, is escaped."""
+
+    def bracket(m: re.Match[str]) -> str:
+        if m[1] is None:  # an escape outside a bracket expression
+            return m[0]
+        return f"[{_IN_BRACKET.sub(lambda t: _IN_BRACKET_SPELLING.get(t[0], t[0]), m[1])}]"
+
+    return _BRACKET.sub(bracket, pattern)
 
 
 _NUMERIC_OR_RANGE_RE = re.compile(r"^[0-9]+(-[0-9]+)?$")

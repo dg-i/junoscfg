@@ -1,0 +1,1 @@
+Field validation no longer prints `FutureWarning: Possible nested set` on every validated conversion: a literal `[` inside a schema pattern's POSIX bracket expression is escaped when the pattern is translated to Python's dialect, which leaves what the pattern matches unchanged.
