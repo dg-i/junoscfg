@@ -1,0 +1,10 @@
+schema: agent-ready
+created: 2026-10-11
+type: bug
+# Zone conversion (yellow): src/junoscfg/convert/__init__.py and
+# src/junoscfg/convert/field_validator.py. The field validator is also a path
+# of domain validation: cross-domain, so the high-risk floor applies
+# (instruction-integrity C7).
+zone: conversion
+domains: [conversion, validation]
+assurance: economy
