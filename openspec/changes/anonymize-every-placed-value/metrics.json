@@ -1,0 +1,192 @@
+{
+  "change": "anonymize-every-placed-value",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "dcf834eac3013180a64228d69162d38b966f68241484664f63a5226d66619210",
+          "head": "6b95a14b7fc568b7c863416c883c27f6b3a012393d0aaf22b38c842075f23a3e"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "changelog.d/+anonymize-every-placed-value.bugfix.md",
+            "changelog.d/+anonymize-every-placed-value.removal.md",
+            "docs/architecture/developer-guide.md",
+            "docs/guide/cli.md",
+            "docs/guide/validation.md",
+            "openspec/specs/conversion/entry-keys/spec.md",
+            "pyproject.toml",
+            "src/junoscfg/__init__.py",
+            "src/junoscfg/anonymize/CONTRACT.md",
+            "src/junoscfg/anonymize/__init__.py",
+            "src/junoscfg/anonymize/revert.py",
+            "src/junoscfg/anonymize/rules/__init__.py",
+            "src/junoscfg/anonymize/rules/group.py",
+            "src/junoscfg/anonymize/rules/ip.py",
+            "src/junoscfg/anonymize/rules/password.py",
+            "src/junoscfg/anonymize/rules/sensitive_word.py",
+            "src/junoscfg/anonymize/walker.py",
+            "src/junoscfg/audit/walker.py",
+            "src/junoscfg/convert/__init__.py",
+            "src/junoscfg/convert/field_validator.py",
+            "tests/contract/test_every_rule.py",
+            "tests/corpus/test_device_anonymization.py",
+            "tests/support/devices.py",
+            "tests/tooling/test_universal_statement_names.py",
+            "tests/unit/anonymize/test_group_rule.py",
+            "tests/unit/anonymize/test_integration.py",
+            "tests/unit/anonymize/test_ip_rule.py",
+            "tests/unit/anonymize/test_revert.py",
+            "tests/unit/anonymize/test_walker.py",
+            "tests/unit/cli/test_cli.py",
+            "tests/unit/convert/test_field_validator.py",
+            "uv.lock"
+          ],
+          "since": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab"
+        },
+        "selector": [
+          "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+          "bb0c86ab5769a8b4586883d790b98c1288e185b0"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 2065,
+        "binary_files": 0,
+        "files": 32,
+        "removed": 565
+      }
+    },
+    "locked_packages": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "30002c07b316d9b158c91304874f48cd175d63142d0fc66ca93b61337fa824dd",
+          "head": "3419cc51d2dcb2008dcefacd7b7c6deef1adaadde3992a8c390c7a8e26eb2c40"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "3a0607ff85a9635273e6d9f7d4a8ca66fb9f8dab",
+      "captured_at": "2026-10-11T08:34:18.945623Z",
+      "head_sha": "bb0c86ab5769a8b4586883d790b98c1288e185b0",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
