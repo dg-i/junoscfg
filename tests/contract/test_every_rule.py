@@ -257,6 +257,36 @@ RULES: tuple[RuleRow, ...] = (
 )
 
 _SOURCE = json.dumps(CONFIGURATION)
+
+#: CONFIGURATION with a group holding the match-all wildcard `<*>` at every
+#: name the rows rename or pass (ANON-P3, change group-wildcards-pass): it
+#: selects every name, holds no value, and so passes every rule.
+_WILD = {
+    "name": "acme-wild",
+    "system": {
+        "login": {
+            "user": [
+                {
+                    "name": "<*>",
+                    "class": "super-user",
+                    "authentication": {"ssh-rsa": [{"name": "<*>"}]},
+                }
+            ]
+        },
+        "name-server": [{"name": "<*>"}],
+    },
+    "snmp": {"community": [{"name": "<*>", "authorization": "read-only"}]},
+    "interfaces": {"interface": [{"name": "<*>", "unit": [{"name": "<*>", "disable": [None]}]}]},
+    "protocols": {"bgp": {"group": [{"name": "<*>", "neighbor": [{"name": "<*>"}]}]}},
+}
+_WILDCARD_SOURCE = json.dumps(
+    {
+        "configuration": {
+            **CONFIGURATION["configuration"],
+            "groups": [*CONFIGURATION["configuration"]["groups"], _WILD],
+        }
+    }
+)
 _PRECEDENCE = {row.id: n for n, row in enumerate(RULES)}
 
 
@@ -286,14 +316,14 @@ def _baseline() -> str:
     return _convert(_SOURCE)
 
 
-def _run(rows: tuple[RuleRow, ...], salt: str = "contract-salt") -> Run:
-    """Anonymize CONFIGURATION with *rows* on, dump the mapping and revert with it."""
+def _run(rows: tuple[RuleRow, ...], salt: str = "contract-salt", source: str = _SOURCE) -> Run:
+    """Anonymize *source* (CONFIGURATION) with *rows* on, dump the mapping and revert with it."""
     options: dict[str, Any] = {}
     for row in rows:
         options.update(row.config)
     with tempfile.TemporaryDirectory() as scratch:
         dumped = Path(scratch) / "map.json"
-        output = _convert(_SOURCE, AnonymizeConfig(salt=salt, dump_map=str(dumped), **options))
+        output = _convert(source, AnonymizeConfig(salt=salt, dump_map=str(dumped), **options))
         mapping = json.loads(dumped.read_text(encoding="utf-8"))
         reverted = _convert(output, AnonymizeConfig(revert_map=str(dumped)))
     return Run(output, json.loads(output), mapping, json.loads(reverted))
@@ -388,6 +418,18 @@ class TestEveryRule:
 
     def test_the_dumped_mapping_restores_the_original(self, row: RuleRow) -> None:
         assert _alone(row.id).reverted == json.loads(_baseline())
+
+    def test_a_match_all_wildcard_name_passes(self, row: RuleRow) -> None:
+        """`<*>` at a name selects every name and holds no value: no rule
+        replaces it, the rule still replaces its own values, and the mapping
+        restores the original."""
+        run = _run((row,), source=_WILDCARD_SOURCE)
+        wild = run.ir["configuration"]["groups"][-1]
+        assert json.dumps(wild).count('"<*>"') == json.dumps(_WILD).count('"<*>"') == 8
+        assert set(run.mapping[row.key]) - row.replaces <= {"acme-wild"}
+        assert row.replaces <= set(run.mapping[row.key])
+        assert not [old for old, new in run.replacements.items() if "<" in old or "<" in new]
+        assert run.reverted == json.loads(_convert(_WILDCARD_SOURCE))
 
     def test_the_cli_flags_keep_the_same_law(self, row: RuleRow, tmp_path: Path) -> None:
         """`--anonymize-*` with a salt gives what the library gives, and reverts."""

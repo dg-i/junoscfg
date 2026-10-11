@@ -30,7 +30,7 @@ from typing import Any
 
 import pytest
 
-from junoscfg import Format, convert_config
+from junoscfg import Format, convert_config, convert_config_result
 from junoscfg.anonymize import AnonymizeConfig
 from tests.support.devices import FORMATS, captures
 
@@ -40,6 +40,16 @@ CASES = [
     for suffix in FORMATS
 ]
 _GROUP_REFERENCES = frozenset({"apply-groups", "apply-groups-except"})
+#: The renderings of the captures that hold a wildcard name (`<...>` in a group).
+WILDCARD_CASES = [
+    pytest.param(capture.key, suffix, id=f"{capture.key}.{suffix}")
+    for capture in captures()
+    if any(
+        line.startswith("set groups ") and (" <" in line or ' "<' in line)
+        for line in capture.device_set()
+    )
+    for suffix in FORMATS
+]
 
 
 def _every_rule(**options: Any) -> AnonymizeConfig:
@@ -67,6 +77,7 @@ class Run:
     written: str
     mapping: dict[str, dict[str, str]]
     reverted: dict[str, Any]
+    warnings: tuple[str, ...]
 
 
 @cache
@@ -76,13 +87,14 @@ def _run(key: str, suffix: str) -> Run:
     plain = convert_config(text, from_format=fmt, to_format=Format.JSON, validate=False)
     with tempfile.TemporaryDirectory() as scratch:
         dumped = Path(scratch) / "map.json"
-        anonymized = convert_config(
+        result = convert_config_result(
             text,
             from_format=fmt,
             to_format=Format.JSON,
             validate=False,
             anon_config=_every_rule(dump_map=str(dumped)),
         )
+        anonymized = result.output
         mapping = json.loads(dumped.read_text(encoding="utf-8"))
         reverted = convert_config(
             anonymized,
@@ -94,7 +106,10 @@ def _run(key: str, suffix: str) -> Run:
     written = convert_config(
         text, from_format=fmt, to_format=Format.SET, validate=False, anon_config=_every_rule()
     )
-    return Run(json.loads(plain), json.loads(anonymized), written, mapping, json.loads(reverted))
+    warned = tuple(d.render() for d in result.diagnostics if d.source == "anonymize")
+    return Run(
+        json.loads(plain), json.loads(anonymized), written, mapping, json.loads(reverted), warned
+    )
 
 
 def _is_address(word: str) -> bool:
@@ -208,6 +223,21 @@ def _references(node: Any) -> list[str]:
     return found
 
 
+def _wildcards(node: Any) -> list[str]:
+    """Every entry name in angle brackets, in tree order."""
+    found: list[str] = []
+    if isinstance(node, dict):
+        name = node.get("name")
+        if isinstance(name, str) and name.startswith("<") and name.endswith(">"):
+            found.append(name)
+        for value in node.values():
+            found.extend(_wildcards(value))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_wildcards(item))
+    return found
+
+
 def _groups(ir: dict[str, Any]) -> set[str]:
     groups = ir["configuration"].get("groups", [])
     if isinstance(groups, dict):
@@ -247,3 +277,15 @@ class TestEveryCaptureAnonymizes:
             if new not in defined and new != old
         ]
         assert dangling == []
+
+    @pytest.mark.parametrize(("key", "suffix"), WILDCARD_CASES)
+    def test_every_wildcard_name_passes(self, key: str, suffix: str) -> None:
+        """A wildcard name the device accepted (`group <*>`, `interfaces <ge-*>`,
+        `"<[gx]e-*>"`, `routing-instances <VRF-*>`) keeps its text with every
+        rule on, and none is reported: each is `*` alone or sits at a name no
+        rule renames (ANON-P3, change group-wildcards-pass)."""
+        run = _run(key, suffix)
+        wildcards = _wildcards(run.source)
+        assert wildcards, "the capture holds no wildcard name: the law would pass on nothing"
+        assert _wildcards(run.anonymized) == wildcards
+        assert [w for w in run.warnings if "wildcard" in w] == []

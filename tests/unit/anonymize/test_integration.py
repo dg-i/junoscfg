@@ -6,6 +6,7 @@ together, is `tests/contract/test_every_rule.py`.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import ipaddress
 import json
@@ -613,7 +614,8 @@ class TestKeyedEntriesSurvive:
         replaced in the synthetic `examples/router1.json`; the example is now
         the device's, and the floor what it holds. A value a rule maps to
         itself is one it keeps by design (`0.0.0.0/0`, the RFC 1918 and
-        documentation prefixes); a wildcard is `test_a_wildcard_group_name_passes_the_group_rule`.
+        documentation prefixes). A wildcard name is no value: `<*>` reaches no
+        rule (`test_a_wildcard_group_name_passes_the_group_rule`).
         """
         source = json.loads(json_config)
         must = self._must_replace(source)
@@ -624,10 +626,7 @@ class TestKeyedEntriesSurvive:
             assert not missing, f"{rule} does not replace {sorted(missing)}"
         left = _strings(result.ir)
         for rule, replaced in result.mapping.items():
-            kept = {
-                value for value, by in replaced.items() if by != value and not value.startswith("<")
-            }
-            kept = kept & left
+            kept = {value for value, by in replaced.items() if by != value} & left
             assert not kept, f"{rule} leaves {sorted(kept)} in the output"
 
     @pytest.mark.parametrize("rule", ["ip", "description"])
@@ -636,15 +635,15 @@ class TestKeyedEntriesSurvive:
         assert self.ONCE_MISSED[rule] <= set(result.mapping.get(rule, {}))
         assert not self.ONCE_MISSED[rule] & _strings(result.ir)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PRODUCT DEFECT: no known-differences class: the group rule replaces the "
-        "wildcard `<*>` of `groups GR-BGP protocols bgp group <*>`, so the group then "
-        "matches no BGP group",
-    )
     def test_a_wildcard_group_name_passes_the_group_rule(self, json_config: str) -> None:
-        mapping = anonymize(json.loads(json_config), self._every_rule()).mapping
-        assert not [name for name in mapping.get("group", {}) if name.startswith("<")]
+        """`groups GR-BGP protocols bgp group <*>` selects every BGP group; the
+        group rule used to rename it, so the group selected none (ANON-P3,
+        change group-wildcards-pass; `TestAWildcardNameIsAPattern`)."""
+        result = anonymize(json.loads(json_config), self._every_rule())
+        assert not [name for name in result.mapping.get("group", {}) if name.startswith("<")]
+        groups = result.ir["configuration"]["groups"]
+        assert "<*>" in [group["name"] for group in _at(groups, "protocols", "bgp", "group")]
+        assert result.patterns == ()
 
     def _anonymized(self, source: str, to_format: Format, dumped: Path) -> str:
         """*source* (JSON) in *to_format* with every rule on, its mapping dumped."""
@@ -681,9 +680,10 @@ class TestKeyedEntriesSurvive:
         The input is the example, re-pinned when it became the device's,
         without the statements junoscfg cannot place
         (`tests/support/devices.py` `UNPLACED_IN_THE_EXAMPLE`): anonymization
-        names each by its schema path. The pin leaves out the wildcard
-        `<*>` the group rule replaces (`test_a_wildcard_group_name_passes_the_group_rule`).
-        The IR is restored through JSON output here; through set output it is
+        names each by its schema path. Until change group-wildcards-pass the
+        pin left out the wildcard `<*>` the group rule replaced; it now reaches
+        no rule, and the hash is the same. The IR is restored through JSON
+        output here; through set output it is
         `test_the_mapping_restores_the_set_output`.
 
         Re-pinned by change anonymize-every-placed-value (`b8c3da05…` to
@@ -697,12 +697,8 @@ class TestKeyedEntriesSurvive:
         source = json.dumps(placed_only(json.loads(json_config)))
         self._anonymized(source, Format.SET, tmp_path / "map.json")
         mapping = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
-        pinned = {
-            rule: {value: by for value, by in values.items() if not value.startswith("<")}
-            for rule, values in mapping.items()
-        }
         assert (
-            hashlib.sha256(json.dumps(pinned, sort_keys=True).encode()).hexdigest()
+            hashlib.sha256(json.dumps(mapping, sort_keys=True).encode()).hexdigest()
             == "8e13d961b885c80dae3cdbad1e999012b81af51c9ea7eda3cd1148570974cb93"
         )
 
@@ -807,6 +803,282 @@ class TestAGroupJunosReservesKeepsItsName:
         assert [group["name"] for group in cfg["groups"]][:-1] == names
         assert cfg["apply-groups"][:-1] == [*names, "${node}"]
         assert cfg["apply-groups"][-1] == cfg["groups"][-1]["name"] != "SAMPLE-GROUP"
+
+
+def _set_ir(text: str) -> dict[str, Any]:
+    """The IR the set reader gives for *text*."""
+    return json.loads(
+        convert_config(text, from_format=Format.SET, to_format=Format.JSON, validate=False)
+    )
+
+
+def _at(node: Any, *keys: str) -> list[Any]:
+    """Every value at *keys* below *node*, through lists, in tree order."""
+    found = [node]
+    for key in keys:
+        found = [
+            value
+            for item in found
+            for entry in (item if isinstance(item, list) else [item])
+            if isinstance(entry, dict) and key in entry
+            for value in (entry[key] if isinstance(entry[key], list) else [entry[key]])
+        ]
+    return found
+
+
+#: Every rule on, as `--anonymize-all` with AS numbers and a sensitive word.
+_EVERY_RULE: dict[str, Any] = {
+    "ips": True,
+    "passwords": True,
+    "communities": True,
+    "ssh_keys": True,
+    "identities": True,
+    "groups": True,
+    "descriptions": True,
+    "as_numbers": [64496, 64497],
+    "sensitive_words": ["customer"],
+}
+
+
+#: A wildcard name inside a group, the names it selects outside, and where the
+#: wildcard and those names sit (the walker's schema path, transparent names
+#: left out, as `AnonymizeResult.patterns` names it).
+_WILDCARD_SOURCES = {
+    "bgp-group": (
+        "set groups GR-BGP protocols bgp group {} hold-time 30\n"
+        "set protocols bgp group EBGP-A neighbor 203.0.114.7\n"
+        "set protocols bgp group EBGP neighbor 203.0.114.8\n",
+        ("groups", "protocols", "bgp", "group", "name"),
+        ("protocols", "bgp", "group", "name"),
+    ),
+    "snmp-view": (
+        "set groups GR-SNMP snmp view {} oid 1.3.6.1 include\n"
+        "set snmp view RO-ALL oid 1.3.6.1 include\n",
+        ("groups", "snmp", "view", "name"),
+        ("snmp", "view", "name"),
+    ),
+    "snmp-community": (
+        "set groups GR-SNMP snmp community {} authorization read-only\n"
+        "set snmp community public-ro authorization read-only\n",
+        ("groups", "snmp", "community", "name"),
+        ("snmp", "community", "name"),
+    ),
+    "login-user": (
+        "set groups GR-LOGIN system login user {} class super-user\n"
+        "set system login user admin class super-user\n",
+        ("groups", "system", "login", "user", "name"),
+        ("system", "login", "user", "name"),
+    ),
+    "bgp-neighbor": (
+        "set groups GR-BGP protocols bgp group IBGP neighbor {} description pattern\n"
+        "set protocols bgp group IBGP neighbor 203.0.114.7\n",
+        ("groups", "protocols", "bgp", "group", "neighbor", "name"),
+        ("protocols", "bgp", "group", "neighbor", "name"),
+    ),
+    "interface": (
+        "set groups GR-IF interfaces {} mtu 9192\n"
+        "set interfaces ge-0/0/0 unit 0 family inet address 198.0.2.1/24\n",
+        ("groups", "interfaces", "interface", "name"),
+        ("interfaces", "interface", "name"),
+    ),
+}
+
+
+class TestAWildcardNameIsAPattern:
+    """A Junos wildcard name in a group (`<*>`, `<ge-*>`, `"<[gx]e-*>"`) is a
+    pattern that selects names, not a name (Junos OS "Configuration Groups":
+    `*` any string, `?` one character, `[...]` a class). The group rule
+    replaced `groups GR-BGP protocols bgp group <*>` by `group_<hash>`, a BGP
+    group of its own that selects nothing; the identity and community rules did
+    the same at their names, and the IP rule left `<203.0.114.7>` as written
+    beside the neighbour it renamed (ANON-P3 = NEW-C12, change
+    group-wildcards-pass). Device evidence: the vMX 23.2R2-S7.5 and QFX5120
+    25.2R2-S1.5 `junoscfg-oracle` captures hold `group <*>`, `interfaces
+    <ge-*>`, `"<[gx]e-*>"` and `routing-instances <VRF-*>`. A wildcard with
+    literal text under a rule that renames whole names cannot keep selecting
+    the same names: it is reported, the interim rule of specification
+    challenge S1. Spec anonymization/placed-values.
+    """
+
+    @pytest.mark.parametrize("place", list(_WILDCARD_SOURCES))
+    def test_a_match_all_wildcard_passes_every_rule(self, place: str) -> None:
+        text, where, _ = _WILDCARD_SOURCES[place]
+        result = anonymize(_set_ir(text.format("<*>")), AnonymizeConfig(salt="s", **_EVERY_RULE))
+        assert _at(result.ir["configuration"], *where) == ["<*>"]
+        assert result.patterns == ()
+        assert not [
+            (old, new)
+            for pairs in result.mapping.values()
+            for old, new in pairs.items()
+            if "<" in old or "<" in new
+        ]
+
+    @pytest.mark.parametrize(
+        ("place", "wildcard", "named", "options"),
+        [
+            ("bgp-group", "<EBGP>", "EBGP", {"groups": True}),
+            ("snmp-view", "<RO-ALL>", "RO-ALL", {"groups": True}),
+            ("login-user", "<admin>", "admin", {"identities": True}),
+            ("snmp-community", "<public-ro>", "public-ro", {"communities": True}),
+            ("bgp-neighbor", "<203.0.114.7>", "203.0.114.7", {"ips": True}),
+        ],
+        ids=["group", "snmp-view", "identity", "community", "ip"],
+    )
+    def test_the_text_of_a_wildcard_is_replaced_as_the_name_it_spells(
+        self, place: str, wildcard: str, named: str, options: dict[str, Any]
+    ) -> None:
+        """A wildcard without a wildcard character selects the one name it
+        spells, and keeps selecting it renamed."""
+        text, where, names = _WILDCARD_SOURCES[place]
+        source = _set_ir(text.format(wildcard))
+        result = anonymize(source, AnonymizeConfig(salt="s", **options))
+        cfg = result.ir["configuration"]
+        renamed = dict(zip(_at(source["configuration"], *names), _at(cfg, *names), strict=True))
+        assert renamed[named] != named
+        assert _at(cfg, *where) == [f"<{renamed[named]}>"]
+        assert result.patterns == ()
+
+    @pytest.mark.parametrize(
+        ("place", "wildcard", "options", "gone"),
+        [
+            ("bgp-group", "<EBGP-*>", {"groups": True}, "EBGP"),
+            ("snmp-view", "<RO-*>", {"groups": True}, "RO-"),
+            ("login-user", "<adm*>", {"identities": True}, "adm"),
+            ("snmp-community", "<public-*>", {"communities": True}, "public"),
+            ("bgp-group", "<[A-E]BGP*>", {"sensitive_words": ["ebgp"]}, None),
+            ("bgp-neighbor", "<203.0.114.*>", {"ips": True}, None),
+        ],
+        ids=["group", "snmp-view", "identity", "community", "sensitive-word-class", "ip"],
+    )
+    def test_a_wildcard_that_selects_other_names_is_reported(
+        self, place: str, wildcard: str, options: dict[str, Any], gone: str | None
+    ) -> None:
+        """No pseudonym of a whole name keeps a wildcard's literal text: the
+        wildcard keeps its brackets, its text a rule renames leaves, and its
+        place is reported (S1). A class around a sensitive word and an address
+        pattern stay as written and are reported too."""
+        text, where, _ = _WILDCARD_SOURCES[place]
+        result = anonymize(
+            _set_ir(text.format(f'"{wildcard}"')), AnonymizeConfig(salt="s", **options)
+        )
+        [anonymized] = _at(result.ir["configuration"], *where)
+        assert anonymized.startswith("<") and anonymized.endswith(">")
+        if gone is not None:
+            assert gone not in json.dumps(result.ir)
+        assert result.patterns == (".".join(where[:-1]),)
+
+    @pytest.mark.parametrize(
+        ("place", "wildcard", "options"),
+        [
+            ("bgp-group", "<EBGP-*>", {"sensitive_words": ["ebgp"]}),
+            ("interface", "<ge-*>", _EVERY_RULE),
+            ("interface", "<[gx]e-*>", _EVERY_RULE),
+            ("snmp-view", "<EBGP-*>", {"groups": True}),
+        ],
+        ids=["sensitive-word", "no-rule-claims-it", "a-class-no-rule-claims", "selects-nothing"],
+    )
+    def test_a_wildcard_that_selects_the_same_names_is_not_reported(
+        self, place: str, wildcard: str, options: dict[str, Any]
+    ) -> None:
+        """A sensitive word is replaced inside a name as inside the wildcard,
+        so `<word_…-*>` selects `word_…-A` and not `word_…`; an interface name
+        no rule renames keeps its wildcard; a wildcard that selected no name
+        selects none."""
+        text, where, names = _WILDCARD_SOURCES[place]
+        source = _set_ir(text.format(f'"{wildcard}"'))
+        result = anonymize(source, AnonymizeConfig(salt="s", **options))
+        cfg = result.ir["configuration"]
+        [anonymized] = _at(cfg, *where)
+        before = [
+            fnmatch.fnmatchcase(name, wildcard[1:-1])
+            for name in _at(source["configuration"], *names)
+        ]
+        after = [fnmatch.fnmatchcase(name, anonymized[1:-1]) for name in _at(cfg, *names)]
+        assert before == after
+        assert "ebgp" not in json.dumps(result.ir).lower()
+        assert result.patterns == ()
+
+    @pytest.mark.parametrize(
+        "options",
+        [
+            {"groups": True},
+            {"identities": True},
+            {"communities": True},
+            {"ips": True},
+            {"sensitive_words": ["ebgp", "ge"]},
+            {"descriptions": True},
+            {**_EVERY_RULE, "sensitive_words": ["ebgp", "ge"]},
+        ],
+        ids=[
+            "groups",
+            "identities",
+            "communities",
+            "ips",
+            "sensitive-words",
+            "descriptions",
+            "all",
+        ],
+    )
+    def test_the_mapping_restores_every_wildcard(
+        self, options: dict[str, Any], tmp_path: Path
+    ) -> None:
+        """Through the dumped mapping, as `--anonymize-revert-map` reads it,
+        every wildcard and every name comes back exactly. A pin: the base
+        restored its own output too."""
+        text = "".join(
+            source.format(f'"{wildcard}"')
+            for (source, _, _), wildcard in zip(
+                _WILDCARD_SOURCES.values(),
+                ["<EBGP-*>", "<RO-*>", "<public-*>", "<adm*>", "<203.0.114.*>", "<[gx]e-*>"],
+                strict=True,
+            )
+        )
+        text += (
+            "set groups GR-BGP protocols bgp group <*> description pattern\n"
+            'set groups GR-BGP protocols bgp group "<[A-E]BGP*>" log-updown\n'
+            "set groups GR-BGP protocols bgp group <EBGP> log-updown\n"
+            "set groups GR-BGP protocols bgp group IBGP neighbor <203.0.114.7> description one\n"
+            "set groups GR-LOGIN system login user <admin> class super-user\n"
+        )
+        dumped = tmp_path / "map.json"
+        out = convert_config(
+            text,
+            from_format=Format.SET,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(salt="s", dump_map=str(dumped), **options),
+        )
+        assert json.loads(out) != _set_ir(text)
+        reverted = convert_config(
+            out,
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(revert_map=str(dumped)),
+        )
+        assert json.loads(reverted) == _set_ir(text)
+
+    def test_a_description_written_as_a_wildcard_is_data(self) -> None:
+        """Only a name is a pattern: free text in angle brackets is replaced
+        whole, as before. A pin of the base's behaviour."""
+        source = _set_ir('set groups GR-IF interfaces <ge-*> description "<customer-*>"\n')
+        result = anonymize(source, AnonymizeConfig(descriptions=True, salt="s"))
+        [interface] = _at(result.ir["configuration"], "groups", "interfaces", "interface")
+        assert interface["name"] == "<ge-*>"
+        assert interface["description"].startswith("descr_")
+
+    def test_the_warning_names_the_path_and_no_value(self) -> None:
+        text, _, _ = _WILDCARD_SOURCES["bgp-group"]
+        result = convert_config_result(
+            text.format("<EBGP-*>"),
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(groups=True, salt="s"),
+        )
+        warned = [d for d in result.diagnostics if d.source == "anonymize"]
+        assert [(d.path, d.severity) for d in warned] == [("groups.protocols.bgp.group", "warning")]
+        assert "wildcard" in warned[0].message
+        assert "ebgp" not in "\n".join(d.render() for d in result.diagnostics).lower()
 
 
 #: Content the walk cannot place, as the library door meets it: the IR, the

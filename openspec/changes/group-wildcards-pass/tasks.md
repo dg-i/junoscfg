@@ -1,6 +1,6 @@
 ## 1. Verification
 
-- [ ] 1.1 Acceptance tests (fail on the merge base `1ebeed9` by design, pins named in `evidence-freeze.md`): `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern`, the strict xfail `test_a_wildcard_group_name_passes_the_group_rule` (removed when it passes) and the `<` filters of C6, `tests/contract/test_every_rule.py::TestEveryRule::test_a_match_all_wildcard_name_passes`, door rows in `tests/contract/test_every_message.py`, `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes::test_every_wildcard_name_passes`.
+- [x] 1.1 Acceptance tests (fail on the merge base `1ebeed9` by design, pins named in `evidence-freeze.md`): `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern`, the strict xfail `test_a_wildcard_group_name_passes_the_group_rule` (removed when it passes) and the `<` filters of C6, `tests/contract/test_every_rule.py::TestEveryRule::test_a_match_all_wildcard_name_passes`, door rows in `tests/contract/test_every_message.py`, `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes::test_every_wildcard_name_passes`.
 - [ ] 1.2 Independent Test/Challenge on these tests (high risk floor).
 
 ## 2. Change

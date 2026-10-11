@@ -217,6 +217,13 @@ _AS_REPLACEMENTS = tuple(str(64496 + i) for i in range(18))
 _AS_SOURCE = "".join(
     f"set protocols bgp group G{i}-ACME peer-as {asn}\n" for i, asn in enumerate(_AS_ORIGINALS)
 )
+#: A wildcard with literal text the group rule renames (ANON-P3, change
+#: group-wildcards-pass): reported by schema path, never by its text.
+_WILDCARD = (
+    "set groups GR-ACME protocols bgp group <ACME-*> hold-time 30\n"
+    f"set protocols bgp group ACME-PEERS neighbor {ADDRESS}\n"
+)
+_WILDCARD_SHOWN = ("groups.protocols.bgp.group", "wildcard")
 _READ = ("could not be read",)
 _WITHHELD = "; details withheld: the run anonymizes"
 _YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"
@@ -253,6 +260,9 @@ DOORS: dict[str, Door] = {
     ),
     "unplaced-strict": Door(
         _library(_UNKNOWN_KEY, Format.JSON, strict=True), ("could not be placed",), "bogus-acme"
+    ),
+    "anonymize-pattern-warning": Door(
+        _library(_WILDCARD, Format.SET, groups=True), _WILDCARD_SHOWN, None
     ),
     "read-set-bracket": Door(_library(_BRACKET, Format.SET), (*_READ, "(line 1)"), "sw1-acme"),
     "read-structured": Door(
@@ -365,6 +375,9 @@ DOORS: dict[str, Door] = {
         _cli(_UNKNOWN_KEY, ["-i", "json", "-e", "set"]),
         ("anonymize: system: 1 statement(s)",),
         "bogus-acme",
+    ),
+    "cli-anonymize-pattern-warning": Door(
+        _cli(_WILDCARD, ["-i", "set", "-e", "set"], "--anonymize-groups"), _WILDCARD_SHOWN, None
     ),
     "cli-pass-through-collision": Door(
         _cli_collision,
