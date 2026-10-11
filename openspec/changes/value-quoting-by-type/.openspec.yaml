@@ -13,3 +13,35 @@ removes:
   - "the known-differences classes `policy-expression-quoted` (176 lines), `policy-expression-double-quoted` (6), `policy-name-unquoted` (14) and `escaped-quote-lost` (16), through tools/device_differences.py"
   - "the strict xfail on `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_mapping_restores_the_set_output`, whose cause this change fixes"
 assurance: economy
+declared-break:
+  consumer:
+    why: >-
+      No name or signature in junoscfg.__all__ changes; src/junoscfg/__init__.py
+      changes only `__version__` at merge. Behind convert_config and
+      convert_config_result, set or structured input that quotes a policy name
+      whose text starts with `(` (`import "( P-A && P-B )"`) now reads to the
+      value the device's own JSON holds, `"\"( P-A && P-B )\""`, quotes kept;
+      it read to `( P-A && P-B )`, an expression over two policies, which is
+      another configuration. Set and structured output of every input now
+      write such a name quoted, a policy-algebra expression bare, and a value
+      holding `"` with `\"`. The set grammar (validate_set, validate_config)
+      accepts `\"` inside a quoted value and no longer accepts a quoted value
+      that ends in a lone backslash. Declared breaks on a named surface raise
+      the minor (AGENTS.md); owner intake 6 allows the IR change on device
+      evidence (synthetic/vmx-23.2R2-S7.5/synthetic-probes.{xml,json}.gz).
+    migration: >-
+      JSON or YAML that an earlier release wrote from set or structured input
+      holding such a quoted name carries the expression spelling; regenerate it
+      from the set or structured source. A consumer that compares a
+      policy-algebra value with a policy name strips one pair of surrounding
+      quotes first, as `junoscfg.audit` does. Set output that an earlier
+      release wrote with bare inner quotes or `""( … )""` did not load on a
+      device; regenerate it.
+  cli:
+    why: >-
+      `junoscfg convert` writes the spellings above; `junoscfg validate`
+      accepts `\"` inside a quoted value and rejects a quoted value ending in a
+      lone backslash.
+    migration: >-
+      Regenerate JSON or YAML written from set or structured input that quotes
+      a policy name starting with `(`; nothing else to do.
