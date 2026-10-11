@@ -19,5 +19,8 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: src/junoscfg/convert/__init__.py | `pipeline_result`, the one caller of `from_dict` in `src/`, and its `wrap=False` door |
+| Context expansion: tests/support/shapes.py, tools/check_test_doors.py | the catalogue the read-IR law runs over; why the law cannot sit in `tests/contract/` |
+| JSON output time, largest device JSON capture (`services-leaf1_qfx5130-48c.json.gz`) | 5.7 ms with the copy; the copy alone 1.5 ms |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

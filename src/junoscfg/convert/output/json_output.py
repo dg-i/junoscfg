@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from typing import Any
 
@@ -15,9 +16,11 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     When *wrap* is true, wraps the config in ``{"configuration": ...}``.
     Dict input receives native-format normalization so the output can be
     loaded on a Junos device. Relative path filtering may pass a scalar.
+    The normalization works on the writer's own copy: the caller's IR is
+    never changed (spec conversion/writers).
     """
     if isinstance(config, dict):
-        config = _native_groups(config)
+        config = _native_groups(copy.deepcopy(config))
         _normalize_presence_flags(config)
         _coerce_scalar_leaves(config, load_schema_tree())
         config = _ensure_name_first(config)

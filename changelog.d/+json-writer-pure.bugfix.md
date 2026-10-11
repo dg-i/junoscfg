@@ -1,0 +1,1 @@
+`junoscfg.convert.from_dict(ir, "json")` no longer rewrites the IR it is given. The JSON writer used to normalize presence flags (`true`, `{}`) and one-element leaf lists in the caller's own dict; it now normalizes a copy. JSON output is unchanged, including the native `groups` list.

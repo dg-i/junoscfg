@@ -153,6 +153,9 @@ print(result.warnings) # []
 
 The IR (intermediate representation) is a plain Python dict matching the Junos JSON format:
 `{"configuration": {"system": {"host-name": "r1"}}}`.
+`from_dict()` never changes the IR it is given, so one IR can be rendered to
+several formats in turn. The JSON writer applies the device's spellings
+(`[null]` presence flags, the native `groups` list) to its own copy.
 
 ## Path Filtering
 

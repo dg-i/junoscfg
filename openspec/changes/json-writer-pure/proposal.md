@@ -34,5 +34,5 @@ and then another format, or keeps the IR, sees an IR it never wrote.
 ## Impact
 
 `src/junoscfg/convert/output/json_output.py` (zone conversion), its contract,
-`tests/unit/convert/test_convert_roundtrip.py`, version files and changelog.
+`tests/unit/convert/test_convert_roundtrip.py`, `docs/guide/conversion.md`, version files and changelog.
 Reproduce: `private_test_data/makeover-work/c11_mutation.py`.

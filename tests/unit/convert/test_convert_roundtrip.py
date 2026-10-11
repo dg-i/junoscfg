@@ -61,17 +61,92 @@ class TestTheJsonAndYamlEnvelope:
 
 # ── Every writer ─────────────────────────────────────────────────────
 
-#: IR spellings a caller may build that the JSON writer normalizes for the device.
-_HAND_BUILT = {
-    "a-presence-flag-as-true": {"system": {"services": {"ssh": True}}},
-    "a-presence-flag-as-an-empty-mapping": {"system": {"services": {"ssh": {}}}},
-    "a-leaf-as-a-one-element-list": {
-        "system": {"login": {"user": [{"name": "admin", "class": ["super-user"]}]}}
-    },
-    "a-group-in-its-wrapper": {
-        "groups": {"group": [{"name": "G1", "system": {"services": {"ssh": True}}}]}
-    },
+_SSH_FLAG = {"system": {"services": {"ssh": [None]}}}
+_ADMIN = {"name": "admin", "class": ["super-user"]}
+_ADMIN_JSON = {"name": "admin", "class": "super-user"}
+
+#: name -> (an IR spelling a caller may build, its JSON `configuration`); None
+#: where no device rendering decides the output, so only purity is asserted.
+_HAND_BUILT: dict[str, tuple[Any, Any]] = {
+    "a-presence-flag-as-true": ({"system": {"services": {"ssh": True}}}, _SSH_FLAG),
+    "a-presence-flag-as-an-empty-mapping": ({"system": {"services": {"ssh": {}}}}, _SSH_FLAG),
+    "a-presence-flag-inside-a-list": ({"system": {"services": {"ssh": [True]}}}, None),
+    "a-tagged-presence-flag": (
+        {"system": {"services": {"ssh": True, "@ssh": {"inactive": True}}}},
+        {"system": {"services": {"ssh": [None], "@ssh": {"inactive": True}}}},
+    ),
+    "a-leaf-as-a-one-element-list": (
+        {"system": {"login": {"user": [_ADMIN]}}},
+        {"system": {"login": {"user": [_ADMIN_JSON]}}},
+    ),
+    "a-group-in-its-wrapper": (
+        {"groups": {"group": [{"name": "G1", "system": {"services": {"ssh": True}}}]}},
+        {"groups": [{"name": "G1", **_SSH_FLAG}]},
+    ),
+    "a-one-element-list-in-a-wrapped-group": (
+        {"groups": {"group": [{"name": "G1", "system": {"login": {"user": [_ADMIN]}}}]}},
+        {"groups": [{"name": "G1", "system": {"login": {"user": [_ADMIN_JSON]}}}]},
+    ),
+    "a-group-list-as-json-reads-it": (
+        {"groups": [{"name": "G1", "system": {"services": {"ssh": {}}}}]},
+        {"groups": [{"name": "G1", **_SSH_FLAG}]},
+    ),
+    "a-flag-four-lists-deep": (
+        {
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "ge-0/0/0",
+                        "unit": [
+                            {
+                                "name": "0",
+                                "family": {
+                                    "inet": {
+                                        "address": [{"name": "198.51.100.1/24", "primary": True}]
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        },
+        {
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "ge-0/0/0",
+                        "unit": [
+                            {
+                                "name": "0",
+                                "family": {
+                                    "inet": {
+                                        "address": [{"name": "198.51.100.1/24", "primary": [None]}]
+                                    }
+                                },
+                            }
+                        ],
+                    }
+                ]
+            }
+        },
+    ),
+    # A leaf-list is never coerced: a fix that coerces it changes what is applied.
+    "a-leaf-list-with-one-value": (
+        {"apply-groups": ["G1"], "system": {"host-name": "router1"}},
+        {"apply-groups": ["G1"], "system": {"host-name": "router1"}},
+    ),
 }
+
+#: Every writer door; `wrap` reaches only the JSON and YAML writers.
+_WRITER_DOORS = [
+    pytest.param("set", {}, id="set"),
+    pytest.param("structured", {}, id="structured"),
+    pytest.param("json", {}, id="json"),
+    pytest.param("json", {"wrap": False}, id="json-bare"),
+    pytest.param("yaml", {}, id="yaml"),
+    pytest.param("yaml", {"wrap": False}, id="yaml-bare"),
+]
 
 
 class TestNoWriterChangesTheIrItIsGiven:
@@ -81,15 +156,29 @@ class TestNoWriterChangesTheIrItIsGiven:
     lists in the caller's IR. `repr` is compared, so a changed key order or
     `True` turned into `[None]` counts. The contract tests cannot state this
     law: the named surfaces read a fresh IR, and only this door takes one a
-    caller holds.
+    caller holds. `pipeline_result` renders relative output with `wrap=False`,
+    so the bare doors are rows of their own.
     """
 
-    @pytest.mark.parametrize("writer", WRITERS, ids=[writer.value for writer in WRITERS])
-    @pytest.mark.parametrize("spelling", _HAND_BUILT.values(), ids=list(_HAND_BUILT))
-    def test_a_hand_built_ir_is_left_unchanged(self, spelling: Any, writer: Format) -> None:
+    @pytest.mark.parametrize(("fmt", "options"), _WRITER_DOORS)
+    @pytest.mark.parametrize("name", list(_HAND_BUILT))
+    def test_a_hand_built_ir_is_left_unchanged(
+        self, name: str, fmt: str, options: dict[str, Any]
+    ) -> None:
+        spelling = _HAND_BUILT[name][0]
         ir = copy.deepcopy(spelling)
-        from_dict(ir, writer.value)
+        output = from_dict(ir, fmt, **options)
         assert repr(ir) == repr(spelling)
+        assert output == from_dict(copy.deepcopy(spelling), fmt, **options)
+
+    @pytest.mark.parametrize(
+        "name", [name for name, (_, expected) in _HAND_BUILT.items() if expected is not None]
+    )
+    def test_the_json_writer_writes_the_device_spelling(self, name: str) -> None:
+        """Purity is not bought by skipping a pass: the output stays normalized."""
+        spelling, expected = _HAND_BUILT[name]
+        output = json.loads(from_dict(copy.deepcopy(spelling), "json"))
+        assert repr(output["configuration"]) == repr(expected)
 
     @pytest.mark.parametrize(
         ("source", "reader"),

@@ -14,6 +14,8 @@ dict IR; a second path for a pair is the duplicate `ARCHITECTURE.md` calls a def
 - XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML apply
   schema-backed leaf-list normalization at the common boundary, while JSON keeps
   its supplied value shapes without loading schema artifacts — enforced by `tests/unit/convert/test_convert_api.py::TestLeafListPromotion`.
+- No writer changes the IR it is given; the JSON writer normalizes its own copy — enforced by
+  `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`.
 - One configuration yields one IR whatever format it arrived in — enforced by
   `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr`.
 - An incomplete set statement, a keyed entry without its key from JSON, YAML or
@@ -22,9 +24,6 @@ dict IR; a second path for a pair is the duplicate `ARCHITECTURE.md` calls a def
 
 ## Precedent
 
-- `junoscfg.convert.pipeline_result` — the implementation door for conversion;
-  string-only `pipeline()` delegates to it and discards diagnostics.
-- `junoscfg.convert.output.dict_walker.WalkOutput` — the strategy every new
-  output format implements instead of walking the IR again.
-- `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical
-  boundary raw set readers apply before constructing the IR.
+- `junoscfg.convert.pipeline_result` — the implementation door for conversion; string-only `pipeline()` delegates to it and discards diagnostics.
+- `junoscfg.convert.output.dict_walker.WalkOutput` — the strategy every new output format implements instead of walking the IR again.
+- `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical boundary raw set readers apply before constructing the IR.

@@ -11,14 +11,17 @@ writer applies to its own copy.
 ### Requirement: A writer leaves the IR it is given unchanged
 
 WHEN any writer (set, structured, JSON, YAML) renders an IR through
-`junoscfg.convert.from_dict` THEN the system SHALL leave that IR, every nested
+`junoscfg.convert.from_dict`, wrapped or with `wrap=False`, THEN the system SHALL leave that IR, every nested
 mapping and list in it, its values and its key order exactly as the caller
 passed them; the output is the same as when the writer was handed its own
 copy. This holds for the IR every reader gives (`junoscfg.convert.to_dict`)
 and for the spellings a caller may build by hand that the JSON writer
-normalizes for the device: a presence flag as `true` or `{}`, a single leaf
-as a one-element list, and `groups` in its `group` wrapper.
-Tests: `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_read_ir_is_left_unchanged`
+normalizes for the device: a presence flag as `true`, `{}` or inside a list,
+tagged or four lists deep, a single leaf as a one-element list, and `groups`
+in its `group` wrapper or as a list; the JSON output stays the device's
+spelling (`[null]` flags, scalar leaves, native `groups`), and a leaf-list
+with one value stays a list.
+Tests: `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_the_json_writer_writes_the_device_spelling`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_read_ir_is_left_unchanged`
 
 #### Scenario: A presence flag written as true
 
