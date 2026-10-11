@@ -15,6 +15,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from agent_ready_checks import verification
 
 from junoscfg.validate import ArtifactBuilder
 from tests.support.schema_data import read_version
@@ -207,6 +208,30 @@ def _git(root, *arguments):
     ).stdout
 
 
+def _read_inputs(policy, recipe):
+    return {
+        Path(name).as_posix()
+        for name in (
+            POLICY,
+            policy["suite"],
+            policy["runtime"],
+            recipe["dump"],
+            recipe["required"],
+            recipe["stability"],
+        )
+    }
+
+
+def _candidate_input(name, explicit):
+    parts = Path(name).parts
+    record = (
+        len(parts) == 4
+        and parts[:2] == ("openspec", "changes")
+        and parts[-1] in verification.EVIDENCE_RECORDS
+    )
+    return name in explicit or not record
+
+
 def _preflight(root, policy, shard):
     recipe = policy["shards"][shard]
     names = {Path(row["dump"]).name for row in policy["shards"].values()}
@@ -216,7 +241,8 @@ def _preflight(root, policy, shard):
         raise ValueError("schema inventory is missing, staged or undeclared")
     validate_input(_path(root, recipe["dump"]), recipe["release"])
     verify_versions(_path(root, policy["runtime"]))
-    if _git(root, "status", "--porcelain", "--untracked-files=no").strip():
+    dirty = _git(root, "diff", "--name-only", "--no-renames", "-z", "HEAD").split("\0")
+    if any(name and _candidate_input(name, _read_inputs(policy, recipe)) for name in dirty):
         raise ValueError("schema verification requires a committed clean candidate")
     required = _json(_path(root, recipe["required"]))
     _required(required)
@@ -230,10 +256,13 @@ def _preflight(root, policy, shard):
 
 
 def _snapshot(root, policy, recipe):
-    names = _git(root, "ls-files", "-z").split("\0")
-    names = [name for name in names if name]
-    names += [recipe["dump"], policy["runtime"]]
-    return {name: hashlib.sha256(_path(root, name).read_bytes()).hexdigest() for name in names}
+    explicit = _read_inputs(policy, recipe)
+    names = set(_git(root, "ls-files", "-z").split("\0")) | explicit
+    return {
+        name: hashlib.sha256(_path(root, name).read_bytes()).hexdigest()
+        for name in sorted(names)
+        if name and _candidate_input(name, explicit)
+    }
 
 
 def _normalized_metadata(directory):

@@ -13,6 +13,12 @@ command identity, locking, caching and stability execution.
   config overrides, retaining protocol authorization; commands preserve candidates
   and declared inputs; no success manifest
   survives failed execution or mutation. Historical verification evidence stays.
+- Dirty admission and mutation snapshots share the installed wrapper's public
+  EVIDENCE_RECORDS boundary: only its five fixed nonexecuting records at exact
+  openspec/changes/<slug>/<record> paths are excluded. Every explicitly read
+  policy/suite/runtime/dump/required/stability input overrides that spelling.
+  Source, tasks, configuration, nested/archive records and other paths remain
+  candidate inputs.
 - Products come from the existing real_artifacts temporary fixture; shipped
   protected bytes agree with committed artifacts. Metadata generated_at is the
   sole semantic comparison exception. Every shard exports canonical metadata

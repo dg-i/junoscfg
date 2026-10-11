@@ -135,3 +135,93 @@ remain required before STOP-R. No independent material correctness finding or
 criteria amendment remains. This report authorizes proceeding to that evidence
 checkpoint and fresh Reviewer, not claiming it already passed. Strategy A
 activation remains root-owned; efficiency remains UNMEASURED.
+
+## FR-01 independent correction acceptance
+
+The fresh Reviewer demonstrated semantic metadata drift on a nonshipped shard
+could pass the wrapper's real second execution. Root accepted enforcement of
+the existing timestamp-only invariant; no criterion or schema assertion changed.
+The correction retains four protected gzip products and adds canonical
+`junos-schema-meta.normalized.json`, removing only generated_at, to every shard's
+stability declaration. Existing shipped metadata comparison remains enforced.
+
+The independently owned regression crosses both nonshipped production labels
+with semantic-field and generated_at-only changes. Each case executes the real
+installed wrapper and two genuine small application pytest sessions, records
+observed metadata history, and checks native exit/reusability. Exact historical
+15b87ee source, helper and manifests were checked against git-show bytes in an
+isolated archive. Final regression source SHA256 is
+`36f895255cdf9ef28bb331c270e2737452e9374771ca4b72099067ec5e3ae479`.
+
+- Final-source red on `15b87eea8117d692e719c8e3252d996666a6e67b`: two semantic
+  failures because the wrapper incorrectly returned zero, two passing timestamp
+  controls, zero errors/skips, exit 1, 35.57s.
+- Serialized independent green on committed
+  `5e1821b711e36918f113edec9b009c6f309fb485`: four actual cases passed, zero
+  failures/errors/skips, exit zero, 32.61s. Head and correction/test/manifest bytes
+  remained unchanged. Raw logs show genuine second-pass semantic refusal and
+  timestamp-only acceptance; native successful records remain valid only for
+  the timestamp controls.
+- The normal hook exposed a caller fixture inheriting Git selectors before
+  metadata assertions; its original four fixture-context failures remain retained. The
+  test caller now isolates only explicit repository selectors and GIT_CONFIG_*
+  controls before invoking the installed wrapper, preserving GIT_ALLOW_PROTOCOL.
+  Every case simulates a disposable parent context and proves its entire file
+  inventory remains byte-identical. Metadata assertions were not relaxed and
+  the installed template was not changed. Shared application config still has
+  restoration SHA256 `92211d1e0eef6eba29bd1e27700b029399caafa69ca34c6a342d3fae05779982`.
+- An earlier immutable four-case run genuinely passed in 34.15s while Builder's
+  fast check overlapped because stricter serialization steering arrived after
+  both launches. That positive receipt is retained as scheduling provenance;
+  the 32.61s confirmation above ran only after Builder reported fast exited and
+  no competing hooks/tests/gates remained. No failure is invented from overlap.
+
+Direct private receipts: metadata-red-provenance.json, metadata-green.out,
+metadata-green.xml and metadata-green-provenance.json in the existing challenge
+home. Earlier red sources/results, the failed hook and overlapping receipt are
+preserved. FR-01's bounded synthetic control correction is accepted by TC;
+Reviewer owns its final verdict. The changed adapter/stability manifests
+invalidate historical full/schema receipts for current verification: root must
+obtain the corrected immutable full and real owning schema evidence. No such
+full, real XSD generation, activation or performance claim comes from this probe.
+
+## TC-L01 — qualified lifecycle record boundary
+
+Independent actual counterevidence showed a second owning-layer integration gap:
+the installed wrapper executed two real small application passes, appended valid
+tracked verification/progress events, and retained identical qualified identity;
+the next uncached adapter command nevertheless refused that dirty ledger. Its
+unconditional tracked clean/snapshot checks treated evidence records as source.
+The qualified public verification.EVIDENCE_RECORDS and delivered guide exclude
+exactly five fixed four-component per-change non-executable record paths. Root
+accepted alignment with that existing provider boundary, not a new requirement.
+
+The final independent source is bound by SHA256
+`798e347415dfa3029e044919398e751484f916c9a9b5ba5de7d008d55b0780b4`.
+Exact archived `5e1821b711e36918f113edec9b009c6f309fb485` plus that regression
+produced 7 expected boundary failures and 10 passing rejection controls in
+69.96s, exit 1, zero errors/skips. Earlier 12- and 14-case red sources/results
+remain retained. The failures cover every fixed record, in-call record update,
+and the next actual native-event wrapper execution.
+
+Serialized independent current-correction green passed all 17 cases in 79.11s,
+exit zero, zero errors/skips. Source/test/helper hashes stayed unchanged during
+execution; the candidate remains uncommitted at this receipt and still needs
+normal hooks/immutable checkpoint. Valid native wrapper events accompany four
+actual small generation sessions across two uncached executions. The provider's
+public record set is reused; no new ignore list, cache or template fork exists.
+Explicit policy/suite/runtime/dump/required/stability reads override fixed-record
+spelling. Source/task/input/nested/archive mutations remain failures; staged
+source-to-record rename refuses before pytest, as do formatting-only valid JSON
+changes to explicitly read runtime/required files with bare and ./ prefixes.
+No activation/store or general source/config/task exemption was introduced.
+
+Direct receipts are ledger-red-provenance.json and
+ledger-green-before-commit-provenance.json with raw logs/JUnit in the private
+challenge home. FR-01 metadata green remains separate historical evidence.
+Shared configuration remains byte-identical to the restoration hash. Root
+ledger and metadata were not changed by TC; only synthetic fixture ledgers were
+appended by the genuine provider. TC accepts the bounded control correction;
+the same Reviewer owns its final verdict. Changed source requires new owning
+immutable full/schema evidence, not relabelled historical receipts. No full,
+real XSD generation, activation or performance proof ran in these controls.
