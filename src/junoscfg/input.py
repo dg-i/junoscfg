@@ -6,13 +6,28 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
-__all__ = ["find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"]
+__all__ = ["InputError", "find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"]
 
 import re
 from typing import TYPE_CHECKING, TextIO
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+
+
+class InputError(ValueError):
+    """A refusal to read configuration text, with the line it happened on.
+
+    Its message is the reader's own and may quote the text; ``lineno``
+    (1-based, ``None`` when unknown) lets a caller that must not quote it
+    still say where (an anonymized conversion), as `json.JSONDecodeError`'s
+    ``lineno`` does.
+    """
+
+    def __init__(self, message: str, lineno: int | None = None) -> None:
+        """Build the refusal from its *message* and the *lineno* it names."""
+        super().__init__(message)
+        self.lineno = lineno
 
 
 def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:

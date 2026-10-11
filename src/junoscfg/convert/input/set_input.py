@@ -21,7 +21,7 @@ from junoscfg.display import (
     statement_name_spellings,
     unplaced_record_problem,
 )
-from junoscfg.input import find_unsupported_set_brackets, normalize
+from junoscfg.input import InputError, find_unsupported_set_brackets, normalize
 
 
 def _is_statement_name(cname: str, cnode: dict[str, Any], token: str) -> bool:
@@ -60,7 +60,8 @@ def set_to_dict(source: str) -> dict[str, Any]:
     """
     bracket_findings = find_unsupported_set_brackets(source)
     if bracket_findings:
-        raise ValueError(bracket_findings[0][1])
+        lineno, message = bracket_findings[0]
+        raise InputError(message, lineno)
 
     content = normalize(source)
     lines = [line.strip() for line in content.split("\n") if line.strip()]
@@ -99,6 +100,7 @@ def set_to_dict(source: str) -> dict[str, Any]:
 def statements_to_dict(
     statements: list[list[tuple[str, frozenset[str]]]],
     set_lines: list[tuple[str, bool]] | None = None,
+    lines: tuple[int, ...] = (),
 ) -> dict[str, Any]:
     """Build the IR dict from curly statements, as `SetConverter.statements()` lexes them.
 
@@ -116,11 +118,14 @@ def statements_to_dict(
     one-line statement the walk reads as siblings (`hold-time up 2000 down
     0`) gives one line per sibling, and a leaf read without its value gives
     an incomplete line.
+
+    *lines*, when given, is the line each statement starts on
+    (`SetConverter.statement_lines()`), named in a refusal.
     """
     schema = load_schema_tree()
     config: dict[str, Any] = {}
     index: _EntryIndex = {}
-    for levels in statements:
+    for number, levels in enumerate(statements):
         tokens: list[str] = []
         tags: dict[int, frozenset[str]] = {}
         for text, level_tags in levels:
@@ -140,9 +145,12 @@ def statements_to_dict(
         if any(tags.values()):
             # A level boundary inside a key or a value: no node starts
             # there, so the tag has nowhere to go. No device writes this.
-            raise ValueError(
-                "Invalid structured input: a tag inside a key or value in "
-                + " ".join(text for text, _ in levels)
+            line = lines[number] if number < len(lines) else None
+            where = f" on line {line}" if line is not None else ""
+            raise InputError(
+                f"Invalid structured input{where}: a tag inside a key or value in "
+                + " ".join(text for text, _ in levels),
+                line,
             )
     return config
 

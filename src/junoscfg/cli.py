@@ -983,11 +983,14 @@ def _failure_withheld(anonymizing: bool) -> Iterator[None]:
     except Exception as error:
         if not anonymizing:
             raise
-        click.echo(
-            f"Error: the conversion failed ({type(error).__name__}); details withheld: "
-            "the run anonymizes",
-            err=True,
-        )
+        text = str(error)
+        if not (isinstance(error, RuntimeError) and text.startswith("the conversion failed (")):
+            # The library withholds its own failures already (`pipeline_result`).
+            text = (
+                f"the conversion failed ({type(error).__name__}); details withheld: "
+                "the run anonymizes"
+            )
+        click.echo(f"Error: {text}", err=True)
         sys.exit(1)
 
 

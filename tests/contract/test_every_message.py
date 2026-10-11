@@ -79,6 +79,11 @@ def _warned(caught: list[warnings.WarningMessage]) -> str:
     )
 
 
+def _said(error: BaseException) -> str:
+    """The exception's own message, as Python's last traceback line shows it."""
+    return "".join(traceback.format_exception_only(error))
+
+
 def _chain(error: BaseException) -> str:
     """The exception as Python prints it uncaught: its whole chain."""
     return "".join(traceback.format_exception(error))
@@ -88,15 +93,18 @@ def _chain(error: BaseException) -> str:
 class Door:
     """One way a message leaves a run.
 
-    ``run(anonymized, tmp)`` returns the exit code (``None`` for the library)
-    and everything the run let out. ``shown`` are fragments the anonymized
-    run must still print (the door's meaning: path, reason, line, count).
+    ``run(anonymized, tmp)`` returns the exit code (``None`` for the library),
+    what the door said (an exception's own message, the diagnostics, stderr)
+    and everything the run let out (that, Python warnings, the formatted
+    chain). ``shown`` are fragments the anonymized run must still say (the
+    door's meaning: path, reason, line, count), matched against what it said
+    only: a traceback's frame lines say ``line 113`` too (Reviewer R3).
     ``kept`` is a fragment of the door's own message a run without
     anonymization prints; ``None`` for a door only an anonymized run opens.
     ``words`` are input words beyond the marker and the address.
     """
 
-    run: Callable[[bool, Path], tuple[int | None, str]]
+    run: Callable[[bool, Path], tuple[int | None, str, str]]
     shown: tuple[str, ...]
     kept: str | None
     words: tuple[str, ...] = ()
@@ -104,8 +112,8 @@ class Door:
 
 def _library(
     source: str, fmt: Format, to: Format = Format.SET, *, strict: bool = False, **options: object
-) -> Callable[[bool, Path], tuple[int | None, str]]:
-    def run(anonymized: bool, tmp: Path) -> tuple[int | None, str]:
+) -> Callable[[bool, Path], tuple[int | None, str, str]]:
+    def run(anonymized: bool, tmp: Path) -> tuple[int | None, str, str]:
         anon = _config(**options) if anonymized else None
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
@@ -115,18 +123,26 @@ def _library(
                 )
             except FieldValidationError as error:
                 details = [f"{e.path} {e.message} {e.value}" for e in error.result.errors]
-                return None, "\n".join([_chain(error), *details, _warned(caught)])
-            except (ValueError, yaml.YAMLError, PassThroughCollisionError) as error:
-                return None, _chain(error) + _warned(caught)
-        return None, "\n".join([*(d.render() for d in result.diagnostics), _warned(caught)])
+                said = "\n".join([_said(error), *details])
+                return None, said, "\n".join([said, _chain(error), _warned(caught)])
+            except (
+                ValueError,
+                yaml.YAMLError,
+                PassThroughCollisionError,
+                RuntimeError,
+                TypeError,
+            ) as error:
+                return None, _said(error), "\n".join([_chain(error), _warned(caught)])
+        said = "\n".join(d.render() for d in result.diagnostics)
+        return None, said, "\n".join([said, _warned(caught)])
 
     return run
 
 
 def _cli(
     source: str, args: list[str], *options: str, xsd: str | None = None
-) -> Callable[[bool, Path], tuple[int | None, str]]:
-    def run(anonymized: bool, tmp: Path) -> tuple[int | None, str]:
+) -> Callable[[bool, Path], tuple[int | None, str, str]]:
+    def run(anonymized: bool, tmp: Path) -> tuple[int | None, str, str]:
         flags = ["--anonymize-ips", "--anonymize-salt", SALT, *options] if anonymized else []
         extra: list[str] = []
         if xsd is not None:
@@ -135,13 +151,15 @@ def _cli(
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             result = CliRunner().invoke(main, ["convert", *args, *extra, *flags], input=source)
-        text = result.stderr + _warned(caught)
+        # A Python warning reaches stderr on the command line; pytest records it instead.
+        said = result.stderr + _warned(caught)
         if result.exit_code != 0 or "-e" not in args:
             # stdout is the output, which carries the configuration, only on success.
-            text += result.stdout
+            said += result.stdout
+        scanned = said
         if result.exception is not None and not isinstance(result.exception, SystemExit):
-            text += _chain(result.exception)
-        return result.exit_code, text
+            scanned += _chain(result.exception)
+        return result.exit_code, said, scanned
 
     return run
 
@@ -200,10 +218,11 @@ _AS_SOURCE = "".join(
     f"set protocols bgp group G{i}-ACME peer-as {asn}\n" for i, asn in enumerate(_AS_ORIGINALS)
 )
 _READ = ("could not be read",)
+_YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"
 _FAILED = ("Validation: FAILED (1 error(s))", "line 1")
 
 
-def _cli_collision(anonymized: bool, tmp: Path) -> tuple[int | None, str]:
+def _cli_collision(anonymized: bool, tmp: Path) -> tuple[int | None, str, str]:
     return _cli(
         f"set system name-server {ADDRESS}\n",
         ["-i", "set", "-e", "set"],
@@ -212,7 +231,7 @@ def _cli_collision(anonymized: bool, tmp: Path) -> tuple[int | None, str]:
     )(anonymized, tmp)
 
 
-def _library_collision(anonymized: bool, tmp: Path) -> tuple[int | None, str]:
+def _library_collision(anonymized: bool, tmp: Path) -> tuple[int | None, str, str]:
     return _library(
         f"set system name-server {ADDRESS}\n",
         Format.SET,
@@ -234,18 +253,31 @@ DOORS: dict[str, Door] = {
     "unplaced-strict": Door(
         _library(_UNKNOWN_KEY, Format.JSON, strict=True), ("could not be placed",), "bogus-acme"
     ),
-    "read-set-bracket": Door(_library(_BRACKET, Format.SET), _READ, "sw1-acme"),
-    "read-structured": Door(_library(_NO_SEMICOLON, Format.STRUCTURED), _READ, "sw1-acme"),
-    "read-structured-tag": Door(_library(_TAG_INSIDE, Format.STRUCTURED), _READ, "sw1-acme"),
-    "read-structured-quote": Door(_library(_OPEN_QUOTE, Format.STRUCTURED), _READ, "sw1-acme"),
-    "read-yaml": Door(_library(_BROKEN_YAML, Format.YAML), (*_READ, "line"), "sw1-acme"),
-    "read-xml": Door(_library(_BROKEN_XML, Format.XML), (*_READ, "line 1"), "sys-acme"),
-    "read-json": Door(_library(_BROKEN_JSON, Format.JSON), (*_READ, "line 1"), "Expecting"),
+    "read-set-bracket": Door(_library(_BRACKET, Format.SET), (*_READ, "(line 1)"), "sw1-acme"),
+    "read-structured": Door(
+        _library(_NO_SEMICOLON, Format.STRUCTURED), (*_READ, "(line 2)"), "sw1-acme"
+    ),
+    "read-structured-tag": Door(
+        _library(_TAG_INSIDE, Format.STRUCTURED), (*_READ, "(line 3)"), "sw1-acme"
+    ),
+    "read-structured-quote": Door(
+        _library(_OPEN_QUOTE, Format.STRUCTURED), (*_READ, "(line 2)"), "sw1-acme"
+    ),
+    "read-yaml": Door(_library(_BROKEN_YAML, Format.YAML), (*_READ, "(line 3)"), "sw1-acme"),
+    "read-xml": Door(_library(_BROKEN_XML, Format.XML), (*_READ, "(line 1)"), "sys-acme"),
+    "read-json": Door(_library(_BROKEN_JSON, Format.JSON), (*_READ, "(line 1)"), "Expecting"),
     "read-note": Door(_library(_EMPTY_BLOCK, Format.STRUCTURED), ("empty block",), "R-ACME"),
     "structured-writer-note": Door(
         _library(_FAMILY_TAG, Format.JSON, Format.STRUCTURED), ("1 tag(s) dropped",), "G-ACME"
     ),
-    "pass-through-collision": Door(_library_collision, ("collides",), None),
+    "pass-through-collision": Door(
+        _library_collision, ("the conversion failed (PassThroughCollisionError)",), None
+    ),
+    "unexpected-failure": Door(
+        _library(_YAML_DATE, Format.YAML, Format.JSON),
+        ("RuntimeError: the conversion failed (TypeError)",),
+        None,
+    ),
     # -- the command line: stderr, stdout of a failed or validate-only run ----
     "cli-validate-set": Door(
         _cli(f"set system bogus-acme {ADDRESS}\n", ["-i", "set", "-v", "-e", "set"]),
@@ -301,17 +333,28 @@ DOORS: dict[str, Door] = {
         ("Field validation: FAILED (1 error(s))", *_ENUM_SHOWN),
         "v9-acme",
     ),
-    "cli-read-bracket": Door(_cli(_BRACKET, ["-i", "set", "-e", "json"]), _READ, "sw1-acme"),
+    "cli-read-bracket": Door(
+        _cli(_BRACKET, ["-i", "set", "-e", "json"]), (*_READ, "(line 1)"), "sw1-acme"
+    ),
     "cli-read-structured": Door(
-        _cli(_NO_SEMICOLON, ["-i", "structured", "-e", "set"]), _READ, "sw1-acme"
+        _cli(_NO_SEMICOLON, ["-i", "structured", "-e", "set"]), (*_READ, "(line 2)"), "sw1-acme"
     ),
     "cli-read-structured-tag": Door(
-        _cli(_TAG_INSIDE, ["-i", "structured", "-e", "set"]), _READ, "sw1-acme"
+        _cli(_TAG_INSIDE, ["-i", "structured", "-e", "set"]), (*_READ, "(line 3)"), "sw1-acme"
     ),
     "cli-read-yaml": Door(
-        _cli(_BROKEN_YAML, ["-i", "yaml", "-e", "set"]), ("Invalid YAML", *_READ), "sw1-acme"
+        _cli(_BROKEN_YAML, ["-i", "yaml", "-e", "set"]),
+        ("Invalid YAML", *_READ, "(line 3)"),
+        "sw1-acme",
     ),
-    "cli-read-xml": Door(_cli(_BROKEN_XML, ["-i", "xml", "-e", "set"]), _READ, "sys-acme"),
+    "cli-read-xml": Door(
+        _cli(_BROKEN_XML, ["-i", "xml", "-e", "set"]), (*_READ, "(line 1)"), "sys-acme"
+    ),
+    "cli-unexpected-failure": Door(
+        _cli(_YAML_DATE, ["-i", "yaml", "-e", "json"]),
+        ("Error: the conversion failed (TypeError)",),
+        None,
+    ),
     "cli-structured-writer-note": Door(
         _cli(_FAMILY_TAG, ["-i", "json", "-e", "structured"]), ("1 tag(s) dropped",), "G-ACME"
     ),
@@ -346,15 +389,15 @@ class TestAnAnonymizedRunQuotesNothingOfTheConfiguration:
     @pytest.mark.parametrize("name", list(DOORS))
     def test_no_message_holds_a_word_of_it(self, name: str, tmp_path: Path) -> None:
         door = DOORS[name]
-        code, text = door.run(True, tmp_path)
+        code, said, text = door.run(True, tmp_path)
         for fragment in door.shown:
-            assert fragment in text, f"{name}: {fragment!r} missing from {text!r}"
+            assert fragment in said, f"{name}: {fragment!r} missing from {said!r}"
         assert MARKER not in text.casefold(), f"{name}: {text!r}"
         assert not DOTTED_QUAD.search(text), f"{name}: {text!r}"
         for word in (ADDRESS, _pseudonym(), *door.words):
             assert word not in text, f"{name}: {word!r} in {text!r}"
         if door.kept is not None:
-            plain_code, _ = door.run(False, tmp_path)
+            plain_code, _, _ = door.run(False, tmp_path)
             assert code == plain_code, f"{name}: anonymizing changed the exit code"
 
 
@@ -364,7 +407,7 @@ class TestARunThatDoesNotAnonymizeKeepsItsMessages:
     @pytest.mark.parametrize("name", list(_KEPT))
     def test_the_message_quotes_the_configuration(self, name: str, tmp_path: Path) -> None:
         door = _KEPT[name]
-        _, text = door.run(False, tmp_path)
+        _, _, text = door.run(False, tmp_path)
         assert door.kept is not None
         assert door.kept in text, f"{name}: {door.kept!r} not in {text!r}"
 
@@ -406,6 +449,38 @@ class TestAFailureNoHandlerExpectsNamesOnlyItsClass:
             assert word not in anonymized.output
         plain = CliRunner().invoke(main, ["convert", *args], input="set system host-name sw1\n")
         assert isinstance(plain.exception, RuntimeError)
+
+
+class TestTheLibraryRaisesAFailureByItsClassOnly:
+    """A failure of an anonymized conversion the library does not expect is a
+    fresh `RuntimeError` naming its class, with no cause, context or notes:
+    a `TypeError` from the JSON writer carried the note "when serializing
+    dict item 'x-acme'" (Reviewer R1, ruling). A conversion that does not
+    anonymize raises the original."""
+
+    def test_nothing_of_the_original_travels_with_it(self) -> None:
+        with pytest.raises(RuntimeError) as raised:
+            convert_config_result(
+                _YAML_DATE, from_format=Format.YAML, to_format=Format.JSON, anon_config=_config()
+            )
+        error = raised.value
+        assert str(error).startswith("the conversion failed (TypeError)")
+        assert error.__cause__ is None
+        assert error.__context__ is None
+        assert not getattr(error, "__notes__", None)
+
+    def test_a_refusal_to_read_carries_nothing_either(self) -> None:
+        with pytest.raises(ValueError, match=r"\(line 1\)") as raised:
+            convert_config_result(
+                _BRACKET, from_format=Format.SET, to_format=Format.SET, anon_config=_config()
+            )
+        assert type(raised.value) is ValueError
+        assert raised.value.__cause__ is None
+        assert raised.value.__context__ is None
+
+    def test_without_anonymization_the_original_is_raised(self) -> None:
+        with pytest.raises(TypeError):
+            convert_config_result(_YAML_DATE, from_format=Format.YAML, to_format=Format.JSON)
 
 
 class TestOnlyTheDebugLevelPrintsOriginals:

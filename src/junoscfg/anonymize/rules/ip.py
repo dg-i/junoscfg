@@ -193,17 +193,19 @@ class IpRule(Rule):
         `ipanon`'s error reads "Anonymized IP <replacement> (from <original>)
         collides with --pass-through prefix <prefix>": the pair the mapping
         holds, printed beside the output. It is raised afresh, its class kept,
-        without the chain that carries the original (spec
+        with no cause or context that carries the original (spec
         anonymization/placed-values).
         """
         try:
-            return self._anonymizer.anonymize(address)
+            return str(self._anonymizer.anonymize(address))
         except PassThroughCollisionError:
-            raise PassThroughCollisionError(
-                "an address's replacement collides with a preserved prefix "
-                "(--anonymize-preserve-prefixes); the addresses are withheld: use another "
-                "salt or adjust the preserved prefixes"
-            ) from None
+            pass
+        # Raised outside the handler: the original is neither its cause nor its context.
+        raise PassThroughCollisionError(
+            "an address's replacement collides with a preserved prefix (`preserve_prefixes`, "
+            "--anonymize-preserve-prefixes); the addresses are withheld: use another salt or "
+            "adjust the preserved prefixes"
+        )
 
     def lexical(self, word: str) -> str | None:
         """A word holding an address has the address replaced."""

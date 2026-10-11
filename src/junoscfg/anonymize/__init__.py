@@ -80,7 +80,10 @@ def anonymize(
     Args:
         ir: The full IR dict (``{"configuration": {...}}``).
         config: Anonymization configuration specifying which rules to apply.
-        diagnostic_sink: Optional receiver for debug diagnostics.
+        diagnostic_sink: Optional receiver for debug diagnostics. At
+            ``config.log_level == "debug"`` each one pairs an original value
+            with its replacement, by design, and ``ipanon`` writes its own
+            warnings to stderr; at any other level it receives nothing.
 
     Returns:
         An :class:`AnonymizeResult` with the anonymized copy of *ir* and the

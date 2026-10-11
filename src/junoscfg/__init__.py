@@ -80,7 +80,11 @@ def convert_config(
     relative: bool = False,
     anon_config: object | None = None,
 ) -> str:
-    """Convert a Junos configuration and return only rendered output."""
+    """Convert a Junos configuration and return only rendered output.
+
+    It raises as :func:`convert_config_result` does, an anonymized
+    conversion's errors included.
+    """
     return convert_config_result(
         source,
         from_format=from_format,
@@ -130,6 +134,14 @@ def convert_config_result(
             *relative* is True without *path*.
         junoscfg.convert.field_validator.FieldValidationError: When
             *strict* is True and validation errors are found.
+        RuntimeError: In a conversion that anonymizes, for any other
+            failure; it names only the failure's class.
+
+    In a conversion that anonymizes no message quotes the configuration: a
+    refusal to read the input is a plain ``ValueError`` (``yaml.YAMLError``
+    for YAML; never a subclass such as ``json.JSONDecodeError``) naming only
+    its line, with no cause or context; field-validation messages keep path,
+    reason and expected value and withhold the value.
 
     Example:
         >>> convert_config('{"configuration":{"system":{"host-name":"r1"}}}',

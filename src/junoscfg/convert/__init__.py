@@ -108,16 +108,63 @@ def pipeline_result(
     Raises:
         FieldValidationError: When *strict* is True and validation errors
             are found.
-        ValueError: When *relative* is True without *path*.
-    """
-    diagnostics: list[Diagnostic] = []
+        ValueError: When *relative* is True without *path*, or the input
+            cannot be read.
+        RuntimeError: In a conversion that anonymizes, for any failure but
+            those above; its message names only the failure's class.
 
+    A conversion that anonymizes quotes no word of the configuration in what
+    it raises: a refusal to read the input is a fresh `ValueError`
+    (`yaml.YAMLError` for YAML) naming its line, any other failure a fresh
+    `RuntimeError` naming its class, both with no cause, context or notes
+    (spec anonymization/placed-values).
+    """
     if relative and not path:
         raise ValueError("relative=True requires path to be set.")
 
+    anonymizing = bool(getattr(anon_config, "any_enabled", False))
+    if not anonymizing:
+        return _convert(
+            source, from_format, to_format, validate, strict, anon_config, path, relative, False
+        )
+    failure: Exception
+    try:
+        return _convert(
+            source, from_format, to_format, validate, strict, anon_config, path, relative, True
+        )
+    except FieldValidationError:
+        raise  # its reports are withheld already
+    except _UnreadableError as unreadable:
+        failure = _withheld_refusal(unreadable.error)
+    except Exception as error:  # noqa: BLE001 -- every failure is withheld, by class
+        failure = _withheld_failure(error)
+    # Raised outside the handler, so the original is neither its cause nor its context.
+    raise failure
+
+
+class _UnreadableError(Exception):
+    """A reader's refusal, carried to `pipeline_result` to be withheld."""
+
+    def __init__(self, error: Exception) -> None:
+        super().__init__(type(error).__name__)
+        self.error = error
+
+
+def _convert(
+    source: str,
+    from_format: str,
+    to_format: str,
+    validate: bool,
+    strict: bool,
+    anon_config: object | None,
+    path: str | None,
+    relative: bool,
+    anonymizing: bool,
+) -> ConversionResult:
+    """`pipeline_result`'s steps; *anonymizing* decides what the messages may quote."""
+    diagnostics: list[Diagnostic] = []
     # The reader's warnings name a path of the input, values included; they
     # join the result once it is known whether the conversion anonymizes.
-    anonymizing = bool(getattr(anon_config, "any_enabled", False))
     read_notes: list[tuple[str, str]] = []
     try:
         ir = to_dict(
@@ -126,12 +173,9 @@ def pipeline_result(
             diagnostic_sink=lambda where, what: read_notes.append((where, what)),
         )
     except Exception as error:
-        if not anonymizing:
-            raise
-        withheld = _withheld_refusal(error)
-        if withheld is None:
-            raise
-        raise withheld from None
+        if anonymizing:
+            raise _UnreadableError(error) from None
+        raise
     for where, what in read_notes:
         if anonymizing:
             # A block that yields no statement never reaches the IR, so no
@@ -269,19 +313,20 @@ def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[
     ]
 
 
-def _withheld_refusal(error: Exception) -> Exception | None:
-    """A refusal to read the input, as an anonymized conversion raises it.
+def _withheld_refusal(error: Exception) -> Exception:
+    """A reader's refusal, as an anonymized conversion raises it.
 
     Every reader's refusal may quote the input: the set reader's bracket line,
     the structured reader's statement, PyYAML's snippet, the XML reader's
     element names, and `json.JSONDecodeError.doc` holds the whole source. The
     run raises a fresh error of the same family (`ValueError`,
-    `yaml.YAMLError`) saying where, when the parser says so, never what. Any
-    other exception is no refusal and is left to the caller (``None``).
+    `yaml.YAMLError`) saying where -- each reader sets `lineno` on its
+    refusal, PyYAML marks it -- never what. Anything else a reader raises is
+    a failure (`_withheld_failure`).
     """
     import yaml
 
-    line = getattr(error, "lineno", None) or getattr(error.__cause__, "lineno", None)
+    line = getattr(error, "lineno", None)
     mark = getattr(error, "problem_mark", None) or getattr(error, "context_mark", None)
     if line is None and mark is not None:
         line = mark.line + 1
@@ -294,7 +339,15 @@ def _withheld_refusal(error: Exception) -> Exception | None:
         return yaml.YAMLError(message)
     if isinstance(error, ValueError):
         return ValueError(message)
-    return None
+    return _withheld_failure(error)
+
+
+def _withheld_failure(error: Exception) -> RuntimeError:
+    """Any other failure of an anonymized conversion: its class, never its text or notes."""
+    return RuntimeError(
+        f"the conversion failed ({type(error).__name__}); details withheld: "
+        "the conversion anonymizes"
+    )
 
 
 __all__ = [

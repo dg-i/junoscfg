@@ -14,6 +14,12 @@ class AnonymizeConfig:
     (ips, passwords, communities, ssh_keys, identities, groups,
     descriptions, ips_in_strings) but NOT as_numbers or
     sensitive_words (those require user-provided lists).
+
+    ``log_level`` is ``"quiet"``, ``"normal"`` or ``"debug"``. Only
+    ``"debug"`` prints original values, by design: each replacement becomes a
+    debug diagnostic pairing the original with its replacement, and the
+    address anonymizer (``ipanon``) writes its own warnings to stderr. At any
+    other level no message of an anonymized run quotes the configuration.
     """
 
     # Rule toggles
@@ -51,10 +57,7 @@ class AnonymizeConfig:
     # AS-number-specific options
     as_numbers_in_strings: bool = False
 
-    # Logging: "quiet", "normal" or "debug". Only "debug" prints originals:
-    # each replacement as a debug diagnostic beside its original, and the
-    # address anonymizer's own warnings on stderr. No other message of an
-    # anonymized run quotes the configuration.
+    # Logging: "quiet", "normal" or "debug" (see the class docstring).
     log_level: str = "normal"
 
     # Appended rather than grouped with the IP options: AnonymizeConfig is a

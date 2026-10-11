@@ -14,6 +14,8 @@ import warnings
 from dataclasses import dataclass, field
 from typing import NamedTuple, NoReturn, TextIO
 
+from junoscfg.input import InputError
+
 # One alternative per token kind, tried in order at each position. A word
 # starts with anything but a quote or `#` and runs to whitespace, a delimiter
 # or `/*`: `#` starts a comment only where a token starts (`router#1` is one
@@ -105,6 +107,7 @@ class _Lexed:
 
     statements: list[tuple[list[str], str]] = field(default_factory=list)
     notes: list[Note] = field(default_factory=list)
+    lines: list[int] = field(default_factory=list)  # where each statement starts
 
 
 class SetConverter:
@@ -158,6 +161,10 @@ class SetConverter:
             [self._split_tags(level) for level in [*stack, text]]
             for stack, text in self._lex().statements
         ]
+
+    def statement_lines(self) -> tuple[int, ...]:
+        """The line each of `statements()` starts on, in the same order."""
+        return tuple(self._lex().lines)
 
     def notes(self) -> tuple[Note, ...]:
         """What the text holds that yields no statement, one warning per block.
@@ -338,11 +345,14 @@ class _Lexer:
             return  # an empty statement, as the device's `};` after a placeholder
         stack = [block.text for block in self._blocks]
         statement = " ".join(self._pending)
+        line = self._text.count("\n", 0, self._pending_position) + 1
         if self._after_list and self._items is not None:
             for item in self._items:
                 self._out.statements.append((list(stack), f"{statement} {item}"))
+                self._out.lines.append(line)
         else:
             self._out.statements.append((stack, statement))
+            self._out.lines.append(line)
         for block in self._blocks:
             block.holds = True
         self._reset()
@@ -397,4 +407,4 @@ class _Lexer:
         start = self._text.rfind("\n", 0, position) + 1
         end = self._text.find("\n", position)
         text = self._text[start : end if end >= 0 else len(self._text)].strip()
-        raise ValueError(f"Invalid structured input on line {line}: {fault}\n{text}")
+        raise InputError(f"Invalid structured input on line {line}: {fault}\n{text}", line)

@@ -29,7 +29,7 @@ def structured_to_dict(
     as its block's path and its message.
     """
     lexer = SetConverter(source)
-    ir = statements_to_dict(lexer.statements())
+    ir = statements_to_dict(lexer.statements(), lines=lexer.statement_lines())
     if diagnostic_sink is not None:
         for note in lexer.notes():
             diagnostic_sink(note.path, note.message)
@@ -66,7 +66,7 @@ def structured_set_lines(source: str) -> StructuredSetLines:
     """
     lexer = SetConverter(source)
     read: list[tuple[str, bool]] = []
-    statements_to_dict(lexer.statements(), set_lines=read)
+    statements_to_dict(lexer.statements(), set_lines=read, lines=lexer.statement_lines())
     return StructuredSetLines(
         lines=tuple(f"set {line}" for line, _ in read),
         incomplete=tuple(f"set {line}" for line, whole in read if not whole),

@@ -38,7 +38,9 @@ def xml_to_dict(source: str | TextIO) -> dict[str, Any]:
         # thing to do -- leaves the prefix undeclared, and lxml raised through
         # the CLI as a traceback where every other input format reports an
         # error.
-        raise ValueError(f"Invalid XML: {exc}") from exc
+        from junoscfg.input import InputError
+
+        raise InputError(f"Invalid XML: {exc}", exc.lineno) from exc
     config_el = find_xml_configuration(root)
     if config_el is None:
         return {}

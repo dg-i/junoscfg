@@ -24,3 +24,6 @@ line-continuations so a parser sees clean text; deciding which parser runs is
 - `junoscfg.input.iter_visible_set_lines` — the shared physical-line view for
   raw set consumers; it removes leading comments while preserving original
   line numbers and any content following a closing block comment.
+- `junoscfg.input.InputError` — a reader's refusal of configuration text,
+  carrying its `lineno` so a caller that must not quote the text still names
+  the line (the set, structured and XML readers raise it).
