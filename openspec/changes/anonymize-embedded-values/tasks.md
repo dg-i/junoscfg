@@ -53,3 +53,10 @@ Changed-hypothesis ambiguity repair passed all 122 supplemental rows; five-reade
 - [ ] Fresh high-risk isolated Reviewer, immutable metrics and bounded Finalizer remain incomplete; no Builder self-approval.
 
 All candidate writes transfer to the orchestrator after this evidence-only handoff. No further local mutations before its explicit resumption.
+
+### Post-rebase verification checkpoint
+
+- Integration base `0438299772819f24c871d4cb2b8768f9233f9318`; resumed candidate `074736b115c45da31c2a0d92ecf35c88054ef32a`. Earlier SHAs remain historical, and #9 runtime invalidates earlier combined-input verification.
+- [x] Exact supplemental S5/S7/legacy refusal plus relevant XML/quoting/integration/message selection: 195 passed, exit 0; no product/test edit needed.
+- [ ] Fast on new immutable record HEAD; normal-hook clean handoff.
+- [ ] Full/device comparison awaits independent final Test/Challenge verdict and orchestrator release. No prior full pass claimed; fresh Reviewer/metrics/Finalizer still open.
