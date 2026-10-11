@@ -26,11 +26,13 @@ Test/Challenge evidence is separate from the Builder's tests.
    table, so inputs the table does not cover reach a hand-written remainder
    and fail it. Hypothesis is approved in the toolbox already, so the change
    that writes the first pair adds it to the dev group without a design.
-4. No implementation. A test that passes before the change exists is not
-   testing the change. A scanning test asserts what it scanned, not only what
-   it found, or an empty scan passes it; a test asserts the property the
-   feature exists for, not that something moved; a test command that can skip
-   everything needs a check that it did not.
+4. No implementation. A behavioural defect needs a test that fails before the
+   repair; a new behaviour needs an acceptance test that the old code cannot
+   satisfy. A refactor or other behaviour-preserving change may instead name
+   existing tests, static checks, equivalence evidence, or a property test that
+   proves preservation. A scanning test asserts what it scanned, not only what
+   it found, or an empty scan passes it; a test command that can skip everything
+   needs a check that it did not.
 5. Apply the role policy from the freeze. High risk and maximum assurance use a
    context-isolated Test/Challenge role; balanced uses it for behavioural
    changes; economy omits it below the mandatory floor. The independent role
@@ -49,8 +51,8 @@ Test/Challenge evidence is separate from the Builder's tests.
 A challenge goes in `openspec/changes/<slug>/review.md` with `Artifact`,
 `Counterexample`, `User impact`, `Proposed correction`, and `Decision`; the
 owner decides, and only a safe reversible action may proceed while pending.
-A concrete counterexample may justify minimal reads outside `codemap.md`'s
-slice. Record each extra path as its own row in the existing Field/Value table
+A concrete counterexample may justify broader reads beyond phase 2's normal
+affected context. Record each cross-responsibility or cross-domain path as its own row in the existing Field/Value table
 in `openspec/changes/<slug>/metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer
 preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep

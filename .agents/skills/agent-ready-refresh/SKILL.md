@@ -19,20 +19,18 @@ Read this file only.
 
 ## Run the update
 
-`uv run --group dev agent-ready update`, from the repository root; it ends by
-running `agent-ready check`, the slow set in one command, which a repository
-on any platform runs by hand the same way. A repository
-that installed the package as a tool runs `agent-ready update` directly, and
-one whose pinned copy predates the command, or fails in a way the newest
-release says it fixed, bootstraps it once:
-`uvx --from "git+<template_url>@<checks-commit>#subdirectory=checks" agent-ready
-update`, with `template_url` from `.copier-answers.yml` and the commit from
-`.agent-ready/template.toml`, or the template's newest `checks-v*` tag where
-that file does not record one yet or the pinned copy is the problem; a tag
-can move under a cached `uvx` build and a commit cannot. From then on the
-pinned copy has it. The
-scheduled workflow has already run it with `--no-checks` when the branch is
-its pull request; run it again then, for the checks. `--to <ref>` picks a
+Run `uv run --locked --group dev agent-ready update --no-checks` from the
+repository root. Use the current updater when the pinned copy predates the
+required update behavior:
+`uvx --from "git+<template_url>@<immutable-checks-commit>#subdirectory=checks"
+agent-ready update --no-checks`. The source comes from `.copier-answers.yml`;
+the reviewed target release supplies the check-package commit. Review the diff
+and report, commit the exact update and receipt, then run
+`uv run --locked --group dev agent-ready check --set full --base <update-base>`.
+Full verification judges a committed snapshot; `--no-checks` defers it until
+that snapshot exists and never waives it. A scheduled update needs the same
+verification, with its local updater attestation reproduced as described below.
+`--to <ref>` picks a
 template ref other than the newest tag, and `--data key=value` changes a
 recorded answer, which is how a repository whose remote is not GitHub stops
 the workflows from shipping: `--data github_workflows=false`. The command
@@ -59,11 +57,17 @@ committed by the command. When you commit a resolution that touches
 `.pre-commit-config.yaml`, stage that file first: pre-commit refuses to run
 with its own configuration modified and unstaged.
 
-Two gates read the refresh commit as what it is. `lane` says `governed diff
-has no live change`: a refresh is not a change, and the gate is not told
-otherwise, as on the onboarding commit; the commit message carries the
-reason. `stage towncrier` asks the diff for a fragment from beta on, and a
-refresh carries a misc fragment naming the release it brought in.
+A successful update records `.agent-ready/update-receipt.json`, binding its base,
+immutable template/check references and exact changed file hashes. The updater
+retains an identical attestation in the Git common directory. Commit that receipt
+with the update. The lane accepts only that exact updater diff without a live
+change; manual corrections invalidate it and need their own reviewed change.
+Incoming tracked receipts alone are insufficient. A fresh clone or CI checkout
+must reproduce the supported update from the recorded base to retain its own
+attestation; copying an incoming attestation is not verification. This is local
+updater provenance, not human approval or protection from local Git-directory
+writers. The receipt never skips other checks. A beta/release refresh still includes
+its required Towncrier fragment; include it in the reviewed update workflow.
 
 ## The rule that governs every finding
 
@@ -137,8 +141,8 @@ Stop and report, rather than pushing on, when:
 - a conflict needs a decision about a local edit, which is the human's;
 - a finding is a cap raise or a stage move, both of which take a decision
   record only a human signs;
-- the same check fails twice on your own resolution, which is more often a
-  contract or a spec problem than a merge problem.
+- the same failure repeats without new evidence or a changed hypothesis, which
+  is more often a contract or spec problem than a merge problem.
 
 Run `agent-ready caps` and `agent-ready skills` before pushing anything that
 touches a capped document or a skill body. Both runtimes run the same checks

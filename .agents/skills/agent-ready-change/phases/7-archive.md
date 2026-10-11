@@ -60,7 +60,8 @@ acceptance tests, or verdicts; such a need returns to the Builder or Reviewer.
    @fission-ai/openspec@1.13.0 validate <slug> --strict` and `npx --yes
    @fission-ai/openspec@1.13.0 archive <slug> --yes --skip-specs`.
    The main specs were already reviewed and merged. A fix-lane change has
-   `skip_specs: true` and no delta.
+   `skip_specs: true` and no delta. A maintenance-lane change retains its
+   proposal, preservation evidence and review evidence.
 5. `npx --yes @fission-ai/openspec@1.13.0 list --specs` confirms the capability
    and requirement count.
 6. Commit the archive-only move on the default branch. Where the default branch
@@ -83,3 +84,7 @@ the delta a second time.
 ## Approval
 
 The merge was the approval. Archiving records it.
+
+When a lifecycle ledger exists, generate its report and include it in the
+existing metrics capture; see `docs/how-to/lifecycle-ledger.md`. Preserve
+missing observations as UNMEASURED and archive the source events with the change.

@@ -36,11 +36,13 @@ reference, and fails when `__all__` and the expose list disagree, so the two are
 written together and `__all__`, the one a person editing the module sees, is the
 single source.
 
-Satisfying both enforcers is a refactor, not a documentation pass: every
-cross-module import moves to the package door, and `__all__` may not exist yet
-to match an expose list against. Two shapes make import cycles: a sibling that
-imports its own package back, and a package `__init__` that imports a submodule
-which reaches back to it. A sibling never imports its own package; a heavy
+Satisfying both enforcers is a refactor, not a documentation pass:
+cross-package consumers move to the package door, while implementation modules
+inside that package may import sibling submodules without bypassing another
+package's contract. `__all__` may not exist yet to match an expose list against.
+Two shapes make import cycles: a sibling that imports its own package back, and
+a package `__init__` that imports a submodule which reaches back to it. A
+sibling never imports its own package; a heavy
 re-export, one that would pull a large dependency at import time, is a
 module-level `__getattr__` rather than an eager import.
 

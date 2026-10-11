@@ -14,9 +14,17 @@ An approved `codemap.md` plus one valid delta per named capability at
 `uv run --locked --group dev agent-ready codemap slice --change <slug>` rebuilds
 the index and writes the 1,500-token slice: proposal-domain modules in turn,
 import neighbours, then churn, with zone, layer, contract, and a `codemap show`
-command per public symbol. Later phases stay inside it unless a concrete
-counterexample requires a minimal read. Record each extra path in `metrics.md`
-as `| Context expansion: <path> | <reason> |`; archive preserves the row.
+command per public symbol. It is the bounded starting point, not a ban on
+necessary context: containing modules, direct callers and dependencies,
+contracts, and affected tests may be read automatically. Record a context row
+only when the change crosses into another responsibility or domain:
+`| Context expansion: <path> | <reason> |`; archive preserves the row.
+
+Repeated expansion caused by the same module or domain is a cohesion-review
+signal. Review responsibilities and the public surface; split only across a
+named responsibility boundary and only when the split reduces relevant context
+without increasing import coupling, cycles, or duplicated interfaces. Never
+split code merely to make this generated slice shorter.
 
 Rerender after a proposal-domain change, a referenced move or rename, a
 zone/layer/contract-placement change, or implementation outside the slice, and
@@ -28,7 +36,7 @@ not refresh this bounded spec-phase picture.
 Record counterevidence in `openspec/changes/<slug>/review.md` with `Artifact`,
 `Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
 owner decides; pending challenges permit only a safe reversible action. Record
-every extra read in the existing Field/Value table in `metrics.md` as
+each cross-responsibility or cross-domain read in the existing Field/Value table in `metrics.md` as
 `| Context expansion: <path> | <reason> |`; the archive metrics writer
 preserves it. Follow the shared protocol in the skill root.
 

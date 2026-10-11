@@ -8,9 +8,10 @@ derived; every gate the repository cannot yet pass in warn mode with a
 committed baseline and an expiry date; the CI workflow in place where there is
 a hosting platform to run it. `agent-ready gates` passes.
 
-GitHub and GitLab run the same `agent-ready check --set full --base <target-ref>`
-command. It includes hooks, tach, OpenSpec validation, internal gates, and
-tests. Run it locally before enabling CI. The gates are what `agent-ready check
+GitHub and GitLab run the same `uv run --locked --group dev --with griffe
+--with tach --with towncrier --with vulture agent-ready check --set full --base
+<target-ref>` command. It includes hooks, tach, OpenSpec validation, internal
+gates, and tests. Run it locally before enabling CI. The gates are what `agent-ready check
 --set fast` runs, the three stage gates among them: `agent-ready stage` with no
 tool runs griffe, towncrier and vulture, and each one fails. `lane` reads red
 on the onboarding branch until phase 7's first change opens a folder: the diff

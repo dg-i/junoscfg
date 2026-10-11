@@ -29,6 +29,11 @@ requires. Do not read the other jobs; they cost tokens you will not use.
 five findings opens five PRs. Each is reviewable on its own, and each is
 revertable on its own without touching the other four.
 
+Template-owned `agent-ready-*` skills, including this skill and its job files,
+are not garden findings. Their line counts are report-only. Never edit, split,
+compact, or truncate them in an application repository; report a desired
+change to the agent-ready-python repository for the next template update.
+
 ## Asking
 
 Some findings need a person's judgement, not more digging: whether a cap is
@@ -47,8 +52,8 @@ Stop and report, rather than pushing on, when:
   not carry — a gap is the finding, not a guess to fill it;
 - the fix is a cap raise or an artefact's retirement, both of which are a
   decision record only a human signs;
-- the same check fails twice on your own PR, which is more often a contract or
-  a spec problem than a documents problem.
+- the same failure repeats without new evidence or a changed hypothesis, which
+  is more often a contract or spec problem than a documents problem.
 
 Run `agent-ready caps` and `agent-ready skills` before opening any PR that
 touches a capped document or a skill body. Both runtimes run the same checks

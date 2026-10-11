@@ -4,30 +4,28 @@ Type `docs` follows phase 6 in `types/docs.md` and stops before the code route b
 
 ## Outcome
 
-`review.md`: the risk-required fresh isolated verdict with ranked findings and
-duplicated providers, or the recorded policy reason review was not required.
+`review.md`: the risk-required fresh isolated verdict with ranked findings and duplicated providers, or the
+recorded policy reason review was not required.
 
 ## A fresh isolated Reviewer
 
-Use the freeze's risk floor and assurance preference. High risk always requires
-this Reviewer; balanced adds yellow zones; maximum assurance adds every standard
-or docs change; economy omits it below the floor. Record an omission without
-presenting Builder self-review as independent.
+Use the freeze's risk floor and assurance preference. High risk always requires this Reviewer; balanced adds
+yellow zones; maximum assurance adds every standard or docs change; economy omits it below the floor. Record
+an omission without presenting Builder self-review as independent.
 
-The Reviewer is fresh and isolated from Builder reasoning and write access. It
-reads the freeze, delta, contracts, challenge evidence, tests, and diff in order.
-It is at least as capable as the Builder. Provider-specific mechanisms are
-implementation details; if isolation is unavailable, record a runtime/operator correction.
+The Reviewer is fresh and isolated from Builder reasoning and write access. It reads the freeze, delta,
+contracts, challenge evidence, tests, and diff in order. It is at least as capable as the Builder.
+Provider-specific mechanisms are implementation details; if isolation is unavailable, record a
+runtime/operator correction.
 
-Coherent tasks receive one review after implementation. Independent changes
-receive a separate verdict and `review.md` each, even when acceptance is batched
-or one Reviewer handles a bounded window. Integration review only supplements.
+Coherent tasks receive one review after implementation. Independent changes receive a separate verdict and
+`review.md` each, even when acceptance is batched or one Reviewer handles a bounded window. Integration review
+only supplements.
 
-A correction touching only change records needs no confirmation round. Every
-other accepted correction runs its regression and `agent-ready check --set
-fast`, then returns to the same isolated Reviewer. Rerun the full set only if
-runtime code, tests, or generated artifacts changed; otherwise use the fast
-set. Never rerun a declared expensive tier for a review-fix round.
+A correction touching only change records needs no confirmation round. Every other accepted correction runs
+its regression and `agent-ready check --set fast`, then returns to the same isolated Reviewer. Rerun the full
+set only if runtime code, tests, or generated artifacts changed; otherwise use the fast set. Rerun a declared
+expensive tier whenever a review-fix round invalidates its evidence.
 
 ## Findings
 
@@ -49,15 +47,16 @@ set. Never rerun a declared expensive tier for a review-fix round.
 
 ## Specification challenges
 
-Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`,
-`Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
-Reviewer edits no code, spec, or test; agents cannot approve their own proposals.
-The owner decides; preserve existing entries and do only safe reversible work.
-Record justified slice reads in the Field/Value table in `metrics.md`:
-`| Context expansion: <path> | <reason> |`. The archive metrics writer preserves
-these rows. Apply phase 2's triggers, check the freeze, tick review, leave metrics open.
-Before committing changed records, run `agent-ready fields` and `agent-ready
-caps`; correct their diagnostics before the commit and phase hand-off.
+Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`, `Counterexample`, `User impact`,
+`Proposed correction`, and `Decision`. The reviewer edits no code, spec, or test; agents cannot approve their
+own proposals. The owner decides, and only a safe reversible action may proceed while pending; preserve
+existing entries. Containing modules, direct callers and dependencies, contracts, and affected tests are
+normal review context. For a concrete counterexample, broader reads are allowed; record each
+cross-responsibility or cross-domain path as its own row in the existing Field/Value table in `metrics.md`: `|
+Context expansion: <path> | <reason> |`. The archive metrics writer preserves these rows. Apply phase 2's
+explicit slice-refresh triggers. When complete, tick the review lifecycle task in `tasks.md`; leave the
+metrics task open. Before committing changed records, run `agent-ready fields` and `agent-ready caps`; correct
+their diagnostics before the commit and phase hand-off.
 
 Before concluding, answer these prompts:
 
@@ -84,17 +83,17 @@ Before concluding, answer these prompts:
 
 ## Stage
 
-Alpha: residue is a finding class, and a finding that asks for compatibility,
-configurability, generality, or a defensive check is excluded, with three
-exceptions that stay: validation of data crossing a trust boundary, which is
-correctness, a property the change removes, which is correctness whatever it
-asks for, and a second answer, whose fix may remove the capability from both
-sides rather than add it to one. Excluded findings arrive in disguise: a
-fallback for data written before a migration, a test that exercises a retired
-surface only to assert its absence, a documentation line restored for a
-retired concept. Beta: residue and a missing changelog fragment. Release: a
-missing deprecation, a missing fragment, an undeclared surface change.
+Alpha: residue is a finding class, and a finding that asks for compatibility, configurability, generality, or
+a defensive check is excluded, with three exceptions that stay: validation of data crossing a trust boundary,
+which is correctness, a property the change removes, which is correctness whatever it asks for, and a second
+answer, whose fix may remove the capability from both sides rather than add it to one. Excluded findings
+arrive in disguise: a fallback for data written before a migration, a test that exercises a retired surface
+only to assert its absence, a documentation line restored for a retired concept. Beta: residue and a missing
+changelog fragment. Release: a missing deprecation, a missing fragment, an undeclared surface change.
 
 ## Approval
 
 The human reads the report before the diff; surviving findings count at archive.
+
+For structured findings and one authoritative ruling, follow `docs/how-to/lifecycle-ledger.md`; agents cannot
+approve their own requirement changes. Check invalidated evidence and scoped carry-forward renewals.

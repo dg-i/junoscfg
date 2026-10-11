@@ -166,7 +166,7 @@ dev = [
     "deptry>=0.25.1",
     # Development tooling only. It needs 3.11+, and must not drag the
     # published package's floor up with it.
-    "agent-ready-checks>=0.15.11; python_version >= '3.11'",
+    "agent-ready-checks>=0.16.1; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -486,7 +486,7 @@ reason = "it instruments future events but does not parse existing Codex exec an
 date = "2026-10-06"
 
 [tool.uv.sources]
-agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.11" }
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.16.1" }
 
 [tool.template.zones.kernel]
 paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]

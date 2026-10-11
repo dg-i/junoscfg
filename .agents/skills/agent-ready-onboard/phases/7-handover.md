@@ -26,24 +26,24 @@ caps --report` shows every governed file against its cap; `agent-ready budget`
 counts the skill descriptions against Codex's 8,000-character ceiling.
 
 Adapt `docs/how-to/work-with-agents.md` and `docs/how-to/solo-review.md` to the
-agreed policy. CODEOWNERS routes review; hosting settings make it mandatory, and
-`docs/how-to/hosting.md` holds what to configure with the operator and what no
-check here can see. For solo mode, record owner acceptance plus a fresh agent review:
-fresh agent review is a second read, not a second human. Document hosting
-exceptions needed for author-owned work, without claiming human independence.
+agreed policy. CODEOWNERS routes review; `docs/how-to/hosting.md` holds settings
+the operator must enforce and what no check can see. In solo mode, record owner
+acceptance plus fresh agent review: a second read, not a second human. Document
+author-owned hosting exceptions without claiming human independence. The human
+guide says phases may share a session until approval, while implementation and
+review never do; it copies the change skill's canonical full-check command.
+Repository changes use `agent-ready-change`; `openspec-*` skills explain OpenSpec.
 
 ## Ownership and retirement
 
-Explain that agent-ready skills and CI workflows are template-owned. In
-`.agent-ready/template.toml`, the template owns `checks-tag` and the
-application owns `[local-policy.<id>]` decisions. `agent-ready update` prints
-the exact scope and id for a hook recommendation; an owner records the local
-adapter, upstream issue URL or `local-only: <reason>`, and review date. A
-matching decision stays accepted while its review date is valid; fields
-rejects invalid or expired policy, and all correctness checks still run.
+Agent-ready skills and CI workflows are template-owned. In
+`.agent-ready/template.toml`, the template owns `checks-tag`; the application owns
+`[local-policy.<id>]`. For each update recommendation, record its scope, id,
+adapter, upstream issue or `local-only` reason, and review date. Fields rejects invalid or expired
+policy, and all correctness checks still run.
 Point the owner to `docs/how-to/remove-agent-ready.md` for a reversible exit.
-Report desired changes upstream; `agent-ready update`
-updates unedited copies and exposes edited copies as conflicts for refresh.
+Report desired changes upstream; `agent-ready update` updates unedited copies
+and exposes edited copies as conflicts for refresh.
 Seeds are application-owned: `pyproject.toml`, `.pre-commit-config.yaml`,
 `ARCHITECTURE.md`, `tach.toml`, source, tests and the two human guides. Updates
 preserve them; refresh assesses changed checks and `agent-ready scaffold template`.
@@ -75,13 +75,13 @@ broke is a finding for the first change, never a note.
 
 ## The version scheme
 
-Phase 0 declared the stage, its named surfaces and its owners. `components` and
-`break-bumps` are answered here, because nobody can answer them before a change
-has run: the scheme is whatever the first release used, and a break on a named
-surface raises whichever component the owner has now seen raised. Write them
-widest to narrowest in the owner's own scheme, one `break-bumps` entry per named
-surface, `none` where its breaks raise nothing. The scheme's meaning is prose in
-`AGENTS.md`; the key is what the lane gate reads.
+Phase 0 declared the stage, surfaces and owners. Answer `components` and
+`break-bumps` after a change has run: use the first release's scheme and the
+component a named-surface break actually raised. Write components widest to
+narrowest, one `break-bumps` entry per surface, `none` where breaks raise
+nothing. Explain the scheme in `AGENTS.md`; the lane gate reads the key. A
+change declares its bump; release execution moves all version locations and
+creates the tag unless the owner documents a different model.
 
 `agent-ready fields` reports them rather than failing until `onboarded` is set,
 so setting `onboarded` is the moment they stop being optional: both happen

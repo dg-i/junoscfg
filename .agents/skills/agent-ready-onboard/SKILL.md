@@ -106,6 +106,13 @@ it around what it was given. The template adds files under `docs/`, the
 how-to guides, `TOOLBOX.md` and the decision records; a site generator with a
 navigation list needs them listed or excluded.
 
+Copier's template-owned files are inputs to onboarding, never onboarding
+outputs. In particular, never edit, split, compact, or truncate an
+`agent-ready-*` skill, including this skill or its phase files, to satisfy an
+application repository's line cap. `agent-ready caps` reports their size but
+does not cap them. Report a desired change to the agent-ready-python repository;
+only `agent-ready update` and its refresh review replace the installed copy.
+
 ## Prerequisites
 
 uv, git, and Python 3.11 or later; Node 20.19 or later for the OpenSpec CLI,
@@ -121,8 +128,9 @@ Stop and report, rather than trying again, when:
 
 - a phase's questions are unanswered — an unanswered question is the phase's
   output, not a blocker to work around;
-- the same check or test fails twice in a row, which is more often a contract or
-  a spec problem than a code problem;
+- the same failure repeats without new evidence or a changed hypothesis, which
+  is more often a contract or spec problem than a retry problem; evidence-driven
+  attempts may continue while they narrow the cause;
 - you are about to write a fact you cannot point at evidence for.
 
 Run checks with `agent-ready` and the repository's own `pre-commit`. Both

@@ -45,7 +45,7 @@ serves the reader's task. Use the project's builder or preview where available.
 Run the normal full checkpoint: it retains repository and document gates but
 skips the application test adapter. Tick verification and change tasks; leave
 review and metrics open. This is the one pre-review full check. Run declared
-expensive tiers once when their paths match, never per review-fix round. Run
+expensive tiers when their paths match, rerunning when evidence is invalidated. Run
 `agent-ready fields` and `agent-ready caps` before committing changed records.
 
 ## Phase 6 — Review

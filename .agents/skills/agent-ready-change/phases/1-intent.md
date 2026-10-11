@@ -21,10 +21,9 @@ here is cheaper than rounds later.
    `<domain>/<capability>`, the domain a key of `[tool.template.domains]`, and
    an existing capability by its exact path under `openspec/specs/`.
 4. Add the lane fields to `.openspec.yaml`, where OpenSpec keeps
-   `skip_specs`: `type`, `zone`, `domains`, `removes`, and the phase-0
-   `assurance`, which may read
-   "none, because ..." and never stays empty on the standard lane. The fix
-   lane's metadata carries no `removes`. Non-goals are prose in the proposal.
+   `skip_specs`: `type`, `zone`, `domains`, `assurance`, and `removes`, which may read
+   "none, because ..." and never stays empty on the standard lane. The fix and
+   maintenance lanes carry no `removes`. Non-goals are prose in the proposal.
 5. In beta and release, a change touching a named surface adds a
    `declared-break` entry per surface there, with `why` the break is necessary
    and the `migration`: `declared-break: {api: {why: ..., migration: ...}}`,
@@ -36,7 +35,7 @@ here is cheaper than rounds later.
    `skip_specs: true` in `.openspec.yaml`; never invent a requirement to
    satisfy validation. A bug, a feature or a pivot never sets it; `uv run
    --locked --group dev agent-ready lane` refuses the flag on those types. Type
-   `fix` uses the separate fix route and sets it true.
+   `fix` and `maintenance` use their short routes and set it true.
 7. Run `npx --yes @fission-ai/openspec@1.13.0 instructions metrics --change
    <slug>` and create `metrics.md` from its table with every unavailable value
    `UNMEASURED`. This is the evidence ledger later phases append to; phase 7
@@ -67,8 +66,8 @@ deprecation requirement first, and every break is declared here.
    in `design.md` or the decision record with the measurement that rejected
    it; a non-goal is what the change leaves alone.
 2. Which domain owns the behaviour that changes, and does its spec exist?
-3. Is this a fix inside the fix-lane caps, or a bug that needs the standard
-   lane?
+3. Is this one failure mode with a regression test, non-behavioural maintenance
+   with preservation evidence, or a standard-lane behavioural change?
 4. Does this change add an override, a fallback, a parameter or an
    environment read? Then name the resource it redirects, the file, the
    table, the directory, and search this repository for every place that

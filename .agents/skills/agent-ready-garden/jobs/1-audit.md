@@ -11,9 +11,10 @@ and every live code-map slice and the contract paths it names are sound.
 
 ## Size
 
-Run `agent-ready caps`. For each document it reports over its cap, work this
-ladder in order, stopping the moment the document is at or under the target
-the failure message names:
+Run `agent-ready caps`. Entries marked `reported, not capped` belong to an
+upstream and are observations, not repair work. For each other document it
+reports over its cap, work this ladder in order, stopping the moment the
+document is at or under the target the failure message names:
 
 1. **Lossless.** Move duplicated or misplaced content to the artefact that
    owns it. This alone clears most findings, because a document over its cap

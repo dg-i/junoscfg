@@ -27,3 +27,4 @@
 
 <!-- Affected code, APIs, dependencies, systems. -->
 <!-- A figure this change rests on names the corpus and the command that reproduce it, both in this repository, so a reviewer can rerun it. -->
+<!-- Maintenance: name the preserved behaviour, focused verification, and changelog decision. -->

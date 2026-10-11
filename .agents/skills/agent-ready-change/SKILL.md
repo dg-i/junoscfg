@@ -1,6 +1,6 @@
 ---
 name: agent-ready-change
-description: Run one change through the provider-agnostic phased workflow, from instruction-integrity preflight to bounded finalization. Use for every change to this repository, fix lane included.
+description: Run one change through the provider-agnostic phased workflow, from instruction-integrity preflight to bounded finalization. Use for every change to this repository, including fix and maintenance lanes.
 ---
 
 # Change
@@ -17,8 +17,8 @@ load it for a single task.
 
 Every lane starts with phase 0. The standard and docs lanes then follow the
 remaining phases. The docs lane takes each phase's **Documentation-only
-route**. The fix lane follows the shorter route under **Lanes** after phase 0
-and does not run the later phase files.
+route**. The fix and maintenance lanes follow the shorter route under **Lanes** after phase 0
+and do not run the later phase files.
 
 | Phase | File | Ends with |
 |---|---|---|
@@ -38,11 +38,13 @@ Four types carry a body of their own, read beside the phase from intent on:
 
 The change's `.openspec.yaml` declares `type`, zone, and the standing owner
 `assurance` selected in phase 0; the lane and assurance policy follow.
-The fix lane, type `fix`, is a ten-line proposal, one regression test, and
-code: by default two substantive files and thirty changed lines, no delta, and
-`skip_specs: true`, in any zone. `[tool.template.fix-lane]` configures the two
-caps. Version-only lines, `uv.lock`, and Towncrier fragments do not count.
-After phase 0, its complete route is:
+The fix lane, type `fix`, is a ten-line proposal, one failure mode, one
+regression test, and its cohesive repair, with no delta and `skip_specs: true`,
+in any zone. File and line counts are review prompts, not classification: a
+cross-cutting diff is still a fix when every edit is necessary for that one
+failure mode, and is a standard-lane `bug` when it changes several behaviours
+or responsibilities. Explicit application `[tool.template.fix-lane]` limits
+still apply. Its complete route is:
 
 1. Re-read the committed preflight and run `git status --short`; do not begin
    with governed changes outside `HEAD`.
@@ -55,17 +57,30 @@ After phase 0, its complete route is:
    commit the test and code. `uv run --locked --group dev agent-ready lane`
    also runs the added test against the merge base and rejects one that passed
    there.
-4. Run `uv run --locked --group dev --with griffe --with tach --with
-   towncrier --with vulture agent-ready check --set full`. The zone's tier
-   decides who reviews the test and diff. After approval, merge, then archive
+4. The zone's tier decides who reviews the test and diff. In a solo repository a fresh agent
+   writes a lightweight `review.md` over the proposal, test, and diff; this is
+   a second read, not the full phase-6 lifecycle. Apply corrections and return
+   them to that reviewer.
+5. Run the canonical full-check command under **The tools**. After approval, merge, then archive
    with `npx --yes @fission-ai/openspec@1.13.0 archive <slug> --yes
    --skip-specs` in a separate archive-only commit or pull request.
 
 A fix proposal names the failure mode that remains after the fix: a repair that
-turns a loud failure into a quiet wrong answer is worse than the failure, and
-the caps never ask. A fix that exceeds those caps is retyped `bug` and takes the
-standard lane. A spike is a branch that never merges; its outputs reach main on
-one standard-lane change.
+turns a loud failure into a quiet wrong answer is worse than the failure. A
+spike is a branch that never merges; its outputs reach main on one standard-lane
+change.
+
+The maintenance lane, type `maintenance`, is for a non-behavioural, low-risk
+change such as typing, comments, formatting, instrumentation that changes no
+result, or testability structure that preserves the public behaviour. It uses
+the fix route without a pre-fix regression: a ten-line proposal states the
+`Preserved behaviour:`, `Verification:`, and `Changelog:` lines with concrete
+preservation evidence and a changelog decision; metadata
+sets `skip_specs: true`; the agent makes the cohesive edit, runs the focused
+evidence, receives zone-selected review, runs the canonical full check, and
+archives with `--skip-specs`. A solo repository also receives the lightweight
+fresh review above before the full check. Any changed behaviour, contract, dependency, compatibility
+surface, or migration retypes the change into the applicable standard lane.
 
 The docs lane, type `docs`, is for a change whose product edits are documents,
 not runtime code, tests, executable configuration, or behaviour specs. It sets
@@ -109,8 +124,13 @@ the change folder and commit it. Resume automatically from that checkpoint.
 
 OpenSpec owns the change folder. Invoke it only as `npx --yes
 @fission-ai/openspec@1.13.0 ...`; invoke the check package only as `uv run
---locked --group dev agent-ready ...`. The longer full-check command in the
-lane route supplies its four runtime tools explicitly. OpenSpec `new change
+--locked --group dev agent-ready ...`. The one canonical full checkpoint
+is `uv run --locked --group dev --with griffe --with tach --with towncrier
+--with vulture agent-ready check --set full`; shorter forms are not workflow
+commands because an existing environment may hide missing runtime tools.
+Generated or vendored `openspec-*` skills do not govern changes in an
+application repository: use this skill for every application repository change and use the
+generic skills only to explain OpenSpec itself. OpenSpec `new change
 <slug>` creates the folder under the `agent-ready` schema, `status --change
 <slug>` shows the common artifact graph, `instructions <artifact> --change
 <slug>` prints one template, and `validate <slug> --strict` checks it. Phase 7
@@ -119,6 +139,12 @@ applies reviewed main-spec edits while the live folder remains; after merge,
 `scaffold decision`, `decisions`, `render levers`, `stage`, `reconcile`, `lane`,
 `retired`, and `codemap`, each named in the phase that uses it. A gap is reported, never
 scripted around.
+
+The installed `agent-ready-*` skills and their phase files are template-owned,
+including this file. Their line counts are report-only in an application
+repository. Never edit, split, compact, or truncate them as part of an
+application change; report the desired change to the agent-ready-python
+repository and let `agent-ready update` replace the installed copy.
 
 ## Specification challenges
 
@@ -160,5 +186,6 @@ proposal. Each phase file carries the stage paragraph that applies to it, and
 Stop and report when the same failure repeats without new evidence or a changed
 hypothesis, when a phase's question is unanswered, when a failing existing test
 in release looks like a break, or when you are about to write a fact you cannot
-point at evidence for. Never repeat an unchanged attempt or weaken the oracle.
+point at evidence for. An evidence-driven attempt may continue when it narrows
+the cause; repetition alone is not a retry counter.
 Before stopping or resuming, update the checkpoint and telemetry.

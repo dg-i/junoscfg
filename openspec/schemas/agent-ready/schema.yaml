@@ -37,7 +37,10 @@ artifacts:
       change with no spec-level behaviour change sets `skip_specs: true` there
       rather than inventing a requirement. Type `docs` also creates
       `docs-plan.md` from its conditional template and does not treat the
-      type-blind codemap and specs graph entries as obligations.
+      type-blind codemap and specs graph entries as obligations. Types `fix`
+      and `maintenance` use the short routes in `agent-ready-change`: both have
+      a ten-line proposal and no delta; fix adds a pre-fix regression, while
+      maintenance names preservation evidence and a changelog decision.
     requires: [instruction-integrity]
 
   - id: codemap
@@ -114,7 +117,10 @@ apply:
   requires: [tasks]
   tracks: tasks.md
   instruction: |
-    Read the module's contract and the code-map slice before touching it, read
-    a named symbol with `uv run --locked --group dev agent-ready codemap show
-    <pkg.mod.symbol>` rather than the file around it, and run the checks. Stop
-    when the same failure repeats without new evidence or a changed hypothesis.
+    Read the module's contract and the code-map slice before touching it. Start
+    a named lookup with `uv run --locked --group dev agent-ready codemap show
+    <pkg.mod.symbol>`; read its containing module, direct callers and
+    dependencies, and affected tests when control flow or shared state require
+    them. Run the canonical full check from `agent-ready-change`. Stop when the
+    same failure repeats without new evidence or a changed hypothesis; continue
+    evidence-driven attempts that narrow the cause.
