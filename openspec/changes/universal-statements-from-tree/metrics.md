@@ -5,18 +5,18 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 1488, "binary_files": 5, "files": 41, "removed": 235} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
 | regeneration on the base (`junoscfg schema generate` from `25.2R2-S1.5_qfx5120.xsd`) | dd7c8c4: structure tree, grammar and both JSON schemas byte-identical to the committed artifacts (3 min 33 s) |
 | output measurement over `tests/data` (`outputs.py`, 236 conversions) | 18 differ, each explained: 12 `apply-flags omit` placed from set/curly (12 `UNPLACED` warnings removed, none added), 6 XML to JSON/YAML nested single-group `apply-groups` now a list as the device writes it |
 | output measurement over the JVD clone (`outputs.py --jvd`, 4,605 conversions) | 11 differ, all curly output: nested two-group `apply-groups` written `[ A B ]`; set, JSON and diagnostics identical; curly round-trip differences 51 lines on base and head alike |
