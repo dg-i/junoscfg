@@ -82,7 +82,7 @@ class TestEntryKeys:
                         "server": {
                             "L": True,
                             "k": ["address"],
-                            "c": {"address": {"l": True}, "version": {"l": True}},
+                            "c": {"address": {"l": True, "nk": True}, "version": {"l": True}},
                         }
                     }
                 }
@@ -367,6 +367,14 @@ class TestAnEntryPathHoldsTheWholeKey:
         assert occ.kind == "entry-key"
         assert occ.schema_path[-2:] == ("then", "community")
         assert occ.path[-3:] == ("community", "add", "comm-a")
+
+    def test_the_key_as_the_set_writer_writes_it(self, occs: Occs, make_ir: Any) -> None:
+        for statement in (
+            "protocols ospf area 0.0.0.1 virtual-link neighbor-id 10.0.0.1 transit-area 0.0.0.2",
+            "policy-options policy-statement p1 term 1 from route-filter 10.0.0.0/8 upto /24",
+        ):
+            words = tuple(statement.split())
+            assert words in [o.path[: len(words)] for o in occs(make_ir("set " + statement))]
 
 
 class TestUnknownPositions:

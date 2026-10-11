@@ -18,6 +18,7 @@ from typing import Any
 
 from junoscfg.audit.algebra import extract_names
 from junoscfg.audit.model import Occurrence, OccurrenceKind
+from junoscfg.display import entry_keys, key_is_positional
 
 # Group references: the audit reads them as references to a group, a meaning
 # the tree's universal `apply-groups` leaf does not carry.
@@ -271,7 +272,7 @@ def _walk_entries(
             )
             continue
 
-        entry_cli_path = cli_path + _key_tokens(keys, entry)
+        entry_cli_path = cli_path + _key_tokens(list_schema, entry)
         if len(value_fields) == 1:
             # One value field, beside any key choice: it names the entry.
             name = entry.get(value_fields[0])
@@ -308,14 +309,17 @@ def _walk_entries(
         )
 
 
-def _key_tokens(keys: tuple[str | tuple[str, ...], ...], entry: dict[str, Any]) -> tuple[str, ...]:
-    """The tokens an entry's key is written with: values, and a choice's keyword."""
+def _key_tokens(list_schema: dict[str, Any], entry: dict[str, Any]) -> tuple[str, ...]:
+    """An entry's key as the set writer writes it: `upto /24`, `neighbor-id 10.0.0.1`."""
     tokens: list[str] = []
-    for field in keys:
-        if isinstance(field, tuple):
-            tokens.extend(alternative for alternative in field if alternative in entry)
-        elif isinstance(entry.get(field), str | int | float):
-            tokens.append(str(entry[field]))
+    for field in entry_keys(list_schema):
+        for name in field if isinstance(field, tuple) else (field,):
+            value = entry.get(name)
+            written = isinstance(value, str | int | float) and not isinstance(value, bool)
+            keyword = not key_is_positional(list_schema.get("c", {}).get(name))
+            if (isinstance(field, tuple) and name in entry) or (written and keyword):
+                tokens.append(name)
+            tokens.extend([str(value)] if written else [])
     return tuple(tokens)
 
 

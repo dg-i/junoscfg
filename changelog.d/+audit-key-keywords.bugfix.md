@@ -1,0 +1,1 @@
+The unused-object audit now writes a keyed entry's path as the set writer does: a key field the device writes with its keyword keeps it (`virtual-link neighbor-id 10.0.0.1 transit-area 0.0.0.2`), and a route filter's match type keeps its value (`upto /24`, `prefix-length-range /16-/24`), so delete, deactivate and show scripts built from these paths load.
