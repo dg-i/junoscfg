@@ -37,7 +37,7 @@ from netutils.password import (
     JUNIPER_KEYS_STRING,
 )
 
-from junoscfg.anonymize.rules import Rule
+from junoscfg.anonymize.rules import Rule, url_userinfo
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
@@ -76,6 +76,10 @@ _PASSWORD_KEY_NAMES: frozenset[str] = frozenset(
 
 # Regex to detect any value starting with a hash prefix ($N$ or $sha1$).
 _HASH_VALUE_RE = re.compile(r"^\$(?:sha1|[0-9]+[a-z]?)\$")
+#: A password hash in free text: it starts a word or follows punctuation
+#: (`key=$9$...`, `($9$...)`), and runs to whitespace, a quote, a bracket, a
+#: comma or a semicolon.
+_HASH_IN_TEXT = re.compile(r"(?<![\w$])\$(?:sha1|[0-9]+[a-z]?)\$[^\s'\"(),;\[\]{}]+")
 
 
 def _hmac_hex(salt: str, value: str) -> str:
@@ -354,9 +358,16 @@ class PasswordRule(Rule):
         self._plain_cache[value] = result
         return result
 
-    def lexical(self, word: str) -> str | None:
-        """A word that starts with a known hash prefix (``$9$``, ``$6$``...) is a secret."""
-        return self.transform(word) if _HASH_VALUE_RE.match(word) else None
+    def spans(self, text: str) -> list[tuple[int, int]]:
+        """Each password hash in *text*, and the password of each URL (NEW-R16)."""
+        found = [match.span() for match in _HASH_IN_TEXT.finditer(text)]
+        found += [password for _, password in url_userinfo(text) if password is not None]
+        found.sort()
+        kept: list[tuple[int, int]] = []
+        for start, end in found:
+            if not kept or start >= kept[-1][1]:
+                kept.append((start, end))
+        return kept
 
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized password mapping."""

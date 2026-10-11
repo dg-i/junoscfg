@@ -19,6 +19,10 @@
 #   that importing the package pulls neither lxml nor the schema artifacts. The
 #   interpreter calls it; vulture sees no caller.
 #
+# - `Rule.lexical` is public API of the exported `Rule` class: the walker reads
+#   a rule's `spans` since change anonymize-embedded-values; tests and callers
+#   that rewrite one word by shape call `lexical`.
+#
 # Two genuinely dead private members were removed rather than whitelisted in
 # phase 4: CommunityRule._counter and _add_sibling. SetWalkOutput.meta_lines was
 # restored after `stage griffe` caught its removal as an undeclared API break.
@@ -56,3 +60,4 @@ read_structure_tree  # unused function (src/junoscfg/validate/artifact_builder.p
 category  # unused variable (src/junoscfg/validate/xsd_fixes.py:24)
 description  # unused variable (src/junoscfg/validate/xsd_fixes.py:25)
 applies_to  # unused variable (src/junoscfg/validate/xsd_fixes.py:26)
+lexical  # unused method (src/junoscfg/anonymize/rules/__init__.py)

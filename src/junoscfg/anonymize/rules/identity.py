@@ -11,7 +11,7 @@ import hashlib
 import hmac
 from typing import TYPE_CHECKING, Any
 
-from junoscfg.anonymize.rules import Rule
+from junoscfg.anonymize.rules import Rule, url_userinfo
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
@@ -25,6 +25,8 @@ class IdentityRule(Rule):
     - Login usernames: ``*.login.user[*].name``
     - Full names: ``*.full-name``
     - SNMP v3 security names: ``snmp.*.security-name``
+    - The user of a URL in free text (``scp://operator@...``), with the
+      pseudonym a login user of that name takes
     """
 
     name = "identity"
@@ -81,6 +83,10 @@ class IdentityRule(Rule):
         """Generate a deterministic identity pseudonym."""
         hex_digest = hmac.new(self._salt.encode(), value.encode(), hashlib.sha256).hexdigest()
         return f"user_{hex_digest[:24]}"
+
+    def spans(self, text: str) -> list[tuple[int, int]]:
+        """The user of each URL in *text* (NEW-A-N4)."""
+        return [user for user, _ in url_userinfo(text) if user is not None]
 
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized identity mapping."""

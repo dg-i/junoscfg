@@ -172,12 +172,14 @@ def main(ctx: click.Context) -> None:
 @click.option(
     "--anonymize-ips-in-strings",
     is_flag=True,
-    help="Also replace IPs embedded in larger strings (URLs, host+IP combos).",
+    help="Also replace an address that is a whole value where the schema says syntax "
+    "(an SNMP OID, an area reference); an address inside text is replaced without it.",
 )
 @click.option(
     "--anonymize-as-numbers-in-strings",
     is_flag=True,
-    help="Also replace target AS numbers embedded in larger strings (group names, communities).",
+    help="Also replace target AS numbers inside text (group names, communities, URLs), "
+    "never inside an address.",
 )
 @click.option(
     "--anonymize-config",

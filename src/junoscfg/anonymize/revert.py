@@ -3,7 +3,7 @@
 The revert dictionary is a JSON file that maps rule names to
 ``{original: anonymized}`` pairs.  To *revert* an already-anonymized
 config, the mapping is inverted (``{anonymized: original}``) and every
-matching string value in the IR is replaced.
+replacement in the IR's values and keys is undone once.
 """
 
 from __future__ import annotations
@@ -42,25 +42,14 @@ def load_mapping(path: str) -> dict[str, dict[str, str]]:
         return json.load(f)  # type: ignore[no-any-return]
 
 
-def _build_reverse_map(mapping: dict[str, dict[str, str]]) -> dict[str, str]:
-    """Invert the mapping to ``{anonymized: original}`` for revert."""
-    reverse: dict[str, str] = {}
-    for _rule_name, pairs in mapping.items():
-        for original, anonymized in pairs.items():
-            reverse[anonymized] = original
-    return reverse
-
-
 def apply_revert(ir: dict[str, Any], mapping: dict[str, dict[str, str]]) -> dict[str, Any]:
     """Walk an IR dict and replace anonymized values with their originals.
 
-    The mapping is first inverted so that each anonymized value maps back
-    to the original.  Then every string value in the IR is checked and
-    replaced if it appears in the reverse map.
-
-    For values that contain anonymized substrings (e.g. sensitive-word
-    replacements embedded in larger strings), a substring-replacement
-    pass is also performed.
+    Each string value and each key is restored: a whole value a rule recorded
+    first, then every other replacement the mapping records, once, in one pass
+    over the text -- the longest first, a number only between non-digits and
+    never inside an address -- and every address last, as the forward chain
+    replaced it first (spec anonymization/embedded-values).
 
     Args:
         ir: The anonymized IR dict.
@@ -69,45 +58,105 @@ def apply_revert(ir: dict[str, Any], mapping: dict[str, dict[str, str]]) -> dict
     Returns:
         The same *ir* dict (mutated in place) with anonymized values restored.
     """
-    reverse = _build_reverse_map(mapping)
-    if not reverse:
+    reverse = _Reverse(mapping)
+    if not reverse.others and not reverse.addresses:
         return ir
-    addresses = {anonymized: original for original, anonymized in mapping.get("ip", {}).items()}
-    _walk_revert(ir, _Reverse(reverse, addresses))
+    _walk_revert(ir, reverse)
     return ir
 
 
 class _Reverse:
-    """The inverted mapping, and the inverted address mapping alone."""
+    """The inverted mapping: the addresses, and every other replacement."""
 
-    def __init__(self, reverse: dict[str, str], addresses: dict[str, str]) -> None:
-        self.reverse = reverse
-        self.addresses = addresses
+    def __init__(self, mapping: dict[str, dict[str, str]]) -> None:
+        self.addresses = {
+            anonymized: original for original, anonymized in mapping.get("ip", {}).items()
+        }
+        self.others = {
+            anonymized: original
+            for rule, pairs in mapping.items()
+            if rule != "ip"
+            for original, anonymized in pairs.items()
+        }
+        self._longest = sorted(self.others, key=len, reverse=True)
+        self._patterns: dict[tuple[str, ...], re.Pattern[str]] = {}
 
     def addresses_in(self, text: str) -> str:
         """*text* with each address token a replacement spells restored."""
-        from junoscfg.anonymize.rules import replace_addresses
+        from junoscfg.anonymize.rules import ipv4_inside, replace_addresses
 
-        return replace_addresses(text, lambda token: self.addresses.get(token, token))
+        def original(token: str) -> str:
+            if token in self.addresses:
+                return self.addresses[token]
+            inside = ipv4_inside(token.split("/", 1)[0])
+            if inside is not None and inside[1] in self.addresses:
+                head, quad = inside
+                return head + self.addresses[quad] + token[len(head) + len(quad) :]
+            return token
 
-    def word(self, word: str) -> str:
-        """Undo the forward chain on one word: a whole-word replacement, then its addresses."""
-        if word in self.addresses:
-            return self.addresses[word]
-        return self.addresses_in(self.reverse.get(word, word))
+        return replace_addresses(text, original)
 
-    def words(self, text: str) -> str:
-        """Undo the forward chain word by word, as the walk splits a word."""
-        return _WORD.sub(lambda match: self.word(match.group()), text)
+    def text(self, value: str) -> str:
+        """*value* restored: a whole value, then the other replacements once, then addresses."""
+        if value in self.addresses:
+            return self.addresses[value]
+        value = self.others[value] if value in self.others else self._replacements(value)
+        if value in self.addresses:
+            return self.addresses[value]
+        return self.patterns_in(self.addresses_in(value))
+
+    def patterns_in(self, text: str) -> str:
+        """*text* with each pattern of whole octets a prefix's replacement spells
+        restored (`peer-203.211.226.*`, an `apply-path`'s `<203.211.226.*>`)."""
+        from junoscfg.anonymize.rules import ADDRESS_FRAGMENT
+
+        return ADDRESS_FRAGMENT.sub(
+            lambda match: self.octets(match.group(0)) or match.group(0), text
+        )
+
+    def octets(self, pattern: str) -> str | None:
+        """*pattern*, a pattern of whole octets, through its prefix's mapping, or ``None``."""
+        from junoscfg.anonymize.rules import address_pattern_prefix, prefix_pattern
+
+        prefix = address_pattern_prefix(pattern)
+        if prefix is None or prefix not in self.addresses:
+            return None
+        return prefix_pattern(self.addresses[prefix], pattern)
+
+    def _replacements(self, text: str) -> str:
+        """*text* with every replacement but an address's undone, in one pass."""
+        found = tuple(anonymized for anonymized in self._longest if anonymized in text)
+        if not found:
+            return text
+        pattern = self._patterns.get(found)
+        if pattern is None:
+            pattern = re.compile(
+                "|".join(
+                    rf"(?<!\d){re.escape(item)}(?!\d)" if item.isdigit() else re.escape(item)
+                    for item in found
+                )
+            )
+            self._patterns[found] = pattern
+        from junoscfg.anonymize.rules import address_tokens
+
+        addresses = [(start, end) for start, end, _ in address_tokens(text)]
+
+        def undo(match: re.Match[str]) -> str:
+            if match.group().isdigit() and any(
+                start < match.end() and match.start() < end for start, end in addresses
+            ):
+                return match.group()
+            return self.others[match.group()]
+
+        return pattern.sub(undo, text)
 
 
 def _walk_revert(obj: Any, reverse: _Reverse) -> None:
-    """Recursively walk the IR and replace anonymized values, and the words of keys.
+    """Recursively walk the IR and restore values and keys.
 
     Content the anonymizer cannot place -- an unknown key, a 0.16.1 joined
-    key, a statement kept whole -- has the addresses, hashes and sensitive
-    words of its keys replaced word by word (spec anonymization/placed-values),
-    so revert restores a key the same way, with the same split. A key the
+    key, a statement kept whole -- has the shapes in its keys replaced (spec
+    anonymization/placed-values), so a key is restored as a value is. A key the
     schema names is never a replacement.
     """
     if isinstance(obj, dict):
@@ -117,7 +166,7 @@ def _walk_revert(obj: Any, reverse: _Reverse) -> None:
                 value = _revert_value(value, reverse)
             elif isinstance(value, (dict, list)):
                 _walk_revert(value, reverse)
-            items.append((reverse.words(key), value))
+            items.append((reverse.text(key), value))
         obj.clear()
         obj.update(items)
     elif isinstance(obj, list):
@@ -128,49 +177,17 @@ def _walk_revert(obj: Any, reverse: _Reverse) -> None:
                 _walk_revert(item, reverse)
 
 
-#: A word as the anonymize walker splits text it cannot place.
-_WORD = re.compile(r'[^\s"]+')
-
-
 def _revert_value(value: str, reverse: _Reverse) -> str:
-    """Revert a single string value.
-
-    An exact match first: a whole value a rule replaced, with any address the
-    chain replaced before it. Then word by word, as the walk rewrote content
-    it cannot place and the strings pass an embedded address; then any
-    anonymized token left as a substring (an AS number inside a word).
-    """
-    if value in reverse.addresses:
-        return reverse.addresses[value]
-    if value in reverse.reverse:
-        return reverse.addresses_in(reverse.reverse[value])
+    """Revert a single string value; a wildcard name's text inside its brackets."""
     text = wildcard_text(value)
-    if text is not None:
-        # A wildcard name: its text was rewritten inside the brackets.
+    if text is not None and value not in reverse.others:
         return f"<{_revert_wildcard(text, reverse)}>"
-    # Word by word, then any token left as a substring -- an AS number inside
-    # a word, which the strings pass replaces beside an address.
-    result = reverse.words(value)
-    for anonymized, original in reverse.reverse.items():
-        if anonymized in result:
-            result = result.replace(anonymized, original)
-    return result
+    return reverse.text(value)
 
 
 def _revert_wildcard(text: str, reverse: _Reverse) -> str:
     """The text of a wildcard name as written: a pattern of whole octets through
     its prefix's mapping (`203.211.226.*` by `203.211.226.0/24`), alone or
     inside the text (`peer-203.211.226.*`), the rest as a value."""
-    from junoscfg.anonymize.rules import ADDRESS_FRAGMENT, address_pattern_prefix, prefix_pattern
-
-    def octets(pattern: str) -> str | None:
-        prefix = address_pattern_prefix(pattern)
-        if prefix is None or prefix not in reverse.addresses:
-            return None
-        return prefix_pattern(reverse.addresses[prefix], pattern)
-
-    whole = octets(text)
-    if whole is not None:
-        return whole
-    restored = ADDRESS_FRAGMENT.sub(lambda match: octets(match.group(0)) or match.group(0), text)
-    return _revert_value(restored, reverse)
+    whole = reverse.octets(text)
+    return whole if whole is not None else reverse.text(text)

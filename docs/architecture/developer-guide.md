@@ -608,21 +608,18 @@ pseudonyms. It operates as a post-processing step in the conversion pipeline, af
 
 ```mermaid
 flowchart TD
-    IR["Dict IR"] --> WALK["walk()\nschema-guided traversal\n+ rule matching"]
-    WALK --> IPS{"ips_in_strings?"}
-    IPS -->|Yes| IPS_PASS["IPs-in-strings pass"]
-    IPS -->|No| AS
-    IPS_PASS --> AS{"as_numbers_in_strings?"}
-    AS -->|Yes| AS_PASS["AS-in-strings pass"]
-    AS -->|No| RESULT
-    AS_PASS --> RESULT["AnonymizeResult\n(ir + mapping + unplaced)"]
+    IR["Dict IR"] --> WALK["walk()\nschema-guided traversal"]
+    WALK --> WHOLE{"a rule takes\nthe whole value?"}
+    WHOLE -->|Yes| RESULT
+    WHOLE -->|No| CHAIN["the chain: each shape inside\nthe text, rule by rule"]
+    CHAIN --> RESULT["AnonymizeResult\n(ir + mapping + unplaced + patterns)"]
 ```
 
 ### Module reference
 
 | Module | Purpose |
 |--------|---------|
-| `anonymize/__init__.py` | Public API: `anonymize()` entry point, multi-pass orchestration |
+| `anonymize/__init__.py` | Public API: `anonymize()` entry point |
 | `anonymize/config.py` | `AnonymizeConfig` dataclass, YAML loader, CLI builder |
 | `anonymize/walker.py` | Schema-guided tree walker (parallel schema + IR traversal) |
 | `anonymize/path_filter.py` | Include/exclude path matching with glob support |
@@ -637,7 +634,7 @@ Rules are checked in priority order; the first matching rule wins:
 |------|----------|----------|----------------|
 | Password | 10 | passwords | Schema type reference (secret/encrypted-password) |
 | SSH Key | 20 | ssh_keys | Schema path under `ssh-rsa`/`ssh-dsa`/`ssh-ecdsa`/`ssh-ed25519` |
-| IP | 30 | ips | A value that is an address on an address, host or untyped leaf; a key its list's name marks as an address where the tree types it as free text |
+| IP | 30 | ips | An address inside text, on any leaf; a value that is an address on an address, host, free-text (but an SNMP OID) or untyped leaf, an `areaid` key its list's name marks |
 | Community | 40 | communities | Schema path under `snmp.community` |
 | Identity | 50 | identities | Schema path for user/full-name/login fields |
 | Group | 60 | groups | Schema path for group/view name fields and `apply-groups[-except]`; Junos-reserved names pass |
@@ -645,7 +642,7 @@ Rules are checked in priority order; the first matching rule wins:
 | AS Number | 80 | as_numbers | Numeric value matching user-provided AS list |
 | Sensitive Word | 90 | sensitive_words/patterns | Literal or regex match against user-provided strings |
 
-### Multi-pass architecture
+### One walk
 
 The primary `walk()` pass offers every value the structure tree places to the
 rules: it resolves a key through `junoscfg.display.schema_child` (a universal
@@ -653,25 +650,32 @@ statement below the root, so `apply-groups` at every level reaches the group
 rule), walks a transparent container's other children against the container,
 and each entry of a list a container holds. What it cannot place -- a key the
 tree does not name, a value of a shape its node does not take, a statement kept
-whole -- is rewritten word by word by the rules that know a word by its shape
-alone (`Rule.lexical`: an address, a password hash, a sensitive word) and named
-by its schema path in `AnonymizeResult.unplaced`; the conversion turns each path
-into an `anonymize:` warning (owner answer 5, spec anonymization/placed-values).
+whole -- is rewritten word by word by the rules that know a value by its shape
+alone and named by its schema path in `AnonymizeResult.unplaced`; the conversion
+turns each path into an `anonymize:` warning (owner answer 5, spec
+anonymization/placed-values).
+
+A value no rule takes whole is free text, as an annotation (`"@"`, `"@<key>"`)
+is. One chain rewrites each part a rule recognises by its shape (`Rule.spans`):
+an address (IPv6, zero-padded, at a sentence's end, the IPv4 address inside
+`::ffff:` and NAT64 forms), a URL's password and user, a password hash, a
+sensitive word, an AS number under `as_numbers_in_strings` outside an address.
+Rules run in priority order and text one rule wrote is never offered to
+another. A part that is the whole value is replaced only where its rule takes
+the value (`matches`), so an SNMP OID stays. An `apply-path` is read against the
+tree: its names go to the rules as the values of the key fields they name, its
+keywords stay (spec anonymization/embedded-values).
 An entry name in angle brackets inside a group (`<*>`, `<ge-*>`) is a pattern
 that selects names: `*` alone passes every rule; any other keeps its brackets
 while its text goes to the rules as a name, or to a rule that knows patterns of
 its values (`Rule.wildcard`: the IP rule's whole-octet address patterns, the
-sensitive-word rule's words behind a class). A wildcard that selects other names
-once rewritten, among those at its place, or that no rule or strings pass could
-rewrite, judged after every pass, is named in `AnonymizeResult.patterns` and an `anonymize:` warning (ANON-P3,
-specification challenges S1-S3). Revert restores the text inside the brackets.
-Two supplementary passes follow:
-
-1. **IPs-in-strings** — Replaces IP addresses embedded in larger string values
-   (e.g., `"server.example.com,10.1.2.3"`) using the IP rule's replacement map;
-   an address the walk already wrote is left alone
-2. **AS-in-strings** — Replaces AS numbers embedded in string values (e.g.,
-   `"inet-Upstream-AS64497"`) using the AS rule's replacement map
+sensitive-word rule's words behind a class, the AS rule's numbers behind `?`).
+A wildcard that selects other names once rewritten, among those at its place,
+or that no rule could rewrite, is named in `AnonymizeResult.patterns` and an
+`anonymize:` warning (ANON-P3, specification challenges S1-S3). Revert takes a
+whole value the mapping records, then undoes every other replacement once, the
+longest first, a number only between non-digits and outside an address, and
+the addresses last.
 
 ---
 

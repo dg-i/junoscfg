@@ -141,6 +141,18 @@ never its text. Stop on that warning, or add `--strict`, when no such word may b
 published. Groups named `re0`, `re1`, `node0`, `node1`, `member<N>` or a `$` variable
 keep their names. See [validation](validation.md).
 
+A value written inside free text is replaced by the rule that owns it: under
+`--anonymize-ips` an address in a URL, a description or an annotation (the address
+alone in a free-text leaf too, an SNMP OID aside), under `--anonymize-identities` and
+`--anonymize-passwords` a URL's user and password (`scp://operator:secret@...`, the user
+with the login user's pseudonym), under `--anonymize-passwords` a password hash in prose,
+and with `--anonymize-as-numbers-in-strings` a target AS number inside text, never inside
+an address. A sensitive word's pseudonym follows its spelling, so `ACME` and `acme`
+revert each to its own. An `apply-path` names configuration: its names take the
+pseudonyms of the names they name, its keywords stay. `--anonymize-ips-in-strings` only
+adds an address that is a whole value where the schema says syntax (an SNMP OID, an area
+reference).
+
 A wildcard name in a group (`<*>`, `<ge-*>`, `<EBGP-*>`) is a pattern that selects
 names, not a name. `<*>` is never replaced. Any other wildcard keeps its angle brackets
 and its text is replaced as the names at its place are: `<EBGP>` names the renamed

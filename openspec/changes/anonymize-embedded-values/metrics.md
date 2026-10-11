@@ -18,9 +18,14 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Acceptance tests on base product code (phase 4) | 36 failed, 17 passed (named pins), `50b0a10` |
+| Acceptance tests on base product code (after Test/Challenge) | the new nodes: 89 failed, 49 passed (named pins), `50b0a10` |
+| Before/after comparison (how-to; 12 renderings x 4 outputs x 15 runs: plain, each rule alone, `ips_in_strings`, `as_numbers_in_strings`, all, all with both in-strings options) | 132 of 1,440 conversions differ, all explained: 96 rename the sensitive word `CM-CUSTOMER` (pseudonym per spelling, NEW-R13/S2) in the sensitive-words, all and all+in-strings runs; 64 renumber the sequential AS replacements under `as_numbers_in_strings` (numbers inside text are now met in walk order, so 64500/64501/64502 go to other originals; each original keeps one replacement); 4 `ips` runs and the JSON/YAML outputs of the all runs replace `3ffe:b00::/32` in the device JSON's annotation (S3); no diagnostic, field-validation message or exception differs. Revert exact on every capture under all 14 rule sets, base and head (`revert_check.py`) |
+| Timing, `anonymize()` with six rules, largest held configuration (296,365 lines) | base 2.592 s, head 3.076 s (+0.48 s: the chain runs on every placed string value); device example 8.6 ms and 10.3 ms; a record, not a gate |
 | Context expansion: `src/junoscfg/anonymize/` (every module, ≈3,000 lines) | Builder, phase 0: the change's owning package, read in source; the rules' shapes, the walker's chain, revert |
 | Context expansion: `tests/unit/anonymize/test_integration.py` (wildcard and unplaced catalogues, the mapping pin) | Builder, phase 0: which existing tests the delta changes |
 | Context expansion: `src/junoscfg/convert/__init__.py` (`_unplaced_warnings`, `_pattern_warnings`) | Builder, phase 2: whether the warnings name the new shapes |
 | Context expansion: `tests/contract/test_every_rule.py` | Builder, phase 2: the mapping law the sensitive-word rule must keep (whole values) |
+| Context expansion: `tests/unit/cli/test_cli.py` (the ips-in-strings row of `ANONYMIZE_OPTIONS`) | Builder, phase 5: its source no longer told the option apart |
+| Context expansion: `.agent-ready/vulture-whitelist.py` | Builder, phase 5: `Rule.lexical` is public API the walker no longer calls |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

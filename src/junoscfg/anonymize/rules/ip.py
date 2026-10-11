@@ -15,6 +15,8 @@ from junoscfg.anonymize.rules import (
     address_pattern_prefix,
     address_tokens,
     has_wildcard_characters,
+    ipv4_inside,
+    parse_address,
     prefix_pattern,
     replace_addresses,
 )
@@ -48,65 +50,34 @@ _ADDRESS_TYPES: frozenset[str] = frozenset(
     }
 )
 
-#: Lists whose key the 25.2R2 tree types only as free text (`string`,
-#: `key-attribute-string-type`) or as `areaid` although it holds an address:
-#: `system syslog host`, `... server`, `... route`, `... source-address`,
-#: `protocols ospf area`. For those keys alone the list's name decides, as it
-#: did for every key until change anonymize-every-placed-value; a typed key
-#: answers by its type. Retires when the schema model types these keys
-#: (schema-model gaps, change 18). An SNMP OID (`oid 1.3.6.1`) and a `from
-#: area` reference are free text and `areaid` beyond these keys, and stay.
-_ADDRESS_KEYED_LISTS: frozenset[str] = frozenset(
-    {
-        "address",
-        "area",
-        "clients",
-        "destination",
-        "destination-address",
-        "host",
-        "name-server",
-        "neighbor",
-        "next-hop",
-        "prefix-list-item",
-        "qualified-next-hop",
-        "route",
-        "server",
-        "source-address",
-        "static-route",
-    }
-)
+#: Free text: a value of these types that is an address is one (specification
+#: challenge S4 of change anonymize-embedded-values), but for an SNMP OID.
+_FREE_TEXT_TYPES = frozenset({"string", "key-attribute-string-type"})
+#: Lists whose key the 25.2R2 tree types `areaid` although it holds an address
+#: (`protocols ospf area`): the list's name decides. A `from area` reference
+#: is `areaid` beyond these keys and stays. Retires when the schema model types
+#: these keys (schema-model gaps, change 18).
+_ADDRESS_KEYED_LISTS: frozenset[str] = frozenset({"area"})
 _KEY_TEXT_TYPES = frozenset({"string", "key-attribute-string-type", "areaid"})
 #: The text of a wildcard that spells an address pattern: address characters,
 #: Junos's wildcard characters, and a dot or colon between groups of digits.
 _ADDRESS_PATTERN = re.compile(r"(?=.*\d)(?=.*[.:])[0-9A-Fa-f.:*?\[\]!^-]+")
 
-#: Leaves the tree types only as free text or `areaid` although they hold an
-#: address: `routing-options ipv6-router-id` (`string`, the IPv4-shaped router
-#: ID), BGP `cluster` (`areaid`, usually the loopback), a route distinguisher
-#: (`route-distinguisher rd-type`, `<address>:<n>`) and a VRF target
-#: (`vrf-target` `community`/`import`/`export`, `target:<address>:<n>`), and
-#: the policy community that matches it (`policy-options community <c> members
-#: target:<address>:<n>`, `origin:<address>:<n>`), so a `vrf-import` policy
-#: still matches the target (Reviewer R1). Matched
-#: by the leaf's own name (and its parent's), only with those types, where the
-#: value holds an address (specification challenges S4, S5). Retires with
-#: `_ADDRESS_KEYED_LISTS`, when change 18 retypes them on device evidence.
-_ADDRESS_VALUED_LEAVES = frozenset(
-    {
-        ("", "ipv6-router-id"),
-        ("", "cluster"),
-        ("route-distinguisher", "rd-type"),
-        ("vrf-target", "community"),
-        ("vrf-target", "import"),
-        ("vrf-target", "export"),
-        ("community", "members"),
-    }
-)
+#: BGP `cluster`, which the tree types `areaid` although it is usually the
+#: loopback: matched by the leaf's own name (specification challenge S4 of
+#: change anonymize-every-placed-value). An address beside other text -- a
+#: route distinguisher, a VRF target, a community member -- is replaced on any
+#: leaf (spec anonymization/embedded-values). Retires when change 18 retypes it.
+_ADDRESS_VALUED_LEAVES = frozenset({"cluster"})
 
 
 def _address_valued(path: list[str]) -> bool:
-    parent = path[-2] if len(path) >= 2 else ""
-    return ("", path[-1]) in _ADDRESS_VALUED_LEAVES or (parent, path[-1]) in _ADDRESS_VALUED_LEAVES
+    return bool(path) and path[-1] in _ADDRESS_VALUED_LEAVES
+
+
+def _snmp_oid(path: list[str]) -> bool:
+    """Whether *path* is an SNMP OID: syntax shaped like an address."""
+    return "snmp" in path and ("oid" in path[-2:])
 
 
 class IpRule(Rule):
@@ -128,6 +99,12 @@ class IpRule(Rule):
             network_registry=registry,
         )
         self._treated_apart = _treated_apart(config)
+        self._in_strings = config.ips_in_strings
+        #: A spelling the address anonymizer cannot read (`203.000.114.006`)
+        #: and its replacement, so revert restores the spelling.
+        self._spelled: dict[str, str] = {}
+        #: The addresses met as the address anonymizer writes them.
+        self._plain: set[str] = set()
 
     @staticmethod
     def _build_network_registry(config: AnonymizeConfig) -> NetworkRegistry | None:
@@ -160,39 +137,45 @@ class IpRule(Rule):
         schema_node: dict[str, Any],
         path: list[str],
     ) -> bool:
-        """Match a value that is an address on a leaf whose type can hold one.
+        """Whether the leaf takes an address that is its whole value.
 
-        The value starts with an address or prefix; what follows it in the
-        same word (`/rack-4`, `,`, `%ge-0/0/0.0`) is text. The type answers:
-        an address or host type, or none at all (a leaf the tree gives no
-        type, content the walk cannot place). A list key the tree types only
-        as free text or `areaid` answers by its list's name
-        (`_ADDRESS_KEYED_LISTS`); a leaf of `_ADDRESS_VALUED_LEAVES` so typed
-        by its own name, wherever in the value the address stands. Any other
-        type never takes an address, and a value holding none never reaches
-        the address anonymizer.
+        An address beside other text in a value is replaced on any leaf (the
+        walker's chain, `spans`); this answers for a value that is one
+        address, where syntax can look like one. The type answers: an address
+        or host type, free text but for an SNMP OID (S4), or none at all (a
+        leaf the tree gives no type, content the walk cannot place). An
+        `areaid` key answers by its list's name (`_ADDRESS_KEYED_LISTS`), BGP
+        `cluster` by its own; any other type never takes an address, unless
+        `ips_in_strings` is on; a value holding none never reaches the
+        address anonymizer.
         """
-        tokens = address_tokens(value) if isinstance(value, str) else []
-        if not tokens:
+        if not (isinstance(value, str) and address_tokens(value)):
             return False
-        if path and _address_valued(path):
-            return self._types(schema_node) <= _KEY_TEXT_TYPES
-        if tokens[0][0] != 0:
-            # An address inside other text is `ips_in_strings`' (`scp://...`).
-            return False
-        return self._takes_address(schema_node, path)
+        return self._in_strings or self._takes_address(schema_node, path)
 
     def _takes_address(self, schema_node: dict[str, Any], path: list[str]) -> bool:
-        """Whether the leaf's type, or its list's name, says it holds an address."""
+        """Whether the leaf's type, or its list's or its own name, says it holds an address."""
         types = self._types(schema_node)
         if not types or types & _ADDRESS_TYPES:
             return True
+        if types <= _FREE_TEXT_TYPES:
+            return not _snmp_oid(path)
+        if path and _address_valued(path):
+            return types <= _KEY_TEXT_TYPES
         return (
             types <= _KEY_TEXT_TYPES
             and len(path) >= 2
             and path[-1] == "name"
             and path[-2] in _ADDRESS_KEYED_LISTS
         )
+
+    def spans(self, text: str) -> list[tuple[int, int]]:
+        """Each address or prefix in *text*."""
+        return [(start, end) for start, end, _ in address_tokens(text)]
+
+    def replace(self, fragment: str) -> str:
+        """An address's replacement."""
+        return self._anonymize(fragment)
 
     def wildcard(
         self, text: str, schema_node: dict[str, Any], path: list[str]
@@ -206,14 +189,19 @@ class IpRule(Rule):
         `3ffe:b00:*`) is left as written and reported (specification
         challenge S2).
         """
-        if not (
+        if (
             has_wildcard_characters(text)
             and _ADDRESS_PATTERN.fullmatch(text)
             and self._takes_address(schema_node, path)
         ):
-            return None
-        pattern = self._octet_pattern(text)
-        return (text, False) if pattern is None else (pattern, True)
+            pattern = self._octet_pattern(text)
+            return (text, False) if pattern is None else (pattern, True)
+        if ADDRESS_FRAGMENT.search(text) or any(
+            (start, end) != (0, len(text)) for start, end, _ in address_tokens(text)
+        ):
+            # An address inside the text (`<peer-203.0.114.*>`), as in free text.
+            return self.pattern_in_string(text, done=frozenset())
+        return None
 
     def _octet_pattern(self, text: str) -> str | None:
         """*text*, a pattern of whole octets, as the pattern of its prefix's
@@ -277,26 +265,44 @@ class IpRule(Rule):
     def _anonymize(self, address: str) -> str:
         """*address*'s replacement; a collision with a preserved prefix names neither.
 
+        The IPv4 address an IPv4-mapped, -compatible or NAT64 form writes, which
+        the address anonymizer keeps with its block, takes its own replacement
+        (`::ffff:203.0.114.5`); a zero-padded dotted quad that of the address
+        it spells, its spelling recorded (specification challenge S5).
+
         `ipanon`'s error reads "Anonymized IP <replacement> (from <original>)
         collides with --pass-through prefix <prefix>": the pair the mapping
         holds, printed beside the output. It is raised afresh, its class kept,
         with no cause or context that carries the original (spec
         anonymization/placed-values).
         """
+        inside = ipv4_inside(address.split("/", 1)[0])
+        if inside is not None:
+            head, quad = inside
+            return head + self._anonymize(quad) + address[len(head) + len(quad) :]
+        if address in self._spelled:
+            return self._spelled[address]
+        bare, slash, length = address.partition("/")
+        parsed = parse_address(bare)
+        canonical = address
+        if parsed is not None and "." in bare and str(parsed) != bare:
+            canonical = str(parsed) + slash + length
+        else:
+            self._plain.add(address)
         try:
-            return str(self._anonymizer.anonymize(address))
+            replaced = str(self._anonymizer.anonymize(canonical))
         except PassThroughCollisionError:
-            pass
+            replaced = None
+        if replaced is not None:
+            if canonical != address:
+                self._spelled[address] = replaced
+            return replaced
         # Raised outside the handler: the original is neither its cause nor its context.
         raise PassThroughCollisionError(
             "an address's replacement collides with a preserved prefix (`preserve_prefixes`, "
             "--anonymize-preserve-prefixes); the addresses are withheld: use another salt or "
             "adjust the preserved prefixes"
         )
-
-    def lexical(self, word: str) -> str | None:
-        """A word holding an address has the address replaced."""
-        return self.transform(word) if address_tokens(word) else None
 
     def replace_ips_in_string(self, value: str, *, done: frozenset[str] = frozenset()) -> str:
         """Replace every address embedded in a string, IPv4 and IPv6.
@@ -311,7 +317,14 @@ class IpRule(Rule):
 
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized IP mapping."""
-        return self._anonymizer.get_mapping()
+        mapping = self._anonymizer.get_mapping()
+        for spelled in self._spelled:
+            bare, slash, length = spelled.partition("/")
+            canonical = f"{parse_address(bare)}{slash}{length}"
+            if canonical not in self._plain:
+                # Only the spelling was written: revert restores the spelling.
+                mapping.pop(canonical, None)
+        return {**mapping, **self._spelled}
 
 
 def _treated_apart(config: AnonymizeConfig) -> tuple[ipaddress.IPv4Network, ...]:

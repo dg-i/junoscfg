@@ -61,8 +61,8 @@ junoscfg convert [OPTIONS] [FILE]
 | `--anonymize-network-file` | `PATH` | — | no | File with one subnet spec per line (for host-bit locking). |
 | `--anonymize-ignore-subnets` | flag | — | no | Treat sub-/8 private ranges as public. |
 | `--anonymize-ignore-reserved` | flag | — | no | Remove all reserved range handling. |
-| `--anonymize-ips-in-strings` | flag | — | no | Also replace IPs embedded in larger strings (URLs, host+IP combos). |
-| `--anonymize-as-numbers-in-strings` | flag | — | no | Also replace target AS numbers embedded in larger strings (group names, communities). |
+| `--anonymize-ips-in-strings` | flag | — | no | Also replace an address that is a whole value where the schema says syntax (an SNMP OID, an area reference); an address inside text is replaced without it. |
+| `--anonymize-as-numbers-in-strings` | flag | — | no | Also replace target AS numbers inside text (group names, communities, URLs), never inside an address. |
 | `--anonymize-config` | `PATH` | — | no | YAML config file with all anonymization options. |
 | `--anonymize-log-level` | `[quiet\|normal\|debug]` | `normal` | no | Anonymization logging verbosity; debug prints each original value beside its replacement to stderr. |
 | `-?`<br>`-h`<br>`--help` | flag | — | no | Show this message and exit. |

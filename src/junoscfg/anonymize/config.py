@@ -46,7 +46,9 @@ class AnonymizeConfig:
     include: list[str] = field(default_factory=list)
     exclude: list[str] = field(default_factory=list)
 
-    # IP-specific options
+    # IP-specific options. An address inside text is replaced under `ips`
+    # alone; `ips_in_strings` adds an address that is a whole value of a leaf
+    # whose type says syntax (an SNMP OID, an `areaid` reference).
     preserve_prefixes: list[str] = field(default_factory=list)
     networks: list[str] = field(default_factory=list)
     network_file: str | None = None
@@ -54,7 +56,8 @@ class AnonymizeConfig:
     ignore_reserved: bool = False
     ips_in_strings: bool = False
 
-    # AS-number-specific options
+    # AS-number-specific options: `as_numbers_in_strings` replaces a target AS
+    # number inside text, between non-digits and never inside an address.
     as_numbers_in_strings: bool = False
 
     # Logging: "quiet", "normal" or "debug" (see the class docstring).

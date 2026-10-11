@@ -20,7 +20,7 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from junoscfg.anonymize.rules import Rule
+from junoscfg.anonymize.rules import Rule, address_tokens, rewrite, spells_through_syntax
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.config import AnonymizeConfig
@@ -50,6 +50,7 @@ class AsNumberRule(Rule):
         self._mapping: dict[str, str] = {}
         self._next_sequential = _SEQUENTIAL_START
         self._used_replacements: set[int] = set(self._explicit_map.values())
+        self._in_strings = config.as_numbers_in_strings
 
         # Validate explicit mappings and pre-populate
         for orig, repl in self._explicit_map.items():
@@ -131,15 +132,39 @@ class AsNumberRule(Rule):
 
         Uses digit-boundary anchoring so ``64498`` matches in
         ``eBGP-AS64498-Rx`` but does NOT spuriously match inside
-        ``649480``.
+        ``649480``, nor inside an address (``10.100.0.1``).
         """
+        return rewrite(self, value, self._numbers(value))[0]
+
+    def spans(self, text: str) -> list[tuple[int, int]]:
+        """Each configured AS number in *text*, under `as_numbers_in_strings`."""
+        return self._numbers(text) if self._in_strings else []
+
+    def _numbers(self, text: str) -> list[tuple[int, int]]:
+        """Each configured AS number in *text* between non-digits, outside an address."""
         if self._as_in_string_re is None:
-            return value
+            return []
+        addresses = [(start, end) for start, end, _ in address_tokens(text)]
+        return [
+            match.span()
+            for match in self._as_in_string_re.finditer(text)
+            if not any(start < match.end() and match.start() < end for start, end in addresses)
+        ]
 
-        def _replace(m: re.Match[str]) -> str:
-            return self.transform(m.group(0))
-
-        return self._as_in_string_re.sub(_replace, value)
+    def wildcard(
+        self, text: str, schema_node: dict[str, Any], path: list[str]
+    ) -> tuple[str, bool] | None:
+        """A wildcard where a configured AS number can be spelled only through a
+        `?` or a class, between non-digits (`<AS6449?-*>` for 64496), cannot be
+        rewritten as a pattern: not vouched for (Reviewer R3 of change
+        group-wildcards-pass), a number it spells in digits replaced. Digits no
+        configured number can match (`<ge-0/0/1?>`) are no such case (NEW-R14)."""
+        if not self._in_strings or not any(
+            spells_through_syntax(text, str(asn), between_non_digits=True)
+            for asn in self._target_set
+        ):
+            return None
+        return self.replace_as_in_string(text), False
 
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized AS number mapping."""

@@ -527,11 +527,16 @@ ANONYMIZE_OPTIONS = (
         "ips-in-strings",
         ("--anonymize-ips-in-strings",),
         {"ips_in_strings": True},
+        # An address beside text is replaced without the option (change
+        # anonymize-embedded-values); what it adds is an address that is a
+        # whole value of a leaf whose type holds none, an `areaid` reference.
         json.dumps(
             {
                 "configuration": {
-                    "security": {
-                        "ssh-known-hosts": {"host": [{"name": "server.example.com,10.1.2.3"}]}
+                    "policy-options": {
+                        "policy-statement": [
+                            {"name": "P", "term": [{"name": "T", "from": {"area": "198.0.2.1"}}]}
+                        ]
                     }
                 }
             }
