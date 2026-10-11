@@ -3,11 +3,13 @@
 That a reader and a writer agree on the IR, for every pair, is
 `tests/contract/test_format_matrix.py`; this file keeps what the dispatch
 doors decide themselves: where the configuration is found, the envelope a
-writer wraps it in, the order of the JSON writer's keys, and what is refused.
+writer wraps it in, that no writer changes the IR it is given, the order of
+the JSON writer's keys, and what is refused.
 """
 
 from __future__ import annotations
 
+import copy
 import json
 from typing import TYPE_CHECKING, Any
 
@@ -15,9 +17,12 @@ import pytest
 import yaml
 
 from junoscfg.convert import find_configuration, from_dict, to_dict
+from tests.support.shapes import SHAPES, WRITERS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from junoscfg import Format
 
 # ── IR utilities ─────────────────────────────────────────────────────
 
@@ -52,6 +57,54 @@ class TestTheJsonAndYamlEnvelope:
         config = {"system": {"host-name": "r1"}}
         assert load(from_dict(config, fmt)) == {"configuration": config}
         assert load(from_dict(config, fmt, wrap=False)) == config
+
+
+# ── Every writer ─────────────────────────────────────────────────────
+
+#: IR spellings a caller may build that the JSON writer normalizes for the device.
+_HAND_BUILT = {
+    "a-presence-flag-as-true": {"system": {"services": {"ssh": True}}},
+    "a-presence-flag-as-an-empty-mapping": {"system": {"services": {"ssh": {}}}},
+    "a-leaf-as-a-one-element-list": {
+        "system": {"login": {"user": [{"name": "admin", "class": ["super-user"]}]}}
+    },
+    "a-group-in-its-wrapper": {
+        "groups": {"group": [{"name": "G1", "system": {"services": {"ssh": True}}}]}
+    },
+}
+
+
+class TestNoWriterChangesTheIrItIsGiven:
+    """A writer reads the IR and never writes into it (spec conversion/writers).
+
+    ARCH-C11: the JSON writer normalized presence flags and one-element leaf
+    lists in the caller's IR. `repr` is compared, so a changed key order or
+    `True` turned into `[None]` counts. The contract tests cannot state this
+    law: the named surfaces read a fresh IR, and only this door takes one a
+    caller holds.
+    """
+
+    @pytest.mark.parametrize("writer", WRITERS, ids=[writer.value for writer in WRITERS])
+    @pytest.mark.parametrize("spelling", _HAND_BUILT.values(), ids=list(_HAND_BUILT))
+    def test_a_hand_built_ir_is_left_unchanged(self, spelling: Any, writer: Format) -> None:
+        ir = copy.deepcopy(spelling)
+        from_dict(ir, writer.value)
+        assert repr(ir) == repr(spelling)
+
+    @pytest.mark.parametrize(
+        ("source", "reader"),
+        [
+            pytest.param(text, reader, id=f"{shape.name}-{reader.value}")
+            for shape in SHAPES
+            for reader, text in shape.sources.items()
+        ],
+    )
+    def test_a_read_ir_is_left_unchanged(self, source: str, reader: Format) -> None:
+        ir = to_dict(source, reader.value)
+        read = copy.deepcopy(ir)
+        for writer in WRITERS:
+            from_dict(ir, writer.value)
+            assert repr(ir) == repr(read), f"after {writer.value}"
 
 
 # ── JSON output ──────────────────────────────────────────────────────

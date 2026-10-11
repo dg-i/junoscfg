@@ -47,3 +47,4 @@ None, because C3–C6 are resolved by repository rules and the task's own condit
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established after the proposal commit `e7cd402`. Approved under the owner's unattended-run instruction of 2026-10-11.
+- Phase 4: acceptance tests committed; on the merge base `d1e804e` the four JSON parameters of `test_a_hand_built_ir_is_left_unchanged` and four sources of `test_a_read_ir_is_left_unchanged` (`a-deleted-container-set`, `a-deleted-container-structured`, `a-presence-flag-set`, `a-bare-container-set`) fail; the other 338 pass by design (guard rows). `agent-ready reconcile` passes. Approved under the owner's unattended-run instruction of 2026-10-11. No acceptance criterion changed. Resume point: STOP-T, independent Test/Challenge.
