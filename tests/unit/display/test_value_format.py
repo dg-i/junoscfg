@@ -15,10 +15,12 @@ from __future__ import annotations
 import itertools
 import json
 from typing import TYPE_CHECKING, Any
+from xml.sax.saxutils import escape
 
 import pytest
+import yaml
 
-from junoscfg import Format, convert_config
+from junoscfg import Format, convert_config, validate_config
 from junoscfg.display import format_value
 
 if TYPE_CHECKING:
@@ -263,3 +265,75 @@ class TestEveryValueReadsBackAsWritten:
         """An import value from JSON or XML reads back as written (SC3 interim, F4, F5)."""
 
         assert not _round_trip([value], writer, _imports, _read_imports)
+
+
+_BAD_EXPRESSIONS = [
+    "( A ) ; export P-B",
+    "( A ; export P-B )",
+    "( A ) { export P-B; }",
+    "( A } )",
+    "( A ) # comment",
+    "( A /* comment */ )",
+    "( A )\nexport P-B",
+    "( A [ P-B ] )",
+    "( A",
+    "( A ) ( B )",
+    '( "P-A )',
+]
+
+
+def _policy_source(value: str, source: Format) -> str:
+    ir = {"configuration": _imports([value])}
+    if source == Format.JSON:
+        return json.dumps(ir)
+    if source == Format.YAML:
+        return yaml.safe_dump(ir)
+    return (
+        "<configuration><protocols><bgp><group><name>G0</name><import>"
+        + escape(value)
+        + "</import></group></bgp></protocols></configuration>"
+    )
+
+
+class TestAPolicyValueOccupiesOneExpression:
+    """Review F1: caller data must never introduce statements in either writer.
+
+    These synthetic negatives make no device-validity claim. The existing
+    preservation and structural-error contracts require refusal when quoting
+    would instead create the quoted-name IR. SC4 does not change the spec.
+    """
+
+    @pytest.mark.parametrize("value", _BAD_EXPRESSIONS)
+    @pytest.mark.parametrize("source", [Format.JSON, Format.YAML, Format.XML])
+    @pytest.mark.parametrize("writer", [Format.SET, Format.STRUCTURED])
+    def test_an_expression_crossing_the_value_boundary_is_refused(
+        self, value: str, source: Format, writer: Format
+    ) -> None:
+        text = _policy_source(value, source)
+        if source in (Format.JSON, Format.YAML):
+            assert validate_config(text, format=source).valid
+        with pytest.raises(ValueError, match="one complete policy-algebra expression"):
+            convert_config(text, from_format=source, to_format=writer, strict=True)
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            '( "P;1" && P-B )',
+            '( "P{1}#/*[2]" && P-B )',
+            '( "P(1)" && ( P-B || P-C ) )',
+            r'( "P \"1\"" && P-B )',
+        ],
+    )
+    @pytest.mark.parametrize("source", [Format.JSON, Format.YAML, Format.XML])
+    @pytest.mark.parametrize("writer", [Format.SET, Format.STRUCTURED])
+    def test_delimiters_in_quoted_names_stay_in_the_expression(
+        self, value: str, source: Format, writer: Format
+    ) -> None:
+        assert format_value(value, _ALGEBRA) == value
+        written = convert_config(
+            _policy_source(value, source), from_format=source, to_format=writer, strict=True
+        )
+        back = json.loads(
+            convert_config(written, from_format=writer, to_format=Format.JSON, strict=True)
+        )
+        assert back == {"configuration": _imports([value])}

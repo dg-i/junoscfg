@@ -15,6 +15,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from junoscfg.display.set_converter import reads_as_one_statement
+
 #: The XSD type of a leaf that holds a policy expression or a policy chain.
 POLICY_ALGEBRA = "policy-algebra"
 
@@ -36,13 +38,31 @@ def is_policy_algebra(node: Any) -> bool:
 def is_algebra_token(text: str) -> bool:
     """Whether *text*, a `policy-algebra` value, is the device's token as written.
 
-    An expression starts with `(`; a quoted name that starts with `(` keeps its
+    An expression occupies one complete parenthesized run with no statement
+    boundary outside quoted names. A quoted name starting with `(` keeps its
     quotes, or it would read as an expression. Readers keep such a token as
     written and writers write it as it is; any other value is an ordinary
     value both ways, so whatever is written reads back as written.
     """
     if text.startswith("("):
-        return True
+        if not reads_as_one_statement(text):
+            return False
+        depth = 0
+        position = 0
+        while position < len(text):
+            quoted = _QUOTED_TOKEN.match(text, position)
+            if quoted is not None:
+                position = quoted.end()
+                continue
+            char = text[position]
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return position == len(text) - 1
+            position += 1
+        return False
     return text.startswith('"(') and _QUOTED_TOKEN.fullmatch(text) is not None
 
 
@@ -55,8 +75,13 @@ def format_value(value: Any, node: Any = None) -> str:
     policy token. Every other value is quoted where it must be, `"` escaped.
     """
     s = str(value)
-    if is_policy_algebra(node) and is_algebra_token(s):
-        return s
+    if is_policy_algebra(node):
+        if is_algebra_token(s):
+            return s
+        if s.startswith("("):
+            # Quoting would create a quoted-name IR, not preserve this value.
+            # Fail before either writer can turn caller data into statements.
+            raise ValueError("value is not one complete policy-algebra expression")
     if not needs_quoting(s):
         return s
     return '"' + s.replace('"', '\\"') + '"'
