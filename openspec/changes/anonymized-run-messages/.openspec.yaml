@@ -1,3 +1,50 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# The highest-tier zone this change edits is red: anonymize (__init__, rules/as_number.py,
+# rules/ip.py). Also yellow: conversion (convert/__init__.py, field_validator.py,
+# output/__init__.py, output/structured_output.py) and surface (cli.py; src/junoscfg/__init__.py
+# for __version__ only).
+zone: anonymize
+domains: [anonymization, conversion, validation]
+removes:
+  - "`_withhold_unplaced` in `convert/__init__.py`: the field validator withholds its own texts (`FieldValidator(withhold_values=True)`)"
+  - "the in-place rewrite of the IR passed to `junoscfg.anonymize.anonymize()`: it copies on entry"
+  - "nothing public: every name of the `junoscfg`, `junoscfg.anonymize` and `junoscfg.convert` doors stays; `from_dict(..., withhold_values=...)` is added"
 assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      No name or signature of the surface changes; src/junoscfg/__init__.py
+      changes only `__version__` (0.19.0 to 0.20.0). Behind convert_config and
+      convert_config_result with an `anon_config` that enables a rule, no
+      message quotes a word of the configuration: a refusal to read the input
+      is raised as ValueError (yaml.YAMLError for a YAML parse error) whose
+      text says the input could not be read, with the line when the parser
+      gives one, where it quoted the input (the set reader's bracket refusal,
+      the structured reader's, PyYAML's snippet, XML element names) and where
+      a JSON parse error was a json.JSONDecodeError; every field-validation
+      message, in the diagnostics and in FieldValidationError, keeps its path,
+      reason and expected and withholds its value (FieldError.value is "");
+      the structured writer's note on dropped tags gives their count without
+      their paths. Lesson #1 of the makeover run: no original value reaches a
+      diagnostic, a warning, stderr or an error of an anonymized run. A
+      conversion that does not anonymize is unchanged.
+    migration: >-
+      To see the reason or the value, convert the same input without
+      `anon_config` (or with every rule off); a caller that catches
+      json.JSONDecodeError from an anonymized conversion catches ValueError,
+      its base class.
+  cli:
+    why: >-
+      `junoscfg convert --anonymize-* -v` (and validate-only) prints
+      "Validation: FAILED (n error(s))" and, per error, its line with the
+      text and document path withheld; `--anonymize-*` without `-v` prints a
+      read refusal as "Error: the input could not be read ..." (exit 2
+      unchanged), field-validation lines and `--strict` failures without
+      values (exit codes unchanged). A run without `--anonymize-*`, and a
+      revert run, print as before.
+    migration: >-
+      Run the same command without the `--anonymize-*` options to see each
+      message's text; line numbers and schema paths are kept so the place can
+      be found in the input.
