@@ -117,13 +117,21 @@ def pipeline_result(
 
     # The reader's warnings name a path of the input, values included; they
     # join the result once it is known whether the conversion anonymizes.
-    read_notes: list[tuple[str, str]] = []
-    ir = to_dict(
-        source,
-        from_format,
-        diagnostic_sink=lambda where, what: read_notes.append((where, what)),
-    )
     anonymizing = bool(getattr(anon_config, "any_enabled", False))
+    read_notes: list[tuple[str, str]] = []
+    try:
+        ir = to_dict(
+            source,
+            from_format,
+            diagnostic_sink=lambda where, what: read_notes.append((where, what)),
+        )
+    except Exception as error:
+        if not anonymizing:
+            raise
+        withheld = _withheld_refusal(error)
+        if withheld is None:
+            raise
+        raise withheld from None
     for where, what in read_notes:
         if anonymizing:
             # A block that yields no statement never reaches the IR, so no
@@ -166,9 +174,7 @@ def pipeline_result(
     if validate:
         from junoscfg.convert.field_validator import FieldValidationError, FieldValidator
 
-        result = FieldValidator().validate(ir)
-        if anonymizing:
-            result = _withhold_unplaced(result)
+        result = FieldValidator(withhold_values=anonymizing).validate(ir)
         if not result.valid:
             if strict:
                 raise FieldValidationError(result)
@@ -195,6 +201,7 @@ def pipeline_result(
             ir,
             to_format,
             wrap=False,
+            withhold_values=anonymizing,
             diagnostic_sink=lambda message: diagnostics.append(
                 Diagnostic(source="structured-output", message=message, severity="note")
             ),
@@ -203,6 +210,7 @@ def pipeline_result(
         output = from_dict(
             ir,
             to_format,
+            withhold_values=anonymizing,
             diagnostic_sink=lambda message: diagnostics.append(
                 Diagnostic(source="structured-output", message=message, severity="note")
             ),
@@ -237,9 +245,9 @@ def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[
     shapes = [
         shape
         for shape, active in (
-            ("an address", cfg.ips),
-            ("a password hash", cfg.passwords),
-            ("a sensitive word", bool(cfg.sensitive_words or cfg.sensitive_patterns)),
+            ("address", cfg.ips),
+            ("password hash", cfg.passwords),
+            ("sensitive word", bool(cfg.sensitive_words or cfg.sensitive_patterns)),
         )
         if active
     ]
@@ -261,28 +269,32 @@ def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[
     ]
 
 
-def _withhold_unplaced(result: FieldValidationResult) -> FieldValidationResult:
-    """*result* with the text of each `UNPLACED` report withheld.
+def _withheld_refusal(error: Exception) -> Exception | None:
+    """A refusal to read the input, as an anonymized conversion raises it.
 
-    In an anonymized run a statement the schema could not place keeps every
-    word no rule recognises by its shape, so its report would print original
-    values; the schema path stays.
+    Every reader's refusal may quote the input: the set reader's bracket line,
+    the structured reader's statement, PyYAML's snippet, the XML reader's
+    element names, and `json.JSONDecodeError.doc` holds the whole source. The
+    run raises a fresh error of the same family (`ValueError`,
+    `yaml.YAMLError`) saying where, when the parser says so, never what. Any
+    other exception is no refusal and is left to the caller (``None``).
     """
-    return FieldValidationResult(
-        errors=[
-            FieldError(
-                path=error.path,
-                message="a statement could not be placed in the schema: kept as written, not "
-                "validated (its text is withheld: the conversion anonymizes)",
-                value="",
-                expected=UNPLACED,
-            )
-            if error.expected == UNPLACED
-            else error
-            for error in result.errors
-        ],
-        warnings=result.warnings,
+    import yaml
+
+    line = getattr(error, "lineno", None) or getattr(error.__cause__, "lineno", None)
+    mark = getattr(error, "problem_mark", None) or getattr(error, "context_mark", None)
+    if line is None and mark is not None:
+        line = mark.line + 1
+    where = f" (line {line})" if isinstance(line, int) else ""
+    message = (
+        f"the input could not be read{where}; the reason quotes the input, so it is "
+        "withheld: the conversion anonymizes (convert it without anonymizing to see it)"
     )
+    if isinstance(error, yaml.YAMLError):
+        return yaml.YAMLError(message)
+    if isinstance(error, ValueError):
+        return ValueError(message)
+    return None
 
 
 __all__ = [

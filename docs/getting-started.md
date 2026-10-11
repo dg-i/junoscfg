@@ -66,7 +66,7 @@ config.expand_all()
 
 ir = {"configuration": {"system": {"host-name": "router1"}}}
 result = anonymize(ir, config)
-print(result.ir)      # anonymized IR
+print(result.ir)      # anonymized copy; ir itself is unchanged
 print(result.mapping)  # revert dictionary
 ```
 

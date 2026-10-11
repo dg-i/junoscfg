@@ -51,7 +51,10 @@ class AnonymizeConfig:
     # AS-number-specific options
     as_numbers_in_strings: bool = False
 
-    # Logging
+    # Logging: "quiet", "normal" or "debug". Only "debug" prints originals:
+    # each replacement as a debug diagnostic beside its original, and the
+    # address anonymizer's own warnings on stderr. No other message of an
+    # anonymized run quotes the configuration.
     log_level: str = "normal"
 
     # Appended rather than grouped with the IP options: AnonymizeConfig is a

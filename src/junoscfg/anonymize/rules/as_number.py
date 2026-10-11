@@ -54,9 +54,10 @@ class AsNumberRule(Rule):
         # Validate explicit mappings and pre-populate
         for orig, repl in self._explicit_map.items():
             if repl in self._target_set and repl != orig:
+                # No number: the pair is the mapping (spec anonymization/placed-values).
                 warnings.warn(
-                    f"AS number replacement {orig}→{repl} collides with "
-                    f"target AS {repl} (which is also being anonymized)",
+                    "an explicit AS number replacement collides with an AS number that is "
+                    "also being anonymized; choose another replacement",
                     stacklevel=2,
                 )
             self._mapping[str(orig)] = str(repl)
@@ -112,15 +113,14 @@ class AsNumberRule(Rule):
 
         if replacement in self._target_set:
             warnings.warn(
-                f"Sequential AS replacement {asn}→{replacement} collides with "
-                f"target AS {replacement}",
+                "a sequential AS number replacement collides with an AS number that is "
+                "also being anonymized",
                 stacklevel=3,
             )
 
         if replacement > _SEQUENTIAL_END:
             warnings.warn(
-                f"Sequential AS replacement {asn}→{replacement} exceeds "
-                f"RFC 5398 documentation range (64496-64511)",
+                "a sequential AS number replacement exceeds the RFC 5398 documentation range",
                 stacklevel=3,
             )
 

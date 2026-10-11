@@ -171,11 +171,16 @@ UNPLACED = "a statement the schema places"
 class FieldValidator:
     """Validates leaf values in the JSON dict IR against schema constraints."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, withhold_values: bool = False) -> None:
         """Build the validator against the structure tree the artifacts resolve to.
 
         It took a ``schema`` argument too, which only tests passed; they now
         select a tree the way a caller does, with ``display.artifacts_dir``.
+
+        With *withhold_values* (an anonymized conversion's report) no message
+        quotes a word of the configuration: each keeps its path, its reason
+        and what was expected, `FieldError.value` is ``""``, and an `UNPLACED`
+        report's text is withheld (spec anonymization/placed-values).
         """
         from junoscfg.display import load_schema_tree
 
@@ -184,6 +189,7 @@ class FieldValidator:
         self._enums: list[list[str]] = []
         self._patterns: list[str] = []
         self._compiled: dict[int, re.Pattern[str]] = {}
+        self._withhold = withhold_values
 
         if schema:
             self._enums = schema.get("_enums", [])
@@ -225,7 +231,28 @@ class FieldValidator:
         # Navigate to configuration node in schema
         schema_root = self._schema.get("c", {}).get("configuration", self._schema)
         self._walk(config, schema_root, [], result)
+        if self._withhold:
+            result.errors = [
+                FieldError(
+                    path=error.path,
+                    message="a statement could not be placed in the schema: kept as written, "
+                    "not validated (its text is withheld: the conversion anonymizes)",
+                    value="",
+                    expected=UNPLACED,
+                )
+                if error.expected == UNPLACED
+                else error
+                for error in result.errors
+            ]
         return result
+
+    def _quoted(self, value: str) -> str:
+        """*value* as a message quotes it, or the withholding when the run anonymizes."""
+        return "(withheld: the conversion anonymizes)" if self._withhold else repr(value)
+
+    def _kept(self, value: Any) -> Any:
+        """*value* as a report carries it: ``""`` when the run anonymizes."""
+        return "" if self._withhold else value
 
     def _walk(
         self,
@@ -569,6 +596,7 @@ class FieldValidator:
             return
 
         str_value = str(value)
+        quoted = self._quoted(str_value)
         dot_path = ".".join(path)
 
         # 1. Enum check
@@ -600,16 +628,16 @@ class FieldValidator:
                     return
                 if closed or not has_fallback:
                     # Enum-only field, non-numeric — mismatch is definitive
-                    shown = allowed[:5]
+                    names = allowed[:5]
                     suffix = f" ... ({len(allowed)} total)" if len(allowed) > 5 else ""
                     result.errors.append(
                         FieldError(
                             path=dot_path,
                             message=(
-                                f"Invalid value {str_value!r}: "
-                                f"must be one of [{', '.join(shown)}{suffix}]"
+                                f"Invalid value {quoted}: "
+                                f"must be one of [{', '.join(names)}{suffix}]"
                             ),
-                            value=value,
+                            value=self._kept(value),
                             expected=f"one of {allowed}",
                         )
                     )
@@ -628,10 +656,10 @@ class FieldValidator:
                         FieldError(
                             path=dot_path,
                             message=(
-                                f"Invalid value {str_value!r}: "
+                                f"Invalid value {quoted}: "
                                 f"must not match pattern {self._patterns[pat_idx][1:]!r}"
                             ),
-                            value=value,
+                            value=self._kept(value),
                             expected=f"value not matching {self._patterns[pat_idx][1:]!r}",
                         )
                     )
@@ -646,10 +674,10 @@ class FieldValidator:
                         FieldError(
                             path=dot_path,
                             message=(
-                                f"Invalid value {str_value!r}: "
+                                f"Invalid value {quoted}: "
                                 f"must match pattern {self._patterns[pat_idx]!r}"
                             ),
-                            value=value,
+                            value=self._kept(value),
                             expected=f"value matching {self._patterns[pat_idx]!r}",
                         )
                     )
@@ -669,6 +697,7 @@ class FieldValidator:
         result: FieldValidationResult,
     ) -> None:
         """Validate value against its XSD type reference."""
+        quoted = self._quoted(str_value)
         tr_lower = type_ref.lower()
         # The tree stores XSD built-ins prefixed -- `xsd:unsignedShort`. The
         # table holds bare names, so every integer leaf typed by an XSD
@@ -693,8 +722,8 @@ class FieldValidator:
             result.errors.append(
                 FieldError(
                     path=dot_path,
-                    message=f"Invalid value {str_value!r}: must be a boolean (true/false)",
-                    value=value,
+                    message=f"Invalid value {quoted}: must be a boolean (true/false)",
+                    value=self._kept(value),
                     expected="true or false",
                 )
             )
@@ -707,6 +736,7 @@ class FieldValidator:
         result: FieldValidationResult,
     ) -> None:
         """Validate an IP address or prefix value."""
+        quoted = self._quoted(str_value)
         is_ipv4_type = type_lower in _IPV4_TYPES
         is_ipv6_type = type_lower in _IPV6_TYPES
         is_prefix = "prefix" in type_lower
@@ -719,8 +749,8 @@ class FieldValidator:
                     result.errors.append(
                         FieldError(
                             path=dot_path,
-                            message=f"Invalid value {str_value!r}: expected IPv4 prefix, got IPv6",
-                            value=str_value,
+                            message=f"Invalid value {quoted}: expected IPv4 prefix, got IPv6",
+                            value=self._kept(str_value),
                             expected="valid IPv4 prefix",
                         )
                     )
@@ -728,8 +758,8 @@ class FieldValidator:
                     result.errors.append(
                         FieldError(
                             path=dot_path,
-                            message=f"Invalid value {str_value!r}: expected IPv6 prefix, got IPv4",
-                            value=str_value,
+                            message=f"Invalid value {quoted}: expected IPv6 prefix, got IPv4",
+                            value=self._kept(str_value),
                             expected="valid IPv6 prefix",
                         )
                     )
@@ -743,8 +773,8 @@ class FieldValidator:
                 result.errors.append(
                     FieldError(
                         path=dot_path,
-                        message=f"Invalid value {str_value!r}: not a {expected}",
-                        value=str_value,
+                        message=f"Invalid value {quoted}: not a {expected}",
+                        value=self._kept(str_value),
                         expected=expected,
                     )
                 )
@@ -757,8 +787,8 @@ class FieldValidator:
                 result.errors.append(
                     FieldError(
                         path=dot_path,
-                        message=f"Invalid value {str_value!r}: expected IPv4 address, got IPv6",
-                        value=str_value,
+                        message=f"Invalid value {quoted}: expected IPv4 address, got IPv6",
+                        value=self._kept(str_value),
                         expected="valid IPv4 address",
                     )
                 )
@@ -766,8 +796,8 @@ class FieldValidator:
                 result.errors.append(
                     FieldError(
                         path=dot_path,
-                        message=f"Invalid value {str_value!r}: expected IPv6 address, got IPv4",
-                        value=str_value,
+                        message=f"Invalid value {quoted}: expected IPv6 address, got IPv4",
+                        value=self._kept(str_value),
                         expected="valid IPv6 address",
                     )
                 )
@@ -780,8 +810,8 @@ class FieldValidator:
             result.errors.append(
                 FieldError(
                     path=dot_path,
-                    message=f"Invalid value {str_value!r}: not a {expected}",
-                    value=str_value,
+                    message=f"Invalid value {quoted}: not a {expected}",
+                    value=self._kept(str_value),
                     expected=expected,
                 )
             )
@@ -794,14 +824,15 @@ class FieldValidator:
         result: FieldValidationResult,
     ) -> None:
         """Validate an integer value against its XSD type bounds."""
+        quoted = self._quoted(str_value)
         try:
             num = int(str_value)
         except ValueError:
             result.errors.append(
                 FieldError(
                     path=dot_path,
-                    message=f"Invalid value {str_value!r}: must be an integer ({type_ref})",
-                    value=str_value,
+                    message=f"Invalid value {quoted}: must be an integer ({type_ref})",
+                    value=self._kept(str_value),
                     expected=f"integer ({type_ref})",
                 )
             )
@@ -816,9 +847,9 @@ class FieldValidator:
                     FieldError(
                         path=dot_path,
                         message=(
-                            f"Invalid value {str_value!r}: out of range for {type_ref} ({lo}..{hi})"
+                            f"Invalid value {quoted}: out of range for {type_ref} ({lo}..{hi})"
                         ),
-                        value=str_value,
+                        value=self._kept(str_value),
                         expected=f"{type_ref} ({lo}..{hi})",
                     )
                 )

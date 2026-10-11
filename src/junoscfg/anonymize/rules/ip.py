@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from ipanon import Anonymizer, NetworkRegistry
+from ipanon import Anonymizer, NetworkRegistry, PassThroughCollisionError
 
 from junoscfg.anonymize.rules import Rule, address_tokens, replace_addresses
 from junoscfg.display import strip_type_prefix
@@ -185,7 +185,25 @@ class IpRule(Rule):
 
     def transform(self, value: str) -> str:
         """Anonymize each address or prefix in *value*; the text around it stays."""
-        return replace_addresses(value, self._anonymizer.anonymize)
+        return replace_addresses(value, self._anonymize)
+
+    def _anonymize(self, address: str) -> str:
+        """*address*'s replacement; a collision with a preserved prefix names neither.
+
+        `ipanon`'s error reads "Anonymized IP <replacement> (from <original>)
+        collides with --pass-through prefix <prefix>": the pair the mapping
+        holds, printed beside the output. It is raised afresh, its class kept,
+        without the chain that carries the original (spec
+        anonymization/placed-values).
+        """
+        try:
+            return self._anonymizer.anonymize(address)
+        except PassThroughCollisionError:
+            raise PassThroughCollisionError(
+                "an address's replacement collides with a preserved prefix "
+                "(--anonymize-preserve-prefixes); the addresses are withheld: use another "
+                "salt or adjust the preserved prefixes"
+            ) from None
 
     def lexical(self, word: str) -> str | None:
         """A word holding an address has the address replaced."""
@@ -199,7 +217,7 @@ class IpRule(Rule):
         *done* -- a replacement the walk already wrote -- is left as it is.
         """
         return replace_addresses(
-            value, lambda token: token if token in done else self._anonymizer.anonymize(token)
+            value, lambda token: token if token in done else self._anonymize(token)
         )
 
     def get_mapping(self) -> dict[str, str]:

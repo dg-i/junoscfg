@@ -14,6 +14,7 @@ def from_dict(
     *,
     wrap: bool = True,
     diagnostic_sink: Callable[[str], None] | None = None,
+    withhold_values: bool = False,
 ) -> str:
     """Dispatch to the appropriate output converter.
 
@@ -26,6 +27,8 @@ def from_dict(
               mapping. Ignored by the other renderers.
         diagnostic_sink: Optional receiver for renderer diagnostics. The
             caller owns any terminal or log rendering.
+        withhold_values: The diagnostics quote no word of the configuration
+            (an anonymized conversion): a note gives counts, not paths.
 
     Returns:
         The rendered configuration as a string.
@@ -47,6 +50,8 @@ def from_dict(
     elif fmt == "structured":
         from junoscfg.convert.output.structured_output import dict_to_structured
 
-        return dict_to_structured(config, diagnostic_sink=diagnostic_sink)
+        return dict_to_structured(
+            config, diagnostic_sink=diagnostic_sink, withhold_values=withhold_values
+        )
     else:
         raise ValueError(f"Unknown output format: {fmt}")

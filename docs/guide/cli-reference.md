@@ -64,7 +64,7 @@ junoscfg convert [OPTIONS] [FILE]
 | `--anonymize-ips-in-strings` | flag | — | no | Also replace IPs embedded in larger strings (URLs, host+IP combos). |
 | `--anonymize-as-numbers-in-strings` | flag | — | no | Also replace target AS numbers embedded in larger strings (group names, communities). |
 | `--anonymize-config` | `PATH` | — | no | YAML config file with all anonymization options. |
-| `--anonymize-log-level` | `[quiet\|normal\|debug]` | `normal` | no | Anonymization logging verbosity. |
+| `--anonymize-log-level` | `[quiet\|normal\|debug]` | `normal` | no | Anonymization logging verbosity; debug prints each original value beside its replacement to stderr. |
 | `-?`<br>`-h`<br>`--help` | flag | — | no | Show this message and exit. |
 
 ### Arguments: `junoscfg convert`

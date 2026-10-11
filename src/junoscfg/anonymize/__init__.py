@@ -12,6 +12,7 @@ Public API::
 
 from __future__ import annotations
 
+import copy
 import secrets
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -82,7 +83,11 @@ def anonymize(
         diagnostic_sink: Optional receiver for debug diagnostics.
 
     Returns:
-        An :class:`AnonymizeResult` with the modified IR and the revert mapping.
+        An :class:`AnonymizeResult` with the anonymized copy of *ir* and the
+        revert mapping. *ir* itself is never changed: it is copied once on
+        entry (`apply_revert` and `walk`, by contrast, rewrite the IR they are
+        given, as they document). A generated salt is written back into
+        *config*, so a reused config keeps one salt.
 
     Raises:
         ValueError: If ``config.networks`` contains ``"auto"`` without
@@ -100,6 +105,9 @@ def anonymize(
     if config.salt is None:
         config.salt = secrets.token_hex(16)
 
+    # The caller's IR is the caller's: a rewrite in place left it holding the
+    # pseudonyms, its originals lost (NEW-R3).
+    ir = copy.deepcopy(ir)
     rules = build_rules(config)
     if not rules:
         return AnonymizeResult(ir=ir)

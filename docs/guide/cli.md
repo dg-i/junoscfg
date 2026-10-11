@@ -141,6 +141,15 @@ never its text. Stop on that warning, or add `--strict`, when no such word may b
 published. Groups named `re0`, `re1`, `node0`, `node1`, `member<N>` or a `$` variable
 keep their names. See [validation](validation.md).
 
+No message of an anonymized run quotes the configuration, original or replaced: a
+field-validation message keeps its path, reason and expected value and withholds the
+value; a refusal to read the input says it could not be read, with its line where the
+parser gives one; `-v` prints each error's line without its text or path; a failure no
+handler expects prints only its class, with no traceback. Exit codes are those of the
+same run without anonymization; run without `--anonymize-*` to see the full messages.
+Only `--anonymize-log-level debug` prints originals: each one beside its replacement,
+on stderr, by design.
+
 #### Examples — Anonymization
 
 ```bash
@@ -400,7 +409,7 @@ anonymize:
   as_numbers_in_strings: true
 
   # Logging
-  log_level: normal  # quiet, normal, or debug
+  log_level: normal  # quiet, normal, or debug (debug prints each original beside its replacement)
 ```
 
 ## Schema Commands

@@ -14,8 +14,16 @@ from junoscfg.display import ConfigStore, format_value, load_schema_tree, univer
 class StructuredWalkOutput(WalkOutput):
     """Pushes hierarchy paths into a ConfigStore for curly-brace rendering."""
 
-    def __init__(self, diagnostic_sink: Callable[[str], None] | None = None) -> None:
-        """Start with an empty store and no deferred operations."""
+    def __init__(
+        self,
+        diagnostic_sink: Callable[[str], None] | None = None,
+        *,
+        withhold_values: bool = False,
+    ) -> None:
+        """Start with an empty store and no deferred operations.
+
+        With *withhold_values* a note names no path (an anonymized conversion).
+        """
         self.config = ConfigStore()
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
@@ -23,6 +31,7 @@ class StructuredWalkOutput(WalkOutput):
         self._merged: list[str] = []
         self._blocks: list[str] = []
         self._diagnostic_sink = diagnostic_sink
+        self._withhold = withhold_values
 
     def emit(self, hierarchy: list[str]) -> None:
         """Push *hierarchy* into the store as one path."""
@@ -94,9 +103,14 @@ class StructuredWalkOutput(WalkOutput):
             elif op == "protect":
                 self.config.mark_protected(path_str)
         if dropped_tags and self._diagnostic_sink is not None:
+            where = (
+                "their paths are withheld: the conversion anonymizes"
+                if self._withhold
+                else "; ".join(dropped_tags)
+            )
             self._diagnostic_sink(
                 f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
-                f"tags ({'; '.join(dropped_tags)}): it is written merged with each child"
+                f"tags ({where}): it is written merged with each child"
             )
         if self._dropped_kept_tags and self._diagnostic_sink is not None:
             self._diagnostic_sink(
@@ -110,14 +124,19 @@ class StructuredWalkOutput(WalkOutput):
             )
 
 
-def dict_to_structured(config: Any, *, diagnostic_sink: Callable[[str], None] | None = None) -> str:
+def dict_to_structured(
+    config: Any,
+    *,
+    diagnostic_sink: Callable[[str], None] | None = None,
+    withhold_values: bool = False,
+) -> str:
     """Render the IR dict as structured (curly-brace) configuration."""
     if not isinstance(config, dict):
         # The legacy rendered-text filter produced no structured statement
         # when a relative path selected a leaf rather than a hierarchy.
         return ""
 
-    output = StructuredWalkOutput(diagnostic_sink)
+    output = StructuredWalkOutput(diagnostic_sink, withhold_values=withhold_values)
     schema = load_schema_tree()
     walker = DictWalker(output, schema)
 

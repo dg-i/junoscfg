@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
+from typing import TYPE_CHECKING, Any
 
 import click
 import yaml
 
 from junoscfg import Format, __version__
 from junoscfg.audit.render import STYLE_CHOICES as _AUDIT_STYLE_CHOICES
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 _FORMAT_CHOICES = [f.value for f in Format] + ["conf"]
 
@@ -184,7 +189,8 @@ def main(ctx: click.Context) -> None:
     "--anonymize-log-level",
     type=click.Choice(["quiet", "normal", "debug"], case_sensitive=False),
     default="normal",
-    help="Anonymization logging verbosity.",
+    help="Anonymization logging verbosity; debug prints each original value beside its "
+    "replacement to stderr.",
 )
 @click.argument("file", required=False, type=click.Path(exists=True))
 def convert(
@@ -281,8 +287,6 @@ def convert(
     # long-lived `ansible-playbook`, so an override with no matching reset
     # leaks one invocation's schema into every later one.
     if artifacts:
-        import contextlib
-
         from junoscfg.display import artifacts_dir as _artifacts_dir
 
         _stack = contextlib.ExitStack()
@@ -344,8 +348,41 @@ def convert(
     # Validate if requested. Validation reads the source before anonymization,
     # so what it prints must not show the source's values when the run
     # anonymizes.
-    if validate or validate_only:
-        anonymizing = bool(anon_config is not None and anon_config.any_enabled)
+    anonymizing = bool(anon_config is not None and anon_config.any_enabled)
+    with _failure_withheld(anonymizing):
+        _validate_and_convert(
+            source,
+            import_format,
+            export_format,
+            artifacts=artifacts,
+            validate=validate or validate_only,
+            validate_only=validate_only,
+            field_validate=not no_field_validate,
+            field_strict=field_strict,
+            filter_path=filter_path,
+            relative=relative,
+            anon_config=anon_config,
+            anonymizing=anonymizing,
+        )
+
+
+def _validate_and_convert(
+    source: str,
+    import_format: str,
+    export_format: str | None,
+    *,
+    artifacts: str | None,
+    validate: bool,
+    validate_only: bool,
+    field_validate: bool,
+    field_strict: bool,
+    filter_path: str | None,
+    relative: bool,
+    anon_config: Any,
+    anonymizing: bool,
+) -> None:
+    """Validate *source* if asked, then convert it and print the result."""
+    if validate:
         _run_validation(source, import_format, artifacts, anonymizing=anonymizing)
         if validate_only:
             return
@@ -359,8 +396,6 @@ def convert(
 
     from_fmt = Format(import_format)
     to_fmt = Format(export_format)
-
-    field_validate = not no_field_validate
 
     try:
         result = convert_config_result(
@@ -934,13 +969,36 @@ def _read_input(file: str | None) -> str:
     return sys.stdin.read()
 
 
+@contextlib.contextmanager
+def _failure_withheld(anonymizing: bool) -> Iterator[None]:
+    """In an anonymized run, an exception no handler expects prints its class only.
+
+    Its message and its chain may hold the configuration (a pass-through
+    collision named its original address; a crash's traceback quotes what it
+    was handed), so the run says only that it failed, and exits 1. A run that
+    does not anonymize keeps its traceback.
+    """
+    try:
+        yield
+    except Exception as error:
+        if not anonymizing:
+            raise
+        click.echo(
+            f"Error: the conversion failed ({type(error).__name__}); details withheld: "
+            "the run anonymizes",
+            err=True,
+        )
+        sys.exit(1)
+
+
 def _run_validation(
     source: str, input_format: str | None, artifacts_dir: str | None, *, anonymizing: bool = False
 ) -> None:
     """Run validation and report results.
 
     When the run anonymizes, a warning about a path of the input is printed
-    without that path, as the conversion's own warnings are.
+    without that path, as the conversion's own warnings are, and each error
+    by its line alone: its text and path quote the input.
     """
     from junoscfg import validate_config
     from junoscfg.validate import SchemaLoadError
@@ -963,6 +1021,13 @@ def _run_validation(
         click.echo(f"Validation: FAILED ({len(result.errors)} error(s))", err=True)
         for err in result.errors[:10]:
             line_info = f" (line {err.line})" if err.line else ""
+            if anonymizing:
+                click.echo(
+                    f"  - an error{line_info}: its text and path are withheld: the run "
+                    "anonymizes (validate without --anonymize-* to see them)",
+                    err=True,
+                )
+                continue
             path_info = f" at {err.path}" if err.path else ""
             click.echo(f"  - {err.message}{line_info}{path_info}", err=True)
         if len(result.errors) > 10:
