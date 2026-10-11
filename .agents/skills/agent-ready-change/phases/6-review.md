@@ -15,20 +15,19 @@ or docs change; economy omits it below the floor. Record an omission without
 presenting Builder self-review as independent.
 
 The Reviewer is fresh and isolated from Builder reasoning and write access. It
-reads the freeze, delta, touched contracts, challenge evidence, tests, and diff,
-in that order. Its model is at least as capable as the Builder. Provider-specific
-mechanisms are implementation details. If the runtime cannot supply the required
-isolation or capability, record a runtime/operator correction and stop.
+reads the freeze, delta, contracts, challenge evidence, tests, and diff in order.
+It is at least as capable as the Builder. Provider-specific mechanisms are
+implementation details; if isolation is unavailable, record a runtime/operator correction.
 
-Coherent tasks in one change receive one review after implementation. Independent
-changes receive a separate verdict and `review.md` each, even when acceptance is batched
-or one fresh Reviewer processes a bounded window. An integration review only
-supplements those verdicts; use `batches.md` for the boundary.
+Coherent tasks receive one review after implementation. Independent changes
+receive a separate verdict and `review.md` each, even when acceptance is batched
+or one Reviewer handles a bounded window. Integration review only supplements.
 
-An accepted correction runs its regression and `agent-ready check --set fast`,
-then returns to the same isolated Reviewer. Rerun the full set only if runtime
-code, tests, generated artifacts, or configuration changed since its checkpoint;
-it replaces standalone pre-commit and full tests.
+A correction touching only change records needs no confirmation round. Every
+other accepted correction runs its regression and `agent-ready check --set
+fast`, then returns to the same isolated Reviewer. Rerun the full set only if
+runtime code, tests, or generated artifacts changed; otherwise use the fast
+set. Never rerun a declared expensive tier for a review-fix round.
 
 ## Findings
 
@@ -53,10 +52,12 @@ it replaces standalone pre-commit and full tests.
 Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`,
 `Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
 Reviewer edits no code, spec, or test; agents cannot approve their own proposals.
-The owner decides; preserve existing entries, and proceed only with safe reversible
-work. Record each justified slice read in the Field/Value table in `metrics.md`:
+The owner decides; preserve existing entries and do only safe reversible work.
+Record justified slice reads in the Field/Value table in `metrics.md`:
 `| Context expansion: <path> | <reason> |`. The archive metrics writer preserves
 these rows. Apply phase 2's triggers, check the freeze, tick review, leave metrics open.
+Before committing changed records, run `agent-ready fields` and `agent-ready
+caps`; correct their diagnostics before the commit and phase hand-off.
 
 Before concluding, answer these prompts:
 

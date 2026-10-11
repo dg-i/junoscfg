@@ -36,17 +36,20 @@ Four types carry a body of their own, read beside the phase from intent on:
 
 ## Lanes
 
-The change's `.openspec.yaml` declares `type`, zone, and the owner-confirmed
-`assurance`; the lane and assurance policy follow.
+The change's `.openspec.yaml` declares `type`, zone, and the standing owner
+`assurance` selected in phase 0; the lane and assurance policy follow.
 The fix lane, type `fix`, is a ten-line proposal, one regression test, and
-code: two files, thirty lines, no delta, and `skip_specs: true`, in any zone.
+code: by default two substantive files and thirty changed lines, no delta, and
+`skip_specs: true`, in any zone. `[tool.template.fix-lane]` configures the two
+caps. Version-only lines, `uv.lock`, and Towncrier fragments do not count.
 After phase 0, its complete route is:
 
 1. Re-read the committed preflight and run `git status --short`; do not begin
    with governed changes outside `HEAD`.
 2. Write the proposal created by phase 0, at most ten lines, and set `type:
    fix`, the zone, `assurance`, and `skip_specs: true` in `.openspec.yaml`.
-   Commit that approved intent before code or tests. The common OpenSpec graph
+   Run `agent-ready fields` and `agent-ready caps`, then commit that approved
+   intent before code or tests. The common OpenSpec graph
    is type-blind: its other status entries are not fix-lane obligations.
 3. Write the one regression test and watch it fail, implement the repair, and
    commit the test and code. `uv run --locked --group dev agent-ready lane`

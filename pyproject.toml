@@ -167,7 +167,7 @@ dev = [
     "deptry>=0.25.1",
     # Development tooling only. It needs 3.11+, and must not drag the
     # published package's floor up with it.
-    "agent-ready-checks>=0.15.10; python_version >= '3.11'",
+    "agent-ready-checks>=0.15.11; python_version >= '3.11'",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -487,7 +487,7 @@ reason = "it instruments future events but does not parse existing Codex exec an
 date = "2026-10-06"
 
 [tool.uv.sources]
-agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.10" }
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", tag = "checks-v0.15.11" }
 
 [tool.template.zones.kernel]
 paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
@@ -588,3 +588,30 @@ purpose = "find configuration objects that are defined but never referenced"
 # is the commit the last sweep read, absent until the first sweep sets it.
 [tool.template.garden]
 questions = []
+
+# The fix lane counts substantive paths and changed lines outside its change
+# folder. Version-only lines in pyproject.toml or package __init__.py files,
+# uv.lock, and Towncrier fragments are release bookkeeping and do not count.
+[tool.template.fix-lane]
+max-files = 2
+max-lines = 30
+
+# Independent changes may use isolated worktrees up to this machine-wide
+# Builder limit. A path matched by serialized-paths admits only one active
+# Builder. Expensive tiers are inline tables shaped
+# { name = "corpus", paths = ["corpus/**"], command = ["uv", "run", "..."] }.
+[tool.template.batch]
+max-builders = 3
+serialized-paths = []
+expensive-tiers = []
+
+# Standing owner preference. Phase 0 selects the strongest matching value from
+# default, zones[<zone>], declared-break, and trust-boundary, copies it to the
+# change's assurance field, and cites record. The mandatory high-risk floor is
+# independent and cannot be lowered here.
+[tool.template.assurance]
+record = "pyproject.toml#tool.template.assurance"
+default = "economy"
+declared-break = "economy"
+trust-boundary = "economy"
+zones = {}

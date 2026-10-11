@@ -48,6 +48,9 @@ confirmed into the approved list or removed at the beta transition; in beta
 and release it is this type with this design, and the approved entry carries
 purpose, minimum version, and licence.
 
+Before committing changed records, run `agent-ready fields` and `agent-ready
+caps`; correct their diagnostics before the commit and phase hand-off.
+
 ## Stage
 
 Alpha: one choice, no option, no abstraction with one implementation. The

@@ -41,7 +41,9 @@ acceptance tests, or verdicts; such a need returns to the Builder or Reviewer.
    regenerations, stalls, and owner interventions. Missing or unsupported
    evidence remains `UNMEASURED`; no agent estimates it.
 3. Review both metrics files, tick the metrics lifecycle task, run `uv run
-   --locked --group dev agent-ready lane`, and commit the evidence files and
+   --locked --group dev agent-ready fields`, `uv run --locked --group dev
+   agent-ready caps`, and `uv run --locked --group dev agent-ready lane`, then
+   commit the evidence files and
    task update. Then merge. The capture head remains
    the code commit, even if the evidence commit or squash merge has another ID.
    A change whose point is that something works better now records the

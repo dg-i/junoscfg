@@ -1,19 +1,19 @@
 # The template owns checks-tag and moves the lockfile to its tested release.
 # The application owns optional [local-policy.<id>] tables below it. Keep
 # those owner decisions during updates; agent-ready fields checks their expiry.
-checks-tag = "checks-v0.15.10"
+checks-tag = "checks-v0.15.11"
 
 # The commit the tag pointed at when this repository last moved to it, written
 # by `agent-ready init` and `agent-ready update`: a tag can move, and `uvx`
 # caches one build per ref, so a tool invocation names this commit.
-checks-commit = "ea017f6ffb076a3b7c26b4757d2d92dad118d5ab"
+checks-commit = "1dfd241339d93254c69403d729425a6677e95844"
 
 # The refresh's hook recommendation, decided: this repository's hook set
 # stands. What the seed's hooks would add is already covered elsewhere. The id
 # is bound to both hook files' bytes; it moved once when --locked was added to
 # this repository's hooks at the template's own request, so the same decision
 # is re-keyed here rather than re-taken.
-[local-policy.hooks-979f92e38d3e8f8dae04f566c54116700c2c31be1a488f3aed74efbb8a8350c9]
+[local-policy.hooks-1e58b646f255c311aa3c581e8ea22408425de1ceb18419a8e9b4778a899ff796]
 scope = "refresh.pre-commit.integration.v1"
 reason = "The local hooks (ruff-format, ruff-check, deptry, caps, markdownlint) stand: mypy runs in CI as reported-not-enforced under docs/decisions/2026-10-06-adopt-mypy-strict.md, `skills` runs inside `agent-ready check`, and `caps` is the document-budget check the seed's doc-budgets hook provides."
 upstream = "local-only: the hook set differs by design, per the decision record named in reason"

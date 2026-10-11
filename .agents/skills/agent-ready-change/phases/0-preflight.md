@@ -30,10 +30,15 @@ does not start while one of those questions is open.
 5. Ask the owner once, in one numbered batch, only for material unresolved
    decisions. Include evidence, effect, and the safe default for each. Continue
    automatically when there are none; do not relay phase transitions.
-6. Have the owner confirm `economy`, `balanced`, or `maximum-assurance` and put
-   that exact value in `.openspec.yaml` as `assurance`. The preference can add
-   assurance but cannot waive a mandatory risk control or an immutable gate.
-7. Commit the completed preflight before phase 1. The phase-1 fields gate reads
+6. Read the standing preference from `[tool.template.assurance]`: select the
+   strongest value matching `default`, `zones[<zone>]`, declared-break status,
+   and trust-boundary status. Copy it to `.openspec.yaml` as `assurance` and
+   cite the table's `record` in `instruction-integrity.md`. Ask only when the
+   standing record is absent or no rule matches. The preference can add
+   assurance but cannot waive the unchanged high-risk floor or an immutable gate.
+7. Before committing changed records, run `agent-ready fields` and
+   `agent-ready caps`; correct their diagnostics in the same working round.
+   Commit the completed preflight before phase 1. The phase-1 fields gate reads
    it together with the proposal; do not weaken that gate to make an unfinished
    proposal pass early.
 

@@ -8,8 +8,8 @@ below.
 ## Outcome
 
 Every test and implementation task ticked, review and metrics still open, the
-phase-4 tests and full checkpoint green, and no unrequested diff. The same
-continuous Builder owns specification refinement, implementation, and fixes.
+phase-4 tests and full checkpoint green, and no unrequested diff. The continuous
+Builder owns specification refinement, implementation, and fixes.
 
 ## Process
 
@@ -18,10 +18,9 @@ continuous Builder owns specification refinement, implementation, and fixes.
    then write `tasks.md`: tests first, implementation second, and the shipped
    review and metrics lifecycle tasks last. An interrupted session resumes
    here; phase 5 never ticks the lifecycle tasks.
-2. Before touching a module, read its contract and its block in the slice.
-   Read a named symbol alone with `uv run --locked --group dev agent-ready
-   codemap show <pkg.mod.symbol>`,
-   which prints the span the index records, rather than the file around it.
+2. Before touching a module, read its contract and slice block. Read a named
+   symbol with `uv run --locked --group dev agent-ready codemap show
+   <pkg.mod.symbol>`, which prints the recorded span rather than its whole file.
 3. Prefer an existing helper over a new one. The slice names them. A
    layering block is a move to the first answerer's layer or one below,
    never a copy, and the importing module's contract gains a precedent
@@ -36,14 +35,17 @@ continuous Builder owns specification refinement, implementation, and fixes.
    adapter, every pull-request gate, the lane gate, and strict OpenSpec
    validation. Do not run standalone pre-commit or the full application suite
    beside it on an unchanged tree. Record the command and checked `HEAD` in
-   `tasks.md`, then commit that evidence-only edit. The checkpoint remains valid
+   `tasks.md`. The explicit default is one full check before review and none on
+   an unchanged tree. Run `agent-ready fields` and `agent-ready caps` before
+   committing that record. The checkpoint remains valid
    across review, metrics, and evidence-only edits; runtime code, tests,
    generated artifacts, or their configuration invalidate it.
    For several coherent tasks, run targeted tests as each lands and take one
    full checkpoint after the last. Independent changes never share a checkpoint.
-   Expensive corpus checks reuse a tool cache or committed baseline only when
-   corpus, configuration, tool version, and relevant commit match; record cache
-   reads and writes. A cache accelerates but never replaces the required gate.
+   A declared expensive tier runs once when the diff touches its paths, or once
+   at a batch boundary for independent changes sharing the exact combined input;
+   never per review-fix round. Reuse a cache only when corpus, configuration,
+   tool version, and relevant commit match. A cache never replaces a gate.
 5. Tick each test and implementation task as it lands. `npx --yes
    @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
    graph; `tasks.md` is the lifecycle authority.
@@ -59,16 +61,13 @@ continuous Builder owns specification refinement, implementation, and fixes.
 
 ## Classify failures
 
-Classify a failure before retrying. Execution/tooling failures such as a wrong
-invocation, collection error, or missing environment dependency permit one
-evidence-backed repair and rerun. If still blocked, report the cause and
-evidence; tooling failures are not semantic evidence against a spec. A semantic
-failure is an executed assertion contradicting required behavior: diagnose and
-fix once. If the same semantic failure repeats, challenge approved criteria
-only when evidence implicates them; otherwise report the implementation blocker.
-Do not make a blind third attempt or weaken the oracle. This is skill guidance,
-not a runtime-enforced retry counter.
-Record retries, regenerations, stalls, and durations in workflow telemetry; zero requires an observed event source.
+Classify a failure before retrying. An execution, collection, or environment
+failure permits one evidence-backed repair and rerun; if blocked, report it,
+because tooling is not semantic evidence against a spec. Diagnose and fix an
+executed assertion failure once. If it repeats, challenge approved criteria only
+when evidence implicates them; otherwise report the implementation blocker. Do
+not make a blind third attempt or weaken the oracle. Record retries,
+regenerations, stalls, and durations; zero requires an observed event source.
 
 ## Specification challenges
 

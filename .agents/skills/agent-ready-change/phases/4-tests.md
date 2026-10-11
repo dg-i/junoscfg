@@ -41,6 +41,8 @@ Test/Challenge evidence is separate from the Builder's tests.
    the baseline, subject to the formal challenge path; never silently change
    approved intent or weaken a kept requirement's assertion. After approval,
    progress automatically to implementation without an owner relay.
+7. Before committing changed records, run `agent-ready fields` and `agent-ready
+   caps`; correct their diagnostics before the commit and phase hand-off.
 
 ## Specification challenges
 

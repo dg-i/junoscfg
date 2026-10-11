@@ -44,7 +44,9 @@ paths resolve; terminology and placement match their homes; the rendered result
 serves the reader's task. Use the project's builder or preview where available.
 Run the normal full checkpoint: it retains repository and document gates but
 skips the application test adapter. Tick verification and change tasks; leave
-review and metrics open.
+review and metrics open. This is the one pre-review full check. Run declared
+expensive tiers once when their paths match, never per review-fix round. Run
+`agent-ready fields` and `agent-ready caps` before committing changed records.
 
 ## Phase 6 — Review
 
@@ -55,7 +57,10 @@ examples that do not work, broken references, missing steps, terminology drift,
 wrong placement, duplicated facts, and failure of the reader's task. Re-run
 mechanical QA and independently sample claims against sources. Record what
 could not be checked. Edit no product document. When review is omitted, record
-the policy evidence. Tick the review task.
+the policy evidence. A record-only correction needs no confirmation; any other
+fix returns to the same Reviewer after the fast set, with a full rerun only for
+changed runtime code, tests, or generated artifacts. Tick the review task and
+run `agent-ready fields` and `agent-ready caps` before committing its records.
 
 ## Phase 7 — Archive
 

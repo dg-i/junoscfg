@@ -41,9 +41,10 @@ here is cheaper than rounds later.
    <slug>` and create `metrics.md` from its table with every unavailable value
    `UNMEASURED`. This is the evidence ledger later phases append to; phase 7
    captures the final values and adjacent JSON.
-8. `npx --yes @fission-ai/openspec@1.13.0 validate <slug>` passes, and `uv run
-   --locked --group dev agent-ready fields` reports no unanswered field in
-   `.openspec.yaml`. Commit the approved proposal, metadata, and evidence ledger
+8. `npx --yes @fission-ai/openspec@1.13.0 validate <slug>` passes. Before
+   committing the changed records, run `uv run --locked --group dev agent-ready
+   fields` and `uv run --locked --group dev agent-ready caps`; correct their
+   diagnostics in the same working round. Commit the proposal, metadata, and ledger
    before phase 2 so every later gate reads the intended branch snapshot.
    Record phase 2 as the resume point; the Builder progresses automatically.
 

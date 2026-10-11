@@ -15,10 +15,9 @@ when all of these hold:
   `codemap.md` for code or `docs-plan.md` for documentation; and
 - one acceptance story can name every task without an unrelated conjunction.
 
-One coherent standard or docs change may name several capabilities and several
-verification and implementation tasks. It still has one branch, pull request,
-change folder, pre-review full checkpoint, risk-required phase-6 verdict, metrics pair, and
-archive.
+One coherent standard or docs change may name several capabilities and tasks.
+It still has one branch, pull request, change folder, full checkpoint,
+risk-required phase-6 verdict, metrics pair, and archive.
 
 The fix lane has one failure mode, one regression test, and its existing file
 and line caps. Several repair steps for that failure may share the fix. Several
@@ -31,22 +30,53 @@ If any condition fails, make separate changes. Never put several live change
 folders in one pull-request diff. The batch may share a plan, dependency order,
 question round, and owner review window. Every independent standard or docs
 change keeps its own approved artifacts, targeted checks, immutable checkpoint,
-`review.md` or recorded review omission, metrics, and merge decision. Every independent fix keeps its own
+review record, metrics, and merge decision. Every independent fix keeps its own
 regression test, full check, zone-selected review, and merge decision.
 
 ## Execute
 
-Order independent changes by dependency. Merge a predecessor before
-implementation starts on a change that needs its code, then branch the dependent
-change from the updated target. Independent changes with no dependency may run
-in parallel on separate branches or worktrees. Stop an affected change for a
-challenge or repeated failure and continue only changes that do not depend on
-it.
+The **Orchestrator** plans the batch, dependency order, conflicts, serialized
+paths, and role requirements. It starts Builders in isolated worktrees and
+starts required Test/Challenge and Reviewer roles with fresh isolated context
+and the capability the assurance policy requires. It relays their recorded
+reports, rules within owner instructions, and alone merges to the default
+branch. It never substitutes its own reasoning for an independent verdict.
 
-Inside one coherent change, run targeted tests as each task lands and run the
-full pre-review checkpoint once, after the last implementation task. Do not run
-one full checkpoint per checklist item. Across independent changes, do not let a
-later green head stand in for an earlier change's checkpoint.
+A Builder owns one change branch and worktree. It reports **STOP-T** after its
+phase-4 material when independent Test/Challenge work is required, then waits
+for the Orchestrator's ruling. It reports **STOP-R** after phase 5 and its one
+full checkpoint, then waits for review. Every stop names the change folder,
+base and head SHAs, zone, risk evidence, and roles required. A challenge or
+repeated failure stops its change while unrelated Builders may continue.
+
+`[tool.template.batch].max-builders` is the machine-wide limit, default 3.
+Run at most that many Builders, each on its own branch and worktree. The main
+checkout is only for merges, archive commits, and tags. A worktree runs its
+full checkpoint at most once before review; no more than `max-builders` full
+checks run across the machine at once. Targeted and fast checks may run as the
+phase rules require.
+
+Changes matching any `[tool.template.batch].serialized-paths` glob run one at
+a time; use it for repository-declared regenerated artifacts. Changes that edit
+the same file never overlap. A dependent change starts only after its
+predecessor merges and its branch is created from the updated default branch.
+
+Inside one coherent change, run targeted tests as each task lands and take one
+full checkpoint after the last implementation task. Independent changes never
+share checkpoint evidence. A repository-declared expensive tier in
+`expensive-tiers` runs once for a change whose diff touches its `paths`, or once
+at the batch boundary when independent changes can share the exact combined
+input. Never rerun an expensive tier for a review-fix round.
+
+## Merge a parallel branch
+
+The Orchestrator rebases the branch onto the current default branch, then reruns
+affected tests and the fast set. If the rebase brought runtime changes into the
+branch, rerun the full checkpoint. Resolve generated-artifact conflicts only by
+regenerating from their sources. Choose the version from the current default
+branch at merge time, fast-forward the branch, perform the archive commit and
+tag, and remove the worktree. A later green branch never stands in for this
+change's evidence.
 
 ## Review and approval
 

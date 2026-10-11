@@ -66,6 +66,9 @@ Regenerate only the artifacts the delta invalidates, once per distinct delta.
 If the same delta triggers regeneration again, diagnose the unstable source
 instead of looping.
 
+Before committing changed records, run `agent-ready fields` and `agent-ready
+caps`; correct their diagnostics before the commit and phase hand-off.
+
 ## Stage
 
 In alpha, question an add-only feature or an unrequested review addition;

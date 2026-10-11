@@ -15,7 +15,8 @@
 ## Assurance
 
 <!-- Also set the exact value as `assurance` in .openspec.yaml. -->
-- Owner-confirmed preference: <economy, balanced, or maximum-assurance>
+- Standing preference: <economy, balanced, or maximum-assurance>
+- Standing record: <[tool.template.assurance] record citation and matched keys>
 - Mandatory risk floor: <controls that the preference cannot waive>
 
 ## Owner decision batch

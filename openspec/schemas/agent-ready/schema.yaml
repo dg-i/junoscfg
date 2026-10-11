@@ -14,8 +14,10 @@ artifacts:
       Complete before proposal work. Inventory the complete effective
       instruction stack, classify every conflict using the six workflow
       classes, report the effect of likely-defective higher-priority
-      instructions while obeying them, and record the owner's economy,
-      balanced, or maximum-assurance preference in .openspec.yaml.
+      instructions while obeying them. Select the strongest matching standing
+      preference from [tool.template.assurance], cite its record and matched
+      keys, and copy its economy, balanced, or maximum-assurance value to
+      .openspec.yaml. Ask only when no standing rule matches.
     requires: []
 
   - id: proposal
@@ -28,7 +30,7 @@ artifacts:
       <domain>/<capability>, the domain being a key of [tool.template.domains].
       The fields the lane gate reads go in .openspec.yaml beside this file:
       `type`, `zone`, `domains`, `removes` on the standard lane, and the
-      owner-confirmed `assurance` on every lane. `removes` may read
+      standing owner `assurance` selected in phase 0 on every lane. `removes` may read
       "none, because ...", and in beta and release `declared-break`, one entry
       per named surface the change touches with its `why` and `migration`,
       shaped `declared-break: {api: {why: ..., migration: ...}}`. A
