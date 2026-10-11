@@ -2,7 +2,7 @@
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
 | distinct files read per phase, by artefact type | UNMEASURED |
-| agent-review findings by severity, and how many survived human review | UNMEASURED |
+| agent-review findings by severity, and how many survived human review | review omitted under economy (review.md) |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
 | lines added and removed | UNMEASURED |
@@ -19,7 +19,7 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Batch id | process-rules-2026-10-11 |
 | Batch review mode | per-change |
-| Batch check executions | UNMEASURED |
+| Batch check executions | full checkpoint 1 (187 s) |
 | Batch integration-only findings | UNMEASURED |
 | Batch escaped regressions | UNMEASURED |
 
