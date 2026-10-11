@@ -1,3 +1,25 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# The highest-tier zone this change edits is red: anonymize (walker.py, revert.py, __init__.py).
+# Also yellow: conversion (convert/__init__.py, the warning) and surface (src/junoscfg/__init__.py
+# for __version__ only).
+zone: anonymize
+domains: [anonymization, conversion]
+removes: "the test filters that dropped every mapping entry whose original starts with `<` in `tests/unit/anonymize/test_integration.py` (`test_no_value_anonymized_before_escapes`, `test_name_keyed_output_is_unchanged`): they hid this defect; no product behaviour, door or name is removed"
 assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      Not a break. src/junoscfg/__init__.py changes only `__version__` (0.20.0
+      to 0.20.1). Below the surface, junoscfg.anonymize.AnonymizeResult gains a
+      trailing field `patterns` with a default, so every existing construction
+      and read keeps working; an anonymized wildcard name such as `<*>` no longer
+      becomes a group name that selects nothing, which was wrong configuration.
+      Patch, as AGENTS.md rules for everything that is not a break on a named
+      surface.
+    migration: >-
+      None needed. A mapping dumped by 0.20.0 still reverts the output 0.20.0
+      wrote. To stop on a wildcard name the anonymization cannot keep selecting
+      the same names, read `AnonymizeResult.patterns` or the `anonymize:`
+      warning.
