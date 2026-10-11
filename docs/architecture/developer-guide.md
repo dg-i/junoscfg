@@ -719,7 +719,7 @@ single CLI run still compiles it once.
 |---|---|---|
 | **Regen** | add `--regen-schema` | the one dump of the shipped release under `private_test_data/schemas/`, or the dump `JUNOSCFG_XSD_SOURCE` names; with none, two, or an unusable override the run stops with exit code 7. It rebuilds the artifacts before collection, then runs the suite |
 | **Schema** | `uv run pytest --schema tests/corpus/test_schema_data.py -q` | each NETCONF dump under `private_test_data/schemas/`; about ten minutes per dump |
-| **jvd** | `uv run pytest --jvd tests/corpus/ -q` | Juniper's jvd corpus, cloned into `private_test_data/jvd/`, or `JUNOSCFG_JVD_PATH` naming a clone |
+| **jvd** | `uv run pytest --jvd tests/corpus/ -q` | Juniper's jvd corpus, cloned into `private_test_data/jvd/`, or `JUNOSCFG_JVD_PATH` naming a clone. Retired, not run by any change; its code goes in a change of its own ([decision](../decisions/2026-10-11-retire-jvd-from-per-change-verification.md)) |
 
 `github.com/Juniper/jvd` is Juniper's own Validated Designs: roughly 1,500
 configurations and five million lines across QFX, ACX, MX, PTX and SRX, the
@@ -738,14 +738,18 @@ and the gitignored `private_test_data/captures/`.
 
 ### Pre-review evidence by the paths a change touches
 
-The full set runs neither the schema nor the jvd tier, so the paths a change
-touches select what runs beside the one full checkpoint. A path in no row takes
-its selection and the full checkpoint alone, and the change record says so.
+The full set does not run the schema tier, so the paths a change touches
+select what runs beside the one full checkpoint. Every change touching the
+schema, the grammar, a reader, a writer or the anonymizer also runs the
+device-evidence checks and the before/after comparison in
+[run a batch of changes](../how-to/run-a-batch-of-changes.md#check-the-change-against-device-evidence);
+the rows add what is particular to the paths. A path in no row takes its
+selection and the full checkpoint alone, and the change record says so.
 
 | Paths touched | Once before review, beside the full checkpoint | The change record carries |
 |---|---|---|
 | XSD parser, schema model, fixes, artifact builder or generators: `src/junoscfg/validate/xsd_*.py`, `schema_node.py`, `artifact_builder.py`, `schema_generator.py`, `grammar_generator.py` | `uv run pytest tests/ -q --regen-schema` once the generator settles (regenerate in a throwaway `git worktree` while it still moves); `uv run pytest --schema tests/corpus/test_schema_data.py -q`; a second `--regen-schema` on the committed tree leaves `git diff --stat -- src/junoscfg/validate/data` empty | the regeneration count, the schema-tier and device-truth results |
-| Set reader, grammar or field validator: `src/junoscfg/convert/input/set_input.py`, `src/junoscfg/input.py`, the grammar rules in `grammar_generator.py`, the shipped grammar and `set_validator.py`, `src/junoscfg/convert/field_validator.py` | `uv run pytest --jvd tests/corpus/test_jvd_corpus.py -q`, which includes `TestFieldWarningBudget`, where a change that floods valid configuration with field warnings fails; the comparison against a frozen master baseline when the change carries one: no file gains unplaced statements unexplained | the warning counts, every set-output difference explained |
+| Set reader, grammar or field validator: `src/junoscfg/convert/input/set_input.py`, `src/junoscfg/input.py`, the grammar rules in `grammar_generator.py`, the shipped grammar and `set_validator.py`, `src/junoscfg/convert/field_validator.py` | the device-evidence checks and the before/after comparison: no capture rendering gains a diagnostic or an unplaced statement unexplained; a lexing change adds the synthetic adversarial rows the how-to lists | every changed output line explained |
 | Cross-format IR, a reader or a writer: `src/junoscfg/convert/input/`, `convert/output/`, `display/to_yaml.py`, `display/config_store.py` | nothing beyond the selection: `tests/contract/` checks every shape through every reader and writer, and `tests/corpus/test_device_truth.py` runs in the full set | which shapes the change added |
 | Anonymization, the red zone: `src/junoscfg/anonymize/` | nothing beyond the selection; read `tests/contract/test_every_rule.py`'s result for the rule touched (its replacements, determinism and revert), plus the fresh-agent review rule in [Solo review](../how-to/solo-review.md) | the contract result for that rule |
 | Entry lookup or a schema-wide walk: `display/constants.py` (`entry_keys`), `display/config_store.py`, `convert/output/dict_walker.py`, `audit/walker.py`, `anonymize/walker.py` | no committed timing guard covers these (`tests/corpus/test_shipped_artifacts.py` times only the grammar): time the largest configuration you hold under `private_test_data/` and a synthetic list of tens of thousands of entries at the base and the head on one machine, and explain the difference. A record, never a gate: `ARCHITECTURE.md` section 1 ranks latency last | both timings, the input's size, the explanation |

@@ -46,9 +46,11 @@ the developer guide's rows name:
 
 The reviewing agent is fresh, did not implement, and its report carries:
 
-1. the corpus it ran: the JVD corpus tier, the comparison against the frozen
-   master baseline when the change carries one, and the device-truth capture
-   pairs it has, with the exact commands in the developer guide's
+1. the device evidence it ran: the device-evidence checks and the before/after
+   comparison in
+   [run a batch of changes](run-a-batch-of-changes.md#check-the-change-against-device-evidence),
+   and the device-truth capture pairs it has, with the exact commands there and
+   in the developer guide's
    [pre-review evidence table](../architecture/developer-guide.md#pre-review-evidence-by-the-paths-a-change-touches);
 2. the adversarial probes it executed, with inputs and results: complete,
    partial and surplus keys; every reader door (set, structured, JSON, YAML,

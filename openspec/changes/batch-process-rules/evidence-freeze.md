@@ -15,7 +15,7 @@ None: `skip_specs: true`. The reader task in `docs-plan.md` is the acceptance ta
 - Oracle check survey (phase 0): check 2 covered over (a); check 3 partly (universal statements over (a), full IR only over shapes); check 4 over (b) only; check 5 over (a) with all rules on and addresses only; checks 1 and 6 uncovered.
 - Timings at 29bbfe8: the six check files 17.6 s, 3,664 passed, 5 xfailed; the output loop 51 s, 192 outputs.
 - The loop's stderr shows a `FutureWarning: Possible nested set at position 4` from `src/junoscfg/convert/field_validator.py:206` on 48 runs (a schema pattern compiled as written): ledgered as PROC-F1.
-- `docs/decisions/2026-10-10-commit-device-captures-as-the-oracle.md`: the jvd clone is the opt-in breadth tier; this change keeps that and drops it from per-change evidence.
+- `docs/decisions/2026-10-10-commit-device-captures-as-the-oracle.md`: the jvd clone is the opt-in breadth tier; this change retires it (delta below).
 
 ## Non-goals
 
@@ -46,3 +46,4 @@ None, because the owner delegated the `--jvd` fate to the decision record and as
 ## Delta log
 
 - Freeze established: proposal at the phase-1 commit, `docs-plan.md` and this file at the phase-2 commit.
+- 2026-10-11, owner delta ("Before/after comparison: device captures only"): the JVD corpus and `--jvd` are retired, not kept opt-in; the comparison method (base worktree under `private_test_data/makeover-work/<slug>/base-tree`, `compare.py` over `convert_config_result`, per-rule anonymization, counts in freeze and metrics, worktree removed in phase 7) and the synthetic adversarial rows for lexing changes go into the how-to. Removing `--jvd`, `tests/support/jvd_data.py` (`BROKEN_FILES`), the marker and the CI run is its own change: the owner names "docs or bug"; the docs lane refuses `.py` and `.yml`, and `openspec/specs/validation/set-command-validation/spec.md` names `--jvd` in a requirement, so `retire-jvd-tier` is a `bug` with a MODIFIED delta, queued before the makeover resumes. Invalidated: the decision record's "keep opt-in" choice, the how-to's shell output loop and the proposal's non-goal on `--jvd`; all rewritten before review. Reference script `private_test_data/makeover-work/compare-template.py` measured: 96 conversions in 3.4 s, 1,056 with every rule in 37 s, no exception.

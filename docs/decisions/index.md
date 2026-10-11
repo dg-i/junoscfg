@@ -13,3 +13,4 @@ Generated from the front-matter of every record in this directory by `agent-read
 | [Reject bracket shorthand in raw set input](2026-10-09-reject-raw-set-brackets.md) | accepted | tests | 2027-10-09 |
 | [Scope compatibility to the production consumer](2026-10-09-scope-compatibility-to-production-consumer.md) | accepted | repository API tests and agent-ready lane | 2027-04-06 |
 | [Commit device captures, JVD's included, as the test oracle](2026-10-10-commit-device-captures-as-the-oracle.md) | accepted | tests | 2027-04-10 |
+| [Retire the JVD tier from per-change verification](2026-10-11-retire-jvd-from-per-change-verification.md) | accepted | none | 2027-04-11 |

@@ -16,9 +16,11 @@ briefs and the developer guide still sends set-reader changes to `--jvd`.
 - `AGENTS.md`: one Verification sentence and one "Where things are" row link the page.
 - `docs/architecture/developer-guide.md` Testing Architecture and `docs/how-to/solo-review.md`
   (the Reviewer's report): the JVD tier leaves per-change evidence; the oracle checks replace it.
-- New decision record (via `agent-ready scaffold decision`): the JVD tier is removed from the
-  instructions and per-change verification and kept as an opt-in manual tool; cites the owner's
-  request and its cost.
+- New decision record (via `agent-ready scaffold decision`): the JVD tier is retired from the
+  instructions and per-change verification, its code removal is the follow-up change
+  `retire-jvd-tier`; cites the owner's request and its cost.
+- The before/after comparison over the device captures, with the owner's method (delta of
+  2026-10-11), and synthetic adversarial rows for changes that touch lexing.
 
 ## Capabilities
 
@@ -30,7 +32,7 @@ None: documents only, `skip_specs: true`.
 
 ## Non-goals
 
-- The `--jvd` option, its tests and the nightly CI job stay; no test is retired.
+- The `--jvd` option, its tests and the nightly CI job: removed in the follow-up change `retire-jvd-tier` (owner, 2026-10-11 delta); no test is retired here.
 - `mkdocs.yml` nav and the `pyproject.toml` settings (`[tool.template.batch]`, the assurance
   `record`) are the batch's next change, `batch-process-config` (lane gate, preflight C1, C2).
 - Missing oracle tests (checks 1, 3, 5, 6) are test-only follow-ups T1–T4 in the ledger.

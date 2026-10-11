@@ -51,7 +51,8 @@ review, run one `uv run --locked --group dev --with griffe --with tach --with
 towncrier --with vulture agent-ready check --set full` (pre-commit, the whole
 suite, the coverage floor), never beside it on the same tree. After review fixes:
 focused tests plus the fast set; repeat full only when runtime-relevant files
-changed. Schema, corpus and per-path extras: developer guide, Testing Architecture.
+changed. Device-evidence checks, the schema tier, worktrees and parallel changes:
+[run a batch of changes](docs/how-to/run-a-batch-of-changes.md).
 
 ## Version Management
 
@@ -60,7 +61,7 @@ together; `tests/unit/cli/test_cli.py::TestVersion` fails when they disagree.
 
 - A break on a named surface (`consumer`, `cli`) raises the **minor**, as
   `[tool.template.stage] break-bumps` declares. Everything else is a patch.
-- Bump in the same commit as the code; tag `v{version}` after committing.
+- Bump at merge time, from `master`'s version, in the archive commit; tag it `v{version}`.
 
 ## Documentation Checklist
 
@@ -69,15 +70,13 @@ together; `tests/unit/cli/test_cli.py::TestVersion` fails when they disagree.
 3. Python snippets use real names from `__all__`.
 4. Any `src/junoscfg/...` path in `docs/architecture/` points at a real file.
 5. Every `.md` under `docs/` is in `mkdocs.yml` `nav:` or its `not_in_nav`.
-6. Adding or removing an XSD fix updates the counts in
-   `docs/architecture/developer-guide.md` and `schema-internals.md`.
+6. Adding or removing an XSD fix updates the counts in `developer-guide.md` and `schema-internals.md`.
 7. `README.md` mentions every major feature and imports only real names.
 8. `[Ruby Junoser gem]` citations name the upstream Ruby project; never rename them.
 
 ## Test Data Conventions
 
-Never use real operator data. Real configurations go in `private_test_data/`,
-which is gitignored except its README.
+Never use real operator data. Real configurations go in `private_test_data/`, gitignored except its README.
 
 | Category | Standard values | Notes |
 |----------|----------------|-------|
@@ -98,3 +97,4 @@ which is gitignored except its README.
 | Approved tools and versions | `docs/TOOLBOX.md` |
 | A decision and its expiry | `docs/decisions/index.md` |
 | How to run a change | the `agent-ready-change` skill |
+| Several changes at once, device-evidence checks | `docs/how-to/run-a-batch-of-changes.md` |

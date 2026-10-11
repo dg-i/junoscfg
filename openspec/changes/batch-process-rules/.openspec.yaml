@@ -5,6 +5,6 @@ type: docs
 # zone-less docs changes (define-openspec-readership-observation, document-local-installation).
 zone: surface
 domains: []
-removes: "the JVD corpus tier from the agent instructions and from per-change verification; the tier itself stays an opt-in manual tool"
+removes: "the JVD corpus tier from the agent instructions and from per-change verification; its code goes in the follow-up change retire-jvd-tier"
 assurance: economy
 skip_specs: true
