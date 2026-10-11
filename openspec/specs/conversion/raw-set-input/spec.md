@@ -13,8 +13,10 @@ WHEN any line of raw set input, whatever its command (`set`, `delete`,
 `]` THEN the system
 SHALL reject the input before constructing an IR with `ValueError`, independent
 of validation and strictness, and SHALL report the complete original offending
-line as `Unsupported bracket syntax in set input on line N:\n<line>`.
-Tests: `tests/unit/convert/test_set_input.py::TestTheReaderRejectsBracketSyntax::test_every_command_and_bracket_form_is_rejected`, `tests/unit/convert/test_convert_api.py::TestSetBracketSyntaxRejection::test_public_conversion_doors_reject_without_validation`, `tests/unit/cli/test_cli.py::TestUsageErrorsExitTwo::test_set_bracket_syntax_is_refused_with_the_whole_line`
+line as `Unsupported bracket syntax in set input on line N:\n<line>`. In a
+conversion that anonymizes, the `ValueError` SHALL withhold the line and say
+that the input could not be read (spec anonymization/placed-values, NEW-R4).
+Tests: `tests/unit/convert/test_set_input.py::TestTheReaderRejectsBracketSyntax::test_every_command_and_bracket_form_is_rejected`, `tests/unit/convert/test_convert_api.py::TestSetBracketSyntaxRejection::test_public_conversion_doors_reject_without_validation`, `tests/unit/cli/test_cli.py::TestUsageErrorsExitTwo::test_set_bracket_syntax_is_refused_with_the_whole_line`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
 
 #### Scenario: Bracket-form matrix
 
@@ -35,6 +37,13 @@ Tests: `tests/unit/convert/test_set_input.py::TestTheReaderRejectsBracketSyntax:
 - **WHEN** CLI conversion or import receives raw set input containing an
   unquoted bracket
 - **THEN** it prints the specified diagnostic and exits 2
+
+#### Scenario: An anonymized conversion
+
+- **WHEN** `set system name-server [ 203.0.114.9 ]` is converted with an
+  anonymizing rule, through the library or `junoscfg convert --anonymize-ips`
+- **THEN** it is refused with `ValueError` (exit 2) whose text holds neither the
+  line nor the address
 
 ### Requirement: Quoted content and ignored comments remain accepted
 
