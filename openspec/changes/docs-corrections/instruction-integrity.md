@@ -39,3 +39,4 @@ None, because the owner asked for no questions (C1); the only owner choice found
 ## Delta log
 
 - Initial preflight, 2026-10-11: scope narrowed to NEW-C7 (C2 overlap with #7 holds NEW-C8; C3 lane gate holds NEW-C14); C4 replaces the inventory's example lead with code- and capture-backed text; C5 keeps the validation paragraph true across #8. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 1.
+- Phase 1, 2026-10-11: proposal (NEW-C7 only), lane fields and metrics ledger approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 2.
