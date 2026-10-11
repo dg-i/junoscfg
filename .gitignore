@@ -39,3 +39,7 @@ local-test-data/
 .coverage.*
 coverage.xml
 htmlcov/
+.agent-ready/verification/
+
+# Prepared schema runtime and generated verification products
+.agent-ready/schema/

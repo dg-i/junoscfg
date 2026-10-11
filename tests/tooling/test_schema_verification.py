@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import importlib
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -50,8 +51,24 @@ def write_products(directory, *, payload=b"generated artifact\n", generated_at="
 
 
 def git(root, *arguments):
+    controls = {
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_PREFIX",
+        "GIT_CEILING_DIRECTORIES",
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+    }
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key not in controls and not key.startswith("GIT_CONFIG")
+    }
     return subprocess.run(
-        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True
+        ["git", *arguments], cwd=root, check=True, capture_output=True, text=True, env=environment
     ).stdout
 
 
@@ -280,6 +297,38 @@ class TestPhysicalInputs:
 
 
 class TestCandidateIntegrity:
+    def test_inherited_hook_context_preserves_parent_repository(self, tmp_path, monkeypatch):
+        parent = tmp_path / "parent"
+        parent.mkdir()
+        git(parent, "init", "-q")
+        (parent / "tracked").write_text("parent candidate")
+        commit_fixture(parent)
+        before = {
+            str(path.relative_to(parent)): path.read_bytes()
+            for path in parent.rglob("*")
+            if path.is_file()
+        }
+        for key, value in {
+            "GIT_DIR": str(parent / ".git"),
+            "GIT_WORK_TREE": str(parent),
+            "GIT_COMMON_DIR": str(parent / ".git"),
+            "GIT_INDEX_FILE": str(parent / ".git/index"),
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "core.bare",
+            "GIT_CONFIG_VALUE_0": "true",
+        }.items():
+            monkeypatch.setenv(key, value)
+        nested = tmp_path / "nested"
+        nested.mkdir()
+        root, _, _ = small_repository(nested)
+        assert adapter().run_shard(root, SHARD) == 0
+        after = {
+            str(path.relative_to(parent)): path.read_bytes()
+            for path in parent.rglob("*")
+            if path.is_file()
+        }
+        assert after == before
+
     def test_real_runner_exports_artifacts_without_mutation(self, tmp_path):
         root, required, policy = small_repository(tmp_path)
         before = git(root, "status", "--porcelain", "--untracked-files=no")

@@ -288,6 +288,9 @@ break-bumps = { consumer = "minor", cli = "minor" }
 
 # Approved tools, and what was considered and rejected. An entry without a
 # licence fails the check, because the licence decision is made from this table.
+".agents/skills/agent-ready-*/SKILL.md" = 300
+".agents/skills/agent-ready-*/*.md" = 100
+".agents/skills/agent-ready-*/**/*.md" = 100
 [[tool.template.toolbox.approved]]
 name = "ruff"
 purpose = "format and lint"
@@ -611,24 +614,51 @@ serialized-paths = [
     "src/junoscfg/validate/data/**",
     "tests/data/device/known-differences.json",
 ]
-expensive-tiers = [
-    { name = "schema", paths = [
-        "src/junoscfg/validate/xsd_*.py",
-        "src/junoscfg/validate/schema_node.py",
-        "src/junoscfg/validate/artifact_builder.py",
-        "src/junoscfg/validate/schema_generator.py",
-        "src/junoscfg/validate/grammar_generator.py",
-    ], command = ["uv", "run", "--locked", "pytest", "--schema", "tests/corpus/test_schema_data.py", "-q"] },
-]
 
 # Standing owner preference. Phase 0 selects the strongest matching value from
 # default, zones[<zone>], declared-break, and trust-boundary, copies it to the
 # change's assurance field, and cites record. The mandatory high-risk floor is
 # independent and cannot be lowered here.
 # The owner's preference of 2026-10-11: economy below the mandatory high-risk floor.
+
+[[tool.template.batch.expensive-tiers]]
+name = "schema-21.4"
+paths = ["src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tools/schema_verification.py", "tools/schema-verification/**", "tests/tooling/test_schema_verification*.py", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "pyproject.toml", "uv.lock"]
+command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "run", "schema-21.4"]
+inputs = ["private_test_data/schemas/21.4R0-ex4600.xsd"]
+version-files = [".agent-ready/schema/runtime.json"]
+required-manifest = "tools/schema-verification/schema-21.4.required.json"
+result-manifest = ".agent-ready/schema/schema-21.4/result.json"
+stability-manifest = "tools/schema-verification/schema-21.4.stability.json"
+
+[[tool.template.batch.expensive-tiers]]
+name = "schema-23.2"
+paths = ["src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tools/schema_verification.py", "tools/schema-verification/**", "tests/tooling/test_schema_verification*.py", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "pyproject.toml", "uv.lock"]
+command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "run", "schema-23.2"]
+inputs = ["private_test_data/schemas/23.2R2-S7.5_vmx.xsd"]
+version-files = [".agent-ready/schema/runtime.json"]
+required-manifest = "tools/schema-verification/schema-23.2.required.json"
+result-manifest = ".agent-ready/schema/schema-23.2/result.json"
+stability-manifest = "tools/schema-verification/schema-23.2.stability.json"
+
+[[tool.template.batch.expensive-tiers]]
+name = "schema-25.2"
+paths = ["src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tools/schema_verification.py", "tools/schema-verification/**", "tests/tooling/test_schema_verification*.py", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "pyproject.toml", "uv.lock"]
+command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "run", "schema-25.2"]
+inputs = ["private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd", ".agent-ready/schema/runtime.json"]
+version-files = [".agent-ready/schema/runtime.json"]
+required-manifest = "tools/schema-verification/schema-25.2.required.json"
+result-manifest = ".agent-ready/schema/schema-25.2/result.json"
+stability-manifest = "tools/schema-verification/schema-25.2.stability.json"
+sentinel-command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "sentinel"]
 [tool.template.assurance]
 record = "docs/how-to/run-a-batch-of-changes.md#assurance"
 default = "economy"
 declared-break = "economy"
 trust-boundary = "economy"
 zones = {}
+
+# Explicit activation requires assessment of every existing branch and live change.
+[tool.template.verification]
+enabled = false
+policy = "strategy-a/1"

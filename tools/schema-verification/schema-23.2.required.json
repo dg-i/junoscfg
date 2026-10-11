@@ -1,0 +1,19 @@
+{
+  "tests": [
+    "tests/corpus/test_schema_data.py::TestFixesApply::test_most_fixes_apply[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestFixesApply::test_report_which_fixes_never_fire[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestPipelineIntegrity::test_structure_is_plausible[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestPipelineIntegrity::test_generated_grammar_compiles[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestPipelineIntegrity::test_generated_json_schema_is_valid[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestRawXsdDoesNotCompile::test_raw_xsd_is_rejected_by_lxml[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestRawXsdDoesNotCompile::test_the_offending_names_are_namespace_prefixed[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestConversionAgainstRealArtifacts::test_roundtrip_against_this_release[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestConversionAgainstRealArtifacts::test_json_and_set_agree_on_real_artifacts[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestIdentifierCounts::test_the_counts_are_the_proposals[23.2R2-S7.5_vmx.xsd]",
+    "tests/corpus/test_schema_data.py::TestIdentifierCounts::test_no_name_keyed_list_carries_k[23.2R2-S7.5_vmx.xsd]"
+  ],
+  "shards": [
+    "schema-23.2"
+  ]
+}

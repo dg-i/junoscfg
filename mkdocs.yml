@@ -59,6 +59,8 @@ nav:
       - Solo Review: how-to/solo-review.md
       - Run a Batch of Changes: how-to/run-a-batch-of-changes.md
       - Capture Change Metrics: how-to/capture-change-metrics.md
+      - Lifecycle Events: how-to/lifecycle-ledger.md
+      - Verification Evidence: how-to/verification-evidence.md
       - Remove agent-ready: how-to/remove-agent-ready.md
 
 markdown_extensions:

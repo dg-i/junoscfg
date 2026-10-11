@@ -1,0 +1,40 @@
+{
+  "runtime": ".agent-ready/schema/runtime.json",
+  "suite": "tests/corpus/test_schema_data.py",
+  "shipped": "schema-25.2",
+  "shards": {
+    "schema-21.4": {
+      "dump": "private_test_data/schemas/21.4R0-ex4600.xsd",
+      "release": "21.4R0",
+      "required": "tools/schema-verification/schema-21.4.required.json",
+      "stability": "tools/schema-verification/schema-21.4.stability.json",
+      "result": ".agent-ready/schema/schema-21.4/result.json",
+      "outcomes": ".agent-ready/schema/schema-21.4/outcomes.json",
+      "artifacts": ".agent-ready/schema/schema-21.4/artifacts",
+      "allowed-skips": {
+        "tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys[21.4R0-ex4600.xsd]": "no pinned count for 21.4R0",
+        "tests/corpus/test_schema_data.py::TestIdentifierCounts::test_the_counts_are_the_proposals[21.4R0-ex4600.xsd]": "no pinned count for 21.4R0"
+      }
+    },
+    "schema-23.2": {
+      "dump": "private_test_data/schemas/23.2R2-S7.5_vmx.xsd",
+      "release": "23.2R2-S7.5",
+      "required": "tools/schema-verification/schema-23.2.required.json",
+      "stability": "tools/schema-verification/schema-23.2.stability.json",
+      "result": ".agent-ready/schema/schema-23.2/result.json",
+      "outcomes": ".agent-ready/schema/schema-23.2/outcomes.json",
+      "artifacts": ".agent-ready/schema/schema-23.2/artifacts",
+      "allowed-skips": {}
+    },
+    "schema-25.2": {
+      "dump": "private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd",
+      "release": "25.2R2-S1.5",
+      "required": "tools/schema-verification/schema-25.2.required.json",
+      "stability": "tools/schema-verification/schema-25.2.stability.json",
+      "result": ".agent-ready/schema/schema-25.2/result.json",
+      "outcomes": ".agent-ready/schema/schema-25.2/outcomes.json",
+      "artifacts": ".agent-ready/schema/schema-25.2/artifacts",
+      "allowed-skips": {}
+    }
+  }
+}

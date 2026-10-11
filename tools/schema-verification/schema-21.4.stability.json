@@ -1,0 +1,6 @@
+[
+  ".agent-ready/schema/schema-21.4/artifacts/junos-json-schema.json.gz",
+  ".agent-ready/schema/schema-21.4/artifacts/junos-yaml-schema.json.gz",
+  ".agent-ready/schema/schema-21.4/artifacts/junos-structure-tree.json.gz",
+  ".agent-ready/schema/schema-21.4/artifacts/junos-set.lark.gz"
+]
