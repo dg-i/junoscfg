@@ -2,14 +2,14 @@
   "change": "xml-leaf-text-verbatim",
   "metrics": {
     "declared_runtime_dependencies": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": null,
       "source": {
         "content_sha256": {
-          "base": "9c90df12ff7d339a478eb74c9dd6fa457c67d58e265c5b665f68dcc596efe9cd",
-          "head": "9c90df12ff7d339a478eb74c9dd6fa457c67d58e265c5b665f68dcc596efe9cd"
+          "base": "60e690db48b6a8490f4fa7328fc626bd855ce34e20392d16bb828a63d727ce23",
+          "head": "60e690db48b6a8490f4fa7328fc626bd855ce34e20392d16bb828a63d727ce23"
         },
         "kind": "git_manifest",
         "path": "pyproject.toml",
@@ -24,9 +24,9 @@
       }
     },
     "files_read": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -36,9 +36,9 @@
       "value": null
     },
     "human_effort": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no human-effort record supplied",
       "source": {
         "kind": "not_provided",
@@ -48,9 +48,9 @@
       "value": null
     },
     "lines_added_removed": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": null,
       "source": {
         "kind": "git_diff",
@@ -58,33 +58,35 @@
           "paths": [
             "changelog.d/+xml-leaf-text-verbatim.bugfix.md",
             "src/junoscfg/display/to_yaml.py",
-            "tests/unit/display/test_to_yaml.py"
+            "tests/data/device/known-differences.json",
+            "tests/unit/display/test_to_yaml.py",
+            "tools/device_differences.py"
           ],
-          "since": "13719d94219a6e0fb6886d538f3480d93fdc0f8a"
+          "since": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b"
         },
         "selector": [
-          "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-          "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf"
+          "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+          "53c31f841576447857f6ff6332f8b3bd8a773e7e"
         ],
         "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
       },
       "status": "measured",
       "value": {
-        "added": 87,
+        "added": 91,
         "binary_files": 0,
-        "files": 3,
-        "removed": 2
+        "files": 5,
+        "removed": 28
       }
     },
     "locked_packages": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": null,
       "source": {
         "content_sha256": {
-          "base": "1b20063ce5f2d6006179d1d0da7a8e53c8db3eba16225a5c885135a6e903ee94",
-          "head": "1b20063ce5f2d6006179d1d0da7a8e53c8db3eba16225a5c885135a6e903ee94"
+          "base": "8ece9fa103b8944eb3aa8477844502cea908fb378c7c53291d7913e803e96ee9",
+          "head": "8ece9fa103b8944eb3aa8477844502cea908fb378c7c53291d7913e803e96ee9"
         },
         "kind": "git_manifest",
         "path": "uv.lock",
@@ -99,9 +101,9 @@
       }
     },
     "phase_span": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -111,9 +113,9 @@
       "value": null
     },
     "retries": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -123,9 +125,9 @@
       "value": null
     },
     "runtime_tokens": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -135,9 +137,9 @@
       "value": null
     },
     "wall_clock_intent_to_merge": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "intent and merge timestamps were not supplied",
       "source": {
         "kind": "not_provided",
@@ -147,9 +149,9 @@
       "value": null
     },
     "workflow_telemetry": {
-      "base_sha": "13719d94219a6e0fb6886d538f3480d93fdc0f8a",
-      "captured_at": "2026-10-11T13:57:29.258930Z",
-      "head_sha": "5f93b36a9753151a1e6f6b22af1820d0f87bd7bf",
+      "base_sha": "3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b",
+      "captured_at": "2026-10-11T16:53:12.348279Z",
+      "head_sha": "53c31f841576447857f6ff6332f8b3bd8a773e7e",
       "reason": "no workflow telemetry record supplied",
       "source": {
         "kind": "not_provided",

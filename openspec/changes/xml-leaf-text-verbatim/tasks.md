@@ -14,8 +14,8 @@
 Pre-review checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at 5f93b36: every step passed except the application tests, 7,561 passed / 37 skipped / 18 xfailed / 2 failed; the two failures are the device law for the two XML captures, the four `xml-value-whitespace-lost` lines "recorded but gone", closed by task 2.3.
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: not required, `economy` below the high-risk floor (`review.md`).
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head: captured for base 13719d9 and code head 5f93b36; recapture after task 2.3 moves the code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for immutable base `3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b` and code/full-check head `53c31f841576447857f6ff6332f8b3bd8a773e7e` (product settlement `7ef8fa5fb8dd72f7813ec6f08e16488b51c7c187`).
+- [x] 3.3 Finalizer completes bounded pre-merge spec application, metrics evidence, and archive preparation without product edits. The orchestrator owns merge and the subsequent live-folder archive, version and tag.
 
 ## Resumed phase-5 checkpoint (2026-10-11)
 
@@ -42,3 +42,11 @@ New immutable full checkpoint: `UV_OFFLINE=1 npm_config_offline=true OPENSPEC_TE
 Current resume point: bounded finalization. All test/implementation tasks are complete; tasks 3.2 and 3.3 remain open for metrics recapture against the current immutable base/code head, reviewed main-spec application, and archive housekeeping. Original economy/risk omission remains unchanged; no independent review is claimed.
 
 Environment evidence: initial offline OpenSpec `status` and `instructions apply` calls exited 1 with npm `ENOTCACHED` and blocked cache-log access under the filesystem sandbox. One evidence-backed offline cache escalation made both commands succeed (exit 0), without network access. Fields and caps exited 0 before the final evidence commit; normal hooks remain enabled.
+
+## Bounded phase-7 pre-merge completion
+
+The reviewed delta was applied through offline OpenSpec 1.13.0 `archive xml-leaf-text-verbatim --yes` in disposable clone `/private/tmp/xml-leaf-phase7-spec-apply`; only `openspec/specs/conversion/xml-input/spec.md` was brought back. The disposable command reported the two then-open housekeeping tasks; it did not archive the live folder. A byte comparison against the reviewed delta after only the main title, Requirements heading and Purpose spacing transformations confirms the purpose, requirement and all four scenarios are unchanged. The generated Purpose already contains the reviewed purpose, with no placeholder. Main-spec commit: `b45ce0631c9d8b2408fe4f0576ad9eb95c561b28` (one new spec, 46 added lines). Strict change validation and all-spec validation passed (22 specs).
+
+Metrics capture exited 0 for base `3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b` and immutable code/full-check head `53c31f841576447857f6ff6332f8b3bd8a773e7e`. Its five-file product scope records 91 added and 28 removed lines; the later main-spec addition and evidence records are outside that measurement. Native usage, cost, human effort and workflow telemetry are UNMEASURED; no bound evidence was supplied. The full result remains scoped to `53c31f841576447857f6ff6332f8b3bd8a773e7e`, not the later finalizer commits; subsequent changes are reviewed main-spec application and records only. No product/test/acceptance promise or review verdict changed.
+
+Next incomplete lifecycle operation: orchestrator review of bounded main-spec evidence, merge, then supported `archive --yes --skip-specs`, version/tag and cleanup. All pre-merge tasks are complete; the live folder remains. Fields, caps, lane and post-commit fast checks are required for this bounded finalization; no full/expensive/schema rerun is authorized for these record/spec edits.
