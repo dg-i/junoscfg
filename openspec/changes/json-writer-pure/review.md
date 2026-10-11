@@ -17,10 +17,13 @@ Disposition, all in the phase-5 commit:
    copy, and `test_the_json_writer_writes_the_device_spelling` pins the JSON
    `configuration` of every hand-built spelling a device rendering decides
    (`[null]` flags, scalar leaves, the native `groups` list of ARCH-C15). The
-   one spelling left unpinned is `ssh: [True]`: no reader gives it and no
-   device rendering decides its output, so pinning today's `[[null]]` would set
-   an expected output nobody has evidence for; purity and output-equals-copy
-   are asserted for it.
+   one spelling left unpinned is `ssh: [True]`. Corrected after review (F1
+   below): the JSON and YAML readers do give it, and today's output is
+   `"ssh": [[null]]` in JSON and `set system services ssh True` in set, on the
+   merge base and the head alike. No device rendering decides what it should
+   be, so pinning today's output would set an expected output nobody has
+   evidence for; purity and output-equals-copy are asserted for it, and the
+   reader/writer handling is carried forward as NEW-R2 (change 13).
 3. F3 (medium), mutation paths no spelling reached: the five spellings added
    (a flag inside a list, a one-element leaf in a wrapped group, the JSON/XML
    readers' `groups` list, a flag four lists deep, a tagged flag), plus the
@@ -33,14 +36,202 @@ Disposition, all in the phase-5 commit:
    `{}` read sources) and 362 pass by design (guard rows, pinned outputs the
    base already writes, and the leaf-list negative row).
 
+### Fresh Reviewer (phase 6, STOP-R)
+
+A fresh, isolated Reviewer ran on code head `5f9934f`, branch head `8145e1d`
+(merge base `d1e804e`). Verdict: CHANGES REQUIRED, the code fix correct and
+complete for every writer; only F1 blocks, and it touches the record and the
+spec. The orchestrator relayed the rulings of 2026-10-11. Points checked
+without a finding: C5 (patch; the lane gate needs a `declared-break` entry for
+any edit of a surface path), every writer and caller of the IR
+(`validate_ir`, `filter_dict_by_path`, `find_unused`, edityaml), the ARCH-C15
+citations (a writer keeping the `group` wrapper fails 26 rows of
+`test_the_source_reads_as_the_ir` and 2 of the pinned-output test), and every
+rerun figure (384/384 on head; 22 fail, 362 pass on the base writer; 5.8 ms
+with the copy, 1.5 ms for the copy).
+
+1. F1 (medium, specification and record): the `ssh: [True]` rationale "no
+   reader gives it" was false. Executed: JSON or YAML input `ssh: [true]`
+   gives JSON `"ssh": [[null]]` and set `ssh True`, on base and head. Fixed:
+   the Test/Challenge F2 disposition above is corrected; the spec's
+   device-spelling clause no longer lists a flag inside a list, which is held
+   only to purity and output-equals-copy; the challenge is below. Carry-forward
+   NEW-R2 (change 13): the `[true]` flag in the JSON and YAML readers and the
+   JSON and set writers, with a device question on `system services ssh`
+   (does `load json` accept `"ssh": [true]`, and what does it render).
+2. F2 (low, outside the writer scope): `anonymize()` rewrites the IR its
+   caller passes and returns the same object, with no contract line saying so
+   (`apply_revert` says "mutated in place"). `pipeline_result` owns the IR it
+   passes, so no named surface is affected. Carry-forward NEW-R3 (change 5):
+   state the in-place rewrite in `src/junoscfg/anonymize/CONTRACT.md`, or copy
+   on entry.
+3. F3 (low): the three Precedent bullets of `src/junoscfg/convert/CONTRACT.md`
+   were reflowed onto one line each because the pre-commit `document caps`
+   hook refused the file at 34 lines (cap 30) once the invariant was added.
+   The content is unchanged (the Reviewer compared it with whitespace
+   normalized). Restoring the base wrapping gives 32 lines, over the cap, so
+   the reflow stays.
+
 ## Already provided
 
 `copy.deepcopy` from the standard library is the copy; no helper is added.
 
 ## Specification challenges
 
-None.
+### A presence flag inside a list does not get the device's spelling
+
+- Artifact: `specs/conversion/writers/spec.md`, requirement "A writer leaves the IR it is given unchanged", the sentence listing a flag "inside a list" among the spellings whose JSON output "stays the device's spelling".
+- Counterexample: executed on base `d1e804e` and head `5f9934f`: `convert_config('{"configuration":{"system":{"services":{"ssh":[true]}}}}', from_format=Format.JSON, to_format=Format.JSON)` gives `"ssh": [[null]]`, not `[null]`; YAML `ssh: [true]` gives the same, and both give `set system services ssh True`. The requirement claimed a device spelling the output does not have.
+- User impact: the main spec would promise the device's spelling for an input that renders differently; the output itself is unchanged by this change.
+- Proposed correction: the device-spelling clause lists `true`, `{}`, tagged and four-lists-deep flags only; a flag inside a list is held to purity and output-equals-copy; NEW-R2 (change 13) takes the reader and writer handling with a device artefact for `system services ssh`.
+- Decision: Pending owner decision. Interim action: the proposed correction is applied to the delta (a narrowing that claims less, reversible, no code or output change), and NEW-R2 is ledgered for change 13 (owner intake 2026-10-11: merge with recorded interim action)
 
 ## Verdict
 
-Pending: the fresh Reviewer (yellow zone, `balanced`) at STOP-R.
+CHANGES REQUIRED at `8145e1d` (fresh Reviewer); F1–F3 addressed in the
+following commit. Pending the same Reviewer's confirmation.
+
+## Appendix: the fresh Reviewer's report (phase 6, verbatim)
+
+Merge base `d1e804e` (v0.16.0), code head `5f9934f`, branch head `8145e1d`.
+Read in order: evidence freeze, delta, `src/junoscfg/convert/CONTRACT.md`,
+`test-challenge.md`, the tests, the diff. Probes (synthetic values) live next to
+this file: `review_probe_callers.py`, `review_wrong_groups.py`,
+`review_rerun_counts.py`.
+
+### Verdict
+
+**CHANGES REQUIRED**. The code fix is correct and complete for every writer.
+Only F1 blocks, and its fix touches only the record and the spec, not the code.
+F2 and F3 do not block.
+
+### Ranked findings
+
+#### F1 (medium, specification and record): the unpinned `ssh: [True]` exception rests on a false premise
+
+- **Violated line:** `openspec/changes/json-writer-pure/specs/conversion/writers/spec.md:18-22`.
+  The requirement lists "a presence flag ... inside a list" among the spellings
+  the JSON writer "normalizes for the device" and says "the JSON output stays the
+  device's spelling (`[null]` flags ...)". Separately,
+  `openspec/changes/json-writer-pure/review.md:20` justifies leaving it unpinned
+  with "no reader gives it".
+- **Counterexample (executed on head and on the base; the output is identical
+  on both):**
+  `convert_config('{"configuration":{"system":{"services":{"ssh":[true]}}}}', from_format=Format.JSON, to_format=Format.JSON)`
+  gives `"ssh": [[null]]`. YAML input `ssh: [true]` gives the same result. Both
+  JSON and YAML input render to set as `set system services ssh True`. The JSON
+  and YAML readers both produce `ssh: [True]` (`to_dict`), and the result
+  reaches the named `consumer` surface.
+- **Impact:** At archive, a requirement goes into the main specs that is false
+  for one of the spellings it lists. The test leaves that row unpinned
+  (`tests/unit/convert/test_convert_roundtrip.py:73`), so the false sentence and
+  the tests agree with each other (shared blind spot).
+- **Fix:**
+  1. Correct the F2 disposition in `review.md:19-23`: the JSON and YAML readers
+     do give `[True]`, and the pre-existing output is `[[null]]` / `ssh True`.
+  2. In the spec, move "inside a list" out of the "device's spelling" clause.
+     For that spelling, the spec should claim only purity and output-equals-copy.
+  3. Open a carry-forward ID for the handling of `[true]` in the readers and
+     writers. Request one device artefact for the path `system services ssh`:
+     does `load json` accept `"ssh": [true]`, and what does it render?
+     Changing the output is out of scope here, as the proposal's non-goal says.
+
+#### F2 (low, carry-forward, outside the writer scope): `anonymize()` rewrites the IR its caller passes
+
+- `src/junoscfg/anonymize/__init__.py:61-119` walks the input and returns the
+  same object as `result.ir`. The probe reports `MUTATES`. Its docstring says
+  "the modified IR", and `src/junoscfg/anonymize/CONTRACT.md` "Not for" mentions
+  only the salt. `apply_revert` (`src/junoscfg/anonymize/revert.py:51`) also
+  mutates, but its docstring says so ("mutated in place").
+- `pipeline_result` owns the IR it hands to both functions, so neither the
+  named surfaces nor this change is affected. The mission rule ("unless the
+  public contract explicitly promises mutation") still applies to the
+  `junoscfg.anonymize` door.
+- **Fix:** open a new ID. Either state the in-place rewrite in the anonymize
+  CONTRACT "Not for" section, or copy on entry.
+
+#### F3 (low, residue): the Precedent section of `src/junoscfg/convert/CONTRACT.md:27-29` was reflowed
+
+- I compared the base and head with whitespace normalized. The only content
+  difference is the added invariant, so the content is preserved verbatim.
+- No check requires the reflow. The codemap `BULLET` regex reads only
+  bullets that are bare dotted names, and markdownlint passes either way. The
+  record gives no reason for it.
+- **Fix:** restore the base wrapping of the three bullets, or record the reason.
+
+### Points checked, no finding
+
+- **C5 patch versus declared break: sound.** The `consumer` surface path is
+  only `src/junoscfg/__init__.py` (`pyproject.toml:249`), and the head changes
+  only `__version__` there. The lane check (`agent_ready_checks/lane.py:584`)
+  requires a `declared-break` entry for any edit of a surface path, even a
+  non-breaking one. Precedent: `archive/2026-10-10-test-architecture`, also
+  version-only and also a patch. `convert_config` reads a fresh IR, so its
+  behaviour does not change, and `break-bumps` does not apply.
+- **Writers and callers:** the set, structured, JSON (wrapped and bare) and
+  YAML (wrapped and bare) writers all leave the IR unchanged. So do
+  `validate_ir`, `filter_dict_by_path`, `find_unused` and `edityaml.apply_rules`,
+  which deep-copies. `ansibilize*` deep-copies on entry (`ansibilize.py:162`
+  and `:241`). `pipeline_result` mutates only the IR it read itself.
+- **ARCH-C15 citations: verified.** All three captures hold `groups` as a list
+  of entries with `name` first, while `interfaces`, `routing-instances` and
+  `vlans` keep their wrappers. The vMX (23.2R2-S7.5) and QFX5120 (25.2R2-S1.5)
+  releases are named.
+  - Counterexample: a writer that keeps the `group` wrapper fails 26 rows of
+    the cited `test_the_source_reads_as_the_ir`, because `read_ir` renders
+    through JSON. It also fails 2 rows of
+    `test_the_json_writer_writes_the_device_spelling`. Both tests guard the
+    requirement.
+- **Figures rerun:**
+
+  | Figure | Result |
+  |---|---|
+  | Test class on head | 384 of 384 pass |
+  | Test class on the base writer (deepcopy as identity, the only code difference) | 22 fail, 362 pass, the exact IDs the freeze lists |
+  | Performance on the largest capture | 5.8 ms; the copy alone 1.5 ms |
+  | `c11_mutation.py` | every JSON row reports `mutated=False` |
+  | Full check | not rerun, as the brief instructs |
+
+- **Version files and docs:** `pyproject.toml`, `__init__.py` and `uv.lock` all
+  read 0.16.1. The changelog fragment and the `docs/guide/conversion.md` line
+  are present. `known-differences.json` is untouched.
+
+### Five prompts
+
+1. **Trust boundary:** none crossed. The change only adds a copy, and it adds no
+   new parsing.
+2. **Incompatible-but-valid input:** `ssh: [true]` in JSON or YAML input, as
+   described in F1.
+3. **Shared blind spot:** F1. The spec sentence and the unpinned test row agree
+   with each other. The independent evidence is the executed `convert_config`
+   probe.
+4. **Second answer:** none. `copy.deepcopy` comes from the standard library.
+   No other presence normalizer was added: `dict_walker` only reads `[None]`.
+5. **Stated figures and non-goals:** every figure I could rerun matches. The
+   full check was not rerun, as the brief instructs.
+
+### Specification challenge (for `openspec/changes/json-writer-pure/review.md`)
+
+| Field | Value |
+|---|---|
+| Artifact | `specs/conversion/writers/spec.md:18-22`, requirement "A writer leaves the IR it is given unchanged" |
+| Counterexample | JSON or YAML input `ssh: [true]` renders as JSON `"ssh": [[null]]`, not the device's `[null]` |
+| User impact | The main spec would promise device spelling for an input that gets a different result |
+| Proposed correction | Limit the device-spelling clause to `true`, `{}`, tagged and four-lists-deep flags. For a flag inside a list, claim only purity and output-equals-copy. Open a carry-forward ID with a device question on `system services ssh`. |
+| Decision | Owner |
+
+### Context expansion rows for `metrics.md`
+
+| Field | Value |
+|---|---|
+| Context expansion: src/junoscfg/anonymize/__init__.py, src/junoscfg/anonymize/revert.py | caller check: does anonymize or revert mutate the caller's IR (F2) |
+| Context expansion: src/junoscfg/edityaml/__init__.py, src/junoscfg/audit/__init__.py | caller check: edityaml and audit purity |
+| Context expansion: .venv agent_ready_checks lane.py, codemap.py | C5 lane rule; whether the CONTRACT reflow is required (F3) |
+| Context expansion: tests/data/device/{jvd,synthetic} captures | ARCH-C15 citations |
+
+### Carry-forward
+
+- F1 item 3: the `[true]` presence flag in the JSON and YAML readers, the JSON
+  writer (`[[null]]`) and the set writer (`ssh True`). Needs a device artefact
+  for `system services ssh`.
+- F2: `anonymize()` mutates the IR without a contract line saying so.

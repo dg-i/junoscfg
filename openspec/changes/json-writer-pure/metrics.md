@@ -21,6 +21,10 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Context expansion: src/junoscfg/convert/__init__.py | `pipeline_result`, the one caller of `from_dict` in `src/`, and its `wrap=False` door |
 | Context expansion: tests/support/shapes.py, tools/check_test_doors.py | the catalogue the read-IR law runs over; why the law cannot sit in `tests/contract/` |
+| Context expansion: src/junoscfg/anonymize/__init__.py, src/junoscfg/anonymize/revert.py | Reviewer caller check: does anonymize or revert mutate the caller's IR (F2) |
+| Context expansion: src/junoscfg/edityaml/__init__.py, src/junoscfg/audit/__init__.py | Reviewer caller check: edityaml and audit purity |
+| Context expansion: .venv agent_ready_checks lane.py, codemap.py | Reviewer: the C5 lane rule; whether the CONTRACT reflow is required (F3) |
+| Context expansion: tests/data/device/{jvd,synthetic} captures | Reviewer: the ARCH-C15 citations |
 | JSON output time, largest device JSON capture (`services-leaf1_qfx5130-48c.json.gz`) | 5.7 ms with the copy; the copy alone 1.5 ms |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

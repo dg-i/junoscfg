@@ -70,6 +70,7 @@ _ADMIN_JSON = {"name": "admin", "class": "super-user"}
 _HAND_BUILT: dict[str, tuple[Any, Any]] = {
     "a-presence-flag-as-true": ({"system": {"services": {"ssh": True}}}, _SSH_FLAG),
     "a-presence-flag-as-an-empty-mapping": ({"system": {"services": {"ssh": {}}}}, _SSH_FLAG),
+    # The JSON and YAML readers give it; its device output is open (NEW-R2, change 13).
     "a-presence-flag-inside-a-list": ({"system": {"services": {"ssh": [True]}}}, None),
     "a-tagged-presence-flag": (
         {"system": {"services": {"ssh": True, "@ssh": {"inactive": True}}}},
