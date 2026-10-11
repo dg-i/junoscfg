@@ -77,3 +77,4 @@ None, because C1–C12 are resolved by precedence, evidence and repository rules
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established after the proposal commit `652a554` and the delta. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, phase 4: acceptance tests committed at `46ebcc1`, failing on `b8e6fc1` as measured above. Checkpoint: STOP-T, independent Test/Challenge next; then phase 5 (implementation). Approved under the owner's unattended-run instruction of 2026-10-11.
