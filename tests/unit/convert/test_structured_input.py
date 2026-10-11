@@ -368,6 +368,20 @@ class TestAnAnonymizedConversionShowsNoInputPath:
             assert original not in cli.stdout
         assert "the block's path is withheld" in cli.stderr
 
+        # Re-review F1b: `-v` validates the source before anonymization; its
+        # warnings withhold the path too.
+        checked = CliRunner().invoke(
+            main,
+            ["-v", "-i", "structured", "-e", "set", "--anonymize-all", "--anonymize-salt", "s1"],
+            input=self.TEXT,
+        )
+        assert checked.exit_code == 0, checked.output
+        assert "Warning:" in checked.stderr
+        assert "the block's path is withheld" in checked.stderr
+        for original in ("203.0.114.5", "203.0.114.6", "G1", "GR-SECRET"):
+            assert original not in checked.stderr
+            assert original not in checked.stdout
+
         # Without anonymization the path is the point of the warning.
         plain = convert_config_result(
             self.TEXT, from_format=Format.STRUCTURED, to_format=Format.SET

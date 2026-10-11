@@ -303,7 +303,9 @@ def validate_structured(source: str, artifacts_dir: str | None = None) -> Valida
                 errors=(ValidationError(message=f"Failed to convert structured config: {e}"),),
             )
 
-    notes = tuple(ValidationError(message=note) for note in read.notes)
+    notes = tuple(
+        ValidationError(message=f"{where}: {what}", path=where) for where, what in read.notes
+    )
     incomplete = tuple(
         ValidationError(message=f"Invalid syntax: {line}: the statement has no value")
         for line in read.incomplete

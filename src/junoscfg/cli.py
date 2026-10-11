@@ -310,12 +310,6 @@ def convert(
 
         import_format = detect_format(source, accepted_formats=CONVERSION_FORMATS)
 
-    # Validate if requested
-    if validate or validate_only:
-        _run_validation(source, import_format, artifacts)
-        if validate_only:
-            return
-
     # Build anonymization config if any anonymize flags are set
     from junoscfg.anonymize import build_config_from_cli
 
@@ -346,6 +340,15 @@ def convert(
         anonymize_log_level=anonymize_log_level,
         anonymize_config=anonymize_config,
     )
+
+    # Validate if requested. Validation reads the source before anonymization,
+    # so what it prints must not show the source's values when the run
+    # anonymizes.
+    if validate or validate_only:
+        anonymizing = bool(anon_config is not None and anon_config.any_enabled)
+        _run_validation(source, import_format, artifacts, anonymizing=anonymizing)
+        if validate_only:
+            return
 
     # For --anonymize-networks auto: stash source text so IpRule can scan it
     if anon_config and "auto" in (anon_config.networks or []):
@@ -931,8 +934,14 @@ def _read_input(file: str | None) -> str:
     return sys.stdin.read()
 
 
-def _run_validation(source: str, input_format: str | None, artifacts_dir: str | None) -> None:
-    """Run validation and report results."""
+def _run_validation(
+    source: str, input_format: str | None, artifacts_dir: str | None, *, anonymizing: bool = False
+) -> None:
+    """Run validation and report results.
+
+    When the run anonymizes, a warning about a path of the input is printed
+    without that path, as the conversion's own warnings are.
+    """
     from junoscfg import validate_config
     from junoscfg.validate import SchemaLoadError
 
@@ -943,7 +952,11 @@ def _run_validation(source: str, input_format: str | None, artifacts_dir: str | 
         sys.exit(3)
 
     for warning in result.warnings:
-        click.echo(f"Warning: {warning.message}", err=True)
+        message = warning.message
+        if anonymizing and warning.path:
+            message = message.removeprefix(f"{warning.path}: ")
+            message += " (the block's path is withheld: the conversion anonymizes)"
+        click.echo(f"Warning: {message}", err=True)
     if result.valid:
         click.echo("Validation: OK", err=True)
     else:

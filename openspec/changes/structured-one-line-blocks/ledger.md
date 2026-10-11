@@ -80,6 +80,7 @@ full check, a fresh review. The last column adds what is specific to the row.
 | ARCH-C05 | mission high-impact 1 | `unknown-knob: 203.0.114.9` under a BGP group | OPEN | data leak | `anonymize/walker.py` (`child_schema is None`) | library and pipeline | none needed | 5 | owner: lexical IP pattern + warning naming the path |
 | ANON-P1 (=NEW-C13) | strict xfails `test_every_rule.py` (2) | groups + sensitive word on `apply-groups` | OPEN | wrong configuration, revert failure | `anonymize/__init__.py`, `rules/group.py` | all | — | 5 | |
 | ANON-P2 | strict xfails `test_integration.py` `MISSED` (2) | values left by every rule in the example | OPEN | data leak | IP typing, walker coverage | all | vmx | 5 | `MISSED` empty |
+| NEW-R1 | Reviewer re-review (change 1) | `junoscfg convert -v --anonymize-all` on input with an invalid statement prints `Invalid syntax: set system bogus-statement 203.0.114.9` | OPEN | data leak (validation errors before anonymization; same on the base) | CLI `-v` with anonymization | CLI | none needed | 5 | |
 | NEW-A-N1, N2, N3, N6 | inventory A | nested universal statements, transparent siblings, host types | OPEN | data leak | `anonymize/walker.py`, `rules/ip.py` | all | — | 5 | |
 | NEW-A-S2 | inventory A | transparent-container siblings in field validation | OPEN | false rejection, silent acceptance | `convert/field_validator.py` | all, strict | — | 5 | |
 | NEW-C11 | inventory C | interface-range description, tacplus addresses | DUPLICATE of ANON-P2 | data leak | as ANON-P2 | all | vmx | 5 | |

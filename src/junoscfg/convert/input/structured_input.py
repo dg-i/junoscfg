@@ -45,12 +45,13 @@ class StructuredSetLines:
             without tags; a one-line statement the walk reads as siblings
             gives one line per sibling.
         incomplete: The lines whose last leaf has no value.
-        notes: What the text holds that yields no statement.
+        notes: What the text holds that yields no statement, each as the
+            block's path and its message.
     """
 
     lines: tuple[str, ...]
     incomplete: tuple[str, ...]
-    notes: tuple[str, ...]
+    notes: tuple[tuple[str, str], ...]
 
 
 def structured_set_lines(source: str) -> StructuredSetLines:
@@ -69,5 +70,5 @@ def structured_set_lines(source: str) -> StructuredSetLines:
     return StructuredSetLines(
         lines=tuple(f"set {line}" for line, _ in read),
         incomplete=tuple(f"set {line}" for line, whole in read if not whole),
-        notes=tuple(str(note) for note in lexer.notes()),
+        notes=tuple((note.path, note.message) for note in lexer.notes()),
     )

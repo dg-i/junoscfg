@@ -243,6 +243,20 @@ The orchestrator accepted F1–F8 on 2026-10-11:
 - F7: the freeze's delta log names DEV-1 in both `bgp-transport-class.conf` files.
 - F8: `cases()` asserts `row.xfail or not row.xfail_on`.
 
+### Re-review (same Reviewer, 2026-10-11)
+
+F2–F8 confirmed resolved. One item remained, F1b (medium): `junoscfg convert -v -i structured -e set
+--anonymize-all --anonymize-salt s1` printed the reader's warnings with their original paths, because
+`-v` validates the source before anonymization and the new `Warning:` loop printed `validate_structured`'s
+notes whole. Corrected: the CLI builds the anonymization config first and passes whether the run
+anonymizes to `_run_validation`, which then prints a warning without its path (validation warnings now
+carry the path in `ValidationError.path`). `test_no_original_value_reaches_a_diagnostic` gains the `-v`
+case.
+
+Carry-forward, not this change's: under `-v` with anonymization a validation *error* prints original
+values (`Invalid syntax: set system bogus-statement 203.0.114.9`), as on the merge base; ledgered as
+NEW-R1 under change 5.
+
 ## Specification challenges
 
 ### F1: a sibling split must not create an acceptance
@@ -287,4 +301,4 @@ The orchestrator accepted F1–F8 on 2026-10-11:
 
 ## Verdict
 
-Fresh Reviewer: CHANGES REQUIRED (F1, F2 blocking). Corrections applied; awaiting the same Reviewer's re-check.
+Fresh Reviewer: CHANGES REQUIRED (F1, F2 blocking); re-review: CHANGES REQUIRED on F1b only. F1b corrected; awaiting the Reviewer's confirmation.
