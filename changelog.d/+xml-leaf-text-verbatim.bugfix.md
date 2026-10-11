@@ -1,0 +1,1 @@
+XML input keeps a leaf value's leading and trailing spaces, as the device writes them: `<allow-commands>^show </allow-commands>` converts to `allow-commands "^show "`, where it lost the space and wrote another configuration. A flag or container written across lines (`<passive>` and `</passive>` on two lines) still reads as the flag.

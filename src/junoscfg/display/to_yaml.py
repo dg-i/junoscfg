@@ -234,10 +234,17 @@ def _xml_leaf(
     (`tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.*`). It used
     to read as the presence flag `[null]`, written back as a bare line the
     device rejects (DEV-16).
+
+    The text is the value as written: the device writes `allow-commands
+    "^show "` as `<allow-commands>^show </allow-commands>` (same captures).
+    Stripping it wrote `"^show"`, another configuration (DEV-17). Text that
+    is only whitespace is a value only on such a leaf; elsewhere it is the
+    layout of a flag or container written across lines, `<passive>\\n</passive>`.
     """
-    empty = "" if node and node.get("l") and not node.get("p") else None
+    takes_value = bool(node and node.get("l") and not node.get("p"))
     values = [
-        _coerce_value(text) if (text := (el.text or "").strip()) else empty for el in elements
+        _coerce_value(text) if (text := el.text or "").strip() or takes_value else None
+        for el in elements
     ]
     tags = [_get_tag_attrs(el) for el in elements]
     if any(tag != tags[0] for tag in tags):
