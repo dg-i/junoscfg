@@ -27,7 +27,7 @@ Tests: `tests/tooling/test_schema_verification.py::TestExecutedCompletion::test_
 ### Requirement: Unknown physical inputs and versions refuse early
 
 WHEN a shard prerequisite is missing, empty, symlinked, unknown-release, outside its declared physical path, or has unavailable/mismatched observable runtime versions THEN the adapter SHALL refuse before costly schema execution.
-Tests: `tests/tooling/test_schema_verification.py::TestPhysicalInputs::test_missing_empty_symlink_or_unknown_dump_refuses`, `tests/tooling/test_schema_verification.py::TestPhysicalInputs::test_unknown_or_changed_runtime_refuses`
+Tests: `tests/tooling/test_schema_verification.py::TestPhysicalInputs::test_missing_empty_symlink_or_unknown_dump_refuses`, `tests/tooling/test_schema_verification.py::TestPhysicalInputs::test_unknown_or_changed_runtime_refuses`, `tests/tooling/test_schema_verification_challenge.py::TestPrerequisitesBeforeExecution::test_shard_refuses_before_launching_pytest`, `tests/tooling/test_schema_verification_challenge.py::TestPrerequisitesBeforeExecution::test_sentinel_refuses_runtime_mismatch_before_generation`
 
 #### Scenario: Legacy symlink points to a real dump
 
@@ -37,7 +37,7 @@ Tests: `tests/tooling/test_schema_verification.py::TestPhysicalInputs::test_miss
 ### Requirement: Real generation preserves the candidate
 
 WHEN a shard runs THEN it SHALL execute the existing schema suite and real_artifacts generation, export actual temporary products to ignored stable paths, compare shipped-release protected products to settled committed products, and refuse failed execution or candidate/input mutation without publishing success.
-Tests: `tests/tooling/test_schema_verification.py::TestCandidateIntegrity::test_real_runner_exports_artifacts_without_mutation`, `tests/tooling/test_schema_verification.py::TestCandidateIntegrity::test_mutated_inputs_or_failed_execution_publish_no_success`
+Tests: `tests/tooling/test_schema_verification.py::TestCandidateIntegrity::test_real_runner_exports_artifacts_without_mutation`, `tests/tooling/test_schema_verification.py::TestCandidateIntegrity::test_mutated_inputs_or_failed_execution_publish_no_success`, `tests/tooling/test_schema_verification_challenge.py::TestFailureCannotPublishSuccess::test_actual_failed_run_cannot_retain_success_manifests`
 
 #### Scenario: A test mutates its schema input
 

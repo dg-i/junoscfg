@@ -18,6 +18,7 @@ verification:
     - tools/schema-verification/schema-25.2.required.json
     - tools/schema-verification/schema-25.2.stability.json
     - tests/tooling/test_schema_verification.py
+    - tests/tooling/test_schema_verification_challenge.py
     - pyproject.toml
     - .gitignore
     - mkdocs.yml
