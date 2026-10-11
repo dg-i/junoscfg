@@ -9,7 +9,7 @@
 - [x] 2.2 Readers, writers and validation take the helper: `convert/input/set_input.py` (statements and meta commands), `display/to_yaml.py`, `convert/input/normalization.py`, `convert/output/{dict_walker,structured_output,json_output}.py`, `convert/field_validator.py`, `validate/schema_generator.py`.
 - [x] 2.3 `validate/xsd_fixes.py`: `apply-flags` is a container of the presence flags `omit` and `replace`; artifacts regenerated with `junoscfg schema generate`; a second regeneration unchanged.
 - [x] 2.4 Contracts and docs, changelog fragment, minor bump 0.18.0 in `pyproject.toml`, `src/junoscfg/__init__.py`, `uv.lock`.
-- [ ] 2.5 Measurement: head outputs against `base-device.json` and `base-jvd.json`; schema tier, JVD tier, device law.
+- [x] 2.5 Measurement: head outputs against `base-device.json` and `base-jvd.json`; schema tier, JVD tier, device law.
 
 ## 3. Review and evidence
 
