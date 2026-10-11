@@ -9,9 +9,9 @@ The garden is the only scheduled writer of shared documents; everywhere else, a
 document changes because a change PR touched it. Run this before each release
 or monthly, whichever is sooner.
 
-Invoke as `agent-ready-garden <job>`, one job per session. Read this file and
-the one job file you are running. Do not read the others; they cost tokens you
-will not use.
+Invoke as `agent-ready-garden <job>`, one job per session. Read this file, the
+one job file you are running, and only the support file that job explicitly
+requires. Do not read the other jobs; they cost tokens you will not use.
 
 ## Jobs
 

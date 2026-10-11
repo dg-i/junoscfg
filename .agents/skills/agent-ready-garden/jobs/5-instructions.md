@@ -2,15 +2,13 @@
 
 ## Outcome
 
-The owner sees the observable instruction surface, including blind spots, and
-one evidence-backed finding per conflict, ambiguity, or stale instruction.
-Mechanical defects are repaired only inside the boundary below. Meaning is
-never changed without the owner's decision.
+The owner sees the observable instruction surface, its blind spots, and one
+evidence-backed finding per conflict, ambiguity, or stale instruction. Repair
+mechanical defects only inside the boundary below; never change meaning.
 
-Run once per garden cycle in a fresh session as `agent-ready-garden
-instructions full` or `agent-ready-garden instructions changed`. If the mode
-is absent, use `full` and say so. Run directly; do not delegate a comparison
-that needs one consistent view of precedence and scope.
+Run once per garden cycle in a fresh session as `agent-ready-garden instructions
+full|changed`. If absent, use `full` and say so. Run directly; do not delegate a
+comparison that needs one consistent view of precedence and scope.
 
 ## Modes
 
@@ -33,6 +31,9 @@ loading, precedence, or scope-boundary changes widen to `full`; case and
 punctuation do not prevent it. An absent or invalid baseline also means `full`.
 
 ## Observable instruction surface
+
+Read `../guides/instruction-audit-output.md`. It defines source ownership,
+remediation destination, and the mandatory user-visible file inventory.
 
 Inventory every source that can instruct the agent, not merely `AGENTS.md`:
 
