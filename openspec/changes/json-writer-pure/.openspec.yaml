@@ -1,2 +1,22 @@
 schema: agent-ready
 created: 2026-10-11
+type: bug
+# The highest-tier zone whose paths this change edits: src/junoscfg/convert/output/json_output.py
+# (conversion, yellow); src/junoscfg/__init__.py (surface, yellow) changes only __version__.
+zone: conversion
+domains: [conversion]
+removes: "none, because the change removes no behaviour, door, test or output: the JSON writer keeps every pass and its output, and only stops writing into the caller's IR"
+assurance: balanced
+declared-break:
+  consumer:
+    why: >-
+      Not a break. src/junoscfg/__init__.py changes only `__version__` (0.16.0
+      to 0.16.1), the bump AGENTS.md requires; no name, signature or behaviour
+      of the surface changes, because convert_config reads a fresh IR and
+      renders it last. Below the surface, junoscfg.convert.from_dict(ir, "json")
+      no longer rewrites the caller's IR; its output is unchanged. Patch, as
+      AGENTS.md rules for everything that is not a break on a named surface.
+    migration: >-
+      None needed. A caller of junoscfg.convert.from_dict that relied on the
+      JSON writer normalizing its IR in place reads the normalized IR back with
+      json.loads(from_dict(ir, "json"))["configuration"].
