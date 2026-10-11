@@ -56,15 +56,20 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 
 !!! warning "Structural only, and it rejects some valid configuration"
     Set validation checks *shape*, not values: every leaf accepts any token.
+    Nodes that share a name can share their grammar alternatives, so a line may
+    also pass with a child the schema has only at another node of that name:
+    `set protocols bgp group RR family inet6 labeled-unicast per-prefix-label`
+    validates although the bundled schema has `per-prefix-label` under
+    `family inet labeled-unicast`, not under `family inet6 labeled-unicast`.
+
     It also over-rejects. Of the 8,713 distinct `set` lines four lab devices
     printed for the configurations in `tests/data/device/`, all valid Junos, it
-    rejects 66; `tests/data/device/grammar-corpus.json` records each, and
-    `tests/corpus/test_set_corpus.py` fails when one is fixed or a new one
-    appears. It also lists the malformed input the grammar must refuse, the
-    intentional exclusions, and the known limitation:
-
-    - **A rule merged from several places offers one choice**, so
-      `set system location dc-a` is rejected even though the hierarchy exists.
+    rejects fewer than one in a hundred; `tests/data/device/grammar-corpus.json`
+    records each, and `tests/corpus/test_set_corpus.py` fails when one is fixed
+    or a new one appears. The same test lists the malformed input the grammar
+    must refuse and the intentional exclusions. `set system location dc-a` is
+    malformed, not an over-rejection: `location` takes keyworded children, as
+    in the devices' `set system location building "B 2"`.
 
     Raw set input **intentionally rejects every unquoted `[` or `]`**. It
     accepts canonical device-produced `| display set` syntax, not interactive

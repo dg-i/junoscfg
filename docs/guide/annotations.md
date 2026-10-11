@@ -19,7 +19,7 @@ A bare `"@"` key inside an object annotates *the object itself*:
     "system": {
       "@": {"operation": "replace"},
       "host-name": "router1",
-      "location": "dc-a"
+      "domain-name": "example.net"
     }
   }
 }
@@ -30,7 +30,7 @@ Converted to structured format, the annotation becomes a prefix on the block:
 ```text
 replace: system {
     host-name router1;
-    location dc-a;
+    domain-name example.net;
 }
 ```
 
@@ -124,7 +124,7 @@ $ cat replace-system.json
     "system": {
       "@": {"operation": "replace"},
       "host-name": "router1",
-      "location": "dc-a"
+      "domain-name": "example.net"
     }
   }
 }
@@ -135,12 +135,12 @@ configuration:
     '@':
       operation: replace
     host-name: router1
-    location: dc-a
+    domain-name: example.net
 
 $ junoscfg convert -i yaml -e conf < replace-system.yaml
 replace: system {
     host-name router1;
-    location dc-a;
+    domain-name example.net;
 }
 ```
 
@@ -150,7 +150,7 @@ no replace command:
 ```console
 $ junoscfg convert -i json -e set < replace-system.json
 set system host-name router1
-set system location dc-a
+set system domain-name example.net
 ```
 
 ## Inline Meta Commands
