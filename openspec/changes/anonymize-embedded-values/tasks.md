@@ -41,5 +41,15 @@ Changed-hypothesis ambiguity repair passed all 122 supplemental rows; five-reade
 - [x] Five-reader legacy-map rejection through conversion/CLI, measured integration expectations, contracts/docstrings/declared docs/migration completed; no v2 representation.
 - [x] Actual message-catalogue fragment corrected after verifying git diff. Exact two affected message-door nodes: 2 passed, exit 0. Previous focused run's 7608 passing cases and 14 existing xfails remain evidence; do not claim one fully green focused command.
 - [x] Fields, caps, reconcile and codemap check exit 0. Delta compacted to 51 lines without wording changes; no cap raised.
-- [ ] Normal-hook commit plus fast check and clean checkpoint.
+- [x] Normal-hook commit plus fast check and clean checkpoint (immutable fast-checked HEAD recorded below).
 - [ ] Root rebase onto integrated #9 baseline, then explicitly released full/device comparison; high-risk fresh Reviewer, metrics and Finalizer remain open.
+
+### Final local handoff checkpoint
+
+- [x] S5/S7 corrections and #8 expectation updates complete; fixed-message ambiguity refusal, flat map rejection before output/mutation, literal/wildcard selector risk in both filter directions, value-free warnings, excluded selector unchanged.
+- [x] Normal-hook implementation commit `348108a67421e952a692d7306659eb7e0fff4a8f` passes affected tests and all hooks. Supplemental 122 cases passed; newly added five-reader legacy-map rows and integration expectations passed in the focused selection. Exact two message-catalogue corrections pass. Prior failures/no-op/record-write provenance is preserved without claiming a completely green focused command.
+- [x] Fast check passes exit 0 on `1d144fcdf073b12f69d05ff74ff6a249a2105d3e`; fields/caps/reconcile/codemap green. This final commit changes evidence only and preserves the checkpoint.
+- [ ] Next incomplete phase-5 work: orchestrator rebase onto integrated #9 baseline `0438299772819f24c871d4cb2b8768f9233f9318`, then explicitly released full checkpoint and device comparison. Original #7 full never passed.
+- [ ] Fresh high-risk isolated Reviewer, immutable metrics and bounded Finalizer remain incomplete; no Builder self-approval.
+
+All candidate writes transfer to the orchestrator after this evidence-only handoff. No further local mutations before its explicit resumption.
