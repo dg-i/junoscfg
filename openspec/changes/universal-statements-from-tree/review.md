@@ -212,6 +212,83 @@ carry-forward list: rerun `outputs.py --jvd` with a timeout of at least 60 minut
   universal statement", with the two rejected lines as its tests.
 - Decision: pending owner.
 
+### Reviewer re-review, verbatim: Re-review of the fixes (c85854d, head ff380dd, diff 81ff738..ff380dd)
+
+All checks below were executed at `ff380dd`. The output files are the `*.fix.out` files
+in this folder.
+
+#### Verdict: APPROVE
+
+#### Findings 1-6: each fix confirmed
+
+**1. Nothing resolves inside a universal statement. Fixed.**
+
+- `schema_child` now gives no universal fallback for any node inside a universal
+  statement's subtree (`constants.py` `_universal` / `schema_child`).
+- `set_input` now calls `schema_child` at both of its sites.
+- The grammar generator drops `universal_statement` from rules that only universal
+  subtrees reach. The shipped grammar now reads `apply_flags: "omit" | "replace"`.
+- Grammar: `set system apply-flags apply-groups G1` and `set system apply-flags
+  apply-flags omit` are both **rejected**.
+- Conversion: from XML, the nested form is reported (1 diagnostic) and written back
+  as read. Set, curly and JSON are covered by the new tests.
+- Anonymization: `rv_anon_in.set` under `--anonymize-ips` is now **refused**
+  ("cannot anonymize ... text is withheld"), and `203.0.114.7` does not appear in the
+  output.
+
+**2. Bare `apply-flags` rejected again, as in 0.17.0. Fixed.**
+
+- `set system apply-flags` and `set apply-flags` are both **rejected**. The test ids
+  `apply-flags-needs-a-flag` and `-at-the-top` exist.
+- Field validation no longer counts a tag as content. A lone `deactivate system
+  apply-flags omit` is now reported (`rv_probe_tag.fix.out`).
+- The valid lines still validate: `omit` at the top and nested, `replace`, GR-OMIT,
+  nested `apply-macro` and `apply-groups`.
+
+**3. The floor is never cached. Fixed.**
+
+- `rv_probe_tripwire.py` now prints `tripped: answered from the floor`.
+- The test asks an old tree first, then asserts the poisoned floor raises.
+
+**4. Fixed together with 1.**
+
+**5. Recorded.** `schema_generator.py` now explains why the floor serves only a
+`SchemaNode` that has not been through the fixes.
+
+**6. Fixed.** The removal fragment says to regenerate custom artifacts built by
+0.8.0-0.17.0. `rv_probe_017tree.py` behaves as the fragment now describes.
+
+#### Regression checks
+
+- **Regeneration (head ff380dd):** the structure tree, grammar and both JSON schemas
+  are content-identical to the committed artifacts. The metadata differs only in
+  `generated_at`.
+- **Device comparison:** `outputs.py` over 236 conversions is byte-identical to the
+  81ff738 head (`rv-fix-device.json`).
+- **JVD:** I did not rerun it. The Builder's `head-jvd.json` (08:48, after c85854d at
+  08:03) is byte-identical to `head-jvd-81ff738.json`, and 11 of 4,605 differ from the
+  base, as recorded.
+- **Targeted tests:** 5,183 passed and 15 xfailed. This covers the change's files, the
+  grammar generator and `tests/contract/`.
+- **`rv_probe_fv` and `rv_probe_tag` against the 81ff738 run:** only the two
+  intended changes moved.
+
+#### Observation, not blocking
+
+Curly `inactive: apply-flags omit;` (and the device-JSON `@` on `apply-flags`) is written
+as `deactivate system apply-flags`, which the grammar rejects. This belongs to the
+grammar's existing class "deactivate of a path that wants a value": it rejects
+`deactivate system host-name` and `deactivate system apply-groups` at base and head
+alike. The base wrote `deactivate system apply-flags omit` from the unplaced record.
+Carry it with NEW-R7/P9 (tag placement) rather than in this change.
+
+#### Carried, as the orchestrator stated
+
+- Finding 7 goes to change 5.
+- Finding 8 goes to NEW-R7, change 14, probe P9.
+- The nested `apply-macro` values the anonymizer leaves verbatim (`rv_anon_in2.set`)
+  are pre-existing and go to change 5.
+
 ## Specification challenges
 
 ### S1: `apply-flags replace` is modelled without device evidence
@@ -232,4 +309,4 @@ carry-forward list: rerun `outputs.py --jvd` with a timeout of at least 60 minut
 
 ## Verdict
 
-CHANGES REQUIRED at 81ff738 (fresh Reviewer). Findings 1–6 were fixed and 7–8 carried forward, as ruled. Confirmation is pending. S1 and S2 are pending the owner, with their interim actions applied.
+APPROVE at ff380dd, from the same fresh Reviewer after CHANGES REQUIRED at 81ff738. Open by ruling, for the owner at archive: S1 (`replace`, probe P8) and S2 (nothing resolves inside a universal statement), both pending with their interim actions applied. Carried forward: finding 7 and the anonymizer's nested `apply-macro` values to change 5; finding 8 and the re-review's observation (curly `inactive: apply-flags omit;` written as `deactivate system apply-flags`, which the grammar rejects) to change 14 as NEW-R7, with probe P9.

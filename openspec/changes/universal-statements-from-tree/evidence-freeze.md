@@ -110,3 +110,4 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
   - Device outputs: identical to the 81ff738 head (18 of 236 differ from the base, as explained above).
   - Timing rerun: head 5.07/5.43/1.52/1.76 s, base 4.94/5.27/1.44/1.68 s (within 3–6 %).
   - Resume point: the Reviewer's confirmation, then phase 7.
+- 2026-10-11, phase 7: Reviewer APPROVE at ff380dd. Its non-blocking observation (curly `inactive: apply-flags omit;` written as a `deactivate` line the grammar rejects, the grammar's existing class "deactivate of a path that wants a value") is carried to change 14 as part of NEW-R7. No criterion changes.
