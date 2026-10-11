@@ -6,7 +6,7 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | UNMEASURED (code head 4fafc72 against 50b0a10: 36 files, +1,488 / -330, records and tests included; final values at phase 7) |
 | dependency count | UNMEASURED |
 | direct declared runtime dependencies | UNMEASURED |
 | total root-lock packages | UNMEASURED |

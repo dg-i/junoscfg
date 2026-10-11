@@ -11,6 +11,8 @@
 - [x] 2.4 `validate/grammar_generator.py`: `QUOTED` takes `\"` and keeps a trailing backslash (SC2); schema tier regenerates `validate/data/` (ef06855; second run byte-identical except `junos-schema-meta.json.gz`); `tools/device_grammar_corpus.py` (false rejections 66 -> 65) and `tools/device_differences.py` (928 -> 716 lines, four classes gone) rebuild their records.
 - [x] 2.5 Changelog fragments (bugfix, removal), docs (`design-decisions.md` Value Quoting, `guide/audit.md`), `display/CONTRACT.md` invariant; before/after comparison over every capture: plain 36 of 96 conversions differ, anonymized 432 of 1,152 (the same 36 under each of 12 rule sets), every changed line a policy-algebra token (DEV-4/5/6) or an escaped quote (DEV-7), no diagnostic, field-validation or exception difference.
 
+- [x] 2.6 Full checkpoint: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at `4fafc72`: every check passed; application tests 8,351 passed, 37 skipped, 20 xfailed.
+
 ## 3. Review and evidence
 
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.

@@ -60,7 +60,7 @@ None blocking: P11 and P12 are device questions with safe interim actions (C3, C
 - Assurance preference: economy
 - Risk floor: high (declared break on `consumer` and `cli`; cross-domain: conversion, validation, schema-pipeline, display kernel)
 - Roles required: Builder; independent Test/Challenge (STOP-T after phase 4); fresh Reviewer at least as capable as the Builder (STOP-R after phase 5); Finalizer
-- Resume point: phase 5 (implementation, schema tier, record rebuilds, before/after comparison), then STOP-R
+- Resume point: STOP-R after phase 5 (full check at `4fafc72`, every check passed); next phase 6, a fresh Reviewer (high risk floor)
 
 ## Delta log
 
