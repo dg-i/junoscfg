@@ -341,6 +341,16 @@ class TestTheLexerReadsTokensNotLines:
                 ],
             ),
             (
+                "interfaces {\n    ${PHY_PORT}:0 { mtu 9216; }\n}\n",
+                [
+                    [
+                        ("interfaces", frozenset()),
+                        ("${PHY_PORT}:0", frozenset()),
+                        ("mtu 9216", frozenset()),
+                    ]
+                ],
+            ),
+            (
                 'snmp { inactive: apply-groups [ G1 "G 2" ]; }',
                 [
                     [("snmp", frozenset()), ("apply-groups G1", frozenset({"inactive"}))],
@@ -348,7 +358,12 @@ class TestTheLexerReadsTokensNotLines:
                 ],
             ),
         ],
-        ids=["a-tagged-entry", "a-quoted-value-holding-delimiters", "a-tagged-bracket-list"],
+        ids=[
+            "a-tagged-entry",
+            "a-quoted-value-holding-delimiters",
+            "a-template-variable",
+            "a-tagged-bracket-list",
+        ],
     )
     def test_tags_and_quoted_values_read_exactly(
         self, text: str, statements: list[list[tuple[str, frozenset[str]]]]
@@ -415,6 +430,10 @@ class TestMalformedTextIsRefused:
             ("system {\n    host-name router1; /* note\n}\n", r"line 2: a comment is never closed"),
             ("snmp {\n    apply-groups [ G1 G2;\n}\n", r"line 2: '\[' is never closed"),
             ("{\n    host-name router1;\n}\n", r"line 1: '\{' opens a block with no name"),
+            (
+                "AN3:\nsystem {\n    host-name router1;\n}\n",
+                r"line 1: statement 'AN3:' has no ';'\nAN3:$",
+            ),
         ],
         ids=[
             "a-brace-too-many",
@@ -424,9 +443,16 @@ class TestMalformedTextIsRefused:
             "an-open-comment",
             "an-open-bracket-list",
             "a-block-without-a-name",
+            "a-label-above-a-block",
         ],
     )
     def test_it_raises(self, text: str, fault: str) -> None:
+        """The message names the fault, its line, and the line's text.
+
+        A statement ends on its own line, as every device writes it, so prose
+        or a CLI prompt above a dump (Juniper's published JVD files carry
+        both) is refused, not read into the next statement's path.
+        """
         with pytest.raises(ValueError, match=fault):
             SetConverter(text).statements()
 

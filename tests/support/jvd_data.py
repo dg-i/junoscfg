@@ -26,15 +26,21 @@ CLONE_URL = "https://github.com/Juniper/jvd.git"
 
 # Files that are documentation carrying configuration rather than
 # configuration: prose, section labels such as `AN3:`, and the CLI prompt
-# captured above a dump. They are not junoscfg's to parse.
+# captured above a dump. They are not junoscfg's to parse. The curly lexer
+# names such a line as a statement without `;` (it was `Unknown statement:`
+# before the token lexer of change structured-one-line-blocks; the same 35
+# files, measured 2026-10-11). An unmatched `}` is a file a device refuses to
+# load: one in the corpus, `p2_ptx10001-36mr.conf` of ewan_finance, closes
+# `routing-options` twice; the line reader passed it silently.
 NOT_CONFIGURATION = (
     "show configuration",
-    "Unknown statement: AN",
-    "Unknown statement: MA",
-    "Unknown statement: MSE",
-    "Unknown statement: MEG",
+    "statement 'AN",
+    "statement 'MA",
+    "statement 'MSE",
+    "statement 'MEG",
     "lets ISIS hellos use the full",
     "## SECRET-DATA",
+    "'}' closes no block",
 )
 
 

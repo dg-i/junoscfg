@@ -11,8 +11,8 @@ a word: it becomes a statement, a refusal, or a warning.
 WHEN structured text puts several statements, a block's braces, or a closing
 brace and the next statement on one line THEN the reader SHALL read the same
 statements, with the same tags, as the text laid out one statement per line;
-`{`, `}`, `;` and a bracket list are tokens wherever they stand outside quotes,
-and format detection SHALL classify such text as structured, a tagged one-liner
+`{`, `}`, `;` and a bracket list are tokens wherever they stand outside quotes
+(a template's `${NAME}` stays inside its word), and format detection SHALL classify such text as structured, a tagged one-liner
 included.
 Tests: `tests/unit/display/test_set_converter.py::TestTheLexerReadsTokensNotLines::test_one_line_text_reads_as_its_lines`, `tests/unit/display/test_set_converter.py::TestTheLexerReadsTokensNotLines::test_tags_and_quoted_values_read_exactly`, `tests/unit/convert/test_structured_input.py::TestABlockOnOneLine::test_every_door_converts_it`, `tests/unit/convert/test_structured_input.py::TestABlockOnOneLine::test_auto_detection_reads_it_as_structured`, `tests/unit/display/test_format_detection.py::TestFormatDetection::test_each_format_is_recognised`
 
@@ -47,9 +47,10 @@ Tests: `tests/unit/display/test_set_converter.py::TestACommentIsNeverPartOfAStat
 ### Requirement: Malformed structured text is refused
 
 WHEN structured text closes a block it never opened, leaves a block, bracket
-list, quote or comment open, ends a statement without `;`, or opens a block
-with no name THEN conversion SHALL raise `ValueError` naming the fault and its
-line, and structured validation SHALL return an invalid result; no statement
+list, quote or comment open, ends a statement without `;`, lets a statement run
+onto a later line (as prose or a CLI prompt above a dump does; no device writes
+one), or opens a block with no name THEN conversion SHALL raise `ValueError`
+naming the fault, its line and the line's text, and structured validation SHALL return an invalid result; no statement
 of the text is converted silently in part. A `;` with no statement before it
 (`;;`, `};`) carries nothing and is read as nothing.
 Tests: `tests/unit/display/test_set_converter.py::TestMalformedTextIsRefused::test_it_raises`, `tests/unit/convert/test_structured_input.py::TestMalformedTextIsRefused::test_every_door_refuses_it`, `tests/unit/display/test_set_converter.py::TestAnEmptyStatementReadsAsNothing::test_a_stray_semicolon`

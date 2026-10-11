@@ -17,8 +17,10 @@ from typing import NoReturn, TextIO
 # One alternative per token kind, tried in order at each position. A word
 # starts with anything but a quote and runs to whitespace, a delimiter, `#` or
 # `/*`; a quote inside a word is part of it, as the set reader's tokenizer
-# reads one. `[` opens a list only where a token starts (`<[gx]e-*>` is one
-# word), and `]` closes one only inside a list (see `_Lexer._word`).
+# reads one, and so is a template's `${NAME}`, which Juniper's published
+# configuration snippets use. `[` opens a list only where a token starts
+# (`<[gx]e-*>` is one word), and `]` closes one only inside a list (see
+# `_Lexer._word`).
 _TOKEN = re.compile(
     r"""
       (?P<space>\s+)
@@ -28,7 +30,7 @@ _TOKEN = re.compile(
     | (?P<quoted>"(?:[^"\\]|\\.)*")
     | (?P<open_quote>")
     | (?P<delimiter>[{};\[])
-    | (?P<word>(?:[^\s{};\#"/]|/(?!\*))(?:[^\s{};\#/]|/(?!\*))*)
+    | (?P<word>(?:\$\{[^\s{};"]*\}|[^\s{};\#"/]|/(?!\*))(?:\$\{[^\s{};"]*\}|[^\s{};\#/]|/(?!\*))*)
     """,
     re.VERBOSE | re.DOTALL,
 )
@@ -187,6 +189,7 @@ class _Lexer:
         self._items: list[str] | None = None  # the open bracket list
         self._list_position = 0
         self._after_list = False  # a list closed; only `;` may follow
+        self._new_line = False  # a line ended since the last token
 
     def run(self) -> _Lexed:
         for match in _TOKEN.finditer(self._text):
@@ -194,7 +197,10 @@ class _Lexer:
             if kind == "comment_text":  # `lastgroup` names the innermost group
                 kind = "block_comment"
             position = match.start()
-            if kind in ("space", "line_comment"):
+            if kind == "space":
+                self._new_line = self._new_line or "\n" in match.group()
+                continue
+            if kind == "line_comment":
                 continue
             if kind == "block_comment":
                 if self._blocks and match.group("comment_text").strip() == _OMITTED:
@@ -205,6 +211,12 @@ class _Lexer:
             if kind == "open_quote":
                 self._fail(position, "a quoted value is never closed")
             token = match.group()
+            new_line, self._new_line = self._new_line, False
+            if new_line and self._pending and not self._in_list and kind in ("quoted", "word"):
+                # A statement ends on its own line, as every device writes it:
+                # prose and a CLI prompt above a dump are refused, not read
+                # into the next statement.
+                self._unterminated()
             if kind == "quoted":
                 self._value(token, position)
             elif kind == "word":
@@ -327,4 +339,7 @@ class _Lexer:
 
     def _fail(self, position: int, fault: str) -> NoReturn:
         line = self._text.count("\n", 0, position) + 1
-        raise ValueError(f"Invalid structured input on line {line}: {fault}")
+        start = self._text.rfind("\n", 0, position) + 1
+        end = self._text.find("\n", position)
+        text = self._text[start : end if end >= 0 else len(self._text)].strip()
+        raise ValueError(f"Invalid structured input on line {line}: {fault}\n{text}")

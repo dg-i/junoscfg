@@ -47,6 +47,22 @@ and one changed verdict pinned. Disposition, all in the phase-5 commit:
     unchanged. The minimal set itself stays tree-less, which
     `TestArtifactsOption` relies on.
 
+### Builder measurement after Test/Challenge (JVD tier)
+
+The `--jvd` tier failed on the first phase-5 head. Measured per file against
+the merge base (evidence freeze, delta log), it led to two lexer rules and one
+test-support change the Reviewer should check:
+
+- A statement may not run onto a later line. Without it, 23 documentation
+  files that the line reader refused (CLI prompt, `AN3:` labels, prose)
+  converted silently, the prose read into the next path.
+- A template's `${NAME}` is one word: 22 published template snippets converted
+  before and still do.
+- `tests/support/jvd_data.py` `NOT_CONFIGURATION`: the `Unknown statement: AN…`
+  markers become `statement 'AN…` (the same 35 files fail on both sides), and
+  `'}' closes no block` is added for the one corpus file with an extra `}`,
+  which a device refuses and the line reader passed silently.
+
 ## Already provided
 
 `display.artifacts_dir()` scopes the walk to the caller's artifacts; the
