@@ -626,3 +626,47 @@ class TestARecordOfKeptStatementsIsInput:
         assert read_ir(structured, Format.STRUCTURED)["system"][self._RECORD] == {
             k: v for k, v in record.items() if not k.startswith("@")
         }
+
+
+class TestUnplacedContentKeepsItsKeywords:
+    """Content the tree does not place is written with every keyword it holds.
+
+    The Group-H flag helpers fell back to tables of element names when they
+    met no node: `timeout`, `limit`, `filter-name` positional, `interfaces`
+    transparent over `interface`, `prefix-list-item` a hidden list key. Every
+    "lost context" they covered was a universal statement below the root or
+    content the tree does not have, so where they fired they dropped the
+    keyword of a statement already reported as unplaced (ARCH-C08: 678
+    consultations, 0 firings over 236 device conversions). The helpers read
+    the node only now. Spec: schema-pipeline/universal-statements, change
+    universal-statements-from-tree.
+    """
+
+    _SOURCE = json.dumps(
+        {
+            "configuration": {
+                "bogus-container": {
+                    "timeout": "5",
+                    "limit": "7",
+                    "filter-name": "F1",
+                    "interfaces": {"interface": [{"name": "ge-0/0/0", "description": "x"}]},
+                    "prefix-list-item": [{"name": "198.51.100.0/24"}],
+                }
+            }
+        }
+    )
+
+    def test_every_keyword_is_written(self) -> None:
+        output = convert_config(self._SOURCE, from_format=Format.JSON, to_format=Format.SET)
+        assert sorted(output.splitlines()) == [
+            "set bogus-container filter-name F1",
+            "set bogus-container interfaces interface ge-0/0/0 description x",
+            "set bogus-container limit 7",
+            "set bogus-container prefix-list-item 198.51.100.0/24",
+            "set bogus-container timeout 5",
+        ]
+
+    def test_it_is_still_reported(self) -> None:
+        """A guard: keeping the keywords places nothing."""
+        with pytest.raises(FieldValidationError, match="'bogus-container' could not be placed"):
+            convert_config(self._SOURCE, from_format=Format.JSON, to_format=Format.SET, strict=True)

@@ -1063,6 +1063,75 @@ class TestApplyMacroTakesAtMostThreeValues:
         assert len(_unplaced(line + "\n")) == 1
 
 
+class TestApplyFlagsIsAContainerOfFlags:
+    """`apply-flags` holds presence flags, at every level, as the device writes it.
+
+    The device prints `set groups GR-OMIT system apply-flags omit`, XML
+    `<apply-flags><omit/></apply-flags>` and JSON `"apply-flags": {"omit":
+    [null]}` (vMX 23.2R2-S7.5, QFX5120 25.2R2-S1.5,
+    `tests/data/device/synthetic/*/junoscfg-oracle.*`). The tree had a leaf, so
+    the reader kept the line whole and reported it below the root, and read
+    the leaf `"omit"` at the top (DEV-V2). `replace` is the spelling the
+    grammar accepted from a production configuration (probe P8 for its JSON).
+    Spec: schema-pipeline/universal-statements, change
+    universal-statements-from-tree.
+    """
+
+    @pytest.mark.parametrize("flag", ["omit", "replace"])
+    @pytest.mark.parametrize(
+        ("prefix", "blocks", "where"),
+        [
+            ("", [], ()),
+            ("system ", ["system"], ("system",)),
+            ("groups GR-OMIT system ", ["groups", "GR-OMIT", "system"], ("groups", 0, "system")),
+            (
+                "protocols bgp group G1 ",
+                ["protocols", "bgp", "group G1"],
+                ("protocols", "bgp", "group", 0),
+            ),
+        ],
+        ids=["top", "system", "group", "bgp-group"],
+    )
+    @pytest.mark.parametrize("fmt", ["set", "structured"])
+    def test_a_flag_reads_as_the_device_writes_it(
+        self, flag: str, prefix: str, blocks: list[str], where: tuple[Any, ...], fmt: str
+    ) -> None:
+        line = f"set {prefix}apply-flags {flag}"
+        if fmt == "set":
+            source = line + "\n"
+        else:
+            source = f"apply-flags {flag};\n"
+            for opener in reversed(blocks):
+                inner = "".join("    " + row + "\n" for row in source.splitlines())
+                source = f"{opener} {{\n{inner}}}\n"
+        node = ir(source, Format(fmt))
+        for step in where:
+            node = node[step]
+        assert node["apply-flags"] == {flag: [None]}
+        assert UNPLACED_RECORD not in node
+        assert to_set(source, Format(fmt)) == [line]
+        assert _unplaced(source, fmt) == []
+
+    @pytest.mark.parametrize(
+        ("prefix", "where"),
+        [("", ()), ("system ", ("system",)), ("groups GR-OMIT system ", ("groups", 0, "system"))],
+        ids=["top", "system", "group"],
+    )
+    def test_another_word_is_kept_whole_and_reported(
+        self, prefix: str, where: tuple[Any, ...]
+    ) -> None:
+        """Any other word is no flag the tree knows: kept, reported, written back.
+        At the top it used to be the leaf's value, read without a word."""
+        line = f"set {prefix}apply-flags bogus"
+        parent = set_ir(line)
+        for step in where:
+            parent = parent[step]
+        assert "apply-flags" not in parent
+        assert kept_in(parent) == {"apply-flags bogus": KEPT}
+        assert _round_trip(line) == [line]
+        assert len(_unplaced(line + "\n")) == 1
+
+
 # ── Statements kept whole ────────────────────────────────────────────
 
 

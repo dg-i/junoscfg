@@ -1982,6 +1982,124 @@ _add(
     ),
 )
 
+# ── Statements valid at every level ──────────────────────────────────
+#
+# The tree declares `apply-groups`, `apply-groups-except`, `apply-flags` and
+# `apply-macro` once, on the root; every reader and writer resolves them below
+# it through `junoscfg.display.schema_child` (spec
+# schema-pipeline/universal-statements, change universal-statements-from-tree).
+
+_GR_OMIT = {
+    "groups": [
+        {
+            "name": "GR-OMIT",
+            "system": {"apply-flags": {"omit": [None]}, "location": {"building": "omit probe"}},
+        }
+    ]
+}
+_BELOW_THE_ROOT = {
+    "apply-groups": ["SAMPLE-GROUP"],
+    "system": {
+        "apply-groups": ["SAMPLE-GROUP", "SAMPLE-GROUP-2"],
+        "apply-groups-except": ["SAMPLE-GROUP-3"],
+        "apply-macro": [{"name": "M1", "data": [{"name": "k1", "value": "v1"}]}],
+        "apply-flags": {"omit": [None]},
+        "host-name": "router1",
+    },
+    "interfaces": {
+        "interface": [
+            {"name": "ge-0/0/0", "apply-groups": ["SAMPLE-GROUP"], "description": "uplink"}
+        ]
+    },
+}
+
+_add(
+    Shape(
+        "apply-flags-omit-as-the-device-writes-it",
+        {
+            SET: "set groups GR-OMIT system apply-flags omit\n"
+            'set groups GR-OMIT system location building "omit probe"\n',
+            STRUCTURED: _nest(
+                ["groups", "GR-OMIT", "system"],
+                "            apply-flags omit;\n            location {\n"
+                '                building "omit probe";\n            }\n',
+            ),
+            JSON: _json(_GR_OMIT),
+            YAML: "configuration:\n  groups:\n  - name: GR-OMIT\n    system:\n"
+            "      apply-flags:\n        omit:\n        - null\n"
+            "      location:\n        building: omit probe\n",
+            XML: _xml(
+                "<groups><name>GR-OMIT</name><system><apply-flags><omit/></apply-flags>"
+                "<location><building>omit probe</building></location></system></groups>"
+            ),
+        },
+        ir=_GR_OMIT,
+        set_output="set groups GR-OMIT system apply-flags omit\n"
+        'set groups GR-OMIT system location building "omit probe"\n',
+        why="DEV-V2: the device writes `apply-flags` as a container holding the flag `omit` "
+        "(group GR-OMIT, tests/data/device/synthetic/{vmx-23.2R2-S7.5,qfx5120-25.2R2-S1.5}/"
+        "junoscfg-oracle.{set,xml,json}.gz). The tree had a leaf, so set and curly input kept "
+        "the line whole and reported it. Change universal-statements-from-tree.",
+    ),
+    Shape(
+        "universal-statements-below-the-root",
+        {
+            SET: "set apply-groups SAMPLE-GROUP\n"
+            "set system apply-groups SAMPLE-GROUP\n"
+            "set system apply-groups SAMPLE-GROUP-2\n"
+            "set system apply-groups-except SAMPLE-GROUP-3\n"
+            "set system apply-macro M1 k1 v1\n"
+            "set system apply-flags omit\n"
+            "set system host-name router1\n"
+            "set interfaces ge-0/0/0 apply-groups SAMPLE-GROUP\n"
+            "set interfaces ge-0/0/0 description uplink\n",
+            STRUCTURED: "apply-groups SAMPLE-GROUP;\n"
+            "system {\n    apply-groups [ SAMPLE-GROUP SAMPLE-GROUP-2 ];\n"
+            "    apply-groups-except SAMPLE-GROUP-3;\n"
+            "    apply-macro M1 {\n        k1 v1;\n    }\n"
+            "    apply-flags omit;\n    host-name router1;\n}\n"
+            "interfaces {\n    ge-0/0/0 {\n        apply-groups SAMPLE-GROUP;\n"
+            "        description uplink;\n    }\n}\n",
+            JSON: _json(_BELOW_THE_ROOT),
+            # One group as a scalar, as YAML may hold it: read as its list.
+            YAML: "configuration:\n  apply-groups: SAMPLE-GROUP\n  system:\n"
+            "    apply-groups:\n    - SAMPLE-GROUP\n    - SAMPLE-GROUP-2\n"
+            "    apply-groups-except: SAMPLE-GROUP-3\n"
+            "    apply-macro:\n    - name: M1\n      data:\n      - name: k1\n        value: v1\n"
+            "    apply-flags:\n      omit:\n      - null\n    host-name: router1\n"
+            "  interfaces:\n    interface:\n    - name: ge-0/0/0\n"
+            "      apply-groups: SAMPLE-GROUP\n      description: uplink\n",
+            XML: _xml(
+                "<apply-groups>SAMPLE-GROUP</apply-groups>"
+                "<system><apply-groups>SAMPLE-GROUP</apply-groups>"
+                "<apply-groups>SAMPLE-GROUP-2</apply-groups>"
+                "<apply-groups-except>SAMPLE-GROUP-3</apply-groups-except>"
+                "<apply-macro><name>M1</name><data><name>k1</name><value>v1</value></data>"
+                "</apply-macro><apply-flags><omit/></apply-flags>"
+                "<host-name>router1</host-name></system>"
+                "<interfaces><interface><name>ge-0/0/0</name>"
+                "<apply-groups>SAMPLE-GROUP</apply-groups><description>uplink</description>"
+                "</interface></interfaces>"
+            ),
+        },
+        ir=_BELOW_THE_ROOT,
+        set_output="set apply-groups SAMPLE-GROUP\n"
+        "set system apply-groups SAMPLE-GROUP\n"
+        "set system apply-groups SAMPLE-GROUP-2\n"
+        "set system apply-groups-except SAMPLE-GROUP-3\n"
+        "set system apply-macro M1 k1 v1\n"
+        "set system apply-flags omit\n"
+        "set system host-name router1\n"
+        "set interfaces ge-0/0/0 apply-groups SAMPLE-GROUP\n"
+        "set interfaces ge-0/0/0 description uplink\n",
+        why="ARCH-C06: below the root the four statements met no node; XML and YAML read a "
+        "nested `apply-groups` with one group as a scalar where set input and the top level "
+        "read a list (the device's JSON writes a list at every level, e.g. "
+        '`"apply-groups" : ["GR-MACRO"]` in tests/data/device/synthetic/vmx-23.2R2-S7.5/'
+        "junoscfg-oracle.json.gz). Change universal-statements-from-tree.",
+    ),
+)
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"

@@ -178,8 +178,8 @@ class TestYamlVariant:
 
         It used to carry no `patternProperties` at all. The four `apply-*`
         statements are legal at every level and junoscfg emits them, so the
-        generator names them from `UNIVERSAL_STATEMENTS` whether or not the
-        tree declares the flag -- see `TestUniversalStatementsReachEveryContainer`.
+        generator names the ones the tree declares, or the kernel's floor for a
+        tree that declares none -- see `TestUniversalStatementsReachEveryContainer`.
         """
         schema = generate_json_schema(_make_tree(), variant="json")
         config = schema["properties"]["configuration"]
@@ -196,23 +196,26 @@ class TestUniversalStatementsReachEveryContainer:
     `patternProperties` entry per container — 123,769 containers, so a property
     per container would be four copies of each name in each of them.
 
-    The names come from `UNIVERSAL_STATEMENTS` in the kernel, with any the tree
-    declares through the `universal` flag added. The kernel list is the floor
-    because a tree built before `_fix_apply_statements` carries no such node —
-    the shipped one does not — and junoscfg emitted `apply-groups` and then
-    rejected its own output for all three real device configurations.
+    The names are the ones the tree declares through the `universal` flag, read
+    through `junoscfg.display.universal_statements`: the tree is authoritative.
+    A tree that declares none -- built before `_fix_apply_statements`, as the
+    shipped one was until 0.8.0 -- gets the kernel's floor, because junoscfg
+    emitted `apply-groups` and then rejected its own output for all three real
+    device configurations. Until universal-statements-from-tree the generator
+    unioned the floor with the tree's flags, so a tree could not leave one out.
     """
 
     @staticmethod
-    def _tree() -> SchemaNode:
+    def _tree(*names: str) -> SchemaNode:
+        """The minimal tree with *names* (the four, by default) flagged universal."""
         tree = _make_tree()
-        groups = SchemaNode(name="apply-groups", is_leaf=True, is_list=True)
-        groups.flags.add("universal")
-        tree.children["apply-groups"] = groups
+        for name in names or ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro"):
+            node = SchemaNode(name=name, is_leaf=True, is_list=True)
+            node.flags.add("universal")
+            tree.children[name] = node
         return tree
 
-    # Every universal name the generator knows: the kernel's four, which the
-    # tree's own `apply-groups` is already one of.
+    # The four universal names the fixed tree declares, and the floor names.
     _PATTERN = "^(apply\\-flags|apply\\-groups|apply\\-groups\\-except|apply\\-macro)$"
 
     def test_the_root_names_them(self) -> None:
@@ -236,12 +239,21 @@ class TestUniversalStatementsReachEveryContainer:
             "^_meta_",
         }
 
-    def test_a_tree_without_the_flag_still_names_the_kernel_four(self) -> None:
-        """The flag adds to the floor; it is not what puts the floor there.
+    def test_the_tree_is_authoritative(self) -> None:
+        """A tree that flags only `apply-groups` names only it (ARCH-C06)."""
+        schema = generate_json_schema(self._tree("apply-groups"))
+        system = schema["properties"]["configuration"]["properties"]["system"]
+        assert "^(apply\\-groups)$" in system["patternProperties"]
+        assert self._PATTERN not in system["patternProperties"]
 
-        This asserted the opposite -- that a tree without the flag gains no
+    def test_a_tree_without_the_flag_still_names_the_kernel_four(self) -> None:
+        """A tree that declares no universal statement gets the kernel's floor.
+
+        This once asserted the opposite -- that a tree without the flag gains no
         pattern -- which pinned the state in which junoscfg's JSON output of
         any configuration carrying `apply-groups` failed its own validation.
+        The floor retires with the trees that need it (spec
+        schema-pipeline/universal-statements).
         """
         schema = generate_json_schema(_make_tree())
         system = schema["properties"]["configuration"]["properties"]["system"]

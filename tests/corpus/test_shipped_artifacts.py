@@ -132,6 +132,10 @@ class TestTheShippedArtifactsModelTheApplyStatements:
             "set system apply-groups-except foo",
             "set protocols bgp group G apply-groups foo",
             "set protocols bgp group overlay apply-flags replace",
+            # The device's own line (group GR-OMIT of the synthetic oracle
+            # captures, vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5), and the top.
+            "set groups GR-OMIT system apply-flags omit",
+            "set apply-flags omit",
             "set interfaces ge-0/0/0 apply-macro m1",
             "set interfaces ge-0/0/0 unit 0 apply-groups foo",
             "set interfaces ge-0/0/0 apply-groups-except bar",
@@ -152,8 +156,16 @@ class TestTheShippedArtifactsModelTheApplyStatements:
             "set system apply-groups",
             # The splice is four names, not a hole.
             "set system apply-nonsense foo",
+            # `apply-flags` holds its flags, not any value: the device writes
+            # `omit` as a flag (`<apply-flags><omit/></apply-flags>`). Any
+            # word passed while the tree had it as a leaf (DEV-V2).
+            "set system apply-flags bogus",
         ],
-        ids=["apply-groups-needs-its-group", "only-the-four-names"],
+        ids=[
+            "apply-groups-needs-its-group",
+            "only-the-four-names",
+            "apply-flags-takes-its-flags",
+        ],
     )
     def test_an_apply_statement_is_rejected(self, bundled_set_validator: Any, line: str) -> None:
         assert bundled_set_validator.validate(line).valid is False, line

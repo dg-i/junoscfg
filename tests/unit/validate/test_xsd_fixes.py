@@ -146,10 +146,32 @@ class TestGroupDMissingElements:
 
         assert root.children["apply-groups"].is_leaf
         assert root.children["apply-groups"].is_list
-        assert root.children["apply-flags"].is_leaf
-        assert not root.children["apply-flags"].is_list
         # `apply-macro m1 key1 val1` writes a run where the tree has structure.
         assert "flat-dict" in root.children["apply-macro"].flags
+
+    def test_apply_flags_is_the_devices_container_of_flags(self):
+        """`apply-flags` holds presence flags, as the device writes it.
+
+        The device prints `set groups GR-OMIT system apply-flags omit`, XML
+        `<apply-flags><omit/></apply-flags>` and JSON `"apply-flags": {"omit":
+        [null]}` (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5,
+        `tests/data/device/synthetic/*/junoscfg-oracle.{set,xml,json}.gz`).
+        This fix modelled it as a single leaf, so set and curly `apply-flags
+        omit` read as another IR than JSON and XML did (DEV-V2). `replace` is
+        the spelling the grammar accepted from a production configuration;
+        its JSON and XML shape is inferred from `omit` (probe P8). Change
+        universal-statements-from-tree.
+        """
+        root = _make_root(("system", SchemaNode(name="system")))
+        registered("apply-statements").apply(root)
+
+        flags = root.children["apply-flags"]
+        assert not flags.is_leaf
+        assert not flags.is_list
+        assert set(flags.children) == {"omit", "replace"}
+        for name, flag in flags.children.items():
+            assert flag.is_presence, name
+            assert not flag.is_leaf, name
 
     def test_apply_statements_do_not_land_below_the_root(self):
         """Declared once, not copied under each of 123,769 containers.

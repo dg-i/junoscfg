@@ -1484,3 +1484,76 @@ class TestAnEntryWithoutItsKeyIsUnplaced:
         entry = {"list-type": "as-list", "list-name": "SAMPLE-AS-LIST"}
         ir = _policy("from", {"as-path-neighbors": [entry]})
         assert validate_ir({"configuration": ir}).errors == []
+
+
+class TestAUniversalStatementIsValidatedWithItsNode:
+    """A universal statement below the root is checked against the root's node.
+
+    Field validation skipped the four statements by name, at every level, so
+    whatever a JSON, YAML or XML `apply-flags` held passed unseen. It now
+    resolves them through `junoscfg.display.schema_child`, as every walker of
+    the tree does (ARCH-C06, NEW-A-N1's validator half; spec
+    schema-pipeline/universal-statements, change universal-statements-from-tree).
+    """
+
+    _NESTED = {
+        "system": {
+            "apply-groups": ["SAMPLE-GROUP"],
+            "apply-groups-except": ["SAMPLE-GROUP-2"],
+            "apply-flags": {"omit": [None]},
+            "apply-macro": [
+                {"name": "M1", "data": [{"name": "k1", "value": "v1"}, {"name": "k2"}]}
+            ],
+            "host-name": "router1",
+        },
+        "protocols": {
+            "bgp": {
+                "group": [{"name": "G1", "apply-flags": {"replace": [None]}, "type": "internal"}]
+            }
+        },
+    }
+
+    @staticmethod
+    def _messages(source: str, fmt: Format) -> list[str]:
+        result = convert_config_result(source, from_format=fmt, to_format=Format.SET)
+        return [d.message for d in result.diagnostics if d.source == "field-validate"]
+
+    def test_nested_statements_are_clean(self) -> None:
+        """A guard: the node they now meet takes every valid spelling."""
+        source = json.dumps({"configuration": self._NESTED})
+        assert self._messages(source, Format.JSON) == []
+        assert self._messages(yaml.safe_dump({"configuration": self._NESTED}), Format.YAML) == []
+        xml = (
+            "<configuration><system><apply-groups>SAMPLE-GROUP</apply-groups>"
+            "<apply-flags><omit/></apply-flags>"
+            "<apply-macro><name>M1</name><data><name>k1</name><value>v1</value></data></apply-macro>"
+            "</system></configuration>"
+        )
+        assert self._messages(xml, Format.XML) == []
+        convert_config(source, from_format=Format.JSON, to_format=Format.SET, strict=True)
+
+    @pytest.mark.parametrize("value", [None, [None], True])
+    def test_a_bare_nested_statement_is_unplaced(self, value: Any) -> None:
+        """A nested `apply-groups` naming no group is a leaf without its value."""
+        source = json.dumps({"configuration": {"system": {"apply-groups": value}}})
+        messages = self._messages(source, Format.JSON)
+        assert len(messages) == 1, messages
+        assert messages[0].startswith("'apply-groups'")
+        assert "could not be placed in the schema" in messages[0]
+
+    @pytest.mark.parametrize("where", [(), ("system",), ("interfaces", "interface")])
+    def test_an_unknown_flag_under_apply_flags_is_unplaced(self, where: tuple[str, ...]) -> None:
+        """`apply-flags` holds `omit` and `replace`; anything else is reported,
+        where it passed unseen (DEV-V2)."""
+        flags: dict[str, Any] = {"apply-flags": {"bogus": [None]}}
+        config: dict[str, Any] = flags
+        if where == ("system",):
+            config = {"system": flags}
+        elif where:
+            config = {"interfaces": {"interface": [{"name": "ge-0/0/0", **flags}]}}
+        source = json.dumps({"configuration": config})
+        messages = self._messages(source, Format.JSON)
+        assert len(messages) == 1, messages
+        assert messages[0].startswith("'bogus'")
+        with pytest.raises(FieldValidationError):
+            convert_config(source, from_format=Format.JSON, to_format=Format.SET, strict=True)
