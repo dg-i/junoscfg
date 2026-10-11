@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import re
 import subprocess
 import sys
@@ -17,7 +18,8 @@ import pytest
 from netutils.password import JUNIPER_KEYS_STRING, decrypt_juniper_type9
 
 import junoscfg.anonymize as anonymize_door
-from junoscfg.anonymize import AnonymizeConfig, PasswordRule, anonymize
+from junoscfg import Format, convert_config
+from junoscfg.anonymize import AnonymizeConfig, PasswordRule, anonymize, apply_revert
 from tests.support.paths import PACKAGE_SRC
 
 #: The alphabet crypt salts and bodies are drawn from.
@@ -540,3 +542,26 @@ class TestSaltIsNotCopied:
         a, b = self._make_rule(), self._make_rule()
         original = "$6$saltsalt$" + "z" * 86
         assert a.transform(original) == b.transform(original)
+
+
+class TestAUrlPasswordIsASecret:
+    """A URL's password (`ftp://user:secret@...`) is a secret: it survived
+    `--anonymize-passwords` (NEW-R15, found by change anonymize-embedded-values).
+    It is replaced as a plain-text secret is; the user, host and path stay.
+    Spec anonymization/embedded-values.
+    """
+
+    def test_it_is_replaced(self) -> None:
+        text = (
+            "set system archival configuration archive-sites "
+            '"ftp://operator:secret99@203.0.114.6/x"\n'
+        )
+        source = json.loads(
+            convert_config(text, from_format=Format.SET, to_format=Format.JSON, validate=False)
+        )
+        result = anonymize(source, AnonymizeConfig(passwords=True, salt="s"))
+        [site] = result.ir["configuration"]["system"]["archival"]["configuration"]["archive-sites"]
+        assert "secret99" not in site["name"]
+        assert site["name"].startswith("ftp://operator:")
+        assert site["name"].endswith("@203.0.114.6/x")
+        assert apply_revert(result.ir, result.mapping) == source

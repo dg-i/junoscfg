@@ -340,8 +340,11 @@ class TestIpAnonymizeIntegration:
         assert "10.4.5.6" not in archive_val
         assert "scp://backup@" in archive_val
 
-    def test_ips_in_strings_disabled_by_default(self) -> None:
-        """Without ips_in_strings, embedded IPs are NOT replaced."""
+    def test_an_address_inside_free_text_is_replaced(self) -> None:
+        """Without ips_in_strings an address beside other text is replaced: it
+        is the IP rule's whatever the leaf's type. This test asserted the
+        opposite, the leak ANON-P5 (specification challenge S1 of change
+        anonymize-embedded-values; spec anonymization/embedded-values)."""
         cfg = AnonymizeConfig(ips=True, salt="str-test")
         ir = {
             "configuration": {
@@ -352,12 +355,22 @@ class TestIpAnonymizeIntegration:
                         ],
                     },
                 },
+                "system": {
+                    "archival": {
+                        "configuration": {
+                            "archive-sites": [{"name": "scp://admin@203.0.114.5/path"}],
+                        },
+                    },
+                },
             },
         }
         result = anonymize(ir, cfg)
-        host_val = result.ir["configuration"]["security"]["ssh-known-hosts"]["host"][0]["name"]
-        # With ips_in_strings disabled, the embedded IP should still be there
-        assert "10.1.2.3" in host_val
+        cfg_out = result.ir["configuration"]
+        host_val = cfg_out["security"]["ssh-known-hosts"]["host"][0]["name"]
+        assert "10.1.2.3" not in host_val
+        assert host_val.startswith("server01.example.com,")
+        [site] = cfg_out["system"]["archival"]["configuration"]["archive-sites"]
+        assert site["name"] == f"scp://admin@{result.mapping['ip']['203.0.114.5']}/path"
 
 
 def _addresses(*addresses: str) -> dict[str, Any]:

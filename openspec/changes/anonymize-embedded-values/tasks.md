@@ -1,6 +1,6 @@
 ## 1. Verification
 
-- [ ] 1.1 Acceptance tests (fail on the merge base `50b0a10` by design, pins named in `evidence-freeze.md`): `tests/unit/anonymize/test_walker.py::TestValuesInsideFreeText` (the synthetic adversarial catalogue `_FREE_TEXT`) and `::TestAnApplyPathNamesConfiguration`, `test_revert.py::TestRevertUndoesEachReplacementOnce`, `test_sensitive_word_rule.py::TestEachSpellingHasItsPseudonym`, `test_as_number_rule.py::TestAWildcardUnderAsNumbersInStrings`, `test_identity_rule.py::TestAUrlUserIsAnIdentity`, `test_password_rule.py::TestAUrlPasswordIsASecret`, `test_ip_rule.py::TestIpAnonymizeIntegration::test_an_address_inside_free_text_is_replaced` (replaces `test_ips_in_strings_disabled_by_default`, which asserted ANON-P5).
+- [x] 1.1 Acceptance tests (fail on the merge base `50b0a10` by design, pins named in `evidence-freeze.md`): `tests/unit/anonymize/test_walker.py::TestValuesInsideFreeText` (the synthetic adversarial catalogue `_FREE_TEXT`) and `::TestAnApplyPathNamesConfiguration`, `test_revert.py::TestRevertUndoesEachReplacementOnce`, `test_sensitive_word_rule.py::TestEachSpellingHasItsPseudonym`, `test_as_number_rule.py::TestAWildcardUnderAsNumbersInStrings`, `test_identity_rule.py::TestAUrlUserIsAnIdentity`, `test_password_rule.py::TestAUrlPasswordIsASecret`, `test_ip_rule.py::TestIpAnonymizeIntegration::test_an_address_inside_free_text_is_replaced` (replaces `test_ips_in_strings_disabled_by_default`, which asserted ANON-P5).
 - [ ] 1.2 Independent Test/Challenge on these tests (high risk floor): `test-challenge.md`.
 
 ## 2. Change

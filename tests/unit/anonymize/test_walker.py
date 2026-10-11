@@ -6,9 +6,19 @@ with test rules that decide on the schema node the walker hands them.
 
 from __future__ import annotations
 
-from typing import Any
+import json
+import re
+from typing import TYPE_CHECKING, Any
 
-from junoscfg.anonymize import AnonymizeConfig, Rule, anonymize, walk
+import pytest
+from click.testing import CliRunner
+
+from junoscfg import Format, convert_config
+from junoscfg.anonymize import AnonymizeConfig, Rule, anonymize, apply_revert, walk
+from junoscfg.cli import main
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 #: The types the bundled tree declares for the address leaves used below.
 _ADDRESS_TYPES = frozenset({"ipaddr", "ipv4prefix"})
@@ -338,3 +348,403 @@ class TestTheWalkerReachesEveryPlacedValue:
         rule = _walked({"apply-macro": [{"name": "SAMPLE-MACRO", "data": [{"name": "k"}]}]})
         offered = [(schema, path) for value, schema, path in rule.seen if value == "SAMPLE-MACRO"]
         assert offered == [({}, ("apply-macro", "name"))]
+
+
+def _ir(text: str, fmt: Format = Format.SET) -> dict[str, Any]:
+    """The IR the reader of *fmt* gives for *text*."""
+    return json.loads(convert_config(text, from_format=fmt, to_format=Format.JSON, validate=False))
+
+
+def _flags(options: dict[str, Any]) -> list[str]:
+    """The `junoscfg convert` options that switch *options* on."""
+    flags = {
+        "ips": ["--anonymize-ips"],
+        "identities": ["--anonymize-identities"],
+        "passwords": ["--anonymize-passwords"],
+        "ips_in_strings": ["--anonymize-ips-in-strings"],
+        "as_numbers_in_strings": ["--anonymize-as-numbers-in-strings"],
+    }
+    found: list[str] = []
+    for name, value in options.items():
+        if name == "as_numbers":
+            found += ["--anonymize-as-numbers", ",".join(str(asn) for asn in value)]
+        else:
+            found += flags[name]
+    return found
+
+
+#: Hand-written free text, which no device capture exercises (the how-to's
+#: device-evidence checks: the substitute for corpus coverage of lexical
+#: scanning). Each row: the text, its reader, the rules on, the originals that
+#: must be gone from the output, and the text around them that must stay.
+_FREE_TEXT: dict[str, tuple[str, Format, dict[str, Any], set[str], set[str]]] = {
+    "a-one-line-block": (
+        "system { login { user operator { class super-user; } } archival { configuration { "
+        'archive-sites { "scp://operator@203.0.114.5/path"; } } } }\n',
+        Format.STRUCTURED,
+        {"ips": True, "identities": True},
+        {"203.0.114.5", "operator"},
+        {"scp://", "/path", "super-user"},
+    ),
+    "a-list-across-lines": (
+        "system {\n    archival {\n        configuration {\n"
+        '            archive-sites [ "scp://operator@203.0.114.5/a"\n'
+        '                "scp://admin@203.0.114.6/b" ];\n        }\n    }\n}\n',
+        Format.STRUCTURED,
+        {"ips": True, "identities": True},
+        {"203.0.114.5", "203.0.114.6", "operator", "admin"},
+        {"scp://", "/a", "/b"},
+    ),
+    "a-value-across-lines": (
+        'interfaces {\n    ge-0/0/0 {\n        description "uplink to\n203.0.114.6 port 3";\n'
+        "    }\n}\n",
+        Format.STRUCTURED,
+        {"ips": True},
+        {"203.0.114.6"},
+        {"uplink to", " port 3"},
+    ),
+    "comments-holding-syntax": (
+        '/* note; { } "quoted" 203.0.114.7 */\nsystem {\n'
+        '    # a ; { } " comment 203.0.114.8\n    archival {\n        configuration {\n'
+        '            archive-sites {\n                "ftp://operator:secret99@203.0.114.6/x";'
+        " /* ; } */\n            }\n        }\n    }\n}\n",
+        Format.STRUCTURED,
+        {"ips": True, "identities": True, "passwords": True},
+        {"203.0.114.6", "203.0.114.7", "203.0.114.8", "operator", "secret99"},
+        {"ftp://", "/x"},
+    ),
+    "a-template": (
+        'set system apply-macro M1 url "scp://operator@203.0.114.10/${node}/cfg"\n',
+        Format.SET,
+        {"ips": True, "identities": True},
+        {"203.0.114.10", "operator"},
+        {"scp://", "/${node}/cfg"},
+    ),
+    "prose": (
+        'set interfaces ge-0/0/0 description "Link to 203.0.114.6; ask operator {primary} '
+        'host:203.0.114.9 lo_203.0.114.9"\n',
+        Format.SET,
+        {"ips": True},
+        {"203.0.114.6", "203.0.114.9"},
+        {"Link to ", "; ask operator {primary} host:", " lo_"},
+    ),
+    "address-forms-inside-words": (
+        "set routing-instances VRF-A route-distinguisher 10.255.0.1:100\n"
+        "set routing-instances VRF-B route-distinguisher 203.0.114.65:100\n"
+        "set routing-instances VRF-B vrf-target target:203.0.114.65:100\n",
+        Format.SET,
+        {"ips": True},
+        {"10.255.0.1", "203.0.114.65"},
+        {"target:", ":100"},
+    ),
+    "an-as-number-inside-a-name": (
+        "set protocols bgp group AS64496-PEERS peer-as 64496\n"
+        'set interfaces ge-0/0/0 description "transit AS64496, see 203.0.114.6"\n',
+        Format.SET,
+        {"ips": True, "as_numbers": [64496], "as_numbers_in_strings": True},
+        {"64496", "203.0.114.6"},
+        {"-PEERS", "transit AS", ", see "},
+    ),
+}
+
+_CLI_FORMAT = {Format.SET: "set", Format.STRUCTURED: "structured"}
+
+
+class TestValuesInsideFreeText:
+    """A value written inside free text is the value of the rule that claims
+    it, as it is standing alone: under `--anonymize-ips` an address in a URL or
+    a description survived unless `--anonymize-ips-in-strings` was on
+    (ANON-P5); a URL's user survived `--anonymize-identities` (NEW-A-N4) and
+    its password `--anonymize-passwords` (NEW-R15). The strings passes after
+    the walk rewrote digits inside an address or another rule's replacement
+    and ignored `include`/`exclude` (NEW-R16). One chain now rewrites each
+    shape inside a value, rule by rule, never offering one rule's text to
+    another; a shape that is the whole value is its rule's to take
+    (specification challenge S1 of change anonymize-embedded-values). Spec
+    anonymization/embedded-values.
+    """
+
+    @pytest.mark.parametrize("door", ["conversion", "cli"])
+    @pytest.mark.parametrize("row", list(_FREE_TEXT))
+    def test_each_value_inside_it_is_replaced(self, row: str, door: str) -> None:
+        text, fmt, options, gone, kept = _FREE_TEXT[row]
+        if door == "conversion":
+            out = convert_config(
+                text,
+                from_format=fmt,
+                to_format=Format.SET,
+                validate=False,
+                anon_config=AnonymizeConfig(salt="s", **options),
+            )
+        else:
+            result = CliRunner().invoke(
+                main,
+                ["convert", "-i", _CLI_FORMAT[fmt], "-e", "set", "--no-field-validate"]
+                + [*_flags(options), "--anonymize-salt", "s"],
+                input=text,
+            )
+            assert result.exit_code == 0, result.output
+            out = result.stdout
+        assert out.strip(), "the row reads to configuration"
+        assert not {original for original in gone if original in out}, out
+        assert not {around for around in kept if around not in out}, out
+
+    @pytest.mark.parametrize("row", list(_FREE_TEXT))
+    def test_the_mapping_restores_each_row(self, row: str, tmp_path: Path) -> None:
+        text, fmt, options, _, _ = _FREE_TEXT[row]
+        dumped = tmp_path / "map.json"
+        out = convert_config(
+            text,
+            from_format=fmt,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(salt="s", dump_map=str(dumped), **options),
+        )
+        reverted = convert_config(
+            out,
+            from_format=Format.JSON,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(revert_map=str(dumped)),
+        )
+        assert json.loads(reverted) == _ir(text, fmt)
+
+    def test_the_url_user_takes_the_login_users_pseudonym(self) -> None:
+        text, fmt, options, _, _ = _FREE_TEXT["a-one-line-block"]
+        result = anonymize(_ir(text, fmt), AnonymizeConfig(salt="s", **options))
+        assert f"//{result.mapping['identity']['operator']}@" in json.dumps(result.ir)
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set snmp view V oid 1.3.6.1 include",
+            "set policy-options policy-statement P term T from area 0.0.0.0",
+        ],
+        ids=["snmp-oid", "from-area"],
+    )
+    def test_an_address_that_is_the_whole_value_answers_by_the_type(self, line: str) -> None:
+        """An OID and an area are syntax shaped like an address: alone in a
+        value of a leaf whose type holds no address, they stay. A pin: the
+        base kept them too. With `ips_in_strings` an address that is a whole
+        value is replaced on any leaf."""
+        out = convert_config(
+            line,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert out.strip() == line
+        location = "set snmp location 203.0.114.9"
+        out = convert_config(
+            location,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(ips=True, ips_in_strings=True, salt="s"),
+        )
+        assert "203.0.114.9" not in out
+
+    def test_an_address_is_no_as_number(self) -> None:
+        """`AS100` is the AS number; `10.100.0.1` stays whole (NEW-R16)."""
+        out = convert_config(
+            'set interfaces ge-0/0/0 description "via 10.100.0.1 AS100"\n',
+            from_format=Format.SET,
+            to_format=Format.SET,
+            anon_config=AnonymizeConfig(as_numbers=[100], as_numbers_in_strings=True, salt="s"),
+        )
+        assert "10.100.0.1" in out
+        assert "AS100" not in out
+
+    def test_text_one_rule_wrote_is_never_rewritten(self) -> None:
+        """A replaced address is no text for a sensitive pattern, and a group's
+        pseudonym none for an AS number: each keeps the replacement its rule
+        gives it everywhere (NEW-R16; the base chained a sensitive pattern over
+        the address the IP rule wrote, and the AS strings pass rewrote digits
+        in any pseudonym)."""
+        text = (
+            "set protocols bgp group transit neighbor 203.0.114.7\n"
+            "set routing-options router-id 203.0.114.7\n"
+        )
+        result = anonymize(
+            _ir(text), AnonymizeConfig(ips=True, sensitive_patterns=[r"\d{3}"], salt="s")
+        )
+        replacement = result.mapping["ip"]["203.0.114.7"]
+        cfg = result.ir["configuration"]
+        assert cfg["routing-options"]["router-id"] == replacement
+        assert cfg["protocols"]["bgp"]["group"][0]["neighbor"][0]["name"] == replacement
+
+        salt, digits = next(
+            (salt, run)
+            for salt in (f"salt-{n}" for n in range(200))
+            for run in re.findall(
+                r"(?<!\d)[1-9]\d{2,4}(?!\d)",
+                anonymize(_ir(text), AnonymizeConfig(groups=True, salt=salt)).mapping["group"][
+                    "transit"
+                ],
+            )
+        )
+        alone = anonymize(_ir(text), AnonymizeConfig(groups=True, salt=salt))
+        both = anonymize(
+            _ir(text),
+            AnonymizeConfig(
+                groups=True, as_numbers=[int(digits)], as_numbers_in_strings=True, salt=salt
+            ),
+        )
+        [group] = both.ir["configuration"]["protocols"]["bgp"]["group"]
+        assert group["name"] == alone.mapping["group"]["transit"]
+
+    def test_the_filters_apply_inside_free_text(self) -> None:
+        """`exclude` keeps a path's free text as written, the in-strings options
+        included; the strings pass after the walk ignored it (NEW-R16)."""
+        text = (
+            'set system archival configuration archive-sites "scp://admin@203.0.114.5/path"\n'
+            "set routing-options router-id 203.0.114.6\n"
+        )
+        result = anonymize(
+            _ir(text),
+            AnonymizeConfig(ips=True, ips_in_strings=True, exclude=["system.archival"], salt="s"),
+        )
+        dumped = json.dumps(result.ir)
+        assert "203.0.114.5" in dumped
+        assert "203.0.114.6" not in dumped
+
+
+def _prefix_list(path: str, name: str = "PL") -> str:
+    return f'set policy-options prefix-list {name} apply-path "{path}"\n'
+
+
+def _apply_path(result: Any) -> str:
+    [entry] = result.ir["configuration"]["policy-options"]["prefix-list"]
+    return str(entry["apply-path"])
+
+
+class TestAnApplyPathNamesConfiguration:
+    """`apply-path` is a configuration path: its keywords are syntax and the
+    word after a list's keyword is a name of that list. The rules never saw
+    those names, so `apply-path "protocols bgp group EBGP neighbor <*>"` kept a
+    renamed group's name and selected nothing, and a sensitive word rewrote
+    its keywords (NEW-A-N7). Device evidence: the vMX 23.2R2-S7.5 and
+    QFX5120 25.2R2-S1.5 `junoscfg-oracle` captures hold
+    `apply-path "protocols bgp group <*> neighbor <*>"`. Spec
+    anonymization/embedded-values.
+    """
+
+    @pytest.mark.parametrize(
+        ("text", "path", "options", "rule", "original"),
+        [
+            (
+                "set protocols bgp group EBGP neighbor 203.0.114.7\n",
+                "protocols bgp group EBGP neighbor <*>",
+                {"groups": True},
+                "group",
+                "EBGP",
+            ),
+            (
+                "set protocols bgp group EBGP neighbor 203.0.114.7\n",
+                "protocols bgp group EBGP neighbor 203.0.114.7",
+                {"ips": True},
+                "ip",
+                "203.0.114.7",
+            ),
+            (
+                "set snmp community public-ro clients 203.0.114.0/24\n",
+                "snmp community public-ro clients <*>",
+                {"communities": True},
+                "community",
+                "public-ro",
+            ),
+        ],
+        ids=["group", "address", "community"],
+    )
+    def test_a_name_in_it_takes_the_names_pseudonym(
+        self, text: str, path: str, options: dict[str, Any], rule: str, original: str
+    ) -> None:
+        result = anonymize(_ir(text + _prefix_list(path)), AnonymizeConfig(salt="s", **options))
+        assert _apply_path(result) == path.replace(original, result.mapping[rule][original])
+        assert original not in json.dumps(result.ir)
+
+    def test_its_keywords_stay(self) -> None:
+        text = "set protocols bgp group EBGP neighbor 203.0.114.7\n" + _prefix_list(
+            "protocols bgp group EBGP neighbor <*>"
+        )
+        result = anonymize(_ir(text), AnonymizeConfig(sensitive_words=["bgp"], salt="s"))
+        [group] = result.ir["configuration"]["protocols"]["bgp"]["group"]
+        assert group["name"] != "EBGP"
+        assert _apply_path(result) == f"protocols bgp group {group['name']} neighbor <*>"
+
+    @pytest.mark.parametrize(
+        ("text", "path", "options", "reported"),
+        [
+            (
+                "set protocols bgp group EBGP neighbor 203.0.114.7\n",
+                "protocols bgp group <*> neighbor <*>",
+                {
+                    "ips": True,
+                    "passwords": True,
+                    "communities": True,
+                    "identities": True,
+                    "groups": True,
+                    "descriptions": True,
+                    "sensitive_words": ["customer"],
+                },
+                False,
+            ),
+            (
+                "set protocols bgp group IBGP neighbor 203.0.114.7\n",
+                "protocols bgp group IBGP neighbor <203.0.114.*>",
+                {"ips": True},
+                False,
+            ),
+            (
+                "set protocols bgp group EBGP-A neighbor 203.0.114.7\n",
+                "protocols bgp group <EBGP-*> neighbor <*>",
+                {"groups": True},
+                True,
+            ),
+        ],
+        ids=["match-all", "an-address-pattern", "a-renamed-name-pattern"],
+    )
+    def test_a_wildcard_in_it_is_a_pattern(
+        self, text: str, path: str, options: dict[str, Any], reported: bool
+    ) -> None:
+        """`<*>` passes; an address pattern of whole octets takes its prefix's
+        replacement and keeps selecting the replaced neighbour; a pattern a
+        renamed name cannot keep is reported by the apply-path's schema path,
+        as a wildcard name is (spec anonymization/wildcard-names). The
+        match-all row is a pin: the base kept it too."""
+        result = anonymize(_ir(text + _prefix_list(path)), AnonymizeConfig(salt="s", **options))
+        anonymized = _apply_path(result)
+        assert "203.0.114" not in anonymized and "EBGP" not in anonymized
+        if "<*>" in path:
+            assert anonymized.endswith("neighbor <*>")
+        if path.endswith("<203.0.114.*>"):
+            pattern = anonymized.rsplit(" ", 1)[1][1:-1]
+            [group] = result.ir["configuration"]["protocols"]["bgp"]["group"]
+            assert re.fullmatch(
+                pattern.replace(".", r"\.").replace("*", ".*"), group["neighbor"][0]["name"]
+            )
+        expected = ("policy-options.prefix-list.apply-path",) if reported else ()
+        assert result.patterns == expected
+
+    def test_a_path_the_tree_cannot_read_is_named(self) -> None:
+        """A path the tree cannot read to its end is content the walk cannot
+        place: its addresses replaced by shape, its place named (owner
+        answer 5)."""
+        result = anonymize(
+            _ir(_prefix_list("protocols bgp bogus-knob EBGP 203.0.114.7")),
+            AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert "203.0.114.7" not in json.dumps(result.ir)
+        assert "policy-options.prefix-list.apply-path" in result.unplaced
+
+    def test_the_mapping_restores_it(self) -> None:
+        """A pin for the base's output, which left the path as written."""
+        text = (
+            "set protocols bgp group EBGP neighbor 203.0.114.7\n"
+            + _prefix_list("protocols bgp group EBGP neighbor 203.0.114.7")
+            + _prefix_list("protocols bgp group <EBGP-*> neighbor <203.0.114.*>", "PL2")
+        )
+        source = _ir(text)
+        result = anonymize(
+            source, AnonymizeConfig(ips=True, groups=True, sensitive_words=["bgp"], salt="s")
+        )
+        assert apply_revert(result.ir, result.mapping) == source

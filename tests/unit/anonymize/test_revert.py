@@ -302,3 +302,50 @@ class TestRevertRestoresKeys:
         ir = {"configuration": {"system": {"bogus [3ffe:b00::1]:179": [None]}}}
         apply_revert(ir, {"ip": {"3ffe:0b00::9": "3ffe:b00::1"}})
         assert ir == {"configuration": {"system": {"bogus [3ffe:0b00::9]:179": [None]}}}
+
+
+def _described(text: str) -> dict:
+    return {
+        "configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", "description": text}]}}
+    }
+
+
+def _description(ir: dict) -> str:
+    return str(ir["configuration"]["interfaces"]["interface"][0]["description"])
+
+
+class TestRevertUndoesEachReplacementOnce:
+    """Revert undid a replacement left inside a word by a substring search over
+    the whole mapping, entry after entry: blind to digit boundaries, so a
+    number inside a longer one or inside an address was rewritten, and
+    dependent on the mapping's order, so a replacement that is another entry's
+    original was undone twice (NEW-A-N5). It now undoes each replacement once,
+    in one pass, longest first, a number only between non-digits and never
+    inside an address. Spec anonymization/embedded-values.
+    """
+
+    def test_a_number_is_restored_only_between_non_digits(self) -> None:
+        ir = _described("AS64497 and AS6449712")
+        apply_revert(ir, {"as_number": {"64496": "64497"}})
+        assert _description(ir) == "AS64496 and AS6449712"
+
+    def test_the_order_of_the_mapping_does_not_matter(self) -> None:
+        """`--anonymize-as-numbers 64496:64497,64497:64498` wrote `AS64497`
+        for `AS64496` and `64498` for `64497`."""
+        pairs = [("64496", "64497"), ("64497", "64498")]
+        for ordered in (pairs, pairs[::-1]):
+            ir = _described("AS64497 and 64498")
+            apply_revert(ir, {"as_number": dict(ordered)})
+            assert _description(ir) == "AS64496 and 64497", ordered
+
+    def test_a_number_inside_an_address_is_no_number(self) -> None:
+        ir = _described("via 10.100.0.1 AS100")
+        apply_revert(ir, {"as_number": {"65001": "100"}})
+        assert _description(ir) == "via 10.100.0.1 AS65001"
+
+    def test_a_replacement_inside_a_word_is_restored(self) -> None:
+        """A pseudonym inside a word another hand wrote around it comes back,
+        as with the substring search. A pin: the base did this too."""
+        ir = _described("scp://user_9d7736b55bab1f75da2d5868@host.example/x")
+        apply_revert(ir, {"identity": {"operator": "user_9d7736b55bab1f75da2d5868"}})
+        assert _description(ir) == "scp://operator@host.example/x"

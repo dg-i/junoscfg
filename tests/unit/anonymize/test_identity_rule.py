@@ -7,7 +7,10 @@ identity rule's own: which leaves it takes and the form of its replacements.
 
 from __future__ import annotations
 
-from junoscfg.anonymize import AnonymizeConfig, IdentityRule, anonymize
+import json
+
+from junoscfg import Format, convert_config
+from junoscfg.anonymize import AnonymizeConfig, IdentityRule, anonymize, apply_revert
 
 
 class TestIdentityRuleMatches:
@@ -170,3 +173,34 @@ class TestIdentityAnonymizeIntegration:
         user = result.ir["configuration"]["groups"][0]["system"]["login"]["user"][0]
         assert user["name"] != "rancid"
         assert user["full-name"] != "RANCID"
+
+
+class TestAUrlUserIsAnIdentity:
+    """A URL's user (`scp://operator@...`) is an identity: it survived
+    `--anonymize-identities` beside the login user the rule renamed (NEW-A-N4).
+    It takes the pseudonym a login user of that name takes; the host and path
+    stay. Spec anonymization/embedded-values.
+    """
+
+    def test_it_takes_the_login_users_pseudonym(self) -> None:
+        text = (
+            "set system login user operator class super-user\n"
+            "set system archival configuration archive-sites "
+            '"scp://operator@203.0.114.5/path"\n'
+            "set system archival configuration archive-sites "
+            '"ftp://admin@host.example:21/cfg"\n'
+        )
+        source = json.loads(
+            convert_config(text, from_format=Format.SET, to_format=Format.JSON, validate=False)
+        )
+        result = anonymize(source, AnonymizeConfig(identities=True, salt="s"))
+        sites = [
+            site["name"]
+            for site in result.ir["configuration"]["system"]["archival"]["configuration"][
+                "archive-sites"
+            ]
+        ]
+        pseudonym = result.mapping["identity"]["operator"]
+        assert sites[0] == f"scp://{pseudonym}@203.0.114.5/path"
+        assert sites[1] == f"ftp://{result.mapping['identity']['admin']}@host.example:21/cfg"
+        assert apply_revert(result.ir, result.mapping) == source

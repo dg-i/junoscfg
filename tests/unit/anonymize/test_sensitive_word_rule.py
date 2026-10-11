@@ -7,11 +7,13 @@ sensitive word rule's own: which leaves it takes and the form of its replacement
 
 from __future__ import annotations
 
+import json
 import re
 
 import pytest
 
-from junoscfg.anonymize import AnonymizeConfig, SensitiveWordRule, anonymize
+from junoscfg import Format, convert_config
+from junoscfg.anonymize import AnonymizeConfig, SensitiveWordRule, anonymize, apply_revert
 
 
 class TestSensitiveWordRuleMatches:
@@ -204,3 +206,32 @@ class TestSensitivePatternMatches:
         assert "LAX001" not in hostname
         assert "border-gw01" in hostname
         assert "sensitive_word" in result.mapping
+
+
+class TestEachSpellingHasItsPseudonym:
+    """The rule folded case for the pseudonym, so `ebgp` and `EBGP` got one and
+    revert restored one case for both (NEW-R13): a renamed BGP group came back
+    under another name. Junos names are case-sensitive: each spelling now gets
+    its own pseudonym, every spelling is still matched. Specification challenge
+    S2 of change anonymize-embedded-values; spec anonymization/embedded-values.
+    """
+
+    def test_two_spellings_get_two_pseudonyms(self) -> None:
+        rule = SensitiveWordRule(AnonymizeConfig(sensitive_words=["ebgp"], salt="s"))
+        upper, lower = rule.transform("EBGP"), rule.transform("ebgp")
+        assert upper != lower
+        assert upper.startswith("word_") and lower.startswith("word_")
+        assert rule.transform("EBGP-A") == f"{upper}-A"
+        assert rule.transform("Ebgp") not in (upper, lower)
+
+    def test_a_value_in_two_cases_reverts_to_each(self) -> None:
+        text = (
+            "set protocols bgp group EBGP description ebgp\n"
+            "set interfaces ge-0/0/0 description EBGP\n"
+        )
+        source = json.loads(
+            convert_config(text, from_format=Format.SET, to_format=Format.JSON, validate=False)
+        )
+        result = anonymize(source, AnonymizeConfig(sensitive_words=["ebgp"], salt="s"))
+        assert "ebgp" not in json.dumps(result.ir).lower()
+        assert apply_revert(result.ir, result.mapping) == source

@@ -7,8 +7,12 @@ AS number rule's own: which leaves it takes and the form of its replacements.
 
 from __future__ import annotations
 
+import json
 import warnings
 
+import pytest
+
+from junoscfg import Format, convert_config
 from junoscfg.anonymize import AnonymizeConfig, AsNumberRule, anonymize
 
 
@@ -327,3 +331,43 @@ class TestAsNumberAnonymizeIntegration:
         local_as = result.ir["configuration"]["protocols"]["bgp"]["group"][0]["local-as"]
         assert local_as["as-number"] != "64561"
         assert local_as["as-number"].isdigit()
+
+
+class TestAWildcardUnderAsNumbersInStrings:
+    """Under `as_numbers_in_strings` a wildcard whose `?` or class could stand
+    for a digit of a configured AS number cannot be rewritten as a pattern and
+    is reported (change group-wildcards-pass, Reviewer R3). Any digit beside
+    `?` or a class was reported, so `<ge-0/0/1?>` was, though no configured AS
+    number can be spelled there (NEW-R14, that change's Reviewer residual):
+    it is reported only where a configured number can stand, between
+    non-digits. Spec anonymization/wildcard-names.
+    """
+
+    @pytest.mark.parametrize(
+        ("line", "reported"),
+        [
+            ("set groups GR interfaces <ge-0/0/1?> description x", False),
+            ("set groups GR protocols bgp group <AS6449?-*> hold-time 30", True),
+            ('set groups GR protocols bgp group "<AS[56]4496-*>" hold-time 30', True),
+            ("set groups GR protocols bgp group <AS16449?-*> hold-time 30", False),
+            ('set groups GR protocols bgp group "<AS6449[0-5]-*>" hold-time 30', False),
+        ],
+        ids=[
+            "an-interface",
+            "a-question-mark-in-the-number",
+            "a-class-in-the-number",
+            "a-longer-number",
+            "a-class-the-number-misses",
+        ],
+    )
+    def test_it_is_reported_only_where_a_configured_number_can_stand(
+        self, line: str, reported: bool
+    ) -> None:
+        source = json.loads(
+            convert_config(line, from_format=Format.SET, to_format=Format.JSON, validate=False)
+        )
+        result = anonymize(
+            source, AnonymizeConfig(as_numbers=[64496], as_numbers_in_strings=True, salt="s")
+        )
+        assert bool(result.patterns) is reported
+        assert result.ir == source
