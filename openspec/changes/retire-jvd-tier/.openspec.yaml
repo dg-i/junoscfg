@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-11
+type: bug
+# No zone path is edited (tests/, .github/, docs/, openspec/specs/ only). The modified
+# requirement is domain validation's; its set-validation code lives in the yellow schema zone.
+zone: schema
+domains: [validation]
+removes: "the retired JVD tier (decision 2026-10-11-retire-jvd-from-per-change-verification): the --jvd pytest option, its skip logic, the jvd_corpus fixture and the jvd marker; tests/corpus/test_jvd_corpus.py; tests/support/jvd_data.py with BROKEN_FILES; the nightly .github/workflows/corpus.yml, whose only job ran it; no product behaviour, door or name is removed"
+assurance: economy
