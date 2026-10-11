@@ -693,13 +693,20 @@ class TestKeyedEntriesSurvive:
         `203.0.114.49`, the `tacplus-server` key the tree types `hostname`
         (NEW-A-N6). `10.255.0.1` and `10.0.0.1`, also once missed, were mapped
         already from their other occurrences.
+
+        Change anonymize-embedded-values measures the current 95 mapping
+        entries before re-pinning to `62a9e899…`: `CM-CUSTOMER` takes the
+        pseudonym of its uppercase spelling (owner S2), and `3ffe:b00::/32`
+        is replaced inside an annotation (owner S3). Removing annotations
+        removes only that IP pair. Existing IR round-trip assertions below
+        remain the meaning check; this pin verifies deterministic mapping.
         """
         source = json.dumps(placed_only(json.loads(json_config)))
         self._anonymized(source, Format.SET, tmp_path / "map.json")
         mapping = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
         assert (
             hashlib.sha256(json.dumps(mapping, sort_keys=True).encode()).hexdigest()
-            == "8e13d961b885c80dae3cdbad1e999012b81af51c9ea7eda3cd1148570974cb93"
+            == "62a9e899cbdd9869132be14abc10b8056bdbbaf17b8431d8024ecfe4f45ce9cb"
         )
 
         out = self._anonymized(source, Format.JSON, tmp_path / "json-map.json")
@@ -957,7 +964,6 @@ class TestAWildcardNameIsAPattern:
             ("login-user", "<adm*>", {"identities": True}, "adm"),
             ("snmp-community", "<public-*>", {"communities": True}, "public"),
             ("bgp-group", "<[A-E]BGP*>", {"sensitive_words": ["ebgp"]}, None),
-            ("bgp-group", "<ebgp-*>", {"sensitive_words": ["ebgp"]}, None),
             ("bgp-neighbor", "<203.0.11*>", {"ips": True}, None),
             ("bgp-neighbor", "<3ffe:b00:*>", {"ips": True}, None),
             ("bgp-neighbor", "<203.0.*>", {"ips": True}, None),
@@ -981,7 +987,6 @@ class TestAWildcardNameIsAPattern:
             "identity",
             "community",
             "sensitive-word-class",
-            "sensitive-word-other-case",
             "ip-not-whole-octets",
             "ip-v6",
             "ip-prefix-cut-by-a-kept-block",
@@ -1018,6 +1023,7 @@ class TestAWildcardNameIsAPattern:
         ("place", "wildcard", "options"),
         [
             ("bgp-group", "<EBGP-*>", {"sensitive_words": ["ebgp"]}),
+            ("bgp-group", "<ebgp-*>", {"sensitive_words": ["ebgp"]}),
             ("interface", "<ge-*>", _EVERY_RULE),
             ("interface", "<[gx]e-*>", _EVERY_RULE),
             ("snmp-view", "<EBGP-*>", {"groups": True}),
@@ -1025,6 +1031,7 @@ class TestAWildcardNameIsAPattern:
         ],
         ids=[
             "sensitive-word",
+            "sensitive-word-other-case",
             "no-rule-claims-it",
             "a-class-no-rule-claims",
             "selects-nothing",
@@ -1260,10 +1267,9 @@ class TestAWildcardNameIsAPattern:
         ids=["P1-wildcard-lower", "P1b-another-value-lower", "same-case"],
     )
     def test_a_word_in_two_cases_reverts_to_each(self, text: str) -> None:
-        """The sensitive-word rule folds case, so `ebgp` and `EBGP` get one
-        pseudonym; a wildcard's rewrite is keyed by its whole spelling, as a
-        name is, so it reverts to its own case (Reviewer R1). Two plain values
-        that differ only in case still revert to one (NEW-R13, change 7)."""
+        """Matching folds case, while each spelling has its own pseudonym:
+        wildcard and plain values restore their own case (NEW-R13, change
+        anonymize-embedded-values, explicit owner decision S2)."""
         source = _set_ir(text)
         result = anonymize(source, AnonymizeConfig(sensitive_words=["ebgp"], salt="s"))
         assert apply_revert(result.ir, result.mapping) == source

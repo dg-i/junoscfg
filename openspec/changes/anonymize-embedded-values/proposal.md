@@ -30,6 +30,8 @@ number can match (NEW-R14).
   never inside an address; the order-dependent substring loop goes.
 - A wildcard under `as_numbers_in_strings` is reported only when a configured AS number can be
   spelled where its `?` or class stands.
+- Keep flat maps and reject ambiguous IP spellings sharing a replacement before output; reject ambiguous legacy IP maps before revert mutation. Successful reversal stays exact; use one spelling per address in the original when rejected (final owner S5 decision).
+- Report changed literal/wildcard apply-path selection by schema path in either filter direction; retain excluded selector text (owner S7 decisions).
 - No override, fallback, parameter or environment read is added.
 
 ## Capabilities
@@ -52,4 +54,4 @@ number can match (NEW-R14).
 ## Impact
 
 `anonymize/{walker,revert,__init__}.py`, `anonymize/rules/{__init__,ip,as_number,identity,password,sensitive_word}.py`,
-contract, developer guide, CLI guide, changelog. Reproduce: `private_test_data/makeover-work/anonymize-embedded-values/repro.py`.
+contract, developer guide, CLI guide, changelog; `tests/contract/test_every_message.py` keeps path/count/reason/privacy checks with the apply-path selector label. Reproduce: `private_test_data/makeover-work/anonymize-embedded-values/repro.py`.

@@ -83,6 +83,17 @@ def _snmp_oid(path: list[str]) -> bool:
 class IpRule(Rule):
     """Anonymize IP addresses using prefix-preserving permutation."""
 
+    class AmbiguousMappingError(ValueError):
+        """A fixed, value-free refusal: a flat map cannot recover each IP spelling."""
+
+        def __init__(self) -> None:
+            """Build the refusal without accepting configuration values."""
+            super().__init__(
+                "ambiguous IP spellings share a replacement; flat mappings cannot restore "
+                "each spelling exactly: use one spelling per address and re-anonymize "
+                "the original configuration"
+            )
+
     name = "ip"
     priority = 30  # After passwords (10) and SSH keys (20)
     keeps_text = True
@@ -324,7 +335,10 @@ class IpRule(Rule):
             if canonical not in self._plain:
                 # Only the spelling was written: revert restores the spelling.
                 mapping.pop(canonical, None)
-        return {**mapping, **self._spelled}
+        mapping = {**mapping, **self._spelled}
+        if self._spelled and len(set(mapping.values())) != len(mapping):
+            raise self.AmbiguousMappingError
+        return mapping
 
 
 def _treated_apart(config: AnonymizeConfig) -> tuple[ipaddress.IPv4Network, ...]:

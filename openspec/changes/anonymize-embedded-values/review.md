@@ -125,6 +125,10 @@ None yet: the fresh Reviewer runs at STOP-R. Test/Challenge findings T1-T12 and 
   decides, so a name in a path in scope is replaced (orchestrator ruling: the safe side) (owner
   intake 2026-10-11: merge with recorded interim action).
 
+## Explicit owner dispositions — superseding historical interim decisions
+
+Source: `private_test_data/makeover-work/codex-resumption/owner-decisions.md`, explicit replies on 2026-10-11. Historical S1–S7 entries and T1–T12 evidence above are retained. S1/S3/S4 privacy and annotations accepted; S2 spelling-keyed pseudonyms with case-insensitive matching accepted; S6 last-@ URL handling accepted. S5 final simplification retains flat maps and rejects ambiguous plain/padded spellings before output; all successful runs restore exactly. It supersedes the historical spelling-loss exception and the supplemental v2 proposal; ambiguous old maps cannot recover lost occurrences and are rejected before revert mutation. S7 accepts in-scope selector replacement despite excluded targets and unchanged excluded selectors despite renamed targets, with value-free selector-risk reporting in both directions. Independent supplemental Test/Challenge evidence at `7e2209e` remains evidence, not Builder approval.
+
 ## Verdict
 
 Pending: the fresh Reviewer's verdict at STOP-R.

@@ -109,7 +109,8 @@ def pipeline_result(
         FieldValidationError: When *strict* is True and validation errors
             are found.
         ValueError: When *relative* is True without *path*, or the input
-            cannot be read.
+            cannot be read, or IP spellings make the flat mapping ambiguous
+            (a fixed value-free refusal).
         RuntimeError: In a conversion that anonymizes, for any failure but
             those above: "the conversion failed (<class>); details withheld:
             the run anonymizes", the wording the CLI prints.
@@ -117,7 +118,8 @@ def pipeline_result(
     A conversion that anonymizes quotes no word of the configuration in what
     it raises: a refusal to read the input is a fresh `ValueError`
     (`yaml.YAMLError` for YAML) naming its line, any other failure a fresh
-    `RuntimeError` naming its class, both with no cause, context or notes
+    `RuntimeError` naming its class; the fixed IP ambiguity refusal remains
+    a fresh value-free ValueError. All carry no cause, context or notes
     (spec anonymization/placed-values).
     """
     if relative and not path:
@@ -128,6 +130,8 @@ def pipeline_result(
         return _convert(
             source, from_format, to_format, validate, strict, anon_config, path, relative, False
         )
+    from junoscfg.anonymize import IpRule
+
     failure: Exception
     try:
         return _convert(
@@ -135,6 +139,9 @@ def pipeline_result(
         )
     except FieldValidationError:
         raise  # its reports are withheld already
+    except IpRule.AmbiguousMappingError:
+        # Only this fixed refusal is safe; arbitrary ValueErrors stay withheld.
+        failure = ValueError(str(IpRule.AmbiguousMappingError()))
     except _UnreadableError as unreadable:
         failure = _withheld_refusal(unreadable.error)
     except Exception as error:  # noqa: BLE001 -- every failure is withheld, by class
@@ -316,9 +323,9 @@ def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[
 
 
 def _pattern_warnings(patterns: tuple[str, ...]) -> list[Diagnostic]:
-    """One warning per schema path holding wildcard names anonymization changed the meaning of.
+    """One warning per schema path holding a changed wildcard or apply-path selector.
 
-    The path holds schema names only; the wildcard and the names it selects
+    The path holds schema names only; the selector and the names it selects
     are withheld (spec anonymization/placed-values).
     """
     counts: dict[str, int] = {}
@@ -329,8 +336,9 @@ def _pattern_warnings(patterns: tuple[str, ...]) -> list[Diagnostic]:
             source="anonymize",
             path=path,
             message=(
-                f"{count} wildcard name(s) here select other names once anonymized, "
-                "or could not be rewritten as a pattern"
+                f"{count} "
+                + ("apply-path selector(s)" if path.endswith(".apply-path") else "wildcard name(s)")
+                + " here select other names once anonymized, or could not be rewritten as a pattern"
             ),
         )
         for path, count in counts.items()

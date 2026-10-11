@@ -67,7 +67,11 @@ class AnonymizeResult:
     wildcard name (`<EBGP-*>` in a group) that selects other names once
     anonymized than it selected, among the names the configuration holds at
     its place, or whose text a rule could not rewrite as a pattern; such text
-    is left as written. A wildcard of `*` alone passes every rule (spec
+    is left as written. Literal and wildcard selectors in an `apply-path`
+    also appear here when their selection of the final names changes, even
+    when the selector is excluded and stays unchanged; its schema path is
+    reported, once per affected selector component, without values.
+    A wildcard of `*` alone passes every rule (spec
     anonymization/wildcard-names; specification challenges S1-S4).
     """
 
@@ -104,7 +108,9 @@ def anonymize(
         ValueError: If ``config.networks`` contains ``"auto"`` without
             ``config.source_text``. Auto-detection scans the configuration
             text for subnets, so it needs that text; asking for it without
-            supplying the text used to do nothing at all.
+            supplying the text used to do nothing at all. Also when different
+            IPv4 spellings share a replacement: a flat mapping cannot restore
+            each exactly. Use one spelling per address before anonymizing.
 
     Content the walk cannot place, a statement kept whole
     (`junoscfg.display.UNPLACED_STATEMENTS`) included, is not refused: its

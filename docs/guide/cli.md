@@ -337,6 +337,19 @@ The mapping file is JSON with the structure:
 ```
 
 Each key is the rule name; values are `{original: anonymized}` pairs.
+Unambiguous mappings from earlier releases still work. A configuration using
+plain and zero-padded spellings of the same IPv4 address can produce one
+replacement for both; this unsupported case is rejected before output with a
+value-free error. Use one spelling per address in the original configuration
+and anonymize again. An old map with multiple originals for one IP replacement
+is also rejected before restoration: it cannot recover the lost occurrences.
+Every successful run restores each replaced spelling exactly.
+
+An apply-path's own include/exclude filter governs its names. Its targets follow
+their own filters. If a literal or wildcard selector then selects different
+names, conversion warns by the apply-path's schema path without printing values.
+This also reports an excluded selector kept unchanged while its target is renamed.
+Match-all and selectors that keep their meaning remain quiet.
 
 #### Deterministic Output with Salt
 

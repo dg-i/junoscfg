@@ -23,16 +23,21 @@ declared-break:
       value (a URL, a description, an apply-path), under `identities` and
       `passwords` a URL's user and password, under `groups` and the other
       naming rules a name inside an apply-path. A sensitive word's pseudonym
-      is keyed by its spelling, so `ACME` and `acme` get two.
+      is keyed by its spelling, so `ACME` and `acme` get two. Ambiguous IP
+      spellings that share a replacement now fail before output; ambiguous
+      legacy IP maps fail before revert mutation. The flat format is unchanged.
+      Apply-path risk reports cover literal and excluded selectors too.
       `include`/`exclude` now apply to the in-strings options, and an AS
       number is no longer replaced inside an address or another rule's
       pseudonym. A configuration anonymized with the same salt by 0.20.x
       differs in those values. Declared breaks on a named surface raise the
       minor (AGENTS.md).
     migration: >-
-      Dump and revert with the same release: a mapping dumped by 0.20.x still
-      reverts the output 0.20.x wrote (a whole value it recorded is matched
-      first), but compare anonymized outputs only within one release. A caller
+      Dump and revert with the same release. Unambiguous flat maps dumped
+      by 0.20.x still revert that release's output (a whole recorded value is
+      matched first). Ambiguous old IP maps lost occurrence information and
+      cannot be restored exactly: use one spelling per address in the original
+      configuration and re-anonymize it. Compare outputs within one release. A caller
       that relied on `--anonymize-ips` leaving addresses inside free text
       excludes those paths with `exclude`.
   cli:
@@ -43,4 +48,7 @@ declared-break:
       value on any leaf.
     migration: >-
       Re-dump the revert map with the new release; use
-      `--anonymize-exclude` to keep a path's free text as written.
+      `--anonymize-exclude` to keep a path's free text as written. Keep one
+      spelling per IPv4 when a flat map would be ambiguous; ambiguous old maps
+      require re-anonymizing the original. Apply-path selector-risk warnings
+      identify only the schema path, including excluded selectors.

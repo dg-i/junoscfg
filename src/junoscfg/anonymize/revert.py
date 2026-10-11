@@ -13,6 +13,7 @@ import re
 from typing import Any
 
 from junoscfg.anonymize.rules import wildcard_text
+from junoscfg.anonymize.rules.ip import IpRule
 
 
 def export_mapping(mapping: dict[str, dict[str, str]], path: str) -> None:
@@ -51,6 +52,10 @@ def apply_revert(ir: dict[str, Any], mapping: dict[str, dict[str, str]]) -> dict
     never inside an address -- and every address last, as the forward chain
     replaced it first (spec anonymization/embedded-values).
 
+    An IP mapping with distinct originals sharing one replacement is
+    ambiguous and raises ValueError before changing *ir*. Unambiguous legacy
+    flat maps remain supported; lost spelling occurrences cannot be recovered.
+
     Args:
         ir: The anonymized IR dict.
         mapping: The mapping dict — ``{rule_name: {original: anonymized}}``.
@@ -72,6 +77,8 @@ class _Reverse:
         self.addresses = {
             anonymized: original for original, anonymized in mapping.get("ip", {}).items()
         }
+        if len(self.addresses) != len(mapping.get("ip", {})):
+            raise IpRule.AmbiguousMappingError
         self.others = {
             anonymized: original
             for rule, pairs in mapping.items()

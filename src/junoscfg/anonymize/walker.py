@@ -83,7 +83,9 @@ def walk_with_patterns(
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """`walk`, and the schema path of each wildcard name that selects other names
     than it did, or that a rule could not rewrite as a pattern: the entry's path
-    (an `apply-path`'s own), once per wildcard, in tree order.
+    (an `apply-path`'s own), once per wildcard or affected apply-path selector
+    component, in tree order. Literal apply-path selectors are checked by
+    equality, including excluded selectors whose text stays unchanged.
     """
     from junoscfg.display import load_schema_tree
 
@@ -129,8 +131,9 @@ class _Walker:
         #: and key, where the final value is read.
         self.names: list[tuple[tuple[str, ...], str, dict[str, Any], str]] = []
         #: Each wildcard name: its place, the path reported, its text as
-        #: written, as rewritten, and whether the rule that rewrote it vouches.
-        self.wildcards: list[tuple[tuple[str, ...], str, str, str, bool]] = []
+        #: written, as rewritten, whether the rule that rewrote it vouches,
+        #: and whether selection uses wildcard matching or literal equality.
+        self.wildcards: list[tuple[tuple[str, ...], str, str, str, bool, bool]] = []
 
     # -- placed content ------------------------------------------------------
 
@@ -241,7 +244,7 @@ class _Walker:
         """Offer a leaf's value, or each value of a leaf-list, to the rules."""
         if value is None or value is True or value == "":
             return
-        if not self.path_filter.matches(path):
+        if not self.path_filter.matches(path) and path[-1] != "apply-path":
             return
         items = value if isinstance(value, list) else [value]
         replaced = []
@@ -305,11 +308,13 @@ class _Walker:
             return  # `*` alone selects every name and holds no value.
         rewritten, vouched = self._try_rules(text, schema_node, path, pattern=True)
         obj[key] = f"<{rewritten}>"
-        self.wildcards.append((_place(path), ".".join(path[:-1]), text, str(rewritten), vouched))
+        self.wildcards.append(
+            (_place(path), ".".join(path[:-1]), text, str(rewritten), vouched, True)
+        )
 
     def patterns(self) -> tuple[str, ...]:
-        """The path of each wildcard that selects other names than it did, or
-        that no rule vouched for, in tree order, from the final values.
+        """The path of each wildcard or apply-path selector whose selection
+        changed, or whose rewrite was not vouched for, from the final values.
 
         The names are those the rules saw at the wildcard's place, in any
         group and outside them (`groups` left out of the place); a wildcard is
@@ -320,9 +325,11 @@ class _Walker:
         for place, before, entry, key in self.names:
             names.setdefault(place, []).append((before, str(entry[key])))
         report = []
-        for place, path, before, after, vouched in self.wildcards:
+        for place, path, before, after, vouched, pattern in self.wildcards:
             if not vouched or any(
-                fnmatchcase(old, before) != fnmatchcase(new, after)
+                (fnmatchcase(old, before) != fnmatchcase(new, after))
+                if pattern
+                else (old == before) != (new == after)
                 for old, new in names.get(place, ())
             ):
                 report.append(path)
@@ -337,37 +344,49 @@ class _Walker:
         containers: the word after a list's keyword is a value of that list's
         key field, even when it spells a keyword; any other word is a keyword
         and stays. A wildcard there is a wildcard name, reported by the
-        `apply-path`'s path. A path the tree cannot read to its end is content
+        `apply-path`'s path. Literal selectors use equality against the same
+        final-name kernel. An excluded path is read only to record its
+        unchanged selectors; its names are never rewritten. A path the tree
+        cannot read to its end is content
         the walk cannot place (spec anonymization/embedded-values).
         """
         from junoscfg.display import entry_key_names, schema_child
 
+        rewrite_names = self.path_filter.matches(path)
         words = text.split(" ")
         node = self.schema_root
         here: list[str] = []
         keys: list[str] = []
         out: list[str] = []
-        found: list[tuple[tuple[str, ...], str, str, bool]] = []
+        found: list[tuple[tuple[str, ...], str, str, bool, bool]] = []
         for word in words:
             if not word:
-                return str(self.unknown_value(text, path))
+                return str(self.unknown_value(text, path)) if rewrite_names else text
             if keys:
                 field = keys.pop(0)
                 where = [*here, field]
                 field_node = node.get("c", {}).get(field, {})
                 inside = wildcard_text(word)
                 if inside is None:
-                    out.append(str(self._try_rules(word, field_node, where)[0]))
+                    rewritten = (
+                        str(self._try_rules(word, field_node, where)[0]) if rewrite_names else word
+                    )
+                    out.append(rewritten)
+                    found.append((_place(where), word, rewritten, True, False))
                 elif not inside.strip("*"):
                     out.append(word)
                 else:
-                    rewritten, vouched = self._try_rules(inside, field_node, where, pattern=True)
+                    rewritten, vouched = (
+                        self._try_rules(inside, field_node, where, pattern=True)
+                        if rewrite_names
+                        else (inside, True)
+                    )
                     out.append(f"<{rewritten}>")
-                    found.append((_place(where), inside, str(rewritten), vouched))
+                    found.append((_place(where), inside, str(rewritten), vouched, True))
                 continue
             child = schema_child(node, word, self.root)
             if child is None:
-                return str(self.unknown_value(text, path))
+                return str(self.unknown_value(text, path)) if rewrite_names else text
             out.append(word)
             here.append(word)
             transparent = child.get("t")
@@ -383,7 +402,8 @@ class _Walker:
                 node = child
         reported = ".".join(path)
         self.wildcards.extend(
-            (place, reported, before, after, vouched) for place, before, after, vouched in found
+            (place, reported, before, after, vouched, pattern)
+            for place, before, after, vouched, pattern in found
         )
         return " ".join(out)
 

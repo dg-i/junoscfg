@@ -28,4 +28,8 @@
 | Context expansion: `tests/unit/cli/test_cli.py` (the ips-in-strings row of `ANONYMIZE_OPTIONS`) | Builder, phase 5: its source no longer told the option apart |
 | Context expansion: `.agent-ready/vulture-whitelist.py` | Builder, phase 5: `Rule.lexical` is public API the walker no longer calls |
 
+| Context expansion: `tests/contract/test_every_message.py` (apply-path shown-message catalogue) | Supplemental S7 warning wording now names selectors; preserve required reason/count/path and every privacy assertion |
+| Context expansion: `tests/support/devices.py` and `tests/conftest.py` (example source) | Measure rebased integration mapping and annotation-only additions before re-pinning |
+| Context expansion: `tests/support/shapes.py` (format catalogue documentation) | XML is input-only; correct supplemental test construction without adding XML output |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

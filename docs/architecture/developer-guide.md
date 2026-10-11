@@ -664,7 +664,11 @@ Rules run in priority order and text one rule wrote is never offered to
 another. A part that is the whole value is replaced only where its rule takes
 the value (`matches`), so an SNMP OID stays. An `apply-path` is read against the
 tree: its names go to the rules as the values of the key fields they name, its
-keywords stay (spec anonymization/embedded-values).
+keywords stay (spec anonymization/embedded-values). Its own filter controls
+rewriting; an excluded selector stays unchanged. The existing name/pattern
+comparison kernel checks literal selectors by equality and wildcard selectors
+by `fnmatchcase` against final names, reporting changed selection in either
+filter direction by the apply-path's schema path through `patterns`.
 An entry name in angle brackets inside a group (`<*>`, `<ge-*>`) is a pattern
 that selects names: `*` alone passes every rule; any other keeps its brackets
 while its text goes to the rules as a name, or to a rule that knows patterns of
@@ -675,7 +679,13 @@ or that no rule could rewrite, is named in `AnonymizeResult.patterns` and an
 `anonymize:` warning (ANON-P3, specification challenges S1-S3). Revert takes a
 whole value the mapping records, then undoes every other replacement once, the
 longest first, a number only between non-digits and outside an address, and
-the addresses last.
+the addresses last. Flat mapping format is retained. Different IP spellings
+sharing one replacement are rejected before anonymized output; an ambiguous
+legacy IP map is rejected before revert mutates the IR. Unambiguous legacy maps
+continue to work. `IpRule.AmbiguousMappingError` carries only a fixed value-free
+refusal; the conversion boundary preserves that refusal and continues to
+withhold arbitrary exception details. Use one spelling per address and
+re-anonymize the original when a map is ambiguous.
 
 ---
 

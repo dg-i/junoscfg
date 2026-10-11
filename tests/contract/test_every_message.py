@@ -237,7 +237,7 @@ _APPLY_PATH_WILDCARD = (
     '"protocols bgp group <ACME-*> neighbor <*>"\n'
     f"set protocols bgp group ACME-PEERS neighbor {ADDRESS}\n"
 )
-_APPLY_PATH_WILDCARD_SHOWN = ("policy-options.prefix-list.apply-path", "wildcard")
+_APPLY_PATH_WILDCARD_SHOWN = ("policy-options.prefix-list.apply-path", "selector")
 _READ = ("could not be read",)
 _WITHHELD = "; details withheld: the run anonymizes"
 _YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"

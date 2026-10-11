@@ -324,6 +324,19 @@ class TestRevertUndoesEachReplacementOnce:
     inside an address. Spec anonymization/embedded-values.
     """
 
+    @pytest.mark.parametrize("reverse_order", [False, True])
+    def test_an_ambiguous_ip_map_is_rejected_before_mutation(self, reverse_order: bool) -> None:
+        """S5: old flat maps lost occurrence information; never guess or partly restore."""
+        pairs = [("203.0.114.6", "203.211.226.137"), ("203.000.114.006", "203.211.226.137")]
+        if reverse_order:
+            pairs.reverse()
+        ir = {"configuration": {"description": "word_123 via 203.211.226.137"}}
+        unchanged = copy.deepcopy(ir)
+        with pytest.raises(ValueError, match="ambiguous") as error:
+            apply_revert(ir, {"sensitive_word": {"operator": "word_123"}, "ip": dict(pairs)})
+        assert ir == unchanged
+        assert not any(value in str(error.value) for pair in pairs for value in pair)
+
     def test_a_number_is_restored_only_between_non_digits(self) -> None:
         ir = _described("AS64497 and AS6449712")
         apply_revert(ir, {"as_number": {"64496": "64497"}})

@@ -6,14 +6,17 @@ with test rules that decide on the schema node the walker hands them.
 
 from __future__ import annotations
 
+import copy
 import json
 import re
+from fnmatch import fnmatchcase
 from typing import TYPE_CHECKING, Any
+from xml.etree.ElementTree import Element, SubElement, tostring
 
 import pytest
 from click.testing import CliRunner
 
-from junoscfg import Format, convert_config
+from junoscfg import Format, convert_config, convert_config_result
 from junoscfg.anonymize import AnonymizeConfig, Rule, anonymize, apply_revert, walk
 from junoscfg.cli import main
 
@@ -355,6 +358,25 @@ def _ir(text: str, fmt: Format = Format.SET) -> dict[str, Any]:
     return json.loads(convert_config(text, from_format=fmt, to_format=Format.JSON, validate=False))
 
 
+def _reader_source(text: str, fmt: Format) -> str:
+    """Synthetic all-reader controls; XML is an input format only."""
+    if fmt != Format.XML:
+        return convert_config(text, from_format=Format.SET, to_format=fmt, validate=False)
+    root = Element("configuration")
+
+    def children(parent: Any, values: dict[str, Any]) -> None:
+        for key, value in values.items():
+            for item in value if isinstance(value, list) else [value]:
+                child = SubElement(parent, key)
+                if isinstance(item, dict):
+                    children(child, item)
+                elif item is not None:
+                    child.text = str(item)
+
+    children(root, _ir(text)["configuration"])
+    return tostring(root, encoding="unicode")
+
+
 def _flags(options: dict[str, Any]) -> list[str]:
     """The `junoscfg convert` options that switch *options* on."""
     flags = {
@@ -673,6 +695,138 @@ class TestValuesInsideFreeText:
         )
         assert address not in out
         assert out.startswith(line.rsplit(" ", 1)[0])
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    @pytest.mark.parametrize("reverse_order", [False, True])
+    def test_ambiguous_spellings_are_rejected_before_output(
+        self, fmt: Format, reverse_order: bool, tmp_path: Path
+    ) -> None:
+        """S5 final owner decision, independent repeated-field impossibility proof."""
+        values = ["203.0.114.6", "203.000.114.006"]
+        if reverse_order:
+            values.reverse()
+        text = f'set interfaces ge-0/0/0 description "via {values[0]} and {values[1]}"\n'
+        source = _ir(text)
+        unchanged = copy.deepcopy(source)
+        with pytest.raises(ValueError, match="ambiguous") as error:
+            anonymize(source, AnonymizeConfig(ips=True, salt="s"))
+        assert source == unchanged
+        assert not any(value in str(error.value) for value in values)
+        rendered = _reader_source(text, fmt)
+        dumped = tmp_path / "map.json"
+        with pytest.raises(ValueError) as error:
+            convert_config(
+                rendered,
+                from_format=fmt,
+                to_format=Format.JSON,
+                validate=False,
+                anon_config=AnonymizeConfig(ips=True, salt="s", dump_map=str(dumped)),
+            )
+        assert not dumped.exists()
+        assert error.value.__cause__ is None
+        assert error.value.__context__ is None
+        assert not any(value in str(error.value) for value in values)
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                fmt.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                "--anonymize-ips",
+                "--anonymize-salt",
+                "s",
+                "--anonymize-dump-map",
+                str(dumped),
+            ],
+            input=rendered,
+        )
+        assert cli.exit_code != 0
+        assert not cli.stdout.strip()
+        assert "ambiguous" in cli.stderr
+        assert not any(value in cli.stderr for value in values)
+        assert not dumped.exists()
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    def test_an_ambiguous_legacy_map_is_rejected_before_output(
+        self, fmt: Format, tmp_path: Path
+    ) -> None:
+        """S5 final decision applies through conversion and CLI to old ambiguous flat maps."""
+        dumped = tmp_path / "map.json"
+        values = ["203.0.114.6", "203.000.114.006", "203.211.226.137"]
+        dumped.write_text(json.dumps({"ip": {value: values[2] for value in values[:2]}}))
+        rendered = _reader_source(
+            'set interfaces ge-0/0/0 description "via 203.211.226.137"\n', fmt
+        )
+        with pytest.raises(ValueError, match="ambiguous") as error:
+            convert_config(
+                rendered,
+                from_format=fmt,
+                to_format=Format.JSON,
+                validate=False,
+                anon_config=AnonymizeConfig(revert_map=str(dumped)),
+            )
+        assert not any(value in str(error.value) for value in values)
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                fmt.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                "--anonymize-revert-map",
+                str(dumped),
+            ],
+            input=rendered,
+        )
+        assert cli.exit_code != 0
+        assert not cli.stdout.strip()
+        assert "ambiguous" in cli.stderr
+        assert not any(value in cli.stderr for value in values)
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    @pytest.mark.parametrize("address", ["203.0.114.6", "203.000.114.006"])
+    def test_an_unambiguous_spelling_restores_exactly(
+        self, fmt: Format, address: str, tmp_path: Path
+    ) -> None:
+        """S5 ordinary and one-spelling controls keep the legacy mapping format."""
+        text = f'set interfaces ge-0/0/0 description "via {address} and {address}"\n'
+        source = _ir(text)
+        rendered = _reader_source(text, fmt)
+        dumped = tmp_path / "map.json"
+        writer = Format.JSON if fmt == Format.XML else fmt
+        out = convert_config(
+            rendered,
+            from_format=fmt,
+            to_format=writer,
+            validate=False,
+            anon_config=AnonymizeConfig(ips=True, salt="s", dump_map=str(dumped)),
+        )
+        pairs = json.loads(dumped.read_text())
+        assert set(pairs) == {"ip"}
+        assert set(pairs["ip"]) == {address}
+        assert address not in out
+        assert apply_revert(_ir(out, writer), pairs) == source
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                writer.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                "--anonymize-revert-map",
+                str(dumped),
+            ],
+            input=out,
+        )
+        assert cli.exit_code == 0, cli.output
+        assert json.loads(cli.stdout) == source
 
     def test_an_address_is_no_as_number(self) -> None:
         """`AS100` is the AS number; `10.100.0.1` stays whole (NEW-R17)."""
@@ -1091,6 +1245,99 @@ class TestAnApplyPathNamesConfiguration:
             _ir(text), AnonymizeConfig(groups=True, exclude=["policy-options"], salt="s")
         )
         assert _apply_path(excluded) == "protocols bgp group EBGP neighbor <*>"
+
+    @pytest.mark.parametrize("fmt", list(Format))
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            "protocols bgp group EBGP-A neighbor <*>",
+            "protocols bgp group <*> neighbor 203.0.114.7",
+            "protocols bgp group <*> neighbor <203.0.114.*>",
+            "protocols bgp group <EBGP-*> neighbor <*>",
+            "protocols bgp group <*> neighbor <*>",
+        ],
+    )
+    @pytest.mark.parametrize(
+        "filters",
+        [
+            {"exclude": ["protocols.bgp"]},
+            {"include": ["policy-options"]},
+            {"exclude": ["policy-options"]},
+            {},
+        ],
+    )
+    def test_filtered_selector_meaning_is_reported(
+        self, fmt: Format, selector: str, filters: dict[str, Any]
+    ) -> None:
+        """S7 independent supplemental audit: both filter directions and harmless controls."""
+        text = "set protocols bgp group EBGP-A neighbor 203.0.114.7\n" + _prefix_list(selector)
+        source = _ir(text)
+        unchanged = copy.deepcopy(source)
+        rendered = _reader_source(text, fmt)
+        options = {"groups": True, "ips": True, "salt": "s", **filters}
+        result = anonymize(source, AnonymizeConfig(**options))
+        assert source == unchanged
+        group = result.ir["configuration"]["protocols"]["bgp"]["group"][0]
+        after = _apply_path(result)
+        if filters == {"exclude": ["policy-options"]}:
+            assert after == selector
+            assert group["name"] != "EBGP-A"
+        elif filters:
+            assert group["name"] == "EBGP-A"
+            assert group["neighbor"][0]["name"] == "203.0.114.7"
+
+        def selects(path: str, name: str, address: str) -> bool:
+            words = path.split()
+            return all(
+                fnmatchcase(value, word[1:-1]) if word.startswith("<") else value == word
+                for value, word in [(name, words[3]), (address, words[5])]
+            )
+
+        before_selected = selects(selector, "EBGP-A", "203.0.114.7")
+        after_selected = selects(after, group["name"], group["neighbor"][0]["name"])
+        risky = before_selected != after_selected
+        assert bool(result.patterns) == risky
+        assert set(result.patterns) <= {"policy-options.prefix-list.apply-path"}
+        conversion = convert_config_result(
+            rendered,
+            from_format=fmt,
+            to_format=Format.JSON,
+            validate=False,
+            anon_config=AnonymizeConfig(**options),
+        )
+        warnings = [d for d in conversion.diagnostics if d.source == "anonymize"]
+        assert bool(warnings) == risky
+        assert {d.path for d in warnings} <= {"policy-options.prefix-list.apply-path"}
+        cli = CliRunner().invoke(
+            main,
+            [
+                "convert",
+                "-i",
+                fmt.value,
+                "-e",
+                "json",
+                "--no-field-validate",
+                "--anonymize-groups",
+                "--anonymize-ips",
+                "--anonymize-salt",
+                "s",
+            ]
+            + [
+                arg
+                for key, paths in filters.items()
+                for path in paths
+                for arg in ["--anonymize-" + key, path]
+            ],
+            input=rendered,
+        )
+        assert cli.exit_code == 0, cli.output
+        assert bool(cli.stderr.strip()) == risky
+        messages = " ".join(d.message for d in warnings) + cli.stderr
+        if risky:
+            assert "selector" in messages
+        forbidden = ["EBGP-A", "203.0.114.7", "PL", group["name"], group["neighbor"][0]["name"]]
+        assert not any(value in messages for value in forbidden)
+        assert apply_revert(result.ir, result.mapping) == source
 
     def test_a_path_the_tree_cannot_read_is_named(self) -> None:
         """A path the tree cannot read to its end is content the walk cannot
