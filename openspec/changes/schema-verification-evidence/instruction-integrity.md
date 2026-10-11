@@ -36,3 +36,5 @@ None: exact inactive adoption, bounded application scope, physical shards, count
 
 - Initial preflight: consistent with approved inactive master `fb84ef7e4027ef49bf474eced30933d097463978`, checks 0.16.1 `6e833710f7b0df04e8612defaf34ed861d124908`, template 0.10.2 `3064189f740d3ff6cd2d54c537b1fc245f755005`. Earlier 0.16.0/0.10.1 preparation is historical. No prior adapter product evidence exists to invalidate.
 - Resume point: phase 1 after committed preflight; no product code or tests yet.
+
+- Phase 1: proposal follows root-approved qualified preparation; resume phase 2 after this commit.
