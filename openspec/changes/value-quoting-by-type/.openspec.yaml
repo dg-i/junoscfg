@@ -1,0 +1,15 @@
+schema: agent-ready
+created: 2026-10-11
+type: bug
+# Every zone this change edits is yellow: conversion (convert/input/set_input.py,
+# convert/output/dict_walker.py), kernel (display/value_format.py), schema
+# (validate/grammar_generator.py and the regenerated validate/data/). The
+# anonymize zone is not edited: ANON-P4 closes by the writer's escape, and only
+# a strict xfail marker in tests/unit/anonymize/ goes.
+zone: conversion
+domains: [conversion, validation]
+removes:
+  - "`junoscfg.display.value_format.policy_expression`, the heuristic that wrote any value looking like `( A && B )` unquoted on any leaf; a leaf's type (`policy-algebra`) decides instead. It was never in `junoscfg.display.__all__`"
+  - "the known-differences classes `policy-expression-quoted` (176 lines), `policy-expression-double-quoted` (6), `policy-name-unquoted` (14) and `escaped-quote-lost` (16), through tools/device_differences.py"
+  - "the strict xfail on `tests/unit/anonymize/test_integration.py::TestKeyedEntriesSurvive::test_the_mapping_restores_the_set_output`, whose cause this change fixes"
+assurance: economy
