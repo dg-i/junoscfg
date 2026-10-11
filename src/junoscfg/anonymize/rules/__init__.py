@@ -57,6 +57,53 @@ def replace_addresses(text: str, replace: Callable[[str], str]) -> str:
     return "".join(parts)
 
 
+#: Junos's wildcard characters in a wildcard name: `*`, `?` and a class `[...]`.
+_WILDCARD_CHARACTERS = re.compile(r"[*?\[]")
+#: An IPv4 pattern of whole octets: `203.0.114.*`, `203.0.*`, `203.*`.
+_OCTET_PATTERN = re.compile(r"((?:\d{1,3}\.){1,3})\*")
+
+
+def wildcard_text(value: object) -> str | None:
+    """The text inside a Junos wildcard name (`<ge-*>` gives `ge-*`), or ``None``.
+
+    Inside a configuration group a name in angle brackets is a pattern that
+    selects names (Junos OS "Configuration Groups"), not a name.
+    """
+    if isinstance(value, str) and len(value) > 2 and value[0] == "<" and value[-1] == ">":
+        return value[1:-1]
+    return None
+
+
+def has_wildcard_characters(text: str) -> bool:
+    """Whether *text* holds `*`, `?` or `[`: it selects more than the one name it spells."""
+    return bool(_WILDCARD_CHARACTERS.search(text))
+
+
+def address_pattern_prefix(text: str) -> str | None:
+    """The prefix an IPv4 pattern of whole octets selects (`203.0.114.*` gives
+    `203.0.114.0/24`), or ``None`` for any other text."""
+    match = _OCTET_PATTERN.fullmatch(text)
+    if match is None:
+        return None
+    octets = match.group(1).rstrip(".").split(".")
+    if any(int(octet) > 255 for octet in octets):
+        return None
+    return ".".join(octets + ["0"] * (4 - len(octets))) + f"/{8 * len(octets)}"
+
+
+def prefix_pattern(prefix: str, like: str) -> str | None:
+    """*prefix* as a pattern of the octets *like* (a pattern of whole octets) spells,
+    or ``None`` when it is no such prefix."""
+    try:
+        network = ipaddress.ip_network(prefix, strict=False)
+    except ValueError:
+        return None
+    octets = like.count(".")
+    if network.version != 4 or network.prefixlen != 8 * octets:
+        return None
+    return ".".join(str(network.network_address).split(".")[:octets]) + ".*"
+
+
 class Rule(ABC):
     """Base class for anonymization rules.
 
@@ -102,6 +149,19 @@ class Rule(ABC):
         address, a password hash, a sensitive word -- rewrites it, word by
         word, never by a keyword (owner answer 5). The default recognises
         nothing.
+        """
+        return None
+
+    def wildcard(
+        self, text: str, schema_node: dict[str, Any], path: list[str]
+    ) -> tuple[str, bool] | None:
+        """Rewrite the text of a wildcard name as a pattern, or ``None`` to treat it as a name.
+
+        A rule that knows patterns of its values answers with the rewritten
+        text and whether the rewrite keeps the pattern selecting the
+        replacements of the names it selected; ``False`` has the walker report
+        the wildcard. The default knows none: the text is offered as a name
+        (`matches`, then `transform`).
         """
         return None
 

@@ -657,6 +657,14 @@ whole -- is rewritten word by word by the rules that know a word by its shape
 alone (`Rule.lexical`: an address, a password hash, a sensitive word) and named
 by its schema path in `AnonymizeResult.unplaced`; the conversion turns each path
 into an `anonymize:` warning (owner answer 5, spec anonymization/placed-values).
+An entry name in angle brackets inside a group (`<*>`, `<ge-*>`) is a pattern
+that selects names: `*` alone passes every rule; any other keeps its brackets
+while its text goes to the rules as a name, or to a rule that knows patterns of
+its values (`Rule.wildcard`: the IP rule's whole-octet address patterns, the
+sensitive-word rule's words behind a class). A wildcard that selects other names
+once rewritten, among those at its place, or that no rule could rewrite, is
+named in `AnonymizeResult.patterns` and an `anonymize:` warning (ANON-P3,
+specification challenges S1-S3). Revert restores the text inside the brackets.
 Two supplementary passes follow:
 
 1. **IPs-in-strings** — Replaces IP addresses embedded in larger string values

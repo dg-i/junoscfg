@@ -12,6 +12,8 @@ import json
 import re
 from typing import Any
 
+from junoscfg.anonymize.rules import wildcard_text
+
 
 def export_mapping(mapping: dict[str, dict[str, str]], path: str) -> None:
     """Write an anonymization mapping to a JSON file.
@@ -142,6 +144,10 @@ def _revert_value(value: str, reverse: _Reverse) -> str:
         return reverse.addresses[value]
     if value in reverse.reverse:
         return reverse.addresses_in(reverse.reverse[value])
+    text = wildcard_text(value)
+    if text is not None:
+        # A wildcard name: its text was rewritten inside the brackets.
+        return f"<{_revert_wildcard(text, reverse)}>"
     # Word by word, then any token left as a substring -- an AS number inside
     # a word, which the strings pass replaces beside an address.
     result = reverse.words(value)
@@ -149,3 +155,14 @@ def _revert_value(value: str, reverse: _Reverse) -> str:
         if anonymized in result:
             result = result.replace(anonymized, original)
     return result
+
+
+def _revert_wildcard(text: str, reverse: _Reverse) -> str:
+    """The text of a wildcard name as written: a pattern of whole octets through
+    its prefix's mapping (`203.211.226.*` by `203.211.226.0/24`), else as a value."""
+    from junoscfg.anonymize.rules import address_pattern_prefix, prefix_pattern
+
+    prefix = address_pattern_prefix(text)
+    if prefix is not None and prefix in reverse.addresses:
+        return prefix_pattern(reverse.addresses[prefix], text) or text
+    return _revert_value(text, reverse)

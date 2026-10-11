@@ -141,6 +141,16 @@ never its text. Stop on that warning, or add `--strict`, when no such word may b
 published. Groups named `re0`, `re1`, `node0`, `node1`, `member<N>` or a `$` variable
 keep their names. See [validation](validation.md).
 
+A wildcard name in a group (`<*>`, `<ge-*>`, `<EBGP-*>`) is a pattern that selects
+names, not a name. `<*>` is never replaced. Any other wildcard keeps its angle brackets
+and its text is replaced as the names at its place are: `<EBGP>` names the renamed
+group `EBGP`, and with `--anonymize-ips` `<203.0.114.*>` becomes the pattern of that
+prefix's replacement. A rule that renames whole names cannot keep `<EBGP-*>` selecting
+`EBGP-A`: such a wildcard, and one whose text no rule could rewrite (an address pattern
+that is no pattern of whole octets, a sensitive word behind a class such as
+`<[Aa]cme-*>`), is named by its schema path in an `anonymize:` warning, never by its
+text. Stop on that warning when the group must keep applying to the same names.
+
 No message of an anonymized run quotes the configuration, original or replaced: a
 field-validation message keeps its path, reason and expected value and withholds the
 value; a refusal to read the input says it could not be read, with its line where the

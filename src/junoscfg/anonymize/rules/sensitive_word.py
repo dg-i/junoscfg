@@ -69,6 +69,25 @@ class SensitiveWordRule(Rule):
         """A word holding a sensitive word or pattern has it replaced."""
         return self.transform(word) if self.matches(word, {}, []) else None
 
+    def wildcard(
+        self, text: str, schema_node: dict[str, Any], path: list[str]
+    ) -> tuple[str, bool] | None:
+        """A wildcard's text: a word it holds literally is replaced as in any name.
+
+        A word it can spell only through wildcard syntax -- a class or `?`,
+        either case (`[Aa]cme-*`) -- has no replacement inside the pattern:
+        the text is left as written and reported, as is any class or `?` while
+        a sensitive pattern is on, which no class can be checked against
+        (specification challenge S3).
+        """
+        if self._pattern is None:
+            return None
+        replaced = self.transform(text) if self._pattern.search(text) else text
+        hidden = bool(self._raw_patterns) and bool(re.search(r"[?\[]", text))
+        if hidden or any(_spells_through_syntax(text, word) for word in self._words):
+            return replaced, False
+        return None
+
     def transform(self, value: str) -> str:
         """Replace all occurrences of sensitive words in the value."""
         if value in self._mapping:
@@ -97,3 +116,71 @@ class SensitiveWordRule(Rule):
     def get_mapping(self) -> dict[str, str]:
         """Return the original -> anonymized value mapping."""
         return dict(self._mapping)
+
+
+def _glob_positions(text: str) -> list[frozenset[str] | str | None]:
+    """*text*, a wildcard's text, as one position per character it matches.
+
+    A literal is its character folded, `?` and a negated class (`[!...]`, and
+    `[^...]`, which Junos may read so) the empty set, taking any character --
+    whether a word can pass it is answered yes, the safe side for a report --
+    a class `[...]` the characters it names, and `*` ``None``.
+    """
+    positions: list[frozenset[str] | str | None] = []
+    index = 0
+    while index < len(text):
+        char = text[index]
+        end = text.find("]", index + 2) if char == "[" else -1
+        if char == "*":
+            positions.append(None)
+        elif char == "?" or (end > 0 and text[index + 1] in "!^"):
+            positions.append(frozenset())
+            index = max(index, end)
+        elif end > 0:
+            positions.append(_class_members(text[index + 1 : end]) or frozenset("["))
+            index = end
+        else:
+            positions.append(char.casefold())
+        index += 1
+    return positions
+
+
+def _accepts(position: frozenset[str] | str, char: str) -> bool:
+    """Whether a position takes *char* in either case."""
+    if isinstance(position, str):
+        return char.casefold() == position
+    return not position or char.lower() in position or char.upper() in position
+
+
+def _class_members(body: str) -> frozenset[str]:
+    """The characters a class body names: single characters and ranges `a-z`."""
+    members: set[str] = set()
+    index = 0
+    while index < len(body):
+        if index + 2 < len(body) and body[index + 1] == "-":
+            members.update(chr(code) for code in range(ord(body[index]), ord(body[index + 2]) + 1))
+            index += 3
+        else:
+            members.add(body[index])
+            index += 1
+    return frozenset(members)
+
+
+def _spells_through_syntax(text: str, word: str) -> bool:
+    """Whether *text* matches a string holding *word* where a class or `?` stands in it.
+
+    A word the text holds in literals alone is the rule's to replace; a `*`
+    stands for text the pattern does not hold.
+    """
+    positions = _glob_positions(text)
+    for start in range(len(positions) - len(word) + 1):
+        window = [
+            position for position in positions[start : start + len(word)] if position is not None
+        ]
+        if (
+            len(window) == len(word)
+            and not all(isinstance(position, str) for position in window)
+            and all(_accepts(position, char) for position, char in zip(window, word, strict=True))
+        ):
+            return True
+    return False

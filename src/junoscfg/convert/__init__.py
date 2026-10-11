@@ -209,6 +209,7 @@ def _convert(
             )
             ir = anon_result.ir
             diagnostics.extend(_unplaced_warnings(anon_result.unplaced, cfg))
+            diagnostics.extend(_pattern_warnings(anon_result.patterns))
 
             # Dump the revert mapping if requested
             if cfg.dump_map:
@@ -308,6 +309,28 @@ def _unplaced_warnings(unplaced: tuple[str, ...], cfg: AnonymizeConfig) -> list[
             message=(
                 f"{count} statement(s) {'here' if path else 'at the top level'} the schema "
                 f"does not place: {replaced}"
+            ),
+        )
+        for path, count in counts.items()
+    ]
+
+
+def _pattern_warnings(patterns: tuple[str, ...]) -> list[Diagnostic]:
+    """One warning per schema path holding wildcard names anonymization changed the meaning of.
+
+    The path holds schema names only; the wildcard and the names it selects
+    are withheld (spec anonymization/placed-values).
+    """
+    counts: dict[str, int] = {}
+    for path in patterns:
+        counts[path] = counts.get(path, 0) + 1
+    return [
+        Diagnostic(
+            source="anonymize",
+            path=path,
+            message=(
+                f"{count} wildcard name(s) here select other names once anonymized, or hold "
+                "text no rule could rewrite as a pattern, which is left as written"
             ),
         )
         for path, count in counts.items()

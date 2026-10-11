@@ -18,6 +18,7 @@ Not quiet at `log_level="debug"`: it pairs each original with its replacement.
 - No per-password field of the original survives: not the salt, and for `$8$` not the IV or the tag — enforced by `tests/unit/anonymize/test_password_rule.py::TestSaltIsNotCopied`.
 - `networks=["auto"]` needs `source_text` and says so — enforced by `tests/unit/anonymize/test_ip_rule.py::TestNetworksAutoNeedsSourceText`.
 - Unplaced content is never refused nor passed unannounced: words known by shape are replaced, its path is in `AnonymizeResult.unplaced` — enforced by `tests/unit/anonymize/test_integration.py::TestContentTheWalkCannotPlace`.
+- A wildcard name (`<*>` in a group) is a pattern: `*` alone passes every rule, any other keeps its brackets, and one that selects other names once anonymized or that no rule could rewrite is named in `AnonymizeResult.patterns`; revert restores it — enforced by `tests/unit/anonymize/test_integration.py::TestAWildcardNameIsAPattern` and `tests/contract/test_every_rule.py::TestEveryRule::test_a_match_all_wildcard_name_passes`.
 - A schema enum value or the keyword of a key choice is syntax and passes the
   rules unchanged — enforced by `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_an_enum_key_passes_unchanged` and `tests/unit/anonymize/test_walker.py::TestKeyFieldsAreLeaves::test_a_key_choice_keyword_passes_unchanged`.
 

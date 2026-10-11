@@ -32,7 +32,7 @@ from junoscfg.anonymize.rules.identity import IdentityRule
 from junoscfg.anonymize.rules.ip import IpRule
 from junoscfg.anonymize.rules.sensitive_word import SensitiveWordRule
 from junoscfg.anonymize.rules.ssh_key import SshKeyRule
-from junoscfg.anonymize.walker import walk
+from junoscfg.anonymize.walker import walk, walk_with_patterns
 
 if TYPE_CHECKING:
     from junoscfg.anonymize.rules.password import PasswordRule
@@ -62,11 +62,19 @@ class AnonymizeResult:
     sensitive words are replaced by their shape; every other word is left as
     written, so a caller who must not publish one stops on a non-empty tuple.
     No path holds the unplaced key, an entry name or a value (owner answer 5).
+
+    ``patterns`` names, by the entry's schema path, once per wildcard, each
+    wildcard name (`<EBGP-*>` in a group) that selects other names once
+    anonymized than it selected, among the names the configuration holds at
+    its place, or whose text a rule could not rewrite as a pattern; such text
+    is left as written. A wildcard of `*` alone passes every rule (spec
+    anonymization/placed-values; specification challenges S1-S3).
     """
 
     ir: dict[str, Any]
     mapping: dict[str, dict[str, str]] = field(default_factory=dict)
     unplaced: tuple[str, ...] = ()
+    patterns: tuple[str, ...] = ()
 
 
 def anonymize(
@@ -115,7 +123,7 @@ def anonymize(
     if not rules:
         return AnonymizeResult(ir=ir)
 
-    unplaced = walk(ir, rules, config, diagnostic_sink=diagnostic_sink)
+    unplaced, patterns = walk_with_patterns(ir, rules, config, diagnostic_sink=diagnostic_sink)
 
     # Second pass: replace IPs embedded in larger strings (URLs, host+IP, etc.)
     if config.ips_in_strings:
@@ -136,7 +144,7 @@ def anonymize(
         if rule_map:
             mapping[rule.name] = rule_map
 
-    return AnonymizeResult(ir=ir, mapping=mapping, unplaced=unplaced)
+    return AnonymizeResult(ir=ir, mapping=mapping, unplaced=unplaced, patterns=patterns)
 
 
 def _replace_ips_in_strings(obj: Any, ip_rule: IpRule) -> None:

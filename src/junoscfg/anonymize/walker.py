@@ -13,14 +13,26 @@ its node does not take, a statement kept whole in the record
 rules that recognise a word by its shape alone (`Rule.lexical`: an address, a
 password hash, a sensitive word), never by a keyword, and its place is
 returned by its schema path (owner answer 5; spec anonymization/placed-values).
+
+An entry's name in angle brackets inside a group (`<*>`, `<ge-*>`) is a
+pattern that selects names (Junos OS "Configuration Groups"), not a name. A
+pattern of `*` alone selects every name and passes every rule. Any other keeps
+its brackets, and its text goes to the rules as a name of that place, or to a
+rule that knows patterns of its values (`Rule.wildcard`). One whose rewritten
+form selects other names among those the configuration holds at its place,
+inside and outside groups, or whose text a rule could not rewrite as a
+pattern, is returned by its schema path (ANON-P3; specification challenges
+S1-S3).
 """
 
 from __future__ import annotations
 
 import re
+from fnmatch import fnmatchcase
 from typing import TYPE_CHECKING, Any
 
 from junoscfg.anonymize.path_filter import PathFilter
+from junoscfg.anonymize.rules import has_wildcard_characters, wildcard_text
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -52,11 +64,23 @@ def walk(
         each piece of content the walk could not place, once per piece, in
         tree order. No path holds an unplaced key, an entry name or a value.
     """
+    return walk_with_patterns(ir, rules, config, diagnostic_sink=diagnostic_sink)[0]
+
+
+def walk_with_patterns(
+    ir: dict[str, Any],
+    rules: list[Rule],
+    config: AnonymizeConfig,
+    *,
+    diagnostic_sink: Callable[[str], None] | None = None,
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """`walk`, and the schema path of each wildcard name it could not keep
+    selecting the same names (the entry's path, once per wildcard, in tree order)."""
     from junoscfg.display import load_schema_tree
 
     schema = load_schema_tree()
     if not schema:
-        return ()
+        return (), ()
 
     walker = _Walker(
         schema,
@@ -70,7 +94,7 @@ def walk(
     # The IR is {"configuration": {...}}; an unwrapped IR is walked as its content.
     cfg = ir.get("configuration")
     walker.node(ir if cfg is None else cfg, schema_root, [])
-    return tuple(walker.unplaced)
+    return tuple(walker.unplaced), walker.patterns()
 
 
 class _Walker:
@@ -90,6 +114,11 @@ class _Walker:
         self.log_debug = log_debug
         self.sink = diagnostic_sink
         self.unplaced: list[str] = []
+        #: Each entry name the rules saw: its place, as written, as rewritten.
+        self.names: list[tuple[tuple[str, ...], str, str]] = []
+        #: Each wildcard name: its place, its path, its text before and after,
+        #: and whether the rule that rewrote it vouches for the pattern.
+        self.wildcards: list[tuple[tuple[str, ...], str, str, str, bool]] = []
 
     # -- placed content ------------------------------------------------------
 
@@ -113,9 +142,14 @@ class _Walker:
                 self._record(value, path)
                 continue
             child = schema_child(schema_node, key, self.root)
-            if child is not None:
+            name = (child is None or bool(child.get("l"))) and self._is_key_field(key, schema_node)
+            if name and wildcard_text(value) is not None:
+                self._wildcard(obj, key, child or {}, [*path, key])
+            elif child is not None:
                 self._child(obj, key, value, child, path)
-            elif self._is_key_field(key, schema_node):
+                if name and isinstance(value, str):
+                    self.names.append((_place([*path, key]), value, str(obj[key])))
+            elif name:
                 # A key field the tree holds no leaf for (`apply-macro`'s
                 # name): the rules see it with no type.
                 self._leaf(obj, key, value, {}, [*path, key])
@@ -227,6 +261,63 @@ class _Walker:
                 return result
         return value
 
+    # -- wildcard names -------------------------------------------------------
+
+    def _wildcard(
+        self, obj: dict[str, Any], key: str, schema_node: dict[str, Any], path: list[str]
+    ) -> None:
+        """Rewrite the wildcard name of *key* at *path* as a pattern, and keep it for `patterns`."""
+        text = str(wildcard_text(obj[key]))
+        if not text.strip("*") or not self.path_filter.matches(path):
+            return  # `*` alone selects every name and holds no value.
+        rewritten, vouched = self._pattern(text, schema_node, path)
+        obj[key] = f"<{rewritten}>"
+        self.wildcards.append((_place(path), ".".join(path[:-1]), text, rewritten, vouched))
+
+    def _pattern(self, text: str, schema_node: dict[str, Any], path: list[str]) -> tuple[str, bool]:
+        """*text* through the first rule that takes it, as `_try_rules` takes a name.
+
+        A rule that knows patterns of its values answers for itself; any
+        other rewrites the text as a name. A rule that takes text holding a
+        wildcard character and leaves it as written does not vouch for it.
+        """
+        vouched = True
+        rules = list(self.rules)
+        while rules:
+            rule = rules.pop(0)
+            answer = rule.wildcard(text, schema_node, path)
+            if answer is None:
+                if not rule.matches(text, schema_node, path) or text in _leaf_enum(schema_node):
+                    continue
+                replaced = rule.transform(text)
+                answer = (replaced, replaced != text or not has_wildcard_characters(text))
+            self._debug(rule, path, text, answer[0])
+            text, vouched = answer[0], vouched and answer[1]
+            if not rule.keeps_text:
+                break
+        return text, vouched
+
+    def patterns(self) -> tuple[str, ...]:
+        """The path of each wildcard that selects other names once rewritten, or
+        that a rule did not vouch for, in tree order.
+
+        The names are those the rules saw at the wildcard's place, in any
+        group and outside them (`groups` left out of the place); a wildcard is
+        no name. Junos's wildcard characters are `fnmatchcase`'s.
+        """
+        names: dict[tuple[str, ...], list[tuple[str, str]]] = {}
+        for place, before, after in self.names:
+            names.setdefault(place, []).append((before, after))
+        return tuple(
+            path
+            for place, path, before, after, vouched in self.wildcards
+            if not vouched
+            or any(
+                fnmatchcase(old, before) != fnmatchcase(new, after)
+                for old, new in names.get(place, ())
+            )
+        )
+
     def _is_key_field(self, key: str, schema_node: dict[str, Any]) -> bool:
         from junoscfg.display import entry_key_names
 
@@ -312,6 +403,11 @@ class _Walker:
     def _debug(self, rule: Rule, path: list[str], before: str, after: str) -> None:
         if self.log_debug and self.sink is not None:
             self.sink(f"[{rule.name}] {'.'.join(path)}: {before!r} -> {after!r}")
+
+
+def _place(path: list[str]) -> tuple[str, ...]:
+    """Where a name stands, the same inside a group and outside it."""
+    return tuple(path[1:] if path[:1] == ["groups"] else path)
 
 
 def _rename_keys(obj: dict[str, Any], renamed: dict[str, str]) -> None:

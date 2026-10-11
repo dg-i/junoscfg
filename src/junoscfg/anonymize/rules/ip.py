@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 from ipanon import Anonymizer, NetworkRegistry, PassThroughCollisionError
 
-from junoscfg.anonymize.rules import Rule, address_tokens, replace_addresses
+from junoscfg.anonymize.rules import (
+    Rule,
+    address_pattern_prefix,
+    address_tokens,
+    has_wildcard_characters,
+    prefix_pattern,
+    replace_addresses,
+)
 from junoscfg.display import strip_type_prefix
 
 if TYPE_CHECKING:
@@ -65,6 +73,9 @@ _ADDRESS_KEYED_LISTS: frozenset[str] = frozenset(
     }
 )
 _KEY_TEXT_TYPES = frozenset({"string", "key-attribute-string-type", "areaid"})
+#: The text of a wildcard that spells an address pattern: address characters,
+#: Junos's wildcard characters, and a dot or colon between groups of digits.
+_ADDRESS_PATTERN = re.compile(r"(?=.*\d)(?=.*[.:])[0-9A-Fa-f.:*?\[\]!^-]+")
 
 #: Leaves the tree types only as free text or `areaid` although they hold an
 #: address: `routing-options ipv6-router-id` (`string`, the IPv4-shaped router
@@ -165,6 +176,10 @@ class IpRule(Rule):
         if tokens[0][0] != 0:
             # An address inside other text is `ips_in_strings`' (`scp://...`).
             return False
+        return self._takes_address(schema_node, path)
+
+    def _takes_address(self, schema_node: dict[str, Any], path: list[str]) -> bool:
+        """Whether the leaf's type, or its list's name, says it holds an address."""
         types = self._types(schema_node)
         if not types or types & _ADDRESS_TYPES:
             return True
@@ -174,6 +189,28 @@ class IpRule(Rule):
             and path[-1] == "name"
             and path[-2] in _ADDRESS_KEYED_LISTS
         )
+
+    def wildcard(
+        self, text: str, schema_node: dict[str, Any], path: list[str]
+    ) -> tuple[str, bool] | None:
+        """An address pattern where an address stands (`neighbor <203.0.114.*>`).
+
+        Replacements keep their prefixes, so a pattern of whole octets becomes
+        the pattern of its prefix's replacement (`203.0.114.0/24` to
+        `203.211.226.0/24`, `<203.211.226.*>`) and selects the replacements of
+        the addresses it selected. Any other address pattern (`203.0.11*`,
+        `3ffe:b00:*`) is left as written and reported (specification
+        challenge S2).
+        """
+        if not (
+            has_wildcard_characters(text)
+            and _ADDRESS_PATTERN.fullmatch(text)
+            and self._takes_address(schema_node, path)
+        ):
+            return None
+        prefix = address_pattern_prefix(text)
+        pattern = prefix_pattern(self.transform(prefix), text) if prefix else None
+        return (text, False) if pattern is None else (pattern, True)
 
     @staticmethod
     def _types(schema_node: dict[str, Any]) -> set[str]:
