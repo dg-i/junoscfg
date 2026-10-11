@@ -45,7 +45,7 @@ None asked: the owner is asleep and the run is unattended. Intake answers 1–8 
 
 - Initial preflight: consistent; C1–C9 resolved by precedence. Approved under the owner's unattended-run instruction of 2026-10-11.
 - 2026-10-11, Test/Challenge findings 1–7 ruled by the orchestrator (`test-challenge.md`, `review.md`). C5 changed: `replace` has no device evidence. Its acceptance by the grammar is kept, as on the base, so the consumer's configuration is not rejected. Its JSON/XML shape is EVIDENCE_BLOCKED on P8, its tests carry `P8` in their ids, and specification challenge S1 is pending the owner with the interim action recorded. Other rulings: the device-door test and the poisoned-floor tripwire are added; the old scalar spelling is read or reported; the helper tests and the curly-writer measurement are added; C4 waits for `base-jvd.json`; a bare `apply-flags` is reported; `apply-flags omit replace` is left untested and ledgered. Approved under the owner's unattended-run instruction of 2026-10-11.
-- 2026-10-11, fresh Reviewer findings 1–8 (CHANGES REQUIRED at 81ff738), every ruling relayed by the orchestrator and accepted (`review.md`). Criteria changed:
+- 2026-10-11, fresh Reviewer findings 1–8 (CHANGES REQUIRED at 81ff738), every ruling relayed by the orchestrator and accepted (`review.md`). The criteria changed as follows.
   - a universal statement is never resolved inside another (specification challenge S2, pending the owner, interim action applied);
   - a bare `apply-flags` is rejected by the grammar, as on the base;
   - only a declared answer is cached;

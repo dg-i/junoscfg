@@ -24,6 +24,8 @@
 | device door probe (`tc_probe_doors.py`) | base 28 differences from the device's JSON, head 0 |
 | regeneration at the head | structure tree changes `apply-flags` only; grammar its alternative and `apply_flags`; a second regeneration byte-identical |
 | timing, median of 3 (largest JVD file curly to set/JSON; 40,000-line set list to set/curly) | base 4.94/5.27/1.44/1.67 s; head 5.01/5.35/1.52/1.75 s (after caching a tree's universal statements; 5.38/5.73/1.93/2.17 s before) |
+| JVD rerun at the review-fix head (120-minute limit) | 4,605 conversions byte-identical to the 81ff738 head; 11 curly outputs differ from the base, nothing else |
+| timing rerun at the review-fix head | base 4.94/5.27/1.44/1.68 s; head 5.07/5.43/1.52/1.76 s |
 | schema tier / JVD tier | 34 passed, 2 skipped / 8 passed |
 | Context expansion: src/junoscfg/display/constants.py, src/junoscfg/display/to_yaml.py | the helper and the XML reader, kernel modules outside the slice |
 | Context expansion: src/junoscfg/convert/input/set_input.py, src/junoscfg/convert/input/normalization.py | readers that resolve a child by key |

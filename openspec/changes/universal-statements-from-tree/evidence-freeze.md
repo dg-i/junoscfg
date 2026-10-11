@@ -90,7 +90,7 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
 - 2026-10-11, phase 5 complete. Full check at 0683f96: every check passed except `fields`, which named three bullets of this file that read as unanswered `label:` lines. They were reworded at c47147a (document only), and `check --set fast` then passed. Application tests in the full check: 6,989 passed, 45 skipped, 22 xfailed; the one warning is the pre-existing DEV-V5 `FutureWarning`. `griffe` reports the display API changes (the four helpers' `key` parameter, the five exported tables, `UNIVERSAL_STATEMENTS`'s value), which are not on a named surface. Resume point: STOP-R, a fresh Reviewer on the head against the merge base dd7c8c4.
 - 2026-10-11, fresh Reviewer (CHANGES REQUIRED at 81ff738). Findings 1–8 ruled by the orchestrator, every one accepted (`review.md`).
   - Consistency: the delta's "valid at every level" excluded nothing, and the head accepted `apply-flags apply-groups G1` and let an address inside `apply-flags` through `--anonymize-ips`.
-  - Criteria changed:
+  - The criteria changed as follows.
     - `schema_child` gives no universal fallback inside a universal statement;
     - the set reader calls `schema_child`;
     - the grammar generator gives `universal_statement` to no rule that only a universal statement reaches;
@@ -102,3 +102,11 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
   - The new tests are head regressions: the base already rejected and reported these lines. No assertion weakened.
   - Carried forward: finding 7 (stale docstring in `anonymize/rules/group.py`) to change 5; finding 8 (tags on nested universal statements) as NEW-R7 to change 14, probe P9 appended.
   - Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, review fixes at c85854d.
+  - Regeneration through `junoscfg schema generate`; a second regeneration is byte-identical.
+  - Tests over unit, contract, tooling and corpus: 7,002 passed, 45 skipped, 22 xfailed. `check --set fast` passed.
+  - Full check: application tests 7,002 passed; every check passed but `fields`, which named two bullets of the delta logs, reworded after the run (documents only).
+  - JVD rerun at the fixed head, with a 120-minute limit (`outputs.py --jvd`, about 45 minutes): 4,605 conversions, byte-identical to the 81ff738 head. Against the base, still the same 11 curly outputs differ and nothing else.
+  - Device outputs: identical to the 81ff738 head (18 of 236 differ from the base, as explained above).
+  - Timing rerun: head 5.07/5.43/1.52/1.76 s, base 4.94/5.27/1.44/1.68 s (within 3–6 %).
+  - Resume point: the Reviewer's confirmation, then phase 7.

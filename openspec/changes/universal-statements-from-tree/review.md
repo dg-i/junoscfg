@@ -232,4 +232,4 @@ carry-forward list: rerun `outputs.py --jvd` with a timeout of at least 60 minut
 
 ## Verdict
 
-Pending.
+CHANGES REQUIRED at 81ff738 (fresh Reviewer). Findings 1–6 were fixed and 7–8 carried forward, as ruled. Confirmation is pending. S1 and S2 are pending the owner, with their interim actions applied.
