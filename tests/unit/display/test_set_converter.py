@@ -434,6 +434,10 @@ class TestMalformedTextIsRefused:
                 "AN3:\nsystem {\n    host-name router1;\n}\n",
                 r"line 1: statement 'AN3:' has no ';'\nAN3:$",
             ),
+            (
+                'system {\n    host-name\n        "a \\"b\\"";\n}\n',
+                r"line 2: statement 'host-name' has no ';'",
+            ),
         ],
         ids=[
             "a-brace-too-many",
@@ -444,6 +448,7 @@ class TestMalformedTextIsRefused:
             "an-open-bracket-list",
             "a-block-without-a-name",
             "a-label-above-a-block",
+            "a-statement-across-lines-holding-an-escaped-quote",
         ],
     )
     def test_it_raises(self, text: str, fault: str) -> None:

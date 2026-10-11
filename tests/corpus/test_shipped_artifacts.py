@@ -76,8 +76,13 @@ class TestTheShippedGrammarKeepsRejecting:
             "set system host-name router1",
             "set policy-options policy-statement P term T from policy "
             "(( A && ! B ) || ( ! C && D ))",
+            'set interfaces ge-0/0/0 description "uplink to sw1 \\"core\\""',
         ],
-        ids=["a-hostname-takes-a-plain-value", "a-policy-expression-is-one-value"],
+        ids=[
+            "a-hostname-takes-a-plain-value",
+            "a-policy-expression-is-one-value",
+            "an-escaped-quote-is-part-of-its-value",
+        ],
     )
     def test_accepted(self, bundled_set_validator: Any, line: str) -> None:
         assert bundled_set_validator.validate(line).valid is True, line
@@ -90,6 +95,7 @@ class TestTheShippedGrammarKeepsRejecting:
             "set interfaces ge-0/0/0 bogus-thing 5",
             "set system host-name",
             "set system host-name foo bar baz",
+            'set interfaces ge-0/0/0 description "uplink to sw1 "core""',
         ],
         ids=[
             "a-hostname-is-not-a-policy-expression",
@@ -97,6 +103,7 @@ class TestTheShippedGrammarKeepsRejecting:
             "an-unknown-element",
             "a-leaf-with-no-value",
             "a-leaf-with-three-values",
+            "bare-inner-quotes-end-the-value",
         ],
     )
     def test_rejected(self, bundled_set_validator: Any, line: str) -> None:

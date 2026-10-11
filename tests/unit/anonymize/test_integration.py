@@ -706,14 +706,13 @@ class TestKeyedEntriesSurvive:
         plain = convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
         assert self._reverted(out, Format.JSON, tmp_path / "json-map.json") == json.loads(plain)
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PRODUCT DEFECT: escaped-quote-lost: the plain set output writes ge-0/0/0's "
-        "description with its inner quotes bare, which reads back as another value; the "
-        "anonymized output carries a pseudonym there instead",
-    )
     def test_the_mapping_restores_the_set_output(self, tmp_path: Path, json_config: str) -> None:
-        """Reverted, the anonymized set output reads to the IR the plain set output reads to."""
+        """Reverted, the anonymized set output reads to the IR the plain set output reads to.
+
+        ANON-P4: the plain set output wrote ge-0/0/0's description with its inner
+        quotes bare, so it read back as another value; the set writer escapes
+        `"` now (spec conversion/value-quoting).
+        """
         source = json.dumps(placed_only(json.loads(json_config)))
         out = self._anonymized(source, Format.SET, tmp_path / "map.json")
         plain = convert_config(

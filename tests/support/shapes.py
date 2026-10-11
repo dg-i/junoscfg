@@ -2100,6 +2100,178 @@ _add(
     ),
 )
 
+# Value quoting by the leaf's type (spec conversion/value-quoting; change
+# value-quoting-by-type). The device writes a policy-algebra expression bare
+# and keeps a quoted policy name's quotes in its XML and JSON; it escapes `"`
+# inside a quoted value (vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5
+# junoscfg-oracle.{set,conf,json,xml}.gz, vMX synthetic-probes.{set,xml,json}.gz).
+_NEIGHBOR = ["protocols", "bgp", "group G", "neighbor 192.168.1.2"]
+_NEIGHBOR_SET = "set protocols bgp group G neighbor 192.168.1.2"
+_NEIGHBOR_XML = (
+    "<protocols><bgp><group><name>G</name><neighbor><name>192.168.1.2</name>"
+    "{}</neighbor></group></bgp></protocols>"
+)
+
+
+def _neighbor(**leaves: Any) -> dict[str, Any]:
+    """BGP group G's neighbor 192.168.1.2 holding *leaves*."""
+    return {
+        "protocols": {
+            "bgp": {"group": [{"name": "G", "neighbor": [{"name": "192.168.1.2", **leaves}]}]}
+        }
+    }
+
+
+def _neighbor_yaml(lines: str) -> str:
+    return (
+        "configuration:\n  protocols:\n    bgp:\n      group:\n      - name: G\n"
+        "        neighbor:\n        - name: 192.168.1.2\n" + lines
+    )
+
+
+def _description(value: str) -> dict[str, Any]:
+    """Interface ge-0/0/0 whose description is *value*."""
+    return {"interfaces": {"interface": [{"name": "ge-0/0/0", "description": value}]}}
+
+
+def _quoting_row(name: str, value: str, spelled: str, why: str, **sources: str) -> Shape:
+    """A description *value*, written *spelled* in set and curly, read from each source.
+
+    *sources* add hand-written spellings (`structured`, `set`) around the same
+    value: a one-line block, comments. A statement across lines is refused
+    whatever it quotes (`tests/unit/display/test_set_converter.py`, probe P7).
+    """
+    line = f"set interfaces ge-0/0/0 description {spelled}\n"
+    return Shape(
+        name,
+        {
+            SET: sources.get("set", line),
+            STRUCTURED: sources.get(
+                "structured", _nest(["interfaces", "ge-0/0/0"], f"        description {spelled};\n")
+            ),
+            JSON: _json(_description(value)),
+            YAML: "configuration:\n  interfaces:\n    interface:\n    - name: ge-0/0/0\n"
+            f"      description: {json.dumps(value)}\n",
+        },
+        ir=_description(value),
+        set_output=line,
+        why=why,
+    )
+
+
+_add(
+    Shape(
+        "a-one-term-policy-expression",
+        {
+            SET: f"{_NEIGHBOR_SET} import ( P-A )\n{_NEIGHBOR_SET} export ( P-A || P-B )\n",
+            STRUCTURED: _nest(
+                _NEIGHBOR,
+                "                import ( P-A );\n                export ( P-A || P-B );\n",
+            ),
+            JSON: _json(_neighbor(**{"import": ["( P-A )"], "export": ["( P-A || P-B )"]})),
+            YAML: _neighbor_yaml(
+                "          import:\n          - ( P-A )\n"
+                "          export:\n          - ( P-A || P-B )\n"
+            ),
+            XML: _xml(
+                _NEIGHBOR_XML.format("<import>( P-A )</import><export>( P-A || P-B )</export>")
+            ),
+        },
+        ir=_neighbor(**{"import": ["( P-A )"], "export": ["( P-A || P-B )"]}),
+        set_output=f"{_NEIGHBOR_SET} import ( P-A )\n{_NEIGHBOR_SET} export ( P-A || P-B )\n",
+        why="DEV-4: `( P-A )` is an expression of one term, written bare as the device "
+        "writes it; quoted it names a policy called `( P-A )`.",
+    ),
+    Shape(
+        "a-quoted-policy-name-that-reads-as-an-expression",
+        {
+            SET: f'{_NEIGHBOR_SET} import "( P-A && P-B )"\n{_NEIGHBOR_SET} export "( P-A )"\n',
+            STRUCTURED: _nest(
+                _NEIGHBOR,
+                '                import "( P-A && P-B )";\n                export "( P-A )";\n',
+            ),
+            JSON: _json(_neighbor(**{"import": ['"( P-A && P-B )"'], "export": ['"( P-A )"']})),
+            YAML: _neighbor_yaml(
+                "          import:\n          - '\"( P-A && P-B )\"'\n"
+                "          export:\n          - '\"( P-A )\"'\n"
+            ),
+            XML: _xml(
+                _NEIGHBOR_XML.format(
+                    '<import>"( P-A &amp;&amp; P-B )"</import><export>"( P-A )"</export>'
+                )
+            ),
+        },
+        ir=_neighbor(**{"import": ['"( P-A && P-B )"'], "export": ['"( P-A )"']}),
+        set_output=f'{_NEIGHBOR_SET} import "( P-A && P-B )"\n{_NEIGHBOR_SET} export "( P-A )"\n',
+        why="DEV-5, DEV-6: the device keeps a quoted policy name's quotes in its own XML and "
+        "JSON (synthetic-probes); set input read it as an expression, and the value from XML "
+        'or JSON was written `""( P-A )""`.',
+    ),
+    Shape(
+        "a-quoted-plain-policy-name",
+        {
+            SET: f'{_NEIGHBOR_SET} import "P-1"\n',
+            STRUCTURED: _nest(_NEIGHBOR, '                import "P-1";\n'),
+            JSON: _json(_neighbor(**{"import": ["P-1"]})),
+        },
+        ir=_neighbor(**{"import": ["P-1"]}),
+        set_output=f"{_NEIGHBOR_SET} import P-1\n",
+        why="A quoted name that cannot read as an expression reads without its quotes, as "
+        "before; what the device holds for it is probe P12.",
+    ),
+    _quoting_row(
+        "a-value-holding-an-escaped-quote",
+        'uplink to sw1 "core"',
+        '"uplink to sw1 \\"core\\""',
+        "DEV-7, NEW-C6, ANON-P4: the inner quotes were written bare and the line did not "
+        'load; the device writes `\\"` (junoscfg-oracle.set.gz).',
+    ),
+    _quoting_row(
+        "an-expression-in-a-description",
+        "( P-A && P-B )",
+        '"( P-A && P-B )"',
+        "A description is text: the look of an expression no longer drops its quotes.",
+    ),
+    _quoting_row(
+        "an-escaped-quote-in-a-one-line-block",
+        'a "b" {c}; d',
+        '"a \\"b\\" {c}; d"',
+        "Lexing row: a one-line curly block.",
+        structured='interfaces { ge-0/0/0 { description "a \\"b\\" {c}; d"; } }\n',
+    ),
+    _quoting_row(
+        "an-escaped-quote-beside-comments",
+        'after "comments" ; { }',
+        '"after \\"comments\\" ; { }"',
+        "Lexing row: comments holding `;`, `{`, `}` and quotes around the value.",
+        structured='interfaces {\n    /* a comment; { } "quoted" */\n    ge-0/0/0 {\n'
+        '        # a line comment; { } "q"\n'
+        '        description "after \\"comments\\" ; { }"; /* trailing "x"; } */\n'
+        "    }\n}\n",
+        set='# a comment; { } "q"\n'
+        'set interfaces ge-0/0/0 description "after \\"comments\\" ; { }"\n',
+    ),
+    _quoting_row(
+        "an-escaped-quote-in-a-template",
+        '${SITE} "core" uplink',
+        '"${SITE} \\"core\\" uplink"',
+        "Lexing row: a template `${SITE}`, as Juniper's published snippets use.",
+    ),
+    _quoting_row(
+        "an-escaped-quote-in-prose",
+        'Don\'t "panic": call ops, 24/7 (not && never) #1',
+        '"Don\'t \\"panic\\": call ops, 24/7 (not && never) #1"',
+        "Lexing row: prose with an apostrophe, a colon, a hash and an expression's operators.",
+    ),
+    _quoting_row(
+        "address-forms-inside-words-beside-an-escaped-quote",
+        'peer "10.255.0.1:100" target:198.51.100.1:5 host:198.51.100.2 lo_198.51.100.3',
+        '"peer \\"10.255.0.1:100\\" target:198.51.100.1:5 host:198.51.100.2 lo_198.51.100.3"',
+        "Lexing row: address-form values inside words.",
+    ),
+)
+
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"

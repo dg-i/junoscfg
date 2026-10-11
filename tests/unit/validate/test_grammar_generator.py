@@ -632,6 +632,21 @@ class TestAnyLeafValueMayBeQuoted:
     def test_an_unquoted_value_still_parses(self) -> None:
         assert _parses(self._tree(), "set system host-name r1")
 
+    def test_an_escaped_quote_is_part_of_the_value(self) -> None:
+        """`\\"` inside a quoted value is the value's, as every reader reads it.
+
+        vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 print
+        `description "uplink to sw1 \\"core\\""` (`junoscfg-oracle.set.gz`);
+        `QUOTED` was `/"[^"]*"/` and ended the value at the first inner quote
+        (DEV-V1, NEW-C6; spec validation/set-command-validation).
+        """
+        assert _parses(self._tree(), 'set system host-name "uplink to sw1 \\"core\\""')
+        assert _parses(self._tree(), 'set system host-name "\\""')
+
+    def test_bare_inner_quotes_are_not_one_value(self) -> None:
+        """Quotes that are not escaped end the value (pin: as on the base)."""
+        assert not _parses(self._tree(), 'set system host-name "uplink to sw1 "core""')
+
 
 class TestPolicyExpressionIsOneValue:
     """`from policy (( A && ! B ) || ( ! C && D ))` is a single value.

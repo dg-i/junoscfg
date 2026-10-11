@@ -19,6 +19,7 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 | Base SHA | 50b0a10 |
+| Acceptance tests on base product code (phase 4) | 277 failed, 3,744 passed over the named files and nodes; every new test or row fails except the named pins (`a-quoted-plain-policy-name` 33 nodes, `test_a_backslash_is_written_as_it_is`, `test_a_junos_variable_stays_quoted`, `test_bare_inner_quotes_are_not_one_value`, `bare-inner-quotes-end-the-value`, `a-statement-across-lines-holding-an-escaped-quote`) |
 | Context expansion: `src/junoscfg/display/value_format.py` | Builder: below the code-map cut; the one value formatter |
 | Context expansion: `src/junoscfg/convert/output/dict_walker.py` | Builder: the writers' call sites of `format_value` |
 | Context expansion: `src/junoscfg/validate/grammar_generator.py` | Builder: the `QUOTED` terminal (serialized path) |
