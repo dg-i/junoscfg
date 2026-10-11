@@ -8,3 +8,29 @@ type: bug
 zone: conversion
 domains: [conversion, validation]
 assurance: economy
+removes:
+  - "the coupling of field-validation warnings to errors in `convert/__init__.py::_convert`: warnings join the diagnostics whether or not errors were found"
+declared-break:
+  consumer:
+    why: >-
+      Not a break. src/junoscfg/__init__.py does not change on this branch.
+      Behind convert_config_result, a field-validation warning (today only a
+      missing mandatory statement) is now a diagnostic whether or not the
+      validation found errors, as spec conversion/diagnostics and the CLI
+      guide already said; its text names the commit boundary. convert_config
+      returns the same string, strict raises on the same errors, and the
+      output is unchanged. Patch, as AGENTS.md rules for what is not a break.
+    migration: >-
+      None needed. A caller that matched the text "Missing mandatory field
+      'X'" matches it as a prefix: the message continues ": required at
+      commit; the configuration loads without it".
+  cli:
+    why: >-
+      Not a break. src/junoscfg/cli.py does not change. `junoscfg convert`
+      prints the mandatory-field warning on stderr whether or not field
+      validation found an error, as docs/guide/cli.md already promised
+      ("printing warnings to stderr"); stdout and every exit code are
+      unchanged, `--strict` included.
+    migration: >-
+      None needed. A script that parsed stderr reads one more `field-validate:`
+      line for each missing mandatory statement.

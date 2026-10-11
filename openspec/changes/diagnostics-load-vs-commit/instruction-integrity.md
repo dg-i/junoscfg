@@ -45,3 +45,4 @@ None, because the owner asked for no questions (C1) and the evidence settles bot
 <!-- Append later instructions or evidence and their consistency result. -->
 
 - Initial preflight, 2026-10-11: consistent; C1–C7 resolved. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 1.
+- Phase 1, 2026-10-11: proposal and lane fields approved under the owner's unattended-run instruction of 2026-10-11. `openspec validate` waits for the phase-2 delta (a bug carries one). Resume point: phase 2.
