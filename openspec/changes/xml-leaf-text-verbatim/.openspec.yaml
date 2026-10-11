@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-11
+type: bug
+# The one zone this change edits: src/junoscfg/display/to_yaml.py (kernel, yellow),
+# the XML reader every conversion of XML input goes through.
+zone: kernel
+domains: [conversion]
+removes: "none, because the change removes no behaviour, door or test: XML leaf text keeps its spaces, and the known-differences class `xml-value-whitespace-lost` is removed by tools/device_differences.py in the regeneration the orchestrator sequences after change 8"
+assurance: economy
