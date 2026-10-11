@@ -1,0 +1,40 @@
+## MODIFIED Requirements
+
+### Requirement: Raw set conversion rejects unquoted square brackets
+
+WHEN any line of raw set input, whatever its command (`set`, `delete`,
+`deactivate`, `activate`, `protect` or another), contains an unquoted `[` or
+`]` THEN the system
+SHALL reject the input before constructing an IR with `ValueError`, independent
+of validation and strictness, and SHALL report the complete original offending
+line as `Unsupported bracket syntax in set input on line N:\n<line>`. In a
+conversion that anonymizes, the `ValueError` SHALL withhold the line and say
+that the input could not be read (spec anonymization/placed-values, NEW-R4).
+Tests: `tests/unit/convert/test_set_input.py::TestTheReaderRejectsBracketSyntax::test_every_command_and_bracket_form_is_rejected`, `tests/unit/convert/test_convert_api.py::TestSetBracketSyntaxRejection::test_public_conversion_doors_reject_without_validation`, `tests/unit/cli/test_cli.py::TestUsageErrorsExitTwo::test_set_bracket_syntax_is_refused_with_the_whole_line`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
+
+#### Scenario: Bracket-form matrix
+
+- **WHEN** a raw set command contains `[ foo bar ]`, `[foo bar]`, `[]`, `[ ]`,
+  a lone opening bracket, a lone closing bracket, a scalar bracket value, or an
+  `apply-groups` bracket value
+- **THEN** conversion rejects the first offending line with the specified
+  two-line diagnostic and preserves that line without truncation
+
+#### Scenario: Validation bypass does not bypass the boundary
+
+- **WHEN** `convert_config(..., from_format=Format.SET, validate=False)` receives
+  raw set input containing an unquoted bracket
+- **THEN** it raises the same `ValueError` as `set_to_dict` and `to_dict`
+
+#### Scenario: CLI conversion
+
+- **WHEN** CLI conversion or import receives raw set input containing an
+  unquoted bracket
+- **THEN** it prints the specified diagnostic and exits 2
+
+#### Scenario: An anonymized conversion
+
+- **WHEN** `set system name-server [ 203.0.114.9 ]` is converted with an
+  anonymizing rule, through the library or `junoscfg convert --anonymize-ips`
+- **THEN** it is refused with `ValueError` (exit 2) whose text holds neither the
+  line nor the address
