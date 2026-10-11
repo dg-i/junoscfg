@@ -159,3 +159,110 @@ This verdict applies to the named immutable HEAD. The planned rebase onto newer 
 The original verdict and SC4 above remain unchanged. The F1 repair enforces the already-approved one-device-token and preservation boundary using `display.set_converter.reads_as_one_statement`, then checks one complete outer parenthesized run while skipping the existing quoted-token helper. Quoted-name delimiters remain data. An expression-shaped value that fails this boundary raises `ValueError` before output: quoting it would introduce a quoted-name IR under the frozen reader rule. No spec edit, new device-validity assertion or agent-approved requirement is made. Reconfirmation by the same independent Reviewer is required on the final candidate.
 
 The omitted negative coverage is now present through JSON/YAML/XML and both command writers; JSON/YAML values are validated first. Schema-valid input is not sufficient permission to emit new statements. XML conversion and strict field validation are exercised; the independent review's missing-cleaned-XSD limitation remains, and no XML XSD validation claim is added. The separate escaped-policy-name audit tokenizer defect remains a carry-forward follow-up, outside this formatter repair. SC1–SC3 retain their original owner-authorized scope.
+
+## Same independent Reviewer: first repair reconfirmation
+
+The following immutable report applies to semantic head `cf6aa270b506c90ce527c3cfa45dca1d91c07a77` and the evidence-only head `f135310d0031a666b220607a0a4a0ad668ca218b`. It remains historical for the next correction.
+
+# Done
+
+**CHANGES REQUIRED** on semantic code HEAD `cf6aa270b506c90ce527c3cfa45dca1d91c07a77`, base/master `40173ba8ec6c0664ea3590b5a3b14786fcf22629`. This is the same independent Reviewer reconfirming the accepted correction and integration rebase. Original `roles/codex-review.md` is preserved.
+
+During review the checkout advanced to `f135310d0031a666b220607a0a4a0ad668ca218b`; `git diff cf6aa270..f135310d --name-only` contains only the freeze, metrics and tasks. Runtime, tests, generated artifacts and executable configuration are identical to the requested semantic HEAD. Both observations below apply to that exact candidate.
+
+Original high F1 is technically repaired: its malformed expression-shaped values now fail before output. New medium F2 blocks approval because the chosen helper rejects complete supported expressions that contain a quoted name touching an opening parenthesis. Owner disposition of F1 remains pending independently of this technical conclusion.
+
+# Evidence
+
+## Ranked findings
+
+### F2 — Medium: the boundary guard rejects complete quoted-name expressions
+
+**Requirement:** `specs/conversion/value-quoting/spec.md`, “A policy-algebra value is written as the device's token,” promises to write an expression starting with `(` as the same token when it occupies one token; its examples explicitly include quoted names inside expressions. `display/CONTRACT.md` and `convert/CONTRACT.md` require typed expression writing and preservation. No requirement limits these expressions to a space between every quoted span and each parenthesis. `ARCHITECTURE.md` §1 requires equivalent configuration, not a particular device layout.
+
+**Diff:** `src/junoscfg/display/value_format.py:48–49` uses `reads_as_one_statement(text)` as a necessary precondition. This existing helper belongs to canonical kept-statement spelling: `display/set_converter.py:47–50` documents single-space words and no quote inside a word, and `:65–73` enforces those restrictions. It is stronger than the formatter's one-complete-expression boundary. The new call makes `is_algebra_token()` false for complete expressions such as `("P 1" && P-B)` and `(("P 1") && P-B)`, so `value_format.py:81–84` raises `ValueError` from both writers.
+
+**Executed counterexamples:** both exact expressions pass the shipped set grammar on the integration candidate. Every input reader—set, structured, JSON, YAML and XML—reads them to the exact same expected IR with strict conversion. Candidate set and structured writers reject both from **all five input doors**. On original base `50b0a104`, both writers read back to the **exact original IR**, without a whitespace-normalization mismatch. A direct `git diff 50b0a104..40173ba8` over `value_format.py`, `set_converter.py` and `convert/input/set_input.py` is empty, so this established baseline behavior also applies to the new integration base. This is an actual newly introduced refusal, not an inference that a formerly lossy spelling deserves new compatibility.
+
+This finding makes no new exact-device-format claim. The complete expressions are already inside the declared product promise; current reader and shipped-grammar execution and baseline round trips independently establish the counterexample.
+
+Minimal reproduction on candidate:
+
+```python
+import json
+from junoscfg import Format, convert_config, validate_set
+value = '("P 1" && P-B)'
+assert validate_set('set protocols bgp group G import ' + value).valid
+ir = {"configuration": {"protocols": {"bgp": {"group": [
+    {"name": "G", "import": [value]}
+]}}}}
+written = convert_config(json.dumps(ir), from_format=Format.JSON,
+                         to_format=Format.STRUCTURED, strict=True)
+back = json.loads(convert_config(written, from_format=Format.STRUCTURED,
+                                 to_format=Format.JSON, strict=True))
+assert back == ir
+```
+
+Candidate raises `ValueError: value is not one complete policy-algebra expression`; baseline succeeds and preserves the value. The nested counterexample substitutes `(("P 1") && P-B)`.
+
+**Recommendation:** retain the complete-parenthesis and statement-delimiter checks, but use a boundary check whose requirements match expression tokenization rather than canonical kept-statement spelling. Do not loosen `reads_as_one_statement` globally, because its stronger invariants serve unplaced-record preservation. Add both compact quoted-name positives across the five readers and both writers; retain all F1 rejection cases and quoted-delimiter positives. This is an implementation/test correction under the existing requirement, not a new requirement decision.
+
+Other probes showed refusal of double-spaced `( P-A  && P-B )` and `( P-A && "P 1")`. Their baseline round trips normalize whitespace, so they are **not** needed to establish F2 and are not treated as exact-IR preservation evidence. The two counterexamples above avoid that limitation.
+
+## Original F1 and SC4 assessment
+
+The original `( A ) ; export P-B` now raises the static structural `ValueError` before either command writer returns output. All 66 committed negatives across JSON/YAML/XML and set/structured writers pass, including delimiters inside the run, trailing statements, comment boundaries, bracket runs, unbalanced parentheses and open quotes. The 24 quoted-name delimiter positives pass. Independent controls `( "P;1" && P-B )` and the whole quoted name `"( A ) ; export P-B"` both round-trip unchanged in set and structured output.
+
+For **malformed expression-shaped values that cannot satisfy the one-token criterion**, rejecting before output satisfies the existing lexical boundary and structural-error contract. The error contains no configuration value. `ARCHITECTURE.md` §8 already supplies the structural-error door; the public pipeline returns no result when this error propagates, and CLI conversion prints output only after the pipeline succeeds. The anonymized error wrapper remains covered by the message-contract tests.
+
+Therefore original SC4's conditional wording does not require a specification change to correct F1: it can be classified as an omitted-negative-test implementation finding now fixed. This assessment does not accept or reject any owner-authored requirement decision and does not infer an answer to the pending **reject-before-output versus park #8** picker. F2 shows that the actual rejection must remain confined to values failing the lexical promise; rejecting a valid complete expression is a separate defect.
+
+SC1–SC3 remain pending only within their existing owner-authorized scoped interim actions. Their source entries are preserved; no general merge permission is extended to F2. There is no additional specification challenge required for F2 because its required complete-expression behavior is already established.
+
+## Verification and rebase impact
+
+- Independent targeted run: **5,212 passed, 7 strict xfailed**, including `test_value_format.py`, `test_set_converter.py`, `test_convert_roundtrip.py`, the rebased audit walker and field validator tests, the full format matrix, message contracts, device rendering law and shipped-artifact tests. It includes all repair negatives and their added positive cases; none covers F2's compact quoted-name expressions.
+- Rebase comparison `586841fe..f04ec2f` adds the reviewed integration changes to audit key-token writing, POSIX bracket escaping in field validation, documents, version/dependency records and archives. None changes the original #8 reader/formatter/lexer implementation. The relevant rebased runtime tests were included in the independent targeted run; no interaction failure was observed.
+- Independently compared the Builder's new-base result records: **36 of 96 plain conversions** and **432 of 1,152 rule runs** differ, exclusively in output. Every field in repaired-head records equals the original independently recorded `roles/review-head.json`. This is verification of the stored refreshed comparison, not a claim to have rerun the whole comparison again.
+- Saved fast/full checks on the committed candidate both end with `every check passed`; full application result is **8,443 passed, 37 skipped, 20 xfailed**. No full or expensive schema tier was repeated by this Reviewer. Their passing status does not cover F2.
+- Checkout stayed clean. The original escaped-policy-name audit carry-forward remains separate; no unrelated #7 policy was evaluated or approved.
+
+## Five review prompts, reconfirmed
+
+1. **Trust-boundary input:** F1 caller values no longer become extra statements; refusal precedes returned output. F2 requires removing only the guard's unrelated canonical-text restriction while retaining that safety check.
+2. **Incompatible-but-valid input:** the two compact quoted-name expressions above pass grammar/readers and baseline exact round trips yet are rejected by the correction. They are the new blocking counterexamples.
+3. **Shared blind spot:** all correction positives place spaces around quoted names. Both implementation and tests consequently miss expressions whose quoted name touches a parenthesis. Add the exact positives; no oracle relaxation is needed.
+4. **Second answer:** existing `reads_as_one_statement` provides safe canonical kept-record spelling, while `is_algebra_token` needs safe expression boundaries. Reusing the former imposes a capability restriction inappropriate to the latter. Preserve the helper's owning invariant and repair the expression boundary at its own scope.
+5. **Figures and non-goals:** independent targeted counts and refreshed stored-comparison counts are stated above. Original device counts and expensive-tier evidence retain their original identities. P11/P12/P13 scoped interims, XML whitespace, meta verbs and the unrelated audit carry-forward are unchanged.
+
+# Changed paths
+
+Only this scratch report `roles/codex-rereview.md` and the review-only `roles/rereview-pytest-tmp` directory. Original report preserved. No tracked file, Git state, product implementation, acceptance test or specification was mutated by this Reviewer.
+
+# Commands and exit status
+
+- Git status/identity, semantic and rebase diffs, source/record reads and `git diff --check 40173ba8..cf6aa270`: **0**. Candidate changed only by the permitted evidence-only checkpoint during review.
+- Offline `uv run --locked --no-sync --group dev pytest -q -p no:cacheprovider`, with scratch `UV_CACHE_DIR`, `--basetemp` and `PYTHONDONTWRITEBYTECODE=1`, on the nine targeted files listed above: **0**, 5,212 passed, 7 xfailed.
+- Candidate F1 refusal/quoted-name controls: **0**; expected `ValueError` caught for original injection, both positives preserved IR.
+- Independent candidate compact-expression probes: **0**, explicitly reporting all five readers preserve IR and all ten command conversions refuse it. Baseline probes: **0**, exact round trips and shipped grammar acceptance for both F2 cases. Additional whitespace cases were reported with their baseline normalization limitations.
+- Independent comparison of `repair-base-40173ba.json`, `repair-head.json` and original `review-head.json`: **0**, asserted output-only changes and exact repaired-head equality.
+
+# Open questions for the owner
+
+The explicit owner disposition of reject-before-output versus parking #8 remains pending; no response or approval is inferred. Technical recommendation is to retain the structural refusal for malformed values and correct F2 before returning for review. No owner question was sent. Existing SC1–SC3 permissions remain as previously recorded, and unrelated #7 choices remain outside this review.
+
+# Deviations
+
+Scratch report only, as required; the Builder copies/preserves ranked evidence in tracked review records. No network, push, merge, full check, expensive schema rerun or other-session control. This re-review is complete for the exact named semantic candidate; F2 must return to the same isolated Reviewer after its focused/required verification.
+
+## Builder correction of F2
+
+`reads_as_one_statement` remains unchanged. Its canonical single-space/no-embedded-quote invariant belongs to kept raw/unplaced records, not policy-expression layout. The formatter instead reuses the same owning lexer's `_TOKEN` primitive, permitting its word/quoted/space tokens while refusing actual structural/comment boundaries and line breaks, then retains complete outer-parenthesis and quoted-span checking. This is intra-package `display` reuse: `tach.toml` declares `junoscfg.display` as one module, existing display files use sibling imports, and `agent-ready interfaces` passes. No private name or submodule is imported across a package door, and no interface is widened.
+
+New catalogue rows cover both exact F2 compact/nested expressions through all five readers and every writer/second hop; another row preserves doubled spaces inside a quoted name. Formatter-only outer-whitespace pins require unchanged spelling without claiming an exact IR round trip the baseline never supplied. All F1 negatives remain, plus a compact open quote negative; spaced quoted-delimiter positives remain. Focused settled run: 332 passed, 2 strict P11 xfailed.
+
+Carry-forward lexical limitation (synthetic, no device-invalidity claim): compact `("P;1" && P-B)` passes the shipped grammar, but the current structured lexer treats the semicolon inside a word-attached quote as structure. Public strict conversion on integration base `40173ba` emits structured text whose strict read-back raises `ValueError`; the corrected boundary refuses this unrepresentable spelling before output. The spaced `( "P;1" && P-B )` stays supported and preserves exact IR. Repairing the reader's embedded-quote delimiter handling is outside this scoped formatter correction; no generic requirement change or merge permission is manufactured.
+
+## Owner disposition after F2 correction
+
+2026-10-11, owner interview relayed by the orchestrator: explicitly approve F1 reject-before-output for unrepresentable values while preserving complete expressions and quoted names. This authorizes the concrete structural-error correction under the existing invariant; it does not approve a rewritten requirement or extend generic merge permission. Original SC4 conditional wording and the original immutable review reports remain historical. Same-Reviewer reconfirmation of the final F2 candidate remains required.

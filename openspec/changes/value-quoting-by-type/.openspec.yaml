@@ -30,6 +30,11 @@ declared-break:
       validate_config) accepts `\"` inside a quoted value; a quoted value
       ending in a lone backslash stays accepted. junoscfg.audit's rendering
       quotes a name that looks like an expression and escapes an inner `"`.
+      Expression-shaped policy-algebra values that cannot safely occupy one
+      complete expression in both command formats now raise ValueError before
+      returning output, rather than becoming additional statements or a
+      different quoted-name IR. Complete compact quoted-name expressions stay
+      supported; canonical word spacing is not required.
       Declared breaks on a named surface raise
       the minor (AGENTS.md); owner intake 6 allows the IR change on device
       evidence (synthetic/vmx-23.2R2-S7.5/synthetic-probes.{xml,json}.gz).
@@ -40,7 +45,11 @@ declared-break:
       policy-algebra value with a policy name strips one pair of surrounding
       quotes first, as `junoscfg.audit` does. Set output that an earlier
       release wrote with bare inner quotes or `""( … )""` did not load on a
-      device; regenerate it.
+      device; regenerate it. Handle ValueError for expression-shaped values
+      that cannot be represented safely; correct the value to a complete
+      expression that the readers can carry, or supply the quoted policy-name
+      token for the intended name. Schema validation alone does not establish
+      safe command token boundaries.
   cli:
     why: >-
       `junoscfg convert` writes the spellings above; `junoscfg validate`
@@ -48,8 +57,14 @@ declared-break:
       lines write a definition name as any value: one that looks like an
       expression (`( A && B )`) is quoted, where it was written bare, and an
       inner `"` is escaped, where it was written bare and did not load.
+      Conversion refuses an unrepresentable expression-shaped policy value
+      before printing output; a schema-valid value can still cross a command
+      boundary, such as `( A ) ; export P-B`.
     migration: >-
       Regenerate JSON or YAML written from set or structured input that quotes
       a policy name starting with `(`. A tool that matches audit output
       against a name strips one pair of quotes and unescapes `\"`; a script
       the audit wrote with a bare inner quote did not load and is written again.
+      Correct unrepresentable expression-shaped values rather than consuming
+      partial command output; conversion reports the structural error before
+      it emits configuration text.

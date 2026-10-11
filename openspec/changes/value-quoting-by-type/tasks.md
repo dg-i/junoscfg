@@ -14,7 +14,10 @@
 - [x] 2.6 Historical full checkpoint (invalidated for the current candidate by rebase and runtime/test repair): `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full` at `4fafc72`: every check passed; application tests 8,351 passed, 37 skipped, 20 xfailed.
 
 - [x] 2.7 Repair independent review F1 without changing the spec: one complete lexical expression, shared statement-boundary helper, fail-before-emission when quoting cannot preserve IR, JSON/YAML/XML negatives and quoted-name delimiter positives. Focused tests: 155 passed, 2 strict P11 xfailed.
-- [x] 2.8 New integration checkpoint at base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: affected tests, fast, full and refreshed device comparisons; old full checkpoint is historical.
+- [x] 2.8 Historical first repair integration checkpoint (invalidated by F2 runtime/tests) at base `40173ba8ec6c0664ea3590b5a3b14786fcf22629`: affected tests, fast, full and refreshed device comparisons; old full checkpoint is historical.
+
+- [x] 2.9 Same-Reviewer F2 correction: reuse shared lexical primitive without canonical raw-record restrictions; preserve raw helper, F1 negatives and scoped interims; compact/nested five-reader catalogue rows and meaningful quoted-space row; settled focused tests 332 passed, 2 strict xfailed.
+- [ ] 2.10 F2 settled candidate: refreshed device comparison, fast and one new committed full checkpoint.
 
 ## 3. Review and evidence
 

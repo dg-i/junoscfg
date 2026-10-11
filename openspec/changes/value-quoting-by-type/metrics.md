@@ -67,6 +67,19 @@
 | Repair full checkpoint | every check passed, exit 0; 8,443 passed, 37 skipped, 20 strict xfailed, coverage floor passed; immutable code head above; prescribed full command; scratch roles/repair-full.out |
 | Repair commit environment retry | First commit attempt exited 1: scratch uv cache lacked hatchling for build isolation. Populated default cache reused offline; retry exited 0 with all hooks passed. No network or check bypass |
 
+
+| Context expansion: `tach.toml` | F2: same-package sibling reuse of the display lexer primitive stays inside the declared display module; no interface widened |
+| Context expansion: `tools/check_test_doors.py` | F2: confirm new test coverage imports through allowed package doors |
+| F2 regression before correction | 5 failed, 1 passed (formatter whitespace/compact-expression rows, one existing meaningful quoted-space pin); pytest exit 1 expected |
+| F2 settled focused coverage | 332 passed, 2 strict P11 xfailed, 4,152 deselected; whole value formatter file and three new catalogue rows through the matrix; scratch roles/repair-f2-settled.out |
+| F2 existing compact delimiter lexer limitation | Synthetic `("P;1" && P-B)` validates in shipped grammar but integration-base structured strict read-back raises ValueError; safe refusal retained, no device-invalidity claim; spaced quoted-delimiter positive remains exact |
+
+| Context expansion: `docs/architecture/design-decisions.md` | F2: existing Value Quoting entry describes resulting structural refusal and actual lexer limitation alongside quoting behavior |
+
+| F2 refreshed device comparison | Fresh head: 1,152 conversions, 36/96 plain and 432/1,152 rule runs differ against unchanged 40173ba baseline, output only. Every head result equals prior repaired-head result; DEV-4/5/6/7 explanations remain exact. Baseline record reused with identical SHA, manifest/captures, recipe, dependencies and configuration. Scratch roles/repair-f2-head.json and repair-f2-device-summary.json |
+
+| F2 commit formatting retry | First commit exited 1 because ruff-format converted two unchanged literal spellings to its required quote style; all other hooks passed. Stage the formatting and retry once; no oracle or semantic change |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
 
 Repair execution: negative regression before repair: 66 failed as expected (pytest status 1; logging command's tail status 0); focused after repair: 155 passed, 2 strict P11 xfailed (status 0). One fixture-construction retry: a Python string had stripped escaped quotes from the positive name, producing six expected refusals; corrected the fixture to a raw string and reran unchanged assertions. Original acceptance/full/schema/device figures above remain historical at their cited original heads; rebased candidate evidence will be recorded separately.

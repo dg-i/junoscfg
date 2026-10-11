@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from junoscfg.display.set_converter import reads_as_one_statement
+from junoscfg.display.set_converter import _TOKEN
 
 #: The XSD type of a leaf that holds a policy expression or a policy chain.
 POLICY_ALGEBRA = "policy-algebra"
@@ -45,13 +45,24 @@ def is_algebra_token(text: str) -> bool:
     value both ways, so whatever is written reads back as written.
     """
     if text.startswith("("):
-        if not reads_as_one_statement(text):
+        if len(text.splitlines()) != 1:
             return False
+        # The shared lexer owns actual syntax boundaries. Its canonical raw
+        # statement helper also requires single spaces and separate quoted
+        # words, which complete policy expressions need not have (review F2).
+        position = 0
+        while position < len(text):
+            token = _TOKEN.match(text, position)
+            if token is None or token.lastgroup not in ("word", "quoted", "space"):
+                return False
+            position = token.end()
         depth = 0
         position = 0
         while position < len(text):
             quoted = _QUOTED_TOKEN.match(text, position)
-            if quoted is not None:
+            if text[position] == '"':
+                if quoted is None:
+                    return False
                 position = quoted.end()
                 continue
             char = text[position]

@@ -279,6 +279,7 @@ _BAD_EXPRESSIONS = [
     "( A",
     "( A ) ( B )",
     '( "P-A )',
+    '("P-A)',
 ]
 
 
@@ -337,3 +338,26 @@ class TestAPolicyValueOccupiesOneExpression:
             convert_config(written, from_format=writer, to_format=Format.JSON, strict=True)
         )
         assert back == {"configuration": _imports([value])}
+
+
+class TestACompleteExpressionKeepsItsSpelling:
+    """Review F2: lexical completeness does not require canonical word layout.
+
+    Compact quoted-name cases have exact baseline IR preservation. Outer
+    whitespace cases pin formatter spelling only: the existing readers
+    normalize some outer spacing, and this repair does not normalize values.
+    """
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            '("P 1" && P-B)',
+            '(("P 1") && P-B)',
+            '( "P  1" && P-B )',
+            '( P-A && "P 1")',
+            "( P-A  && P-B )",
+            "( P-A\t&& P-B )",
+        ],
+    )
+    def test_a_complete_expression_is_written_unchanged(self, value: str) -> None:
+        assert format_value(value, _ALGEBRA) == value

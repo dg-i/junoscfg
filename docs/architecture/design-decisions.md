@@ -112,6 +112,18 @@ quoted name whose text starts with `(` (`"( P-A )"`), which the readers keep quo
 because unquoted it would read as an expression. Text that looks like an expression on
 any other leaf is quoted (spec `conversion/value-quoting`).
 
+An expression must occupy one complete parenthesized run without crossing the
+command lexer’s statement, comment or line boundaries. Quoted names may touch
+parentheses, and meaningful spaces inside a quoted name remain intact. The
+formatter reuses the command lexer’s tokens; the stronger canonical spelling
+rules for kept raw statements do not constrain expressions. An expression-shaped
+value that cannot be represented safely raises `ValueError` before output:
+quoting it would instead create a quoted-name IR. Schema validation alone does
+not establish this command boundary. The current curly lexer cannot carry a
+delimiter inside a word-attached quote such as `("P;1" && P-B)`; the spaced
+`( "P;1" && P-B )` is supported. This is a reader limitation, not a claim that
+the device rejects the compact spelling.
+
 ## Anonymization Design
 
 ### Schema-Guided Walker

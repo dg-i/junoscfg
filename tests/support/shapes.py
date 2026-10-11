@@ -2313,6 +2313,32 @@ _add(
 )
 
 
+# Review F2: these complete expressions passed every input reader and exact
+# baseline round trips, but the canonical-kept-statement guard refused them.
+# Single-space word layout is not an expression requirement.
+for _row_name, _expression in (
+    ("a-compact-quoted-policy-name-expression", '("P 1" && P-B)'),
+    ("a-nested-compact-quoted-policy-name-expression", '(("P 1") && P-B)'),
+    ("an-expression-preserving-spaces-inside-a-quoted-name", '( "P  1" && P-B )'),
+):
+    _expression_ir = _neighbor(**{"import": [_expression]})
+    _add(
+        Shape(
+            _row_name,
+            {
+                SET: f"{_NEIGHBOR_SET} import {_expression}\n",
+                STRUCTURED: _nest(_NEIGHBOR, f"        import {_expression};\n"),
+                JSON: _json(_expression_ir),
+                YAML: _neighbor_yaml(f"          import: [{json.dumps(_expression)}]\n"),
+                XML: _xml(_NEIGHBOR_XML.format(f"<import>{xml_escape(_expression)}</import>")),
+            },
+            ir=_expression_ir,
+            set_output=f"{_NEIGHBOR_SET} import {_expression}\n",
+            why="Review F2: complete expression quoted names can touch parentheses; "
+            "meaningful spaces inside a quoted name stay unchanged.",
+        )
+    )
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"
