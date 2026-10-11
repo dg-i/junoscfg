@@ -13,5 +13,5 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it: fresh Reviewer (`review.md`), CHANGES REQUIRED at a4eb20e, fixes at 79b44a3, APPROVE at b2bc5d3.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head: base 1ebeed9, code head 4ba7c97.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits: main spec applied before merge from a disposable worktree (d7087e2); run by the Builder under the owner's unattended-run brief, no product edit.
