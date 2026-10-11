@@ -52,8 +52,6 @@ def _re(pattern: str) -> Callable[[str], bool]:
     return lambda line: found(line) is not None
 
 
-_POLICY_QUOTED = _re(r'\b(import|export) "\(')
-_POLICY_BARE = _re(r"\b(import|export) \(")
 _LEAKS = _re(
     r" rf_list | server-group server-group | other-variables | bridge-domains domain "
     r"| dynamic-tunnels dynamic-tunnel | hello-padding-type "
@@ -116,40 +114,6 @@ CLASSES = (
         "`radius-server <address> timeout N` is written `radius-server <address> N`, which the "
         "device accepts and loads without the timeout",
         lambda line, side, suffix, c: _re(r"\bradius-server \S+ (timeout )?\d+$")(line),
-    ),
-    Class(
-        "policy-expression-double-quoted",
-        "defect",
-        'from XML, a policy expression is written `""( P )""`, which does not load',
-        lambda line, side, suffix, c: '""(' in line,
-    ),
-    Class(
-        "policy-expression-quoted",
-        "defect",
-        'a single-term policy expression `( P )` is written `"( P )"`, which the device reads '
-        "as a policy name",
-        lambda line, side, suffix, c: (
-            (side == "extra" and _POLICY_QUOTED(line)) or (side == "missing" and _POLICY_BARE(line))
-        ),
-    ),
-    Class(
-        "policy-name-unquoted",
-        "defect",
-        'the quoted policy name `"( A && B )"` is written unquoted, which the device reads as '
-        "an expression",
-        lambda line, side, suffix, c: (
-            (side == "extra" and _POLICY_BARE(line)) or (side == "missing" and _POLICY_QUOTED(line))
-        ),
-    ),
-    Class(
-        "escaped-quote-lost",
-        "defect",
-        'a value holding an escaped quote `\\"` is written with bare inner quotes, which does '
-        "not load",
-        lambda line, side, suffix, c: (
-            (side == "missing" and '\\"' in line)
-            or (side == "extra" and _re(r'"[^"]* "[^"\s]+""$')(line))
-        ),
     ),
     Class(
         "inactive-keyed-entry-repeated",

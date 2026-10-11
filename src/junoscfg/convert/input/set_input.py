@@ -13,6 +13,8 @@ from junoscfg.display import (
     KEY_ALIASES,
     UNPLACED_STATEMENTS,
     entry_keys,
+    is_algebra_token,
+    is_policy_algebra,
     key_is_positional,
     load_schema_tree,
     passes_tag_to_child,
@@ -239,6 +241,20 @@ def _parse_value(token: str) -> str:
         inner = token[1:-1]
         return inner.replace('\\"', '"').replace("\\\\", "\\")
     return token
+
+
+def _leaf_value(text: str, leaf: dict[str, Any]) -> str:
+    """The value of *leaf* that *text*, one token or the line's rest, spells.
+
+    A quoted `policy-algebra` name whose text starts with `(` is kept as
+    written, quotes included, as the device's XML and JSON hold it
+    (`<import>"( P-A )"</import>`, vMX 23.2R2-S7.5 `synthetic-probes`):
+    unquoted it would read as an expression, another configuration (DEV-5;
+    spec conversion/value-quoting). Every other value is read as any is.
+    """
+    if text.startswith('"') and is_policy_algebra(leaf) and is_algebra_token(text):
+        return text
+    return _parse_value(text)
 
 
 # ── Dict entry helpers ───────────────────────────────────────────────
@@ -731,13 +747,13 @@ def _merge_tokens(
                 or KEY_ALIASES.get(tokens[next_idx], tokens[next_idx]) in children
             ):
                 # Sibling follows — take only one token as value
-                val = _parse_value(tokens[i + 1])
+                val = _leaf_value(tokens[i + 1], child)
                 current[token] = [val] if is_leaf_list else val
                 i = next_idx
                 base = _cut(reading, base, i)
                 continue
             # No sibling — join all remaining tokens as the value
-            val = _parse_value(" ".join(tokens[i + 1 :]))
+            val = _leaf_value(" ".join(tokens[i + 1 :]), child)
             existing = current.get(token)
             if existing is not None:
                 if isinstance(existing, list):

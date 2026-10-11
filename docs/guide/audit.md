@@ -16,9 +16,10 @@ approach's known weaknesses:
   (see [classification rules](#classification-rules) below).
 - **Comments**: names in `annotate` comments never count as references.
 - **Quoting**: quoted names and policy expressions such as
-  `"( POL-A && ! POL-B )"` are parsed structurally — the names inside the
+  `( POL-A && ! POL-B )` are parsed structurally — the names inside the
   expression count as references, and `POL-B` never accidentally
-  "matches" an unrelated `POL-B-OLD`.
+  "matches" an unrelated `POL-B-OLD`. Quoted, `"( POL-A && ! POL-B )"` is one
+  policy name, as the device reads it.
 
 Findings are suggestions requiring human review — see
 [Limitations](#limitations).

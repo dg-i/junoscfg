@@ -139,10 +139,10 @@ class DictWalker:
                 k_schema = child_children.get(k)
                 is_nk = isinstance(k_schema, dict) and k_schema.get("nk")
                 if is_nk:
-                    parts.append(format_value(v))
+                    parts.append(format_value(v, k_schema))
                 else:
                     parts.append(k)
-                    parts.append(format_value(v))
+                    parts.append(format_value(v, k_schema))
             elif v is None:
                 parts.append(k)
         self._output.emit(path + [" ".join(parts)])
@@ -289,7 +289,7 @@ class DictWalker:
                     and len(value) > 1
                     and all(isinstance(v, (str, int, float)) for v in value)
                 ):
-                    items = " ".join(format_value(v) for v in value)
+                    items = " ".join(format_value(v, child_schema) for v in value)
                     output.emit(path + [f"{set_key} [ {items} ]"])
                     # `inactive: members [ … ];`, as the device writes it.
                     attr = obj.get(f"@{key}")
@@ -380,13 +380,13 @@ class DictWalker:
                             )
                     elif is_transparent_list_key(child_schema):
                         if entry is not None:
-                            output.emit(path + [format_value(entry)])
+                            output.emit(path + [format_value(entry, child_schema)])
                         else:
                             output.emit(path)
                     elif entry is None:
                         output.emit(path + [set_key])
                     else:
-                        output.emit(path + [f"{set_key} {format_value(entry)}"])
+                        output.emit(path + [f"{set_key} {format_value(entry, child_schema)}"])
 
                 attr = obj.get(f"@{key}")
                 if isinstance(attr, dict):
@@ -406,7 +406,7 @@ class DictWalker:
                 positional = (
                     is_nk or is_positional_key(child_schema) or self._self_named_key(key, path)
                 )
-                formatted = format_value(value)
+                formatted = format_value(value, child_schema)
                 if positional:
                     if is_nk and schema_node and schema_node.get("L"):
                         output.emit(path + [formatted])
@@ -572,7 +572,8 @@ class DictWalker:
                 parts.append(resolve_key_alias(chosen))
                 value = hash_[chosen]
                 if not (value is None or value is True or value == [None]):
-                    parts.append(format_value(value[0] if isinstance(value, list) else value))
+                    leaf = (schema_node or {}).get("c", {}).get(resolve_key_alias(chosen))
+                    parts.append(format_value(value[0] if isinstance(value, list) else value, leaf))
                 continue
             if field not in hash_:
                 return None
@@ -586,7 +587,7 @@ class DictWalker:
                 # keyword: `virtual-link neighbor-id 10.255.255.1 transit-area
                 # 0.0.0.2` (device probe, vMX 23.2R2-S7.5).
                 parts.append(field)
-            parts.append(format_value(value))
+            parts.append(format_value(value, leaf))
         return " ".join(parts), written
 
     def _is_structured_mode(self) -> bool:

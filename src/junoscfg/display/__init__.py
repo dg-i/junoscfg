@@ -53,7 +53,7 @@ from junoscfg.display.path_filter import filter_dict_by_path
 from junoscfg.display.set_converter import SetConverter
 from junoscfg.display.to_json import filter_json_by_path
 from junoscfg.display.to_yaml import filter_yaml_by_path, xml_to_dict, xml_to_yaml
-from junoscfg.display.value_format import format_value
+from junoscfg.display.value_format import format_value, is_algebra_token, is_policy_algebra
 
 __all__ = [
     "INTEGER_TYPES",
@@ -75,9 +75,11 @@ __all__ = [
     "format_value",
     "get_transparent_child",
     "holds_tag",
+    "is_algebra_token",
     "is_display_set",
     "is_flat_dict",
     "is_freeform_nk",
+    "is_policy_algebra",
     "key_is_positional",
     "is_positional_key",
     "is_transparent_list_key",

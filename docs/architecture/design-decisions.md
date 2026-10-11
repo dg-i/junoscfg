@@ -103,9 +103,14 @@ Only `inactive:` survives the set-command roundtrip (via `deactivate`); `replace
 
 ## Value Quoting
 
-Both JSON and XML converters need to quote values containing special characters.
-Policy expressions (containing `&&`, `||`, `!`) are never quoted despite containing
-spaces. Shared quoting logic lives in `value_format.py`.
+Every set and curly writer spells a value through one kernel answer,
+`junoscfg.display.format_value`, given the value's leaf: a value is quoted where it
+must be, its `"` escaped as `\"` and its `\` written as is, as the device writes them.
+The leaf's type decides, never the value's look: a leaf typed `policy-algebra` holds
+the device's own token, an expression such as `( P-A && P-B )` written bare, or a
+quoted name whose text starts with `(` (`"( P-A )"`), which the readers keep quoted
+because unquoted it would read as an expression. Text that looks like an expression on
+any other leaf is quoted (spec `conversion/value-quoting`).
 
 ## Anonymization Design
 

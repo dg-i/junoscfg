@@ -1014,6 +1014,8 @@ class TestKeyedEntryTakesExactlyItsKeys:
         `apply-flags` takes one of its flags, `omit` and `replace`, as the
         device's container, and no rule inside a universal statement takes
         another one (change universal-statements-from-tree, DEV-V2, Reviewer 1-2).
+        `QUOTED` takes an escaped character and a trailing backslash (change
+        value-quoting-by-type, DEV-V1, SC2).
         """
         from tests.support.keyed_entries import NAME_KEYED_XSD, build_artifacts
 

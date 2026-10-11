@@ -4,10 +4,6 @@
    "definition": "the device's display set prints an inactive route-filter as a bare `deactivate` with no `set` line for it",
    "kind": "device-quirk"
   },
-  "escaped-quote-lost": {
-   "definition": "a value holding an escaped quote `\\\"` is written with bare inner quotes, which does not load",
-   "kind": "defect"
-  },
   "inactive-keyed-entry-name-leak": {
    "definition": "from curly input, the same entry is written `... routing-instance R name`",
    "kind": "defect"
@@ -26,18 +22,6 @@
   },
   "overload-timeout-dropped": {
    "definition": "`isis overload timeout N` is written `overload N`, which the device rejects",
-   "kind": "defect"
-  },
-  "policy-expression-double-quoted": {
-   "definition": "from XML, a policy expression is written `\"\"( P )\"\"`, which does not load",
-   "kind": "defect"
-  },
-  "policy-expression-quoted": {
-   "definition": "a single-term policy expression `( P )` is written `\"( P )\"`, which the device reads as a policy name",
-   "kind": "defect"
-  },
-  "policy-name-unquoted": {
-   "definition": "the quoted policy name `\"( A && B )\"` is written unquoted, which the device reads as an expression",
    "kind": "defect"
   },
   "radius-timeout-dropped": {
@@ -262,52 +246,6 @@
     "set routing-options transport-class name gold tunnel-egress end-point 1.1.0.12": "transport-class-dict"
    }
   },
-  "jvd/vmx-23.2R2-S7.5/services-leaf1_qfx5130-48c.conf": {
-   "extra": {
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted"
-   },
-   "missing": {
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted"
-   }
-  },
   "jvd/vmx-23.2R2-S7.5/services-leaf1_qfx5130-48c.json": {
    "extra": {
     "set policy-options route-filter-list RoutesFromExt-blue-external_router rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
@@ -372,28 +310,8 @@
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router rf_list ::/0 prefix-length-range /1-/128": "xml-element-name-leak",
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router rf_list fdf6:ed70:1fac:f2d4::2002/127 upto /128": "xml-element-name-leak",
     "set routing-instances blue forwarding-options dhcp-relay server-group server-group blue address 10.10.0.200": "xml-element-name-leak",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
     "set routing-instances green forwarding-options dhcp-relay server-group server-group green address 10.25.0.200": "xml-element-name-leak",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red forwarding-options dhcp-relay server-group server-group red address 192.168.37.100": "xml-element-name-leak",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted"
+    "set routing-instances red forwarding-options dhcp-relay server-group server-group red address 192.168.37.100": "xml-element-name-leak"
    },
    "missing": {
     "set policy-options route-filter-list RoutesFromExt-blue-external_router 0.0.0.0/0 exact": "xml-element-name-leak",
@@ -458,74 +376,8 @@
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router ::/0 prefix-length-range /1-/128": "xml-element-name-leak",
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router fdf6:ed70:1fac:f2d4::2002/127 upto /128": "xml-element-name-leak",
     "set routing-instances blue forwarding-options dhcp-relay server-group blue 10.10.0.200": "xml-element-name-leak",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
     "set routing-instances green forwarding-options dhcp-relay server-group green 10.25.0.200": "xml-element-name-leak",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances red forwarding-options dhcp-relay server-group red 192.168.37.100": "xml-element-name-leak",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted"
-   }
-  },
-  "jvd/vmx-23.2R2-S7.5/services-leaf1_qfx5130-48c.set": {
-   "extra": {
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted"
-   },
-   "missing": {
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted"
+    "set routing-instances red forwarding-options dhcp-relay server-group red 192.168.37.100": "xml-element-name-leak"
    }
   },
   "jvd/vmx-23.2R2-S7.5/services-leaf1_qfx5130-48c.xml": {
@@ -592,28 +444,8 @@
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router rf_list ::/0 prefix-length-range /1-/128": "xml-element-name-leak",
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router rf_list fdf6:ed70:1fac:f2d4::2002/127 upto /128": "xml-element-name-leak",
     "set routing-instances blue forwarding-options dhcp-relay server-group server-group blue address 10.10.0.200": "xml-element-name-leak",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export \"( RoutesToExt-blue-external_router )\"": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import \"( RoutesFromExt-blue-external_router )\"": "policy-expression-quoted",
     "set routing-instances green forwarding-options dhcp-relay server-group server-group green address 10.25.0.200": "xml-element-name-leak",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export \"( RoutesToExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import \"( RoutesFromExt-green-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export \"( RoutesToExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import \"( RoutesFromExt-purple-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red forwarding-options dhcp-relay server-group server-group red address 192.168.37.100": "xml-element-name-leak",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export \"( RoutesToExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import \"( RoutesFromExt-red-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export \"( RoutesToExt-yellow-external_router )\"": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import \"( RoutesFromExt-yellow-external_router )\"": "policy-expression-quoted"
+    "set routing-instances red forwarding-options dhcp-relay server-group server-group red address 192.168.37.100": "xml-element-name-leak"
    },
    "missing": {
     "set policy-options route-filter-list RoutesFromExt-blue-external_router 0.0.0.0/0 exact": "xml-element-name-leak",
@@ -678,28 +510,8 @@
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router ::/0 prefix-length-range /1-/128": "xml-element-name-leak",
     "set policy-options route-filter-list RoutesToExtV6-yellow-external_router fdf6:ed70:1fac:f2d4::2002/127 upto /128": "xml-element-name-leak",
     "set routing-instances blue forwarding-options dhcp-relay server-group blue 10.10.0.200": "xml-element-name-leak",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 10.204.0.9 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 export ( RoutesToExt-blue-external_router )": "policy-expression-quoted",
-    "set routing-instances blue protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::1 import ( RoutesFromExt-blue-external_router )": "policy-expression-quoted",
     "set routing-instances green forwarding-options dhcp-relay server-group green 10.25.0.200": "xml-element-name-leak",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 10.204.0.13 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 export ( RoutesToExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances green protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::11 import ( RoutesFromExt-green-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 10.204.0.17 import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d export ( RoutesToExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances purple protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::d import ( RoutesFromExt-purple-external_router )": "policy-expression-quoted",
-    "set routing-instances red forwarding-options dhcp-relay server-group red 192.168.37.100": "xml-element-name-leak",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 10.204.0.5 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 export ( RoutesToExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances red protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::9 import ( RoutesFromExt-red-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 10.204.0.1 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 export ( RoutesToExt-yellow-external_router )": "policy-expression-quoted",
-    "set routing-instances yellow protocols bgp group l3rtr neighbor 2001:db8:dc4:10:204::5 import ( RoutesFromExt-yellow-external_router )": "policy-expression-quoted"
+    "set routing-instances red forwarding-options dhcp-relay server-group red 192.168.37.100": "xml-element-name-leak"
    }
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf": {
@@ -708,8 +520,6 @@
     "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
@@ -722,8 +532,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
     "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
@@ -738,7 +546,6 @@
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -746,7 +553,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
@@ -762,7 +568,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -770,7 +575,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
@@ -790,8 +594,6 @@
     "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
@@ -802,8 +604,6 @@
     "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
@@ -818,7 +618,6 @@
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -826,7 +625,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
@@ -843,7 +641,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -851,7 +648,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
@@ -873,8 +669,6 @@
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
@@ -888,8 +682,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
     "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
@@ -914,7 +706,6 @@
     "set dynamic-profiles DP-PROBE predefined-variable-defaults other-variables routing-instances VRF-A": "xml-element-name-leak",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -922,7 +713,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
@@ -951,7 +741,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -959,7 +748,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
@@ -983,8 +771,6 @@
     "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
@@ -996,8 +782,6 @@
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
@@ -1022,7 +806,6 @@
     "set dynamic-profiles DP-PROBE predefined-variable-defaults other-variables routing-instances VRF-A": "xml-element-name-leak",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \"core\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -1030,7 +813,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import \"( P-A )\"": "policy-expression-quoted",
     "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
@@ -1060,7 +842,6 @@
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
-    "set interfaces ge-0/0/0 description \"uplink to sw1 \\\"core\\\"\"": "escaped-quote-lost",
     "set policy-options route-filter-list RFL-DEFAULT 0.0.0.0/0 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT 10.0.0.0/8 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 0.0.0.0/0 prefix-length-range /1-/32": "xml-element-name-leak",
@@ -1068,7 +849,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols bgp group EXPR neighbor 192.168.1.2 import ( P-A )": "policy-expression-quoted",
     "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
@@ -1088,54 +868,34 @@
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.conf": {
    "extra": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export ( P-A || P-B )": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import ( P-A && P-B )": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted"
    },
    "missing": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"( P-A || P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"( P-A && P-B )\"": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.json": {
    "extra": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"\"( P-A || P-B )\"\"": "policy-expression-double-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"\"( P-A && P-B )\"\"": "policy-expression-double-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.2 import \"\"( P-A )\"\"": "policy-expression-double-quoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted"
    },
    "missing": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"( P-A || P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"( P-A && P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.2 import \"( P-A )\"": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.set": {
    "extra": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export ( P-A || P-B )": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import ( P-A && P-B )": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted"
    },
    "missing": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"( P-A || P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"( P-A && P-B )\"": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.xml": {
    "extra": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"\"( P-A || P-B )\"\"": "policy-expression-double-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"\"( P-A && P-B )\"\"": "policy-expression-double-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.2 import \"\"( P-A )\"\"": "policy-expression-double-quoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted"
    },
    "missing": {
-    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 export \"( P-A || P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.1 import \"( P-A && P-B )\"": "policy-name-unquoted",
-    "set protocols bgp group EXPR-QUOTED neighbor 192.168.3.2 import \"( P-A )\"": "policy-name-unquoted"
+    "set dynamic-profiles DP-QUOTED interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted"
    }
   }
  }

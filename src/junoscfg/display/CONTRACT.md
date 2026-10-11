@@ -4,10 +4,9 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 ## Not for
 
-Display rendering only in name: the shared kernel six of the eight packages
-import. Nor for placing a tag: conversion reads the curly lexer's `statements()`
-through the schema (`tests/unit/convert/test_meta_tags.py`); the schema-free
-`SetConverter.to_set()`, which tags a last node, is deprecated.
+Display rendering only in name: the shared kernel six of the eight packages import. Nor for
+placing a tag: conversion reads the curly lexer's `statements()` through the schema
+(`tests/unit/convert/test_meta_tags.py`); the deprecated `SetConverter.to_set()` tags a last node.
 
 ## Invariants
 
@@ -20,6 +19,7 @@ through the schema (`tests/unit/convert/test_meta_tags.py`); the schema-free
 - `schema_child()` resolves a statement valid at every level from the root; no
   flag helper or module keeps their names, and the floor serves only a tree that
   declares none — enforced by `tests/unit/display/test_universal_statements.py::TestTheFloorIsForATreeThatDeclaresNone::test_conversion_never_answers_from_the_floor` and `tests/tooling/test_universal_statement_names.py::TestUniversalStatementsComeFromTheTree::test_no_module_keeps_their_names`.
+- `format_value()` spells a value by its leaf's type, never its look, and readers keep as written exactly the `policy-algebra` tokens it writes as they are, so every value written reads back — enforced by `tests/unit/display/test_value_format.py::TestEveryValueReadsBackAsWritten::test_every_short_value_reads_back` and `tests/unit/display/test_value_format.py::TestEveryValueReadsBackAsWritten::test_a_policy_algebra_value_reads_back`.
 
 ## Precedent
 

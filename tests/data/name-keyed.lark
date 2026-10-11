@@ -25,7 +25,7 @@ term__list: QUOTED_OR_VALUE ("accept" | "metric" QUOTED_OR_VALUE | universal_sta
 SET: "set"
 DEACTIVATE: "deactivate"
 VALUE: /\S+/
-QUOTED: /"[^"]*"/
+QUOTED: /"(?:[^"\\]|\\.)*\\?"/
 EXPRESSION: /\([^\n]*\)/
 QUOTED_OR_VALUE: QUOTED | VALUE
 ALGEBRA_OR_VALUE: QUOTED | EXPRESSION | VALUE

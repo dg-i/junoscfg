@@ -439,7 +439,13 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     lines.append('SET: "set"')
     lines.append('DEACTIVATE: "deactivate"')
     lines.append("VALUE: /\\S+/")
-    lines.append('QUOTED: /"[^"]*"/')
+    # A quoted value reads as every reader reads one: `\` and the character
+    # after it are the value's, so `"uplink to sw1 \"core\""`, which the
+    # device prints, is one value (DEV-V1, NEW-C6). A lone backslash before
+    # the closing quote stays the value's last character, as the set reader
+    # reads `"a b\"` and junoscfg's writer writes the value `a b\`; how the
+    # device writes one is probe P11 (specification challenge SC2, interim).
+    lines.append(r'QUOTED: /"(?:[^"\\]|\\.)*\\?"/')
     # A policy expression is one value spanning several tokens:
     # `from policy (( A && ! B ) || ( ! C && D ))`. A device carries it as a
     # single opaque string -- `"policy": ["(( A && ! B ) || ( ! C && D ))"]` --
