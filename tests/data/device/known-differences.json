@@ -43,10 +43,6 @@
   "xml-element-name-leak": {
    "definition": "from XML or JSON, an element the CLI hides appears in the set path (rf_list, server-group server-group, other-variables, bridge-domains domain, dynamic-tunnels dynamic-tunnel, hello-padding-type); the same statements curly input reports as not placed in the schema",
    "kind": "defect"
-  },
-  "xml-value-whitespace-lost": {
-   "definition": "from XML, leading or trailing spaces in a value are stripped (`\"^show \"` becomes `\"^show\"`)",
-   "kind": "defect"
   }
  },
  "differences": {
@@ -632,8 +628,7 @@
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict",
-    "set system login class OPS allow-commands \"^show\"": "xml-value-whitespace-lost"
+    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
@@ -658,8 +653,7 @@
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict",
-    "set system login class OPS allow-commands \"^show \"": "xml-value-whitespace-lost"
+    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf": {
@@ -823,8 +817,7 @@
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict",
-    "set system login class OPS allow-commands \"^show\"": "xml-value-whitespace-lost"
+    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
@@ -862,8 +855,7 @@
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict",
-    "set system login class OPS allow-commands \"^show \"": "xml-value-whitespace-lost"
+    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.conf": {

@@ -141,20 +141,6 @@ CLASSES = (
         ),
     ),
     Class(
-        "xml-value-whitespace-lost",
-        "defect",
-        'from XML, leading or trailing spaces in a value are stripped (`"^show "` becomes '
-        '`"^show"`)',
-        lambda line, side, suffix, c: (
-            suffix == "xml"
-            and (
-                _re(r'"\s[^"]*"$|"[^"]*\s"$')(line)
-                if side == "missing"
-                else _re(r'"[^"\s]+"$')(line)
-            )
-        ),
-    ),
-    Class(
         "trigger-after-split",
         "device-quirk",
         "the device's display set prints `within N trigger after 1` as two lines, `... trigger "

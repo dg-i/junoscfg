@@ -35,3 +35,7 @@ as Builder evidence only.
 ## Specification challenges
 
 None.
+
+## Resumed implementation evidence (2026-10-11)
+
+The original task-2.3 deferral above is historical. Change 8 merged; the orchestrator lifted C2 and rebased this branch onto `3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b` (v0.21.0), resumed HEAD `5e765a969c76a1a2d60ab19e1dfd18056fc444c0`. Task 2.3 removed the classifier and regenerated the record from captured source outputs: 716 to 712 lines, exactly four removals, no additions. Focused tests pass (4,654 passed / 5 xfailed). The old full check at `5f93b36` is superseded; a new full checkpoint and exact-base comparison are still required at the orchestrator's integration boundary. Existing economy/risk rationale remains unchanged; these are Builder checks, not an independent review.

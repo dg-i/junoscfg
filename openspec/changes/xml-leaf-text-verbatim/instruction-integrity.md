@@ -38,3 +38,5 @@ None asked: the run is unattended. Intake answers 1–8 and the kickoff settle a
 <!-- Append later instructions or evidence and their consistency result. -->
 
 - Initial preflight: consistent; C1–C3 resolved. Approved under the owner's unattended-run instruction of 2026-10-11.
+
+- 2026-10-11 resumed phase 5: orchestrator task explicitly lifts C2 after change 8 merged. The branch was rebased by the orchestrator onto integrated master `3ba9300a8a3d7d1bef713a8f202103ebc34e2c9b` (v0.21.0), resume HEAD `5e765a969c76a1a2d60ab19e1dfd18056fc444c0`. Task 2.3 now owns both serialized paths; no concurrent owner edits them. Consistency: same approved DEV-17 scope, no new acceptance promise or assurance waiver; original C2 deferral is historical. Full and expensive/schema checks are explicitly deferred to the orchestrator integration boundary; focused and fast checks run now.
