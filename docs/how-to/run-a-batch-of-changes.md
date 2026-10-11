@@ -197,12 +197,14 @@ once, before review, never again for a review-fix round. It needs a dump under
 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # regenerates (about 5 minutes with the suite)
 git add src/junoscfg/validate/data && git commit                            # commit the regenerated artifacts
 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema   # a second run on the committed tree
-git diff --stat -- src/junoscfg/validate/data                               # must print nothing
+git diff --stat -- src/junoscfg/validate/data ':!*/junos-schema-meta.json.gz'  # must print nothing
 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest --schema tests/corpus/test_schema_data.py -q
 ```
 
-While the generator is still changing, regenerate in a scratch worktree. Do the
-official regeneration once, at the end.
+`junos-schema-meta.json.gz` records when it was generated, so it differs after
+every run; every other artifact must come back byte-identical. While the
+generator is still changing, regenerate in a scratch worktree. Do the official
+regeneration once, at the end.
 
 ## Version and merge
 
