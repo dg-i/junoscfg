@@ -31,4 +31,9 @@ None.
 
 ## Confirmation
 
-Pending: the accepted fixes return to the same Reviewer.
+The same Reviewer re-read `db38a5e..417e969`: findings 1–14 and 16 CONFIRMED, 15 not changed
+with the rationale accepted, no new finding; it ran the how-to's comparison block as written
+("0 of 1152 conversions differ", head 42.6 s) and `mkdocs build --strict` (passed). Verdict
+APPROVE. A later Builder fix, `417e969..c8086a5` (the regeneration check excludes the
+timestamped `junos-schema-meta.json.gz`, found by the schema-tier QA run), returned to the same
+Reviewer: CONFIRMED, verified in the regeneration worktree, verdict APPROVE.
