@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-11
+type: fix
+zone: conversion
+domains: [conversion]
+assurance: economy
+skip_specs: true
