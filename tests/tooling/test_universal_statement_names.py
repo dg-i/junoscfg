@@ -13,7 +13,10 @@ tables of element names where a universal statement below the root met no node
 The names may appear where they are declared or given a meaning the tree does
 not hold: the kernel's compatibility floor, the schema fix that declares them,
 and the anonymize and audit walkers, which read `apply-groups` as a reference
-to a group (their traversal is change 5's).
+to a group (their traversal is change 5's). The scan reads string constants
+whole: a name, or a prefix of one (`startswith("apply-")`, the literal part of
+`f"apply-{kind}"`). A name hidden inside a regular expression or assembled
+from parts that are no prefix is beyond it.
 """
 
 from __future__ import annotations
@@ -62,8 +65,14 @@ def _readings(tree: ast.AST, where: str) -> list[tuple[int, str]]:
     found: list[tuple[int, str]] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            if id(node) not in docstrings and node.value in NAMES and not names_allowed:
-                found.append((node.lineno, repr(node.value)))
+            # A name, or a prefix of one: `startswith("apply-")`, and the
+            # literal part of `f"apply-{kind}"`, which the walk visits too.
+            text = node.value
+            names_one = text in NAMES or (
+                text.startswith("apply") and any(name.startswith(text) for name in NAMES)
+            )
+            if id(node) not in docstrings and names_one and not names_allowed:
+                found.append((node.lineno, repr(text)))
         elif isinstance(node, (ast.Name, ast.Attribute, ast.alias)):
             name = (
                 node.id
@@ -103,6 +112,7 @@ class TestUniversalStatementsComeFromTheTree:
             "a = token == 'apply-macro'\nb = ('apply-groups', 'apply-groups-except')\n"
             "c = key in UNIVERSAL_STATEMENTS\nd = TRANSPARENT_CONTAINERS.get(key)\n"
             "e = m.ALL_POSITIONAL_KEYS\nf = {'apply-flags': 1}\n"
+            "g = key.startswith('apply-')\nh = f'apply-{kind}'\ni = 'an apply-groups message'\n"
         )
         found = {what for _, what in _readings(ast.parse(source), "convert/example.py")}
         assert found == {
@@ -113,6 +123,7 @@ class TestUniversalStatementsComeFromTheTree:
             "TRANSPARENT_CONTAINERS",
             "ALL_POSITIONAL_KEYS",
             "'apply-flags'",
+            "'apply-'",
         }
         allowed = _readings(ast.parse(source), "audit/example.py")
         assert {what for _, what in allowed} == {

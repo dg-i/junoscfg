@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 from junoscfg.convert.ir import wrap_configuration
-from junoscfg.display import load_schema_tree
+from junoscfg.display import load_schema_tree, schema_child
 
 
 def dict_to_json(config: Any, *, wrap: bool = True) -> str:
@@ -22,7 +22,8 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     if isinstance(config, dict):
         config = _native_groups(copy.deepcopy(config))
         _normalize_presence_flags(config)
-        _coerce_scalar_leaves(config, load_schema_tree())
+        tree = load_schema_tree()
+        _coerce_scalar_leaves(config, tree, tree)
         config = _ensure_name_first(config)
     elif config is True:
         # A selected presence flag is rendered the same way it was when the
@@ -32,7 +33,9 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     return json.dumps(output, indent=4, ensure_ascii=False) + "\n"
 
 
-def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:
+def _coerce_scalar_leaves(
+    obj: Any, schema_node: dict[str, Any] | None, root: dict[str, Any] | None
+) -> None:
     """Walk the IR and coerce single-element arrays to scalars for single-leaf fields.
 
     YAML input may represent a single value as a one-element list
@@ -45,11 +48,10 @@ def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:
     """
     if not isinstance(obj, dict):
         return
-    children = schema_node.get("c", {}) if schema_node else {}
     for key, value in obj.items():
         if key.startswith("@"):
             continue
-        child = children.get(key)
+        child = schema_child(schema_node, key, root)
         if isinstance(value, list):
             is_leaf = child and child.get("l") and not child.get("ll")
             if is_leaf and len(value) == 1 and value[0] is not None:
@@ -62,9 +64,9 @@ def _coerce_scalar_leaves(obj: Any, schema_node: dict[str, Any] | None) -> None:
                     item_schema = child.get("c", {}).get(child["t"], child)
                 for item in value:
                     if isinstance(item, dict):
-                        _coerce_scalar_leaves(item, item_schema)
+                        _coerce_scalar_leaves(item, item_schema, root)
         elif isinstance(value, dict):
-            _coerce_scalar_leaves(value, child)
+            _coerce_scalar_leaves(value, child, root)
 
 
 def _ensure_name_first(obj: Any) -> Any:

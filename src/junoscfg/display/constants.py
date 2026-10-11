@@ -1,9 +1,10 @@
 """Shared Junos configuration constants and schema flag helpers.
 
-Schema flag helpers read conversion-hint flags from schema tree nodes
-(set by Group H xsd_fixes and serialized by artifact_builder). When
-schema_node is None (schema walk lost track), they fall back to
-name-based constants.
+Schema flag helpers read conversion-hint flags from schema tree nodes (set by
+Group H xsd_fixes and serialized by artifact_builder). A walk that meets no
+node -- content the tree does not place -- gets no flag: the helpers keep no
+table of element names. A statement valid at every level is resolved through
+`schema_child`, never by its name.
 """
 
 from __future__ import annotations
@@ -14,57 +15,13 @@ import json
 import os
 from contextlib import contextmanager
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import Callable, Iterator, Mapping, Sequence
 
 _T = TypeVar("_T")
-
-# ── XML-compat constants ─────────────────────────────────────────────
-# These mirror schema flags for converters that walk XML trees instead
-# of the schema (xml_to_set.py, to_yaml.py). Keep in sync with
-# xsd_fixes.py Group H.
-
-# Parent key => child key that should be skipped in the path.
-# Junos JSON/XML wraps keyed lists: {"interfaces": {"interface": [...]}}.
-# The inner element name is an XML artifact, not part of set commands.
-TRANSPARENT_CONTAINERS: dict[str, str] = {
-    "groups": "group",
-    "interfaces": "interface",
-    "routing-instances": "instance",
-    "vlans": "vlan",
-}
-
-# Array/list wrapper keys whose name should be stripped from the path.
-TRANSPARENT_LIST_KEYS: frozenset[str] = frozenset(["prefix-list-item", "contents"])
-
-# Keys whose value is a positional argument that creates nesting scopes.
-# Their value is emitted without the element name in the set command.
-POSITIONAL_KEY_ELEMENTS: frozenset[str] = frozenset(["filter-name", "aspath", "list_name"])
-
-# Positional key elements that do NOT create nesting scopes.
-# Their value is emitted as a standalone set line; remaining siblings
-# are emitted at the parent path level.
-NON_NESTING_POSITIONAL_KEYS: frozenset[str] = frozenset(
-    [
-        "filename",
-        "as-number",
-        "confederation-as",
-        "path",
-        "limit",
-        "timeout",
-    ]
-)
-
-# All positional keys (union of nesting and non-nesting).
-ALL_POSITIONAL_KEYS: frozenset[str] = POSITIONAL_KEY_ELEMENTS | NON_NESTING_POSITIONAL_KEYS
-
-# ── Private fallback constants ───────────────────────────────────────
-# Used internally by schema flag helpers as fallbacks when the schema
-# walk loses track. Not exported.
-
-_FLAT_DICT_ELEMENTS: frozenset[str] = frozenset(["trigger"])
 
 # ── Key aliases ──────────────────────────────────────────────────────
 
@@ -89,52 +46,35 @@ def resolve_key_alias(key: str) -> str:
 
 # ── Schema flag helpers ──────────────────────────────────────────────
 # These read conversion-hint flags from schema tree nodes (set by Group H
-# xsd_fixes and serialized by artifact_builder). When schema_node is None
-# (schema walk lost track), they fall back to name-based constants.
+# xsd_fixes and serialized by artifact_builder). Without a node they answer no
+# flag. They used to fall back to tables of element names (`interfaces` over
+# `interface`, `timeout` positional, ...) wherever the walk met no node; every
+# such case was a universal statement below the root, which `schema_child` now
+# resolves, or content the tree does not place, where the tables dropped a
+# keyword (ARCH-C08, change universal-statements-from-tree).
 
 
-def get_transparent_child(schema_node: dict[str, Any] | None, key: str | None = None) -> str | None:
-    """Return the transparent child name from a schema node, or None.
-
-    Falls back to TRANSPARENT_CONTAINERS when schema_node is unavailable.
-    """
-    if schema_node is not None:
-        t = schema_node.get("t")
-        if t is not None:
-            return t
-    if key is not None:
-        return TRANSPARENT_CONTAINERS.get(key)
-    return None
+def get_transparent_child(schema_node: dict[str, Any] | None) -> str | None:
+    """The child a transparent container wraps, or None."""
+    if schema_node is None:
+        return None
+    child: str | None = schema_node.get("t")
+    return child
 
 
-def is_transparent_list_key(schema_node: dict[str, Any] | None, key: str | None = None) -> bool:
-    """Check if a schema node is a transparent list key.
-
-    Falls back to TRANSPARENT_LIST_KEYS when schema_node is unavailable.
-    """
-    if schema_node is not None:
-        return bool(schema_node.get("tk"))
-    return key is not None and key in TRANSPARENT_LIST_KEYS
+def is_transparent_list_key(schema_node: dict[str, Any] | None) -> bool:
+    """Whether a schema node is a transparent list key."""
+    return schema_node is not None and bool(schema_node.get("tk"))
 
 
-def is_positional_key(schema_node: dict[str, Any] | None, key: str | None = None) -> bool:
-    """Check if a schema node is a positional key (nesting or flat).
-
-    Falls back to ALL_POSITIONAL_KEYS when schema_node is unavailable.
-    """
-    if schema_node is not None:
-        return bool(schema_node.get("pk") or schema_node.get("pkf"))
-    return key is not None and key in ALL_POSITIONAL_KEYS
+def is_positional_key(schema_node: dict[str, Any] | None) -> bool:
+    """Whether a schema node is a positional key (nesting or flat)."""
+    return schema_node is not None and bool(schema_node.get("pk") or schema_node.get("pkf"))
 
 
-def is_flat_dict(schema_node: dict[str, Any] | None, key: str | None = None) -> bool:
-    """Check if a schema node is a flat dict element.
-
-    Falls back to _FLAT_DICT_ELEMENTS when schema_node is unavailable.
-    """
-    if schema_node is not None:
-        return bool(schema_node.get("fd"))
-    return key is not None and key in _FLAT_DICT_ELEMENTS
+def is_flat_dict(schema_node: dict[str, Any] | None) -> bool:
+    """Whether a schema node is a flat dict element."""
+    return schema_node is not None and bool(schema_node.get("fd"))
 
 
 def holds_tag(attrs: Any) -> bool:
@@ -510,12 +450,79 @@ def statement_name_spellings(name: str, enums: Sequence[str]) -> tuple[str, ...]
     return parts if all(value in parts for value in enums) else ()
 
 
-#: The statements a configuration may carry at any hierarchy level. They are
-#: valid everywhere and appear in no NETCONF XSD of 21.4R0, 23.2R2, 23.4R2 or
-#: 25.2R2, so every layer that reads a configuration has had to know them
-#: separately -- eight modules do. One source, so a ninth copy is not the way a
-#: new one is added.
-UNIVERSAL_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
+#: The compatibility floor for a structure tree that declares no universal
+#: statement: the four statements Junos accepts at every hierarchy level, with
+#: the nodes the schema fix `apply-statements` declares for them on the root of
+#: every tree built since 0.8.0. They appear in no NETCONF XSD of 21.4R0,
+#: 23.2R2, 23.4R2 or 25.2R2. Nothing reads this but `universal_statements`: the
+#: tree is authoritative, and the floor stands in only for a tree built before
+#: the fix (or without the fixes). Retirement trigger: the artifact loader
+#: refuses a structure tree whose root declares no universal statement, after
+#: one minor release that warns; then the floor goes. Until then
+#: `tests/unit/display/test_universal_statements.py` fails if the bundled tree
+#: declares anything else or a conversion is answered from here (spec
+#: schema-pipeline/universal-statements).
+UNIVERSAL_STATEMENTS: Mapping[str, dict[str, Any]] = MappingProxyType(
+    {
+        "apply-groups": {"l": True, "ll": True, "u": True},
+        "apply-groups-except": {"l": True, "ll": True, "u": True},
+        # The device writes `<apply-flags><omit/></apply-flags>`; `replace` is
+        # inferred to follow it (probe P8, EVIDENCE_BLOCKED).
+        "apply-flags": {"u": True, "c": {"omit": {"p": True}, "replace": {"p": True}}},
+        "apply-macro": {
+            "L": True,
+            "fd": True,
+            "u": True,
+            "c": {"data": {"L": True, "c": {"name": {"l": True}, "value": {"l": True}}}},
+        },
+    }
+)
+
+
+def _children_of(schema_node: Any) -> Mapping[str, Any]:
+    """A structure-tree node's children, or a `SchemaNode`'s."""
+    if isinstance(schema_node, dict):
+        children: Mapping[str, Any] = schema_node.get("c") or {}
+        return children
+    return getattr(schema_node, "children", None) or {}
+
+
+def _is_universal(schema_node: Any) -> bool:
+    if isinstance(schema_node, dict):
+        return bool(schema_node.get("u"))
+    return "universal" in getattr(schema_node, "flags", ())
+
+
+def universal_statements(root: Any) -> Mapping[str, Any]:
+    """The statements valid at every level: the root's children flagged universal.
+
+    The tree is authoritative: a root that flags any child answers exactly
+    those. A root that flags none -- a structure tree built before 0.8.0, or a
+    `SchemaNode` tree built without the fixes -- answers the compatibility
+    floor `UNIVERSAL_STATEMENTS`. Takes a structure-tree node or a
+    `SchemaNode`; `None` (no tree at all) answers nothing.
+    """
+    if root is None:
+        return {}
+    declared = {name: node for name, node in _children_of(root).items() if _is_universal(node)}
+    return declared if declared else UNIVERSAL_STATEMENTS
+
+
+def schema_child(schema_node: Any, key: str, root: Any) -> Any:
+    """The node *key* names below *schema_node*, walking the tree from *root*.
+
+    The node's own child first; else the root's universal statement of that
+    name, which is valid at every level and declared only on the root; else
+    None. One answer for every reader, writer and validator, so none keeps the
+    four names (spec schema-pipeline/universal-statements). *schema_node* may be
+    None, inside content the tree does not place: a universal statement there
+    is still one.
+    """
+    if schema_node is not None:
+        child = _children_of(schema_node).get(key)
+        if child is not None:
+            return child
+    return universal_statements(root).get(key)
 
 
 #: The IR key under which a level keeps the statements a reader could not

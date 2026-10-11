@@ -35,9 +35,11 @@ from junoscfg.display.constants import (
     read_artifact_text,
     resolve_artifacts_dir,
     resolve_key_alias,
+    schema_child,
     statement_children,
     statement_name_spellings,
     strip_type_prefix,
+    universal_statements,
     unplaced_record_problem,
 )
 from junoscfg.display.format_detection import (
@@ -92,9 +94,11 @@ __all__ = [
     "forget_loaded_artifacts",
     "resolve_artifacts_dir",
     "resolve_key_alias",
+    "schema_child",
     "statement_children",
     "statement_name_spellings",
     "strip_type_prefix",
+    "universal_statements",
     "unplaced_record_problem",
     "xml_to_dict",
     "xml_to_yaml",

@@ -49,6 +49,13 @@ _SEQUENCES = (
     "rule; no tree the parser builds still shows them"
 )
 EXCEPTIONS: dict[tuple[str, str], str] = {
+    (
+        "unit/display/test_universal_statements.py",
+        "junoscfg.display.constants",
+    ): (
+        "the runtime tripwire poisons the compatibility floor where `universal_statements` "
+        "reads it; the door re-exports the object, so patching it there changes nothing"
+    ),
     ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants"): _CACHES,
     ("unit/display/test_artifact_resolution.py", "constants._schema_trees"): _CACHES,
     ("unit/display/test_artifact_resolution.py", "constants._built_artifacts"): _CACHES,

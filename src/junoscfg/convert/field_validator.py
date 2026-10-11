@@ -13,13 +13,13 @@ from typing import Any
 
 from junoscfg.display import (
     INTEGER_TYPES,
-    UNIVERSAL_STATEMENTS,
     UNPLACED_STATEMENTS,
     entry_key_names,
     entry_keys,
     enum_is_fragment,
     holds_tag,
     passes_tag_to_child,
+    schema_child,
     statement_name_spellings,
     strip_type_prefix,
     unplaced_record_problem,
@@ -252,13 +252,23 @@ class FieldValidator:
                     self._report_unplaced(value, schema_node, obj, path, result)
                     continue
 
-                # Valid at every level; the reader shapes them, not the tree.
-                # Bare, as `true` or `[null]` from JSON or YAML (the set
-                # reader keeps it in the record), one names no group.
-                if key in UNIVERSAL_STATEMENTS and value not in (True, None, [None]):
-                    continue
+                # A universal statement below the root resolves to the
+                # root's node, as in every walker of the tree (ARCH-C06).
+                child_schema = schema_child(schema_node, key, self._schema)
 
-                child_schema = children.get(key)
+                # A universal statement with nothing in it -- a bare `set
+                # system apply-flags` -- names no flag, group or macro, as a
+                # leaf without its value names nothing.
+                if (
+                    child_schema is not None
+                    and child_schema.get("u")
+                    and not child_schema.get("l")
+                    and value in (None, True, [None], [], {})
+                ):
+                    self._unplaced(
+                        f"'{key}' without its value", schema_node, obj, path, result, value=key
+                    )
+                    continue
 
                 # Handle transparent containers
                 if child_schema and child_schema.get("t"):
@@ -288,7 +298,7 @@ class FieldValidator:
                     child_schema is not None
                     and entry_keys(child_schema) != ("name",)
                     and not all(isinstance(item, dict) for item in items)
-                ) or key in UNIVERSAL_STATEMENTS
+                )
                 if child_schema is None or incomplete:
                     # A key the schema does not name and no reader writes by
                     # rule is configuration junoscfg could not model, from
@@ -364,6 +374,19 @@ class FieldValidator:
                     path.append(key)
                     self._walk(value, child_schema, path, result)
                     path.pop()
+                elif (
+                    isinstance(value, str | int | float)
+                    and not isinstance(value, bool)
+                    and child_schema.get("c")
+                    and not child_schema.get("p")
+                    and not child_schema.get("L")
+                ):
+                    # A value where the tree has a container: `"apply-flags":
+                    # "omit"`, the spelling 0.17.0 wrote for the top level's
+                    # flag. Writers keep it as it stands; it is not validated.
+                    self._unplaced(
+                        f"'{key}' holding a value", schema_node, obj, path, result, value=key
+                    )
 
         elif isinstance(obj, list):
             for item in obj:

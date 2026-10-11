@@ -16,14 +16,17 @@ from __future__ import annotations
 
 import copy
 import json
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 import junoscfg.display as display
 from junoscfg import Format, convert_config
 from junoscfg.display import UNIVERSAL_STATEMENTS, schema_child, universal_statements
 from tests.support.artifacts import using_tree
+from tests.support.shapes import BY_NAME, WRITERS, read_ir
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from pathlib import Path
 
 NAMES = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
@@ -61,6 +64,34 @@ class TestOneHelperResolvesThem:
         assert schema_child(system, "bogus-statement", bundled_tree) is None
         assert schema_child(None, "bogus-statement", bundled_tree) is None
         assert schema_child(system, "bogus-statement", None) is None
+        # Only a universal statement: no other child of the root is valid below it.
+        assert schema_child(system, "interfaces", bundled_tree) is None
+        assert schema_child(None, "system", bundled_tree) is None
+
+    def test_a_nodes_own_statement_wins_in_every_reader(self, tmp_path: Path) -> None:
+        """A tree whose `system` declares its own `apply-macro` leaf reads it as
+        that leaf from every door, and writes it back: no reader looks the
+        universal statement up before the node's own child."""
+        tree = {
+            "c": {
+                **{name: copy.deepcopy(dict(node)) for name, node in UNIVERSAL_STATEMENTS.items()},
+                "system": {"c": {"apply-macro": {"l": True}, "host-name": {"l": True}}},
+            }
+        }
+        sources = {
+            Format.SET: "set system apply-macro M1\n",
+            Format.STRUCTURED: "system {\n    apply-macro M1;\n}\n",
+            Format.JSON: '{"configuration": {"system": {"apply-macro": "M1"}}}',
+            Format.YAML: "configuration:\n  system:\n    apply-macro: M1\n",
+            Format.XML: "<configuration><system><apply-macro>M1</apply-macro></system>"
+            "</configuration>",
+        }
+        with using_tree(tmp_path, tree):
+            for fmt, source in sources.items():
+                ir = json.loads(convert_config(source, from_format=fmt, to_format=Format.JSON))
+                assert ir["configuration"] == {"system": {"apply-macro": "M1"}}, fmt
+                out = convert_config(source, from_format=fmt, to_format=Format.SET, strict=True)
+                assert out == "set system apply-macro M1\n", fmt
 
     def test_the_helper_is_a_kernel_door(self) -> None:
         """Usable from every package above the kernel: conversion, validation and
@@ -81,9 +112,19 @@ class TestTheFloorIsForATreeThatDeclaresNone:
         }
 
     def test_a_tree_declaring_some_gets_only_those(self) -> None:
-        tree = {"c": {"apply-groups": {"l": True, "ll": True, "u": True}, "system": {"c": {}}}}
-        assert set(universal_statements(tree)) == {"apply-groups"}
+        """The flag decides, not the name: a fifth flagged statement counts, an
+        `apply-flags` the tree does not flag is no universal statement."""
+        tree = {
+            "c": {
+                "apply-groups": {"l": True, "ll": True, "u": True},
+                "apply-x": {"l": True, "u": True},
+                "apply-flags": {"c": {"omit": {"p": True}}},
+                "system": {"c": {}},
+            }
+        }
+        assert set(universal_statements(tree)) == {"apply-groups", "apply-x"}
         assert schema_child(tree["c"]["system"], "apply-flags", tree) is None
+        assert schema_child(tree["c"]["system"], "apply-x", tree) is tree["c"]["apply-x"]
 
     def test_the_bundled_tree_never_runs_on_the_floor(self, bundled_tree: dict) -> None:
         """The tripwire. The floor is what the bundled tree declares, so an old
@@ -98,6 +139,37 @@ class TestTheFloorIsForATreeThatDeclaresNone:
         for name, node in got.items():
             assert node is bundled_tree["c"][name], name
             assert node == UNIVERSAL_STATEMENTS[name], name
+
+    def test_conversion_never_answers_from_the_floor(self, monkeypatch: Any) -> None:
+        """The runtime tripwire: with the floor poisoned, both catalogue rows still
+        read, write and validate on the bundled tree. A walker that resolves
+        against the wrong root -- the current node, a subtree, nothing -- would
+        be answered by the floor, which equals the bundled nodes, and no output
+        test could see it; here it raises."""
+
+        class Poisoned(Mapping):
+            def __getitem__(self, key: str) -> Any:
+                raise AssertionError("answered from the floor")
+
+            def __iter__(self) -> Iterator[str]:
+                raise AssertionError("answered from the floor")
+
+            def __len__(self) -> int:
+                raise AssertionError("answered from the floor")
+
+        monkeypatch.setattr("junoscfg.display.constants.UNIVERSAL_STATEMENTS", Poisoned())
+        for name in (
+            "apply-flags-omit-as-the-device-writes-it",
+            "universal-statements-below-the-root",
+        ):
+            shape = BY_NAME[name]
+            for reader, source in shape.sources.items():
+                assert read_ir(source, reader) == shape.expected_ir(), (name, reader)
+                for writer in WRITERS:
+                    output = convert_config(
+                        source, from_format=reader, to_format=writer, strict=True
+                    )
+                    assert read_ir(output, writer) == shape.expected_ir(), (name, reader, writer)
 
     def test_an_old_tree_reads_and_writes_them(self, tmp_path: Path) -> None:
         source = (

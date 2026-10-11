@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
-from junoscfg.display import ConfigStore, format_value, load_schema_tree
+from junoscfg.display import ConfigStore, format_value, load_schema_tree, universal_statements
 
 
 class StructuredWalkOutput(WalkOutput):
@@ -118,10 +118,13 @@ def dict_to_structured(config: Any, *, diagnostic_sink: Callable[[str], None] | 
         return ""
 
     output = StructuredWalkOutput(diagnostic_sink)
-    walker = DictWalker(output)
+    schema = load_schema_tree()
+    walker = DictWalker(output, schema)
 
-    # Emit top-level apply-groups first (matches Structure.py ordering)
-    ag_keys = ("apply-groups", "apply-groups-except")
+    # The top level's universal leaf-lists -- `apply-groups`,
+    # `apply-groups-except` -- come first, one value a line (matches
+    # Structure.py ordering).
+    ag_keys = tuple(name for name, node in universal_statements(schema).items() if node.get("ll"))
     for agk in ag_keys:
         if agk in config:
             val = config[agk]
@@ -134,7 +137,6 @@ def dict_to_structured(config: Any, *, diagnostic_sink: Callable[[str], None] | 
 
     # Walk remaining config (skip already-emitted apply-groups)
     filtered = {k: v for k, v in config.items() if k not in ag_keys}
-    schema = load_schema_tree()
     walker._walk(filtered, [], schema_node=schema)  # noqa: SLF001
     output.finalize()
 

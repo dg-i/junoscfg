@@ -15,7 +15,13 @@ from typing import TYPE_CHECKING
 import pytest
 import yaml
 
-from junoscfg import FieldValidationError, Format, convert_config, validate_config
+from junoscfg import (
+    FieldValidationError,
+    Format,
+    convert_config,
+    convert_config_result,
+    validate_config,
+)
 from junoscfg.convert import pipeline, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.artifacts import write_minimal_tree
@@ -484,6 +490,75 @@ class TestLeafListPromotion:
         assert parsed["configuration"]["protocols"]["evpn"]["extended-vni-list"] == [
             "3001000-3001100"
         ]
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason="ARCH-C10 carry-forward: JSON input keeps a scalar leaf-list as supplied; "
+        "change 13 (one-ir-at-reader-boundary) reads it as the list the device writes",
+    )
+    def test_a_nested_json_scalar_universal_leaf_list_is_a_list(self) -> None:
+        """XML and YAML read a nested `apply-groups` with one group as a list
+        (change universal-statements-from-tree); JSON does not yet. The device
+        writes the list (`"apply-groups" : ["GR-MACRO"]`,
+        tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json.gz).
+        Pinned as the open defect, not as the answer."""
+        source = '{"configuration": {"system": {"apply-groups": "SAMPLE-GROUP"}}}'
+        result = json.loads(convert_config(source, from_format=Format.JSON, to_format=Format.JSON))
+        assert result["configuration"]["system"]["apply-groups"] == ["SAMPLE-GROUP"]
+
+
+class TestApplyFlagsSpellingsAreKept:
+    """Spellings of `apply-flags` other than the device's are read or reported, never lost.
+
+    0.17.0 wrote the top level's `set apply-flags omit` as the leaf
+    `"apply-flags": "omit"`, and the downstream collection's example holds the
+    kept key `apply-flags replace: true` that junoscfg wrote for a BGP group
+    (`examples/playbook/group_vars/routers.yml` of
+    dg-i/ansible-collection-junos-config). The tree now holds `apply-flags` as
+    the device's container (DEV-V2). Change universal-statements-from-tree.
+    """
+
+    _SCALAR = {
+        "json-top": (Format.JSON, '{"configuration": {"apply-flags": "omit"}}'),
+        "json-system": (Format.JSON, '{"configuration": {"system": {"apply-flags": "omit"}}}'),
+        "yaml-top": (Format.YAML, "configuration:\n  apply-flags: omit\n"),
+        "yaml-system": (Format.YAML, "configuration:\n  system:\n    apply-flags: omit\n"),
+        "xml-top": (Format.XML, "<configuration><apply-flags>omit</apply-flags></configuration>"),
+        "xml-system": (
+            Format.XML,
+            "<configuration><system><apply-flags>omit</apply-flags></system></configuration>",
+        ),
+    }
+
+    @pytest.mark.parametrize("door", list(_SCALAR))
+    def test_the_old_scalar_spelling_is_not_lost(self, door: str) -> None:
+        """Read as the container or reported, and the set line written as it was."""
+        fmt, source = self._SCALAR[door]
+        result = convert_config_result(source, from_format=fmt, to_format=Format.SET)
+        prefix = "set system " if door.endswith("system") else "set "
+        assert result.output == f"{prefix}apply-flags omit\n"
+        ir = json.loads(convert_config(source, from_format=fmt, to_format=Format.JSON))
+        flags = ir["configuration"]
+        if door.endswith("system"):
+            flags = flags["system"]
+        reported = [d for d in result.diagnostics if "could not be placed" in d.message]
+        assert flags["apply-flags"] == {"omit": [None]} or len(reported) == 1, reported
+
+    def test_the_consumers_apply_flags_spelling_is_kept(self) -> None:
+        """The kept key the collection's example holds (synthetic values) is
+        written back as its set line and reported, as on 0.17.0: `replace`
+        itself is EVIDENCE_BLOCKED on probe P8."""
+        source = (
+            "configuration:\n  protocols:\n    bgp:\n      group:\n"
+            "      - name: G1\n        apply-flags replace: true\n        type: internal\n"
+        )
+        result = convert_config_result(source, from_format=Format.YAML, to_format=Format.SET)
+        assert sorted(result.output.splitlines()) == [
+            "set protocols bgp group G1 apply-flags replace",
+            "set protocols bgp group G1 type internal",
+        ]
+        reported = [d for d in result.diagnostics if "could not be placed" in d.message]
+        assert len(reported) == 1, reported
 
 
 class TestARecordOfKeptStatementsIsInput:

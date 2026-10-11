@@ -266,7 +266,7 @@ The `display/` package provides shared utility modules used by the `convert/` pi
 
 | Module | Purpose | Consumer |
 |--------|---------|----------|
-| `constants.py` | Schema flag helpers, XML-compat constants, `KEY_ALIASES` (XML↔set name mapping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py`, `convert/input/set_input.py` |
+| `constants.py` | Schema flag helpers, `schema_child` and `universal_statements` (the statements valid at every level, and the floor for a tree built before 0.8.0), `KEY_ALIASES` (XML↔set name mapping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py`, `convert/input/set_input.py` |
 | `config_store.py` | Ordered tree for building structured output; supports operational prefixes | `convert/output/structured_output.py`, CLI filter |
 | `value_format.py` | Value formatting (quoting, escaping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py` |
 | `set_converter.py` | The curly token lexer: `statements()` and `notes()` for conversion; schema-free `to_set()`, deprecated | `convert/input/structured_input.py`, `validate/structured_validator.py` (deprecated) |
@@ -446,8 +446,8 @@ time artifacts are regenerated from an XSD dump. This means:
 3. Each fix is an `XsdFix` dataclass with id, category, description, and apply function
 
 Groups A-G fix genuine XSD deficiencies. Group H encodes conversion-hint flags that
-tell the runtime converters how to handle specific elements, replacing hardcoded
-constants in `constants.py`.
+tell the runtime converters how to handle specific elements; the runtime reads them
+from the node only, and the name tables they replaced in `constants.py` are gone.
 
 For the full fix methodology including worked examples, see the
 [Conversion Bugfix Guide](conversion-bugfix-guide.md).
@@ -765,7 +765,7 @@ Follow the methodology in the [Conversion Bugfix Guide](conversion-bugfix-guide.
 
 1. Reproduce and diff against expected output
 2. Classify root cause (schema flag, schema structure, or runtime constant)
-3. Apply fix in `xsd_fixes.py` (preferred) or `constants.py` (XML-compat only)
+3. Apply fix in `xsd_fixes.py`; the runtime reads flags from the tree, never from a table of names
 4. Regenerate artifacts with `--regen-schema` (needs the shipped release's dump)
 5. Add regression test
 
@@ -775,7 +775,6 @@ Follow the methodology in the [Conversion Bugfix Guide](conversion-bugfix-guide.
 2. Serialize the flag in `artifact_builder.py` (add to `_serialize_node()`)
 3. Add a helper function in `constants.py` to read the flag from schema nodes
 4. Consume the flag in the appropriate converter(s)
-5. Add XML-compat fallback constant if needed for `xml_to_set.py`
 
 ### Adding a new validation backend
 

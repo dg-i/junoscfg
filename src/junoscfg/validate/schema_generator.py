@@ -14,10 +14,10 @@ import re
 from typing import Any
 
 from junoscfg.display import (
-    UNIVERSAL_STATEMENTS,
     entry_key_names,
     open_artifact_write,
     statement_name_spellings,
+    universal_statements,
 )
 from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 
@@ -32,19 +32,18 @@ _MAX_DEPTH = 12
 # does not say.
 #
 # `_fix_apply_statements` declares them on the root with the `universal` flag,
-# but a tree built before that fix carries no such node, as the bundled one did
-# not until 0.8.0. The kernel list is the floor, so junoscfg does not reject
-# its own output for a configuration that carries `apply-groups` -- which all
-# three real device configurations do -- whatever tree it runs on.
-_UNIVERSAL_FLAG = "universal"
+# and the tree is authoritative: `junoscfg.display.universal_statements` names
+# the ones it declares. A tree that declares none -- built before that fix, as
+# the bundled one was until 0.8.0 -- gets the kernel's floor, so junoscfg does
+# not reject its own output for a configuration that carries `apply-groups`,
+# which all three real device configurations do.
 
 
 def _universal_properties(root: SchemaNode) -> dict[str, Any]:
     """The `patternProperties` entry for the universal statements, or nothing."""
-    names = sorted(
-        {name for name, node in root.children.items() if _UNIVERSAL_FLAG in node.flags}
-        | set(UNIVERSAL_STATEMENTS)
-    )
+    names = sorted(universal_statements(root))
+    if not names:
+        return {}
     return {"^(" + "|".join(re.escape(name) for name in names) + ")$": {}}
 
 

@@ -18,6 +18,7 @@ from junoscfg.display import (
     passes_tag_to_child,
     statement_children,
     statement_name_spellings,
+    universal_statements,
     unplaced_record_problem,
 )
 from junoscfg.input import find_unsupported_set_brackets, normalize
@@ -445,6 +446,7 @@ def _merge_tokens(
     curly = tags is not None
     current = config
     current_schema = schema
+    root = schema
     i = 0
     # Where the children of `current` start among the tokens.
     base = 0
@@ -456,11 +458,21 @@ def _merge_tokens(
         token = tokens[i]
         children = statement_children(current_schema)
         here = tags.pop(i, frozenset())
+        # A statement valid at every level is declared on the root only
+        # (`universal_statements`); the reader meets it below the root too.
+        own = children.get(token)
+        if own is None:
+            universal = universal_statements(root).get(token)
+            if universal is not None:
+                children = {**children, token: universal}
+        else:
+            universal = own if own.get("u") else None
 
-        # Apply-groups (not in the schema, handled specially). It takes one
-        # group; `set apply-groups G1 G2` and a bare `set apply-groups` are
-        # statements the device rejects, kept in the record beside the groups.
-        if token in ("apply-groups", "apply-groups-except"):
+        # A universal leaf-list (`apply-groups`, `apply-groups-except`) takes
+        # one value a statement; `set apply-groups G1 G2` and a bare `set
+        # apply-groups` are statements the device rejects, kept in the record
+        # beside the values.
+        if universal is not None and universal.get("ll"):
             lst = current.get(token, [])
             if i + 2 != len(tokens):
                 tags[i] = here
@@ -480,12 +492,17 @@ def _merge_tokens(
             _mark(current, here, token)
             return
 
-        # Apply-macro (not in the schema). It takes a name, then optionally a
-        # keyword and that keyword's value; the device rejects a fourth value
-        # (device probe, vMX 23.2R2-S7.5), which used to become a second data
-        # entry without a word.
-        if token == "apply-macro" and i + 1 < len(tokens):
-            lst = current.get("apply-macro", [])
+        # A universal flat-dict list (`apply-macro`) takes a name, then
+        # optionally a keyword and that keyword's value; the device rejects a
+        # fourth value (device probe, vMX 23.2R2-S7.5), which used to become a
+        # second data entry without a word.
+        if (
+            universal is not None
+            and universal.get("L")
+            and universal.get("fd")
+            and i + 1 < len(tokens)
+        ):
+            lst = current.get(token, [])
             # A tag on one data line has no place in the IR's `data` pairs:
             # the line is kept whole and reported, never widened to the macro.
             data_tagged = any(tags.get(k) for k in range(i + 2, len(tokens)))
@@ -493,7 +510,7 @@ def _merge_tokens(
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
-            current["apply-macro"] = lst
+            current[token] = lst
             entry = _find_or_create_entry(lst, {"name": _parse_value(tokens[i + 1])}, index)
             _mark(entry, here | tags.pop(i + 1, frozenset()))
             if i + 2 < len(tokens):
@@ -786,6 +803,10 @@ def _apply_meta(
 
         # Resolve key alias for schema lookup (e.g., ieee-802.3ad → 802.3ad)
         schema_key = KEY_ALIASES.get(token, token)
+        if schema_key not in children:
+            universal = universal_statements(schema).get(schema_key)
+            if universal is not None:
+                children = {**children, schema_key: universal}
 
         if schema_key not in children:
             # Check transparent container

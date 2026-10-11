@@ -1507,9 +1507,7 @@ class TestAUniversalStatementIsValidatedWithItsNode:
             "host-name": "router1",
         },
         "protocols": {
-            "bgp": {
-                "group": [{"name": "G1", "apply-flags": {"replace": [None]}, "type": "internal"}]
-            }
+            "bgp": {"group": [{"name": "G1", "apply-flags": {"omit": [None]}, "type": "internal"}]}
         },
     }
 
@@ -1531,6 +1529,15 @@ class TestAUniversalStatementIsValidatedWithItsNode:
         )
         assert self._messages(xml, Format.XML) == []
         convert_config(source, from_format=Format.JSON, to_format=Format.SET, strict=True)
+
+    def test_replace_is_clean_p8(self) -> None:
+        """EVIDENCE_BLOCKED on probe P8: `replace`'s JSON shape is inferred from
+        `omit`'s. The grammar accepted `apply-flags replace` before and still
+        does, so the consumer's configuration is not rejected (owner ruling;
+        specification challenge in the change's review.md)."""
+        group = {"name": "G1", "apply-flags": {"replace": [None]}}
+        config = {"protocols": {"bgp": {"group": [group]}}}
+        assert self._messages(json.dumps({"configuration": config}), Format.JSON) == []
 
     @pytest.mark.parametrize("value", [None, [None], True])
     def test_a_bare_nested_statement_is_unplaced(self, value: Any) -> None:

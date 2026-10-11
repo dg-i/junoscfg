@@ -279,23 +279,37 @@ def _fix_security_policy_zones(root: SchemaNode) -> bool:
 # The four meta-statements Junos accepts at every hierarchy level and no
 # NETCONF XSD models. Checked in 21.4R0, 23.2R2, 23.4R2 and 25.2R2: not one of
 # the four appears as an element, a ref or even a substring in any of them.
-# Junos renders them, the Ansible collection downstream emits them, and six
-# modules in this package each compensate for their absence in a different way.
-_APPLY_STATEMENTS = ("apply-groups", "apply-groups-except", "apply-flags", "apply-macro")
+# Junos renders them and the Ansible collection downstream emits them. This fix
+# declares them on the root; every layer reads them from there through
+# `junoscfg.display.schema_child` (spec schema-pipeline/universal-statements).
 
 
 def _apply_statement_nodes() -> dict[str, SchemaNode]:
-    """The four nodes, shaped as the IR already carries them.
+    """The four nodes, shaped as the device writes them.
 
     `apply-groups` and `apply-groups-except` are leaf-lists: `set ... apply-groups
-    foo` repeats, and `convert/input/set_input.py` appends to a list. `apply-flags`
-    is a single leaf. `apply-macro` is a named list whose entries carry a `data`
-    list of name/value pairs, which is what `set_input` builds and
-    `convert/output/dict_walker.py` flattens back out.
+    foo` repeats, and `convert/input/set_input.py` appends to a list.
+    `apply-flags` is a container of presence flags: the device writes `set ...
+    apply-flags omit`, `<apply-flags><omit/></apply-flags>` and `"apply-flags":
+    {"omit": [null]}` (vMX 23.2R2-S7.5, QFX5120 25.2R2-S1.5); it was a single
+    leaf here, so set input read another IR than JSON and XML (DEV-V2).
+    `replace` is the spelling the grammar accepted from a production
+    configuration; its JSON and XML shape is inferred from `omit` (probe P8).
+    `apply-macro` is a named list whose entries carry a `data` list of
+    name/value pairs, which is what `set_input` builds and
+    `convert/output/dict_walker.py` flattens back out. The kernel's floor
+    (`junoscfg.display.UNIVERSAL_STATEMENTS`) holds the same nodes for a tree
+    built before this fix.
     """
     groups = SchemaNode(name="apply-groups", is_leaf=True, is_list=True)
     groups_except = SchemaNode(name="apply-groups-except", is_leaf=True, is_list=True)
-    flags = SchemaNode(name="apply-flags", is_leaf=True)
+    flags = SchemaNode(
+        name="apply-flags",
+        children={
+            "omit": SchemaNode(name="omit", is_presence=True),
+            "replace": SchemaNode(name="replace", is_presence=True),
+        },
+    )
     macro = SchemaNode(
         name="apply-macro",
         is_list=True,

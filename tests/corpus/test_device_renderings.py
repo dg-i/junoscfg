@@ -15,9 +15,11 @@ the device's set.
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 
+from junoscfg import Format, convert_config
 from tests.support.devices import DEVICE_DATA, FORMATS, captures, known_differences, recorded
 
 CASES = [
@@ -42,6 +44,77 @@ class TestJunoscfgWritesTheDevicesSet:
             for line in sorted(lines)
         ]
         assert not problems, "\n".join(problems)
+
+
+#: The statements valid at every level (spec schema-pipeline/universal-statements).
+UNIVERSAL = frozenset({"apply-groups", "apply-groups-except", "apply-flags", "apply-macro"})
+
+
+def _universal_statements(node: Any, path: tuple[str, ...], found: dict) -> None:
+    """Every universal statement in an IR, by its path, an entry named by its key."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in UNIVERSAL:
+                found[(*path, key)] = json.dumps(value, sort_keys=True)
+            elif key == "junoscfg:unplaced" and isinstance(value, dict):
+                for text in value:
+                    if text.split()[0] in UNIVERSAL:
+                        found[(*path, "unplaced", text)] = "kept"
+            else:
+                _universal_statements(value, (*path, key), found)
+    elif isinstance(node, list):
+        for index, item in enumerate(node):
+            entry = item.get("name", index) if isinstance(item, dict) else index
+            _universal_statements(item, (*path, str(entry)), found)
+
+
+def _read(capture: Any, suffix: str) -> dict:
+    rendered = convert_config(
+        capture.rendering(suffix),
+        from_format=FORMATS[suffix],
+        to_format=Format.JSON,
+        validate=False,
+    )
+    found: dict = {}
+    _universal_statements(json.loads(rendered), (), found)
+    return found
+
+
+class TestEveryDoorReadsTheDevicesUniversalStatements:
+    """Each reader gives the universal statements the device's own JSON holds.
+
+    The device law above compares set output only, and set output hid both
+    defects: `apply-flags omit` kept whole was written back verbatim, and a
+    nested `apply-groups` with one group read from XML as a scalar where the
+    device's JSON writes a list. Change universal-statements-from-tree
+    (Test/Challenge finding 1). The curly rendering of group GR-OMIT is the
+    device's `{ /* OMITTED */ }` (class `omitted-curly`), so it is left out
+    there.
+    """
+
+    @pytest.mark.parametrize(
+        ("capture", "suffix"),
+        [
+            pytest.param(capture, suffix, id=f"{capture.key}.{suffix}")
+            for capture in captures()
+            for suffix in ("conf", "set", "xml")
+        ],
+    )
+    def test_every_door_reads_the_devices_universal_statements(self, capture, suffix: str) -> None:
+        device = _read(capture, "json")
+        got = _read(capture, suffix)
+        if suffix == "conf":
+            device = {path: v for path, v in device.items() if "GR-OMIT" not in path}
+            got = {path: v for path, v in got.items() if "GR-OMIT" not in path}
+        assert got == device
+
+    def test_the_captures_hold_universal_statements(self) -> None:
+        """The comparison above means something only where there is something to compare."""
+        held = {capture.key: _read(capture, "json") for capture in captures()}
+        assert sum(len(found) for found in held.values()) >= 30, held
+        assert sum(1 for found in held.values() if found) >= 3, held
+        flags = [path for found in held.values() for path in found if path[-1] == "apply-flags"]
+        assert len(flags) >= 2, flags
 
 
 class TestTheRecordExplainsItself:

@@ -25,6 +25,7 @@ from junoscfg.display import (
     load_schema_tree,
     passes_tag_to_child,
     resolve_key_alias,
+    schema_child,
     unplaced_record_problem,
 )
 
@@ -87,13 +88,19 @@ class WalkOutput(ABC):
 class DictWalker:
     """Walk a Junos JSON dict IR and emit output via a strategy object."""
 
-    def __init__(self, output: WalkOutput) -> None:
-        """Walk into *output*, the strategy that renders each emitted path."""
+    def __init__(self, output: WalkOutput, root: dict[str, Any] | None = None) -> None:
+        """Walk into *output*, the strategy that renders each emitted path.
+
+        *root* is the structure tree the walk resolves a universal statement
+        against (`schema_child`); `walk` loads it when not given.
+        """
         self._output = output
+        self._root = root
 
     def walk(self, config: dict[str, Any]) -> None:
         """Walk the configuration dict from the root."""
         schema = load_schema_tree()
+        self._root = schema
         self._walk(config, [], schema_node=schema)
 
     # ------------------------------------------------------------------
@@ -155,7 +162,7 @@ class DictWalker:
         from junoscfg.convert.output.set_output import SetWalkOutput
 
         temp = SetWalkOutput()
-        temp_walker = DictWalker(temp)
+        temp_walker = DictWalker(temp, self._root)
         temp_walker._walk(remaining, [], schema_node=schema_node)
         base = f"{key} {formatted_name}"
 
@@ -220,14 +227,14 @@ class DictWalker:
                 continue
 
             set_key = resolve_key_alias(key)
-            child_schema = children.get(set_key)
+            child_schema = schema_child(schema_node, set_key, self._root)
 
             if isinstance(value, dict):
-                if is_flat_dict(child_schema, set_key) and UNPLACED_STATEMENTS not in value:
+                if is_flat_dict(child_schema) and UNPLACED_STATEMENTS not in value:
                     self._emit_flat_dict(value, path, set_key, child_schema)
                     continue
 
-                child_key = get_transparent_child(child_schema, set_key)
+                child_key = get_transparent_child(child_schema)
                 if child_key and child_key in value:
                     child_value = value[child_key]
 
@@ -290,7 +297,16 @@ class DictWalker:
                         self._emit_attrs(path + [set_key], self._read_leaf_attrs(attr))
                     continue
 
-                if key == "data" and path and path[-1].startswith("apply-macro"):
+                # A flat-dict list's own list of pairs -- `apply-macro M1 { k1
+                # v1; }` holds `data` -- is written as runs of tokens, each
+                # pair a line of its own below the entry.
+                if (
+                    schema_node is not None
+                    and schema_node.get("L")
+                    and schema_node.get("fd")
+                    and child_schema is not None
+                    and child_schema.get("L")
+                ):
                     for entry in value:
                         if isinstance(entry, dict) and "name" in entry:
                             name_val = format_value(entry["name"])
@@ -325,7 +341,7 @@ class DictWalker:
                         continue
 
                 list_schema = child_schema
-                tc_child_name = get_transparent_child(child_schema, set_key)
+                tc_child_name = get_transparent_child(child_schema)
                 if tc_child_name and list_schema is not None:
                     tc_child = self._schema_children(list_schema).get(tc_child_name)
                     if tc_child is not None:
@@ -346,7 +362,7 @@ class DictWalker:
                     output.keep_block(path + [set_key])
                 for entry in value:
                     if isinstance(entry, dict):
-                        if is_transparent_list_key(child_schema, key):
+                        if is_transparent_list_key(child_schema):
                             self._process_hash(
                                 set_key,
                                 entry,
@@ -362,7 +378,7 @@ class DictWalker:
                                 split_key_name=is_tc or wrapped,
                                 schema_node=list_schema,
                             )
-                    elif is_transparent_list_key(child_schema, key):
+                    elif is_transparent_list_key(child_schema):
                         if entry is not None:
                             output.emit(path + [format_value(entry)])
                         else:
@@ -388,7 +404,7 @@ class DictWalker:
                     and not is_freeform_nk(child_schema)
                 )
                 positional = (
-                    is_nk or is_positional_key(child_schema, key) or self._self_named_key(key, path)
+                    is_nk or is_positional_key(child_schema) or self._self_named_key(key, path)
                 )
                 formatted = format_value(value)
                 if positional:

@@ -978,6 +978,8 @@ class TestKeyedEntryTakesExactlyItsKeys:
         Two lines differ by owner decision: `data__list` (phase 5) and
         `universal_statement`, where `apply-macro` takes one to three values,
         as the device does (phase-6 fix pass, device probe, vMX 23.2R2-S7.5).
+        `apply-flags` takes its flags, `omit` and `replace`, as the device's
+        container (change universal-statements-from-tree, DEV-V2).
         """
         from tests.support.keyed_entries import NAME_KEYED_XSD, build_artifacts
 

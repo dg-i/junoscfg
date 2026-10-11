@@ -36,14 +36,13 @@ The XSD schema doesn't model the element correctly. Fix via xsd_fixes.py Groups 
 
 **Fix location:** `src/junoscfg/validate/xsd_fixes.py`
 
-### Runtime-level (missing alias or XML-compat constant)
+### Runtime-level (missing alias)
 
-The schema is correct but the runtime conversion code needs a name mapping or XML-compat constant.
+The schema is correct but the runtime conversion code needs a name mapping.
 
 **Symptoms:**
 
 - JSON input uses original XML name that differs from set command keyword
-- XML/YAML converter doesn't recognize element (these walk XML trees, not the schema)
 
 **Fix location:** `src/junoscfg/display/constants.py`
 
@@ -87,7 +86,7 @@ For each bug, apply fixes in this order:
 
 2. **Regenerate schema** — `uv run pytest tests/ -q --regen-schema` to rebuild `junos-structure-tree.json` with new flags. It rebuilds from the shipped release's dump under `private_test_data/schemas/` and stops, exit code 7, without it.
 
-3. **Constants (only for XML/YAML converters)** — If the fix affects the XML→YAML bridge (`to_yaml.py`), also update the XML-compat constants in `constants.py` (they mirror schema flags for converters that walk XML trees).
+3. **No name tables** — Every reader and writer, the XML reader in `to_yaml.py` included, reads the flags from the tree node; a flag helper given no node answers no flag. A statement valid at every level (`apply-groups`, `apply-groups-except`, `apply-flags`, `apply-macro`) is declared on the root only, and `junoscfg.display.schema_child(node, key, root)` resolves it below the root; never compare a key with its name.
 
 4. **Key aliases** — If JSON input uses an original XML name, add to `KEY_ALIASES` in `constants.py`. The set input parser also resolves `KEY_ALIASES` during schema lookup so that aliased keywords (e.g., `802.3ad` → `ieee-802.3ad`) match the correct schema node.
 
@@ -108,7 +107,7 @@ For each bug, apply fixes in this order:
 
 | File | Role |
 |------|------|
-| `src/junoscfg/display/constants.py` | Schema flag helpers, XML-compat constants, key aliases |
+| `src/junoscfg/display/constants.py` | Schema flag helpers, `schema_child` and `universal_statements`, key aliases |
 | `src/junoscfg/convert/output/dict_walker.py` | Dict IR → set/structured via `DictWalker` + `WalkOutput` strategy pattern |
 | `src/junoscfg/convert/output/set_output.py` | `SetWalkOutput` — renders set commands from dict IR |
 | `src/junoscfg/convert/output/structured_output.py` | `StructuredWalkOutput` — renders structured format from dict IR |
@@ -143,7 +142,7 @@ Some Junos elements have a wrapper child that exists in XML/JSON but not in set 
 
 Encoded as schema flag `t: "interface"` on the `interfaces` node.
 
-**For JSON→set:** `_walk()` calls `get_transparent_child(child_schema, set_key)` to find and skip the wrapper.
+**For JSON→set:** `_walk()` calls `get_transparent_child(child_schema)` to find and skip the wrapper.
 
 **For set→structured:** `_schema_walk()` reads `node.get("t")` to detect when a token should be treated as a named list entry name. Transparent named lists are emitted as separate hierarchy levels.
 
@@ -213,7 +212,7 @@ structured output rather than as a block. Example: `route-filter
 
 1. `xsd_fixes.py` — Changed `_fix_groups()` to create `groups` (container) → `group` (named list)
 2. `xsd_fixes.py` — Group H `_fix_transparent_containers()` adds `transparent:group` flag
-3. `constants.py` — `"groups": "group"` in `TRANSPARENT_CONTAINERS` (XML-compat)
+3. `constants.py` — `"groups": "group"` in `TRANSPARENT_CONTAINERS` (XML-compat; the table was retired by change universal-statements-from-tree, the flag alone carries it)
 4. `structured_output.py` — Reads `"t"` flag for transparent named list handling
 
 ### Example B: `attributes-match` flattening (2 errors)

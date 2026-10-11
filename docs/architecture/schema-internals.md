@@ -221,7 +221,7 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `pkf` | `true` | Positional key (flat) | Group H fix |
 | `fd` | `true` | Flat dict element | Group H fix |
 | `frnk` | `true` | Freeform NK key | Group H fix |
-| `u` | `true` | Valid at every level (the `apply-*` statements) | Group D fix |
+| `u` | `true` | Valid at every level (the `apply-*` statements), declared on the root only; `junoscfg.display.schema_child` resolves it below the root, and a tree with no `u` node (built before 0.8.0) runs on the kernel's floor `UNIVERSAL_STATEMENTS` | Group D fix |
 | `e` | `int` | Enum list index (into `_enums` table) | artifact_builder |
 | `r` | `int` | Regex pattern index (into `_patterns` table) | artifact_builder |
 | `m` | `true` | Mandatory field | xsd_parser |

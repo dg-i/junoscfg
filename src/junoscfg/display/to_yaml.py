@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, TextIO
 
 import yaml
 
+from junoscfg.display.constants import load_schema_tree, schema_child
+
 if TYPE_CHECKING:
     from lxml import etree
 
@@ -41,9 +43,8 @@ def xml_to_dict(source: str | TextIO) -> dict[str, Any]:
     if config_el is None:
         return {}
 
-    from junoscfg.display.constants import load_schema_tree
-
-    return {"configuration": _xml_element_to_dict(config_el, load_schema_tree())}
+    tree = load_schema_tree()
+    return {"configuration": _xml_element_to_dict(config_el, tree, tree)}
 
 
 def xml_to_yaml(source: str | TextIO) -> str:
@@ -111,24 +112,30 @@ def _get_tag_attrs(element: etree._Element) -> dict[str, Any] | None:
     return found or None
 
 
-def _xml_element_to_dict(element: etree._Element, schema: dict[str, Any] | None) -> dict[str, Any]:
-    """Convert an XML element and its children to a Junos JSON-equivalent dict."""
+def _xml_element_to_dict(
+    element: etree._Element, schema: dict[str, Any] | None, root: dict[str, Any] | None
+) -> dict[str, Any]:
+    """Convert an XML element and its children to a Junos JSON-equivalent dict.
+
+    *schema* is the element's structure-tree node and *root* the tree's root,
+    against which a universal statement below it resolves (`schema_child`).
+    """
     children = _filtered_children(element)
     if not children:
         return {}
-    return _xml_children_to_dict(children, schema)
+    return _xml_children_to_dict(children, schema, root)
 
 
-def _schema_of(element: etree._Element, schema: dict[str, Any] | None) -> dict[str, Any] | None:
+def _schema_of(
+    element: etree._Element, schema: dict[str, Any] | None, root: dict[str, Any] | None
+) -> dict[str, Any] | None:
     """The structure-tree node for *element* under *schema*; None outside the tree.
 
     A transparent container the XML writes without its wrapper -- `groups`,
     whose `<groups>` elements are the `group` entries themselves -- is read
     as that wrapper's entries.
     """
-    if schema is None:
-        return None
-    node: dict[str, Any] | None = schema.get("c", {}).get(_local_name(element))
+    node: dict[str, Any] | None = schema_child(schema, _local_name(element), root)
     wrapper = node.get("t") if node else None
     if node is not None and wrapper:
         held = {_local_name(c) for c in _filtered_children(element)}
@@ -155,33 +162,37 @@ def _should_be_array(element: etree._Element, node: dict[str, Any] | None) -> bo
 
 
 def _xml_single_as_array(
-    element: etree._Element, schema: dict[str, Any] | None
+    element: etree._Element, schema: dict[str, Any] | None, root: dict[str, Any] | None
 ) -> list[dict[str, Any]]:
     """Convert a single XML element to a 1-element array of dicts."""
     children = _filtered_children(element)
     tag_attrs = _get_tag_attrs(element)
-    entry = _xml_children_to_dict(children, schema) if children else {}
+    entry = _xml_children_to_dict(children, schema, root) if children else {}
     if tag_attrs:
         entry["@"] = tag_attrs
     return [entry]
 
 
-def _xml_single_element(element: etree._Element, schema: dict[str, Any] | None) -> Any:
+def _xml_single_element(
+    element: etree._Element, schema: dict[str, Any] | None, root: dict[str, Any] | None
+) -> Any:
     """Convert a single XML container element to a Junos JSON-equivalent dict."""
-    child_dict = _xml_children_to_dict(_filtered_children(element), schema)
+    child_dict = _xml_children_to_dict(_filtered_children(element), schema, root)
     tag_attrs = _get_tag_attrs(element)
     if tag_attrs:
         child_dict["@"] = tag_attrs
     return child_dict
 
 
-def _xml_multi_elements(elements: list[etree._Element], schema: dict[str, Any] | None) -> Any:
+def _xml_multi_elements(
+    elements: list[etree._Element], schema: dict[str, Any] | None, root: dict[str, Any] | None
+) -> Any:
     """Convert same-tag XML container siblings to a JSON array of entries."""
     result: list[dict[str, Any]] = []
     for el in elements:
         children = _filtered_children(el)
         tag_attrs = _get_tag_attrs(el)
-        entry = _xml_children_to_dict(children, schema) if children else {}
+        entry = _xml_children_to_dict(children, schema, root) if children else {}
         if tag_attrs:
             entry["@"] = tag_attrs
         result.append(entry)
@@ -238,7 +249,7 @@ def _xml_leaf(
 
 
 def _xml_children_to_dict(
-    children: list[etree._Element], schema: dict[str, Any] | None
+    children: list[etree._Element], schema: dict[str, Any] | None, root: dict[str, Any] | None
 ) -> dict[str, Any]:
     """Convert a list of XML child elements to a dict."""
     groups: dict[str, list[etree._Element]] = {}
@@ -262,7 +273,7 @@ def _xml_children_to_dict(
     result: dict[str, Any] = {}
     for name in order:
         elements = groups[name]
-        node = _schema_of(elements[0], schema)
+        node = _schema_of(elements[0], schema, root)
         if not any(_filtered_children(el) for el in elements) and (
             len(elements) > 1 or _holds_a_value(elements[0], node)
         ):
@@ -271,11 +282,11 @@ def _xml_children_to_dict(
                 result[f"@{name}"] = attrs
         elif len(elements) == 1:
             if _should_be_array(elements[0], node):
-                result[name] = _xml_single_as_array(elements[0], node)
+                result[name] = _xml_single_as_array(elements[0], node, root)
             else:
-                result[name] = _xml_single_element(elements[0], node)
+                result[name] = _xml_single_element(elements[0], node, root)
         else:
-            result[name] = _xml_multi_elements(elements, node)
+            result[name] = _xml_multi_elements(elements, node, root)
     return result
 
 

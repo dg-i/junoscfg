@@ -54,3 +54,26 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
 
 - Freeze established after the proposal commit `ce24d30` and the delta. Approved under the owner's unattended-run instruction of 2026-10-11.
 - 2026-10-11, phase 4: acceptance tests written. On the merge base `dd7c8c4`: `tests/unit/display/test_universal_statements.py` fails to import (`schema_child`, `universal_statements` do not exist), so its nine tests fail; over the other eight files and `tests/contract/`, 111 failed, 4,891 passed. Every new acceptance node fails except these guards, which pass on both sides by design: `test_another_word_is_kept_whole_and_reported[system,group]` (the nested line was already kept), `TestAUniversalStatementIsValidatedWithItsNode::test_nested_statements_are_clean` and `::test_a_bare_nested_statement_is_unplaced` (the exemption hid both), `TestUnplacedContentKeepsItsKeywords::test_it_is_still_reported`, the two new valid lines of `test_an_apply_statement_validates` (the old grammar took any value), and the rows' JSON and YAML readers of `apply-flags-omit-as-the-device-writes-it` (JSON, YAML and XML already read the device's shape). Corrected by the delta (C5, C9): `test_apply_statements_are_modelled_once_on_the_root` loses its two single-leaf assertions on `apply-flags`, now `test_apply_flags_is_the_devices_container_of_flags`; `TestUniversalStatementsReachEveryContainer._tree` declares the four statements as the fixed tree does, and its docstrings no longer say the shipped tree lacks them. No other assertion changed. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: STOP-T, independent Test/Challenge.
+- 2026-10-11, Test/Challenge (`test-challenge.md`, findings 1–7), rulings relayed by the orchestrator, all applied (`review.md`).
+  - Consistency: C5 narrowed. `replace` stays a flag, so the grammar keeps the base's acceptance, but its JSON/XML shape is EVIDENCE_BLOCKED on P8. The delta says so; the cases are `[replace-P8]` and `test_replace_is_clean_p8`. Specification challenge S1 is pending the owner.
+  - New criteria:
+    - every capture's set, curly and XML door reads the device JSON's universal statements (`TestEveryDoorReadsTheDevicesUniversalStatements`: 5 of 18 fail on the base, 0 at the head);
+    - a poisoned floor leaves both catalogue rows converting;
+    - 0.17.0's scalar `"apply-flags": "omit"` is reported (field validation reports a value on a non-presence, non-list container) and written back;
+    - a bare `apply-flags` is reported (a universal statement with no content);
+    - the consumer's kept key is written back and reported;
+    - a node's own child wins in every reader;
+    - the name scan reads a prefix of a name and an f-string's literal part;
+    - the JSON door's nested scalar is a strict xfail naming change 13.
+  - Ledgered, untested by ruling: `set apply-flags omit replace` (no evidence either way; the head grammar rejects it).
+  - Golden `tests/data/name-keyed.lark` regenerated from the generator (the `apply-flags` rule only), its docstring updated.
+  - Invalidated: `test_another_word_is_kept_whole_and_reported` now asserts the general container rule (the unknown word is kept from itself, inside `apply-flags`) where it asserted the record at the parent.
+  - No assertion weakened. Approved under the owner's unattended-run instruction of 2026-10-11.
+- 2026-10-11, phase 5, measurements at the head (uncommitted tree before the phase-5 commit):
+  - Artifacts regenerated with `junoscfg schema generate` from `25.2R2-S1.5_qfx5120.xsd`; a second regeneration is byte-identical (tree, grammar, both JSON schemas).
+  - Diff against the base: the structure tree changes only `apply-flags` (`{l,u}` to `{u, c: {omit: p, replace: p}}`). The grammar changes only the `universal_statement` `apply-flags` alternative and the new `apply_flags` rule. The JSON schema changes the top-level `apply-flags` property to an object with `omit`/`replace` (nested ones keep the `patternProperties` entry).
+  - Device outputs (`outputs.py`, 236 conversions, `diff-device.txt`): 18 differ, every one explained.
+    - 12 are set/curly sources of `GR-OMIT`. `apply-flags omit` is placed: set and curly output move it before `location`, in the device's own order. JSON and YAML change to `{"omit": [null]}`. The one `UNPLACED` warning per conversion goes (12 warnings removed, none added).
+    - 6 are XML-to-JSON/YAML. A nested `apply-groups[-except]` with one group becomes a list, as the device JSON writes it.
+  - Curly writer (`tc_probe_via_structured.py`, capture → curly → set against capture → set): the same 96 lines at the head as on the base, byte-identical output.
+  - `tc_probe_doors.py`: 28 differences on the base, 0 at the head.

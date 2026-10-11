@@ -1077,7 +1077,15 @@ class TestApplyFlagsIsAContainerOfFlags:
     universal-statements-from-tree.
     """
 
-    @pytest.mark.parametrize("flag", ["omit", "replace"])
+    @pytest.mark.parametrize(
+        "flag",
+        [
+            "omit",
+            # EVIDENCE_BLOCKED on probe P8: the shape of `replace` is inferred
+            # from `omit`; the grammar accepted it before, and still does.
+            pytest.param("replace", id="replace-P8"),
+        ],
+    )
     @pytest.mark.parametrize(
         ("prefix", "blocks", "where"),
         [
@@ -1120,16 +1128,34 @@ class TestApplyFlagsIsAContainerOfFlags:
     def test_another_word_is_kept_whole_and_reported(
         self, prefix: str, where: tuple[Any, ...]
     ) -> None:
-        """Any other word is no flag the tree knows: kept, reported, written back.
-        At the top it used to be the leaf's value, read without a word."""
+        """Any other word is no flag the tree knows: kept from that word, as in
+        any container, reported, and written back. At the top it used to be the
+        leaf's value, read without a word."""
         line = f"set {prefix}apply-flags bogus"
         parent = set_ir(line)
         for step in where:
             parent = parent[step]
-        assert "apply-flags" not in parent
-        assert kept_in(parent) == {"apply-flags bogus": KEPT}
+        assert parent["apply-flags"] == kept("bogus")
         assert _round_trip(line) == [line]
         assert len(_unplaced(line + "\n")) == 1
+
+    @pytest.mark.parametrize(
+        ("fmt", "source"),
+        [
+            ("set", "set system apply-flags\n"),
+            ("structured", "system {\n    apply-flags;\n}\n"),
+            ("json", '{"configuration": {"system": {"apply-flags": {}}}}'),
+            ("json", '{"configuration": {"system": {"apply-flags": true}}}'),
+            ("yaml", "configuration:\n  system:\n    apply-flags:\n"),
+        ],
+        ids=["set", "structured", "json-empty", "json-true", "yaml"],
+    )
+    def test_a_bare_keyword_is_reported(self, fmt: str, source: str) -> None:
+        """`apply-flags` naming no flag says nothing the device's spelling does;
+        reported where the old leaf took any value and needed one (Test/Challenge
+        finding 7). The grammar takes a bare container keyword, as for any."""
+        assert len(_unplaced(source, fmt)) == 1
+        assert to_set(source, Format(fmt)) == ["set system apply-flags"]
 
 
 # ── Statements kept whole ────────────────────────────────────────────
