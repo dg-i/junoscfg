@@ -111,7 +111,8 @@ def pipeline_result(
         ValueError: When *relative* is True without *path*, or the input
             cannot be read.
         RuntimeError: In a conversion that anonymizes, for any failure but
-            those above; its message names only the failure's class.
+            those above: "the conversion failed (<class>); details withheld:
+            the run anonymizes", the wording the CLI prints.
 
     A conversion that anonymizes quotes no word of the configuration in what
     it raises: a refusal to read the input is a fresh `ValueError`
@@ -345,8 +346,7 @@ def _withheld_refusal(error: Exception) -> Exception:
 def _withheld_failure(error: Exception) -> RuntimeError:
     """Any other failure of an anonymized conversion: its class, never its text or notes."""
     return RuntimeError(
-        f"the conversion failed ({type(error).__name__}); details withheld: "
-        "the conversion anonymizes"
+        f"the conversion failed ({type(error).__name__}); details withheld: the run anonymizes"
     )
 
 

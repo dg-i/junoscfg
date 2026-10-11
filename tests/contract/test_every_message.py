@@ -218,6 +218,7 @@ _AS_SOURCE = "".join(
     f"set protocols bgp group G{i}-ACME peer-as {asn}\n" for i, asn in enumerate(_AS_ORIGINALS)
 )
 _READ = ("could not be read",)
+_WITHHELD = "; details withheld: the run anonymizes"
 _YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"
 _FAILED = ("Validation: FAILED (1 error(s))", "line 1")
 
@@ -271,11 +272,13 @@ DOORS: dict[str, Door] = {
         _library(_FAMILY_TAG, Format.JSON, Format.STRUCTURED), ("1 tag(s) dropped",), "G-ACME"
     ),
     "pass-through-collision": Door(
-        _library_collision, ("the conversion failed (PassThroughCollisionError)",), None
+        _library_collision,
+        (f"RuntimeError: the conversion failed (PassThroughCollisionError){_WITHHELD}",),
+        None,
     ),
     "unexpected-failure": Door(
         _library(_YAML_DATE, Format.YAML, Format.JSON),
-        ("RuntimeError: the conversion failed (TypeError)",),
+        (f"RuntimeError: the conversion failed (TypeError){_WITHHELD}",),
         None,
     ),
     # -- the command line: stderr, stdout of a failed or validate-only run ----
@@ -352,7 +355,7 @@ DOORS: dict[str, Door] = {
     ),
     "cli-unexpected-failure": Door(
         _cli(_YAML_DATE, ["-i", "yaml", "-e", "json"]),
-        ("Error: the conversion failed (TypeError)",),
+        (f"Error: the conversion failed (TypeError){_WITHHELD}\n",),
         None,
     ),
     "cli-structured-writer-note": Door(
@@ -364,7 +367,9 @@ DOORS: dict[str, Door] = {
         "bogus-acme",
     ),
     "cli-pass-through-collision": Door(
-        _cli_collision, ("the conversion failed (PassThroughCollisionError)",), None
+        _cli_collision,
+        (f"Error: the conversion failed (PassThroughCollisionError){_WITHHELD}\n",),
+        None,
     ),
     "cli-as-number-warning": Door(
         _cli(
@@ -444,7 +449,7 @@ class TestAFailureNoHandlerExpectsNamesOnlyItsClass:
         )
         assert isinstance(anonymized.exception, SystemExit)
         assert anonymized.exit_code == 1
-        assert "the conversion failed (RuntimeError)" in anonymized.stderr
+        assert anonymized.stderr == f"Error: the conversion failed (RuntimeError){_WITHHELD}\n"
         for word in (MARKER, ADDRESS, "KeyError", "lost its place"):
             assert word not in anonymized.output
         plain = CliRunner().invoke(main, ["convert", *args], input="set system host-name sw1\n")
@@ -464,7 +469,7 @@ class TestTheLibraryRaisesAFailureByItsClassOnly:
                 _YAML_DATE, from_format=Format.YAML, to_format=Format.JSON, anon_config=_config()
             )
         error = raised.value
-        assert str(error).startswith("the conversion failed (TypeError)")
+        assert str(error) == f"the conversion failed (TypeError){_WITHHELD}"
         assert error.__cause__ is None
         assert error.__context__ is None
         assert not getattr(error, "__notes__", None)

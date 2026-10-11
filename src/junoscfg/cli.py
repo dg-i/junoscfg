@@ -985,7 +985,8 @@ def _failure_withheld(anonymizing: bool) -> Iterator[None]:
             raise
         text = str(error)
         if not (isinstance(error, RuntimeError) and text.startswith("the conversion failed (")):
-            # The library withholds its own failures already (`pipeline_result`).
+            # The library withholds its own failures already, in this same wording
+            # (`pipeline_result`), and names the original class, which this cannot.
             text = (
                 f"the conversion failed ({type(error).__name__}); details withheld: "
                 "the run anonymizes"

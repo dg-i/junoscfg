@@ -12,7 +12,7 @@ Rulings relayed by the orchestrator on 2026-10-11, all accepted; dispositions:
    the reader's refusals were withheld (`rv_probe_date.py`). Fixed in the library, the CLI's
    rule: in an anonymized run `pipeline_result` raises any failure but `FieldValidationError`
    and a withheld refusal as `RuntimeError("the conversion failed (<class>); details withheld:
-   the conversion anonymizes")`, raised outside the handler so it has no cause, context or
+   the run anonymizes")` (wording unified by R7), raised outside the handler so it has no cause, context or
    notes; the CLI prints that message as it stands. Rows `unexpected-failure`,
    `cli-unexpected-failure`; `TestTheLibraryRaisesAFailureByItsClassOnly`. The pass-through
    collision now reaches a library caller as such a `RuntimeError` (declared in the migration).
@@ -61,6 +61,23 @@ orchestrator on 2026-10-11, all accepted and applied before implementation close
    replacements. JSON and YAML refusals are fresh exceptions, so `JSONDecodeError.doc` and the
    YAML mark's buffer are not carried.
 
+Re-review (same Reviewer, at `5b8e22e`): R1–R6 confirmed closed (`rv_recheck_attrs.py`: every
+anonymized error a one-element chain, no attribute quoting the configuration; door, reader and fuzz
+probes 0 leaks; W6 caught on all 12 line-bearing doors; door law on base product code 38 failed,
+46 passed; `tach check` OK; the `InputError` door coherent: `__all__`, tach `expose`,
+`input.CONTRACT.md`, a `ValueError` subclass). One new finding, ruled and fixed:
+
+- R7, LOW: two endings for the failure message: the library's `RuntimeError` ended "the
+  conversion anonymizes", which the CLI passes through, its own text "the run anonymizes".
+  Fixed: one wording, "the conversion failed (<class>); details withheld: the run anonymizes",
+  in the library and the CLI; the collision rows, `cli-unexpected-failure`,
+  `TestAFailureNoHandlerExpectsNamesOnlyItsClass` and
+  `TestTheLibraryRaisesAFailureByItsClassOnly` assert the full string.
+
+Optional, recorded for the owner (not a finding): an anonymized refusal to read could be raised as
+`InputError(message, line)` so consumers get the line as data; kept a plain `ValueError` with the
+line in its text, as the requirement reads.
+
 ## Already provided
 
 - `AnonymizeConfig.any_enabled` decides once per run whether it anonymizes (changes 1 and 5).
@@ -88,4 +105,7 @@ orchestrator on 2026-10-11, all accepted and applied before implementation close
 
 ## Verdict
 
-CHANGES REQUIRED at `8860818` (R1–R6); fixes applied, confirmation by the same Reviewer pending.
+CHANGES REQUIRED at `8860818` (R1–R6), then **APPROVE at `5b8e22e`** from the same fresh Reviewer
+(full text `private_test_data/makeover-work/anonymized-run-messages/roles/review.md`), with R7 (low)
+fixed before finalization. No correctness challenge remains open; S1 and S2 are resolved by the
+ruled corrections. Carried forward: NEW-R11, NEW-R12 (change 13).
