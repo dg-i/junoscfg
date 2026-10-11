@@ -67,10 +67,11 @@ with the copy, 1.5 ms for the copy).
    on entry.
 3. F3 (low): the three Precedent bullets of `src/junoscfg/convert/CONTRACT.md`
    were reflowed onto one line each because the pre-commit `document caps`
-   hook refused the file at 34 lines (cap 30) once the invariant was added.
-   The content is unchanged (the Reviewer compared it with whitespace
-   normalized). Restoring the base wrapping gives 32 lines, over the cap, so
-   the reflow stays.
+   hook refused the file at 34 lines (cap 30) with the invariant's first,
+   four-line draft; with the invariant compacted to two lines, the base
+   wrapping still gives 32 lines (the Reviewer's count), over the cap, so the
+   reflow stays. The content is unchanged (the Reviewer compared it with
+   whitespace normalized).
 
 ## Already provided
 
@@ -88,8 +89,12 @@ with the copy, 1.5 ms for the copy).
 
 ## Verdict
 
-CHANGES REQUIRED at `8145e1d` (fresh Reviewer); F1–F3 addressed in the
-following commit. Pending the same Reviewer's confirmation.
+CHANGES REQUIRED at `8145e1d` (fresh Reviewer); F1–F3 addressed in
+`012943b`. The same Reviewer confirmed every fix and **APPROVES at
+`879ef61`**: no finding remains unresolved; NEW-R2 and NEW-R3 are carried
+forward to changes 13 and 5; the specification challenge awaits the owner's
+decision, and its interim action is reversible. Its one nit (the F3 line
+count) is corrected above. Merge.
 
 ## Appendix: the fresh Reviewer's report (phase 6, verbatim)
 
@@ -235,3 +240,28 @@ F2 and F3 do not block.
   writer (`[[null]]`) and the set writer (`ssh True`). Needs a device artefact
   for `system services ssh`.
 - F2: `anonymize()` mutates the IR without a contract line saying so.
+
+### Confirmation of the review fixes (fix commit 012943b, branch head 879ef61)
+
+Diff read: `git diff 8145e1d..879ef61`. Code head unchanged: no file under
+`src/` changed since `5f9934f`.
+
+| Finding | Fix | Confirmed by |
+|---|---|---|
+| F1 | `spec.md:18-26` now limits the device-spelling clause to `true`, `{}`, tagged and four-lists-deep flags. A flag inside a list (`[true]`, which the JSON and YAML readers give) is held only to purity and output-equals-copy, with NEW-R2 for change 13. `review.md` corrects the "no reader gives it" rationale. The test comment at `test_convert_roundtrip.py:73` names NEW-R2. The challenge is recorded in the required five-field format, with a reversible interim action. | Every spelling still in the device clause is pinned by `test_the_json_writer_writes_the_device_spelling`. The class passes 384/384 at 879ef61. `openspec validate json-writer-pure` is valid. |
+| F2 | NEW-R3 is ledgered in `private_test_data/makeover-ledger.md:16` (change 5). | Ledger row present. |
+| F3 | The reason for the reflow is recorded: the document cap. | `pyproject.toml:213` caps `src/**/CONTRACT.md` at 30 lines. The base file has 30 lines, base wrapping plus the invariant gives 32, and head has 29. `agent-ready caps` passes. |
+
+The F1 narrowing claims less than before and weakens no assertion, because the
+`[true]` row was never pinned. The metrics rows and the delta log entries are
+present. The full check is not needed, because only the spec, the records and
+one test comment changed.
+
+Nit, not blocking: `review.md` F3 says the hook refused the file "at 34 lines".
+My reconstruction gives 32. Both are over the cap, so the conclusion holds.
+
+#### Verdict
+
+**APPROVE** at 879ef61. No finding remains unresolved. NEW-R2 and NEW-R3 are
+carried forward to changes 13 and 5. The specification challenge awaits the
+owner's decision, and its interim action is reversible.
