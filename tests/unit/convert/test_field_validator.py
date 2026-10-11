@@ -1564,3 +1564,55 @@ class TestAUniversalStatementIsValidatedWithItsNode:
         assert messages[0].startswith("'bogus'")
         with pytest.raises(FieldValidationError):
             convert_config(source, from_format=Format.JSON, to_format=Format.SET, strict=True)
+
+    @pytest.mark.parametrize(
+        ("fmt", "source"),
+        [
+            ("set", "set system apply-flags apply-macro M1 peer 203.0.114.7\n"),
+            (
+                "json",
+                json.dumps(
+                    {
+                        "configuration": {
+                            "system": {
+                                "apply-flags": {
+                                    "apply-macro": [
+                                        {
+                                            "name": "M1",
+                                            "data": [{"name": "peer", "value": "203.0.114.7"}],
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ),
+            ),
+            (
+                "xml",
+                "<configuration><system><apply-flags><apply-macro><name>M1</name><data>"
+                "<name>peer</name><value>203.0.114.7</value></data></apply-macro>"
+                "</apply-flags></system></configuration>",
+            ),
+        ],
+        ids=["set", "json", "xml"],
+    )
+    def test_a_universal_statement_inside_apply_flags_never_passes(
+        self, fmt: str, source: str
+    ) -> None:
+        """Nothing resolves a universal statement inside another: it is unplaced,
+        strict conversion raises, and an anonymized run refuses rather than pass
+        the address through (Reviewer finding 1: the head let it through where
+        0.17.0 refused)."""
+        assert self._messages(source, Format(fmt)), "reported"
+        with pytest.raises(FieldValidationError):
+            convert_config(source, from_format=Format(fmt), to_format=Format.SET, strict=True)
+        with pytest.raises(FieldValidationError) as refused:
+            pipeline(
+                source,
+                from_format=fmt,
+                to_format="set",
+                anon_config=AnonymizeConfig(ips=True, salt="s"),
+                validate=False,
+            )
+        assert "203.0.114.7" not in str(refused.value)

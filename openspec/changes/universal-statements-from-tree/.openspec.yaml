@@ -24,9 +24,10 @@ declared-break:
       reported UNPLACED (strict raised, anonymization refused), at the root it
       was the leaf `"apply-flags": "omit"`. JSON and YAML output show the new
       shape; JSON, YAML and XML input already read it so. `apply-flags
-      replace` reads the same way; any other word under `apply-flags` is
-      reported UNPLACED, and validate_config rejects the set line, where both
-      passed before. XML and YAML input hold a nested `apply-groups` with one
+      replace` reads the same way; any other word under `apply-flags`, a
+      universal statement inside it, a bare `apply-flags` and one holding only
+      a tag are reported UNPLACED, and validate_config rejects such a set
+      line, where any value passed before. XML and YAML input hold a nested `apply-groups` with one
       group as a list, as set input and the root already did. Declared breaks
       on a named surface raise the minor (AGENTS.md).
     migration: >-
@@ -36,8 +37,11 @@ declared-break:
       `"junoscfg:unplaced": {"apply-flags omit": [null]}` below it. JSON or
       YAML that 0.17.0 wrote still reads: the old top-level leaf writes back
       the same set line, and the old record is reported as before; regenerate
-      it from set or curly text to place it. A configuration a device loads
-      is otherwise unaffected.
+      it from set or curly text to place it. Artifacts built with `junoscfg
+      schema generate` 0.8.0 to 0.17.0 and used through `--artifacts` or
+      `JUNOSCFG_ARTIFACTS` still model `apply-flags` as a leaf: regenerate
+      custom artifacts with 0.18.0. A configuration a device loads is
+      otherwise unaffected.
   cli:
     why: >-
       `junoscfg convert` to JSON or YAML writes the shape above for set and
@@ -47,4 +51,5 @@ declared-break:
       `apply-flags`.
     migration: >-
       None for configuration a device prints. A script that parsed the old
-      JSON or YAML spelling reads the mapping instead.
+      JSON or YAML spelling reads the mapping instead. Regenerate custom
+      artifacts (`--artifacts`) with `junoscfg schema generate` 0.18.0.

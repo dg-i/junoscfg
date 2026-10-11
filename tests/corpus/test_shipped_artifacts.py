@@ -160,11 +160,21 @@ class TestTheShippedArtifactsModelTheApplyStatements:
             # `omit` as a flag (`<apply-flags><omit/></apply-flags>`). Any
             # word passed while the tree had it as a leaf (DEV-V2).
             "set system apply-flags bogus",
+            # A bare `apply-flags` names no flag (0.17.0 rejected it too).
+            "set system apply-flags",
+            "set apply-flags",
+            # No universal statement inside another: `apply-flags` holds flags.
+            "set system apply-flags apply-groups G1",
+            "set system apply-flags apply-flags omit",
         ],
         ids=[
             "apply-groups-needs-its-group",
             "only-the-four-names",
             "apply-flags-takes-its-flags",
+            "apply-flags-needs-a-flag",
+            "apply-flags-needs-a-flag-at-the-top",
+            "no-universal-statement-inside-apply-flags",
+            "no-apply-flags-inside-apply-flags",
         ],
     )
     def test_an_apply_statement_is_rejected(self, bundled_set_validator: Any, line: str) -> None:

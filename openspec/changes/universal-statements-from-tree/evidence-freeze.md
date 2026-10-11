@@ -88,3 +88,17 @@ None, because C1–C9 are resolved by precedence and repository rules. P8 (the J
     - Unit, contract, tooling and corpus (device law included): 6,989 passed, 45 skipped, 22 xfailed (one new strict xfail, the ARCH-C10 carry-forward).
     - `known-differences.json` unchanged: the device law passes with no record change.
 - 2026-10-11, phase 5 complete. Full check at 0683f96: every check passed except `fields`, which named three bullets of this file that read as unanswered `label:` lines. They were reworded at c47147a (document only), and `check --set fast` then passed. Application tests in the full check: 6,989 passed, 45 skipped, 22 xfailed; the one warning is the pre-existing DEV-V5 `FutureWarning`. `griffe` reports the display API changes (the four helpers' `key` parameter, the five exported tables, `UNIVERSAL_STATEMENTS`'s value), which are not on a named surface. Resume point: STOP-R, a fresh Reviewer on the head against the merge base dd7c8c4.
+- 2026-10-11, fresh Reviewer (CHANGES REQUIRED at 81ff738). Findings 1–8 ruled by the orchestrator, every one accepted (`review.md`).
+  - Consistency: the delta's "valid at every level" excluded nothing, and the head accepted `apply-flags apply-groups G1` and let an address inside `apply-flags` through `--anonymize-ips`.
+  - Criteria changed:
+    - `schema_child` gives no universal fallback inside a universal statement;
+    - the set reader calls `schema_child`;
+    - the grammar generator gives `universal_statement` to no rule that only a universal statement reaches;
+    - a universal statement of flags requires a flag in the grammar;
+    - field validation's emptiness check ignores `@` keys;
+    - the floor is never cached.
+  - Specification challenge S2 recorded, pending the owner, interim action applied.
+  - Invalidated: the grammar and the `name-keyed.lark` golden (regenerated: `apply_flags`, `apply_macro__list` and `data__list` lose `universal_statement`, and `apply-flags` needs its flag; nothing else in the grammar moved), and the JVD head output (rerun).
+  - The new tests are head regressions: the base already rejected and reported these lines. No assertion weakened.
+  - Carried forward: finding 7 (stale docstring in `anonymize/rules/group.py`) to change 5; finding 8 (tags on nested universal statements) as NEW-R7 to change 14, probe P9 appended.
+  - Approved under the owner's unattended-run instruction of 2026-10-11.

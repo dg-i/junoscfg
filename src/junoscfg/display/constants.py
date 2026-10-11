@@ -482,7 +482,7 @@ UNIVERSAL_STATEMENTS: Mapping[str, dict[str, Any]] = MappingProxyType(
 
 # A structure tree's universal statements, by the tree's id; the tree is held,
 # so its id is not reused while the entry stands.
-_universal_cache: dict[int, tuple[dict[str, Any], int, Mapping[str, Any]]] = {}
+_universal_cache: dict[int, tuple[dict[str, Any], int, Mapping[str, Any], frozenset[int]]] = {}
 
 
 def _children_of(schema_node: Any) -> Mapping[str, Any]:
@@ -499,6 +499,30 @@ def _is_universal(schema_node: Any) -> bool:
     return "universal" in getattr(schema_node, "flags", ())
 
 
+def _universal(root: Any) -> tuple[Mapping[str, Any], frozenset[int]]:
+    """The root's universal statements, and the ids of every node inside them."""
+    children = _children_of(root)
+    # Asked for every key a node's children miss, so a structure tree's
+    # declared answer is kept: such a tree is read once and never changed. The
+    # floor is never kept, so a test that replaces it sees every use; a
+    # `SchemaNode` tree is still being built by the fixes and is asked afresh.
+    cached = _universal_cache.get(id(root)) if isinstance(root, dict) else None
+    if cached is not None and cached[0] is root and cached[1] == len(children):
+        return cached[2], cached[3]
+    declared = {name: node for name, node in children.items() if _is_universal(node)}
+    answer: Mapping[str, Any] = declared if declared else UNIVERSAL_STATEMENTS
+    inside: set[int] = set()
+    stack = list(answer.values())
+    while stack:
+        node = stack.pop()
+        inside.add(id(node))
+        stack.extend(_children_of(node).values())
+    within = frozenset(inside)
+    if declared and isinstance(root, dict):
+        _universal_cache[id(root)] = (root, len(children), answer, within)
+    return answer, within
+
+
 def universal_statements(root: Any) -> Mapping[str, Any]:
     """The statements valid at every level: the root's children flagged universal.
 
@@ -510,18 +534,7 @@ def universal_statements(root: Any) -> Mapping[str, Any]:
     """
     if root is None:
         return {}
-    children = _children_of(root)
-    # Asked for every key a node's children miss, so a structure tree's answer
-    # is kept: such a tree is read once and never changed. A `SchemaNode` tree
-    # is still being built by the fixes; it is asked afresh.
-    cached = _universal_cache.get(id(root)) if isinstance(root, dict) else None
-    if cached is not None and cached[0] is root and cached[1] == len(children):
-        return cached[2]
-    declared = {name: node for name, node in children.items() if _is_universal(node)}
-    answer: Mapping[str, Any] = declared if declared else UNIVERSAL_STATEMENTS
-    if isinstance(root, dict):
-        _universal_cache[id(root)] = (root, len(children), answer)
-    return answer
+    return _universal(root)[0]
 
 
 def schema_child(schema_node: Any, key: str, root: Any) -> Any:
@@ -529,16 +542,22 @@ def schema_child(schema_node: Any, key: str, root: Any) -> Any:
 
     The node's own child first; else the root's universal statement of that
     name, which is valid at every level and declared only on the root; else
-    None. One answer for every reader, writer and validator, so none keeps the
-    four names (spec schema-pipeline/universal-statements). *schema_node* may be
-    None, inside content the tree does not place: a universal statement there
-    is still one.
+    None. Never inside a universal statement itself: `apply-flags` holds its
+    flags, not `apply-groups` (spec schema-pipeline/universal-statements). One
+    answer for every reader, writer and validator, so none keeps the four
+    names. *schema_node* may be None, inside content the tree does not place: a
+    universal statement there is still one.
     """
     if schema_node is not None:
         child = _children_of(schema_node).get(key)
         if child is not None:
             return child
-    return universal_statements(root).get(key)
+    if root is None:
+        return None
+    statements, inside = _universal(root)
+    if schema_node is not None and id(schema_node) in inside:
+        return None
+    return statements.get(key)
 
 
 #: The IR key under which a level keeps the statements a reader could not

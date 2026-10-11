@@ -19,6 +19,8 @@ import json
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
+import pytest
+
 import junoscfg.display as display
 from junoscfg import Format, convert_config
 from junoscfg.display import UNIVERSAL_STATEMENTS, schema_child, universal_statements
@@ -52,6 +54,18 @@ class TestOneHelperResolvesThem:
             assert schema_child(bgp_group, name, bundled_tree) is bundled_tree["c"][name], name
         # Below unplaced content too: a universal statement is valid at every level.
         assert schema_child(None, "apply-groups", bundled_tree) is bundled_tree["c"]["apply-groups"]
+
+    def test_nothing_resolves_inside_a_universal_statement(self, bundled_tree: dict) -> None:
+        """`apply-flags` holds its flags, `apply-macro` its pairs: a universal
+        statement is never resolved inside one (Reviewer finding 1)."""
+        flags = bundled_tree["c"]["apply-flags"]
+        data = bundled_tree["c"]["apply-macro"]["c"]["data"]
+        for node in (flags, data, bundled_tree["c"]["apply-macro"]):
+            for name in NAMES:
+                assert schema_child(node, name, bundled_tree) is None, name
+        assert schema_child(flags, "omit", bundled_tree) is flags["c"]["omit"]
+        floor_flags = UNIVERSAL_STATEMENTS["apply-flags"]
+        assert schema_child(floor_flags, "apply-groups", OLD_TREE) is None
 
     def test_the_nodes_own_child_comes_first(self, bundled_tree: dict) -> None:
         system = bundled_tree["c"]["system"]
@@ -157,7 +171,12 @@ class TestTheFloorIsForATreeThatDeclaresNone:
             def __len__(self) -> int:
                 raise AssertionError("answered from the floor")
 
+        # An old tree asked first: the floor is never kept, so the poison below
+        # trips whatever ran before it (Reviewer finding 3).
+        assert tuple(universal_statements(OLD_TREE)) == NAMES
         monkeypatch.setattr("junoscfg.display.constants.UNIVERSAL_STATEMENTS", Poisoned())
+        with pytest.raises(AssertionError, match="answered from the floor"):
+            universal_statements(OLD_TREE)
         for name in (
             "apply-flags-omit-as-the-device-writes-it",
             "universal-statements-below-the-root",

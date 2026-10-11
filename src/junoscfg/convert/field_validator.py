@@ -257,13 +257,17 @@ class FieldValidator:
                 child_schema = schema_child(schema_node, key, self._schema)
 
                 # A universal statement with nothing in it -- a bare `set
-                # system apply-flags` -- names no flag, group or macro, as a
-                # leaf without its value names nothing.
+                # system apply-flags`, or one holding only a tag -- names no
+                # flag, group or macro, as a leaf without its value names
+                # nothing.
                 if (
                     child_schema is not None
                     and child_schema.get("u")
                     and not child_schema.get("l")
-                    and value in (None, True, [None], [], {})
+                    and (
+                        value in (None, True, [None], [])
+                        or (isinstance(value, dict) and all(k.startswith("@") for k in value))
+                    )
                 ):
                     self._unplaced(
                         f"'{key}' without its value", schema_node, obj, path, result, value=key

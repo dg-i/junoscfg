@@ -36,7 +36,10 @@ _MAX_DEPTH = 12
 # the ones it declares. A tree that declares none -- built before that fix, as
 # the bundled one was until 0.8.0 -- gets the kernel's floor, so junoscfg does
 # not reject its own output for a configuration that carries `apply-groups`,
-# which all three real device configurations do.
+# which all three real device configurations do. The grammar generator reads
+# the flag alone; the two agree on every tree `junoscfg schema generate` builds,
+# since it runs the fixes first. The floor here serves only a `SchemaNode` handed
+# to this public function without them.
 
 
 def _universal_properties(root: SchemaNode) -> dict[str, Any]:

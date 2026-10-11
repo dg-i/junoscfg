@@ -358,10 +358,13 @@ def generate_lark_grammar(root: SchemaNode) -> str:
         # One rule, referenced from every other. `configuration` included, so
         # `set apply-groups global-vxlan` at the top level parses as itself
         # rather than being stripped to a bare `set` before it reaches here.
-        for info in rule_map.values():
+        # Never inside a universal statement: `apply-flags` holds its flags,
+        # not `apply-groups` (spec schema-pipeline/universal-statements).
+        inside = _rules_only_inside(root, universal, variant_names)
+        for name, info in rule_map.items():
             # Not after an entry that is nothing but its key: the device
             # rejects a further token there.
-            if info.alts or not info.is_named_list:
+            if (info.alts or not info.is_named_list) and name not in inside:
                 info.alts.add(_UNIVERSAL_RULE)
 
     # Pass 2: emit grammar
@@ -457,6 +460,41 @@ def generate_lark_grammar(root: SchemaNode) -> str:
     lines.append("")
 
     return "\n".join(lines)
+
+
+def _rules_only_inside(
+    root: SchemaNode, universal: dict[str, SchemaNode], variant_names: dict[int, str]
+) -> set[str]:
+    """The rules every node of which lies inside a universal statement.
+
+    Rules merge by name, so a rule a node elsewhere shares keeps the universal
+    statements: only one that nothing outside them reaches loses them.
+    """
+
+    def names(start: list[SchemaNode], skip: set[int]) -> set[str]:
+        found: set[str] = set()
+        seen: set[int] = set(skip)
+        stack = list(start)
+        while stack:
+            node = stack.pop()
+            if id(node) in seen:
+                continue
+            seen.add(id(node))
+            if node.children:
+                found.add(variant_names.get(id(node), _rule_name_for(node.name, node)))
+            stack.extend(node.children.values())
+        return found
+
+    inside_nodes = list(universal.values())
+    inside = names(inside_nodes, set())
+    within: set[int] = set()
+    stack = list(inside_nodes)
+    while stack:
+        node = stack.pop()
+        within.add(id(node))
+        stack.extend(node.children.values())
+    outside = names([root], within)
+    return inside - outside
 
 
 def _collect_rules(
@@ -656,6 +694,13 @@ def _child_reference(
             return safe_name
         if node.is_list:
             # A list entry is named, so the entry name is not optional.
+            return f"{keyword} {safe_name}"
+        if "universal" in node.flags and all(
+            child.is_presence and not child.children for child in node.children.values()
+        ):
+            # A universal statement of flags names one: a bare `apply-flags`
+            # says nothing, and field validation reports it (0.17.0 rejected
+            # it, the leaf wanting a value).
             return f"{keyword} {safe_name}"
         # A container may be set bare to bring it into being:
         # `set system services netconf ssh` names a container that also holds

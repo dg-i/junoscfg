@@ -1152,10 +1152,50 @@ class TestApplyFlagsIsAContainerOfFlags:
     )
     def test_a_bare_keyword_is_reported(self, fmt: str, source: str) -> None:
         """`apply-flags` naming no flag says nothing the device's spelling does;
-        reported where the old leaf took any value and needed one (Test/Challenge
-        finding 7). The grammar takes a bare container keyword, as for any."""
+        reported, and rejected by the grammar, as the old leaf wanting a value
+        was (Test/Challenge finding 7, Reviewer finding 2)."""
         assert len(_unplaced(source, fmt)) == 1
         assert to_set(source, Format(fmt)) == ["set system apply-flags"]
+
+    def test_a_flag_known_only_by_its_tag_is_reported(self) -> None:
+        """A lone `deactivate system apply-flags omit` sets no flag: the base kept
+        it whole and reported it, and so is it reported now (Reviewer finding 2)."""
+        assert len(_unplaced("deactivate system apply-flags omit\n")) == 1
+
+    @pytest.mark.parametrize(
+        ("fmt", "source", "line"),
+        [
+            (
+                "set",
+                "set system apply-flags apply-groups G1\n",
+                "set system apply-flags apply-groups G1",
+            ),
+            (
+                "set",
+                "set system apply-flags apply-flags omit\n",
+                "set system apply-flags apply-flags omit",
+            ),
+            (
+                "structured",
+                "system {\n    apply-flags {\n        apply-groups G1;\n    }\n}\n",
+                "set system apply-flags apply-groups G1",
+            ),
+            (
+                "json",
+                '{"configuration": {"system": {"apply-flags": {"apply-groups": ["G1"]}}}}',
+                "set system apply-flags apply-groups G1",
+            ),
+        ],
+        ids=["set-apply-groups", "set-apply-flags", "structured", "json"],
+    )
+    def test_no_universal_statement_inside_apply_flags(
+        self, fmt: str, source: str, line: str
+    ) -> None:
+        """A statement valid at every level is no flag: inside `apply-flags` it is
+        reported and written back as read, never placed (Reviewer finding 1; spec
+        schema-pipeline/universal-statements)."""
+        assert len(_unplaced(source, fmt)) == 1
+        assert to_set(source, Format(fmt)) == [line]
 
 
 # ── Statements kept whole ────────────────────────────────────────────

@@ -16,9 +16,9 @@ from junoscfg.display import (
     key_is_positional,
     load_schema_tree,
     passes_tag_to_child,
+    schema_child,
     statement_children,
     statement_name_spellings,
-    universal_statements,
     unplaced_record_problem,
 )
 from junoscfg.input import find_unsupported_set_brackets, normalize
@@ -458,15 +458,12 @@ def _merge_tokens(
         token = tokens[i]
         children = statement_children(current_schema)
         here = tags.pop(i, frozenset())
-        # A statement valid at every level is declared on the root only
-        # (`universal_statements`); the reader meets it below the root too.
-        own = children.get(token)
-        if own is None:
-            universal = universal_statements(root).get(token)
-            if universal is not None:
-                children = {**children, token: universal}
-        else:
-            universal = own if own.get("u") else None
+        # A statement valid at every level is declared on the root only; the
+        # reader meets it below the root too, never inside one (`schema_child`).
+        found = schema_child(current_schema, token, root)
+        universal = found if found is not None and found.get("u") else None
+        if universal is not None and token not in children:
+            children = {**children, token: universal}
 
         # A universal leaf-list (`apply-groups`, `apply-groups-except`) takes
         # one value a statement; `set apply-groups G1 G2` and a bare `set
@@ -804,9 +801,9 @@ def _apply_meta(
         # Resolve key alias for schema lookup (e.g., ieee-802.3ad → 802.3ad)
         schema_key = KEY_ALIASES.get(token, token)
         if schema_key not in children:
-            universal = universal_statements(schema).get(schema_key)
-            if universal is not None:
-                children = {**children, schema_key: universal}
+            found = schema_child(current_schema, schema_key, schema)
+            if found is not None and found.get("u"):
+                children = {**children, schema_key: found}
 
         if schema_key not in children:
             # Check transparent container
