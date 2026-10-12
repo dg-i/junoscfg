@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "0d96d006c3a35ec041abccaa8d8693bfe57bf430",
+  "checkpoint": "73a0097848033ddf79804d3fecead7108c8cf63e",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Direct user exclusive-ownership authorization, local makeover activation scope, ok go ahead, and owner schema-scheduling amendment OWNER-SCHEMA-SCHEDULE-2026-10-12; all other sessions/jobs parked",
-  "captured_at": "2026-10-12T01:20:56.557906+00:00",
+  "authority": "Direct user exclusive-ownership authorization, local makeover activation scope, ok go ahead, and owner schema-scheduling amendment OWNER-SCHEMA-SCHEDULE-2026-10-12; all other sessions/jobs parked; actual reviewed local integration and explicit root master-ready/adapter-parked transition under unattended owner authorization",
+  "captured_at": "2026-10-12T01:46:30.822064+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -52,13 +52,13 @@
     "codex/refresh-architecture-measurements": "parked",
     "codex/reject-set-bracket-syntax": "parked",
     "codex/remove-redundant-conversion-shims": "parked",
-    "codex/schema-verification-evidence": "ready",
+    "codex/schema-verification-evidence": "parked",
     "codex/strategy-a-adoption": "parked",
     "codex/strategy-a-adoption-qualified": "parked",
     "codex/structured-conversion-diagnostics": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked"
+    "master": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
