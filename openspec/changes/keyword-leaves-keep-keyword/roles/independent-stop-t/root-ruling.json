@@ -1,0 +1,17 @@
+{
+  "old_base": "b10ba77134fe6d36d1f2ab5859710498ab010764",
+  "old_acceptance_head": "58c967bfbb0a46af298e2787d5a40a9082017211",
+  "new_base": "842a1153ce303ece93e94cb532e26b407bba3a61",
+  "rebased_acceptance_head": "4434b0e6d1a01e203e9bcc7616ed06832c0ce5de",
+  "old_new_differences": [
+    ".agent-ready/activation.json"
+  ],
+  "all_source_artifacts_tests_assertions_lock_tools_contracts_change_records": "byte-identical across operator-only rebase",
+  "independent_red": "actual58c967bf baseline retained, applies by byte identity; not relabeled rerun",
+  "assessment_sha256": "c5e656eeef5447033ebaff6cdccc3e655916c49892fb7c66314cc880c1aa4e8f",
+  "root_ruling": "ADEQUATE independent STOP-T accepted; implement bounded scoped hints/richer-content repair then one necessary public product generation from shipped25.2; no real full schema until entire-makeover end",
+  "generation": "necessary product output from existing public command; not schema verification or historical/current nativefull proof",
+  "ordinary": "supportedfast plus configured ordinary fullcoverage after readiness;91.47 unchanged",
+  "metadata": "Builder must declare all actual external paths, including root operator activation file, in verification planned paths before public readiness",
+  "other_branches": "all parked, #15 phase5 waits #10 integration"
+}
