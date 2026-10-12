@@ -2,7 +2,7 @@
 
 ### Requirement: Proven hidden lists retain the declared key
 
-WHEN a device-backed hidden list arrives as set, structured, JSON, YAML or XML THEN conversion SHALL retain the device's keyed list IR and omit the hidden XML element name in set and structured output; equal declared key tuples SHALL merge without fusing tokens into a key.
+WHEN a device-backed hidden list arrives as set, structured, JSON or YAML THEN conversion SHALL retain the device's keyed list IR and omit the hidden XML element name in set and structured output; equal declared key tuples SHALL merge without fusing tokens into a key.
 Tests: `tests/unit/convert/test_hidden_list_names.py::TestAHiddenListKeepsItsDeviceKey::test_every_reader_keeps_the_key`, `tests/unit/convert/test_hidden_list_names.py::TestAHiddenListKeepsItsDeviceKey::test_every_writer_omits_the_hidden_name`
 
 #### Scenario: Device proven nested and composite keys
@@ -29,3 +29,7 @@ Tests: `tests/unit/convert/test_hidden_list_names.py::TestKeywordChildrenPrecede
 
 - **WHEN** a keyword child competes with a positional hidden key, or a nonmatching model is read or written
 - **THEN** no keyword, value, unknown statement or list entry is silently consumed as a hidden name
+
+## XML scope disposition
+
+The original preparation promise included XML input. The owner subsequently deferred XML input/output qualification; XML is buggy and not qualified by this non-XML batch. All five existing XML input assertions remain unchanged and passed the renewed focused run; those are retained historical controls, not a new XML completion claim. Authority: private owner-xml-defer-ruling.json (2026-10-12), recorded verbatim in review.md SC1.

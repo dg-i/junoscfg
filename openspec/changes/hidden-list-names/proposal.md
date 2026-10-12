@@ -1,6 +1,6 @@
 ## Why
 
-Device captures hide XML list names in display set, but current conversion leaks them or retains valid statements unplaced. The same configuration must have one keyed IR across its representations.
+Device captures hide XML list names in display set, but current conversion leaks them or retains valid statements unplaced. The same configuration must have one keyed IR across the admitted set, structured, JSON and YAML representations.
 
 ## What Changes
 
@@ -27,3 +27,9 @@ Daemon-process without capture; NEW-R15 LRF single-choice name spelling (current
 ## Impact
 
 Future production paths overlap #11 and remain parked. Tests own a new convert unit file; no shared catalogue edits. Public product generation, known differences and final full schemas require root sequencing. Device evidence: committed synthetic vMX/QFX junoscfg-oracle set/JSON/XML, with vMX bridge domains and predefined defaults; QFX platform rejection is not global invalidity.
+
+## Current-base scope and source plan
+
+Preparation rebased onto e293b72564ef579a393102e4578f253efa8bdc8f after archived keyed-single-entry-lists (#11, local v0.25.0). Complete only set, structured, JSON and YAML promises. XML input/output is buggy and deferred under the latest owner instruction, recorded in review.md SC1; existing XML assertions remain unchanged.
+
+Proposed owning edits are display/constants.py structural hidden-list classification, convert/input/set_input.py reuse of the existing complete-key reader in normal and meta paths, and convert/output/dict_walker.py existing hidden-key writer treatment. Preserve existing t container hints and tk compatibility; neither producer edits nor public product generation is currently proposed. Existing L/nk/k products carry the required structure. This source plan awaits independent Test/Challenge and root admission.

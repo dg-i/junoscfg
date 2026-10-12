@@ -1,6 +1,6 @@
 ## 1. Verification
 
-- [ ] 1.1 Write meaningful hidden-list acceptance and preservation tests; execute red on preparation base and record hashes/exits.
+- [x] 1.1 Write meaningful hidden-list acceptance and preservation tests; execute red on preparation base and record hashes/exits.
 - [ ] 1.2 After #11 integration, reconcile/rebase scope and rerun exact red; independent Test/Challenge and root ruling before product admission.
 
 ## 2. Change
