@@ -24,3 +24,7 @@
 ## Verdict
 
 <!-- Merge, or what has to change first. Unresolved correctness challenges block completion. The reviewer edits no code, specification, or test. -->
+
+## Scope dispositions and follow-up evidence
+
+<!-- Apply docs/how-to/review-scope.md. Reuse finding IDs and the authoritative ruling. Record classification, evidence, backlog destination and status, or binding obligation. Initial review covers the complete change; follow-ups cover accepted corrections and consequences. Reopening cites material new evidence and the original finding/ruling. Preserve original evidence here. -->

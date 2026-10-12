@@ -98,3 +98,11 @@ raises. The human approves `AGENTS.md` and sets `onboarded = YYYY-MM-DD` under
 reports what each phase still has outstanding, which is how an owner reads the
 state later without opening a phase file. Hand the friction log to the template
 project as its input, not as this repository's document.
+
+## Discoverable backlog
+
+Confirm `docs/BACKLOG.md` exists and identifies the single authoritative destination;
+create it if absent, preserving any existing contents. Link it from the application's
+working guidance. A declared tracker stores items and status; the file points to it.
+Use `docs/how-to/review-scope.md` for required fields and scope dispositions.
+Consolidate deferred findings without cancelling dependencies or binding carries.

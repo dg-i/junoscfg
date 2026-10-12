@@ -28,3 +28,7 @@
 <!-- Affected code, APIs, dependencies, systems. -->
 <!-- A figure this change rests on names the corpus and the command that reproduce it, both in this repository, so a reviewer can rerun it. -->
 <!-- Maintenance: name the preserved behaviour, focused verification, and changelog decision. -->
+
+## Completion
+
+<!-- Intended behavioural outcome (or reader task), acceptance criteria, and exclusions approved before implementation. Apply docs/how-to/review-scope.md; location and severity alone do not authorize additional implementation. -->

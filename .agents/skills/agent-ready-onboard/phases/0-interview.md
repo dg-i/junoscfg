@@ -98,3 +98,10 @@ part of `[tool.template.stage]` this phase answers, which means every
 `[inferred` marker is gone: a confirmed claim loses the marker and a wrong one
 is corrected. Do not continue to phase 1 without it, and not in this session:
 `agent-ready status` resumes the next one.
+
+## Backlog destination
+
+Establish one authoritative backlog destination under `docs/how-to/review-scope.md`.
+Use application-owned `docs/BACKLOG.md` by default. Honour an existing declared
+issue tracker and make the file a pointer to it, with no duplicate active ledger.
+Preserve existing findings, IDs, evidence, and binding obligations.

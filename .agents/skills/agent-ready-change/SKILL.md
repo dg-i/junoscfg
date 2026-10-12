@@ -189,3 +189,11 @@ in release looks like a break, or when you are about to write a fact you cannot
 point at evidence for. An evidence-driven attempt may continue when it narrows
 the cause; repetition alone is not a retry counter.
 Before stopping or resuming, update the checkpoint and telemetry.
+
+## Review scope and backlog
+
+All lanes follow `docs/how-to/review-scope.md`: freeze outcome, criteria and
+exclusions before implementation; repair outcome-blocking defects and introduced
+regressions wherever found. Review follow-ups cover accepted corrections and
+consequences. Independent findings receive authoritative backlog dispositions;
+binding obligations remain effective. No time or review-round cap applies.

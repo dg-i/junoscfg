@@ -40,3 +40,9 @@
 <!-- Append source, change, consistency result, invalidated work, and rerun required. -->
 
 - Freeze established: <commit or artifact identities>
+
+## Scope and completion
+
+<intended outcome, frozen criteria and exclusions; applicable existing requirements>
+
+<!-- Apply docs/how-to/review-scope.md. Record genuine dependencies and binding carry-forward conditions explicitly. Independent backlog items do not join this change. -->

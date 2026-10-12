@@ -42,8 +42,9 @@ expensive tier whenever a review-fix round invalidates its evidence.
   contradiction is the first thing to check: a reversal on one experiment is
   the commonest wrong finding of the implementer's own.
 - A review that touches what a decision record governs cites the record's id.
-- "I could not check X" names the next failure: it goes to the carry-forward
-  list of the change, not only into the report.
+- "I could not check X" records the evidence gap. If it concerns current-change
+  acceptance, record a binding carry-forward under the lifecycle rules; an
+  independent concern takes the authoritative backlog disposition path.
 
 ## Specification challenges
 
@@ -97,3 +98,11 @@ The human reads the report before the diff; surviving findings count at archive.
 
 For structured findings and one authoritative ruling, follow `docs/how-to/lifecycle-ledger.md`; agents cannot
 approve their own requirement changes. Check invalidated evidence and scoped carry-forward renewals.
+
+## Scope boundary
+
+Apply `docs/how-to/review-scope.md` to findings and specification challenges.
+The initial review covers the complete change; follow-ups verify accepted
+corrections and their consequences. Reopening needs material new evidence.
+Independent findings receive authoritative backlog dispositions; genuine
+dependencies and binding carry-forwards remain explicit completion obligations.

@@ -93,3 +93,10 @@ deprecation, and a declared break names its migration.
 CODEOWNERS routes the delta to domain owners; without pull requests, approval
 is the owner's commit. Once the freeze is approved, the continuous Builder
 progresses automatically to design when required and otherwise to verification.
+
+## Scope baseline
+
+Freeze the intended outcome as well as criteria and exclusions. Follow
+`docs/how-to/review-scope.md` when classifying new evidence: a valid
+omitted-criteria challenge follows the owner ruling and delta check; an
+independent improvement goes to the declared backlog without enlarging scope.

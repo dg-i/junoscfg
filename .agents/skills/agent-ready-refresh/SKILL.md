@@ -147,3 +147,13 @@ Stop and report, rather than pushing on, when:
 Run `agent-ready caps` and `agent-ready skills` before pushing anything that
 touches a capped document or a skill body. Both runtimes run the same checks
 the same way; nothing in this skill depends on a feature only one of them has.
+
+## Application-owned backlog and adoption
+
+`docs/BACKLOG.md` is a preserved seed. Verify populated contents survive the update;
+never reset them to the template example. If an issue tracker is declared, retain
+one authoritative destination and the file's pointer. Apply
+`docs/how-to/review-scope.md` when consolidating deferred findings with their IDs,
+evidence and rulings. Align application-owned prompts and working guidance with
+that policy in a separate reviewed adoption change. Record an ongoing batch's
+remaining scope and resume from valid evidence without restarting completed phases.

@@ -88,3 +88,10 @@ The merge was the approval. Archiving records it.
 When a lifecycle ledger exists, generate its report and include it in the
 existing metrics capture; see `docs/how-to/lifecycle-ledger.md`. Preserve
 missing observations as UNMEASURED and archive the source events with the change.
+
+## Scope closure
+
+Use `docs/how-to/review-scope.md`: verify authoritative dispositions for independent
+findings and preserve their source-change links through archival. Do not require
+ordinary backlog repairs for completion. Check genuine dependencies and binding
+carry-forward conditions separately; backlog placement cannot discharge them.

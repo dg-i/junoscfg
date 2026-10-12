@@ -76,3 +76,11 @@ in alpha.
 
 The human approves the test files as the zone policy requires. The Builder then
 records the checkpoint and continues without asking for a phase transition.
+
+## Scope boundary
+
+Apply `docs/how-to/review-scope.md` to findings and specification challenges.
+The initial review covers the complete change; follow-ups verify accepted
+corrections and their consequences. Reopening needs material new evidence.
+Independent findings receive authoritative backlog dispositions; genuine
+dependencies and binding carry-forwards remain explicit completion obligations.

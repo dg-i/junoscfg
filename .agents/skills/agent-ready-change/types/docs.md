@@ -70,3 +70,9 @@ containing reviewed documents and QA evidence, review them, tick metrics, and
 run the lane gate. Ignore the type-blind codemap and specs status entries. Merge,
 then run `npx --yes @fission-ai/openspec@1.13.0 archive <slug> --yes --skip-specs`
 and commit the archive-only move.
+
+## Scope
+
+Apply `docs/how-to/review-scope.md` to the reader's agreed task, QA criteria,
+review follow-ups, and backlog dispositions. Missing steps that prevent that
+task are in scope; independent documentation improvements are future work.

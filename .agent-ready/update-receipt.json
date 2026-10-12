@@ -1,110 +1,86 @@
 {
-  "base": "6abd5235b74ce069085395c7c5a084694993fddd",
+  "base": "3fe3ddda3ff591adcb746e449a81beb37b2a7f19",
   "changes": {
-    ".agent-ready/template.toml": {
-      "after": "f1df5503d89876b68bfd41d868e6852cbba654cacbd677ba68d02a3bafd04b9a",
-      "before": "3b6c923a843d0aa9ee4f0e581740d9ae5ee5bfba1758a06af163e5bce567d0c6"
-    },
     ".agents/skills/agent-ready-change/SKILL.md": {
-      "after": "b559d5380232c9650ce460dae53632765265121c54cd3dbf210efd8a789ebed9",
-      "before": "0eec0621da414eaa84187d96ca494f3e578039a7d08974cb7f995b582d459050"
+      "after": "920bddd0c558e6d73cac13e1642e184395aefd500a0d9582151e29320b88cca9",
+      "before": "b559d5380232c9650ce460dae53632765265121c54cd3dbf210efd8a789ebed9"
     },
     ".agents/skills/agent-ready-change/batches.md": {
-      "after": "ef3858a731858fef43752284a78c61c4466419c8af2839f686be8a3a1c4f65b8",
-      "before": "9f063fa735a01668a6a9e5ae74e0e2bf14614c0dd78e6bd7a20aa93ace0c400e"
+      "after": "e6ec3c12b4beaa264496f55e8dfbe8791827139ed14cad771f37a5ab01ac2bef",
+      "before": "ef3858a731858fef43752284a78c61c4466419c8af2839f686be8a3a1c4f65b8"
     },
     ".agents/skills/agent-ready-change/phases/1-intent.md": {
-      "after": "00df4e2f0ddf1f23e060c88296f2c11218c9d4ebf20296c6b1ddb5cf4589a217",
-      "before": "f162de42e7a7b225e94fd06f41c2b4d802dbc00e5847ac21ef33d9946b1311c3"
+      "after": "38e3c694c2032d0ea2f7017791badaf40f6e6dc21b73136e4403b490f68adb1b",
+      "before": "00df4e2f0ddf1f23e060c88296f2c11218c9d4ebf20296c6b1ddb5cf4589a217"
     },
     ".agents/skills/agent-ready-change/phases/2-spec.md": {
-      "after": "d98dd61f4c50717fac47a0aabd0b62f7c10ffbf84ef5001125af66dee2a685a5",
-      "before": "b8f40b2b2653dea9776e897884de1b09e8dacc8a81a7feb25d4aba933eea3590"
+      "after": "0881f321282c97d4a2da99a717289823c89c81fab5328b5203d02ecab84c4404",
+      "before": "d98dd61f4c50717fac47a0aabd0b62f7c10ffbf84ef5001125af66dee2a685a5"
     },
     ".agents/skills/agent-ready-change/phases/4-tests.md": {
-      "after": "fda70eea57e6be8716f70692ae6ef1f21d61c3adf0a6613031e7d1b3ef1ff0d9",
-      "before": "71a0313ba63877b4e4929f48927bf8ec22e29c5c524eed5074c27c005b170923"
-    },
-    ".agents/skills/agent-ready-change/phases/5-implement.md": {
-      "after": "2c3f337d4f33425260462b5d958b4e9a807b618845cff116486633f2b25a5e8e",
-      "before": "6e8a7ff9ec79ed87aa5a816ec314428b3938f6e922cb8bd26d71dfe2ff5e410c"
+      "after": "196b27649902ca80898285693cbed5e850131cd06131193fc362d796b31f7bf7",
+      "before": "fda70eea57e6be8716f70692ae6ef1f21d61c3adf0a6613031e7d1b3ef1ff0d9"
     },
     ".agents/skills/agent-ready-change/phases/6-review.md": {
-      "after": "7c8228e81fa0f2494b71633a30f1cbdc027881e042dfb679b8e4e51734757529",
-      "before": "c0def3cd00aa884df3e2244c2e41ae51b240588e443429c0b37c4b7753f61ec5"
+      "after": "4f710d4723534e2048a0d0156f55d5dc911a69cc55e427e3defd8ec7ffe1d6e1",
+      "before": "7c8228e81fa0f2494b71633a30f1cbdc027881e042dfb679b8e4e51734757529"
     },
     ".agents/skills/agent-ready-change/phases/7-archive.md": {
-      "after": "4daf7e0d717fec86c5acfc5d22b938860afd491e99778a83f1a4046aa732d80a",
-      "before": "a8c527dabcee5bcf1efc703ec45e293ff931d7af15042d3444e29da47c895ce7"
+      "after": "58cb37c21970dfbcfd545e7a0207e40d68508f9f314c5d79b90689bde5c2f102",
+      "before": "4daf7e0d717fec86c5acfc5d22b938860afd491e99778a83f1a4046aa732d80a"
     },
     ".agents/skills/agent-ready-change/types/docs.md": {
-      "after": "364a5cc4b32da745dceb8ade341538bca50f4093878e82f1203f83690a195856",
-      "before": "45ee48e7506c72cefd75f83c9c5e08106b8f983b46b24117ee52c948bed565e7"
+      "after": "b45cd201580a335d2660001aaf6769128e1b63d73845999ade3a548ee48e6470",
+      "before": "364a5cc4b32da745dceb8ade341538bca50f4093878e82f1203f83690a195856"
     },
-    ".agents/skills/agent-ready-garden/SKILL.md": {
-      "after": "be87ce32fba51cf621e07c1f57607db11c2c2f376222eee6381f9eeeabe94725",
-      "before": "a24c2206b37e72aefdd51fbcd47ab2b0e23ce5599706161d89bd10b16764f42f"
-    },
-    ".agents/skills/agent-ready-garden/jobs/1-audit.md": {
-      "after": "595895a8800920ea2b746710416ba7d43f8e6573364de9413d28829d9d4b394b",
-      "before": "b720a46beb3b2ea9e2d42f9c9098113d432c39aba2472f555c2dae20f6d54b9d"
-    },
-    ".agents/skills/agent-ready-onboard/SKILL.md": {
-      "after": "6d33752c254f92edb6710a70b7c2126e60685c0c8a779ff946ecbb53418ab513",
-      "before": "d0c73ecfc95e632688ac1972fd67ded7895dfc131529851b9297f1b3043bd923"
-    },
-    ".agents/skills/agent-ready-onboard/phases/4-gates.md": {
-      "after": "02328db52f0ee910029ac65f49d6a2f5033453b30fbb54da51cfaafa04eb4cf3",
-      "before": "1351057c567865f383b9d1ecb587a15dd95b74a13670343fadd49af41a0519e9"
-    },
-    ".agents/skills/agent-ready-onboard/phases/5-contracts.md": {
-      "after": "17cf19b1030799b2d99b7ee4e82f87ea84046053bafcf3a394f8164f43e37fd8",
-      "before": "275337475506d3e3d2d8d0fde578280c7616216477fc4ff25741eb55475e4428"
+    ".agents/skills/agent-ready-onboard/phases/0-interview.md": {
+      "after": "bf87dd4bd95118605739509dede49e37b82c964b6ec12423e2283010a5eafaf7",
+      "before": "881dea6484b569809545de51a3e6c904227b012a2c8edafafb9d29c19db4e897"
     },
     ".agents/skills/agent-ready-onboard/phases/7-handover.md": {
-      "after": "02ff0a4f90d7c81473bd6bf396f309667bc3d5ce0bc620c8da6e5ce9258b716e",
-      "before": "a0da356c38d9082f797650c9026e2b738b8e06e2529df1972219f37f9380ba93"
+      "after": "29acdd95edbc2bca6bbec701b42fd2eb309454f344d008df6d32d8db84069b8d",
+      "before": "02ff0a4f90d7c81473bd6bf396f309667bc3d5ce0bc620c8da6e5ce9258b716e"
     },
     ".agents/skills/agent-ready-refresh/SKILL.md": {
-      "after": "103f1a730c9b8371c2a65d94ca98f42952eb3b2d4ec6dda883124acb40f86caf",
-      "before": "762e97ad2b134cb738b7626c8bdc6a15ab93fc46c31a78f70166f4ddacdd63b9"
+      "after": "767ed1081f7f952d0fb63001d8a90a65358ce95cbfbf997ab9675ef4476f9377",
+      "before": "103f1a730c9b8371c2a65d94ca98f42952eb3b2d4ec6dda883124acb40f86caf"
     },
     ".copier-answers.yml": {
-      "after": "257337539de074e6ef34d1336c0ae674ffde9f41aba08088b3502c8fc732fcbc",
-      "before": "5aedc8924946abd315cdb01c35fa7ed739c8cb1c2bddda0ead7b80671b5d5d66"
+      "after": "e2914e68b8b645d56962887a4cec4e9223fc44d4e986a9af6de1a39458fa5331",
+      "before": "257337539de074e6ef34d1336c0ae674ffde9f41aba08088b3502c8fc732fcbc"
     },
-    "changelog.d/agent-ready-3064189f740d3ff6cd2d54c537b1fc245f755005-6e833710f7b0df04e8612defaf34ed861d124908.misc.rst": {
-      "after": "dabeb32a11a931572f611918b22565dc8329743702eea54461e7f0e06c8ee38d",
+    "changelog.d/agent-ready-c49a310317633638aa58974570573246a4153101-6e833710f7b0df04e8612defaf34ed861d124908.misc.rst": {
+      "after": "c42694f914f8867420583af31a040180d7b8a32cdae8bf36aa0a9f0e16d237c0",
+      "before": null
+    },
+    "docs/BACKLOG.md": {
+      "after": "f2b06345a91b7ed69aaaea775eb3e84e2d2a3b70fe2d0af4019da360426a1e06",
       "before": null
     },
     "docs/how-to/lifecycle-ledger.md": {
-      "after": "076b02067bdd2523e85ec2afe046dc4ea20978e8bc2fd63ddfbbede234b09345",
+      "after": "10a6ad847a123bd5f6ae9df77225ef07b777ab81df6f74f81b38e96bc2fb0616",
+      "before": "076b02067bdd2523e85ec2afe046dc4ea20978e8bc2fd63ddfbbede234b09345"
+    },
+    "docs/how-to/review-scope.md": {
+      "after": "929f7ea92c5983aa662951d18eb52de3c95d11dc807dbdf08e1270a23c009610",
       "before": null
     },
-    "docs/how-to/verification-evidence.md": {
-      "after": "a10a72126235547bb3c24e83d3655b0f81ab653db49bc86ff751156691a597d5",
-      "before": null
-    },
-    "openspec/schemas/agent-ready/schema.yaml": {
-      "after": "808439dbf03c23852f8ad411d5496d7a02e3c6b8defb6400167b366c1f3f4cda",
-      "before": "ea6af9033fd10fcc02c1a8539ccbd186a7e072d2cd7adc123e5359bd5761c439"
+    "openspec/schemas/agent-ready/templates/evidence-freeze.md": {
+      "after": "0d7c59d799e9837b51f173600f4f6346e9f3bcd40ed7562c7ddcb35852426e74",
+      "before": "23c89316a7491cbcba53b7b384c5d3253175f46c2ec62fd2d629bb51afc25928"
     },
     "openspec/schemas/agent-ready/templates/proposal.md": {
-      "after": "a58127548219e3a5842a26363dae1ca18c8956942a63f61be110bc049fe5417b",
-      "before": "29e4844c74089de0313c6b7f814992c426f584964c3ecaf245553d0ced37de82"
+      "after": "0882d2a9323c16fa6aaf5d69b65344a1fd688479dd35553420ce79409d594635",
+      "before": "a58127548219e3a5842a26363dae1ca18c8956942a63f61be110bc049fe5417b"
     },
-    "pyproject.toml": {
-      "after": "a8d2f2e26feba225534713422682ac74875a1a672934afd1eb19d7e82ba92c2e",
-      "before": "3845bd8d1e4970026b252c253d55fe6e8b1f3f92ffeaaa9c82cca2f8f5945db0"
-    },
-    "uv.lock": {
-      "after": "70c9d04a2985d19a66ae0cd0937913e146ae54e6d8b2a9edd82e1ad904f7c81a",
-      "before": "650ce0bc44e0c3a36c3cd92c24026ab835f201dab23c3467e56ac0a6a2e463f3"
+    "openspec/schemas/agent-ready/templates/review.md": {
+      "after": "fa0e273ea70ad5d7b18476318873d709616bed04efdc93e80b40b47b5cd1f7ba",
+      "before": "059ff3e2c2351d1e8ba274521538cc2a19038df7983a79b532b1627a22e2a7cc"
     }
   },
   "checks": "6e833710f7b0df04e8612defaf34ed861d124908",
   "schema": "template-update/1",
   "source": "/Users/manon-dev/src/agent-ready-python",
-  "template": "3064189f740d3ff6cd2d54c537b1fc245f755005",
-  "template-ref": "v0.10.2"
+  "template": "c49a310317633638aa58974570573246a4153101",
+  "template-ref": "v0.11.0"
 }

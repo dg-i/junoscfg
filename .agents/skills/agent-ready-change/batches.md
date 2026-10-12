@@ -88,3 +88,13 @@ decision threshold.
 
 For policy `strategy-a/1`, follow `docs/how-to/verification-evidence.md` for ready/parked admission and
 capacity; readiness never proves success. Preserve all existing parked work in the activation inventory.
+
+## Backlog admission
+
+Follow `docs/how-to/review-scope.md`. Ordinary backlog findings do not enter the
+active batch automatically or block unrelated completion. Record genuine
+dependencies and binding carry-forward conditions explicitly; deferral does not
+cancel them. Authoritative backlog dispositions resolve independent review
+findings. Follow-up reviews verify accepted corrections and their consequences.
+On resumption, record the batch's remaining scope and last valid evidence;
+continue incomplete work without restarting completed phases.

@@ -84,3 +84,10 @@ deprecation requirement first, and every break is declared here.
 
 The human approves the proposal: the pull request review where the repository
 has them, the commit where it has none.
+
+## Scope and completion
+
+Approve the intended outcome, acceptance criteria, and exclusions before
+implementation; phase 2 freezes them. Apply `docs/how-to/review-scope.md`:
+outcome-blocking defects and introduced regressions are current obligations,
+wherever found; independent defects receive authoritative backlog dispositions.

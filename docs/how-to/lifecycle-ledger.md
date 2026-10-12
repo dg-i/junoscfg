@@ -75,3 +75,16 @@ regressions. Synthetic fixtures prove the mechanism, not workflow improvement.
 The existing comparative protocol's ten-pair directional and twenty-pair policy
 floors still apply. Provenance truth, independence and follow-up completeness need
 independent review. This command never declares measured improvement.
+
+## Scope dispositions
+
+Apply [review scope](review-scope.md) when recording findings and rulings. A ruling's
+`decision` and `scope` record the independent finding's backlog destination and
+why it is separate work, preserving explicit dependencies and binding obligations.
+This resolves its current review obligation without marking the defect repaired.
+Ordinary backlog items need no `carry` event. Binding acceptance conditions do;
+copying them into the backlog never closes or renews them. Material new evidence
+may reopen a closed finding through a linked new finding and ruling; preserve
+original events and identify the earlier ID in the counterexample and decision.
+Use existing duration and post-review churn observations; no extra instrumentation
+is a completion prerequisite.
