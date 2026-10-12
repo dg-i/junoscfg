@@ -1,3 +1,3 @@
 ## Checkpoint
 
-Phase 2 complete; next phase 3 design. PARKED preparation only. Root approved bounded scope; corrected intent/delta a18016d passes strict OpenSpec, fields and caps.
+Phase 3 design complete; next phase 4 acceptance tests. PARKED preparation only; no product implementation. Freeze commit d067e7a is the baseline.
