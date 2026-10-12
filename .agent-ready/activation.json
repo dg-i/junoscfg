@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "63f50f6e133edf0b78d2d4d7e047c22a9cbfaff2",
+  "checkpoint": "f530b00ff64a96d445876846e18e9b51ef923966",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root integration after independent keyword repair and resulting-main-spec PASS, exact bounded Finalizer completion; master ready for archive/version only, all other branches/changes remain parked. Full schema verification still deferred to entire makeover end selected25.2R2 only.",
-  "captured_at": "2026-10-12T03:37:55.465157+00:00",
+  "authority": "Root accepts renewed independent unsupported-command STOP-T ADEQUATE on current v0.23.0 runtime; only #15 admitted for scoped implementation and ordinary checkpoint. #11 preparation/T4 remain parked; all real full schema verification at entire makeover end only25.2R2.",
+  "captured_at": "2026-10-12T03:51:05.887687+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -58,10 +58,11 @@
     "codex/structured-conversion-diagnostics": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/keyword-leaves-keep-keyword": "parked",
-    "codex/unsupported-set-commands-reported": "parked",
-    "codex/compare-device-outputs-tool": "parked"
+    "codex/unsupported-set-commands-reported": "ready",
+    "codex/compare-device-outputs-tool": "parked",
+    "codex/keyed-single-entry-lists": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -118,7 +119,8 @@
     "structured-conversion-diagnostics": "parked",
     "xml-direct-to-ir": "parked",
     "keyword-leaves-keep-keyword": "parked",
-    "unsupported-set-commands-reported": "parked",
-    "compare-device-outputs-tool": "parked"
+    "unsupported-set-commands-reported": "ready",
+    "compare-device-outputs-tool": "parked",
+    "keyed-single-entry-lists": "parked"
   }
 }
