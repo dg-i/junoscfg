@@ -2,6 +2,11 @@
 
 Convert and validate Junos configurations between JSON, structured, YAML, and display set formats.
 
+**XML input and output: BUGGY; XML work is deferred.** XML input remains
+available but is not qualified by the current makeover. XML output is not
+implemented and raises `NotImplementedError`. See the
+[XML work TODO](docs/roadmaps/xml-work-todo.md).
+
 Originally inspired by the [Ruby Junoser gem](https://github.com/codeout/junoser), now a comprehensive Junos configuration toolkit.
 
 ## Installation
