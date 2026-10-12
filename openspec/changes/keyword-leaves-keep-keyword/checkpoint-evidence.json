@@ -1,0 +1,72 @@
+{
+  "checked_head": "a32fd100009e48dbce96f67ecab2a915c6485449",
+  "base": "ad2d81edec41d208fba0f58f71bda8987654e9bf",
+  "commands": {
+    "readiness": {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--group",
+        "dev",
+        "agent-ready",
+        "readiness",
+        "--base",
+        "ad2d81edec41d208fba0f58f71bda8987654e9bf"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 0.30765950000000003,
+      "output_sha256": "5fe43dd9de35ff6e4f1ef7188e4ccec98060eb01b4da7696e020f16417155c72",
+      "tracked_unchanged": true
+    },
+    "fast": {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "--group",
+        "dev",
+        "--with",
+        "griffe",
+        "--with",
+        "tach",
+        "--with",
+        "towncrier",
+        "--with",
+        "vulture",
+        "agent-ready",
+        "check",
+        "--set",
+        "fast",
+        "--base",
+        "ad2d81edec41d208fba0f58f71bda8987654e9bf"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 124.328056667,
+      "output_sha256": "1689425f06039f6869d568b920f399bda102c2a4d53228aa5da7c20c911e5974",
+      "tracked_unchanged": true
+    },
+    "ordinary": {
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/",
+        "-q",
+        "--cov",
+        "--cov-report=term:skip-covered"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 192.24149258399999,
+      "output_sha256": "76e5320acb412816f338585fd26f09348cc5201888b89c0232c20e77b21fa548",
+      "tracked_unchanged": true
+    }
+  },
+  "ordinary": "9733 passed,13 skipped,20 existing strict xfails",
+  "coverage_percent": 92.97,
+  "unchanged_floor_percent": 91.47,
+  "source_and_assertion_changes_after_checkpoint": "none; subsequent commit contains phase5 handoff records only",
+  "full_schema_execution": "none; deferred to final makeover25.2 with unchanged doublepass/stability/sentinel",
+  "generation": "one actual public product generation, not a full schema verification checkpoint"
+}

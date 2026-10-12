@@ -36,3 +36,11 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Generated slot changes | 754 pkf and108 fd removals only |
 | Known differences | 712 to632; overload24/radius56 removed |
 | Public product generation | Exit0,212.056s; one physical25.2 dump |
+| Checked code head | a32fd100009e48dbce96f67ecab2a915c6485449 |
+| Current base | ad2d81edec41d208fba0f58f71bda8987654e9bf |
+| Public readiness | Exit0, clean immutable candidate |
+| Supported fast | Exit0,124.328s; tracked/head/status unchanged |
+| Exact ordinary coverage | Exit0;9733 passed,13 skipped,20 existing strict xfails;92.97% |
+| Coverage floor | 91.47%, unchanged |
+| Ordinary duration | Pytest183.23s; wrapper192.241s |
+| Real full schema | Deferred final makeover25.2, no current execution |
