@@ -1,0 +1,155 @@
+{
+  "candidate_head": "1875d65407f5cc8bebcaa6d6952c8375a87988bf",
+  "base": "ad2d81edec41d208fba0f58f71bda8987654e9bf",
+  "cwd": "/Users/manon-dev/src/junoscfg-wt/keyword-leaves-keep-keyword",
+  "tracked_unchanged": true,
+  "runs": {
+    "units": {
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "-q",
+        "-o",
+        "cache_dir=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/pytest-cache",
+        "--junitxml=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/units.xml",
+        "tests/unit/validate/test_xsd_fixes.py::TestFlatPositionalHints",
+        "tests/unit/validate/test_xsd_fixes.py::TestTriggerFlattening",
+        "tests/unit/convert/test_convert_roundtrip.py::TestAFlatHintPreservesRicherContent",
+        "tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven",
+        "tests/unit/display/test_universal_statements.py"
+      ],
+      "env": {
+        "UV_OFFLINE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "562",
+        "time": "0.642",
+        "timestamp": "2026-10-12T05:22:43.117925+02:00",
+        "hostname": "frida.local"
+      },
+      "junit_sha256": "d2f69aae0befeaeccbc431cc4ba6277f42d2bdf2ee6dce766ca8716fcf9e27df",
+      "output_sha256": "d085bf996508028c85d648da21f4a389db8097c1479bf8b2f929dd888a9a2cb6"
+    },
+    "matrix": {
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "-q",
+        "-o",
+        "cache_dir=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/pytest-cache",
+        "--junitxml=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/matrix.xml",
+        "tests/contract/test_format_matrix.py",
+        "-k",
+        "keyworded or optical-trigger or sonet-trigger or positional-trace or positional-maximum or event-trigger or universal-statement"
+      ],
+      "env": {
+        "UV_OFFLINE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "565",
+        "time": "1.092",
+        "timestamp": "2026-10-12T05:23:01.563989+02:00",
+        "hostname": "frida.local"
+      },
+      "junit_sha256": "7278539836e5e7ae8bef50107a33d20ef03eaa83544ad9618bed4b46175f3743",
+      "output_sha256": "2376884266622f46859069e57de21b17884c8ebac43d85455fef4e138cfadf2a"
+    },
+    "device": {
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "-q",
+        "-rs",
+        "-o",
+        "cache_dir=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/pytest-cache",
+        "--junitxml=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/device.xml",
+        "tests/corpus/test_device_renderings.py",
+        "tests/corpus/test_schema_data.py"
+      ],
+      "env": {
+        "UV_OFFLINE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "12",
+        "tests": "64",
+        "time": "1.405",
+        "timestamp": "2026-10-12T05:23:17.882659+02:00",
+        "hostname": "frida.local"
+      },
+      "junit_sha256": "a3dcc47b32389e58b086bb5d6b3490bf833d3f315688b8218fc5077ec0ff7ed7",
+      "output_sha256": "e134557af2d9d73a99e8295bb052f089e6c373e568f60e1ae170136970a28e87"
+    },
+    "probes": {
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "python",
+        "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/keyword-leaves-keep-keyword/fresh-review/probe.py"
+      ],
+      "exit_code": 0,
+      "script_sha256": "b2943521a2e10a48f5d791cf3786a0ced1f98ba00d949066321e37bc692becd3",
+      "output_sha256": "85741006dcb85854e1177c88b32b4988cdff7eb3e70578799e4e9c9c375bea6a",
+      "results_sha256": "20b83cf2b7ffeee646d84eee553d9dc4546d5461cac95474e0eb1bacb8605f69"
+    }
+  },
+  "preserved_initial_attempts": [
+    {
+      "action": "units initial uv initialization",
+      "exit": 2,
+      "reason": "sandbox cache initialization blocked; no tests executed; authorized offline retry passed"
+    },
+    {
+      "action": "audit initial",
+      "exit": 1,
+      "reason": "reviewer selected command array index5 (generate) instead of physical dump index6; corrected binding passed"
+    },
+    {
+      "action": "probes initial",
+      "exit": 1,
+      "reason": "reviewer fixture assumed a value-required synthetic leaf-list accepts [None]; outside declared valid input promise; preserved initial script/output; supported mixed cases retained"
+    },
+    {
+      "action": "probes second",
+      "exit": 1,
+      "reason": "reviewer capture filter included synthetic-probes rather than only named junoscfg-oracle captures; corrected to two named captures; preserved second script/output"
+    }
+  ],
+  "schema_execution": "No schema, regeneration, expensive verification or generation executed; native full remains deferred per OWNER-SCHEMA-SCHEDULE-2026-10-12",
+  "comparison_recount_sha256": "e9e587107c23eccc21124f6069eb13d9a6a1b4967674554721c2d44df9d2ffd5"
+}

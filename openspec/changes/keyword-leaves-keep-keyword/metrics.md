@@ -44,3 +44,11 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Coverage floor | 91.47%, unchanged |
 | Ordinary duration | Pytest183.23s; wrapper192.241s |
 | Real full schema | Deferred final makeover25.2, no current execution |
+
+| Context expansion: src/junoscfg/display/CONTRACT.md | Shared schema/public helper and lazy-load invariants used by all conversion doors |
+| Context expansion: tests/support/artifacts.py | Existing custom-tree provider for independent richer-content trust-boundary probes |
+| Context expansion: tests/support/devices.py | Direct captured oracle and independent corpus-difference provider |
+| Context expansion: tests/corpus/test_device_renderings.py | Verify recorded differences against actual captured output without editing record |
+| Context expansion: tests/support/schema_data.py | Explain actual empty discovery and preserve schema-tier scheduling strength |
+| Context expansion: tests/conftest.py | Verify unchanged opt-in marks and empty schema fixture skip behavior |
+| Context expansion: tools/device_differences.py | Confirm classifier retirement is limited to solved timeout classes |

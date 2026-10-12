@@ -32,6 +32,8 @@ verification:
     - src/junoscfg/validate/data/junos-structure-tree.json.gz
     - src/junoscfg/validate/data/junos-set.lark.gz
     - src/junoscfg/validate/data/junos-schema-meta.json.gz
+    - openspec/specs/conversion/writers/spec.md
+    - openspec/specs/schema-pipeline/conversion-hints/spec.md
   dependencies: []
   changelog: changelog.d/keyword-leaves-keep-keyword.bugfix
   generated-records:
