@@ -33,3 +33,14 @@ requires news in beta for the added non-record test file; the archived
 pattern-sweep-no-warning maintenance precedent uses the same required-fragment
 convention. No source, test, fixture or behavior changes; fresh privacy review
 still required. No readiness, rebase, ordinary/fast/schema command was run.
+
+Final runtime-base renewal: preserved 66789bb full verified bundle and nonbranch
+ref; rebased onto Root-admitted 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b.
+All nine owned paths remained exact before this records-only update. Incoming
+paths are the three reviewed hidden-list/metadata safety releases, their
+archive/spec/test/news records, versions/lock and operator activation; no T3
+source/test/news mutation. Historical TC verdict remains qualified to 443d1c3
+and its old base; current-base focused renewal and ordinary/fast pending.
+Six optional private capture files verified at 112002 bytes; three physical
+schema files are directory-symlinked only for ordinary fixture availability.
+No schema execution is authorized here. Fresh privacy review remains required.

@@ -5,7 +5,7 @@ zone: anonymize
 assurance: economy
 skip_specs: true
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tests/corpus/test_device_rule_values.py
     - changelog.d/+anonymization-rule-coverage.bugfix.md
