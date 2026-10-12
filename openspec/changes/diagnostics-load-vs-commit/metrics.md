@@ -31,3 +31,6 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Implementation owning tests | 177 passed, one existing strict xfail |
 | Implementation device checks | 4,456 passed, five existing strict xfails |
 | Device/anonymizer before-after | 64/96 plain; 768/1,152 anonymizer; diagnostics only, zero output/exception-class differences |
+
+| Ordinary verification | Actual 0118eaf/current base0e65a5f: exit0; 9,143 passed,37 skipped,20 existing strict xfails; branch-aware coverage92.93% versus floor91.47%; inputs/head/status unchanged |
+| Review correction | One LOW stale test comment; accepted qualified wording, executable AST/assertions identical |

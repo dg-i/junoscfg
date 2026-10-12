@@ -115,7 +115,7 @@ class TestDiagnosticRouting:
 #: A radius server without its `secret`, which the schema marks mandatory: the
 #: vMX (23.2R2-S7.5) loaded it so, the device's own line
 #: (`tests/data/device/synthetic/vmx-23.2R2-S7.5/synthetic-probes.set.gz`), and
-#: Junos checks it at commit.
+#: Junos may check it at commit.
 RADIUS_WITHOUT_SECRET = {
     Format.SET: "set access radius-server 192.168.50.10\n",
     Format.STRUCTURED: "access {\n    radius-server {\n        192.168.50.10;\n    }\n}\n",
