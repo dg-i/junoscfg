@@ -89,7 +89,7 @@ an example-based test exists:
 | 3 | Every format reads to one IR, and every (reader, writer) round trip keeps it | (a) | `test_device_renderings.py::TestEveryDoorReadsTheDevicesUniversalStatements` (universal statements only); `tests/contract/test_format_matrix.py` (shapes) | T2: the whole IR across the four renderings of a capture, and round trips over the captures |
 | 4 | Schema and field validation are as clean as `UNPLACED_IN_THE_EXAMPLE` records, plus the JSON shapes the strict xfails name | (b) | `tests/contract/test_round_trip_validates.py::TestTheExampleRendersValid`, `tests/unit/convert/test_field_validator.py::TestTheExampleConfigurationValidates` | nothing |
 | 5 | Anonymization law: every rule combination leaves no eligible original, revert is exact, references resolve | (a) | `tests/corpus/test_device_anonymization.py::TestEveryCaptureAnonymizes` (all rules at once; addresses only) | T3: each rule and combination, and every eligible value, not only addresses |
-| 6 | A before/after comparison of every output from base and head, with every changed line explained | (a) | none: a per-change script | T4: commit the script as a shared tool. Until then, follow the steps below |
+| 6 | A before/after comparison of every output from base and head, with every changed line explained | (a) | tools/compare_device_outputs.py; tests/tooling/test_compare_device_outputs.py checks the tool with synthetic inputs | Run the shared tool as below |
 
 The follow-ups T1–T4 are test-only or tooling changes, listed in the ledger.
 
@@ -122,9 +122,9 @@ The corpus is every rendering listed in `tests/data/device/manifest.json`:
 `jvd/<device>/*.{conf,set,json,xml}.gz`. Read them gunzipped, in memory, and
 never write them back.
 
-1. Put the script in `private_test_data/makeover-work/<slug>/compare.py`.
-   Until follow-up T4 commits a shared tool, start from
-   `private_test_data/makeover-work/compare-template.py`.
+1. Use `tools/compare_device_outputs.py` from the change tree for both records
+   and their diff. Keep the resulting JSON files in
+   `private_test_data/makeover-work/<slug>/`.
 2. Make a base worktree and run the script there:
 
    ```sh
@@ -141,13 +141,14 @@ never write them back.
    When the change touches anonymization, repeat this with each anonymize rule
    on its own and with all rules on.
 4. Run the same script on the head, then diff the two JSON results by key. The
-   template does both:
+   shared tool does both:
 
    ```sh
    w=$PWD/private_test_data/makeover-work/$slug   # from the change worktree
-   (cd "$w/base-tree" && PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" record "$w/base.json")
-   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" record "$w/head.json"
-   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$w/compare.py" diff "$w/base.json" "$w/head.json"
+   tool=$PWD/tools/compare_device_outputs.py
+   (cd "$w/base-tree" && PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$tool" record "$w/base.json")
+   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$tool" record "$w/head.json"
+   PYTHONDONTWRITEBYTECODE=1 uv run --locked python "$tool" diff "$w/base.json" "$w/head.json"
    ```
 
    For a change that touches anonymization, add `--anonymize` after the
