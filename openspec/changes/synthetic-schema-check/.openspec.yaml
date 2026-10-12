@@ -6,7 +6,7 @@ domains: [schema-pipeline]
 assurance: economy
 skip_specs: true
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tests/unit/validate/test_artifact_builder.py
     - docs/architecture/developer-guide.md

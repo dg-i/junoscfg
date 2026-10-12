@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "3ae36011215a4f49c310af2f46da9d8c3436e57e",
+  "checkpoint": "7b61b23e60096c752d1923d845bbdcd632126bd9",
   "actor": "Codex orchestrator for owner-requested schema qualification optimization",
-  "authority": "Owner-requested trigger reduction passed independent review and full verification, archived and merged locally; restore master admission and park completed change.",
-  "captured_at": "2026-10-12T16:26:31.398383+00:00",
+  "authority": "Owner requested synthetic generator tests after the completed trigger reduction; fresh independent source review approved. Admit isolated maintenance change for full verification.",
+  "captured_at": "2026-10-12T16:33:54.602009+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
@@ -72,7 +72,8 @@
     "codex/reject-deprecated-tagged-statements": "parked",
     "codex/schema-parity-sibling-order": "parked",
     "codex/schema-qualification-speed": "parked",
-    "codex/reduce-schema-qualification-triggers": "parked"
+    "codex/reduce-schema-qualification-triggers": "parked",
+    "codex/synthetic-schema-check": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -141,6 +142,7 @@
     "reject-deprecated-tagged-statements": "parked",
     "schema-parity-sibling-order": "parked",
     "streamline-schema-qualification": "parked",
-    "reduce-schema-qualification-triggers": "parked"
+    "reduce-schema-qualification-triggers": "parked",
+    "synthetic-schema-check": "ready"
   }
 }

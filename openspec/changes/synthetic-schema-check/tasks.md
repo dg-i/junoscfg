@@ -6,7 +6,7 @@
 - [x] 2.2 Run focused tests, record measured duration, commit with normal hooks.
 
 ## 3. Review and evidence
-- [ ] 3.1 Fresh lightweight source review; resolve findings.
+- [x] 3.1 Fresh lightweight source review; resolve findings.
 - [ ] 3.2 Root coordinates admission and one canonical full checkpoint.
 - [ ] 3.3 Finalize and archive after owner-authorized merge.
 
