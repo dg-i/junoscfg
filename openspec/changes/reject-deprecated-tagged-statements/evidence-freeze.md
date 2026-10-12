@@ -1,6 +1,6 @@
 ## Resolved instructions
 
-instruction-integrity.md C1-C3 and root admission govern this preparation-only snapshot. Intent is approved; precise SC1 correction, existing assertions and contract require independent challenge/root ruling before implementation. No material intent question is open; phase-2 implementation authorization remains conditional on that ruling.
+instruction-integrity.md C1-C3 and root admission govern this preparation-only snapshot. Intent and precise SC1 correction are approved after independent Test/Challenge/root ruling; test-challenge.md is the verbatim report and sc1-ruling.json the exact accepted scope. Phase-2 correction is closed. Implementation waits for root-preserved rebase and phase-5 admission after the preceding release.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ Draft full deltas: conversion/structured-input deprecated writer requirement; va
 
 - Immutable base 5187ac92734dce8c9ebd4e8404a98f76871fd399; preflight 79c475d, intent 2dbc2cb.
 - Held synthetic device examples/junoscfg-oracle.conf lines 806/814 and .set lines 269/272-273; strict-xfail exact route/autonomous-system fixtures in frozen tests.
-- Four passing legacy fixtures freeze existing accepted schema-free behavior, even though their metadata target contradicts supported conversion. SC1 lists semantic preservation explicitly.
+- Four passing legacy fixtures freeze valid accepted schema-free compatibility behavior. Independent execution found equal IR for those legacy and supported outputs; the conservative admitted boundary intentionally refuses these safe shapes too. SC1 lists semantic preservation and the accepted quoted-foo canonical spelling migration explicitly.
 - Source _Lexer._end_statement joins pending tokens with one space; bracket expansion appends one item with a space; _strip_prefixes removes normalized leading tags. A hypothetical quoted-only terminal `inactive: "a b";` is also conservatively refused, although it is one lexical token. A quoted single token may itself contain spaces, but valid terminal statements have an unquoted statement keyword before a value; the bounded refusal treats whitespace in stripped terminal text conservatively. No extra tokenizer is needed.
 - Exact direct caller StructuredValidator._validate catches exceptions and returns invalid; JunosValidator.validate_structured delegates to it. Existing public validate_structured uses the schema-aware reader.
 - Intent-only OpenSpec validate reported missing deltas; phase 2 supplies them. fields reported a bare None in new capabilities; corrected with the explicit reason. These are preparation diagnostics, not passing evidence.
@@ -32,17 +32,19 @@ No throughput promise: one bounded examination of already lexed terminal text, n
 
 ## Outstanding decisions
 
-SC1 precise compatibility/test/contract correction is pending independent Test/Challenge and root ruling. This freeze authorizes preparation/new regression only, not source implementation or phase-2 closure for implementation.
+No unresolved SC1 compatibility decision: root accepts the independently assessed four-fixture correction and precise ASCII-space guard. Scheduling gate remains: no runtime, existing-test, contract or main-spec edits until root-preserved rebase after the preceding repair release and explicit phase-5 admission.
 
 ## Execution and checkpoint
 
 - Assurance preference: economy.
 - Risk floor: high, declared consumer break and conversion/validation domains.
 - Roles required: Builder, independent Test/Challenge, fresh isolated Reviewer, bounded Finalizer.
-- Resume point: phase 4 new regression then STOP-T; phase 2 closes for implementation only after SC1 ruling.
+- Resume point: records-only handoff after accepted STOP-T; next incomplete phase is 5 after root-preserved rebase and admission.
 
 ## Delta log
 
 - Freeze established from immutable base and baseline copies; source, contracts and existing assertions remain unchanged.
 
 - Phase-4 preparation: new file executed on unchanged runtime, 11 meaningful failures and 10 preservation controls pass; no criterion changed. Lexical quote-only edge documented in preparation-red.md. STOP-T, SC1 pending.
+
+- 2026-10-12 accepted Test/Challenge/root delta: verbatim report and exact ruling incorporated. The four old assertions are valid prior compatibility, not independently demonstrated metadata loss; quoted foo canonical unquoting preserves value/IR. Precision added to guard wording (ASCII space), source message/docstring truthfulness and standing deprecation timeline. These qualifications invalidate misleading Builder descriptions of four defective assertions; no product or baseline bytes changed. Reruns required after rebase: focused implementation evidence and risk-required fresh review, then admitted canonical verification. No preparation tests repeated for this records-only delta.

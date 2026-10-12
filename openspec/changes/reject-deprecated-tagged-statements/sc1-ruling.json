@@ -1,0 +1,15 @@
+{
+  "utc": "2026-10-12T10:52:01.552223+00:00",
+  "decision": "ACCEPT SC1 and independent test adequacy",
+  "head": "55bbfe4b7a0f61f01ce599f7feeef613bbb7a27f",
+  "base": "5187ac92734dce8c9ebd4e8404a98f76871fd399",
+  "tracked_verified": 1298,
+  "evidence_verified": 28,
+  "report_sha256": "5f2c855f8535ba4b01935f4b9e720a4a5f6becc604fd150439e7b7bbfc9591c9",
+  "correction": "Bounded declared consumer compatibility migration: deprecated schema-free to_set refuses emitted operational tags on terminal text containing ASCII space; block tags, singleword terminal flags, replace-only, untagged, statements and modern public conversion preserved.",
+  "four_original_tests": "Same full fixtures preserved, correct parent metadata targets and all positive content covered through supported converter plus deprecated refusal; foo originalquotes moderncanonicalunquoting explicitly accepted with value/IR equivalence. Existing compatibility assertions valid underoldpromise, now retired via admitted break, not calledinvalid.",
+  "device_semantics": "Only independently executed heldroute metadata loss; do notclaimfourotherlegacyfixtures loseIR, invalidJunoscommandsor loadeddeviceeffects.",
+  "strict_xfails": "Keep strict; refusal is saferfailedfeature, notcompleteddevicecorrectness.",
+  "pending": "Rebase after preceding scalar safetyrelease before phase5/ordinary; source/test/contract/main edits only scoped approved correction, fresh Reviewer required.",
+  "qualification": "Initial read-only root verifier assumed evidence-manifest values were flat SHA strings; structured sha256+bytes rows verified on corrected invocation before any mutation/admission."
+}

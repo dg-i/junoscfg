@@ -7,7 +7,7 @@ WHEN a caller uses `SetConverter.to_set()` THEN it SHALL emit a
 to_format=Format.SET)` and removal in the next minor release. It keeps its
 schema-free route and token lexer, so one-line text yields its lines, but SHALL
 refuse terminal statements tagged `inactive`, `protect`, or `delete` whose
-stripped lexer text contains a space (the conservative multiword boundary). A `ValueError` names the
+stripped lexer text contains ASCII space (the conservative toolkit boundary). A `ValueError` names the
 schema-aware replacement and SHALL contain no source path, key or value.
 The lexer already joins terminal tokens with single spaces and retains quotes;
 this boundary SHALL use that existing normalized text, without resolving the

@@ -82,3 +82,7 @@ zone conversion · layer pipeline · contract none
 - `statements_to_dict` function: `uv run --locked --group dev agent-ready codemap show junoscfg.convert.input.set_input.statements_to_dict`
 
 <!-- cut at 1,500 tokens; 58 modules below the cut -->
+
+## Accepted SC1 execution supplement
+
+The owning guard remains SetConverter.to_set in the shared display kernel. It inspects already lexed stripped terminal text for ASCII space and emitted operational tags; it does not inspect block opener levels or resolve schema endpoints. The direct deprecated validation caller retains its existing exception boundary. Source docstring/warning alignment is part of the same bounded correction. Independent report and root ruling close SC1; this map has no new responsibility, dependency or proposed symbol. Source work waits for the root-preserved rebase.
