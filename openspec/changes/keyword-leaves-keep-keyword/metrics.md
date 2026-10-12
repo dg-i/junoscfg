@@ -29,3 +29,10 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Base flat-positional keyworded slots | 754 |
 | Base flat-dict trigger slots | 110;2 intended |
 | Required independent roles | Test/Challenge and fresh Reviewer pending |
+| Context expansion: tools/device_differences.py | Retire only device classes independently proven fixed; regenerate record from captures |
+| Post-generation acceptance | 543 passed,4680 deselected |
+| Device and compatibility controls | 190 passed,1 existing strict xfail |
+| Device/anonymizer blast radius | 384 of1152 outputs differ; diagnostics unchanged;0 exceptions |
+| Generated slot changes | 754 pkf and108 fd removals only |
+| Known differences | 712 to632; overload24/radius56 removed |
+| Public product generation | Exit0,212.056s; one physical25.2 dump |

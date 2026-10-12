@@ -13,3 +13,31 @@ declared-break:
   cli:
     why: Set and structured conversion output preserves previously omitted keywords and nested trigger content.
     migration: Reconvert original configurations and update downstream expectations for corrected output.
+
+verification:
+  state: ready
+  planned-paths:
+    - .agent-ready/activation.json
+    - src/junoscfg/validate/xsd_fixes.py
+    - src/junoscfg/convert/output/dict_walker.py
+    - tests/support/shapes.py
+    - tests/unit/validate/test_xsd_fixes.py
+    - tests/unit/convert/test_convert_roundtrip.py
+    - docs/architecture/schema-internals.md
+    - tools/device_differences.py
+    - tests/data/device/known-differences.json
+    - changelog.d/keyword-leaves-keep-keyword.bugfix
+    - src/junoscfg/validate/data/junos-json-schema.json.gz
+    - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+    - src/junoscfg/validate/data/junos-structure-tree.json.gz
+    - src/junoscfg/validate/data/junos-set.lark.gz
+    - src/junoscfg/validate/data/junos-schema-meta.json.gz
+  dependencies: []
+  changelog: changelog.d/keyword-leaves-keep-keyword.bugfix
+  generated-records:
+    - src/junoscfg/validate/data/junos-json-schema.json.gz
+    - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+    - src/junoscfg/validate/data/junos-structure-tree.json.gz
+    - src/junoscfg/validate/data/junos-set.lark.gz
+    - src/junoscfg/validate/data/junos-schema-meta.json.gz
+    - tests/data/device/known-differences.json

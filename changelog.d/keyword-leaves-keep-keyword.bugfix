@@ -1,0 +1,1 @@
+Preserve keyworded timeout, limit, path and filename leaves in Set and structured output, and retain nested content beneath unrelated trigger containers. Reconvert original configurations if previous output omitted those keywords or trigger contents.

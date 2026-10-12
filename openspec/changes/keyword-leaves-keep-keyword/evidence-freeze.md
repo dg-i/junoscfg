@@ -39,3 +39,5 @@ None affecting this repair. DEV-V6 is carried evidence-blocked with supported be
 - Freeze established after intent be817d5; material challenges return through this freeze before affected work continues.
 
 - Operator-only delta: root accepted independent ADEQUATE at actual58c967b/baseb10ba771, admitted only this change and rebased onto842a1153ce303ece93e94cb532e26b407bba3a61, producing4434b0e6d1a01e203e9bcc7616ed06832c0ce5de. Only .agent-ready/activation.json changed; source/artifacts/tests/locks/tools/contracts/frozen records remain byte-identical. Actual independent red evidence applies by explicit identity, never relabeled as a rerun. No criterion invalidated; supported focused/fast checks follow source repair. Public shipped25.2 product generation and ordinary checkpoint are authorized; full schemas remain deferred.
+
+- Phase5 scope refinement: schema-internals documents actual flag semantics; XSD fix registry count remains41 (no fix added/removed). tools/device_differences.py may retire only overload/radius classifiers after exact regenerated capture evidence proves zero remaining lines; no class broadened. No acceptance criterion changes.

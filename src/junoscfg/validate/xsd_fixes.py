@@ -663,14 +663,17 @@ def _fix_ephemeral_instance(root: SchemaNode) -> bool:
 
 
 def _fix_flat_dict_elements(root: SchemaNode) -> bool:
-    """Set flat-dict flag on container dicts flattened to single set line.
+    """Flatten only the event-options policy's after/count trigger.
 
-    e.g., trigger {"after": [null], "count": 1} → "trigger after 1"
+    Other trigger containers own nested configuration, which cannot be
+    represented by this hint. Groups hold a copy of the same configuration.
     """
     found = False
-    for node in find_all(root, "trigger"):
-        node.flags.add("flat-dict")
-        found = True
+    for prefix in ((), ("groups", "group")):
+        node = navigate(root, *prefix, "event-options", "policy", "within", "trigger")
+        if node is not None:
+            node.flags.add("flat-dict")
+            found = True
     return found
 
 
@@ -706,8 +709,9 @@ def _fix_positional_keys(root: SchemaNode) -> bool:
             found = True
     for name in flat:
         for node in find_all(root, name):
-            node.flags.add("positional-key-flat")
-            found = True
+            if "nokeyword" in node.flags and "freeform-nk" not in node.flags:
+                node.flags.add("positional-key-flat")
+                found = True
     return found
 
 

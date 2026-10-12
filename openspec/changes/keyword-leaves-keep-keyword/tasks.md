@@ -6,11 +6,13 @@
 
 ## 2. Change
 
-- [ ] 2.1 Repair contextual XSD hints and lossless flat emission after STOP-T approval.
-- [ ] 2.2 Regenerate shipped products via public schema generate; measure exact changed slots and outputs, update owned known differences/count docs/changelog.
-- [ ] 2.3 Run focused/fast and admitted ordinary checkpoint; real full schemas remain deferred to final makeover25.2.
+- [x] 2.1 Repair contextual XSD hints and lossless flat emission after STOP-T approval.
+- [x] 2.2 Regenerate shipped products via public schema generate; measure exact changed slots and outputs, update owned known differences/count docs/changelog.
+- [x] 2.3 Run meaningful focused acceptance, device/anonymizer comparison and exact slot/product checks; preserve deferred full schema obligations.
 
 ## 3. Review and evidence
+
+- [ ] 3.0 Pass public readiness on clean committed products, supported fast and admitted exact ordinary coverage checkpoint; real full schemas remain deferred to final makeover25.2.
 
 - [ ] 3.1 Complete the risk-required fresh isolated review.
 - [ ] 3.2 Capture metrics.md and metrics.json for immutable base/code head.

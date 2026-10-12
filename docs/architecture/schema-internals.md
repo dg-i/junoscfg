@@ -218,8 +218,8 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `t` | `"child"` | Transparent container | Group H fix |
 | `tk` | `true` | Transparent list key | Group H fix |
 | `pk` | `true` | Positional key (nesting) | Group H fix |
-| `pkf` | `true` | Positional key (flat) | Group H fix |
-| `fd` | `true` | Flat dict element | Group H fix |
+| `pkf` | `true` | Flat positional leaf; requires `nk` without `frnk` | Group H fix |
+| `fd` | `true` | Flat dict: event-options policy within trigger, or universal apply-macro | Group H fix |
 | `frnk` | `true` | Freeform NK key | Group H fix |
 | `u` | `true` | Valid at every level (the `apply-*` statements), declared on the root only; `junoscfg.display.schema_child` resolves it below the root, and a tree with no `u` node (built before 0.8.0) runs on the kernel's floor `UNIVERSAL_STATEMENTS` | Group D fix |
 | `e` | `int` | Enum list index (into `_enums` table) | artifact_builder |
@@ -292,7 +292,11 @@ after parsing. Fixes are organized into groups:
 Groups A-G fix genuine XSD deficiencies. Group H encodes conversion-hint flags
 that tell the runtime converters how to handle specific elements. All fixes persist
 across XSD regeneration because they are applied in Python code, not stored in the
-artifacts.
+artifacts. Flat positional hints respect each node's `nokeyword` declaration;
+a leaf named `timeout`, `limit`, `path` or `filename` keeps its keyword when
+the schema declares one. Trigger flattening is scoped to `event-options policy
+within trigger`, including its group copy. The shared writer uses normal traversal
+when a flat hint meets nested mappings or lists with values, preserving their content.
 
 ### Example: Ephemeral Instance Fix (Group D/G)
 

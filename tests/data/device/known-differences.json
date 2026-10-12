@@ -20,14 +20,6 @@
    "definition": "the device's curly prints a group with `apply-flags omit` as `/* OMITTED */`, so the curly rendering lacks that group's content; XML, JSON and set carry it",
    "kind": "device-quirk"
   },
-  "overload-timeout-dropped": {
-   "definition": "`isis overload timeout N` is written `overload N`, which the device rejects",
-   "kind": "defect"
-  },
-  "radius-timeout-dropped": {
-   "definition": "`radius-server <address> timeout N` is written `radius-server <address> N`, which the device accepts and loads without the timeout",
-   "kind": "defect"
-  },
   "transport-class-dict": {
    "definition": "`routing-options transport-class name N ...` is written with a Python dict as the name, and every entry after the first is lost; a JSON number stays a number inside it",
    "kind": "defect"
@@ -48,9 +40,6 @@
  "differences": {
   "jvd/vmx-23.2R2-S7.5/bng1_mx304.conf": {
    "extra": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 10": "radius-timeout-dropped",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet6 demux-source \"$junos-subscriber-ipv6-address\"": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base routing-instances \"$junos-routing-instance\" routing-options access route \"$junos-framed-route-ip-address-prefix\" metric \"$junos-framed-route-cost\"": "junos-variable-quoted",
@@ -59,9 +48,6 @@
     "set dynamic-profiles prof_autosense_ipdemux routing-instances \"$junos-routing-instance\" routing-options rib inet6.0 access-internal route \"$junos-subscriber-ipv6-address\" qualified-next-hop \"$junos-interface-name\"": "junos-variable-quoted"
    },
    "missing": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet6 demux-source $junos-subscriber-ipv6-address": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base routing-instances \"$junos-routing-instance\" routing-options access route $junos-framed-route-ip-address-prefix metric \"$junos-framed-route-cost\"": "junos-variable-quoted",
@@ -72,9 +58,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/bng1_mx304.json": {
    "extra": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 10": "radius-timeout-dropped",
     "set dynamic-profiles auto-stacked-pwht predefined-variable-defaults other-variables routing-instances PPPOE_SUBS_1": "xml-element-name-leak",
     "set dynamic-profiles auto-stacked-pwht_dhcp predefined-variable-defaults other-variables routing-instances dhcp-subs": "xml-element-name-leak",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
@@ -88,9 +71,6 @@
     "set dynamic-profiles prof_autosense_ipdemux routing-instances \"$junos-routing-instance\" routing-options rib inet6.0 access-internal route \"$junos-subscriber-ipv6-address\" qualified-next-hop \"$junos-interface-name\"": "junos-variable-quoted"
    },
    "missing": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles auto-stacked-pwht predefined-variable-defaults routing-instances PPPOE_SUBS_1": "xml-element-name-leak",
     "set dynamic-profiles auto-stacked-pwht_dhcp predefined-variable-defaults routing-instances dhcp-subs": "xml-element-name-leak",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
@@ -106,9 +86,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/bng1_mx304.set": {
    "extra": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 10": "radius-timeout-dropped",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet6 demux-source \"$junos-subscriber-ipv6-address\"": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base routing-instances \"$junos-routing-instance\" routing-options access route \"$junos-framed-route-ip-address-prefix\" metric \"$junos-framed-route-cost\"": "junos-variable-quoted",
@@ -117,9 +94,6 @@
     "set dynamic-profiles prof_autosense_ipdemux routing-instances \"$junos-routing-instance\" routing-options rib inet6.0 access-internal route \"$junos-subscriber-ipv6-address\" qualified-next-hop \"$junos-interface-name\"": "junos-variable-quoted"
    },
    "missing": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet6 demux-source $junos-subscriber-ipv6-address": "junos-variable-quoted",
     "set dynamic-profiles prod-dhcp-base routing-instances \"$junos-routing-instance\" routing-options access route $junos-framed-route-ip-address-prefix metric \"$junos-framed-route-cost\"": "junos-variable-quoted",
@@ -130,9 +104,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/bng1_mx304.xml": {
    "extra": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 10": "radius-timeout-dropped",
     "set dynamic-profiles auto-stacked-pwht predefined-variable-defaults other-variables routing-instances PPPOE_SUBS_1": "xml-element-name-leak",
     "set dynamic-profiles auto-stacked-pwht_dhcp predefined-variable-defaults other-variables routing-instances dhcp-subs": "xml-element-name-leak",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
@@ -146,9 +117,6 @@
     "set dynamic-profiles prof_autosense_ipdemux routing-instances \"$junos-routing-instance\" routing-options rib inet6.0 access-internal route \"$junos-subscriber-ipv6-address\" qualified-next-hop \"$junos-interface-name\"": "junos-variable-quoted"
    },
    "missing": {
-    "set access profile vlan-auth-access1 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access profile vlan-auth-access2 radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.0.2.2 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles auto-stacked-pwht predefined-variable-defaults routing-instances PPPOE_SUBS_1": "xml-element-name-leak",
     "set dynamic-profiles auto-stacked-pwht_dhcp predefined-variable-defaults routing-instances dhcp-subs": "xml-element-name-leak",
     "set dynamic-profiles prod-dhcp-base interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
@@ -164,7 +132,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.conf": {
    "extra": {
-    "set groups GR-ISIS-BCP protocols isis overload 300": "overload-timeout-dropped",
     "set policy-options policy-statement export_isis_metro_a_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
@@ -174,7 +141,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
    },
    "missing": {
-    "set groups GR-ISIS-BCP protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
@@ -184,7 +150,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json": {
    "extra": {
-    "set groups GR-ISIS-BCP protocols isis overload 300": "overload-timeout-dropped",
     "set policy-options policy-statement export_isis_metro_a_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
@@ -194,7 +159,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
    },
    "missing": {
-    "set groups GR-ISIS-BCP protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
@@ -204,7 +168,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.set": {
    "extra": {
-    "set groups GR-ISIS-BCP protocols isis overload 300": "overload-timeout-dropped",
     "set policy-options policy-statement export_isis_metro_a_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
@@ -214,7 +177,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
    },
    "missing": {
-    "set groups GR-ISIS-BCP protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
@@ -224,7 +186,6 @@
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.xml": {
    "extra": {
-    "set groups GR-ISIS-BCP protocols isis overload 300": "overload-timeout-dropped",
     "set policy-options policy-statement export_isis_metro_a_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
@@ -234,7 +195,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
    },
    "missing": {
-    "set groups GR-ISIS-BCP protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
     "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
@@ -513,22 +473,16 @@
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf": {
    "extra": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A name": "inactive-keyed-entry-name-leak",
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-name-leak",
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
     "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
@@ -538,8 +492,6 @@
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json": {
    "extra": {
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
@@ -549,7 +501,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
@@ -559,8 +510,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
@@ -571,7 +520,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
@@ -587,20 +535,14 @@
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.set": {
    "extra": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A VRF-A": "inactive-keyed-entry-repeated",
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-repeated",
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
@@ -610,8 +552,6 @@
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.xml": {
    "extra": {
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-DEFAULT rf_list 0.0.0.0/0 exact": "xml-element-name-leak",
@@ -621,7 +561,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
@@ -631,8 +570,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak",
@@ -643,7 +580,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
@@ -659,24 +595,18 @@
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf": {
    "extra": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A name": "inactive-keyed-entry-name-leak",
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-name-leak",
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
     "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
@@ -686,8 +616,6 @@
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json": {
    "extra": {
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set bridge-domains domain BD-100 domain-type bridge": "xml-element-name-leak",
     "set bridge-domains domain BD-100 interface ge-0/0/7.100": "xml-element-name-leak",
     "set bridge-domains domain BD-100 routing-interface irb.100": "xml-element-name-leak",
@@ -707,7 +635,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-instances VS-1 bridge-domains domain BD-300 interface ge-0/0/8.300": "xml-element-name-leak",
@@ -720,8 +647,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set bridge-domains BD-100 domain-type bridge": "xml-element-name-leak",
     "set bridge-domains BD-100 interface ge-0/0/7.100": "xml-element-name-leak",
     "set bridge-domains BD-100 routing-interface irb.100": "xml-element-name-leak",
@@ -742,7 +667,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-instances VS-1 bridge-domains BD-300 interface ge-0/0/8.300": "xml-element-name-leak",
@@ -761,22 +685,16 @@
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.set": {
    "extra": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A VRF-A": "inactive-keyed-entry-repeated",
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
     "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-repeated",
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-options transport-class auto-create": "transport-class-dict",
     "set routing-options transport-class fallback none": "transport-class-dict",
     "set routing-options transport-class name bronze color 6000": "transport-class-dict",
@@ -786,8 +704,6 @@
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.xml": {
    "extra": {
-    "set access profile PROF-1 radius-server 192.168.50.10 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 10": "radius-timeout-dropped",
     "set bridge-domains domain BD-100 domain-type bridge": "xml-element-name-leak",
     "set bridge-domains domain BD-100 interface ge-0/0/7.100": "xml-element-name-leak",
     "set bridge-domains domain BD-100 routing-interface irb.100": "xml-element-name-leak",
@@ -807,7 +723,6 @@
     "set policy-options route-filter-list RFL-MIXED rf_list 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED rf_list 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-instances VS-1 bridge-domains domain BD-300 interface ge-0/0/8.300": "xml-element-name-leak",
@@ -820,8 +735,6 @@
     "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
    },
    "missing": {
-    "set access profile PROF-1 radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
-    "set access radius-server 192.168.50.10 timeout 10": "radius-timeout-dropped",
     "set bridge-domains BD-100 domain-type bridge": "xml-element-name-leak",
     "set bridge-domains BD-100 interface ge-0/0/7.100": "xml-element-name-leak",
     "set bridge-domains BD-100 routing-interface irb.100": "xml-element-name-leak",
@@ -842,7 +755,6 @@
     "set policy-options route-filter-list RFL-MIXED 10.12.0.0/16 orlonger": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact": "xml-element-name-leak",
     "set policy-options route-filter-list RFL-MIXED 2001:db8::/32 orlonger": "xml-element-name-leak",
-    "set protocols isis overload timeout 300": "overload-timeout-dropped",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.200": "xml-element-name-leak",
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-instances VS-1 bridge-domains BD-300 interface ge-0/0/8.300": "xml-element-name-leak",

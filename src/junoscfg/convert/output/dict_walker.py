@@ -127,7 +127,13 @@ class DictWalker:
         path: list[str],
         set_key: str,
         schema_node: dict[str, Any] | None,
-    ) -> None:
+    ) -> bool:
+        """Emit only a representable flat run; richer content uses the normal walk."""
+        for key, child in value.items():
+            if key.startswith("@") or isinstance(child, bool):
+                return False
+            if child is not None and not isinstance(child, (str, int, float)) and child != [None]:
+                return False
         parts = [set_key]
         child_children = self._schema_children(schema_node)
         for k, v in value.items():
@@ -146,6 +152,7 @@ class DictWalker:
             elif v is None:
                 parts.append(k)
         self._output.emit(path + [" ".join(parts)])
+        return True
 
     # ------------------------------------------------------------------
     # Oneliner emission
@@ -230,8 +237,11 @@ class DictWalker:
             child_schema = schema_child(schema_node, set_key, self._root)
 
             if isinstance(value, dict):
-                if is_flat_dict(child_schema) and UNPLACED_STATEMENTS not in value:
-                    self._emit_flat_dict(value, path, set_key, child_schema)
+                if (
+                    is_flat_dict(child_schema)
+                    and UNPLACED_STATEMENTS not in value
+                    and self._emit_flat_dict(value, path, set_key, child_schema)
+                ):
                     continue
 
                 child_key = get_transparent_child(child_schema)

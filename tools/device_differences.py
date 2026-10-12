@@ -103,19 +103,6 @@ CLASSES = (
         lambda line, side, suffix, c: "transport-class" in line,
     ),
     Class(
-        "overload-timeout-dropped",
-        "defect",
-        "`isis overload timeout N` is written `overload N`, which the device rejects",
-        lambda line, side, suffix, c: _re(r"\boverload (timeout )?\S+$")(line),
-    ),
-    Class(
-        "radius-timeout-dropped",
-        "defect",
-        "`radius-server <address> timeout N` is written `radius-server <address> N`, which the "
-        "device accepts and loads without the timeout",
-        lambda line, side, suffix, c: _re(r"\bradius-server \S+ (timeout )?\d+$")(line),
-    ),
-    Class(
         "inactive-keyed-entry-repeated",
         "defect",
         "from set input, an inactive keyed entry such as `port-mirroring ... routing-instance "
