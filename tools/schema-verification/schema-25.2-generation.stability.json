@@ -1,0 +1,7 @@
+[
+  ".agent-ready/schema/schema-25.2/generation-artifacts/junos-json-schema.json.gz",
+  ".agent-ready/schema/schema-25.2/generation-artifacts/junos-yaml-schema.json.gz",
+  ".agent-ready/schema/schema-25.2/generation-artifacts/junos-structure-tree.json.gz",
+  ".agent-ready/schema/schema-25.2/generation-artifacts/junos-set.lark.gz",
+  ".agent-ready/schema/schema-25.2/generation-artifacts/junos-schema-meta.normalized.json"
+]

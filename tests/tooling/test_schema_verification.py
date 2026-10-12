@@ -428,6 +428,10 @@ class TestEvidenceConfiguration:
         assert "tools/schema_verification.py" not in assertion["paths"]
         assert "pyproject.toml" not in assertion["paths"]
         assert "uv.lock" in assertion["paths"]
+        assert "tests/conftest.py" in assertion["paths"]
+        assert "src/junoscfg/validate/__init__.py" in assertion["paths"]
+        assert "src/junoscfg/display/constants.py" in assertion["paths"]
+        assert "src/junoscfg/display/__init__.py" in assertion["paths"]
         policy = json.loads((PROJECT_ROOT / "tools/schema-verification/policy.json").read_text())
         assert set(policy["shards"]) == {"schema-21.4", "schema-23.2", "schema-25.2"}
         for shard, recipe in policy["shards"].items():

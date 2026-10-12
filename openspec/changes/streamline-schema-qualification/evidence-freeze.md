@@ -27,3 +27,7 @@ None; split tiers preserve template integrity without upstream migration.
 
 ## Delta log
 - Freeze established: this delta and proposal; two-build estimate superseded by three-build design preserving existing wrapper output validation.
+
+- Dependency inspection: generator imports of shared compression/key helpers resolve to display/constants.py through display/__init__.py. Include those exact trigger paths; no acceptance obligation changes.
+
+- Fresh review found two violations of retained boundaries (inherited qualifier Git context; dirty explicit generation manifests). Existing contract determines both repairs; acceptance criteria unchanged. Added regressions and focused reruns before expensive execution.

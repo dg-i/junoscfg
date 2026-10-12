@@ -14,7 +14,12 @@
       "allowed-skips": {
         "tests/corpus/test_schema_data.py::TestEntryKeysOnTheDump::test_the_as_list_slots_carry_both_keys[21.4R0-ex4600.xsd]": "no pinned count for 21.4R0",
         "tests/corpus/test_schema_data.py::TestIdentifierCounts::test_the_counts_are_the_proposals[21.4R0-ex4600.xsd]": "no pinned count for 21.4R0"
-      }
+      },
+      "generation-required": "tools/schema-verification/schema-21.4-generation.required.json",
+      "generation-stability": "tools/schema-verification/schema-21.4-generation.stability.json",
+      "generation-result": ".agent-ready/schema/schema-21.4/generation-result.json",
+      "generation-outcomes": ".agent-ready/schema/schema-21.4/generation-outcomes.json",
+      "generation-artifacts": ".agent-ready/schema/schema-21.4/generation-artifacts"
     },
     "schema-23.2": {
       "dump": "private_test_data/schemas/23.2R2-S7.5_vmx.xsd",
@@ -24,7 +29,12 @@
       "result": ".agent-ready/schema/schema-23.2/result.json",
       "outcomes": ".agent-ready/schema/schema-23.2/outcomes.json",
       "artifacts": ".agent-ready/schema/schema-23.2/artifacts",
-      "allowed-skips": {}
+      "allowed-skips": {},
+      "generation-required": "tools/schema-verification/schema-23.2-generation.required.json",
+      "generation-stability": "tools/schema-verification/schema-23.2-generation.stability.json",
+      "generation-result": ".agent-ready/schema/schema-23.2/generation-result.json",
+      "generation-outcomes": ".agent-ready/schema/schema-23.2/generation-outcomes.json",
+      "generation-artifacts": ".agent-ready/schema/schema-23.2/generation-artifacts"
     },
     "schema-25.2": {
       "dump": "private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd",
@@ -34,7 +44,12 @@
       "result": ".agent-ready/schema/schema-25.2/result.json",
       "outcomes": ".agent-ready/schema/schema-25.2/outcomes.json",
       "artifacts": ".agent-ready/schema/schema-25.2/artifacts",
-      "allowed-skips": {}
+      "allowed-skips": {},
+      "generation-required": "tools/schema-verification/schema-25.2-generation.required.json",
+      "generation-stability": "tools/schema-verification/schema-25.2-generation.stability.json",
+      "generation-result": ".agent-ready/schema/schema-25.2/generation-result.json",
+      "generation-outcomes": ".agent-ready/schema/schema-25.2/generation-outcomes.json",
+      "generation-artifacts": ".agent-ready/schema/schema-25.2/generation-artifacts"
     }
   }
 }

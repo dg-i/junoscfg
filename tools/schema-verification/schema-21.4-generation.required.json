@@ -1,0 +1,9 @@
+{
+  "tests": [
+    "public-build",
+    "artifact-integrity"
+  ],
+  "shards": [
+    "schema-21.4-generation"
+  ]
+}

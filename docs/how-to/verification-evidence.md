@@ -93,6 +93,14 @@ and the existing application test adapter, or pytest when no adapter is declared
 Path selection includes renames and deletions. An invalidated checkpoint requires
 a rerun even after review corrections; "one checkpoint" is not a maximum.
 
+For junoscfg, routine tiers qualify only the shipped schema. Assertion execution
+has no stability manifest; the separate generation tier has one and runs public
+generation twice. Its inputs include the assertion result and exported products,
+so changed prerequisite bytes invalidate generation evidence. Generation outputs,
+not assertion exports, are the integrity-authoritative retained artifacts.
+The [schema qualification instructions](run-a-batch-of-changes.md#run-the-schema-tier-when-the-generators-change)
+cover explicit older-release qualification and timing reports.
+
 ## Evidence identity and recovery
 
 Evidence lives under `.agent-ready/verification/`. Each command records full

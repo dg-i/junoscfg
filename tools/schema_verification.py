@@ -12,10 +12,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from agent_ready_checks import verification
+from agent_ready_checks import lane, readiness, verification
 
 from junoscfg.validate import ArtifactBuilder
 from tests.support.schema_data import read_version
@@ -197,6 +199,19 @@ def _repository_environment():
     }
 
 
+@contextmanager
+def _repository_context():
+    """Scope installed-wrapper Git calls to the candidate, restoring caller context."""
+    clean = _repository_environment()
+    removed = {key: value for key, value in os.environ.items() if key not in clean}
+    for key in removed:
+        os.environ.pop(key)
+    try:
+        yield
+    finally:
+        os.environ.update(removed)
+
+
 def _git(root, *arguments):
     return subprocess.run(
         ["git", *arguments],
@@ -208,7 +223,7 @@ def _git(root, *arguments):
     ).stdout
 
 
-def _read_inputs(policy, recipe):
+def _read_inputs(policy, recipe, extra=()):
     return {
         Path(name).as_posix()
         for name in (
@@ -218,6 +233,7 @@ def _read_inputs(policy, recipe):
             recipe["dump"],
             recipe["required"],
             recipe["stability"],
+            *extra,
         )
     }
 
@@ -232,7 +248,7 @@ def _candidate_input(name, explicit):
     return name in explicit or not record
 
 
-def _preflight(root, policy, shard):
+def _preflight(root, policy, shard, extra=()):
     recipe = policy["shards"][shard]
     names = {Path(row["dump"]).name for row in policy["shards"].values()}
     directory = _path(root, recipe["dump"]).parent
@@ -245,7 +261,8 @@ def _preflight(root, policy, shard):
         "\0"
     )
     if any(
-        record and _candidate_input(record[3:], _read_inputs(policy, recipe)) for record in dirty
+        record and _candidate_input(record[3:], _read_inputs(policy, recipe, extra))
+        for record in dirty
     ):
         raise ValueError("schema verification requires a committed clean candidate")
     required = _json(_path(root, recipe["required"]))
@@ -259,8 +276,8 @@ def _preflight(root, policy, shard):
     return recipe, required
 
 
-def _snapshot(root, policy, recipe):
-    explicit = _read_inputs(policy, recipe)
+def _snapshot(root, policy, recipe, extra=()):
+    explicit = _read_inputs(policy, recipe, extra)
     names = set(_git(root, "ls-files", "-z").split("\0")) | explicit
     return {
         name: hashlib.sha256(_path(root, name).read_bytes()).hexdigest()
@@ -325,6 +342,116 @@ def run_shard(root, shard):
     return status
 
 
+def _export_products(source, output):
+    output.mkdir(parents=True, exist_ok=True)
+    for name in (*PRODUCTS, META):
+        shutil.copyfile(source / name, _path(output, name))
+    _write(_path(output, NORMALIZED_META), _normalized_metadata(source))
+
+
+def generation_inputs(recipe):
+    """Bind assertion completion and every consumed product to generation identity."""
+    return [
+        recipe["result"],
+        *[f"{recipe['artifacts']}/{name}" for name in (*PRODUCTS, META, NORMALIZED_META)],
+    ]
+
+
+def run_generation(root, shard):
+    """Perform one fresh build; the template owns the two-pass stability check."""
+    policy = _policy(root)
+    recipe = policy["shards"][shard]
+    result = _path(root, recipe["generation-result"])
+    outcomes = _path(root, recipe["generation-outcomes"])
+    result.unlink(missing_ok=True)
+    outcomes.unlink(missing_ok=True)
+    try:
+        inputs = generation_inputs(recipe) + [
+            recipe["generation-required"],
+            recipe["generation-stability"],
+        ]
+        recipe, required = _preflight(root, policy, shard, inputs)
+        if _json(_path(root, recipe["result"])) != required:
+            raise ValueError("successful assertion completion is required before generation")
+        obligations = {
+            "tests": ["public-build", "artifact-integrity"],
+            "shards": [f"{shard}-generation"],
+        }
+        if _json(_path(root, recipe["generation-required"])) != obligations:
+            raise ValueError("generation obligations differ")
+        expected = [
+            f"{recipe['generation-artifacts']}/{name}" for name in (*PRODUCTS, NORMALIZED_META)
+        ]
+        if _json(_path(root, recipe["generation-stability"])) != expected:
+            raise ValueError("generation stability manifest differs")
+        before = _snapshot(root, policy, recipe, inputs)
+        assertion = _path(root, recipe["artifacts"])
+        if _json(assertion / NORMALIZED_META) != _normalized_metadata(assertion):
+            raise ValueError("assertion metadata export differs")
+        with tempfile.TemporaryDirectory(prefix="schema-generation-") as directory:
+            output = Path(directory)
+            start = time.perf_counter()
+            ArtifactBuilder().build(_path(root, recipe["dump"]), output)
+            duration = time.perf_counter() - start
+            _compare(output, assertion)
+            if shard == policy["shipped"]:
+                _compare(output, root / "src/junoscfg/validate/data")
+            _export_products(output, _path(root, recipe["generation-artifacts"]))
+        if _snapshot(root, policy, recipe, inputs) != before:
+            raise ValueError("generation mutated candidate or input bytes")
+        measured = {"durations": {"public-build": duration}}
+        _write(outcomes, measured)
+        _write(result, obligations)
+        print("schema generation outcomes: " + json.dumps(measured, sort_keys=True))
+    except BaseException:
+        result.unlink(missing_ok=True)
+        outcomes.unlink(missing_ok=True)
+        raise
+    return 0
+
+
+def qualify(root, shard):
+    """Explicit compatibility qualification through the installed evidence wrapper."""
+    with _repository_context():
+        return _qualify(root, shard)
+
+
+def _qualify(root, shard):
+    if readiness.config(root).get("enabled", False):
+        snapshot = lane.snapshot_problem(root)
+        problems = readiness.problems(root, lane.selected_change_for_base(root, None), None)
+        if snapshot or problems:
+            raise ValueError(
+                "qualification not ready: " + "; ".join(([snapshot] if snapshot else []) + problems)
+            )
+    policy = _policy(root)
+    recipe = policy["shards"][shard]
+    command = [sys.executable, "-B", "-m", "tools.schema_verification"]
+    common = {"inputs": [recipe["dump"], policy["runtime"]], "version-files": [policy["runtime"]]}
+    assertion = dict(
+        common,
+        name=shard,
+        **{"required-manifest": recipe["required"], "result-manifest": recipe["result"]},
+    )
+    generation = dict(
+        common,
+        name=f"{shard}-generation",
+        **{
+            "inputs": common["inputs"] + generation_inputs(recipe),
+            "required-manifest": recipe["generation-required"],
+            "result-manifest": recipe["generation-result"],
+            "stability-manifest": recipe["generation-stability"],
+        },
+    )
+    with verification.capacity(root):
+        status = verification.execute(root, command + ["run", shard], None, assertion, reuse=False)
+        if status:
+            return status
+        return verification.execute(
+            root, command + ["generation", shard], None, generation, reuse=False
+        )
+
+
 def run_sentinel(root):
     """Always perform fresh public generation without reading stable tier output."""
     policy = _policy(root)
@@ -356,10 +483,7 @@ class _Evidence:
         if self.shard == self.policy["shipped"]:
             _compare(path, self.root / "src/junoscfg/validate/data")
         output = _path(self.root, self.recipe["artifacts"])
-        output.mkdir(parents=True, exist_ok=True)
-        for name in (*PRODUCTS, META):
-            shutil.copyfile(path / name, output / name)
-        _write(output / NORMALIZED_META, _normalized_metadata(path))
+        _export_products(path, output)
         self.generated = True
 
     def finish(self, exit_status):
@@ -372,6 +496,10 @@ class _Evidence:
             self.recipe["allowed-skips"],
             collected=self.collected,
         )
+        outcomes["durations"] = {
+            node: {row["when"]: row["duration"] for row in self.reports if row["nodeid"] == node}
+            for node in self.required["tests"]
+        }
         _write(_path(self.root, self.recipe["outcomes"]), outcomes)
         _write(_path(self.root, self.recipe["result"]), actual)
         print("schema executed outcomes: " + json.dumps(outcomes, sort_keys=True))
@@ -431,6 +559,7 @@ def pytest_runtest_makereport(item):
             "when": report.when,
             "outcome": report.outcome,
             "reason": reason,
+            "duration": report.duration,
         }
     )
     if report.when == "setup" and report.passed:
@@ -455,7 +584,7 @@ def pytest_sessionfinish(session, exitstatus):
 def main(argv=None):
     """Run preparation or immutable schema verification from the candidate root."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "run", "sentinel"))
+    parser.add_argument("action", choices=("prepare", "run", "generation", "qualify", "sentinel"))
     parser.add_argument("shard", nargs="?")
     args = parser.parse_args(argv)
     root = Path.cwd()
@@ -464,10 +593,14 @@ def main(argv=None):
             prepare_runtime(root)
         elif args.action == "run" and args.shard:
             return run_shard(root, args.shard)
+        elif args.action == "generation" and args.shard:
+            return run_generation(root, args.shard)
+        elif args.action == "qualify" and args.shard:
+            return qualify(root, args.shard)
         elif args.action == "sentinel":
             return run_sentinel(root)
         else:
-            parser.error("run requires a shard")
+            parser.error("run, generation and qualify require a shard")
     except (OSError, ValueError, KeyError) as error:
         print(f"schema evidence refused: {error}", file=sys.stderr)
         return 1

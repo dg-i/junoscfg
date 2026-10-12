@@ -102,3 +102,92 @@ class TestGenerationQualification:
         assert not result.exists()
         if fault == "missing-assertions":
             assert not calls
+
+
+class TestExplicitQualification:
+    def test_parked_policy_refuses_before_execution(self, tmp_path, monkeypatch):
+        from agent_ready_checks import lane, readiness, verification
+
+        monkeypatch.setattr(readiness, "config", lambda root: {"enabled": True})
+        monkeypatch.setattr(lane, "snapshot_problem", lambda root: None)
+        monkeypatch.setattr(lane, "selected_change_for_base", lambda root, base: None)
+        monkeypatch.setattr(readiness, "problems", lambda root, folder, base: ["branch is parked"])
+
+        def forbidden(*args, **kwargs):
+            pytest.fail("execution attempted before admission")
+
+        monkeypatch.setattr(verification, "execute", forbidden)
+        with pytest.raises(ValueError, match="parked"):
+            adapter().qualify(tmp_path, SHARD)
+
+
+def test_bundled_conversion_preflight(monkeypatch):
+    """Exercise the identical real-schema conversion assertions without rebuilding."""
+    from tests.corpus.test_schema_data import TestConversionAgainstRealArtifacts
+    from tests.support.paths import ARTIFACT_DIR
+
+    checks = TestConversionAgainstRealArtifacts()
+    checks.test_roundtrip_against_this_release(ARTIFACT_DIR, monkeypatch)
+    checks.test_json_and_set_agree_on_real_artifacts(ARTIFACT_DIR, monkeypatch)
+
+
+@pytest.mark.parametrize("manifest", ["generation-required", "generation-stability"])
+@pytest.mark.parametrize("prefix", ["", "./"])
+def test_generation_manifest_is_not_an_exempt_record(tmp_path, monkeypatch, manifest, prefix):
+    root, recipe, _, _ = generation_repository(tmp_path)
+    policy_path = root / "tools/schema-verification/policy.json"
+    policy = json.loads(policy_path.read_text())
+    path = root / "openspec/changes/probe/review.md"
+    path.parent.mkdir(parents=True)
+    path.write_text("{}")
+    policy["shards"][SHARD][manifest] = prefix + str(path.relative_to(root))
+    policy_path.write_text(json.dumps(policy))
+    commit_fixture(root)
+    path.write_text((root / recipe[manifest]).read_text())
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("public build executed with dirty explicit manifest")
+
+    monkeypatch.setattr(ArtifactBuilder, "build", forbidden)
+    with pytest.raises(ValueError, match="committed clean candidate"):
+        adapter().run_generation(root, SHARD)
+
+
+def test_explicit_qualification_isolates_and_restores_hook_environment(tmp_path, monkeypatch):
+    import os
+
+    from agent_ready_checks import readiness, verification
+
+    from tests.tooling.test_schema_verification import git
+
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    git(parent, "init", "-q")
+    (parent / "parent-only").write_text("parent candidate")
+    commit_fixture(parent)
+    candidate = tmp_path / "candidate"
+    candidate.mkdir()
+    root, _, _, _ = generation_repository(candidate)
+    for key, value in {
+        "GIT_DIR": str(parent / ".git"),
+        "GIT_WORK_TREE": str(parent),
+        "GIT_INDEX_FILE": str(parent / ".git/index"),
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "core.bare",
+        "GIT_CONFIG_VALUE_0": "true",
+        "GIT_ALLOW_PROTOCOL": "file",
+    }.items():
+        monkeypatch.setenv(key, value)
+    before = dict(os.environ)
+    calls = []
+
+    def observe(root, command, base, declaration, *, reuse):
+        assert Path(readiness.git(root, "rev-parse", "--show-toplevel")) == root
+        assert os.environ["GIT_ALLOW_PROTOCOL"] == "file"
+        calls.append(command[-2])
+        return 0
+
+    monkeypatch.setattr(verification, "execute", observe)
+    assert adapter().qualify(root, SHARD) == 0
+    assert calls == ["run", "generation"]
+    assert dict(os.environ) == before

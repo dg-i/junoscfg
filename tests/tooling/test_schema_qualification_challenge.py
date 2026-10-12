@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 import pytest
@@ -15,6 +16,27 @@ from tests.tooling.test_schema_verification import (
     commit_fixture,
     small_repository,
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_git_environment(monkeypatch):
+    """The installed wrapper must inspect the fixture, even inside a Git hook."""
+    protocol = os.environ.get("GIT_ALLOW_PROTOCOL")
+    selectors = {
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_PREFIX",
+        "GIT_CEILING_DIRECTORIES",
+        "GIT_DISCOVERY_ACROSS_FILESYSTEM",
+    }
+    for key in tuple(os.environ):
+        if key in selectors or key.startswith("GIT_CONFIG"):
+            monkeypatch.delenv(key)
+    assert os.environ.get("GIT_ALLOW_PROTOCOL") == protocol
 
 
 def generation_repository(tmp_path, fault=""):

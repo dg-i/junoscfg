@@ -189,56 +189,63 @@ code, tests or generated artifacts changed.
 
 ## Run the schema tier when the generators change
 
-Three declarations in `[tool.template.batch].expensive-tiers` run the existing
-schema corpus once per physical dump. Each binds its ignored XSD, exact required
-node IDs, prepared runtime identity and actual completed reports. All existing
-schema assertions remain. The two unpinned 21.4 count tests may retain their
-executed `no pinned count for 21.4R0` skips; every other required call must pass,
-and setup/teardown must succeed. Collected IDs never count as execution.
+Two declarations in `[tool.template.batch].expensive-tiers` qualify the shipped
+25.2 release: one assertion pass, followed by public generation executed twice
+for stability. All 12 existing schema assertions remain, including direct-tree
+and serialized-tree grammar paths. Generation compares its four raw artifacts
+and metadata (excluding only `generated_at`) with the assertion exports and
+committed shipped artifacts. The separately scheduled sentinel is removed.
+
+Automatic selection covers XSD parsing/fixes, artifact generators, their shared
+compression/key helpers and package door, shipped data,
+the schema corpus, schema fixture definitions in `tests/conftest.py`, its
+schema-specific support, and `uv.lock`. Wrapper tests,
+workflow documentation, shared configuration and bookkeeping alone do not select
+real schemas. The full checkpoint still runs ordinary tests of that machinery.
 
 Keep the three known dumps under `private_test_data/schemas/` as physical files,
-not symlinks. Missing, empty, unknown-release or undeclared/staged `new.xsd`
-inputs refuse before expensive work. Update and review declarations/manifests
-when intentionally changing the inventory. Real operator data remains private.
-
-When a generator changes, settle the bundled artifacts from the shipped dump
-before the checkpoint, using the existing source selection:
+not symlinks. Never use a staged `new.xsd` during immutable qualification.
+Before the checkpoint, prepare the runtime identity in the same environment:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --regen-schema
-git add src/junoscfg/validate/data
-git commit
 uv run --locked --group dev --inexact python -B -m tools.schema_verification prepare
 ```
 
-The last command prepares `.agent-ready/schema/runtime.json` from observed
-Python and installed library/version bytes. Prepare it before verification;
-commands compare its identity and never refresh it during execution. The adapter
-exports actual `real_artifacts` products and observed outcomes into the ignored
-`.agent-ready/schema/` directory. Stable gzip bytes are the products generated
-by the existing public pipeline, not copied from a completion list.
-
-Run the canonical full checkpoint on the clean committed candidate:
+When generator changes alter shipped products, regenerate them through the
+existing `--regen-schema` workflow and commit settled products first. Qualification
+never overwrites committed artifacts. Run the cheap parity controls and review
+wrapper changes before real qualification:
 
 ```sh
-uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full
+uv run --locked --group dev pytest -q tests/tooling/test_schema_set_parity.py \
+  tests/tooling/test_schema_qualification.py::test_bundled_conversion_preflight
 ```
 
-The template runs every shard command twice on a miss and requires four
-nonmetadata compressed artifacts to be byte-identical. One uncached shipped
-sentinel invokes `ArtifactBuilder` into fresh temporary output and compares
-protected committed products. Only metadata `generated_at` has its existing
-exception; its other fields must agree. Commands never modify the candidate or
-its declared inputs. Detailed executed outcomes also appear in the wrapper's
-hashed command log; local convenience JSON does not replace retained evidence.
+For explicit qualification, including older-release compatibility or a measured
+shipped run after a wrapper change, use one command (replace the release as needed):
 
-Policy remains inactive until the explicit operator assessment in
-[Verification Evidence](verification-evidence.md). While inactive, declared
-work executes uncached. With reviewed activation, the existing template owns
-identity, admission, reuse and locking. Rerun whenever inputs or evidence are
-invalidated, including after corrections; avoid unchanged duplicate full work.
-Rollback disables reuse and retains historical evidence. No legacy import or
-second application cache exists. Measured efficiency remains `UNMEASURED`.
+```sh
+uv run --locked --group dev --inexact python -B -m tools.schema_verification qualify schema-25.2
+```
+
+`schema-21.4` and `schema-23.2` remain declared in application policy and use the
+same command. Their existing approved release-count skips retain exact identity
+and reason. Explicit qualification checks readiness, takes the template capacity
+lock, and forces one uncached assertion pass plus two uncached generation passes.
+It stops before generation if assertions fail. Automatic tiers may reuse matching
+native evidence; generation inputs bind assertion completion and exports, and
+its output hashes are revalidated by the installed wrapper.
+
+Executed outcome JSON contains per-test setup/call/teardown seconds. Shared
+fixtures are attributed to the triggering setup, not falsely separated into
+individual generator stages. Generation reports public-build seconds. Native
+wrapper logs retain these measurements and total command time; local outcome
+JSON is a convenience and does not replace hashed native evidence.
+
+No new cache framework or generator API is introduced. Compared with two full
+assertion passes and a sentinel, the qualification performs one full pass and
+two standalone builds. The extra build preserves the installed template's
+stability/output-validation contract; speedup must be measured, not assumed.
 
 ## Version and merge
 
