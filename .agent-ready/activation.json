@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "773270e069d2031435d45966432bfbd928d5b2db",
+  "checkpoint": "ccff14e6b1efe454f1eea8e8c33ffe829fa06fc5",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root verified all 1248 tracked candidate files and 80 finalizer evidence hashes, independent source/main-spec PASS, actual ordinary 10210 PASS/37 existing SKIP/20 strict XF and fast PASS. Keyed change integrated locally; master ready solely for archive/minor release. Other changes parked; full schema only entire makeover end selected25.2; no push/network/device.",
-  "captured_at": "2026-10-12T08:06:53.888600+00:00",
+  "authority": "Keyed-list change independently reviewed, integrated, archived and locally taggedv0.25.0;77archives0/version3PASS/normalhooks0;81nonrecreatablefiles89externallinks preserved normalWTcleanup. Main parked; hidden-list preparation remains parked for preserved currentbase rebase/renewed red/TC. All other sessions/jobs parked. Full schema only entiremakeoverEND selected25.2; no push/network/device.",
+  "captured_at": "2026-10-12T08:13:33.980831+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked"
   },
