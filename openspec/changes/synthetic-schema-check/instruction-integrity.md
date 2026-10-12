@@ -29,3 +29,6 @@ None. User requests supplementary synthetic generator tests after merged trigger
 ## Delta log
 
 - Initial preflight: clean master 630a5c9, v0.28.4. Next: maintenance intent. No product edits.
+
+## Changelog gate correction
+The first full checkpoint passed 10,427 tests but its mandatory towncrier gate rejected the maintenance no-fragment choice. Add one misc fragment and align metadata; no tests or product behavior change. Preserve the failed receipt and rerun the required full checkpoint.

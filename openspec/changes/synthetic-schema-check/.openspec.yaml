@@ -10,7 +10,8 @@ verification:
   planned-paths:
     - tests/unit/validate/test_artifact_builder.py
     - docs/architecture/developer-guide.md
+    - changelog.d/+synthetic-schema-check.misc.md
     - .agent-ready/activation.json
   dependencies: []
-  changelog: "none: internal supplementary test coverage only"
+  changelog: changelog.d/+synthetic-schema-check.misc.md
   generated-records: []
