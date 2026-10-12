@@ -8,6 +8,7 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Clean committed current-base native readiness and owner ordinary substitute plus supported fast set.
+- [x] 3.1 Clean committed current-base native readiness and owner ordinary coverage substitute.
+- [ ] 3.4 Supported fast set after mandatory fresh review; initial skills/lane failures retained, ignored mirror repaired.
 - [ ] 3.2 Fresh isolated high-risk review and accepted corrections.
 - [ ] 3.3 Root finalization, release and archive; owner canonical full/schema deferral remains explicit.
