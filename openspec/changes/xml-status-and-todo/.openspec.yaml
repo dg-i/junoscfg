@@ -1,0 +1,14 @@
+schema: agent-ready
+created: 2026-10-12
+type: docs
+zone: conversion
+domains: [conversion]
+assurance: economy
+skip_specs: true
+verification:
+  state: parked
+  planned-paths:
+    - README.md
+    - docs/roadmaps/xml-work-todo.md
+  dependencies: []
+  generated-records: []
