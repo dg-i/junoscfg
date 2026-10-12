@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "c393a34ed48efd699357b479df75d4426a29e38a",
+  "checkpoint": "07f028c31635a993a17ee4f819b29285ddd3667b",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root integrates T5 maintenance after independent review and bounded metadata affirmation, verified ordinary9826/cov93.00 and correctedfast0 with unchangedruntime/test proof. T5 is complete for source integration and parked; master ready for bounded garden/archive/version/localtag only. Keyed #11 remains ready under root-second-product-build-ruling: ONE second public25.2 implementation build after source-only independentADEQUATE; actual secondbuild result and focused proofs are distinct from fullschema verification, candidate remains subject to currentbase renewal/ordinaryfast/freshReviewer. All other work parked. No fullschema until entire makeover END, selected25.2 only; no push/network/device.",
-  "captured_at": "2026-10-12T06:43:31.168979+00:00",
+  "authority": "Root completed T5 maintenance independentlyreviewed, archived/taggedlocalv0.24.2,76archives0, versiontests0/normalhooks0 and preservednormalWTcleanup. T5 remainsparked; masterparked outsideintegration. #11 retains admitted sixslot/sourceSC1C/SC2generator correction and completed secondpublic25.2implementationbuild0, notfullschema. Atomic normalcommit3obsoleteguards stopped; stagedsource/products frozen; boundedindependentTC/ruling needed for exactexistingtest/corpuscorrection before retry. No thirdbuild. #12/#21b and allotherchangesparked, sourceimplementation depends keyedpredecessorintegration/currentbase/renewedTC/admission. Fullschema only entiremakeoverEND selected25.2; no push/network/device.",
+  "captured_at": "2026-10-12T07:02:48.746228+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked"
   },
