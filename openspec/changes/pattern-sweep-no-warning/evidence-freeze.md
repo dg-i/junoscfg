@@ -49,3 +49,19 @@ Parked. Targeted test material complete. Next: Root's base renewal and READY
 admission, then fresh lightweight maintenance Reviewer and later checks under
 owner-authorized scheduling. No review verdict, full-check completion, integration,
 archive, version or tag is claimed by this Builder.
+
+## Renewed review candidate
+
+Root's operator-only rebases preserve all owned test/artifact bytes and all 83
+source files. Current base: a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69;
+pre-admission HEAD: 70fb78db200d757abadaebabe887b0fe7bc44613. Original parked
+checkpoint b75af5a2bdcc4f6524f2d831f1640ff5a7381fa9 remains preserved by named
+ref and verified bundle. Root's retained root-preserved-operator-rebase.json and
+root-ready-rebase.json record both renewals, identity comparisons and activation.
+Own metadata now declares ready with the same exact sole planned test path;
+Root's base/admission task is completed. Readiness is a permission precheck only.
+The native readiness and two-test rerun on the resulting commit will be retained
+with exact base/HEAD and complete tracked-file before/after manifests in
+private_test_data/makeover-work/pattern-sweep-no-warning/immutable-review-checkpoint.json.
+Fresh review, ordinary/fast/full-substitute evidence and finalization remain
+pending. Historical parked text above describes the original bounded checkpoint.

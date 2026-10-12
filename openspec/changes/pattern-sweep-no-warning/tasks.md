@@ -11,7 +11,7 @@
 
 ## 3. Review and evidence
 
-- [ ] Root renews base and admits exact planned paths as READY.
+- [x] Root renews base and admits exact planned paths as READY.
 - [ ] Fresh lightweight Reviewer reviews proposal, test and diff.
 - [ ] Root completes owner-scheduled verification and integration gates.
 - [ ] Root completes metrics, archive, version and tag.

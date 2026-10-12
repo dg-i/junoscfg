@@ -6,7 +6,7 @@ assurance: economy
 skip_specs: true
 removes: none, because this adds test coverage without changing runtime behavior
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tests/unit/convert/test_shipped_pattern_warnings.py
   dependencies: []

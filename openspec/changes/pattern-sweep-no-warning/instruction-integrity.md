@@ -52,3 +52,20 @@ fix-lane diff cap is only applied to fix changes. Root corrected that instructio
 before any compression: keep both readable focused tests. This is automatically
 resolved by precedence and clarified scope; no gate, cap or assertion changed.
 Next incomplete step: fresh maintenance review and Root-owned admission/checks.
+
+## Root-authorized base renewal and admission
+
+Root retained original b75af5a2bdcc4f6524f2d831f1640ff5a7381fa9 in
+refs/codex-preserved/pattern-sweep-stop-b75af5a and a verified bundle. The first
+raw-range bundle attempt refused an empty bundle before rebase; the corrected
+named-ref bundle verified with exit 0. Root then renewed through e8c4ec51 to
+current base a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69, with all six owned
+artifacts and 83 source files byte-identical. Rebased pre-admission HEAD is
+70fb78db200d757abadaebabe887b0fe7bc44613. Root's shared READY activation exited
+0; that establishes permission only, not verification evidence. Root explicitly
+authorizes this record-only ready metadata commit, native readiness precheck and
+the two focused tests; ordinary/fast/full and finalization remain outside scope.
+No runtime or test behavior changed; prior targeted material remains historical.
+Next incomplete step: fresh lightweight maintenance Reviewer on current frozen
+artifacts/diff; admission and tests will be bound to their actual committed HEAD
+in the private immutable review checkpoint.
