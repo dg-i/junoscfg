@@ -6,7 +6,7 @@ zone: conversion
 domains: [conversion]
 removes: none, because the shared tool replaces the untracked per-change comparison copy without retiring a named surface
 verification:
-  state: ready
+  state: parked
   planned-paths:
   - tools/compare_device_outputs.py
   - tools/compare_device_outputs.CONTRACT.md
