@@ -8,13 +8,11 @@ checks-tag = "checks-v0.16.2"
 # caches one build per ref, so a tool invocation names this commit.
 checks-commit = "976629c389ed8718e80c510b5089b526283a0d39"
 
-# The refresh's hook recommendation, decided: this repository's hook set
-# stands. What the seed's hooks would add is already covered elsewhere. The id
-# is bound to both hook files' bytes; it moved once when --locked was added to
-# this repository's hooks at the template's own request, so the same decision
-# is re-keyed here rather than re-taken.
-[local-policy.hooks-1e58b646f255c311aa3c581e8ea22408425de1ceb18419a8e9b4778a899ff796]
+# Owner renewed this exact hook recommendation on 2026-10-13: preserve the
+# local Ruff version, test-door and affected-test hooks, Markdown exclusions,
+# and reported-not-enforced mypy in CI. Retain the existing review deadline.
+[local-policy.hooks-d5ba33148e499b17c17de4ffdac4e89020b99b8285075f8ae3b421cb6d79f791]
 scope = "refresh.pre-commit.integration.v1"
-reason = "The local hooks (ruff-format, ruff-check, deptry, caps, markdownlint) stand: mypy runs in CI as reported-not-enforced under docs/decisions/2026-10-06-adopt-mypy-strict.md, `skills` runs inside `agent-ready check`, and `caps` is the document-budget check the seed's doc-budgets hook provides."
+reason = "Owner approved retaining Ruff 0.15.0 and the local hooks (ruff-format, ruff-check, deptry, test-doors, affected-tests, caps, markdownlint), including local Markdown exclusions, on 2026-10-13: mypy runs in CI as reported-not-enforced under docs/decisions/2026-10-06-adopt-mypy-strict.md, `skills` runs inside `agent-ready check`, and `caps` is the document-budget check the seed's doc-budgets hook provides."
 upstream = "local-only: the hook set differs by design, per the decision record named in reason"
 review-by = "2027-04-08"
