@@ -2,10 +2,11 @@
 
 - [x] 1.1 Prepare four synthetic acceptance tests; confirm deliberate red against absent shared tool and green only against read-only private reference; economy omits independent Test/Challenge below floor.
 
+- [ ] 1.2 Run focused acceptance, ordinary suite with unchanged 91.47 coverage floor, and supported fast canonical extras; no full schema before entire makeover end, selected 25.2R2 only then.
+
 ## 2. Change
 
 - [x] 2.1 Root admitted phase 5 at 4b039a3 on base 0df3cc5; shared tool/module contract promoted, comparison directions and fragment added; frozen four acceptance tests passed in 0.09s.
-- [ ] 2.2 Run focused acceptance, ordinary suite with unchanged 91.47 coverage floor, and supported fast canonical extras; no full schema before entire makeover end, selected 25.2R2 only then.
 
 ## 3. Review and evidence
 
