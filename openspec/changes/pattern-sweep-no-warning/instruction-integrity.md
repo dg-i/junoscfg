@@ -43,3 +43,12 @@ No material unresolved owner decision. Parent authorization permits the bounded
 maintenance route. Next: commit preflight, then a ten-line maintenance intent.
 Base: 6d5c152d6880b264c0f18ac86729ee7bdc986377. Source identity recorded in ignored
 private_test_data/makeover-work/pattern-sweep-no-warning/source-before.json.
+
+## Scope clarification after intent
+
+Root initially mentioned a 30-line cap for this maintenance change. Inspection of
+installed agent_ready_checks/lane.py lines 751–770 confirmed that the explicit
+fix-lane diff cap is only applied to fix changes. Root corrected that instruction
+before any compression: keep both readable focused tests. This is automatically
+resolved by precedence and clarified scope; no gate, cap or assertion changed.
+Next incomplete step: fresh maintenance review and Root-owned admission/checks.
