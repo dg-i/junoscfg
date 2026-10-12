@@ -6,7 +6,7 @@ domains: [schema-pipeline]
 assurance: economy
 removes: "none, because existing schema assertions and product APIs remain; manual evidence reporting becomes an executable adapter"
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tools/schema_verification.py
     - tools/schema_verification.CONTRACT.md

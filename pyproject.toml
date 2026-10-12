@@ -660,5 +660,5 @@ zones = {}
 
 # Explicit activation requires assessment of every existing branch and live change.
 [tool.template.verification]
-enabled = false
+enabled = true
 policy = "strategy-a/1"
