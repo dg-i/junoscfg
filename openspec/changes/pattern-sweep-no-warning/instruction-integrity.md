@@ -84,3 +84,22 @@ then one ordinary pytest suite with coverage at unchanged 91.47 floor, followed
 sequentially by the exact supported fast set. This owner-approved substitute
 checkpoint does not assert canonical-full or physical-schema completion.
 Finalization, metrics, archive, version/tag and integration remain Root-owned.
+
+## Native substitute-check findings and release bookkeeping correction
+
+Ordinary suite at 7828979f9990fc9f67b64136cd5ff45364f47265 passed: 9826
+passed, 37 skipped and 20 xfailed in 187.95 pytest seconds; coverage 93.00%
+exceeds unchanged 91.47%. Wrapper elapsed 196.82 seconds. Native fast then
+exited 1: actual skills mirror absent; stage towncrier found no news fragment;
+lane rejected the standard-only removes key even though its prose said none.
+The ignored mirror was regenerated with the public skills --regenerate command
+(exit 0). Root approves deleting removes entirely and the existing repository
+misc fragment convention, with exact planned path and changelog declaration.
+The observed stage gate supersedes the earlier no-fragment decision; this is a
+release-bookkeeping correction without promise, source or test behavior changes.
+No gate, cap, acceptance assertion, skip or xfail changes. Original failed fast
+argv/environment/times/raw log hashes remain in substitute-native-commands.json.
+Root authorizes native precheck, two focused tests and exact fast retry on the
+new clean record/news commit. Ordinary remains qualified to its prior proof HEAD;
+no ordinary/full/schema rerun is authorized. Fresh Reviewer will affirm the
+bounded metadata/news delta before finalization, which remains unchecked.

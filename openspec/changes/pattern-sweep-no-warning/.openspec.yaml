@@ -4,11 +4,11 @@ type: maintenance
 zone: conversion
 assurance: economy
 skip_specs: true
-removes: none, because this adds test coverage without changing runtime behavior
 verification:
   state: ready
   planned-paths:
     - tests/unit/convert/test_shipped_pattern_warnings.py
+    - changelog.d/+pattern-sweep-no-warning.misc.md
   dependencies: []
-  changelog: 'none: test-only coverage of preserved warning-free pattern validation'
+  changelog: changelog.d/+pattern-sweep-no-warning.misc.md
   generated-records: []
