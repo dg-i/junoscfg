@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "8f9e0693350d05c6d3c11777052077470bb7b358",
+  "checkpoint": "c393a34ed48efd699357b479df75d4426a29e38a",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root accepts independent SC1 interim C595PASS with explicit nofallback wording narrowing under valid input preservation. No SEC classification/cardinality expansion; original three owning paths/rootgroup sixslots only. Keyed branch ready source correction and conditional onepublic25.2 productgeneration after preserved currentbase restoration/projection check. Comparison completed archived v0.24.1 parked. Other work parked. Full schemas only entire-END selected25.2. Audit kernel preparation branch explicitly parked, ownnewtests only; source implementation remains gated until keyed predecessor writer integration, renewed challenge/admission. Pattern warning sweep independent preparation is parked and test-only. SC2 owning generator extension is admitted SOURCE-ONLY after independent challenge; a second keyed product build remains prohibited until separate source-only assessment. Master remains parked; no full schema until entire-END selected25.2. Root admits exact T5 maintenance warning-sweep test after native263-pattern+real-warning-control evidence and preserved operator-only base renewal; fresh lightweight review and ordinary/fast still required. No source or schema generation authorized by T5 admission.",
-  "captured_at": "2026-10-12T06:07:53.976267+00:00",
+  "authority": "Root integrates T5 maintenance after independent review and bounded metadata affirmation, verified ordinary9826/cov93.00 and correctedfast0 with unchangedruntime/test proof. T5 is complete for source integration and parked; master ready for bounded garden/archive/version/localtag only. Keyed #11 remains ready under root-second-product-build-ruling: ONE second public25.2 implementation build after source-only independentADEQUATE; actual secondbuild result and focused proofs are distinct from fullschema verification, candidate remains subject to currentbase renewal/ordinaryfast/freshReviewer. All other work parked. No fullschema until entire makeover END, selected25.2 only; no push/network/device.",
+  "captured_at": "2026-10-12T06:43:31.168979+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,9 +63,9 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
-    "codex/pattern-sweep-no-warning": "ready"
+    "codex/pattern-sweep-no-warning": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -127,6 +127,6 @@
     "keyed-single-entry-lists": "ready",
     "hidden-list-names": "parked",
     "audit-entry-key-from-kernel": "parked",
-    "pattern-sweep-no-warning": "ready"
+    "pattern-sweep-no-warning": "parked"
   }
 }
