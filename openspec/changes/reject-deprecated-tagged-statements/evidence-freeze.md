@@ -44,3 +44,5 @@ SC1 precise compatibility/test/contract correction is pending independent Test/C
 ## Delta log
 
 - Freeze established from immutable base and baseline copies; source, contracts and existing assertions remain unchanged.
+
+- Phase-4 preparation: new file executed on unchanged runtime, 11 meaningful failures and 10 preservation controls pass; no criterion changed. Lexical quote-only edge documented in preparation-red.md. STOP-T, SC1 pending.

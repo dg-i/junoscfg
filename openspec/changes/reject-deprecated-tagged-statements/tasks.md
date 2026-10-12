@@ -1,6 +1,6 @@
 ## 1. Verification
 
-- [ ] 1.1 Add the new terminal-refusal regression file and record meaningful failure on unchanged base runtime.
+- [x] 1.1 Add the new terminal-refusal regression file and record meaningful failure on unchanged base runtime.
 - [ ] 1.2 STOP-T: independent challenge evaluates SC1 and all frozen legacy assertions; root rules before affected edits.
 
 ## 2. Change

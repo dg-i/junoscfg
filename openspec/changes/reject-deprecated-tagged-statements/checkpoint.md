@@ -1,1 +1,1 @@
-Next incomplete phase: 4 new regression / independent Test-Challenge, with phase 2 implementation closure conditional on SC1 ruling. Last valid evidence: immutable base 5187ac9 and frozen baseline; no source/contract/existing-test edits. PARKED.
+STOP-T. Next incomplete work: independent Test/Challenge and root SC1 ruling; phase-2 implementation closure awaits that ruling. Immutable runtime base 5187ac92734dce8c9ebd4e8404a98f76871fd399. New acceptance file red: 11 failed, 10 preserved controls passed. Source, main specs, contracts and existing tests unchanged. PARKED.
