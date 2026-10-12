@@ -241,8 +241,12 @@ def _preflight(root, policy, shard):
         raise ValueError("schema inventory is missing, staged or undeclared")
     validate_input(_path(root, recipe["dump"]), recipe["release"])
     verify_versions(_path(root, policy["runtime"]))
-    dirty = _git(root, "diff", "--name-only", "--no-renames", "-z", "HEAD").split("\0")
-    if any(name and _candidate_input(name, _read_inputs(policy, recipe)) for name in dirty):
+    dirty = _git(root, "status", "--porcelain", "--untracked-files=no", "--no-renames", "-z").split(
+        "\0"
+    )
+    if any(
+        record and _candidate_input(record[3:], _read_inputs(policy, recipe)) for record in dirty
+    ):
         raise ValueError("schema verification requires a committed clean candidate")
     required = _json(_path(root, recipe["required"]))
     _required(required)

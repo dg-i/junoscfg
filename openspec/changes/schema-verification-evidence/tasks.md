@@ -13,7 +13,7 @@
 - [x] 2.4 Execute actual scaffold template and caps --homes; retain output and resolve only authorized ownership/inactive seeds.
 - [x] 2.5 Add delivered-guide navigation and executable schema recipe plus release fragment.
 - [x] 2.6 Provision physical private inputs, capture actual outcomes/durations, complete focused tests and fast gates.
-- [ ] 2.7 Commit immutable candidate and run one canonical full plus real schema/stability/sentinel evidence; report STOP-R.
+- [ ] 2.7 Commit immutable candidate and complete supported fast plus configured application tests/coverage; report review checkpoint with explicit owner-deferred schema evidence. Final entire-makeover checkpoint requires only the selected 25.2R2 physical version, unchanged double-pass/stability assertions and shipped sentinel.
 
 ## 3. Review and evidence
 
@@ -32,3 +32,5 @@ Git hook isolation repair: the original normal-hook run failed in fixture setup 
 The isolated normal-hook affected suite passed; its test-door gate rejected private helper access only. The corrected regression uses public run_shard and passed in 4.88s (1 selected node, exit 0); test doors now pass. Original 42 assertions remain, with one additional hook-context regression. Exact focused isolation suite before the public-call correction: 43 passed in 62.01s. Normal-hook commit retry remains required and no full exists yet.
 
 Pre-full phase-5 preparation at 3757577e4ce75d4518d76fd831e7ee3972715718: independent application controls accepted, focused 43 passed in 75.06s. Initial fast set failed only missing generated .claude/skills in this worktree; installed offline agent-ready skills --regenerate restored that ignored mirror with no tracked edits, focused skills passed, and the corrected exact fast command passed every gate (raw schema-adapter-pre-full-fast-corrected.out). Physical inputs, focused outcomes/durations and fast gates are complete; actual real-schema outcomes belong to pending task 2.7. Normal implementation commit passed all hooks without exemptions. Final record-only commit and inactive readiness precede the one immutable canonical full. Installed wrapper execute applies actual second-pass stability with reuse=False, so inactive full runs both passes for each declared physical shard and the shipped sentinel uncached. No generation, activation or performance claim is made by this preparation.
+
+Direct owner scheduling amendment (2026-10-12): real schema runs are deferred until the end of the entire makeover and restricted to the existing physical 25.2R2-S1.5_qfx5120 version. All recipe capabilities and assertions remain available. Post-makeover TODO: drastically narrow the cases that trigger full schema regeneration. This carry remains pending; ordinary checks are not reported as canonical full success.

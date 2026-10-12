@@ -285,3 +285,34 @@ class TestQualifiedLifecycleRecordBoundary:
         assert launched == []
         assert not source.exists() and destination.read_text() == "# tracked candidate source\n"
         assert not (root / policy["shards"][SHARD]["result"]).exists()
+
+    def test_staged_source_with_restored_working_bytes_refuses_before_execution(
+        self, tmp_path, monkeypatch
+    ):
+        root, _, policy = small_repository(tmp_path)
+        source = root / "candidate.py"
+        original = "# committed source\n"
+        source.write_text(original)
+        commit_fixture(root)
+        source.write_text("# staged source change\n")
+        git(root, "add", "candidate.py")
+        source.write_text(original)
+        assert git(root, "status", "--porcelain", "--untracked-files=no") == "MM candidate.py\n"
+        assert git(root, "diff", "--name-only", "--no-renames", "HEAD") == ""
+        original_run = subprocess.run
+        launched = []
+
+        def observe(command, *args, **kwargs):
+            if any("pytest" in str(part) for part in command):
+                launched.append(command)
+                raise AssertionError("staged source change preceded candidate refusal")
+            return original_run(command, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "run", observe)
+        try:
+            status = adapter().run_shard(root, SHARD)
+        except (ValueError, OSError):
+            status = 1
+        assert status != 0
+        assert launched == []
+        assert not (root / policy["shards"][SHARD]["result"]).exists()

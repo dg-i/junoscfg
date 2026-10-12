@@ -225,3 +225,37 @@ appended by the genuine provider. TC accepts the bounded control correction;
 the same Reviewer owns its final verdict. Changed source requires new owning
 immutable full/schema evidence, not relabelled historical receipts. No full,
 real XSD generation, activation or performance proof ran in these controls.
+
+## TC-L02 — staged source remains candidate dirt
+
+One further concrete admission counterexample restores the existing clean
+tracked candidate/index invariant. Real Git source was committed, changed and
+staged, then its working bytes restored to HEAD. Status remained MM while the
+net HEAD-to-worktree diff was empty. Public run_shard on exact archived
+`ec0742c8ce9c3cb16582881324785bbbd95faf1c` attempted pytest instead of refusing;
+the launch observer stopped it before generation. One executed expected failure,
+zero collection errors/skips, exit 1, 3.42s; direct source/raw/JUnit hashes are in
+staged-source-red-provenance.json. All original seventeen-case source bytes are
+preserved exactly, with one additional node; final test SHA256 is
+`6c301ddd08beb55da7030da4f0ca0c458b03ace44fa46fc5c551afadd23064c0`.
+
+Root and the same isolated Reviewer classify this as enforcement of the existing
+clean committed candidate requirement, not a new criterion. Root authorizes
+restoring status-based tracked dirty-name discovery with porcelain, no untracked
+files, no renames and NUL records; remove only the two status columns/separator
+and feed exact path names to the same qualified predicate/explicit overrides.
+The prior seventeen passes remain truthful scoped observations; they did not
+cover the staged-index mismatch. The interrupted full exit 130 and incomplete
+schema record remain historical observations, never completed success. Minimal
+source repair, serialized eighteen-case green, normal hooks, immutable review
+and new owning full/schema evidence remain required. No production edit,
+activation, real schema execution or full checkpoint was performed by TC.
+
+TC-L02 current-correction confirmation: serialized independent eighteen-case
+public application/provider suite passed 18/0 failures/errors/skips in 79.73s,
+exit zero. The new MM source case refused before pytest; all original seventeen
+controls passed unchanged. Corrected source/test/helper bytes and shared Git
+configuration stayed unchanged during execution. Direct source/raw/JUnit hashes
+are in staged-source-green-before-commit-provenance.json. This is uncommitted
+current-correction evidence; normal hooks, immutable confirmation, same Reviewer
+approval and corrected owning full/schema evidence remain pending.
