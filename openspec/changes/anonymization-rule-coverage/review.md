@@ -118,3 +118,15 @@ All mapping categories, all held eligible occurrences, canonical IR shape and ex
 The preservation-oriented maintenance lane legitimately passes baseline; no runtime defect is inferred from the original coverage blind spot or the injected mutants. The prior initial oracle corrections remain qualified as test-oracle errors. This ADEQUATE verdict resolves SC1's test adequacy challenge for this frozen candidate. Final integration must rebase after runtime predecessors and rerun focused evidence on the resulting source, followed by the required fresh Reviewer and authorized lifecycle gates. This work is independent Test/Challenge, not phase-6 source review, and qualifies no XML/T1/T2/full/fast/schema/generation result.
 
 Exact argv, UTC, durations, runtime import identity, per-device inventories and log SHA-256 receipts are in verdict.json, focused.json, probe-execution.json, original-gap-rejection.json and probe-results.json.
+
+## Final-base Builder verification
+
+On base 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b, original test/news bytes
+remain unchanged after preserved rebase. Current-base focused evidence is
+238 PASS plus three optional private capture nodes PASS. Ordinary suite and
+four-extra native fast passed on the same clean 0ca6cb1 proof head: 10356 PASS,
+37 existing skips, 20 strict expected failures, 92.95% coverage against the
+unchanged 91.47% floor. This is Builder verification, not a fresh review verdict.
+No source/fixture/assertion change, XML qualification or schema execution.
+Native readiness setup failures and the first overwritten-raw-log limitation
+remain qualified in checkpoint.md; no failed run supplies PASS evidence.

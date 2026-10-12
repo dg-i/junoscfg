@@ -8,9 +8,9 @@
 
 ## 3. Review and evidence
 - [x] Independent Test/Challenge assessment accepted after bounded SC1 correction.
-- [ ] Root lane/source-plan and READY admission.
+- [x] Root lane/source-plan and READY admission; native readiness/lane passed.
 - [ ] Genuinely fresh Reviewer verdict.
-- [ ] Owner-approved ordinary and fast checkpoint on the admitted clean head.
+- [x] Owner-approved ordinary and fast checkpoint on the admitted clean head.
 
 ## Finalization
 - [ ] Native metrics and bounded lifecycle housekeeping.

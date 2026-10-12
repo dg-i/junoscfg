@@ -57,3 +57,15 @@ products belong to this maintenance change, so the empty declaration was added.
 This second failed check is preserved separately. The first readiness raw file
 was overwritten by the runner on retry; its actual exit/message remains in tool
 output and the prior checkpoint, not claimed as a retained raw-log receipt.
+
+STOP-R current-base SOURCE handoff: ordinary and native four-extra fast both
+exit 0 on immutable clean proof HEAD 0ca6cb1a7fbe9855001adf7e9ec551d0cf9c1d6f,
+BASE 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b. Ordinary: 10356 PASS, 37
+existing availability skips, 20 strict expected failures; coverage 92.95% meets
+unchanged 91.47% floor, pytest 190.90s, wrapper 201.336890s. Fast: all gates
+passed in 16.326404s. Both tracked before/after manifests match exactly.
+Earlier focused238 and3capture passes are current-base evidence, not new TC.
+Raw argv/UTC/durations/exit/log hashes and manifests are under root private
+final-base-renewal/*.json. No canonical full, physical schema, generation or XML
+qualification occurred. Next: genuinely fresh lightweight maintenance privacy
+Reviewer, then bounded finalization; no independent review PASS yet claimed.
