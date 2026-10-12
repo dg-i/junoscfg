@@ -15,4 +15,4 @@
 - [ ] 3.2 Capture metrics for immutable base and code head.
 - [ ] 3.3 Finalizer applies reviewed main-spec deltas; root alone merges, versions, archives and tags.
 
-- [ ] 3.4 Native readiness, owner-directed one ordinary suite and four-extra fast sequentially on the committed runtime HEAD, base dd626c13bd0bdd3877d848072b31ba7b62df6699.
+- [x] 3.4 Native readiness, owner-directed one ordinary suite and four-extra fast passed sequentially at 7c1b5a3f31d4279f09d3cb4ab31914f102b2031a, base dd626c13bd0bdd3877d848072b31ba7b62df6699; implementation-verification.md records actual commands and qualifications.

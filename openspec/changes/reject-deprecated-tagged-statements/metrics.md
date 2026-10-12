@@ -28,4 +28,7 @@
 | Context expansion: src/junoscfg/display/set_converter.py | Owning shared kernel excluded from domain-ranked slice; necessary lexical guard responsibility. |
 | Context expansion: src/junoscfg/display/CONTRACT.md | Owning shared-kernel contract and deprecated boundary. |
 
+| Owner ordinary checkpoint | 7c1b5a3: 10290 passed, 37 skipped, 20 xfailed; coverage 92.95%, required 91.47%; actual command 198.866s, exit 0. |
+| Native fast checkpoint | Same 7c1b5a3: four extras, base dd626c1; actual 59.501s, exit 0; sole prior failure missing ignored skills mirror, tracked bytes unchanged. |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
