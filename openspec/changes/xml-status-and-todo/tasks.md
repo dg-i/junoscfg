@@ -16,7 +16,7 @@
 
 - [x] 3.0 Run root-admitted native checkpoint after actual READY; preserve exact argv, HEAD, raw log and result; no schema execution.
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
+- [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
 
