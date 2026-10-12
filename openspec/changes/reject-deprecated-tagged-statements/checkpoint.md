@@ -1,1 +1,1 @@
-Next incomplete phase: 1 intent. Last valid evidence: clean operator base 5187ac92734dce8c9ebd4e8404a98f76871fd399, readonly preparation and root admission. No product edits.
+Next incomplete phase: 2 spec/evidence freeze. Last valid evidence: preflight commit 79c475d and root-approved bounded intent direction; SC1 correction remains reserved for independent admission. No product edits.
