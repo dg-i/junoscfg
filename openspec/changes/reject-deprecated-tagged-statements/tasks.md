@@ -11,8 +11,10 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 STOP-R: fresh isolated review with frozen evidence, contracts, diff and tests.
+- [x] 3.1 STOP-R: fresh isolated review with frozen evidence, contracts, diff and tests.
 - [ ] 3.2 Capture metrics for immutable base and code head.
 - [ ] 3.3 Finalizer applies reviewed main-spec deltas; root alone merges, versions, archives and tags.
 
 - [x] 3.4 Native readiness, owner-directed one ordinary suite and four-extra fast passed sequentially at 7c1b5a3f31d4279f09d3cb4ab31914f102b2031a, base dd626c13bd0bdd3877d848072b31ba7b62df6699; implementation-verification.md records actual commands and qualifications.
+
+Root admits fresh SOURCE PASS and same Reviewer exact main-spec affirmation. Both reports retained complete/verbatim in review.md; SC1/Test-Challenge and historical failure qualifications preserved. Only two exact admitted main specs apply. Native capture and final clean gates follow normal application commit; actual root merge/version/archive/tag remains pending.
