@@ -69,3 +69,18 @@ No runtime or test behavior changed; prior targeted material remains historical.
 Next incomplete step: fresh lightweight maintenance Reviewer on current frozen
 artifacts/diff; admission and tests will be bound to their actual committed HEAD
 in the private immutable review checkpoint.
+
+## Fresh maintenance review accepted and substitute checks authorized
+
+Root accepted the independent lightweight maintenance PASS over reviewed HEAD
+5955ae353870fe5114664e86fd9eb5c878cae29f and base
+a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69. review.md preserves the exact fresh
+verdict bytes (SHA256 2df6642fc534d1d706782e5d59a6f9342f7ca55b9d61eae256ed3e8748305a14).
+Root verified independent archive/log bindings and 1231 tracked before/after
+identities; no review correction changes source, tests or acceptance criteria.
+This is a maintenance second read, not a main-spec or full phase-6 verdict.
+Root now authorizes a native readiness precheck on the clean record commit,
+then one ordinary pytest suite with coverage at unchanged 91.47 floor, followed
+sequentially by the exact supported fast set. This owner-approved substitute
+checkpoint does not assert canonical-full or physical-schema completion.
+Finalization, metrics, archive, version/tag and integration remain Root-owned.
