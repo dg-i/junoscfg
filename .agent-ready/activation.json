@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "bb609dcec4c68d98775ded840936d7f386d848b1",
+  "checkpoint": "c8082a1407b5543b82b5a4310b39a1765f4bccfc",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Deprecated terminal guard completed localv0.28.0, normal hooks and81archivesPASS. Admit final-base T3 test-only privacy coverage renewal/ordinary/fast/fresh review; master parked. No schema execution until entire reduced batch end, selected25only.",
-  "captured_at": "2026-10-12T12:04:43.775866+00:00",
+  "authority": "Root local patch release of fresh reviewed T3 test-only maintenance. Ordinary10356PASS92.95 andfastPASS; independent238PASS42negativecontrols. All prearchive work complete; actual root release pending. Final selected25 schema qualification follows entire integration.",
+  "captured_at": "2026-10-12T12:23:13.929308+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,11 +63,11 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
-    "codex/anonymization-rule-coverage": "ready",
+    "codex/anonymization-rule-coverage": "parked",
     "codex/reject-leaf-list-meta-values": "parked",
     "codex/reject-deprecated-tagged-statements": "parked"
   },
