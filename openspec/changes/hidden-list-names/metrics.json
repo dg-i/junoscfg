@@ -1,0 +1,168 @@
+{
+  "change": "hidden-list-names",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "77c3690201fc2bd8c327b40e1f61ba4e5327d30866cc06eb41570e5326562988",
+          "head": "77c3690201fc2bd8c327b40e1f61ba4e5327d30866cc06eb41570e5326562988"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "changelog.d/+hidden-list-names.bugfix.md",
+            "openspec/specs/conversion/hidden-list-names/spec.md",
+            "openspec/specs/schema-pipeline/hidden-list-hints/spec.md",
+            "src/junoscfg/convert/input/set_input.py",
+            "src/junoscfg/display/constants.py",
+            "tests/data/device/known-differences.json",
+            "tests/unit/convert/test_hidden_list_names.py",
+            "tests/unit/validate/test_hidden_list_hints.py"
+          ],
+          "since": "255441927eb836ee9eeb7be10c077f18bb4b345e"
+        },
+        "selector": [
+          "255441927eb836ee9eeb7be10c077f18bb4b345e",
+          "23c6349aad6ec333b3305e3139de826a53ec6717"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 424,
+        "binary_files": 0,
+        "files": 8,
+        "removed": 465
+      }
+    },
+    "locked_packages": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "8d9f8903f46dd03bb69e6e0e07a67b5a26bd9859d590afc76574cb7f331edf6a",
+          "head": "8d9f8903f46dd03bb69e6e0e07a67b5a26bd9859d590afc76574cb7f331edf6a"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "255441927eb836ee9eeb7be10c077f18bb4b345e",
+      "captured_at": "2026-10-12T09:52:02.723136Z",
+      "head_sha": "23c6349aad6ec333b3305e3139de826a53ec6717",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
