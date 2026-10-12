@@ -13,7 +13,7 @@ declared-break:
     why: 'Set conversion exits with a value-free ValueError for unsupported scalar-leaf metadata targets.'
     migration: 'Remove the entire unsupported command and retain the set lines, or explicitly request the whole-leaf operation if intended; dropping a selector is not equivalent.'
 verification:
-  state: proposed
+  state: ready
   planned-paths:
     - src/junoscfg/convert/input/set_input.py
     - tests/unit/convert/test_scalar_meta_targets.py
