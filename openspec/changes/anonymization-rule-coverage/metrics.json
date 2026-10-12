@@ -1,0 +1,162 @@
+{
+  "change": "anonymization-rule-coverage",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "2808e0a160600d1812c6e8028447d76d47273560aacd02abef5233ed01a51e73",
+          "head": "2808e0a160600d1812c6e8028447d76d47273560aacd02abef5233ed01a51e73"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lines_added_removed": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "changelog.d/+anonymization-rule-coverage.bugfix.md",
+            "tests/corpus/test_device_rule_values.py"
+          ],
+          "since": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b"
+        },
+        "selector": [
+          "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+          "223af53d9fc9b120b184f215c9231476a54b69f3"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 291,
+        "binary_files": 0,
+        "files": 2,
+        "removed": 0
+      }
+    },
+    "locked_packages": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "34509eb267ce49d2aa7599ed5e2b66eb47185c7322a94f3daabb485c4db9d158",
+          "head": "34509eb267ce49d2aa7599ed5e2b66eb47185c7322a94f3daabb485c4db9d158"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "5f75bdf54f1320b1276b4ae2efd1af3137d9b92b",
+      "captured_at": "2026-10-12T12:18:41.013807Z",
+      "head_sha": "223af53d9fc9b120b184f215c9231476a54b69f3",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

@@ -13,7 +13,7 @@
 - [x] Owner-approved ordinary and fast checkpoint on the admitted clean head.
 
 ## Finalization
-- [ ] Native metrics and bounded lifecycle housekeeping.
+- [x] Native metrics and bounded lifecycle housekeeping.
 - [ ] Root integration, archive, version/local tag and preserved cleanup.
 
 ## SC1 correction
@@ -23,3 +23,5 @@
 - [x] Same independent TC demonstrates six meaningful combined-leak failures and 174 rejected mutants; Root accepts ADEQUATE.
 
 Root accepts genuinely fresh lightweight privacy PASS at c6c4d09c289312651d101908f94e010f83521c6a / base 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b. Complete report SHA b0686b76642d384e6ce28d7daf473582612d8a6d7d203edb50310de3ae1cfcf0 appended verbatim, preserving historical TC/SC1 and first readiness overwritten-raw qualification. Native metrics and bounded clean gates follow normal reviewed-record application commit. Actual root integration/archive/version/tag/cleanup task stays open.
+
+Finalizer premerge handoff prepared: native metrics bind clean application 223af53d9fc9b120b184f215c9231476a54b69f3 and exact base 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b; final clean bounded checks follow records commit. Actual root integration/archive/version/local tag/preserved cleanup stays open and unexecuted. Maintenance skip_specs has no main delta/application. No source/test/news/fixture/dependency edit, full/ordinary/schema or build repeat.
