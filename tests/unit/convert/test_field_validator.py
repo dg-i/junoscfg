@@ -663,13 +663,15 @@ class TestMandatoryValidation:
         assert result.warnings == []
 
     def test_the_message_names_the_commit_boundary(self) -> None:
-        """A missing mandatory statement fails a commit, never a load (DEV-V3, OPEN-16).
+        """A missing mandatory statement may be required at commit (DEV-V3, OPEN-16).
 
         The vMX (23.2R2-S7.5) and the QFX5120 (25.2R2-S1.5) loaded `access
         profile PROF-1 radius-server 192.168.50.10 timeout 10` without `secret`
         (`tests/data/device/synthetic/*/junoscfg-oracle.set.gz`, loaded and
         never committed); the schema marks `secret` mandatory, which Junos
-        checks at commit. The warning says so, and the result stays valid.
+        may check at commit. The owner qualified this wording after an unapplied
+        group committed successfully; group evaluation stays outside this change.
+        The warning says so, and the result stays valid.
         """
         ir = to_dict("set access profile PROF-1 radius-server 192.168.50.10 timeout 10\n", "set")
         result = validate_ir(ir)
@@ -678,7 +680,7 @@ class TestMandatoryValidation:
         assert [(w.path, w.message) for w in result.warnings] == [
             (
                 "access.profile.radius-server.secret",
-                "Missing mandatory field 'secret': required at commit; "
+                "Missing mandatory field 'secret': may be required at commit; "
                 "the configuration loads without it",
             )
         ]
@@ -970,7 +972,8 @@ class TestTheExampleConfigurationValidates:
 
     RADIUS_SECRET = (
         "access.profile.radius-server.secret",
-        "Missing mandatory field 'secret': required at commit; the configuration loads without it",
+        "Missing mandatory field 'secret': may be required at commit; "
+        "the configuration loads without it",
     )
 
     def test_every_statement_the_schema_places_validates(self, json_config: str) -> None:

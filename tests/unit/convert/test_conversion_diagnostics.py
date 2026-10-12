@@ -131,7 +131,8 @@ RADIUS_WITHOUT_SECRET = {
 SECRET_WARNING = (
     "field-validate",
     "access.radius-server.secret",
-    "Missing mandatory field 'secret': required at commit; the configuration loads without it",
+    "Missing mandatory field 'secret': may be required at commit; "
+    "the configuration loads without it",
 )
 
 

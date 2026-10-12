@@ -22,7 +22,7 @@ declared-break:
       output is unchanged. Patch, as AGENTS.md rules for what is not a break.
     migration: >-
       None needed. A caller that matched the text "Missing mandatory field
-      'X'" matches it as a prefix: the message continues ": required at
+      'X'" matches it as a prefix: the message continues ": may be required at
       commit; the configuration loads without it".
   cli:
     why: >-
@@ -34,3 +34,18 @@ declared-break:
     migration: >-
       None needed. A script that parsed stderr reads one more `field-validate:`
       line for each missing mandatory statement.
+
+verification:
+  state: parked
+  planned-paths:
+    - src/junoscfg/convert/__init__.py
+    - src/junoscfg/convert/field_validator.py
+    - src/junoscfg/convert/CONTRACT.md
+    - tests/unit/convert/test_conversion_diagnostics.py
+    - tests/unit/convert/test_field_validator.py
+    - docs/guide/validation.md
+    - changelog.d/diagnostics-load-vs-commit.bugfix
+    - openspec/specs/conversion/diagnostics/spec.md
+  dependencies: []
+  changelog: changelog.d/diagnostics-load-vs-commit.bugfix
+  generated-records: []

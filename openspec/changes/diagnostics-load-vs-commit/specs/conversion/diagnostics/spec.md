@@ -47,12 +47,12 @@ Tests: `tests/unit/convert/test_conversion_diagnostics.py::TestDiagnosticRouting
 
 WHEN a configuration lacks a statement the schema marks mandatory THEN field
 validation SHALL report a warning, never an error, whose message names the
-statement and says that Junos requires it at commit and loads the
+statement and says that it may be required at commit and Junos loads the
 configuration without it; `strict` SHALL NOT raise on it. Device evidence: the
 vMX (23.2R2-S7.5) and the QFX5120 (25.2R2-S1.5) loaded `access profile PROF-1
 radius-server 192.168.50.10 timeout 10` without `secret`
 (`tests/data/device/synthetic/*/junoscfg-oracle.set.gz`); the commit half is
-the schema model's `mandatory` flag, as no capture is committed.
+the schema model's `mandatory` flag, qualified by the owner's group commit-check counterevidence; group mandatory evaluation remains outside this change.
 
 Tests: `tests/unit/convert/test_field_validator.py::TestMandatoryValidation::test_the_message_names_the_commit_boundary`, `tests/unit/convert/test_field_validator.py::TestTheExampleConfigurationValidates::test_every_statement_the_schema_places_validates`
 
@@ -61,5 +61,5 @@ Tests: `tests/unit/convert/test_field_validator.py::TestMandatoryValidation::tes
 - **WHEN** `access profile PROF-1 radius-server 192.168.50.10` carries no
   `secret`
 - **THEN** the warning at `access.profile.radius-server.secret` reads
-  `Missing mandatory field 'secret': required at commit; the configuration
+  `Missing mandatory field 'secret': may be required at commit; the configuration
   loads without it`, and the validation result is valid

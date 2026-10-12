@@ -1,6 +1,6 @@
 <!-- Complete at the end of phase 2. Later instructions or evidence require a delta consistency check before affected work continues. -->
 
-## Resolved instructions
+## Historical freeze (source 5ae3ad7; current execution baseline below)
 
 - Standard lane, type `bug`, zone `conversion` (yellow), domains `conversion` and `validation` (C7: cross-domain, high-risk floor).
 - Owner intake 2026-10-11 (`builder-brief.md`): unattended, no questions (C1), no version bump on the branch, never push, nothing from `private_test_data/` in a tracked file.
@@ -59,3 +59,15 @@ None, because all material decisions are resolved (C1–C7); the group question 
 
 - Freeze established at the phase-2 commit on branch `change/diagnostics-load-vs-commit` (base `40173ba`); approved under the owner's unattended-run instruction of 2026-10-11.
 - Phase 4, 2026-10-11: the acceptance tests of the "warning without an error" scenario use the vMX's own line `set access radius-server 192.168.50.10` (`synthetic-probes.set.gz`) instead of the oracle's `access profile PROF-1 radius-server 192.168.50.10 timeout 10`: every writer drops `timeout` there (`set ... radius-server 192.168.50.10 10`), the mission's device-oracle defect 3, owned by ledger row 10 (DEV-3). The field-validator test keeps the oracle line (it asserts no output). Requirements and criteria unchanged; spec scenario text updated to name the line. No rerun beyond the phase-4 tests.
+
+## Current execution baseline — migration 2026-10-12
+
+- Base `13b2cc73fd42fb44d1c69121b73d9b9fa61677cd`, template/check revisions and effective amendments as current preflight. Historical 96/1,152 comparisons above remain historical, never new-base proof. Current-base comparisons and red tests replace execution evidence before STOP-T.
+- Approved qualified warning: `Missing mandatory field 'secret': may be required at commit; the configuration loads without it`. Warning severity stays warning; warnings propagate regardless of errors; strict raises only on errors; output/stdout and exit behavior unchanged.
+- P15 owner counterevidence: unapplied down-only hold-time group commits successfully; applying it without up fails; up0 succeeds. This invalidates unconditional wording, not mandatory evaluation. Group evaluation, commit-check feature, validation doors and JSON end-range aliases remain non-goals. Approved tests change the qualified wording only.
+- Named acceptance: `TestAFieldWarningNeedsNoError::{test_every_door_reports_it,test_an_error_beside_it_changes_nothing,test_the_cli_prints_it}` in `tests/unit/convert/test_conversion_diagnostics.py`; `TestMandatoryValidation::test_the_message_names_the_commit_boundary` in `tests/unit/convert/test_field_validator.py`. Oracle warning pin follows qualified text without weakened assertions.
+- Exact planned product paths/dependencies/changelog/generated records are in `.openspec.yaml`; no added dependencies or generated-record edits. Reviewed main spec is applied only after review; change remains parked during migration.
+- Current verification: focused named tests (zero collection errors), device/anonymizer base comparisons before runtime edits; after implementation owning tests/device checks, supported fast plus configured ordinary coverage command. No canonical full or real schema now; final 25.2R2-S1.5 schema deferred to whole makeover end.
+- Risk high (cross-domain); assurance economy; roles independent Test/Challenge and fresh Reviewer at least as capable as Builder. Resume STOP-T awaiting root admission/independent challenge. No material outstanding owner decision.
+- Delta consistency: current base/instructions invalidate old execution proof and unconditional warning text. Intent, severity, strict/output criteria and non-goals remain; rerun current codemap, gates, named acceptance and baseline comparisons. Historical source/bundle/logs retained.
+- Actual current-base STOP-T evidence: all 14 named acceptance cases failed, zero collection/errors/skips (`current-red.xml`); current baseline 96 plain conversions and 1,152 anonymizer combinations recorded before runtime changes (`current-base.json`, `current-base-anon.json`). Provenance/hashes in private `migration-evidence.json`; product `src/` diff against exact base is empty. Historical records remain unchanged.

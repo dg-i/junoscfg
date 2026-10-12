@@ -4,7 +4,7 @@ A conversion reports a field-validation warning only when an unrelated error exi
 profile PROF-1 radius-server 192.168.50.10 timeout 10` alone converts with no diagnostic, and the
 same line beside `set chassis dump-on-panic` adds `Missing mandatory field 'secret'` (NEW-B7 =
 NEW-C2). That message also hides the boundary: the vMX and the QFX5120 loaded the line without
-`secret`; the schema marks it mandatory, which Junos checks at commit (DEV-V3, OPEN-16).
+`secret`; the schema marks it mandatory, which may be required at commit (DEV-V3, OPEN-16; approved qualified wording).
 
 ## What Changes
 
@@ -12,7 +12,7 @@ NEW-C2). That message also hides the boundary: the vMX and the QFX5120 loaded th
   warning as a diagnostic whether or not the validation found errors; with `strict` the errors
   still raise `FieldValidationError` and a configuration with warnings only converts, its warnings
   reported.
-- The mandatory-field warning names the boundary: `Missing mandatory field 'secret': required at
+- The mandatory-field warning names the boundary: `Missing mandatory field 'secret': may be required at
   commit; the configuration loads without it`. It stays a warning and `strict` never raises on it.
 - Removes the coupling of warnings to errors in `convert/__init__.py::_convert`.
 - No override, fallback, parameter or environment read is added.

@@ -21,3 +21,9 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+| Current migration checkpoint | Base 13b2cc73fd42fb44d1c69121b73d9b9fa61677cd; parked STOP-T; independent challenge pending |
+| Current-base named acceptance | 14 failed; zero collection errors/skips; private current-red.xml |
+| Current-base output baseline | 96 plain conversions; 1,152 anonymizer combinations; recorded before product implementation |
+| Context expansion: tests/data/device/manifest.json | Device/anonymizer corpus for current-base output-preservation evidence |
+| Schema scheduling amendment | OWNER-SCHEMA-SCHEDULE-2026-10-12: no real schema/canonical full now; ordinary coverage plus fast before review |

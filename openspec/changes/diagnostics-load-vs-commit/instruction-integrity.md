@@ -1,6 +1,6 @@
 <!-- Complete before proposal work. Precedence decides what is effective, not whether it is correct. -->
 
-## Effective instruction stack
+## Historical effective instruction stack (source 5ae3ad7; superseded below)
 
 | Source | Scope | Priority | Available | Effect on this change |
 |---|---|---|---|---|
@@ -47,3 +47,15 @@ None, because the owner asked for no questions (C1) and the evidence settles bot
 - Initial preflight, 2026-10-11: consistent; C1–C7 resolved. Approved under the owner's unattended-run instruction of 2026-10-11. Resume point: phase 1.
 - Phase 1, 2026-10-11: proposal and lane fields approved under the owner's unattended-run instruction of 2026-10-11. `openspec validate` waits for the phase-2 delta (a bug carries one). Resume point: phase 2.
 - Phase 4, 2026-10-11: acceptance tests written (15 fail on the base `40173ba` for the reason the delta names, none passes there); test data moved to a capture line not touched by DEV-3 (evidence-freeze delta log). The high-risk floor requires independent Test/Challenge: STOP-T. Approved under the owner's unattended-run instruction of 2026-10-11.
+
+## Current migration preflight — 2026-10-12
+
+- Current base: `13b2cc73fd42fb44d1c69121b73d9b9fa61677cd`; historical base `40173ba8ec6c0664ea3590b5a3b14786fcf22629` and STOP-T `5ae3ad7d8074cf40a1c8feaf0129c075f59e0950` preserved in the verified private bundle and logs. Rebase changed planning/tests only; product implementation has not started.
+- Runtime: Codex continuous Builder under root orchestration, isolated diagnostics worktree; independent Test/Challenge and fresh Reviewer remain required. Historical provider/model entries above do not describe this run.
+- Installed checks `0.16.1` revision `6e833710f7b0df04e8612defaf34ed861d124908`, template `0.10.2` revision `3064189f740d3ff6cd2d54c537b1fc245f755005`; Strategy A `strategy-a/1` enabled. Local `.agent-ready/activation.json` parses equal to common Git operator inventory; checkpoint `73a0097848033ddf79804d3fecead7108c8cf63e`. Branch/change stay PARKED until root admission. No shared inventory edit by Builder.
+- Owner qualified-warning ruling approves exactly `may be required at commit; the configuration loads without it`. Automatically resolved by precedence: supersedes unconditional historical wording, changes wording assertions only; severity/strict/output/non-goals remain approved. Root owns admission and material rulings.
+- Owner schema schedule `OWNER-SCHEMA-SCHEDULE-2026-10-12` supersedes canonical full/per-change real-schema requirements for this makeover. Automatically resolved by precedence: do not launch canonical full or real schemas now. Supported substitute before review is fast plus exact configured ordinary command `uv run --locked pytest tests/ -q --cov --cov-report=term:skip-covered`; assertions/floor remain. Only root executes final selected physical 25.2R2-S1.5 schema at makeover end.
+- Owner authorizes unattended local migration and completion; no phase questions, network, push, publish, device contact or Claude control. Sibling/common-Git/cache writes use sandbox escalation. Main/shared inventory/version/tag/archive belong to root. No new dependency, override, fallback or environment read.
+- Standing assurance `economy` from `docs/how-to/run-a-batch-of-changes.md#assurance`; cross-domain conversion/validation unchanged high-risk floor. No material unresolved owner decision.
+- Contracts reread: `ARCHITECTURE.md`, convert contract, tests contract, batch guide and current phases 0/1/2/4. Knowledge graph absent in this worktree; source and current generated codemap supply bounded context. Unknown usage/efficiency remains UNMEASURED.
+- Next incomplete phase: independent phase-4 Test/Challenge after current-base red and baseline comparisons; no implementation until root ruling.
