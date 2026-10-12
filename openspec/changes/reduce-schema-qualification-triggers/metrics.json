@@ -1,0 +1,303 @@
+{
+  "change": "reduce-schema-qualification-triggers",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "e62b4510326aefaf11c85e8e96a3eb80f38036d409fcff10238dac122f8761da",
+          "head": "bac318f45d6b6778be3320276501aa1f82f7b6752ef059b780a92c708494b824"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/Users/manon-dev/.codex/worktrees/reduce-schema-qualification/junoscfg/openspec/changes/reduce-schema-qualification-triggers/events.jsonl",
+        "sha256": "677a84232a291e6f0ba61c84993333268c036101640615c7461e1be00cb00cdd"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+        "carry": {},
+        "change": "reduce-schema-qualification-triggers",
+        "checks": [
+          {
+            "checkpoint": "84c05efba815704bc2df95ba596f511ab1a3d8a83776f52fb43b27071da62fd8",
+            "duration_ms": 490.9409169922583,
+            "evidence": ".agent-ready/verification/d4cc05a0e051403d8514bff2de5b282c.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "b7bd6410920d11430b5325d890851a244de26c23b8a94174005881329681c2e0",
+            "duration_ms": 830084.289832972,
+            "evidence": ".agent-ready/verification/f5732542bd5746b5a7945a2ce044b424.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "6124e84d1c1e75ed9d3b363d196b90c92ee280e6f5295b014ea8615a0456aeb9",
+            "duration_ms": 431784.517083026,
+            "evidence": ".agent-ready/verification/f47930117cc044669cd300d2259f7b35.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "748712cf8c080d02c7b5dcc997655f4a6f65f740dee6d37f72c763ab53bb34c1",
+            "duration_ms": 1695965.102041955,
+            "evidence": ".agent-ready/verification/8af5da03055e4fd1b42168ea63ef4d44.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+        "ledger_sha256": "677a84232a291e6f0ba61c84993333268c036101640615c7461e1be00cb00cdd",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "72ec91bda3d55fdd448dc9b63daafcc9399e1352bfebff3a02bbda3d103614d1",
+              "1b5a80578a0f2f4507be8fe9ea76339c1f0c99e9a1462ffcb1f5b0a5343a9ef0",
+              "6e82e8f43e71d35e45213cafb1ac1adc1f5e4c4b3ad367d253b9e897079235f9"
+            ],
+            "value": 3
+          },
+          "full_runs": {
+            "events": [
+              "3451ae3a6b4cb6ebc55d32cfc202a81da4108010c5fb9680fa0c87d4ad9e2484"
+            ],
+            "value": 1
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 7,
+            "total": 11
+          },
+          {
+            "completed": 7,
+            "total": 11
+          },
+          {
+            "completed": 7,
+            "total": 11
+          },
+          {
+            "completed": 7,
+            "total": 11
+          },
+          {
+            "completed": 11,
+            "total": 11
+          }
+        ],
+        "roles": [
+          {
+            "referent": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+            "role": "Reviewer",
+            "verdict": "APPROVE"
+          }
+        ],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            "changelog.d/+reduce-schema-qualification-triggers.misc.md",
+            "docs/how-to/run-a-batch-of-changes.md",
+            "docs/how-to/verification-evidence.md",
+            "openspec/specs/schema-pipeline/verification-evidence/spec.md",
+            "pyproject.toml",
+            "tests/tooling/test_schema_dependencies.py",
+            "tests/tooling/test_schema_dependency_trigger_challenge.py",
+            "tests/tooling/test_schema_verification.py",
+            "tools/schema-verification/dependencies.json",
+            "tools/schema-verification/dependencies.required.json",
+            "tools/schema_dependencies.CONTRACT.md",
+            "tools/schema_dependencies.py",
+            "tools/schema_verification.CONTRACT.md",
+            "tools/schema_verification.py"
+          ],
+          "since": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7"
+        },
+        "selector": [
+          "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+          "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 520,
+        "binary_files": 0,
+        "files": 15,
+        "removed": 18
+      }
+    },
+    "locked_packages": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "0fe18d0668c6cf88536bcd2100e5aaa486743a56e9cbe1cb5d9ad53e3021d013",
+          "head": "0fe18d0668c6cf88536bcd2100e5aaa486743a56e9cbe1cb5d9ad53e3021d013"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+      "captured_at": "2026-10-12T16:21:58.951804Z",
+      "head_sha": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

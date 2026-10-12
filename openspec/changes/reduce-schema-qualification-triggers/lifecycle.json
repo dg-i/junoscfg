@@ -1,0 +1,116 @@
+{
+  "archived": false,
+  "base": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7",
+  "carry": {},
+  "change": "reduce-schema-qualification-triggers",
+  "checks": [
+    {
+      "checkpoint": "84c05efba815704bc2df95ba596f511ab1a3d8a83776f52fb43b27071da62fd8",
+      "duration_ms": 490.9409169922583,
+      "evidence": ".agent-ready/verification/d4cc05a0e051403d8514bff2de5b282c.json",
+      "exit_status": 0,
+      "reused": false,
+      "tier": "expensive"
+    },
+    {
+      "checkpoint": "b7bd6410920d11430b5325d890851a244de26c23b8a94174005881329681c2e0",
+      "duration_ms": 830084.289832972,
+      "evidence": ".agent-ready/verification/f5732542bd5746b5a7945a2ce044b424.json",
+      "exit_status": 0,
+      "reused": false,
+      "tier": "expensive"
+    },
+    {
+      "checkpoint": "6124e84d1c1e75ed9d3b363d196b90c92ee280e6f5295b014ea8615a0456aeb9",
+      "duration_ms": 431784.517083026,
+      "evidence": ".agent-ready/verification/f47930117cc044669cd300d2259f7b35.json",
+      "exit_status": 0,
+      "reused": false,
+      "tier": "expensive"
+    },
+    {
+      "checkpoint": "748712cf8c080d02c7b5dcc997655f4a6f65f740dee6d37f72c763ab53bb34c1",
+      "duration_ms": 1695965.102041955,
+      "evidence": ".agent-ready/verification/8af5da03055e4fd1b42168ea63ef4d44.json",
+      "exit_status": 0,
+      "reused": false,
+      "tier": "full"
+    }
+  ],
+  "head": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+  "ledger_sha256": "677a84232a291e6f0ba61c84993333268c036101640615c7461e1be00cb00cdd",
+  "observations": {
+    "active_agent_minutes": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "cache_tokens": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "escaped_regressions": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "expensive_runs": {
+      "events": [
+        "72ec91bda3d55fdd448dc9b63daafcc9399e1352bfebff3a02bbda3d103614d1",
+        "1b5a80578a0f2f4507be8fe9ea76339c1f0c99e9a1462ffcb1f5b0a5343a9ef0",
+        "6e82e8f43e71d35e45213cafb1ac1adc1f5e4c4b3ad367d253b9e897079235f9"
+      ],
+      "value": 3
+    },
+    "full_runs": {
+      "events": [
+        "3451ae3a6b4cb6ebc55d32cfc202a81da4108010c5fb9680fa0c87d4ad9e2484"
+      ],
+      "value": 1
+    },
+    "intent_to_archive_minutes": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "output_tokens": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "post_review_code_churn": {
+      "reason": "UNMEASURED",
+      "value": null
+    },
+    "review_findings": {
+      "reason": "UNMEASURED",
+      "value": null
+    }
+  },
+  "progress": [
+    {
+      "completed": 7,
+      "total": 11
+    },
+    {
+      "completed": 7,
+      "total": 11
+    },
+    {
+      "completed": 7,
+      "total": 11
+    },
+    {
+      "completed": 7,
+      "total": 11
+    },
+    {
+      "completed": 11,
+      "total": 11
+    }
+  ],
+  "roles": [
+    {
+      "referent": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522",
+      "role": "Reviewer",
+      "verdict": "APPROVE"
+    }
+  ],
+  "schema": "lifecycle-summary/1"
+}

@@ -1,24 +1,27 @@
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
-| Context expansion: main private_test_data/schema-trigger-reduction/historical-trigger-analysis.json | Reviewer independently checked 150 commits reachable from base 1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7: 13 original filename matches, 10 root-version-only matches. Counts describe per-commit filename selection, not execution history or branch-checkpoint replay. |
 | distinct files read per phase, by artefact type | UNMEASURED |
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 520, "binary_files": 0, "files": 15, "removed": 18} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | {"archived": false, "base": "1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7", "carry": {}, "change": "reduce-schema-qualification-triggers", "checks": [{"checkpoint": "84c05efba815704bc2df95ba596f511ab1a3d8a83776f52fb43b27071da62fd8", "duration_ms": 490.9409169922583, "evidence": ".agent-ready/verification/d4cc05a0e051403d8514bff2de5b282c.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "b7bd6410920d11430b5325d890851a244de26c23b8a94174005881329681c2e0", "duration_ms": 830084.289832972, "evidence": ".agent-ready/verification/f5732542bd5746b5a7945a2ce044b424.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "6124e84d1c1e75ed9d3b363d196b90c92ee280e6f5295b014ea8615a0456aeb9", "duration_ms": 431784.517083026, "evidence": ".agent-ready/verification/f47930117cc044669cd300d2259f7b35.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "748712cf8c080d02c7b5dcc997655f4a6f65f740dee6d37f72c763ab53bb34c1", "duration_ms": 1695965.102041955, "evidence": ".agent-ready/verification/8af5da03055e4fd1b42168ea63ef4d44.json", "exit_status": 0, "reused": false, "tier": "full"}], "head": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522", "ledger_sha256": "677a84232a291e6f0ba61c84993333268c036101640615c7461e1be00cb00cdd", "observations": {"active_agent_minutes": {"reason": "UNMEASURED", "value": null}, "cache_tokens": {"reason": "UNMEASURED", "value": null}, "escaped_regressions": {"reason": "UNMEASURED", "value": null}, "expensive_runs": {"events": ["72ec91bda3d55fdd448dc9b63daafcc9399e1352bfebff3a02bbda3d103614d1", "1b5a80578a0f2f4507be8fe9ea76339c1f0c99e9a1462ffcb1f5b0a5343a9ef0", "6e82e8f43e71d35e45213cafb1ac1adc1f5e4c4b3ad367d253b9e897079235f9"], "value": 3}, "full_runs": {"events": ["3451ae3a6b4cb6ebc55d32cfc202a81da4108010c5fb9680fa0c87d4ad9e2484"], "value": 1}, "intent_to_archive_minutes": {"reason": "UNMEASURED", "value": null}, "output_tokens": {"reason": "UNMEASURED", "value": null}, "post_review_code_churn": {"reason": "UNMEASURED", "value": null}, "review_findings": {"reason": "UNMEASURED", "value": null}}, "progress": [{"completed": 7, "total": 11}, {"completed": 7, "total": 11}, {"completed": 7, "total": 11}, {"completed": 7, "total": 11}, {"completed": 11, "total": 11}], "roles": [{"referent": "bbad2aa1d7f0650e205b0a6f9c1eed76433f1522", "role": "Reviewer", "verdict": "APPROVE"}], "schema": "lifecycle-summary/1"} |
+| Context expansion: main private_test_data/schema-trigger-reduction/historical-trigger-analysis.json | Reviewer independently checked 150 commits reachable from base 1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7: 13 original filename matches, 10 root-version-only matches. Counts describe per-commit filename selection, not execution history or branch-checkpoint replay. |
+| Dependency guard measured execution | 0.490940917 seconds; only the dependency-consistency obligation completed. Native receipt .agent-ready/verification/d4cc05a0e051403d8514bff2de5b282c.json; independently verified in review.md. |
+| Historical filename-selection observation | Of 150 commits reachable from base, 13 matched original schema filenames; 10 of those 13 (approximately 77%) matched only uv.lock and differed only in the editable root version. This describes avoided filename matches, not observed executions, branch-checkpoint replay, or measured wall-time savings. Source: main private_test_data/schema-trigger-reduction/historical-trigger-analysis.json; reviewer independently reproduced counts. |
+| Final checkpoint measured execution | Full native duration 1695.965102 seconds includes ordinary gates, cheap guard and real schema qualification. Ordinary suite: 10426 passed, 37 skipped, 20 xfailed. Schema assertions: 12 passed; assertion native command 830.084290 seconds plus two-build generation command 431.784517 seconds = 1261.868807 seconds. These nested command durations must not be added to the full duration. Sources: independently verified four native receipts listed in review.md. |
+| Admission refusal versus execution | Initial readiness refusal occurred before tests while metadata was parked; it was not an expensive test retry. The successful lifecycle expensive_runs=3 counts the cheap guard and two schema commands selected inside the single successful full checkpoint. No extra full or real-schema execution was performed for finalization. |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

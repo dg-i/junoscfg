@@ -73,3 +73,26 @@ APPROVE the main-spec sync: independent exact-text comparison confirms
 committed contents plus the two reviewed delta requirements (without the delta's
 ADDED heading). No original requirement or reviewed meaning changed. No product
 or test edits or additional tests were needed for this bounded comparison.
+
+## Final checkpoint receipt review
+
+FINAL APPROVAL at `bbad2aa1d7f0650e205b0a6f9c1eed76433f1522`. The planned
+full-check carry-forward above is resolved. No findings remain. Independent
+comparison confirms product code, tooling, tests, pyproject and lock are unchanged
+since reviewed implementation `7e4201acfc930013d4a64d9076f5d2fe5e85461f`.
+
+The installed native `verification.valid` accepts all four receipts below,
+including their identity digests, output hashes, required completion coverage and
+generation stability output hashes. Every recorded identity file hash also
+matches the current candidate. Reviewer inspected existing evidence only; no
+verification execution was repeated.
+
+| Receipt under `.agent-ready/verification/` | Verified result |
+|---|---|
+| `8af5da03055e4fd1b42168ea63ef4d44.json` | Full checkpoint exit 0; 1695965.102 ms; ordinary suite 10426 passed, 37 skipped, 20 xfailed |
+| `d4cc05a0e051403d8514bff2de5b282c.json` | Dependency guard exit 0; 490.941 ms; only consistency obligation |
+| `f5732542bd5746b5a7945a2ce044b424.json` | Assertions exit 0; 830084.290 ms; 12 passed in 826.34 s |
+| `f47930117cc044669cd300d2259f7b35.json` | Generation exit 0; 431784.517 ms; two public builds, 214.437 and 214.771 s |
+
+The full log records each of the three successful native tier receipts and its
+own final exit 0. No further review carry-forward remains for this change.
