@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "d0698d47c4e0d0e4d7ea2942a55d7357395d8305",
-  "actor": "Codex root under user-authorized local makeover",
-  "authority": "All agreed implementation and narrow independently reviewed test correction complete locally through v0.28.2. Master READY only for final selected25.2 qualification two stability passes and fresh sentinel;83archivesPASS; no21.4/23.2 executions, no push/publication.",
-  "captured_at": "2026-10-12T13:13:45.445644+00:00",
+  "checkpoint": "820af2d2ee11e52fbae6b5677c9d1bd86662d992",
+  "actor": "Codex orchestrator for owner-requested schema qualification optimization",
+  "authority": "Owner requested implementation of the reviewed optimization plan; source and main-spec independently approved. Admit only this change for ordinary full checks and explicit 25.2 qualification.",
+  "captured_at": "2026-10-12T14:34:04.333144+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,14 +63,15 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
     "codex/anonymization-rule-coverage": "parked",
     "codex/reject-leaf-list-meta-values": "parked",
     "codex/reject-deprecated-tagged-statements": "parked",
-    "codex/schema-parity-sibling-order": "parked"
+    "codex/schema-parity-sibling-order": "parked",
+    "codex/schema-qualification-speed": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -137,6 +138,7 @@
     "anonymization-rule-coverage": "parked",
     "reject-leaf-list-meta-values": "parked",
     "reject-deprecated-tagged-statements": "parked",
-    "schema-parity-sibling-order": "parked"
+    "schema-parity-sibling-order": "parked",
+    "streamline-schema-qualification": "ready"
   }
 }

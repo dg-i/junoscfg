@@ -6,7 +6,7 @@ zone: schema
 domains: [schema-pipeline]
 removes: redundant full assertion pass and separate sentinel build; implicit older-release qualification
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tools/schema_verification.py
     - tools/schema_verification.CONTRACT.md
