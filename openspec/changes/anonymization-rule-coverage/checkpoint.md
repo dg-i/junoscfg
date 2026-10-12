@@ -51,3 +51,9 @@ with tracked bytes unchanged. Initial readiness failed because the historical
 tasks heading lacked the native exact lifecycle delimiter; only that heading
 was corrected, leaving pending review/check boxes unchecked. Actual failure
 receipt is retained; no evidence was promoted from it.
+
+Native readiness also requires explicit generated-records: []; no generated
+products belong to this maintenance change, so the empty declaration was added.
+This second failed check is preserved separately. The first readiness raw file
+was overwritten by the runner on retry; its actual exit/message remains in tool
+output and the prior checkpoint, not claimed as a retained raw-log receipt.

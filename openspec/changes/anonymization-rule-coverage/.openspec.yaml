@@ -11,3 +11,4 @@ verification:
     - changelog.d/+anonymization-rule-coverage.bugfix.md
   dependencies: []
   changelog: changelog.d/+anonymization-rule-coverage.bugfix.md
+  generated-records: []
