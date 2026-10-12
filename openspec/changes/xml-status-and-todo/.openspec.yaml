@@ -6,7 +6,7 @@ domains: [conversion]
 assurance: economy
 skip_specs: true
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - README.md
     - docs/roadmaps/xml-work-todo.md
