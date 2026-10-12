@@ -17,7 +17,7 @@
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
+| requirement-to-test reconcile result | Pass: four requirements map to four existing test IDs |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
@@ -30,3 +30,6 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Batch check executions | UNMEASURED |
 | Batch integration-only findings | UNMEASURED |
 | Batch escaped regressions | UNMEASURED |
+
+| Prepared acceptance | 4 deliberate failures, missing shared tool; private reference 4 passed; not implementation evidence |
+| Phase checkpoint | Phase 4 PREPARED / PARKED, root admission required before phase 5 |
