@@ -1,5 +1,15 @@
 schema: agent-ready
 created: 2026-10-12
-assurance: economy
 type: bug
 zone: schema
+domains: [schema-pipeline, conversion]
+assurance: economy
+removes: none, because supported syntax and public doors remain; incorrect name-wide hints are corrected
+spec-depth: full
+declared-break:
+  consumer:
+    why: Keyworded leaves and unrelated nested triggers now retain content previously omitted from rendered output.
+    migration: Reconvert original configurations; do not rely on omitted timeout/limit/path/filename keywords or truncated trigger output.
+  cli:
+    why: Set and structured conversion output preserves previously omitted keywords and nested trigger content.
+    migration: Reconvert original configurations and update downstream expectations for corrected output.
