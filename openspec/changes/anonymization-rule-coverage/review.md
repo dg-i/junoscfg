@@ -1,11 +1,11 @@
 # Preparation review
 
 ## Coverage and baseline
-The new corpus law adds 54 cases: nine non-address rule rows, two held synthetic
+The new corpus law adds 60 cases: ten rule rows, two held synthetic
 oracle devices and three input formats (JSON, set, structured). Existing device
 address/reference laws and the 172 handwritten individual/pair/all-rule contract
-controls remain untouched. Focused execution: 226 passed, no skips, xfails or
-errors, 3.03 pytest seconds. Public convert_config and AnonymizeConfig are the
+controls remain untouched. Focused execution: 232 pending final clean-head focused verification, no skips, xfails or
+errors, prior nine-row proof: 3.03 pytest seconds. Public convert_config and AnonymizeConfig are the
 only runtime doors. Exact inventories are derived independently from device set;
 each mapped whole-value occurrence must change, shape remains and reversal equals
 the original reader's canonical IR. This is passing coverage, not pre-fix red.
@@ -25,3 +25,16 @@ Root must commission independent Test/Challenge and a genuinely fresh Reviewer;
 this Builder assessment is not either independent verdict. Root admission,
 ordinary/fast substitute checkpoint, lifecycle metrics, any required news fragment,
 integration and archive remain pending. XML is deferred and no schema was run.
+
+## Root-requested IP-only coverage completion
+Root required a held-device IP-only row because combined-rule coverage does not
+prove the single-rule device scope. Added six cases, independently inventorying
+native device addresses and JSON annotation text. The native annotation contains
+3ffe:b00::/32; an initial tentative DEV-V6 explanation was disproved by direct
+native source inspection and corrected before commit. Reserved addresses remain
+unchanged; named/unplaced statement keys and route-distinguisher address spans
+follow the dumped map exactly once. The added oracle's initial mismatches were
+missing annotation/password scope, address-preserving syntax and key/span shape
+assumptions; all were new-test errors, not accepted product reds. The initial IP
+new-test snapshot and repeated raw failure remain private. No runtime edit.
+Final corpus-only execution: 60 passed, no skip/xfail/error, 3.21 pytest seconds.

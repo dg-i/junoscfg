@@ -4,7 +4,7 @@
 - [x] Record effective instructions and preserved-behavior maintenance intent.
 - [x] Search existing individual/pair/all-rule contracts and device coverage.
 - [x] Add independently derived non-XML device-value inventory/reversal coverage.
-- [x] Run 54 new cases and 172 unchanged contract controls; preserve evidence.
+- [x] Run 60 new cases and 172 unchanged contract controls; preserve evidence.
 
 ## Review and evidence
 - [ ] Independent Test/Challenge assessment of privacy inventory completeness.

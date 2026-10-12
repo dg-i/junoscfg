@@ -1,4 +1,4 @@
-"""Every non-address rule covers its held device values, individually.
+"""Every rule covers its held device values, individually.
 
 T3 supplements the combined device address/reference law and the independent
 handwritten all-rule/pair contract. Invented oracle configurations were loaded
@@ -8,6 +8,7 @@ The expected inventory comes from device display set, not product rule matches.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import re
 import shlex
@@ -32,6 +33,7 @@ class RuleCase:
 
 
 RULES = (
+    RuleCase("ip", "ip", {"ips": True}),
     RuleCase("password", "password", {"passwords": True}),
     RuleCase("ssh-key", "ssh_key", {"ssh_keys": True}),
     RuleCase("community", "community", {"communities": True}),
@@ -52,12 +54,19 @@ CASES = [
 
 
 def _inventory(capture: Capture, row: RuleCase) -> set[str]:
-    """Device-token semantics for the nine rule scopes present in this capture."""
+    """Device-token semantics for the ten rule scopes present in this capture."""
     values: set[str] = set()
     for line in capture.device_set():
         words = shlex.split(line)
         for index, word in enumerate(words[:-1]):
             value = words[index + 1]
+            if row.id == "ip" and word != "oid":
+                try:
+                    ipaddress.ip_interface(value)
+                except ValueError:
+                    pass
+                else:
+                    values.add(value)
             if not value or value == "<*>":
                 continue
             eligible = {
@@ -83,6 +92,43 @@ def _inventory(capture: Capture, row: RuleCase) -> set[str]:
     return values
 
 
+def _ip_is_preserved(value: str) -> bool:
+    """Documented reserved ranges and whole private-block aggregates pass."""
+    address = ipaddress.ip_address(value.partition("/")[0])
+    network = ipaddress.ip_network(value, strict=False)
+    if address.is_unspecified or address.is_loopback or address.is_multicast or address.is_reserved:
+        return True
+    if network.prefixlen == 0:
+        return True
+    if address.version == 4 and any(
+        address in ipaddress.ip_network(block)
+        for block in ("0.0.0.0/8", "192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24")
+    ):
+        return True
+    return value in {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}
+
+
+def _strings(value: Any) -> list[str]:
+    if isinstance(value, dict):
+        return [str(k) for k in value] + [s for child in value.values() for s in _strings(child)]
+    if isinstance(value, list):
+        return [s for child in value for s in _strings(child)]
+    return [value] if isinstance(value, str) else []
+
+
+def _mapped(value: Any, table: dict[str, str]) -> Any:
+    if isinstance(value, dict):
+        return {_mapped(k, table): _mapped(v, table) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_mapped(v, table) for v in value]
+    if isinstance(value, str):
+        if value in table:
+            return table[value]
+        pattern = "|".join(re.escape(original) for original in sorted(table, key=len, reverse=True))
+        return re.sub(pattern, lambda match: table[match.group()], value)
+    return value
+
+
 def _leaves(value: Any, path: tuple[Any, ...] = ()) -> dict[tuple[Any, ...], Any]:
     if isinstance(value, dict):
         return {
@@ -102,6 +148,21 @@ def test_each_device_rule_replaces_its_inventory_and_reverses(
     capture: Capture, suffix: str, row: RuleCase, tmp_path: Path
 ) -> None:
     expected = _inventory(capture, row)
+    if row.id == "ip" and suffix == "json":
+        # Native JSON includes an annotation with an embedded IPv6 prefix.
+        # Inventory that held text as well as the device's statement values.
+        expected = set()
+        for value in _strings(json.loads(capture.rendering("json"))):
+            if not isinstance(value, str):
+                continue
+            for candidate in (value, *value.split()):
+                candidate = candidate.strip("(),;\"'")
+                try:
+                    ipaddress.ip_interface(candidate)
+                except ValueError:
+                    pass
+                else:
+                    expected.add(candidate)
     if suffix == "conf" and row.id in {"group", "sensitive-pattern"}:
         # The device emits /* OMITTED */ instead of the GR-OMIT group.
         assert "/* OMITTED */" in capture.rendering("conf")
@@ -119,11 +180,20 @@ def test_each_device_rule_replaces_its_inventory_and_reverses(
     mapping = json.loads(dumped.read_text(encoding="utf-8"))
     assert set(mapping) == {row.mapping}
     assert set(mapping[row.mapping]) == expected
-    assert all(original != replacement for original, replacement in mapping[row.mapping].items())
+    for original, replacement in mapping[row.mapping].items():
+        if row.id == "ip" and _ip_is_preserved(original):
+            assert replacement == original
+        else:
+            assert replacement != original
     before, after = _leaves(baseline), _leaves(json.loads(anonymized))
-    assert before.keys() == after.keys(), "anonymization changed capture shape"
+    if row.id == "ip":
+        # Native readers may hold address names as dictionary keys: rename keys
+        # as well as leaves, without dropping or reordering any entries.
+        assert json.loads(anonymized) == _mapped(baseline, mapping[row.mapping])
+    else:
+        assert before.keys() == after.keys(), "anonymization changed capture shape"
     for path, original in before.items():
-        if isinstance(original, str) and original in mapping[row.mapping]:
+        if row.id != "ip" and isinstance(original, str) and original in mapping[row.mapping]:
             assert after[path] == mapping[row.mapping][original], "a mapped occurrence survived"
     assert json.loads(anonymized) != baseline
     reverted = convert_config(
