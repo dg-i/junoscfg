@@ -11,7 +11,7 @@
 ## 3. Review and evidence
 - [x] 3.1 Run supported fast and root-admitted ordinary configured checkpoint; schema checkpoint deferred to entire-makeover end.
 - [x] 3.2 Receive fresh isolated review and resolve accepted findings.
-- [ ] 3.3 Complete bounded pre-merge main-spec application, metrics capture and record gates.
+- [x] 3.3 Complete bounded pre-merge main-spec application, metrics capture and record gates.
 
 Phase 5 execution evidence (lifecycle boxes remain open): focused350 passed;
 plain96/per-rule1152 public comparisons unchanged. Normal code hooks passed
