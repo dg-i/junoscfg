@@ -11,9 +11,9 @@
 - [x] 3.0 Parent coordinates activation, readiness and canonical full checkpoint at committed candidate before review.
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.3 Finalizer prepares reviewed main specification, metrics and archive-ready handoff without product edits.
 
 ## Checkpoint
 
-Implementation and fresh review approved. Canonical full checkpoint passed at 51e91f69d9ef5f3fe25527bb904a77cf0c4bd1eb; 10439 passed, 13 skipped, 20 xfailed. Main specification applied exactly from reviewed delta. Next: native metrics and archive-ready handoff.
+Implementation and fresh review approved. Canonical full checkpoint passed at 51e91f69d9ef5f3fe25527bb904a77cf0c4bd1eb; 10439 passed, 13 skipped, 20 xfailed. Main specification applied exactly from reviewed delta. Native metrics captured; all obligations complete and ready for authorized merge then archive.
