@@ -14,5 +14,9 @@
 - [x] Root renews base and admits exact planned paths as READY.
 - [x] Fresh lightweight Reviewer reviews proposal, test and diff.
 - [x] Complete the owner-approved ordinary/fast substitute verification.
-- [ ] Root completes integration gates.
-- [ ] Root completes metrics, archive, version and tag.
+- [ ] Complete the native pre-merge integration readiness gates.
+- [x] Capture and inspect native metrics with immutable base/head and UNMEASURED absent telemetry.
+- [x] Prepare the reviewed maintenance handoff for Root-owned merge, archive, version and tag.
+
+Actual merge, archive, version/tag and worktree cleanup remain pending Root action.
+The checked handoff records preparation; it does not claim those operations occurred.

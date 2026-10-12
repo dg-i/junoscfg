@@ -103,3 +103,16 @@ Root authorizes native precheck, two focused tests and exact fast retry on the
 new clean record/news commit. Ordinary remains qualified to its prior proof HEAD;
 no ordinary/full/schema rerun is authorized. Fresh Reviewer will affirm the
 bounded metadata/news delta before finalization, which remains unchecked.
+
+## Economical finalization authorization
+
+Root accepted the fresh metadata/news affirmation of exact e3fbb077113d63c754ced890ca9d6879a2a82fe1
+against a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69. The independent affirmation
+is appended verbatim to review.md, preserving the original maintenance review.
+Root verified all 1233 tracked files, 83 original source files, eight owned files
+and six native command log bindings. The authorization is bounded to native
+metrics, own record/lifecycle updates and final integration readiness gates.
+Maintenance skip_specs remains; no main-spec or full phase-7 lifecycle is claimed.
+Actual merge, archive, release version/tag and cleanup remain pending Root action.
+Missing telemetry must remain UNMEASURED. Proof heads remain ordinary7828979,
+fast8cbb125 and reviewed5955/e3fbb; final records do not recast them as one proof.
