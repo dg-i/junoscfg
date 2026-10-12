@@ -22,3 +22,7 @@
 | Context expansion: tests/support/shapes.py | one catalogue drives all format laws |
 | Context expansion: src/junoscfg/display/constants.py | shared entry-key helpers and bundled metadata |
 | Required roles | Independent Test/Challenge and fresh Reviewer; not yet executed |
+| Preparation corrected unit red | 17 failed;7 passed |
+| Preparation matrix red | 154 failed;101 passed;4817 deselected |
+| Preparation rendering validity red | 2 failed;8 passed;353 deselected |
+| Candidate model inventory | 692 nonlist positional-name slots;366 homogeneous, not device acceptance proof |

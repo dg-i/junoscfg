@@ -2,7 +2,7 @@
 
 ### Requirement: A keyed singleton retains its entry and its tag through every format
 WHEN supported keyed singleton configuration arrives through set, structured, XML, JSON or YAML THEN every reader SHALL retain an entry array and every writer SHALL preserve its children and entry metadata through the same IR. Set inactive output SHALL name the entry path once without repeating the key or naming the key leaf.
-Tests: `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestASecondWriterKeepsTheIr::test_every_second_writer`
+Tests: `tests/unit/convert/test_convert_roundtrip.py::TestKeyedSingletonValidation::test_supported_statement_validates`, `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_format_matrix.py::TestASecondWriterKeepsTheIr::test_every_second_writer`
 
 #### Scenario: Inactive port-mirroring entry
 - **WHEN** routing-instance with name and IP address is inactive

@@ -2498,6 +2498,140 @@ _add(
 )
 
 
+# Keyed single-entry lists: device-backed paths; singleton cardinality is not
+# permission for a second entry. Makeover #11, DEV-1/8/9, NEW-B4, OPEN-21.
+_port_entry_ir = {
+    "forwarding-options": {
+        "port-mirroring": {
+            "family": {
+                "inet": {
+                    "output": {
+                        "routing-instance": [
+                            {"name": "VRF-A", "ip-address": "10.0.0.1", "@": {"inactive": True}}
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
+_port_prefix = "forwarding-options port-mirroring family inet output routing-instance VRF-A"
+_add(
+    Shape(
+        "a-keyed-singleton-port-mirroring-entry",
+        {
+            SET: f"set {_port_prefix} ip-address 10.0.0.1\ndeactivate {_port_prefix}\n",
+            STRUCTURED: "forwarding-options { port-mirroring { family inet { output { "
+            "routing-instance { inactive: VRF-A { ip-address 10.0.0.1; } } } } } }\n",
+            JSON: _json(_port_entry_ir),
+            YAML: _json(_port_entry_ir),
+            XML: _xml(
+                "<forwarding-options><port-mirroring><family><inet><output>"
+                '<routing-instance inactive="inactive"><name>VRF-A</name>'
+                "<ip-address>10.0.0.1</ip-address></routing-instance>"
+                "</output></inet></family></port-mirroring></forwarding-options>"
+            ),
+        },
+        ir=_port_entry_ir,
+        set_output=f"set {_port_prefix} ip-address 10.0.0.1\ndeactivate {_port_prefix}\n",
+        why="DEV-8/9, OPEN-21, meta-tag F1: tests/data/device/synthetic/"
+        "{vmx-23.2R2-S7.5,qfx5120-25.2R2-S1.5}/junoscfg-oracle captures show "
+        "an inactive keyed array. vMX23.2R2-S7.5/QFX5120 25.2R2-S1.5; "
+        "private deactivate6.txt supports entry tag placement only.",
+    )
+)
+for _name, _set, _curly, _ir, _why in (
+    (
+        "a-keyed-singleton-srgb-range",
+        "set protocols mpls label-range srgb-label-range 800000 890000",
+        "protocols { mpls { label-range { srgb-label-range 800000 890000; } } }",
+        {
+            "protocols": {
+                "mpls": {
+                    "label-range": {"srgb-label-range": [{"name": "800000", "range-end": "890000"}]}
+                }
+            }
+        },
+        "NEW-B4: tests/data/device/jvd/vmx-23.2R2-S7.5/bng1_mx304 captures "
+        "(synthetic JVD on vMX23.2R2-S7.5) show one range array and both values. "
+        "String expected values isolate this change from numeric normalization #13.",
+    ),
+    (
+        "a-keyed-singleton-attribute-group",
+        "set protocols isis interface ge-0/0/0 level 2 application-specific "
+        "attribute-group ASLA te-metric 25",
+        "protocols { isis { interface ge-0/0/0 { level 2 { application-specific { "
+        "attribute-group ASLA { te-metric 25; } } } } } }",
+        {
+            "protocols": {
+                "isis": {
+                    "interface": [
+                        {
+                            "name": "ge-0/0/0",
+                            "level": [
+                                {
+                                    "name": "2",
+                                    "application-specific": {
+                                        "attribute-group": [{"name": "ASLA", "te-metric": "25"}]
+                                    },
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        },
+        "OPEN-14: tests/data/device/jvd/vmx-23.2R2-S7.5/mdr1_acx7509 captures "
+        "(synthetic JVD on vMX23.2R2-S7.5) show attribute-group arrays with child metrics.",
+    ),
+    (
+        "a-transport-class-container-with-two-entries",
+        "set routing-options transport-class name gold color 4000\n"
+        "set routing-options transport-class name bronze color 6000\n"
+        "set routing-options transport-class auto-create",
+        "routing-options { transport-class { name gold { color 4000; } "
+        "name bronze { color 6000; } auto-create; } }",
+        {
+            "routing-options": {
+                "transport-class": {
+                    "name": [
+                        {"name": "gold", "color": "4000"},
+                        {"name": "bronze", "color": "6000"},
+                    ],
+                    "auto-create": [None],
+                }
+            }
+        },
+        "DEV-1: synthetic vMX23.2R2-S7.5 and QFX5120 25.2R2-S1.5 "
+        "junoscfg-oracle captures retain transport-class name entries and auto-create. "
+        "The container itself is not an entry.",
+    ),
+    (
+        "a-known-container-with-a-keyworded-name",
+        "set snmp name sw1\nset snmp location lab",
+        "snmp { name sw1; location lab; }",
+        {"snmp": {"name": "sw1", "location": "lab"}},
+        "NEW-B1 corrected-schema preservation control; no device validity claim. "
+        "Keyworded name is a leaf, not an entry identifier.",
+    ),
+):
+    _add(
+        Shape(
+            _name,
+            {
+                SET: _set + "\n",
+                STRUCTURED: _curly + "\n",
+                JSON: _json(_ir),
+                YAML: _json(_ir),
+                XML: _xml(_leaf_hint_xml(_ir)),
+            },
+            ir=_ir,
+            written={SET: tuple(_set.splitlines())},
+            why=_why,
+        )
+    )
+
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"

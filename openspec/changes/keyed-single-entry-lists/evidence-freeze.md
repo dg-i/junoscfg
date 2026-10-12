@@ -33,3 +33,5 @@ None within bounded preparation. Independent challenge assesses promotion criter
 ## Delta log
 - Freeze after5acb2f1. Initial reproduction API mistakes corrected to format= and ValidationResult.valid; successful base-probes retained. Failed calls never counted as red acceptance.
 - Phase1 validation before deltas found missing specs; fields None diagnostic corrected at5acb2f1. Initial freeze authoring failed before writing on unavailable system PyYAML;1621b87 contains codemap only. Current corrected records use prepared runtime; no failed gate counted as pass.
+
+- Phase4 preparation delta: unknown-schema preservation control initially expected the literal keyword name, while executed base writes positional X. Corrected this unapproved draft control to the actual preserved fallback; original red-unit.out retained. No behavior criterion weakened: seven product assertions remain red. Added explicit positive public validation doors for set/structured/JSON/YAML; XML validation is excluded because cleaned XSD is not bundled, while XML conversion remains in five-reader laws.

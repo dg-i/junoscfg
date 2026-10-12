@@ -16,15 +16,15 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import yaml
 
+from junoscfg import Format, validate_config
 from junoscfg.convert import find_configuration, from_dict, to_dict
 from tests.support.artifacts import using_tree
-from tests.support.shapes import SHAPES, WRITERS
+from tests.support.shapes import BY_NAME, SHAPES, WRITERS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from junoscfg import Format
 
 # ── IR utilities ─────────────────────────────────────────────────────
 
@@ -322,3 +322,86 @@ class TestAFlatHintPreservesRicherContent:
                 assert "100" in output
             else:
                 assert "A" in output and "B" in output
+
+
+class TestKeyedSingletonMetadata:
+    """Device array paths use list traversal; no second-entry validity claim."""
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            (
+                "forwarding-options",
+                "port-mirroring",
+                "family",
+                "inet",
+                "output",
+                "routing-instance",
+            ),
+            ("protocols", "mpls", "label-range", "srgb-label-range"),
+            ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+        ],
+    )
+    @pytest.mark.parametrize("prefix", [(), ("groups", "group")])
+    def test_device_backed_slots_are_lists(
+        self, bundled_tree: dict, path: tuple, prefix: tuple
+    ) -> None:
+        node = bundled_tree
+        for name in prefix + path:
+            node = node["c"][name]
+        assert node.get("L") is True
+        assert node["c"]["name"].get("nk") is True
+        assert len(node["c"]) > 1
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            ("routing-options", "transport-class"),
+            ("snmp",),
+            ("protocols", "bgp", "traceoptions", "file", "filename"),
+            ("forwarding-options", "port-mirroring", "family"),
+        ],
+    )
+    def test_ordinary_containers_keep_their_classification(
+        self, bundled_tree: dict, path: tuple
+    ) -> None:
+        node = bundled_tree
+        for name in path:
+            node = node["c"][name]
+        assert not node.get("L")
+
+
+class TestKnownContainerNames:
+    """A known container keeps keyworded name; missing schema keeps legacy fallback."""
+
+    def test_name_and_siblings_are_written_separately(self) -> None:
+        config = {"snmp": {"name": "sw1", "location": "lab"}}
+        before = copy.deepcopy(config)
+        assert from_dict(config, "set").splitlines() == [
+            "set snmp name sw1",
+            "set snmp location lab",
+        ]
+        assert config == before
+
+    def test_an_unknown_schema_retains_the_entry_fallback(self) -> None:
+        config = {"unknown-entry": {"name": "X", "location": "lab"}}
+        before = copy.deepcopy(config)
+        assert from_dict(config, "set") == "set unknown-entry X location lab\n"
+        assert config == before
+
+
+class TestKeyedSingletonValidation:
+    """Committed device lines validate through runtime doors; XML XSD is not bundled."""
+
+    @pytest.mark.parametrize(
+        "shape_name",
+        [
+            "a-keyed-singleton-port-mirroring-entry",
+            "a-keyed-singleton-srgb-range",
+            "a-keyed-singleton-attribute-group",
+        ],
+    )
+    @pytest.mark.parametrize("fmt", [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML])
+    def test_supported_statement_validates(self, shape_name: str, fmt: Format) -> None:
+        result = validate_config(BY_NAME[shape_name].sources[fmt], format=fmt)
+        assert result.valid, result.errors
