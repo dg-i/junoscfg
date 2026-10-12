@@ -3,3 +3,18 @@ created: 2026-10-12
 type: bug
 zone: surface
 assurance: economy
+domains: [schema-pipeline]
+removes: silent omission of tooling and shared-data changes from ordinary affected pytest checks
+verification:
+  state: ready
+  planned-paths:
+    - tools/affected_tests.py
+    - .pre-commit-config.yaml
+    - tests/tooling/test_affected_tests.py
+    - tests/CONTRACT.md
+    - changelog.d/+test-selection-completeness.misc.md
+    - .agent-ready/activation.json
+    - openspec/specs/schema-pipeline/test-selection/spec.md
+  dependencies: []
+  changelog: changelog.d/+test-selection-completeness.misc.md
+  generated-records: []
