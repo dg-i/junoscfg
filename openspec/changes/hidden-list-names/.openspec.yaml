@@ -13,7 +13,7 @@ declared-break:
     why: 'Conversion output omits device-hidden list names and no longer reports proven valid hidden-list statements UNPLACED.'
     migration: 'Expect device-equivalent set output and keyed JSON/YAML arrays for the admitted shapes.'
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tests/unit/convert/test_hidden_list_names.py
     - tests/unit/validate/test_hidden_list_hints.py
