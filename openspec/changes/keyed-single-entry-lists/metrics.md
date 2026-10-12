@@ -42,3 +42,5 @@
 | Context expansion: tests/data/device/grammar-corpus.json | SC3 exact independent tracked-only255-pair reclassification; no new rows |
 | Normal atomic hook before SC3 | 3 failed;10205 passed;37 skipped;20 existing xfailed; no commit or bypass |
 | SC3 focused correction | 17 passed;1 optional device-grammar skipped, not PASS; protected source/product/test hashes unchanged |
+| Current verification base | 3d60e0a04c42c3afa9049e922d70a0cb47fd14b5; rebased475997a2;32 owned delta files exact |
+| Product-build version qualification | Earlier physical build, unchanged generator/products; incoming app0.24.2 only; metadata generator0.2.0 independent |
