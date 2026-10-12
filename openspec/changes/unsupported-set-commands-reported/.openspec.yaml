@@ -4,3 +4,26 @@ type: bug
 zone: conversion
 domains: [conversion, validation]
 assurance: economy
+removes:
+  - silent omission of unsupported raw set commands; no API removal
+declared-break:
+  consumer:
+    why: Correctness refusal replaces partial success for unsupported raw set commands.
+    migration: Supply canonical display set input; handle ValueError for unsupported commands.
+  cli:
+    why: Unsupported raw set conversion exits 2 instead of emitting partial output.
+    migration: Supply canonical display set input and treat exit 2 as an input refusal.
+verification:
+  state: parked
+  planned-paths:
+    - src/junoscfg/input.py
+    - src/junoscfg/input.CONTRACT.md
+    - src/junoscfg/convert/input/set_input.py
+    - src/junoscfg/validate/set_validator.py
+    - tests/unit/convert/test_set_commands.py
+    - docs/guide/annotations.md
+    - docs/guide/conversion.md
+    - changelog.d/unsupported-set-commands-reported.bugfix
+  dependencies: []
+  changelog: changelog.d/unsupported-set-commands-reported.bugfix
+  generated-records: []
