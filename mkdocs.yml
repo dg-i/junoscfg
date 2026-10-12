@@ -62,6 +62,8 @@ nav:
       - Capture Change Metrics: how-to/capture-change-metrics.md
       - Lifecycle Events: how-to/lifecycle-ledger.md
       - Verification Evidence: how-to/verification-evidence.md
+      - Verification Baseline: VERIFICATION.md
+      - Improve Verification: how-to/improve-verification.md
       - Remove agent-ready: how-to/remove-agent-ready.md
 
 markdown_extensions:

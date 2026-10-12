@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "93cadef1a0b660409d7fbbbbc2e1c2b7d58d9ae7",
-  "actor": "Codex orchestrator for owner-approved test optimization",
-  "authority": "Owner-approved test optimization complete: both changes independently reviewed, full-verified, merged, archived and tagged; return admission to master.",
-  "captured_at": "2026-10-12T18:26:03.371261+00:00",
+  "checkpoint": "96eac91ac780c66450201fa98869cfaf8b4442e4",
+  "actor": "Codex orchestrator for owner-approved refresh",
+  "authority": "Owner approved hook preservation, 275-second full-check budget, adoption, commit and merge on 2026-10-13. Existing parked work remains parked.",
+  "captured_at": "2026-10-12T23:46:55.848579+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
@@ -75,7 +75,9 @@
     "codex/reduce-schema-qualification-triggers": "parked",
     "codex/synthetic-schema-check": "parked",
     "codex/test-selection-completeness": "parked",
-    "codex/test-tooling-performance": "parked"
+    "codex/test-tooling-performance": "parked",
+    "codex/agent-ready-refresh-v012": "ready",
+    "codex/recover-alias-every-input": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -147,6 +149,7 @@
     "reduce-schema-qualification-triggers": "parked",
     "synthetic-schema-check": "parked",
     "test-selection-completeness": "parked",
-    "test-tooling-performance": "parked"
+    "test-tooling-performance": "parked",
+    "adopt-refresh-verification": "ready"
   }
 }

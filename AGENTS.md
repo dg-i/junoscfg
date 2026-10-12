@@ -52,7 +52,7 @@ towncrier --with vulture agent-ready check --set full` (pre-commit, the whole
 suite, the coverage floor), never beside it on the same tree. After review fixes:
 focused tests plus the fast set; repeat full only when runtime-relevant files
 changed. Per-path extras: developer guide, Testing Architecture. Device-evidence
-checks, schema tier, worktrees, parallel changes: [run a batch of changes](docs/how-to/run-a-batch-of-changes.md).
+checks, schema tier, worktrees, parallel changes: [run a batch of changes](docs/how-to/run-a-batch-of-changes.md). At session entry and job completion, check `docs/VERIFICATION.md` following `docs/how-to/improve-verification.md`.
 
 ## Version Management
 

@@ -4,3 +4,17 @@ type: maintenance
 zone: schema
 assurance: economy
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+    - .agent-ready/activation.json
+    - .agent-ready/template.toml
+    - AGENTS.md
+    - docs/VERIFICATION.md
+    - mkdocs.yml
+    - tools/schema-verification/dependencies.json
+    - changelog.d/+adopt-refresh-verification.misc.md
+  dependencies: []
+  changelog: changelog.d/+adopt-refresh-verification.misc.md
+  generated-records:
+    - tools/schema-verification/dependencies.json
