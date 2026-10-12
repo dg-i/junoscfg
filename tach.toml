@@ -76,7 +76,8 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.input"]
 expose = [
-    "InputError", "find_unsupported_set_brackets", "iter_visible_set_lines", "normalize",
+    "InputError", "find_unsupported_set_brackets", "find_unsupported_set_commands",
+    "iter_visible_set_lines", "normalize",
 ]
 
 [[interfaces]]

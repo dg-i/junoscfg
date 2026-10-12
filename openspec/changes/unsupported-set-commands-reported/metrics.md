@@ -33,3 +33,4 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Phase 5 focused verification | 350 passed in0.75s including84 frozen acceptance; original diagnostic failure preserved and approved stronger assertion passes |
 | Phase 5 preservation comparison | 0/96 plain and0/1152 per-rule outputs/diagnostics/exception records changed from detachedbbc125eb |
 | Context expansion: tests/contract/test_every_message.py | Root-approved correction only of obsolete plain unsupported-command quotation fragment; all privacy/exit scans retained |
+| Context expansion: tach.toml | Root-approved expose declaration only for already-approved shared helper; no module/layer/dependency changes |

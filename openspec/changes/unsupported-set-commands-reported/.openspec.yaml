@@ -28,6 +28,7 @@ verification:
     - docs/guide/conversion.md
     - docs/api/input.md
     - mkdocs.yml
+    - tach.toml
     - changelog.d/unsupported-set-commands-reported.bugfix
   dependencies: []
   changelog: changelog.d/unsupported-set-commands-reported.bugfix
