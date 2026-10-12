@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "4a2f859ec658fd31609d6e8b1a67e5c052037236",
+  "checkpoint": "69f072604e0585acd008cb4df3fc043dc515c182",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Hidden-list reviewed change completed localv0.26.0. User reduced scope: preparation of bounded scalar metadata surplus-token refusal admitted, newbranch/change parked until independentTC/rootphase5. T3 parked awaiting finalruntimebase; allothersparked. Finalselected25 schema onlyend.",
-  "captured_at": "2026-10-12T10:26:33.937717+00:00",
+  "authority": "Userreducedscope currentconfirmed metadata-loss safety repair; bounded deprecatedto_set terminaltag refusal preparationONLY additionally admitted; standardbuglane necessary to preserve semantic tests and declare compatibilitymigration. Both safetybranchesparked awaiting independentTC. T3parked untilfinalruntimebase; no generalmetadatarefactor.",
+  "captured_at": "2026-10-12T10:33:06.735091+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -68,7 +68,8 @@
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
     "codex/anonymization-rule-coverage": "parked",
-    "codex/reject-leaf-list-meta-values": "parked"
+    "codex/reject-leaf-list-meta-values": "parked",
+    "codex/reject-deprecated-tagged-statements": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -133,6 +134,7 @@
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked",
     "anonymization-rule-coverage": "parked",
-    "reject-leaf-list-meta-values": "parked"
+    "reject-leaf-list-meta-values": "parked",
+    "reject-deprecated-tagged-statements": "parked"
   }
 }
