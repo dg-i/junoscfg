@@ -99,7 +99,7 @@ Which annotations junoscfg *reads* from each input format:
 | replace | `"@": {"operation": "replace"}` | — (no set command exists) | `replace:` prefix |
 | delete | `"@": {"operation": "delete"}` | `delete <path>` | `delete:` prefix (legacy junoscfg output only) |
 | protect | `"@": {"protect": "protect"}` | `protect <path>` | `protect:` prefix |
-| comment | preserved, not interpreted | `annotate` lines silently dropped | `/* ... */` and `#` comments silently dropped |
+| comment | preserved, not interpreted | `annotate` commands rejected as unsupported | `/* ... */` and `#` comments silently dropped |
 | `junos:*` metadata | preserved, not interpreted | — | — |
 
 Which annotations junoscfg *writes* to each output format:

@@ -1,0 +1,1 @@
+Reject unsupported raw set commands instead of silently dropping them. Conversion refuses the entire input with a value-free physical line-number error; validation reports the shared reason. Annotation, insertion and pattern-replacement commands remain unsupported.

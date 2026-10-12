@@ -10,6 +10,25 @@ Junoscfg converts Junos configurations between five formats:
 | **JSON** | Junos native JSON |
 | **YAML** | Standard YAML (1:1 mapping of Junos JSON) |
 
+## Raw set command boundary
+
+Raw set conversion reads `set`, `deactivate`, `protect`, `delete`, and
+`activate` commands with a path. Blank lines, full-line `#` comments and
+leading `/* ... */` comments are ignored. Words inside values remain values.
+
+Interactive commands such as `annotate`, `insert`, `replace pattern`, `rename`,
+`copy`, `edit`, `load`, `commit`, and `unprotect` are unsupported. Any unsupported
+command, including an unknown command or a bare verb without a path, refuses
+conversion of the entire input with `ValueError` and its physical line number;
+CLI conversion exits 2 without partial output. Validation reports these lines
+as errors and validation-only CLI exits 1. Command errors withhold input values.
+Existing unquoted-bracket refusal takes precedence.
+
+Support for annotation, insertion and pattern replacement commands is deferred.
+Supply canonical display set input and handle refusals explicitly. Scripts that
+previously relied on unsupported lines being ignored must remove those commands
+before conversion; there is no silent-ignore option.
+
 ## Conversion Matrix
 
 All 20 format pairs are supported (including identity conversions on the diagonal).

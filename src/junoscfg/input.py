@@ -6,7 +6,13 @@ multi-line bracket unification.
 
 from __future__ import annotations
 
-__all__ = ["InputError", "find_unsupported_set_brackets", "iter_visible_set_lines", "normalize"]
+__all__ = [
+    "InputError",
+    "find_unsupported_set_brackets",
+    "find_unsupported_set_commands",
+    "iter_visible_set_lines",
+    "normalize",
+]
 
 import re
 from typing import TYPE_CHECKING, TextIO
@@ -47,6 +53,23 @@ def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:
                 )
             )
 
+    return tuple(findings)
+
+
+def find_unsupported_set_commands(source: str) -> tuple[tuple[int, str], ...]:
+    """Return value-free, physical-line diagnostics for unsupported commands.
+
+    Classify the existing raw set reader's command spellings only, not paths
+    or values. Every supported command needs a nonempty path after its literal
+    space separator. Leading comments are ignored through the same physical
+    line view used by bracket detection and validation.
+    """
+    prefixes = ("set ", "deactivate ", "protect ", "delete ", "activate ")
+    findings: list[tuple[int, str]] = []
+    for lineno, _original_line, visible_line in iter_visible_set_lines(source):
+        line = visible_line.strip()
+        if not any(line.startswith(prefix) and line[len(prefix) :].strip() for prefix in prefixes):
+            findings.append((lineno, f"Unsupported command in set input on line {lineno}"))
     return tuple(findings)
 
 

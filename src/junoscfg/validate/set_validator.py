@@ -21,7 +21,11 @@ from lark import Lark
 from lark.exceptions import UnexpectedInput
 
 from junoscfg.display import build_from_artifact
-from junoscfg.input import find_unsupported_set_brackets, iter_visible_set_lines
+from junoscfg.input import (
+    find_unsupported_set_brackets,
+    find_unsupported_set_commands,
+    iter_visible_set_lines,
+)
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
 if TYPE_CHECKING:
@@ -57,9 +61,14 @@ class SetValidator:
         errors: list[ValidationError] = []
         set_lines: list[str] = []
         bracket_errors = dict(find_unsupported_set_brackets(source))
+        command_errors = dict(find_unsupported_set_commands(source))
 
         for lineno, _original_line, visible_line in iter_visible_set_lines(source):
             if message := bracket_errors.get(lineno):
+                errors.append(ValidationError(message=message, line=lineno))
+                continue
+
+            if message := command_errors.get(lineno):
                 errors.append(ValidationError(message=message, line=lineno))
                 continue
 

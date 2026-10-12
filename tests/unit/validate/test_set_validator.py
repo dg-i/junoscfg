@@ -67,7 +67,8 @@ class TestSetValidator:
     def test_no_set_prefix_error(self, validator: SetValidator) -> None:
         result = validator.validate("system host-name router1")
         assert result.valid is False
-        assert "does not start with" in result.errors[0].message
+        assert result.errors[0].message == "Unsupported command in set input on line 1"
+        assert result.errors[0].line == 1
 
     def test_quoted_value(self, validator: SetValidator) -> None:
         result = validator.validate('set interfaces description "my interface"')

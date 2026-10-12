@@ -322,7 +322,9 @@ DOORS: dict[str, Door] = {
     ),
     "cli-validate-only-bracket": Door(_cli(_BRACKET, ["-i", "set", "-v"]), _FAILED, "sw1-acme"),
     "cli-validate-only-line": Door(
-        _cli(f"bogus-acme {ADDRESS}\n", ["-i", "set", "-v"]), _FAILED, "bogus-acme"
+        _cli(f"bogus-acme {ADDRESS}\n", ["-i", "set", "-v"]),
+        _FAILED,
+        "Unsupported command in set input on line 1",
     ),
     "cli-validate-only-structured": Door(
         _cli(f"system {{\n    bogus-acme {ADDRESS};\n}}\n", ["-i", "structured", "-v"]),

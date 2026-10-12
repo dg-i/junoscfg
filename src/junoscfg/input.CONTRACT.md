@@ -1,29 +1,21 @@
 # junoscfg.input — contract
 
-Interface: `__all__` in `input.py`, module entry and expose list in `tach.toml`.
-
 ## Not for
 
-Not format detection and not parsing. `normalize()` strips comments and
-line-continuations so a parser sees clean text; deciding which parser runs is
-`convert.input`'s job.
+Not format detection or parsing; `convert.input` chooses the parser.
 
 ## Invariants
 
-- Comment stripping never removes content inside a quoted value — enforced by
+- Comment stripping preserves quoted content — enforced by
   `tests/unit/input/test_input.py::TestRemoveComments::test_preserves_inline_content`.
+- Unsupported raw set commands are refused before normalization or IR construction
+  with value-free physical-line diagnostics — enforced by
+  `tests/unit/convert/test_set_commands.py::test_unsupported_commands_are_refused`.
 
 ## Precedent
 
-- `junoscfg.input.normalize` — the single entry point raw set input calls
-  before parsing; structured text has its own token lexer
-  (`junoscfg.display.SetConverter`), which handles comments itself.
-- `junoscfg.input.find_unsupported_set_brackets` — the shared lexical boundary
-  for raw set conversion and validation; callers consume its line-numbered
-  diagnostics instead of scanning independently.
-- `junoscfg.input.iter_visible_set_lines` — the shared physical-line view for
-  raw set consumers; it removes leading comments while preserving original
-  line numbers and any content following a closing block comment.
-- `junoscfg.input.InputError` — a reader's refusal of configuration text,
-  carrying its `lineno` so a caller that must not quote the text still names
-  the line (the set, structured and XML readers raise it).
+- `normalize` is the raw set normalizer; structured text uses `display.SetConverter`.
+- `find_unsupported_set_brackets` and `find_unsupported_set_commands` are the
+  shared lexical boundaries consumed by raw set conversion and validation.
+- `iter_visible_set_lines` retains physical lines and content after leading comments.
+- `InputError` carries `lineno` for refusals whose callers must withhold source text.

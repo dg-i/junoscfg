@@ -23,7 +23,12 @@ from junoscfg.display import (
     statement_name_spellings,
     unplaced_record_problem,
 )
-from junoscfg.input import InputError, find_unsupported_set_brackets, normalize
+from junoscfg.input import (
+    InputError,
+    find_unsupported_set_brackets,
+    find_unsupported_set_commands,
+    normalize,
+)
 
 
 def _is_statement_name(cname: str, cnode: dict[str, Any], token: str) -> bool:
@@ -65,6 +70,11 @@ def set_to_dict(source: str) -> dict[str, Any]:
         lineno, message = bracket_findings[0]
         raise InputError(message, lineno)
 
+    command_findings = find_unsupported_set_commands(source)
+    if command_findings:
+        lineno, message = command_findings[0]
+        raise InputError(message, lineno)
+
     content = normalize(source)
     lines = [line.strip() for line in content.split("\n") if line.strip()]
 
@@ -77,8 +87,6 @@ def set_to_dict(source: str) -> dict[str, Any]:
             tokens = _tokenize(line[4:])
             if tokens:
                 _merge_tokens(config, tokens, schema, index)
-        elif line == "set":
-            pass  # bare "set" with no tokens
         elif line.startswith("deactivate "):
             tokens = _tokenize(line[11:])
             if tokens:

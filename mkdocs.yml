@@ -43,6 +43,7 @@ nav:
       - junoscfg: api/conversion.md
       - junoscfg.convert: api/convert.md
       - junoscfg.display: api/display.md
+      - junoscfg.input: api/input.md
       - junoscfg.validate: api/validate.md
       - junoscfg.anonymize: api/anonymize.md
       - junoscfg.audit: api/audit.md
