@@ -35,3 +35,7 @@ None for preparation: direct owner authorization and root scope settle the bound
 ## Delta log
 
 - Initial preflight: base c1c226d9769025071d30dec6c4cca74f2b833e72, clean before OpenSpec creation. Own change folder and new tests/unit/convert/test_hidden_list_names.py only. #11 owns overlapping production/shared tests; T4 owns comparison tooling. Next: phase 1.
+
+- Preflight gate correction: initial fields invocation diagnosed missing type/zone; preflight commit d85e0ca captured incomplete metadata. Corrected here before phase-1 closure; do not reuse that initial command as PASS evidence.
+
+- Template sequencing observation: pinned OpenSpec validate requires a delta even at intent. Added bounded draft deltas to satisfy validation without setting forbidden bug skip_specs; phase-2 freeze and tests still pending.
