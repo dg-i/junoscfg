@@ -1,0 +1,6 @@
+schema: agent-ready
+created: 2026-10-12
+type: maintenance
+zone: schema
+assurance: economy
+skip_specs: true
