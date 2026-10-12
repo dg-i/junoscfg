@@ -1,0 +1,1 @@
+Phase 0 complete; next phase 1. Last valid evidence: clean base 8066ce3a3f41af0b379d9d5a8e5b964eb1f3bd33 and source-confirmed silent command dispatch. Parked preparation only; no runtime edits. Owner unattended approval applies.
