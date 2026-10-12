@@ -36,3 +36,5 @@ None affecting bounded preparation: existing scope approval and conservative evi
 - Base bbc125eb3fa259745a3c8cb9278b1b66f720adb0, branch codex/keyed-single-entry-lists, app0.23.0. Checks0.16.1/template0.10.2 StrategyA activated; this branch PARKED, root/#15 owns admission.
 - Read main graph vocabulary entry/key/list/parser/schema/walker and direct neighbours of parse_xsd, DictWalker and entry_keys; verify current schema parser and writer source. No historical graph line used as current proof.
 - Phase0 complete under direct root authorization; next phase1. No product edits, generation or full/schema execution.
+
+- Intent approval derives from root explicit existing issue scope; new cardinality claims excluded. Next phase2 after intent commit.
