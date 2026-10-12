@@ -1,0 +1,21 @@
+schema: agent-ready
+created: 2026-10-12
+type: bug
+zone: schema
+domains: [schema-pipeline, conversion]
+assurance: economy
+removes: none, because supported doors remain; incorrect container/key classification is repaired
+spec-depth: full
+declared-break:
+  consumer:
+    why: Keyed singleton nodes read as arrays and corrected writers retain key and sibling meaning.
+    migration: Reconvert original configurations and update consumers expecting singleton dictionaries to use list entries.
+  cli:
+    why: Set and structured output corrects repeated inactive keys and container name consumption.
+    migration: Reconvert original input and update output expectations; do not retain malformed generated commands.
+verification:
+  state: parked
+  planned-paths: []
+  dependencies: [unsupported-set-commands-reported]
+  changelog: changelog.d/keyed-single-entry-lists.bugfix
+  generated-records: []
