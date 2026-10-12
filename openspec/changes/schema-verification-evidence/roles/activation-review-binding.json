@@ -1,0 +1,46 @@
+{
+  "head": "5f0ba1e004514e5596c6cdf4cffaedc835c5c780",
+  "base": "fb84ef7e4027ef49bf474eced30933d097463978",
+  "verdict": "APPROVE scoped operational activation and bounded finalization/release handoff",
+  "local_shared_semantically_identical": true,
+  "only_proposed3_edits": [
+    ".agent-ready/activation.json",
+    "openspec/changes/schema-verification-evidence/.openspec.yaml",
+    "pyproject.toml"
+  ],
+  "ready_branches": [
+    "codex/schema-verification-evidence"
+  ],
+  "ready_changes": [
+    "schema-verification-evidence"
+  ],
+  "config_controls_passed": 3,
+  "fast_exit_status": 0,
+  "source_ordinary_input_protected_hashes_unchanged": true,
+  "branches": 54,
+  "worktrees": 9,
+  "evidence_hashes": {
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-activation-actual.json": "fe22d0b535acb09898f14c1d1ae3fa02cacf41940ae31c7e372d31ceeda6cddf",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/activation-assessment-0d96d00-proposed.json": "9f99690577468ae5f887c938aeb84df36e6f9c707b098d401d37b69ca2eb5f73",
+    "/Users/manon-dev/src/junoscfg-wt/schema-verification-evidence/.agent-ready/activation.json": "9f99690577468ae5f887c938aeb84df36e6f9c707b098d401d37b69ca2eb5f73",
+    "/Users/manon-dev/src/junoscfg/.git/agent-ready-activation.json": "b54eadf33098780f7046dfc9de9c67724014172afb2e0a2a95d53be403ee8183",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/diagnostics-activation-quarantine-ruling.json": "8fbe69f572277f46f66a786f6b5396d012f084d059c35effb43bca08fdb4532f",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/activation-survivor-inventory-0d96d00-assessed.json": "732ce34d58c3a1ccca09eaab44cfa60bcc3ec0ef90a7849966b3be8bf237afd8",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-activated-fast.out": "ebdc7a142864dce92f1b6608da33b02bea899b8e0b84720dbeba8abfedc26c8b",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-activated-configuration.xml": "0ebd47e92177632a4c31dfeac7b204d42b1db72d69fb47c8fe10534c32767862",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-activated-configuration.out": "f21802e5e24571b06b077e416af1539fdce6ad55b407e03af6af45b03968cb3b",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-readiness-activate.out": "ddaa80150663f13e5d769c15180a20b98c413a6e02c263ce9e7884ca550c7273",
+    "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/codex-resumption/schema-adapter-readiness-activated-validation.out": "5fe43dd9de35ff6e4f1ef7188e4ccec98060eb01b4da7696e020f16417155c72"
+  },
+  "carries": [
+    "actual wholemakeoverend selected25.2doublepass/metadata/rawstability/freshshippedsentinel",
+    "actual postmerge masterready/adapterparked localshared reassessment before archive/mainadmission",
+    "diagnostics migration before ready, no historical import"
+  ],
+  "not_claimed": [
+    "native activated canonical full",
+    "final schema success",
+    "migration-to-ready for parked work",
+    "performance benefit"
+  ]
+}

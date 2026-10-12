@@ -18,10 +18,10 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Receive fresh isolated Reviewer verdict and apply accepted corrections with invalidated reruns.
-- [ ] 3.2 Complete bounded finalization and reviewed main specification.
-- [ ] 3.3 Capture truthful metrics and actual root-controlled activation evidence; record integration/archive/version/tag handoff for root release bookkeeping.
+- [x] 3.2 Complete bounded finalization and reviewed main specification.
+- [x] 3.3 Capture truthful metrics and actual root-controlled activation evidence; record integration/archive/version/tag handoff for root release bookkeeping.
 
-Checkpoint: phase 5 implementation and focused acceptance are complete; immutable commit and independent application integration precede the canonical full. Activation has not started. Root owns activation and release bookkeeping. Last exact baseline red output is retained privately, with no test collection error and no weakened assertion.
+Historical superseded checkpoint: phase 5 implementation and focused acceptance are complete; immutable commit and independent application integration precede the canonical full. Activation has not started. Root owns activation and release bookkeeping. Last exact baseline red output is retained privately, with no test collection error and no weakened assertion.
 
 Exact STOP-T red: 37 failed / 0 errors / 0 skips, 0.38s, exit 1; reconcile passes. Commit invocation: `SKIP=affected-tests git commit`, using the existing explicit acceptance-red allowance; all other hooks normal. Actual scaffold template and caps --homes completed in phase 5, exit 0; exact output retained privately.
 
@@ -35,4 +35,6 @@ Pre-full phase-5 preparation at 3757577e4ce75d4518d76fd831e7ee3972715718: indepe
 
 Direct owner scheduling amendment (2026-10-12): real schema runs are deferred until the end of the entire makeover and restricted to the existing physical 25.2R2-S1.5_qfx5120 version. All recipe capabilities and assertions remain available. Post-makeover TODO: drastically narrow the cases that trigger full schema regeneration. This carry remains pending; ordinary checks are not reported as canonical full success.
 
-Actual owner-amended checkpoint at fc97703: normal hooks and every supported fast gate passed; independent immutable 18-case controls passed in 83.51s; configured public ordinary suite passed 9129 tests with 37 existing skips and 20 strict xfails in 360.95s, branch coverage 92.93% against 91.47%. Same fresh Reviewer approved source integration under explicit owner deferral. Final entire-makeover selected 25.2R2 schema double-pass/stability/sentinel remains PENDING, never reported as passed. Tasks 3.2 and 3.3 remain open.
+Actual owner-amended checkpoint at fc97703: normal hooks and every supported fast gate passed; independent immutable 18-case controls passed in 83.51s; configured public ordinary suite passed 9129 tests with 37 existing skips and 20 strict xfails in 360.95s, branch coverage 92.93% against 91.47%. Same fresh Reviewer approved source integration under explicit owner deferral. Final entire-makeover selected 25.2R2 schema double-pass/stability/sentinel remains PENDING, never reported as passed. At that historical checkpoint, tasks 3.2 and 3.3 remained open.
+
+Current bounded finalization: actual operational activation is independently approved at 5f0ba1e; supported metrics captured the exact immutable base/code-head pair with unknown telemetry UNMEASURED. Reviewed main spec, metrics, separate activation review/binding and actual root premerge release handoff are recorded. All housekeeping tasks above are complete. Actual merge/archive/version/tag and master-only assessment transition remain future root actions in release-handoff.md. Owner-approved final whole-makeover 25.2R2 schema evidence remains explicitly pending; no canonical activated full claim.
