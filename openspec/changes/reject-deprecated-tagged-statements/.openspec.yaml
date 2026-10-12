@@ -21,6 +21,6 @@ verification:
     - changelog.d/+reject-deprecated-tagged-statements.bugfix.md
     - openspec/specs/conversion/structured-input/spec.md
     - openspec/specs/validation/structured-validation/spec.md
-  dependencies: [2026-10-12-reject-leaf-list-meta-values]
+  dependencies: [openspec/changes/archive/2026-10-12-reject-leaf-list-meta-values]
   changelog: changelog.d/+reject-deprecated-tagged-statements.bugfix.md
   generated-records: []
