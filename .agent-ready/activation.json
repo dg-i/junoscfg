@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "5187ac92734dce8c9ebd4e8404a98f76871fd399",
+  "checkpoint": "66aeeb141f6351de43b13f3a29a6a7aaf9b39bdc",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Rootaccepted independent scalar-meta TC e9bb128c:1286trackedhashes/12meaningfulred40controls/68privatechecks. Admit only boundedscalar-meta refusal phase5 and ownerordinary+fast substitute; deprecatedstandardbug preparation remainsPARKED, T3 awaitingfinalruntimebase. No schema/fulluntilend25only.",
-  "captured_at": "2026-10-12T10:38:48.670947+00:00",
+  "authority": "Root verified reviewed scalar-meta refusal finalizer1291hashes andverbatimTC/freshreportprefixes; rootmasterREADY onlylocalarchive/minor0.27/version/tag, sourcebranchparked. Finalfast0/ordinary0+separate3privatecapturePASS preserved; sourceintegrationrecord-layout verifierqualifications recorded. Deprecatedstandard safety/T3 parked; final25onlyatend.",
+  "captured_at": "2026-10-12T11:05:02.714911+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,12 +63,12 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
     "codex/anonymization-rule-coverage": "parked",
-    "codex/reject-leaf-list-meta-values": "ready",
+    "codex/reject-leaf-list-meta-values": "parked",
     "codex/reject-deprecated-tagged-statements": "parked"
   },
   "changes": {
