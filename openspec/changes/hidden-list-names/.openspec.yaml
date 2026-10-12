@@ -22,6 +22,8 @@ verification:
     - src/junoscfg/convert/output/dict_walker.py
     - changelog.d/+hidden-list-names.bugfix.md
     - tests/data/device/known-differences.json
+    - openspec/specs/conversion/hidden-list-names/spec.md
+    - openspec/specs/schema-pipeline/hidden-list-hints/spec.md
   dependencies: [openspec/changes/archive/2026-10-12-keyed-single-entry-lists]
   changelog: 'changelog.d/+hidden-list-names.bugfix.md'
   generated-records: []
