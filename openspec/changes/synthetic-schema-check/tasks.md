@@ -7,8 +7,8 @@
 
 ## 3. Review and evidence
 - [x] 3.1 Fresh lightweight source review; resolve findings.
-- [ ] 3.2 Root coordinates admission and one canonical full checkpoint.
-- [ ] 3.3 Finalize and archive after owner-authorized merge.
+- [x] 3.2 Root coordinates admission and one canonical full checkpoint.
+- [x] 3.3 Finalize live evidence for root archive/version and merge.
 
 ## Checkpoint
-Preflight 40ad0d2 and intent 150114f committed. Product complete; next fresh review and root-coordinated full. Focused new test passed in 0.11s (0.03s call); entire owning module 19 passed in 5.69s. Ruff and fields/caps passed. No runtime or qualification-policy edits. Lane gate requires committed product and will run after this commit. No real schema runs executed by Builder.
+Final reviewed evidence complete at d4311345d62d53474cbcaae9d6a8f78df4a0d46e; prepared for root archive/version and merge. Fresh review approved source and final receipt; exact report in review.md. Successful canonical full: 10427 passed, 13 skipped, 20 xfailed; no real-schema tier selected. Prior full failure on towncrier and initial readiness refusal remain distinct retained evidence. Focused new test: Builder 0.11s total/0.03s call; Reviewer 0.09s total/0.03s call, 0.143s command wall. Entire owning module: 19 passed in 5.69s. These observations do not guarantee a runtime threshold. No runtime or qualification-policy edits.
