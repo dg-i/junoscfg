@@ -5,21 +5,20 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 285, "binary_files": 3, "files": 12, "removed": 114} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
-| Base | b10ba77134fe6d36d1f2ab5859710498ab010764 |
-
-Machine evidence and per-field provenance: [metrics.json](metrics.json).
+| generated lifecycle evidence | UNMEASURED |
+| Initial historical base | b10ba77134fe6d36d1f2ab5859710498ab010764 |
 | Context expansion: src/junoscfg/display/constants.py | shared positional semantics consumed by schema/conversion |
 | Context expansion: src/junoscfg/convert/output/dict_walker.py | owning shared writer below codemap cut |
 | Context expansion: tests/support/shapes.py | one catalogue drives all reader/output family laws |
@@ -28,7 +27,7 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Ordinary row JSON/YAML validity | 20 passed,333 deselected |
 | Base flat-positional keyworded slots | 754 |
 | Base flat-dict trigger slots | 110;2 intended |
-| Required independent roles | Test/Challenge and fresh Reviewer pending |
+| Required independent roles | Independent Test/Challenge ADEQUATE and fresh phase6/main-spec PASS accepted by root |
 | Context expansion: tools/device_differences.py | Retire only device classes independently proven fixed; regenerate record from captures |
 | Post-generation acceptance | 543 passed,4680 deselected |
 | Device and compatibility controls | 190 passed,1 existing strict xfail |
@@ -44,7 +43,6 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Coverage floor | 91.47%, unchanged |
 | Ordinary duration | Pytest183.23s; wrapper192.241s |
 | Real full schema | Deferred final makeover25.2, no current execution |
-
 | Context expansion: src/junoscfg/display/CONTRACT.md | Shared schema/public helper and lazy-load invariants used by all conversion doors |
 | Context expansion: tests/support/artifacts.py | Existing custom-tree provider for independent richer-content trust-boundary probes |
 | Context expansion: tests/support/devices.py | Direct captured oracle and independent corpus-difference provider |
@@ -52,3 +50,9 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Context expansion: tests/support/schema_data.py | Explain actual empty discovery and preserve schema-tier scheduling strength |
 | Context expansion: tests/conftest.py | Verify unchanged opt-in marks and empty schema fixture skip behavior |
 | Context expansion: tools/device_differences.py | Confirm classifier retirement is limited to solved timeout classes |
+
+| Reviewed code candidate | 1875d65407f5cc8bebcaa6d6952c8375a87988bf; actual native execution remains a32fd10 by verified byte identity |
+| Efficiency improvement | UNMEASURED |
+| Final-only schema carry | Entire-makeover end only25.2R2-S1.5_qfx5120; original doublepass/stability/sentinel pending |
+
+Machine evidence and per-field provenance: [metrics.json](metrics.json).
