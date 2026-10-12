@@ -22,5 +22,5 @@ establish complete XML correctness.
 
 The output work must first reconcile the
 [accepted compatibility scope decision](../decisions/2026-10-09-scope-compatibility-to-production-consumer.md)
-and the [current architecture](../../ARCHITECTURE.md). Do not remove their
+and the [architecture guide](../architecture/developer-guide.md). Do not remove their
 constraints through a documentation edit.
