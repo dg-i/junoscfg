@@ -15,7 +15,7 @@ new version. This skill works that report.
 Invoke as `agent-ready-refresh`, on the update branch the scheduled workflow
 opened or on a clean branch of your own. The update refuses a branch with
 existing changes so its scoped recovery command cannot discard local edits.
-Read this file only.
+Read this file and `docs/how-to/improve-verification.md`.
 
 ## Run the update
 
@@ -157,3 +157,15 @@ one authoritative destination and the file's pointer. Apply
 evidence and rulings. Align application-owned prompts and working guidance with
 that policy in a separate reviewed adoption change. Record an ongoing batch's
 remaining scope and resume from valid evidence without restarting completed phases.
+
+## Verification baseline and feedback
+
+Preserve application-owned `docs/VERIFICATION.md`. If newly supplied, initialise
+it using `docs/how-to/improve-verification.md` and add the session-entry/job-end
+pointer to AGENTS.md through a reviewed application change. Reassess current
+verification using representative existing evidence; measure affected stages
+when the update changes checks or conditions. Preserve accepted budgets and
+targets unless the owner explicitly revises them. Record gaps without rerunning
+unaffected expensive suites solely for measurement. Check the ten-commit cadence
+at completion, retaining one pending invitation during unattended work. Record
+assessment changes separately from the updater's exact attested diff.

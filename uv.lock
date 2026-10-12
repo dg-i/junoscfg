@@ -9,8 +9,8 @@ resolution-markers = [
 
 [[package]]
 name = "agent-ready-checks"
-version = "0.16.1"
-source = { git = "file:///Users/manon-dev/src/agent-ready-python?subdirectory=checks&tag=checks-v0.16.1#6e833710f7b0df04e8612defaf34ed861d124908" }
+version = "0.16.2"
+source = { git = "file:///Users/manon-dev/src/agent-ready-python?subdirectory=checks&tag=checks-v0.16.2#976629c389ed8718e80c510b5089b526283a0d39" }
 dependencies = [
     { name = "pyyaml" },
     { name = "tomlkit" },
@@ -572,7 +572,7 @@ provides-extras = ["xml"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "agent-ready-checks", marker = "python_full_version >= '3.11'", git = "file:///Users/manon-dev/src/agent-ready-python?subdirectory=checks&tag=checks-v0.16.1" },
+    { name = "agent-ready-checks", marker = "python_full_version >= '3.11'", git = "file:///Users/manon-dev/src/agent-ready-python?subdirectory=checks&tag=checks-v0.16.2" },
     { name = "deptry", specifier = ">=0.25.1" },
     { name = "lxml", specifier = ">=4.9" },
     { name = "mypy", specifier = ">=2.4" },

@@ -1,12 +1,12 @@
 # The template owns checks-tag and moves the lockfile to its tested release.
 # The application owns optional [local-policy.<id>] tables below it. Keep
 # those owner decisions during updates; agent-ready fields checks their expiry.
-checks-tag = "checks-v0.16.1"
+checks-tag = "checks-v0.16.2"
 
 # The commit the tag pointed at when this repository last moved to it, written
 # by `agent-ready init` and `agent-ready update`: a tag can move, and `uvx`
 # caches one build per ref, so a tool invocation names this commit.
-checks-commit = "6e833710f7b0df04e8612defaf34ed861d124908"
+checks-commit = "976629c389ed8718e80c510b5089b526283a0d39"
 
 # The refresh's hook recommendation, decided: this repository's hook set
 # stands. What the seed's hooks would add is already covered elsewhere. The id

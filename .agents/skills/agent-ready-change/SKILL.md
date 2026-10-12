@@ -197,3 +197,12 @@ exclusions before implementation; repair outcome-blocking defects and introduced
 regressions wherever found. Review follow-ups cover accepted corrections and
 consequences. Independent findings receive authoritative backlog dispositions;
 binding obligations remain effective. No time or review-round cap applies.
+
+## Verification improvement
+
+At entry and completion, check the cadence in `docs/VERIFICATION.md` using
+`docs/how-to/improve-verification.md`. Apply its affected-check assessment in
+every lane that touches verification. Keep improvements within the agreed scope.
+Prepare due assessments from existing evidence; unattended batches defer one
+invitation until job end, preserving pending state across interruption. Optional
+feedback does not block the requested change or authorise additional changes.

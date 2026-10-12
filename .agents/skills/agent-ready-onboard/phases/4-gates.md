@@ -95,3 +95,14 @@ default branch or the commit that opened the one live change; `base` under
 
 The human approves the gate set, each baseline, and each expiry date. A cap is
 raised in this phase only by a decision record naming its measurement. Stop here: the next phase is a new session, and `agent-ready status` resumes it.
+
+## Verification budgets and quality
+
+Use `docs/how-to/improve-verification.md` to initialise `docs/VERIFICATION.md`.
+Agree separate baseline, accepted budget and target for each feedback stage,
+plus behavioural assurance, reliability and corpus organisation targets.
+Greenfield values are provisional; brownfield values use representative existing
+evidence or measured commands, with missing evidence explicit. Preserve local
+test structure and improve incrementally; urgent structural repair needs evidence
+that reliable verification is prevented. Ask the owner to settle unresolved
+budgets, critical risks, tolerances and selected gap owners with the gate decisions.

@@ -106,3 +106,12 @@ create it if absent, preserving any existing contents. Link it from the applicat
 working guidance. A declared tracker stores items and status; the file points to it.
 Use `docs/how-to/review-scope.md` for required fields and scope dispositions.
 Consolidate deferred findings without cancelling dependencies or binding carries.
+
+## Verification continuity
+
+Confirm `docs/VERIFICATION.md` contains the agreed dimensions, stages and targets.
+Initialise its cadence anchor at the observed integration head. Add a short
+AGENTS.md instruction to check this record at session entry and job completion,
+following `docs/how-to/improve-verification.md`; preserve it on later scaffolding.
+Explain the optional ten-commit invitation and unattended-job deferral. Review
+state is application-owned and survives template updates.

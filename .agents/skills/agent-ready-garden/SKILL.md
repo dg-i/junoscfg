@@ -58,3 +58,10 @@ Stop and report, rather than pushing on, when:
 Run `agent-ready caps` and `agent-ready skills` before opening any PR that
 touches a capped document or a skill body. Both runtimes run the same checks
 the same way; nothing in this skill depends on a feature only one of them has.
+
+## Verification feedback
+
+At entry and job completion, check `docs/VERIFICATION.md` following
+`docs/how-to/improve-verification.md`. This commit-based invitation is independent
+of the garden cadence. Use existing evidence, consolidate unattended invitations,
+and keep optional improvement proposals separate from authorised garden repairs.
