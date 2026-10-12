@@ -1,0 +1,16 @@
+schema: agent-ready
+created: 2026-10-12
+type: maintenance
+zone: schema
+domains: [schema-pipeline]
+assurance: economy
+skip_specs: true
+verification:
+  state: parked
+  planned-paths:
+    - tests/unit/validate/test_artifact_builder.py
+    - docs/architecture/developer-guide.md
+    - .agent-ready/activation.json
+  dependencies: []
+  changelog: none
+  generated-records: []
