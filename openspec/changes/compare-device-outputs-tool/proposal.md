@@ -17,7 +17,7 @@ Update the existing batch-guide comparison instructions to use the shared tool; 
 
 ### Modified Capabilities
 
-None.
+None, because no existing capability requirement changes.
 
 ## Non-goals
 

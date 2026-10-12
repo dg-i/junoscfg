@@ -32,3 +32,5 @@ None: bounded T4 intent already authorized by the owner through the Orchestrator
 ## Delta log
 
 - Initial preflight: consistent after C1–C3. Source template is private, captures remain read-only, all tracked acceptance data synthetic.
+
+- Phase-1 gate observation: fields rejected bare None in the proposal; corrected to an explanatory answer. OpenSpec validate required a delta before phase 2, so validation is rerun with this bounded real delta. No skip_specs flag or check weakening used. Earlier proposal commit is retained as historical evidence, not a green validation claim.
