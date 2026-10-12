@@ -43,3 +43,5 @@ No material open preparation decision within the bounded promise. Production gen
 ## Delta log
 
 - Freeze established on preparation base c1c226d. Initial fields metadata issue corrected in 352ee6b; intent OpenSpec validation passed only after bounded draft deltas existed. No source generation/full check has run.
+
+- Acceptance delta: owned new tests/unit/validate/test_hidden_list_hints.py pins structural producer output through public apply_all_fixes/write_structure_tree and is_transparent_list_key, with arbitrary names, name/address-plus-choice keys and keyworded/leaf/unkeyed negative controls. Minimal synthetic temporary tree serialization is unit evidence, not public 25.2 product generation. No criteria widened; 47 nodes execute, 24 expected failures / 23 preservation passes.

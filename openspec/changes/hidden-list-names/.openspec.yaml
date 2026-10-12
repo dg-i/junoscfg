@@ -16,6 +16,7 @@ verification:
   state: parked
   planned-paths:
     - tests/unit/convert/test_hidden_list_names.py
+    - tests/unit/validate/test_hidden_list_hints.py
   dependencies: []
   changelog: 'none: preparation only; required bug fragment will be declared before admission'
   generated-records: []
