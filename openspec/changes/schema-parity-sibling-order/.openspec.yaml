@@ -4,3 +4,12 @@ type: maintenance
 zone: schema
 assurance: economy
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+    - tests/corpus/test_schema_data.py
+    - tests/tooling/test_schema_set_parity.py
+    - changelog.d/+schema-parity-sibling-order.bugfix.md
+  dependencies: []
+  changelog: changelog.d/+schema-parity-sibling-order.bugfix.md
+  generated-records: []
