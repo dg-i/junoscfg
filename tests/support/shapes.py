@@ -2339,6 +2339,165 @@ for _row_name, _expression in (
         )
     )
 
+
+# Keyworded leaves and hierarchical triggers, with positional syntax controls.
+# NEW-A-S1/DEV-2/DEV-3/NEW-B2/NEW-B3. Only overload and radius timeout
+# are device-backed; other rows assert the corrected-schema preservation law.
+def _leaf_hint_xml(config: dict[str, Any]) -> str:
+    """Spell these scalar/list-entry fixtures as XML without using a product writer."""
+    parts = []
+    for key, value in config.items():
+        for item in value if isinstance(value, list) else [value]:
+            body = (
+                _leaf_hint_xml(item)
+                if isinstance(item, dict)
+                else ""
+                if item is None
+                else xml_escape(str(item))
+            )
+            parts.append(f"<{key}>{body}</{key}>")
+    return "".join(parts)
+
+
+for _name, _set, _curly, _ir, _why in (
+    (
+        "a-keyworded-overload-timeout",
+        "set protocols isis overload timeout 300",
+        "protocols { isis { overload { timeout 300; } } }",
+        {"protocols": {"isis": {"overload": {"timeout": "300"}}}},
+        "DEV-2: junoscfg-oracle.set.gz, vMX23.2R2-S7.5 and QFX5120 25.2R2-S1.5, "
+        "tests/data/device/synthetic/: overload timeout retains its keyword.",
+    ),
+    (
+        "a-keyworded-radius-timeout",
+        "set access radius-server 192.168.50.10 timeout 10",
+        "access { radius-server 192.168.50.10 { timeout 10; } }",
+        {"access": {"radius-server": [{"name": "192.168.50.10", "timeout": "10"}]}},
+        "DEV-3: same committed vMX/QFX junoscfg-oracle captures retain radius timeout.",
+    ),
+    (
+        "a-keyworded-as-path-path",
+        'set routing-options static route 10.1.0.0/16 as-path path "64496 64497"',
+        'routing-options { static { route 10.1.0.0/16 { as-path { path "64496 64497"; } } } }',
+        {
+            "routing-options": {
+                "static": {"route": [{"name": "10.1.0.0/16", "as-path": {"path": "64496 64497"}}]}
+            }
+        },
+        "NEW-B2: XSD keyworded path, independently expected IR; no device claim.",
+    ),
+    (
+        "a-keyworded-capture-filename",
+        "set forwarding-options packet-capture file filename pcap1",
+        "forwarding-options { packet-capture { file { filename pcap1; } } }",
+        {"forwarding-options": {"packet-capture": {"file": {"filename": "pcap1"}}}},
+        "NEW-B2: XSD keyworded filename; no device claim.",
+    ),
+    (
+        "a-keyworded-syslog-limit",
+        "set services service-set SS1 syslog cache limit 100",
+        "services { service-set SS1 { syslog { cache { limit 100; } } } }",
+        {"services": {"service-set": [{"name": "SS1", "syslog": {"cache": {"limit": "100"}}}]}},
+        "NEW-B2: XSD keyworded limit; no device claim.",
+    ),
+    (
+        "an-optical-trigger-with-nested-content",
+        "set interfaces et-0/0/0 otn-options trigger oc-los hold-time up 100",
+        "interfaces { et-0/0/0 { otn-options { trigger { oc-los { hold-time { up 100; } } } } } }",
+        {
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "et-0/0/0",
+                        "otn-options": {"trigger": {"oc-los": {"hold-time": {"up": "100"}}}},
+                    }
+                ]
+            }
+        },
+        "NEW-B3: XSD hierarchical otn trigger; no device claim.",
+    ),
+    (
+        "a-sonet-trigger-with-nested-content",
+        "set interfaces so-0/0/0 sonet-options trigger lol hold-time up 100",
+        "interfaces { so-0/0/0 { sonet-options { trigger { lol { hold-time { up 100; } } } } } }",
+        {
+            "interfaces": {
+                "interface": [
+                    {
+                        "name": "so-0/0/0",
+                        "sonet-options": {"trigger": {"lol": {"hold-time": {"up": "100"}}}},
+                    }
+                ]
+            }
+        },
+        "NEW-B3: XSD hierarchical sonet trigger; no device claim.",
+    ),
+    (
+        "a-positional-trace-filename-with-siblings",
+        "set protocols bgp traceoptions file bgp-log size 10m files 10",
+        "protocols { bgp { traceoptions { file bgp-log size 10m files 10; } } }",
+        {
+            "protocols": {
+                "bgp": {
+                    "traceoptions": {"file": {"filename": "bgp-log", "size": "10m", "files": "10"}}
+                }
+            }
+        },
+        "Negative control: genuine nokeyword filename retains its positional spelling.",
+    ),
+    (
+        "a-positional-maximum-prefixes-limit-with-siblings",
+        "set routing-options maximum-prefixes 3000000 threshold 50 log-interval 5",
+        "routing-options { maximum-prefixes 3000000 threshold 50 log-interval 5; }",
+        {
+            "routing-options": {
+                "maximum-prefixes": {"limit": "3000000", "threshold": "50", "log-interval": "5"}
+            }
+        },
+        "Negative control: genuine nokeyword limit retains its positional spelling.",
+    ),
+):
+    _add(
+        Shape(
+            _name,
+            {
+                SET: _set + "\n",
+                STRUCTURED: _curly + "\n",
+                JSON: _json(_ir),
+                YAML: _json(_ir),
+                XML: _xml(_leaf_hint_xml(_ir)),
+            },
+            ir=_ir,
+            written={} if _name.startswith("a-positional-") else {SET: (_set,)},
+            why=_why,
+        )
+    )
+
+
+_event_trigger_ir = {
+    "event-options": {
+        "policy": [
+            {"name": "P", "within": [{"name": "1800", "trigger": {"after": [None], "count": "1"}}]}
+        ]
+    }
+}
+_add(
+    Shape(
+        "an-event-trigger-with-its-supported-count",
+        {
+            SET: "set event-options policy P within 1800 trigger after 1\n",
+            STRUCTURED: "event-options { policy P { within 1800 { trigger after 1; } } }\n",
+            JSON: _json(_event_trigger_ir),
+            YAML: _json(_event_trigger_ir),
+            XML: _xml(_leaf_hint_xml(_event_trigger_ir)),
+        },
+        ir=_event_trigger_ir,
+        why="DEV-V6 carry: preserve currently supported after/count behavior; "
+        "the Set-input device equivalence probe remains unresolved.",
+    )
+)
+
+
 #: The shapes by name, for a test that needs one row.
 BY_NAME: Mapping[str, Shape] = MappingProxyType({shape.name: shape for shape in SHAPES})
 assert len(BY_NAME) == len(SHAPES), "two shapes share a name"

@@ -1,7 +1,7 @@
 ## 1. Verification
 
-- [ ] 1.1 Add independent-IR catalogue rows and genuine-positional controls; execute red family tests on base.
-- [ ] 1.2 Add schema hint and richer-content regressions; execute red/negative evidence.
+- [x] 1.1 Add independent-IR catalogue rows and genuine-positional controls; execute red family tests on base.
+- [x] 1.2 Add schema hint and richer-content regressions; execute red/negative evidence.
 - [ ] 1.3 Obtain independent Test/Challenge and orchestrator ruling at STOP-T.
 
 ## 2. Change

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from junoscfg.validate import (
     ALL_FIXES,
     Combinator,
@@ -431,3 +433,64 @@ class TestGroupHUfdGroupTransparent:
 
     def test_a_tree_without_the_statement_reports_nothing_applied(self) -> None:
         assert self._fix().apply(_make_root()) is False
+
+
+class TestFlatPositionalHints:
+    @pytest.mark.parametrize(
+        "name", ["filename", "as-number", "confederation-as", "path", "limit", "timeout"]
+    )
+    @pytest.mark.parametrize(
+        "flags",
+        [set(), {"nokeyword"}, {"nokeyword", "freeform-nk"}],
+        ids=["keyworded", "positional", "freeform-keyworded"],
+    )
+    def test_only_a_positional_leaf_receives_the_hint(self, name: str, flags: set[str]) -> None:
+        """NEW-A-S1: a name cannot turn a keyworded leaf into an argument."""
+        leaf = SchemaNode(name=name, is_leaf=True, flags=flags.copy())
+        root = _make_root((name, leaf))
+        registered("positional-keys").apply(root)
+        assert ("positional-key-flat" in leaf.flags) == (flags == {"nokeyword"})
+
+
+class TestTriggerFlattening:
+    def test_only_event_options_trigger_is_flattened(self) -> None:
+        """NEW-B3: same-named trigger nodes outside event-options are hierarchical."""
+        trigger = SchemaNode(
+            name="trigger",
+            children={"count": SchemaNode(name="count", is_leaf=True, flags={"nokeyword"})},
+        )
+        within = SchemaNode(name="within", children={"trigger": trigger})
+        policy = SchemaNode(name="policy", children={"within": within})
+        event = SchemaNode(name="event-options", children={"policy": policy})
+        optical = SchemaNode(name="trigger", children={"oc-los": SchemaNode(name="oc-los")})
+        unrelated = SchemaNode(name="trigger")
+        group_trigger = SchemaNode(name="trigger")
+        group = SchemaNode(
+            name="group",
+            children={
+                "event-options": SchemaNode(
+                    name="event-options",
+                    children={
+                        "policy": SchemaNode(
+                            name="policy",
+                            children={
+                                "within": SchemaNode(
+                                    name="within", children={"trigger": group_trigger}
+                                )
+                            },
+                        )
+                    },
+                )
+            },
+        )
+        root = _make_root(
+            ("event-options", event),
+            ("interfaces", SchemaNode(name="interfaces", children={"trigger": optical})),
+            ("other", SchemaNode(name="other", children={"trigger": unrelated})),
+            ("groups", SchemaNode(name="groups", children={"group": group})),
+        )
+        registered("flat-dict-elements").apply(root)
+        assert "flat-dict" in trigger.flags
+        assert "flat-dict" in group_trigger.flags
+        assert "flat-dict" not in optical.flags
+        assert "flat-dict" not in unrelated.flags

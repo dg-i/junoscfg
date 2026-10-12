@@ -17,10 +17,12 @@ import pytest
 import yaml
 
 from junoscfg.convert import find_configuration, from_dict, to_dict
+from tests.support.artifacts import using_tree
 from tests.support.shapes import SHAPES, WRITERS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from junoscfg import Format
 
@@ -291,3 +293,32 @@ class TestAPolicyChainIsWrittenAsTheDevicesTokens:
         output = from_dict(config, "structured")
         assert "import [ ( P-A ) P-B ];" in output
         assert '"( P-A )"' not in output
+
+
+class TestAFlatHintPreservesRicherContent:
+    @pytest.mark.parametrize("writer", ["set", "structured"])
+    @pytest.mark.parametrize(
+        "value",
+        [{"nested": {"up": "100"}}, {"members": ["A", "B"]}],
+        ids=["nested-mapping", "leaf-list"],
+    )
+    def test_nested_content_is_not_discarded(
+        self, tmp_path: Path, writer: str, value: dict[str, Any]
+    ) -> None:
+        """NEW-B3: even a stale or external flat hint cannot discard a richer child."""
+        tree = {
+            "c": {
+                "trigger": {
+                    "fd": True,
+                    "c": {"nested": {"c": {"up": {"l": True}}}, "members": {"l": True, "ll": True}},
+                }
+            }
+        }
+        config = {"trigger": value}
+        with using_tree(tmp_path, tree):
+            output = from_dict(config, writer)
+            assert to_dict(output, writer) == config
+            if "nested" in value:
+                assert "100" in output
+            else:
+                assert "A" in output and "B" in output

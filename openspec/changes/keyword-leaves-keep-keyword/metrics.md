@@ -23,3 +23,9 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Context expansion: src/junoscfg/display/constants.py | shared positional semantics consumed by schema/conversion |
 | Context expansion: src/junoscfg/convert/output/dict_walker.py | owning shared writer below codemap cut |
 | Context expansion: tests/support/shapes.py | one catalogue drives all reader/output family laws |
+| Acceptance unit baseline | 17 failed,6 passed |
+| Acceptance matrix baseline | 210 failed,290 passed,4317 deselected |
+| Ordinary row JSON/YAML validity | 20 passed,333 deselected |
+| Base flat-positional keyworded slots | 754 |
+| Base flat-dict trigger slots | 110;2 intended |
+| Required independent roles | Test/Challenge and fresh Reviewer pending |
