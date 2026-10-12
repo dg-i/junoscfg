@@ -32,3 +32,5 @@ No unresolved intent decision: root admission approves the bounded direction, al
 ## Delta log
 
 - Initial preflight follows root admission. No master writes, archive, version, merge, tag, schema build or expensive verification authorized at this checkpoint.
+
+- Phase-5 delta: root explicitly admits scoped implementation after the preserved rebase onto dd626c13bd0bdd3877d848072b31ba7b62df6699. Owner-directed ordinary-suite substitute plus four-extra fast replaces the skill's canonical full adapter; classified automatically resolved by precedence. Floor 91.47 and independent fresh review remain required. No additional feature/schema work is authorized.

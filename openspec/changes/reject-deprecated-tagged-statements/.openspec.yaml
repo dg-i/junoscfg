@@ -11,15 +11,16 @@ declared-break:
     why: "Deprecated to_set refuses ambiguous multiword terminal metadata instead of silently attaching it to a value or child. Deprecated structured validators consequently return invalid for these inputs."
     migration: "Use junoscfg.convert_config(..., from_format=Format.STRUCTURED, to_format=Format.SET) and junoscfg.validate_structured(); existing deprecation/removal timing remains. Beta minor bump belongs to the orchestrator at merge."
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - src/junoscfg/display/set_converter.py
     - src/junoscfg/display/CONTRACT.md
     - tests/unit/display/test_set_converter.py
     - tests/unit/display/test_delete_lines.py
     - tests/unit/display/test_terminal_tag_refusal.py
+    - changelog.d/reject-deprecated-tagged-statements.fixed
     - openspec/specs/conversion/structured-input/spec.md
     - openspec/specs/validation/structured-validation/spec.md
-  dependencies: []
+  dependencies: [2026-10-12-reject-leaf-list-meta-values]
   changelog: 'Required: deprecated terminal metadata conversion now fails explicitly; migrate to schema-aware conversion.'
   generated-records: []

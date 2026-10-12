@@ -5,9 +5,9 @@
 
 ## 2. Change
 
-- [ ] 2.0 Await root-preserved rebase after preceding release and explicit phase-5 admission.
+- [x] 2.0 Root-preserved rebase onto dd626c13bd0bdd3877d848072b31ba7b62df6699 and explicit phase-5 admission; original TC claims qualified by historical base.
 - [ ] 2.1 Implement the minimal guard, update the approved contract and preserve existing fixtures through supported conversion with precise targets and deprecated refusal, with truthful docstring/warning and unchanged standing deprecation policy.
-- [ ] 2.2 Run focused and fast checks after READY admission; run one canonical full checkpoint before review when authorized.
+- [ ] 2.2 Run focused and fast checks after READY admission; run owner-directed ordinary suite and four-extra fast sequentially on the same runtime HEAD before review.
 
 ## 3. Review and evidence
 
