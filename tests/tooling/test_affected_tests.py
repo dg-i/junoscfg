@@ -11,6 +11,7 @@ import importlib.util
 import sys
 
 import pytest
+import yaml
 
 from tests.support.paths import PROJECT_ROOT
 
@@ -99,7 +100,72 @@ class TestATestChangeSelectsItself:
         assert affected.select([name]) == ["tests/"]
 
     def test_a_document_selects_nothing(self) -> None:
-        assert affected.select(["docs/guide/cli-reference.md", "README.md"]) == []
+        assert (
+            affected.select(
+                [
+                    "docs/guide/cli-reference.md",
+                    "README.md",
+                    "tools/schema_verification.CONTRACT.md",
+                ]
+            )
+            == []
+        )
+
+
+class TestSharedInputsReceiveCoverage:
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "tools/affected_tests.py",
+            "tools/schema_verification.py",
+            "tools/schema-verification/policy.json",
+            "tach.toml",
+            ".pre-commit-config.yaml",
+        ],
+    )
+    def test_tooling_inputs_select_tooling(self, name: str) -> None:
+        assert affected.select([name]) == ["tests/tooling/"]
+
+    @pytest.mark.parametrize(
+        "name",
+        ["tests/data/device/grammar-corpus.json", "tests/data/keyed-entries.xsd"],
+    )
+    def test_shared_data_selects_everything(self, name: str) -> None:
+        assert affected.select([name]) == ["tests/"]
+
+    def test_hook_runs_for_deletion_only_commits(self) -> None:
+        config = yaml.safe_load((PROJECT_ROOT / ".pre-commit-config.yaml").read_text())
+        hooks = [hook for repo in config["repos"] for hook in repo["hooks"]]
+        hook = next(hook for hook in hooks if hook["id"] == "affected-tests")
+        # pre-commit removes deleted paths before applying files/types filters.
+        assert hook.get("always_run") is True
+        assert hook["pass_filenames"] is False
+
+    @pytest.mark.parametrize(
+        "files, expected",
+        [
+            (
+                ["tools/affected_tests.py", "tests/tooling/test_affected_tests.py"],
+                ["tests/tooling/"],
+            ),
+            (
+                ["src/junoscfg/audit/engine.py", "tests/unit/audit/test_engine.py"],
+                ["tests/contract/", "tests/unit/audit/", "tests/unit/cli/"],
+            ),
+        ],
+    )
+    def test_ancestor_selection_subsumes_descendants(self, files, expected) -> None:
+        assert affected.select(files) == expected
+
+
+class TestDeletedTestsRetainCoverage:
+    @pytest.mark.parametrize(
+        "name",
+        ["tests/unit/audit/test_removed.py", "tests/unit/audit/gone/conftest.py"],
+    )
+    def test_deleted_test_selects_existing_ancestor(self, name: str) -> None:
+        assert not (PROJECT_ROOT / name).exists()
+        assert affected.select([name]) == ["tests/unit/audit/"]
 
 
 class TestTheDoorCheck:
