@@ -175,3 +175,109 @@ Proposed fixture SHA-256: `aa2dca4629e6770b94f3a85810c96e02102bbb83967b71558cac0
 ## Phase 5 verified evidence
 
 Actual checked HEADc68f3eae2eb3a0f430f1c0bdfdf81c6e84332c25/BASE255441927eb836ee9eeb7be10c077f18bb4b345e. Original47, separate corrected private12, held24 and exact existing75 tests pass (158 total); broader1754PASS8existingstrictXF retained. Ordinary0:10257PASS37existingSKIP20strictXF,cov92.93>=unchanged91.47,186.88s pytest198.349159s wrapper, rawSHAa9426cd84faf2fad1575422f016f77511949c08d829da14644a7e377675bcae6. Corrected exactfast0:58.483031s,rawSHA2dd6abb3b9c10a933ca3e75254c93062bf3e093db2a92dab3dce4956da8f613d. Firstfast1 onlyignoredskillsmirror; supported native mirrorregeneration0 alltracked unchanged; originalfail retained. These are actual ordinary/fast proofs; no canonicalfull/schemaPASS claimed, no XML qualification. Fresh isolated source review remains pending.
+
+
+## Fresh independent source review
+
+# Done
+
+**SOURCE PASS** for `hidden-list-names`, immutable candidate `be3dbb0ccd53fe9aa1b1ae8472d1501013f3f9f0`, base `255441927eb836ee9eeb7be10c077f18bb4b345e`. Recommend admitting bounded Finalizer main-spec application, then returning those generated main-spec changes for a separate bounded affirmation. No MUST, SHOULD or NICE finding and no new specification challenge. This is a source-review verdict, not final schema qualification, XML qualification, release approval or archive completion.
+
+The reviewer session did not write the implementation and received public approved requirements, public independent challenge reports/rulings and immutable executed checkpoint proof. No Builder private implementation reasoning/report was read. The review used an exact Git archive beneath the main checkout's ignored private evidence directory; candidate worktree, branch and public artifacts were never edited. All 1,277 tracked public hashes and all 1,277 isolated tracked hashes match before/after.
+
+# Evidence
+
+Fresh independent execution: **176 PASS**, no skips, xfails, collection errors or setup errors: 47 original frozen public acceptance, 14 accepted supplemental/established-delete controls, 91 selected existing entry-key/keyword/alias/metadata/t/tk controls, and 24 held-device rendering controls. Additional direct public-door assertions pass seven structural/legacy classification boundaries and eight set/structured tagged-key round trips. Those assembled tag controls assert established IR semantics for held key shapes; they infer no new device syntax.
+
+The repair has one structural answer, `display.is_transparent_list_key`, reused by both normal and meta set paths and the unchanged shared DictWalker. Classification requires L+nk, excludes leaves, and verifies actual declared key children through the existing `entry_key_names`/`entry_keys` provider. An implicit name default alone does not qualify an unkeyed model. Explicit tk compatibility remains. The normal/meta paths reuse existing `_read_key` and `_find_or_create_entry` rather than create another key decoder or identity rule. The existing writer already removes the hidden list keyword while preserving the complete key; no writer edit is necessary. The named t/tk producers and all five physical products are byte-exact with base.
+
+Independent traversal confirms **374 L+nk slots, 32 tk hints, 187 t hints**; every L+nk and tk slot satisfies the actual structural predicate. The earlier 219 named-hint aggregate is 187+32. These count model slots, not independently device-proven patterns. Source-only interpretation of metadata already shipped is sufficient for this repair; unchanged product hashes do not prove that every model syntax is correct or substitute for the owner-deferred physical schema tier.
+
+All eight gzip capture hashes match the freeze. All eight case/device combinations contain the held exact set lines and narrowly held historical XML fragments. Seven narrowly projected held JSON subtrees match exactly. vMX bridge-domain names match, but vlan-id is numeric 100/200 in the device JSON versus lexical strings in preparation acceptance: incidental non-key #13, no numeric-parity claim. vMX alone supplies bridge domains/defaults; QFX's documented refusal remains platform-specific. No new device/platform inference is made. This applies accepted decision `2026-10-10-commit-device-captures-as-the-oracle`.
+
+Known-difference verification independently reproduces the actual record delta **544→124**, **420 retired**, **zero added/reclassified**, 20 remaining renderings. All retired rows are the resolved xml-element-name-leak class; eight residual hello-padding rows and every unrelated class inventory/class metadata remain exact. The native tool, captures and law assertions are unchanged. The executed 24-node held-device control is green. No generator was rerun and no fixture was edited here. The native existing `tools/device_differences.py` remains the one classifier, consistent with accepted SC3.
+
+Accepted SC2 is substantively correct: all four exact complete hidden-key metadata targets and incomplete-key negatives pass. The unchanged writer suppresses a redundant set command for a bare deleted keyed entry; independent ordinary-composite and legacy-tk controls confirm the same established semantics. Delete IR targeting was retained, not weakened. Accepted SC1 remains binding: all XML input/output is BUGGY/deferred; five historical XML readers and retained XML-source rendering laws are preservation controls, not qualification.
+
+The supplied immutable ordinary/fast receipts and all 40 STOP-R raw-evidence hashes revalidate. Checked HEAD `c68f3eae2eb3a0f430f1c0bdfdf81c6e84332c25` differs from the reviewed candidate only in own change records; source, tests, products and news are identical. The ordinary receipt records 10,257 PASS/37 existing SKIP/20 strict XF and coverage 92.93%, above unchanged 91.47%; corrected exact fast records exit 0. The initial fast failure and supported ignored skills-mirror regeneration are retained; every tracked byte was unchanged. This is the owner-approved ordinary+fast substitute. Neither receipt is described as canonical full or physical schema PASS. No broad ordinary/full/fast command was repeated by this reviewer.
+
+The five phase-6 prompts were addressed:
+
+- Trust-boundary input: configuration tokens and structured key values cross into the IR. Partial keys, terminal surplus, incomplete meta targets and unknown suffix controls preserve unresolved content without falsely tagging an ancestor; no new configuration-derived execution, file access or environment dependency is introduced. Trusted schema-model metadata supplies classification. No omitted boundary counterexample was found.
+- Incompatible-but-valid input: complete composite keys, choice values, repeated tuples, real keyword precedence, aliases, existing name-keyed transparent paths and tags all pass. No evidenced input within the admitted non-XML promise conflicts with the implementation assumptions. Unheld daemon-process/NEW-R15/numeric normalization are not restored or inferred.
+- Shared blind spot: device lines and raw JSON/XML fragments independently check prepared expectations. The bridge numeric discrepancy and erroneous original supplemental delete expectation remain explicitly disposed through #13/accepted SC2. No unresolved criterion defect was found.
+- Second answer: normal/meta input reuse `_read_key`; input and writer share the classification helper; identity stays `_find_or_create_entry` plus existing declared-key helpers. Existing tk fallback has no new name table or override, and all stored tk slots already satisfy structure. No duplicate capability, new parameter or competing error path is introduced.
+- Figures/non-goals: slot/hint inventories, capture counts/subsets, known-difference delta and checkpoint hashes were rerun or revalidated against held repository artifacts. Non-goals defer unevidenced paths; they claim no global impossibility. Deferred expensive schema work remains a carry, not a concealed executed result.
+
+# Changed paths
+
+Only private reviewer evidence under `private_test_data/makeover-work/hidden-list-names/independent-fresh-phase6/`: this report, binding/full hash manifests, exact candidate archive, focused raw logs/receipts, evidence-verification script/receipt/output, supplemental tag-control receipt/output, context rows and final evidence manifest. No public review verdict was edited. No public source, specification, acceptance test, fixture, task checkbox, metric, product, branch or commit changed.
+
+Public phase-6 lifecycle checkbox and permitted context rows are supplied to root for bounded record adoption; metrics finalization stays pending. Fields/caps must run at public-record adoption before its commit. Running them from an unregistered private archive would discover the surrounding main checkout and would not validate the intended future record mutation.
+
+# Commands and exit status
+
+Actual full argv, cwd, explicit environment, UTC start/end, observed durations and raw SHA-256 are in `execution.json`, `verification-execution.json` and `fresh-key-tag-execution.json`.
+
+- Cached locked Python `-m pytest -o addopts= -q -p no:cacheprovider` on the two original acceptance files: **0**, 47 PASS.
+- Same invocation on separately accepted corrected private controls and established-delete controls: **0**, 14 PASS.
+- Same invocation on exact existing selections listed in execution.json: **0**, 91 PASS.
+- Same invocation on `TestJunoscfgWritesTheDevicesSet`: **0**, 24 PASS.
+- Independent `verify_evidence.py`: corrected harness **0**; hashes, inventories, capture fragments, record delta and immutable checkpoint proof verified. Its first attempt exited **1** in the private projection harness; see Deviations.
+- Direct public-door structural/tag controls, exact `python -c` in receipt: **0**, seven classifier boundaries and eight tagged-key round trips.
+- Git archive/rev-parse/status/diff/show and bounded file reads were read-only. No switch, rebase, push, merge, full/fast/ordinary rerun, physical XSD build, product generation, JVD execution, device/network operation or active-session control occurred.
+
+# Open questions for the owner
+
+None for the bounded source verdict. Existing carries remain: XML TODO, #13 numeric normalization, daemon-process/NEW-R15/missing-capture syntax, and final owner-selected 25.2 physical schema verification at the non-XML batch end. The next possible schema failure remains divergence on a real regenerated 25.2 product or sentinel; unchanged source products and this SOURCE PASS do not close it. Root already holds the scheduling decision. Main specs have not yet been generated or reviewed.
+
+# Deviations
+
+The first independent capture-verifier attempt incorrectly treated a nested mismatch while trying RFL-DEFAULT as a global failure before trying the intended RFL-MIXED entry. The harness was corrected to continue candidate selection on that mismatch; all final equality assertions remain. The original script/hash and exact displayed tool-output transcript/hash are retained; the transcript capture method is explicitly recorded. The initial attempt's UTC was not captured and is marked UNMEASURED; the corrected actual execution has a complete raw receipt. This was a private evidence-harness failure, not a product test failure or specification challenge.
+
+Per root's explicit isolation/ownership assignment, this review writes only private evidence, leaving public lifecycle/metric adoption to root. Ordinary/fast verification was revalidated from immutable executed receipts instead of repeated; canonical full and physical schema remain intentionally owner-deferred. No other deviation.
+
+
+## Fresh independent exact main-spec affirmation
+
+# Done
+
+**MAIN-SPEC AFFIRMATION PASS** for the two proposed new capability specifications bound to SOURCE PASS candidate `be3dbb0ccd53fe9aa1b1ae8472d1501013f3f9f0` and base `255441927eb836ee9eeb7be10c077f18bb4b345e`. Recommend root exact-SHA admission of only these proposed bytes. No MUST, SHOULD, NICE or new specification challenge. This supplemental affirmation neither edits nor replaces the source verdict. Live application remains pending root admission.
+
+# Evidence
+
+An executed bounded hash/text/AST/Git binding check confirms:
+
+- Conversion proposal SHA-256: `874f9e03f0a1536a394ee0d57fc15a8ce338a69622eba5a4fbe166acb3c1c2a3`.
+- Schema proposal SHA-256: `d1ea5b95813159c4a3f701def7f1f8037f79e056982a959e165ce92b719e11dd`.
+- Proposed diff SHA-256: `442d33fb8ac9a08dcaa293b5dba7adb1ac17603e35d635278c9e1bd45b2ba8cb`.
+
+All four requirements, their scenarios and seven test references are byte-exact between the source-reviewed approved delta requirement sections, native-generated main specs and proposed main specs. The only proposed edits to native output replace each generated TBD Purpose with the approved narrow summary. Both capabilities are absent from source HEAD/base; no existing main capability is replaced. Native outputs and all supplied command stdout/stderr hashes match their manifest and actual receipts.
+
+The preserved disposable clone's HEAD equals the source-reviewed HEAD. Native pinned `npx --yes @fission-ai/openspec@1.13.0 archive hidden-list-names --yes` ran offline, exited 0 and reports exactly +4 requirements: three conversion, one schema. The subsequent pinned `validate --specs --strict` exited 0 with 28 passed/0 failed. Incomplete-task warnings belong to the disposable native archive used to obtain merge output; they are not a claim that live lifecycle work completed. Informational long-requirement diagnostics do not change the 28/0 result. This reviewer validated those executed receipts rather than rerunning generation or validation.
+
+The conversion Purpose correctly names the four admitted non-XML input doors and set/structured output. It explicitly retains XML qualification deferral. Native archive omitted the delta's non-requirement XML-scope footer; the narrow proposed Purpose, unchanged public README and unchanged public XML TODO preserve accepted SC1: XML input/output are BUGGY/deferred, existing passing controls do not qualify them. No blanket XML correctness or output implementation is claimed.
+
+The schema Purpose describes deriving transparency from proven structurally keyed nokeyword lists. That truthfully summarizes runtime classification of already shipped L/nk/k/key-child metadata. It neither claims fresh producer edits nor introduces a tk field/product. Named hint compatibility and equivalence/blast-radius evidence before retirement remain explicit. Ordinary keyworded/leaf/unknown/unkeyed models remain protected. The main text adds no scalar-cardinality correction, schema-release-gap repair, new device validity inference or XSD/product-generation claim.
+
+Complete key tuples, composite address-plus-choice identity, equal-key merging and keyword precedence remain exact approved requirements. Existing entry-key/meta contracts continue to own exact metadata targeting and partial-key preservation. Accepted SC2's narrow private delete expectation correction creates no new main requirement or writer semantic change. Accepted SC3's exact native known-difference retirement creates no broader schema or XML claim. Neither supplemental ruling is silently reversed by the proposed text. Existing t/tk compatibility, daemon-process/NEW-R15/missing-capture exclusions, #13 numeric representation, XML TODO and the owner-deferred final selected 25.2 schema tier remain carried by the unchanged source-approved proposal/freeze/contracts/public records.
+
+All 1,277 live tracked file hashes remain source-review exact and the worktree is clean. The disposable clone's source/tests/products/news remain source-review exact. All 1,296 files in the original source evidence manifest and that manifest itself remain byte-exact; original source report SHA-256 remains `a4d6111185e26f6386d56db7262e29eb591851f5b75e154ad2fe12d35add09ac`. Supplementary evidence is in separate new files and does not alter the original source manifest.
+
+# Changed paths
+
+Only new private `independent-fresh-phase6/mainspec-review.md`, `mainspec-binding.json` and `mainspec-evidence-manifest.json`. No live specification, source, test, fixture, lifecycle task, metrics, product, branch or source-review evidence was edited.
+
+# Commands and exit status
+
+Reviewer bounded inline Python SHA/text/AST/Git verification: **0**. It checks the exact requirement bodies, Purpose-only substitutions, test-binding existence, native receipt/raw hashes, proposal hashes, source/evidence immutability and clean live checkout.
+
+Revalidated Finalizer receipts: offline shared clone **0**; pinned native archive **0**; pinned strict main-spec validation **0**, 28 PASS. Their actual argv, UTC starts, observed durations, environment overrides and raw stdout/stderr hashes are preserved in Finalizer commands.json and bound in mainspec-binding.json. No test, ordinary, fast, full, schema or generation execution was repeated by this reviewer.
+
+# Open questions for the owner
+
+None for these exact proposed main-spec bytes. Root exact-SHA admission and live application remain pending. This affirmation does not close the existing final schema/XML carries or approve merge/archive/version/tag actions.
+
+# Deviations
+
+None. This is the authorized separate text/provenance affirmation by the same fresh source Reviewer. The original source verdict, manifest and evidence remain immutable.
