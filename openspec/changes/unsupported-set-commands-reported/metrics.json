@@ -2,5 +2,32 @@
   "base": "8066ce3a3f41af0b379d9d5a8e5b964eb1f3bd33",
   "values": "UNMEASURED",
   "phase": "1",
-  "authority": "Owner unattended-run instruction and latest rejection-only scope"
+  "authority": "Owner unattended-run instruction and latest rejection-only scope",
+  "phase5": {
+    "base": "bbc125eb3fa259745a3c8cb9278b1b66f720adb0",
+    "checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+    "supported_fast": {
+      "exit": 0,
+      "seconds": 56.969440917,
+      "raw_sha256": "0b4e4ab37c37aeba345b7e165ecc7d3694da10b3625a38691ad851fe2b9c91f1"
+    },
+    "ordinary": {
+      "exit": 0,
+      "seconds": 193.82792974999998,
+      "raw_sha256": "968e647cf18bcfb520cfd7876bd1556947aa2396a6908fd200af41fbfded4ad2",
+      "passed": 9820,
+      "skipped": 37,
+      "xfailed": 20,
+      "coverage_percent": 93.0,
+      "coverage_floor": 91.47
+    },
+    "tracked_identity": true,
+    "focused_passed": 350,
+    "frozen_acceptance_cases": 84,
+    "comparison_plain": 96,
+    "comparison_rules": 1152,
+    "comparison_changed": 0,
+    "fresh_review": "REQUIRED; pending root scheduling",
+    "full_schema": "NOT EXECUTED; deferred entire-makeover boundary"
+  }
 }

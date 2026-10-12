@@ -34,3 +34,10 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Phase 5 preservation comparison | 0/96 plain and0/1152 per-rule outputs/diagnostics/exception records changed from detachedbbc125eb |
 | Context expansion: tests/contract/test_every_message.py | Root-approved correction only of obsolete plain unsupported-command quotation fragment; all privacy/exit scans retained |
 | Context expansion: tach.toml | Root-approved expose declaration only for already-approved shared helper; no module/layer/dependency changes |
+| Phase 5 checked HEAD | 573e46a309195eba9723f648ff594a77f7d059df |
+| Phase 5 checked base | bbc125eb3fa259745a3c8cb9278b1b66f720adb0 |
+| Supported fast | exit0; 56.969s; raw SHA256 0b4e4ab37c37aeba345b7e165ecc7d3694da10b3625a38691ad851fe2b9c91f1 |
+| Configured ordinary | exit0; 193.828s wrapper;9820passed/37existing skipped/20xfail;93.00% coverage |
+| Ordinary raw SHA256 | 968e647cf18bcfb520cfd7876bd1556947aa2396a6908fd200af41fbfded4ad2 |
+| Check identity | all tracked/index/HEAD/tree/status identical before and after fast and ordinary |
+| Deferred verification | full real schema only at entire-makeover end, physical25.2R2 with original doublepass/stability/sentinel; not executed here |
