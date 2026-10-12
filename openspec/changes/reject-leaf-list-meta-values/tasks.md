@@ -6,7 +6,7 @@
 
 - [x] 2.1 Original twelve regressions, forty preservation controls and unchanged sixty-eight private TC checks pass.
 
-## 3. Lifecycle verification
+## 3. Review and evidence
 
 - [ ] 3.1 Clean committed current-base native readiness and owner ordinary substitute plus supported fast set.
 - [ ] 3.2 Fresh isolated high-risk review and accepted corrections.
