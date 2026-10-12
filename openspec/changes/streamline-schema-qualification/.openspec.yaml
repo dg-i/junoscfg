@@ -5,3 +5,22 @@ type: feature
 zone: schema
 domains: [schema-pipeline]
 removes: redundant full assertion pass and separate sentinel build; implicit older-release qualification
+verification:
+  state: draft
+  planned-paths:
+    - tools/schema_verification.py
+    - tools/schema_verification.CONTRACT.md
+    - tools/schema-verification/**
+    - tests/tooling/test_schema_verification.py
+    - tests/tooling/test_schema_verification_metadata.py
+    - tests/tooling/test_schema_qualification.py
+    - tests/tooling/test_schema_qualification_challenge.py
+    - pyproject.toml
+    - docs/how-to/run-a-batch-of-changes.md
+    - docs/how-to/verification-evidence.md
+    - changelog.d/streamline-schema-qualification.misc
+    - .agent-ready/activation.json
+    - openspec/specs/schema-pipeline/verification-evidence/spec.md
+  dependencies: []
+  changelog: changelog.d/streamline-schema-qualification.misc
+  generated-records: []
