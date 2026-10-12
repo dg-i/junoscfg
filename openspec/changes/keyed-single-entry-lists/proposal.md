@@ -10,7 +10,7 @@ Device-backed keyed singleton entries are modelled as containers, so valid devic
 
 ## Capabilities
 ### New Capabilities
-None.
+None, because existing capabilities own this correction.
 ### Modified Capabilities
 - `schema-pipeline/entry-key-fields`: keyed singleton classification, preserving children and identifier order.
 - `conversion/entry-keys`: all readers/writers retain singleton entry keys and entry tags without consuming ordinary container children.
