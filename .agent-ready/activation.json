@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "7b61b23e60096c752d1923d845bbdcd632126bd9",
+  "checkpoint": "847428159ca12efb32ee525ae59fbdc01e245721",
   "actor": "Codex orchestrator for owner-requested schema qualification optimization",
-  "authority": "Owner requested synthetic generator tests after the completed trigger reduction; fresh independent source review approved. Admit isolated maintenance change for full verification.",
-  "captured_at": "2026-10-12T16:33:54.602009+00:00",
+  "authority": "Owner-requested supplementary synthetic generator coverage passed independent review and full verification, archived and merged locally; restore master admission and park completed change.",
+  "captured_at": "2026-10-12T16:52:26.416720+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
@@ -73,7 +73,7 @@
     "codex/schema-parity-sibling-order": "parked",
     "codex/schema-qualification-speed": "parked",
     "codex/reduce-schema-qualification-triggers": "parked",
-    "codex/synthetic-schema-check": "ready"
+    "codex/synthetic-schema-check": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -143,6 +143,6 @@
     "schema-parity-sibling-order": "parked",
     "streamline-schema-qualification": "parked",
     "reduce-schema-qualification-triggers": "parked",
-    "synthetic-schema-check": "ready"
+    "synthetic-schema-check": "parked"
   }
 }
