@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "b10ba77134fe6d36d1f2ab5859710498ab010764",
+  "checkpoint": "58c967bfbb0a46af298e2787d5a40a9082017211",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Owner unattended queue authorization; independent #15 phase0\u20134 preparation explicitly parked beside parked #10; no expensive admission, no feature support for #24.",
-  "captured_at": "2026-10-12T02:37:12.398471+00:00",
+  "authority": "Owner unattended queue authorization; independent #10 Test/Challenge ADEQUATE accepted by root, minimal necessary shipped25.2 public product generation and later ordinary checkpoint admitted; all full schema verification deferred to whole-makeover end.",
+  "captured_at": "2026-10-12T02:54:18.669052+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -58,8 +58,8 @@
     "codex/structured-conversion-diagnostics": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
-    "codex/keyword-leaves-keep-keyword": "parked",
+    "master": "parked",
+    "codex/keyword-leaves-keep-keyword": "ready",
     "codex/unsupported-set-commands-reported": "parked"
   },
   "changes": {
@@ -116,7 +116,7 @@
     "schema-verification-evidence": "parked",
     "structured-conversion-diagnostics": "parked",
     "xml-direct-to-ir": "parked",
-    "keyword-leaves-keep-keyword": "parked",
+    "keyword-leaves-keep-keyword": "ready",
     "unsupported-set-commands-reported": "parked"
   }
 }
