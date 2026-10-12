@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "77b5f6ab21d07c532f6aad55b9bc816b4dfedebd",
+  "checkpoint": "d0698d47c4e0d0e4d7ea2942a55d7357395d8305",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Reviewed maintenance schema parity test correction integrated. Root local archive/version/tag/preserved cleanup authorized; then final selected25-only qualification. No runtime or requirements changed.",
-  "captured_at": "2026-10-12T13:08:06.400731+00:00",
+  "authority": "All agreed implementation and narrow independently reviewed test correction complete locally through v0.28.2. Master READY only for final selected25.2 qualification two stability passes and fresh sentinel;83archivesPASS; no21.4/23.2 executions, no push/publication.",
+  "captured_at": "2026-10-12T13:13:45.445644+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -137,6 +137,6 @@
     "anonymization-rule-coverage": "parked",
     "reject-leaf-list-meta-values": "parked",
     "reject-deprecated-tagged-statements": "parked",
-    "schema-parity-sibling-order": "ready"
+    "schema-parity-sibling-order": "parked"
   }
 }
