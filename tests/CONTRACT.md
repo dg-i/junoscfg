@@ -39,7 +39,12 @@ Where a test goes, which door it uses, and what it asserts.
 
 ## Which tests a change runs
 
-A change under `src/junoscfg/<package>/` runs `tests/unit/<package>/` and
-`tests/contract/`; the pre-commit hook selects exactly that. A change to
-`tests/support/`, `conftest.py`, `src/junoscfg/__init__.py` or the artifacts
-runs everything. The full set adds `corpus/`, `tooling/` and branch coverage.
+A change under `src/junoscfg/<package>/` runs its unit tests, the unit tests
+of its transitive importers, and `tests/contract/`. Tooling code/configuration,
+`tach.toml` and the pre-commit configuration run `tests/tooling/`. Shared
+`tests/data/`, `tests/support/`, `tests/conftest.py`, the package root,
+shipped artifacts, `pyproject.toml` and the lock run the full default suite.
+A changed test selects itself; a conftest or deleted test selects its nearest
+existing containing test directory. Covered descendants are omitted from the
+selection. The hook always invokes the selector, including deletion-only
+commits; unrelated documents select no tests. The full set adds branch coverage.

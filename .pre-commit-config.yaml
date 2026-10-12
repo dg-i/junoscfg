@@ -47,7 +47,9 @@ repos:
         name: affected tests
         entry: uv run --locked --group dev python tools/affected_tests.py --run
         language: system
-        files: ^(src/|tests/|pyproject\.toml$|uv\.lock$)
+        # Deleted paths are filtered out by pre-commit before files matching.
+        # Always call the cheap selector; documentation-only edits select nothing.
+        always_run: true
         pass_filenames: false
         require_serial: true
 

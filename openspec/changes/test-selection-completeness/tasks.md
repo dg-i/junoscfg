@@ -4,10 +4,11 @@
 
 ## 2. Change
 
-- [ ] 2.1 Repair selection and hook; update test contract and changelog; pass focused tests.
-- [ ] 2.2 Parent coordinates activation, readiness and canonical full checkpoint at committed candidate before review.
+- [x] 2.1 Repair selection and hook; update test contract and changelog. Focused command `uv run --locked --group dev pytest -q tests/tooling/test_affected_tests.py`: 38 passed in 0.71s (/tmp/selection-green.log). Codemap check and requirement reconciliation pass.
 
 ## 3. Review and evidence
+
+- [ ] 3.0 Parent coordinates activation, readiness and canonical full checkpoint at committed candidate before review.
 
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
@@ -15,4 +16,4 @@
 
 ## Checkpoint
 
-Phase 4 complete. Owner's approved plan covers acceptance criteria; independent challenge omitted under frozen economy/normal-risk policy. Phase 5 next. The expected-red test checkpoint skips only affected-tests hook; all other commit hooks run, and phase 5 reruns focused tests and full checkpoint.
+Phase 5 implementation complete; next parent-coordinated readiness and canonical full checkpoint, then fresh isolated review. Expected-red checkpoint 0b2e8d3 skipped only affected-tests hook; all other hooks passed. Implementation commit runs all hooks normally.

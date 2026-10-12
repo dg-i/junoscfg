@@ -7,7 +7,9 @@ read from the source, so the kernel (``display``, ``input``), which every
 package imports, selects every unit directory. A change to a test file runs
 that file; to a ``conftest.py``, its directory; to ``tests/support/``,
 ``tests/conftest.py``, the shipped artifacts or the lock, the whole default
-suite. Anything else selects nothing.
+suite. Tooling code/configuration selects the tooling suite; shared test data
+selects everything. Deleted tests select their nearest existing test directory.
+Anything else selects nothing; selected ancestors subsume their descendants.
 
 ``uv run python tools/affected_tests.py FILE...`` prints the selection;
 ``--run`` runs it with pytest. With no files it reads the change from git: the
@@ -30,6 +32,7 @@ EVERYTHING = ("tests/",)
 RUNS_EVERYTHING = (
     "tests/conftest.py",
     "tests/support/",
+    "tests/data/",
     "src/junoscfg/validate/data/",
     "pyproject.toml",
     "uv.lock",
@@ -94,9 +97,27 @@ def select(files: list[str]) -> list[str]:
                 if package and (TESTS / "unit" / package).is_dir():
                     chosen.add(f"tests/unit/{package}/")
             chosen.add("tests/contract/")
-        elif rel.startswith("tests/") and rel.endswith(".py") and path.exists():
-            chosen.add(f"{Path(rel).parent.as_posix()}/" if path.name == "conftest.py" else rel)
-    return sorted(chosen)
+        elif rel in {".pre-commit-config.yaml", "tach.toml"} or (
+            rel.startswith("tools/") and path.suffix != ".md"
+        ):
+            chosen.add("tests/tooling/")
+        elif rel.startswith("tests/") and rel.endswith(".py"):
+            if path.is_file() and path.name != "conftest.py":
+                chosen.add(rel)
+            else:
+                directory = path.parent
+                while not directory.is_dir() and directory != TESTS:
+                    directory = directory.parent
+                chosen.add(f"{directory.relative_to(ROOT).as_posix()}/")
+    return [
+        target
+        for target in sorted(chosen)
+        if not any(
+            target != parent and target.startswith(parent)
+            for parent in chosen
+            if parent.endswith("/")
+        )
+    ]
 
 
 def _git(*args: str) -> list[str]:
