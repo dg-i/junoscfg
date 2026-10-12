@@ -65,3 +65,44 @@ with exact base/HEAD and complete tracked-file before/after manifests in
 private_test_data/makeover-work/pattern-sweep-no-warning/immutable-review-checkpoint.json.
 Fresh review, ordinary/fast/full-substitute evidence and finalization remain
 pending. Historical parked text above describes the original bounded checkpoint.
+
+## Qualified ordinary and fast substitute evidence
+
+Fresh lightweight review remains bound to 5955ae353870fe5114664e86fd9eb5c878cae29f.
+Native readiness precheck and the ordinary suite ran on clean proof HEAD
+7828979f9990fc9f67b64136cd5ff45364f47265 against base
+a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69, with UV_OFFLINE=1 and
+PYTHONDONTWRITEBYTECODE=1. Ordinary exact argv: uv run --locked pytest tests/ -q
+--cov --cov-report=term:skip-covered. Exit 0: 9826 passed, 37 existing skips,
+20 existing xfails, 187.95s pytest; 196.818454583s wrapper. Coverage 93.00%
+meets unchanged 91.47% floor. Log SHA256
+ccf34d8823443ea78f1bad20abe92467ae173926ae45c146edf539d8567efa8f.
+All 1232 tracked before/after files match at that proof HEAD (manifest SHA256
+2de045c6b46195e1b006f213a7ec2b3c65b9a4ab0d596acf48b0a2167d099a64).
+
+The first sequential fast attempt exited 1 for missing ignored skill mirror,
+standard-only removes metadata, and required news fragment; all actual failures
+are preserved in substitute-fast.out, SHA256
+84d88950f54b17cb40c9a1ff2b730be9d94410b0552d9673b69cffdea839df47.
+Public skills --regenerate exited 0. Root approved record/news correction only:
+remove removes, add changelog.d/+pattern-sweep-no-warning.misc.md and declare its
+exact planned path/changelog. Ordinary was not rerun: all 83 original source
+files and owning test remain byte-identical across the correction.
+
+Native readiness precheck, focused 2-test rerun and exact fast retry then ran
+sequentially on clean proof HEAD 8cbb125f9500641a3b746bb3b519fa64eb519f83,
+with the same base/environment. Each exit 0; focused 2 passed in 0.18s.
+Fast exact argv: uv run --locked --group dev --with griffe --with tach --with
+towncrier --with vulture agent-ready check --set fast --base
+a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69. Fast wrapper: 11.164481458s;
+log SHA256 3ebdd05bdbf210b37d7f00b25d4b4f558ec75a5a12a5e40dff54e581a7cc679b.
+All 1233 tracked before/after files match at this fast proof HEAD (manifest
+SHA256 e546caff87506ae6854b9213b3b3fa94d61867957c584e6a6a82d262a4a0d9ac).
+Root's requested fresh bounded metadata/news affirmation remains pending.
+
+These are distinct qualified ordinary and fast proof heads, not a canonical
+full or physical-schema PASS. Native argv, environment, UTC timings, raw exits,
+logs and identities are retained in substitute-native-commands.json,
+substitute-retry-native-commands.json and their checkpoints in the canonical
+ignored evidence directory. This final record commit changes no runtime/test
+bytes. Integration, finalization, metrics, archive, version and tag remain open.
