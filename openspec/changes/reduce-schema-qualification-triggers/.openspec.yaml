@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-12
+type: feature
+zone: schema
+domains: [schema-pipeline]
+assurance: economy
+removes: expensive schema execution selected solely by the editable root package version
