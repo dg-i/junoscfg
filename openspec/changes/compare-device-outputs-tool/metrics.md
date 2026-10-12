@@ -35,3 +35,11 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Phase checkpoint | Phase 4 PREPARED / PARKED, root admission required before phase 5 |
 
 | Role-policy delta | Root corrected mandatory solo source review after ca95319; original frozen history preserved; source/test/criteria evidence unchanged |
+
+| Actual source head | aa505613e0fcaa4c7130bd674aea8478d2c2d190 |
+| Actual ordinary checked head | a8683fede9dd64fad7e5df07295bb282df9155a5 |
+| Actual fast checked head | eb1eab9772fe355133138de27d54997d3fac84e8 |
+| Ordinary coverage evidence | Exit 0; 9,824 passed / 37 skipped / 20 xfailed; 93.00%, floor 91.47%; 186.75s pytest |
+| Fast evidence | Exit 0; every check passed; 12.323s wrapper wall time |
+| Source review | Omitted by economy normal-risk standard-feature policy; no independent verdict; phase-7 bounded main-spec review pending |
+| Native log hashes | ordinary b41716ece7172ba3c36c594fb4125752c7640bf1364ceb41714864abfee7575b; fast 10701391e89fd810366936e1086f44205c6d9a0a385ca23e2180d00bf4909e3c |
