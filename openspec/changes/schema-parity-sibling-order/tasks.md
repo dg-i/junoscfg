@@ -8,8 +8,8 @@
 - [x] Direct-call formerly failing test with retained artifacts; no schema generation.
 
 ## 3. Review and evidence
-- [ ] Native readiness and lane admission.
-- [ ] Ordinary suite and four-extra fast under owner schedule.
+- [x] Native readiness and lane admission.
+- [x] Ordinary suite and four-extra fast under owner schedule.
 - [ ] Genuinely fresh independent review.
 
 ## Finalization
