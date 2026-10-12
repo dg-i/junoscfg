@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-12
+assurance: economy
+type: feature
+zone: schema
+domains: [schema-pipeline]
+removes: redundant full assertion pass and separate sentinel build; implicit older-release qualification
