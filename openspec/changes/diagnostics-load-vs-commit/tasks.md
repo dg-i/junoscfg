@@ -1,7 +1,7 @@
 ## 1. Acceptance and independent challenge
 
 - [x] 1.1 Verify qualified-wording acceptance fails on current base with zero collection errors; retain device/anonymizer before records.
-- [ ] 1.2 Receive independent high-risk Test/Challenge verdict and root ruling before runtime work.
+- [x] 1.2 Receive independent high-risk Test/Challenge verdict and root ruling before runtime work.
 
 ## 2. Implementation
 
@@ -9,7 +9,7 @@
 - [ ] 2.2 Qualify mandatory warning text exactly as approved; preserve severity, schema paths and output.
 - [ ] 2.3 Update owning convert contract, validation guide and one bugfix fragment.
 
-## 3. Verification and review
+## 3. Review and evidence
 
 - [ ] 3.1 Run owning focused tests and device checks; compare all current-base device outputs and anonymizer combinations, explaining diagnostics-only changes.
 - [ ] 3.2 Run supported fast and configured ordinary coverage command; no canonical full or real schema before makeover end.

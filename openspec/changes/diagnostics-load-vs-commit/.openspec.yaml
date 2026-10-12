@@ -36,8 +36,10 @@ declared-break:
       line for each missing mandatory statement.
 
 verification:
-  state: parked
+  state: ready
   planned-paths:
+    # Root-owned operator configuration; the eight product paths remain unchanged.
+    - .agent-ready/activation.json
     - src/junoscfg/convert/__init__.py
     - src/junoscfg/convert/field_validator.py
     - src/junoscfg/convert/CONTRACT.md
