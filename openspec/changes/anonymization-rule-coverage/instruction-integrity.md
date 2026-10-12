@@ -37,3 +37,10 @@ Next: commit preflight, then maintenance intent; passing coverage is not a red.
 The initial fields command reported unanswered type, zone and assurance; caps and
 normal preflight commit succeeded. Metadata now answers maintenance/anonymize/economy;
 the original fields failure is retained as an incomplete gate, not a PASS.
+
+## Root-accepted SC1 coverage delta
+Independent TC demonstrated that original 60 captured single-rule cases and
+172 handwritten controls miss a combined-only held credential leak. Root accepted
+six bounded all-rule cases, original assertions preserved, no runtime edits or
+expanded pair matrix. This is scope clarification within T3, not a new feature.
+Evidence and report are preserved; independent reassessment precedes admission.

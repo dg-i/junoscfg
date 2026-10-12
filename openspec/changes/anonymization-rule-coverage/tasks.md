@@ -15,3 +15,9 @@
 ## Finalization
 - [ ] Native metrics and bounded lifecycle housekeeping.
 - [ ] Root integration, archive, version/local tag and preserved cleanup.
+
+## SC1 correction
+- [x] Preserve original STOP-T ref and verified bundle before revision.
+- [x] Add six all-rule device cases retaining the original 60 and 172 controls.
+- [x] Run 66 corpus baseline nodes; PASS with no skips/xfails/errors.
+- [ ] Same independent TC demonstrates the combined-leak mutation now fails.

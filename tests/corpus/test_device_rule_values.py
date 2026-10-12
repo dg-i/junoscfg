@@ -204,3 +204,87 @@ def test_each_device_rule_replaces_its_inventory_and_reverses(
         anon_config=AnonymizeConfig(revert_map=str(dumped)),
     )
     assert json.loads(reverted) == baseline
+
+
+def _combined_inventory(capture: Capture, suffix: str) -> set[str]:
+    expected = set().union(*(_inventory(capture, row) for row in RULES))
+    if suffix == "conf":
+        assert "/* OMITTED */" in capture.rendering("conf")
+        expected.remove("GR-OMIT")
+    if suffix == "json":
+        for value in _strings(json.loads(capture.rendering("json"))):
+            for candidate in (value, *value.split()):
+                candidate = candidate.strip("(),;\"'")
+                try:
+                    ipaddress.ip_interface(candidate)
+                except ValueError:
+                    pass
+                else:
+                    expected.add(candidate)
+    return expected
+
+
+def _combined_expected(value: Any, whole: dict[str, str], embedded_ip: dict[str, str]) -> Any:
+    """Apply whole-value ownership once; only IPs span remaining captured text.
+
+    All other active rule-owned whole values are explicitly inventoried. AS
+    numbers in strings are not enabled; a community member's AS is syntax here.
+    Earlier rules can own a sensitive-word or pattern value, so the flat union
+    does not require the later rule to repeat its original mapping entry.
+    """
+    if isinstance(value, dict):
+        return {
+            _combined_expected(k, whole, embedded_ip): _combined_expected(v, whole, embedded_ip)
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [_combined_expected(v, whole, embedded_ip) for v in value]
+    if isinstance(value, str):
+        if value in whole:
+            return whole[value]
+        pattern = "|".join(re.escape(old) for old in sorted(embedded_ip, key=len, reverse=True))
+        return re.sub(pattern, lambda match: embedded_ip[match.group()], value)
+    return value
+
+
+@pytest.mark.parametrize(
+    ("capture", "suffix"),
+    [
+        pytest.param(capture, suffix, id=f"{capture.device}.{suffix}.all-rules")
+        for capture in CAPTURES
+        for suffix in ("json", "set", "conf")
+    ],
+)
+def test_every_device_rule_together_replaces_all_eligible_occurrences_and_reverses(
+    capture: Capture, suffix: str, tmp_path: Path
+) -> None:
+    """SC1: a combined-only credential leak must fail despite exact reversal."""
+    assert len(CAPTURES) == 2
+    expected = _combined_inventory(capture, suffix)
+    options = {key: value for row in RULES for key, value in row.options.items()}
+    source = capture.rendering(suffix)
+    arguments = {"from_format": FORMATS[suffix], "to_format": Format.JSON, "validate": False}
+    baseline = json.loads(convert_config(source, **arguments))
+    dumped = tmp_path / "combined-mapping.json"
+    anonymized = convert_config(
+        source,
+        **arguments,
+        anon_config=AnonymizeConfig(salt="device-rule-salt", dump_map=str(dumped), **options),
+    )
+    mapping = json.loads(dumped.read_text(encoding="utf-8"))
+    whole = {old: new for pairs in mapping.values() for old, new in pairs.items()}
+    assert set(whole) == expected, "an eligible captured value has no owning mapping"
+    for original, replacement in whole.items():
+        if original in mapping.get("ip", {}) and _ip_is_preserved(original):
+            assert replacement == original
+        else:
+            assert replacement != original, "an eligible captured value was preserved"
+    assert json.loads(anonymized) == _combined_expected(baseline, whole, mapping["ip"])
+    reverted = convert_config(
+        anonymized,
+        from_format=Format.JSON,
+        to_format=Format.JSON,
+        validate=False,
+        anon_config=AnonymizeConfig(revert_map=str(dumped)),
+    )
+    assert json.loads(reverted) == baseline

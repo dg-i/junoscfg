@@ -13,3 +13,8 @@ Root-requested IP-only row is included; native JSON annotations, reserved addres
 exceptions and embedded/unplaced keys are explicit. All 60 corpus nodes passed;
 next clean-head proof will execute them beside the 172 unchanged rule controls.
 No implementation needed; test-only maintenance and independent roles pending.
+
+STOP-T2 preparation: SC1 accepted by Root; original STOP-T remains historical.
+Six bounded combined cases added with independent full eligible-value inventory
+and occurrence checks; no source edit. Base unchanged. Corpus 66 PASS, 4.32s.
+Next: same independent TC reassessment, then Root current-base renewal/admission.
