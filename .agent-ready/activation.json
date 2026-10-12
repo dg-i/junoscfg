@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "c8082a1407b5543b82b5a4310b39a1765f4bccfc",
+  "checkpoint": "86bd996952437598b712360dfd826471d18939e2",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root local patch release of fresh reviewed T3 test-only maintenance. Ordinary10356PASS92.95 andfastPASS; independent238PASS42negativecontrols. All prearchive work complete; actual root release pending. Final selected25 schema qualification follows entire integration.",
-  "captured_at": "2026-10-12T12:23:13.929308+00:00",
+  "authority": "Agreed reduced nonXML implementation complete locally through v0.28.1, fresh reviews and ordinary/fast/hooks passed,82archivesPASS. All change branches parked; master admitted solely for final selected25.2R2-S1.5 qualification: required two stability passes and fresh sentinel, no21.4/23.2 execution. Deferred backlog retained; no push/publication.",
+  "captured_at": "2026-10-12T12:29:26.418387+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -133,7 +133,7 @@
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked",
-    "anonymization-rule-coverage": "ready",
+    "anonymization-rule-coverage": "parked",
     "reject-leaf-list-meta-values": "parked",
     "reject-deprecated-tagged-statements": "parked"
   }
