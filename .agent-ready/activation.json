@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "66aeeb141f6351de43b13f3a29a6a7aaf9b39bdc",
+  "checkpoint": "a96cac2d31b9508170cc5907d1cd6a236ef08aa4",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root verified reviewed scalar-meta refusal finalizer1291hashes andverbatimTC/freshreportprefixes; rootmasterREADY onlylocalarchive/minor0.27/version/tag, sourcebranchparked. Finalfast0/ordinary0+separate3privatecapturePASS preserved; sourceintegrationrecord-layout verifierqualifications recorded. Deprecatedstandard safety/T3 parked; final25onlyatend.",
-  "captured_at": "2026-10-12T11:05:02.714911+00:00",
+  "authority": "Scalar metadata refusal completed localv0.27.0,80archives0 normalhooks. Rootadmitted independently challenged SC1 precise deprecated terminal-tag refusal phase5 after preservedrebase; rootmasterparked,T3parkeduntilfinalruntimebase. No broadmetadatarefactor/schemawork; finalselected25qualification onlyEND.",
+  "captured_at": "2026-10-12T11:15:14.103009+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,13 +63,13 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
     "codex/anonymization-rule-coverage": "parked",
     "codex/reject-leaf-list-meta-values": "parked",
-    "codex/reject-deprecated-tagged-statements": "parked"
+    "codex/reject-deprecated-tagged-statements": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -134,7 +134,7 @@
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked",
     "anonymization-rule-coverage": "parked",
-    "reject-leaf-list-meta-values": "ready",
-    "reject-deprecated-tagged-statements": "parked"
+    "reject-leaf-list-meta-values": "parked",
+    "reject-deprecated-tagged-statements": "ready"
   }
 }
