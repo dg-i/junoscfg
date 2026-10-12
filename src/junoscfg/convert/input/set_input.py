@@ -980,11 +980,8 @@ def _apply_meta(
             i += 1
             continue
 
-        # Scalar leaf followed by its value token(s): annotate the leaf and
-        # ignore the trailing value (e.g. "deactivate system host-name r1")
         if child.get("l"):
-            current.setdefault(f"@{token}", {})[attr_key] = attr_value
-            return
+            raise ValueError("Metadata commands cannot target scalar-leaf values")
 
         # Fallback
         _keep_meta_whole(current, tokens, i, attr_key, attr_value)

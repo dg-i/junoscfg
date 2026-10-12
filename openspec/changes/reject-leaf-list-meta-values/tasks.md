@@ -1,10 +1,10 @@
 ## 1. Bounded repair
 
-- [ ] 1.1 Refuse scalar-leaf metadata tails before broader annotation; add required news.
+- [x] 1.1 Refuse scalar-leaf metadata tails before broader annotation; add required news.
 
 ## 2. Focused evidence
 
-- [ ] 2.1 Original twelve regressions, forty preservation controls and unchanged sixty-eight private TC checks pass.
+- [x] 2.1 Original twelve regressions, forty preservation controls and unchanged sixty-eight private TC checks pass.
 
 ## 3. Lifecycle verification
 
