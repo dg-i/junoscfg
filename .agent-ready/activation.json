@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "07f028c31635a993a17ee4f819b29285ddd3667b",
+  "checkpoint": "773270e069d2031435d45966432bfbd928d5b2db",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root completed T5 maintenance independentlyreviewed, archived/taggedlocalv0.24.2,76archives0, versiontests0/normalhooks0 and preservednormalWTcleanup. T5 remainsparked; masterparked outsideintegration. #11 retains admitted sixslot/sourceSC1C/SC2generator correction and completed secondpublic25.2implementationbuild0, notfullschema. Atomic normalcommit3obsoleteguards stopped; stagedsource/products frozen; boundedindependentTC/ruling needed for exactexistingtest/corpuscorrection before retry. No thirdbuild. #12/#21b and allotherchangesparked, sourceimplementation depends keyedpredecessorintegration/currentbase/renewedTC/admission. Fullschema only entiremakeoverEND selected25.2; no push/network/device.",
-  "captured_at": "2026-10-12T07:02:48.746228+00:00",
+  "authority": "Root verified all 1248 tracked candidate files and 80 finalizer evidence hashes, independent source/main-spec PASS, actual ordinary 10210 PASS/37 existing SKIP/20 strict XF and fast PASS. Keyed change integrated locally; master ready solely for archive/minor release. Other changes parked; full schema only entire makeover end selected25.2; no push/network/device.",
+  "captured_at": "2026-10-12T08:06:53.888600+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -49,7 +49,7 @@
     "codex/hidden-list-names": "parked",
     "codex/identifier-key-fields-opus-control": "parked",
     "codex/implement-simplification-roadmap": "parked",
-    "codex/keyed-single-entry-lists": "ready",
+    "codex/keyed-single-entry-lists": "parked",
     "codex/keyword-leaves-keep-keyword": "parked",
     "codex/optimize-agent-test-workflow": "parked",
     "codex/prepare-public-github-push": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked"
   },
@@ -124,7 +124,7 @@
     "keyword-leaves-keep-keyword": "parked",
     "unsupported-set-commands-reported": "parked",
     "compare-device-outputs-tool": "parked",
-    "keyed-single-entry-lists": "ready",
+    "keyed-single-entry-lists": "parked",
     "hidden-list-names": "parked",
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked"
