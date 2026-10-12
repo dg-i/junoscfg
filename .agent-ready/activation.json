@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "14ce2b7717a1b8bd150ca45224db960739fd4c42",
+  "checkpoint": "93cadef1a0b660409d7fbbbbc2e1c2b7d58d9ae7",
   "actor": "Codex orchestrator for owner-approved test optimization",
-  "authority": "Owner-approved test optimization: selection repair merged and archived; admit reviewed performance change for combined full verification.",
-  "captured_at": "2026-10-12T18:14:12.198703+00:00",
+  "authority": "Owner-approved test optimization complete: both changes independently reviewed, full-verified, merged, archived and tagged; return admission to master.",
+  "captured_at": "2026-10-12T18:26:03.371261+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
@@ -75,7 +75,7 @@
     "codex/reduce-schema-qualification-triggers": "parked",
     "codex/synthetic-schema-check": "parked",
     "codex/test-selection-completeness": "parked",
-    "codex/test-tooling-performance": "ready"
+    "codex/test-tooling-performance": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -147,6 +147,6 @@
     "reduce-schema-qualification-triggers": "parked",
     "synthetic-schema-check": "parked",
     "test-selection-completeness": "parked",
-    "test-tooling-performance": "ready"
+    "test-tooling-performance": "parked"
   }
 }
