@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "9ed05e44059a11b44539281d57806e73a09b3374",
+  "checkpoint": "d2c49f5e1b57211b7823fd84ea893b70a336ce89",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Rootreviewed XMLstatusdocs/TODO, verified finalizer1262tracked/68evidence and exact6ownrecords, native DOCSfull25gates0/noapplicationor schema. OwnerlatestdefersXMLfunctionalwork. RootmasterREADY onlyarchive/localpatchv0.25.1; docsbranchparked; hiddenpreparationTCadequate rootaccepted but stillparked pendingcurrentbaserebase/phase5admission. Fullschema entire nonXMLbatchEND25only.",
-  "captured_at": "2026-10-12T08:36:08.798887+00:00",
+  "authority": "XMLstatusdocs releasedlocalv0.25.1 normalhooks/version3PASS/78archives0; publicBUGGY/TODO ownerdeferral applies. Rootaccepted independenthiddenlist TC after1262candidatearchive+83base source hashes and allrawproof checks. HiddenbranchREADY for currentbase renewal then bounded3pathsourceonly phase5 conditional renewedtests/nativeadmission; no XSD/productgeneration/t-tkretirement/XMLqualification. Masterparked; allothersparked. Finalfullschema nonXMLbatchEND25only/no push/network/device.",
+  "captured_at": "2026-10-12T08:43:00.498748+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -46,7 +46,7 @@
     "codex/define-readership-observation": "parked",
     "codex/filter-at-ir-boundary": "parked",
     "codex/generate-cli-option-reference": "parked",
-    "codex/hidden-list-names": "parked",
+    "codex/hidden-list-names": "ready",
     "codex/identifier-key-fields-opus-control": "parked",
     "codex/implement-simplification-roadmap": "parked",
     "codex/keyed-single-entry-lists": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked"
@@ -126,7 +126,7 @@
     "unsupported-set-commands-reported": "parked",
     "compare-device-outputs-tool": "parked",
     "keyed-single-entry-lists": "parked",
-    "hidden-list-names": "parked",
+    "hidden-list-names": "ready",
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked"
