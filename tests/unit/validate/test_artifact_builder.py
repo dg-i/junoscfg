@@ -8,6 +8,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import pytest
+from jsonschema import Draft7Validator
+from lark import Lark, UnexpectedInput
+
 from junoscfg.display import entry_key_names, read_artifact_text
 from junoscfg.validate import (
     ArtifactBuilder,
@@ -473,3 +477,135 @@ class TestTheOneLineFlag:
         assert (len(with_others), keys_only) == (3554, 1286)
         digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
         assert digest == "b4c53cfcd0df5ab5237263a0aa18db90e7dde41ac76a378dd9607f3cfb397163"
+
+
+# Deliberately synthetic: this exercises composition, not device correctness.
+REPRESENTATIVE_NETCONF = """\
+<rpc-reply>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:junos="http://xml.juniper.net/junos/25.2R2/junos">
+  <xsd:complexType name="system-type">
+    <xsd:sequence>
+      <xsd:element name="host-name" type="xsd:string" minOccurs="0"/>
+      <xsd:choice minOccurs="0" maxOccurs="unbounded">
+        <xsd:element name="mode"><xsd:simpleType><xsd:restriction base="xsd:string">
+          <xsd:enumeration value="active"/><xsd:enumeration value="passive"/>
+        </xsd:restriction></xsd:simpleType></xsd:element>
+        <xsd:element name="ssh"><xsd:complexType/></xsd:element>
+        <xsd:element name="user" maxOccurs="unbounded">
+          <xsd:annotation><xsd:appinfo><flag>oneliner</flag></xsd:appinfo></xsd:annotation>
+          <xsd:complexType><xsd:sequence>
+            <xsd:element name="username" type="xsd:string">
+              <xsd:annotation><xsd:appinfo>
+                <flag>identifier</flag><flag>nokeyword</flag><identifier/>
+              </xsd:appinfo></xsd:annotation>
+            </xsd:element>
+            <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence></xsd:complexType>
+        </xsd:element>
+        <xsd:element name="tag" type="xsd:string" maxOccurs="unbounded"/>
+      </xsd:choice>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="configuration">
+    <xsd:complexType><xsd:sequence><xsd:choice minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="system" type="system-type"/>
+      <xsd:element name="backup-system" type="system-type"/>
+    </xsd:choice></xsd:sequence></xsd:complexType>
+  </xsd:element>
+</xsd:schema>
+</rpc-reply>
+"""
+
+
+def test_public_build_produces_usable_reproducible_artifacts(tmp_path: Path) -> None:
+    """Exercise extraction through consumers, without large private schema inputs."""
+    source = tmp_path / "synthetic-netconf.xml"
+    source.write_text(REPRESENTATIVE_NETCONF, encoding="utf-8")
+    artifacts = ArtifactBuilder().build(source, tmp_path / "first")
+    assert set(artifacts) == {
+        "json-schema",
+        "yaml-schema",
+        "structure-tree",
+        "lark-grammar",
+        "metadata",
+    }
+    contents = {name: read_artifact_text(path) for name, path in artifacts.items()}
+    tree = read_structure_tree(artifacts["structure-tree"])
+    assert {"system", "backup-system", "apply-groups", "apply-flags"} <= set(tree.children)
+    assert tree.children["apply-groups"].is_leaf
+    assert tree.children["apply-flags"].children["omit"].is_presence
+    for system in (tree.children["system"], tree.children["backup-system"]):
+        assert system.type_ref == "system-type"
+        assert set(system.children) == {"host-name", "mode", "ssh", "user", "tag"}
+        assert system.children["host-name"].is_leaf
+        assert system.children["mode"].enums == ["active", "passive"]
+        assert system.children["ssh"].is_presence
+        user = system.children["user"]
+        assert user.is_list and "oneliner" in user.flags
+        assert entry_key_names(user) == {"username"}
+        tag = system.children["tag"]
+        assert tag.is_list and tag.is_leaf and not tag.children
+
+    valid = {
+        "configuration": {
+            "system": {
+                "host-name": "router1",
+                "mode": "active",
+                "ssh": [None],
+                "user": [{"username": "operator", "description": "sample"}],
+                "tag": ["sample", "second"],
+            },
+            "backup-system": {"host-name": "router2"},
+        }
+    }
+    for name in ("json-schema", "yaml-schema"):
+        schema = json.loads(contents[name])
+        Draft7Validator.check_schema(schema)
+        validator = Draft7Validator(schema)
+        validator.validate(valid)
+        with_yaml_metadata = {
+            "configuration": {"system": {"host-name": "router1", "_ansible_note": "sample"}}
+        }
+        assert validator.is_valid(with_yaml_metadata) is (name == "yaml-schema")
+        for invalid in (
+            {"configuration": {"unknown": {}}},
+            {"configuration": {"system": {"unknown": "sample"}}},
+            {"configuration": {"system": {"user": [{"unknown": "sample"}]}}},
+            {"configuration": {"system": "not-a-container"}},
+        ):
+            assert not validator.is_valid(invalid), (name, invalid)
+
+    grammar = contents["lark-grammar"]
+    assert generate_lark_grammar(tree).strip() == grammar.strip()
+    parser = Lark(grammar, parser="earley")
+    for line in (
+        "set system host-name router1",
+        "set system mode active",
+        "set system ssh",
+        "set system user operator description sample",
+        "set system tag sample",
+        "set backup-system host-name router2",
+    ):
+        parser.parse(line)
+    for line in ("set system unknown sample", "set system user", "set system mode"):
+        with pytest.raises(UnexpectedInput):
+            parser.parse(line)
+
+    metadata = json.loads(contents["metadata"])
+    assert metadata["junos_version"] == "25.2R2"
+    assert metadata["stats"]["list_nodes"] >= 4
+    assert 0 < metadata["fixes_applied"] <= metadata["fixes_registered"]
+    assert metadata["stats"]["enum_values"] == 4
+    assert metadata["generated_at"]
+    second = ArtifactBuilder().build(source, tmp_path / "second")
+    assert set(second) == set(artifacts)
+    for name, path in second.items():
+        rebuilt = read_artifact_text(path)
+        if name == "metadata":
+            second_metadata = json.loads(rebuilt)
+            assert second_metadata.pop("generated_at")
+            metadata.pop("generated_at")
+            assert second_metadata == metadata
+        else:
+            assert rebuilt == contents[name], name

@@ -726,6 +726,35 @@ caches what an artifact builds while its file is unchanged), so the suite pays
 for it once, as does a library caller validating many configurations; a
 single CLI run still compiles it once.
 
+### Synthetic generator composition check
+
+`test_public_build_produces_usable_reproducible_artifacts` in
+`tests/unit/validate/test_artifact_builder.py` runs in the ordinary suite. It
+feeds a small synthetic NETCONF reply through the public `ArtifactBuilder.build`
+twice, without parser or generator mocks. This supplements the existing focused
+tests and real-schema qualification; it does not replace device evidence,
+release compatibility checks, or large-schema performance and recursion coverage.
+
+| Construct or stage | Assertion on generated artifacts |
+|---|---|
+| NETCONF extraction and full pipeline | All five artifacts reload through public readers; version metadata follows the namespace |
+| Containers, leaves, presence | Reloaded tree distinguishes `system`, `host-name` and `ssh`; grammar parses their statements |
+| Nested sequence and choice | Sibling statements survive the complete pipeline; no claim of exclusive-choice enforcement |
+| Shared named complex-type reference | Both system containers retain the referenced type and usable children |
+| Inline enum | Both enum values survive in the tree; grammar accepts a represented value |
+| Identifier and oneliner annotations | `username` is a positional list key; tree retains oneliner and grammar parses key plus description |
+| Keyless leaf-list | `tag` retains leaf/list shape; schema accepts a list and grammar parses a value |
+| Built-in fixes | Injected apply-groups/apply-flags nodes and fix metadata survive |
+| JSON and YAML schemas | Draft-07 definitions validate; known configurations pass; unknown nodes and malformed containers fail; YAML-only metadata stays variant-specific |
+| Grammar consumption | Grammar rebuilt from the saved tree agrees; Lark compiles and accepts known/rejects unknown or incomplete statements |
+| Fresh-build reproducibility | Every reloaded artifact agrees across two public builds, excluding only metadata `generated_at` |
+
+The focused check targets roughly five seconds or less, measured separately
+with `pytest --durations=1`; it has no timing assertion. Synthetic fixtures do
+not exhaust Junos annotations or schema shapes, and the schemas intentionally
+do not enforce every leaf value constraint. The real qualification policy stays
+in [verification evidence](../how-to/verification-evidence.md).
+
 ### Opt-in tiers
 
 | Tier | Command | Needs |
