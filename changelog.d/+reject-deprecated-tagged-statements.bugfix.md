@@ -1,0 +1,1 @@
+Deprecated SetConverter.to_set() refuses inactive/protect/delete metadata on terminal text containing ASCII space instead of guessing the target; migrate to convert_config with structured input and set output, or public validate_structured for validation.

@@ -6,11 +6,13 @@
 ## 2. Change
 
 - [x] 2.0 Root-preserved rebase onto dd626c13bd0bdd3877d848072b31ba7b62df6699 and explicit phase-5 admission; original TC claims qualified by historical base.
-- [ ] 2.1 Implement the minimal guard, update the approved contract and preserve existing fixtures through supported conversion with precise targets and deprecated refusal, with truthful docstring/warning and unchanged standing deprecation policy.
-- [ ] 2.2 Run focused and fast checks after READY admission; run owner-directed ordinary suite and four-extra fast sequentially on the same runtime HEAD before review.
+- [x] 2.1 Implement the minimal guard, update the approved contract and preserve existing fixtures through supported conversion with precise targets and deprecated refusal, with truthful docstring/warning and unchanged standing deprecation policy.
+- [x] 2.2 Focused verification: new 21 nodes and existing display/delete/deprecated-validation controls, 82 passed and 4 strict xfailed; prospective controls and exact four-fixture proof pass.
 
 ## 3. Review and evidence
 
 - [ ] 3.1 STOP-R: fresh isolated review with frozen evidence, contracts, diff and tests.
 - [ ] 3.2 Capture metrics for immutable base and code head.
 - [ ] 3.3 Finalizer applies reviewed main-spec deltas; root alone merges, versions, archives and tags.
+
+- [ ] 3.4 Native readiness, owner-directed one ordinary suite and four-extra fast sequentially on the committed runtime HEAD, base dd626c13bd0bdd3877d848072b31ba7b62df6699.

@@ -18,9 +18,9 @@ verification:
     - tests/unit/display/test_set_converter.py
     - tests/unit/display/test_delete_lines.py
     - tests/unit/display/test_terminal_tag_refusal.py
-    - changelog.d/reject-deprecated-tagged-statements.fixed
+    - changelog.d/+reject-deprecated-tagged-statements.bugfix.md
     - openspec/specs/conversion/structured-input/spec.md
     - openspec/specs/validation/structured-validation/spec.md
   dependencies: [2026-10-12-reject-leaf-list-meta-values]
-  changelog: 'Required: deprecated terminal metadata conversion now fails explicitly; migrate to schema-aware conversion.'
+  changelog: changelog.d/+reject-deprecated-tagged-statements.bugfix.md
   generated-records: []

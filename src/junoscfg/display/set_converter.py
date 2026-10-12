@@ -131,22 +131,32 @@ class SetConverter:
     def to_set(self) -> str:
         """Convert structured config to display set format. Deprecated.
 
-        A tag becomes a `deactivate`/`protect`/`delete` line for the whole of
-        the statement it leads, which is right for a block opener and wrong
-        for a one-line entry: `inactive: route 0.0.0.0/0 next-hop 10.0.0.1;`
-        marks the route, and `deactivate … route 0.0.0.0/0 next-hop 10.0.0.1`
-        marks `next-hop`. Where an entry ends is the schema's to say;
-        `convert_config(..., from_format=Format.STRUCTURED, to_format=Format.SET)`
-        reads `statements()` through the schema instead.
+        The schema-free writer cannot place terminal metadata safely when
+        the stripped lexer text contains ASCII space. Such terminals tagged
+        inactive/protect/delete are refused, including quoted-only text with
+        a space. Block-opening tags, terminal flags without a space,
+        replace-only stripping and untagged output keep their legacy behavior.
+        Use `convert_config(..., from_format=Format.STRUCTURED,
+        to_format=Format.SET)`, which reads `statements()` through the schema.
         """
         warnings.warn(
             "SetConverter.to_set() is deprecated and will be removed in the next minor "
-            "release: it tags a one-line statement's last node. Use junoscfg.convert_config"
+            "release: it refuses terminal metadata whose stripped text contains ASCII space. "
+            "Use junoscfg.convert_config"
             "(..., from_format=Format.STRUCTURED, to_format=Format.SET).",
             DeprecationWarning,
             stacklevel=2,
         )
-        result = [self._transform_line(stack, text) for stack, text in self._lex().statements]
+        lexed = self._lex()
+        for _, text in lexed.statements:
+            terminal, tags = self._strip_prefixes(text)
+            if " " in terminal and tags & {"inactive", "protect", "delete"}:
+                raise ValueError(
+                    "SetConverter.to_set() cannot place terminal metadata without the schema. "
+                    "Use junoscfg.convert_config(..., from_format=Format.STRUCTURED, "
+                    "to_format=Format.SET)."
+                )
+        result = [self._transform_line(stack, text) for stack, text in lexed.statements]
         return "\n".join(result) + "\n" if result else ""
 
     def statements(self) -> list[list[tuple[str, frozenset[str]]]]:

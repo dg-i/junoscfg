@@ -6,7 +6,7 @@ Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.tom
 
 Display rendering only in name: the shared kernel six of the eight packages import. Nor for
 placing a tag: conversion reads the curly lexer's `statements()` through the schema
-(`tests/unit/convert/test_meta_tags.py`); the deprecated `SetConverter.to_set()` tags a last node.
+(`tests/unit/convert/test_meta_tags.py`); deprecated `SetConverter.to_set()` refuses inactive/protect/delete tags on stripped terminal lexer text containing ASCII space (including quoted-only text). Block tags, terminal flags without ASCII space, replace-only stripping, untagged output and `statements()` retain their legacy behavior; migrate terminal metadata to `convert_config(..., from_format=Format.STRUCTURED, to_format=Format.SET)` through the schema.
 
 ## Invariants
 

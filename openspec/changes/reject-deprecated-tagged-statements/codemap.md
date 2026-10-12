@@ -86,3 +86,5 @@ zone conversion · layer pipeline · contract none
 ## Accepted SC1 execution supplement
 
 The owning guard remains SetConverter.to_set in the shared display kernel. It inspects already lexed stripped terminal text for ASCII space and emitted operational tags; it does not inspect block opener levels or resolve schema endpoints. The direct deprecated validation caller retains its existing exception boundary. Source docstring/warning alignment is part of the same bounded correction. Independent report and root ruling close SC1; this map has no new responsibility, dependency or proposed symbol. Source work waits for the root-preserved rebase.
+
+Implementation base: dd626c13bd0bdd3877d848072b31ba7b62df6699. Explicit archived dependency: 2026-10-12-reject-leaf-list-meta-values; its incoming lower-layer SET metadata selector refusal changes historical reread qualification only. Modern structured input still consumes statements(), and the guard adds no public symbol or dependency. The declared changelog fragment is changelog.d/+reject-deprecated-tagged-statements.bugfix.md.

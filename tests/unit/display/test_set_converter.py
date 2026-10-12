@@ -17,6 +17,17 @@ def struct_to_set(config: str) -> str:
         return SetConverter(config).to_set()
 
 
+def schema_aware_struct_to_set(config: str) -> str:
+    """SC1: preserve original fixture meaning through the supported migration."""
+    result = convert_config(config, from_format=Format.STRUCTURED, to_format=Format.SET)
+    assert json.loads(convert_config(result, from_format=Format.SET, to_format=Format.JSON)) == (
+        json.loads(convert_config(config, from_format=Format.STRUCTURED, to_format=Format.JSON))
+    )
+    with pytest.raises(ValueError, match="convert_config"):
+        struct_to_set(config)
+    return result
+
+
 class TestStructuredBracketLists:
     def test_structured_bracket_list_emits_repeated_set_commands(self) -> None:
         config = (
@@ -117,11 +128,14 @@ class TestSetConverter:
             "groups bar {\n    snmp {\n        location bar;\n    }\n}\n"
             "groups baz {\n    snmp {\n        inactive: location baz;\n    }\n}\n"
         )
-        result = struct_to_set(config)
-        assert 'set groups foo snmp location "foo"\n' in result
+        # SC1 accepts canonical unquoting of "foo"; the helper pins value/IR equivalence.
+        result = schema_aware_struct_to_set(config)
+        assert "set groups foo snmp location foo\n" in result
         assert "set groups bar snmp location bar\n" in result
         assert "set groups baz snmp location baz\n" in result
-        assert "deactivate groups baz snmp location baz\n" in result
+        assert [line for line in result.splitlines() if line.startswith("deactivate ")] == [
+            "deactivate groups baz snmp location"
+        ]
 
     def test_apply_groups_to_set(self) -> None:
         config = (
@@ -143,13 +157,15 @@ class TestSetConverter:
             "    inactive: apply-groups [ foo bar ];\n"
             "}\n"
         )
-        result = struct_to_set(config)
+        result = schema_aware_struct_to_set(config)
         assert "set apply-groups foo\n" in result
-        assert "deactivate apply-groups foo\n" in result
+        assert "set apply-groups bar\n" in result
         assert "set snmp apply-groups foo\n" in result
-        assert "deactivate snmp apply-groups foo\n" in result
         assert "set snmp apply-groups bar\n" in result
-        assert "deactivate snmp apply-groups bar\n" in result
+        assert [line for line in result.splitlines() if line.startswith("deactivate ")] == [
+            "deactivate apply-groups",
+            "deactivate snmp apply-groups",
+        ]
 
     def test_protect_prefix_emits_command(self) -> None:
         config = (
@@ -169,9 +185,11 @@ class TestSetConverter:
 
     def test_protect_leaf_emits_command(self) -> None:
         config = "system {\n    protect: host-name router1;\n}"
-        result = struct_to_set(config)
+        result = schema_aware_struct_to_set(config)
         assert "set system host-name router1\n" in result
-        assert "protect system host-name router1\n" in result
+        assert [line for line in result.splitlines() if line.startswith("protect ")] == [
+            "protect system host-name"
+        ]
 
     def test_combined_replace_protect_inactive(self) -> None:
         config = (
@@ -215,10 +233,9 @@ class TestTheExampleConfigurationConvertsToSet:
         reason="PRODUCT DEFECT of a deprecated door, removed in the next minor release "
         "(follow-up of change structured-one-line-blocks): no known-differences class (the "
         "device law reads curly through SetConverter.statements, not to_set): to_set() "
-        "writes the tag of a "
-        "one-line statement on the whole line, `inactive: route 10.98.0.0/16 reject;` as "
-        "`deactivate ... route 10.98.0.0/16 reject` and `protect: autonomous-system 64496;` "
-        "as `protect ... autonomous-system 64496`",
+        "refuses terminal metadata with ASCII space instead of guessing its node; "
+        "the deprecated door still cannot produce the device-correct route/AS metadata "
+        "(bounded refusal: reject-deprecated-tagged-statements)",
     )
     def test_the_set_output_means_what_the_devices_set_means(self, structured_config: str) -> None:
         capture = example()
@@ -247,8 +264,9 @@ class TestATagOnAOneLineStatementCoversTheStatement:
         strict=True,
         reason="PRODUCT DEFECT of a deprecated door, removed in the next minor release "
         "(follow-up of change structured-one-line-blocks): no known-differences class: "
-        "SetConverter.to_set() writes the tag on the whole line (see "
-        "TestTheExampleConfigurationConvertsToSet)",
+        "SetConverter.to_set() now refuses the ambiguous terminal rather than placing "
+        "its tag; device-correct output remains unsupported (see "
+        "TestTheExampleConfigurationConvertsToSet; reject-deprecated-tagged-statements)",
     )
     @pytest.mark.parametrize(
         ("curly", "tag_line"),
@@ -550,9 +568,10 @@ class TestAnEmptyStatementReadsAsNothing:
 class TestToSetIsDeprecated:
     """Spec: conversion/structured-input, "The schema-free set writer of the lexer is deprecated".
 
-    OPEN-10: `to_set()` places a one-line statement's tag on its last node
-    (the strict xfails above); conversion reads the statement through the
-    schema. Its one caller, the structured validator, is deprecated with it.
+    OPEN-10: `to_set()` now refuses terminal metadata with ASCII space
+    (the strict device-meaning xfails above remain unsupported); conversion
+    reads the statement through the schema. Its one caller, the structured
+    validator, is deprecated with it.
     """
 
     def test_it_warns_and_keeps_its_output(self) -> None:

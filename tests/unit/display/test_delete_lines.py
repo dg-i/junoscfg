@@ -9,8 +9,11 @@ delete is `tests/unit/convert/test_delete_operation.py` and the delete rows of
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from junoscfg import Format, convert_config
 from junoscfg.display import (
     SetConverter,
     filter_set_by_path,
@@ -31,11 +34,22 @@ class TestSetConverterWritesADeletePrefix:
         assert "set services ssh" in result
 
     def test_delete_prefix_leaf(self) -> None:
-        """'system { delete: host-name router1; }' → 'delete system host-name router1'."""
+        """SC1 migration keeps content and deletes the owning leaf through the schema."""
         input_text = "system {\n    delete: host-name router1;\n}"
-        with pytest.deprecated_call():  # to_set() is deprecated (structured-one-line-blocks)
-            result = SetConverter(input_text).to_set()
-        assert "delete system host-name router1" in result
+        result = convert_config(input_text, from_format=Format.STRUCTURED, to_format=Format.SET)
+        assert "set system host-name router1\n" in result
+        assert [line for line in result.splitlines() if line.startswith("delete ")] == [
+            "delete system host-name"
+        ]
+        assert json.loads(
+            convert_config(result, from_format=Format.SET, to_format=Format.JSON)
+        ) == (
+            json.loads(
+                convert_config(input_text, from_format=Format.STRUCTURED, to_format=Format.JSON)
+            )
+        )
+        with pytest.deprecated_call(), pytest.raises(ValueError, match="convert_config"):
+            SetConverter(input_text).to_set()
 
 
 class TestFilterSetDelete:
