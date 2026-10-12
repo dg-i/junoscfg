@@ -171,3 +171,7 @@ Only the copied fixture was regenerated here. Public adoption should use the exa
 Historical XML-source failures disappear incidentally through the shared hidden-name writer treatment. Their existing controls remain intact; these 24 passes do **not** qualify XML input/output or reopen the deferred XML scope. Source-only runtime classification, no public schema/product generation, and all other scope limits remain in force. No full, fast or ordinary suite, real XSD/schema tier, devices, network, push or public mutation ran.
 
 Proposed fixture SHA-256: `aa2dca4629e6770b94f3a85810c96e02102bbb83967b71558cac06a4e8b7a75e`.
+
+## Phase 5 verified evidence
+
+Actual checked HEADc68f3eae2eb3a0f430f1c0bdfdf81c6e84332c25/BASE255441927eb836ee9eeb7be10c077f18bb4b345e. Original47, separate corrected private12, held24 and exact existing75 tests pass (158 total); broader1754PASS8existingstrictXF retained. Ordinary0:10257PASS37existingSKIP20strictXF,cov92.93>=unchanged91.47,186.88s pytest198.349159s wrapper, rawSHAa9426cd84faf2fad1575422f016f77511949c08d829da14644a7e377675bcae6. Corrected exactfast0:58.483031s,rawSHA2dd6abb3b9c10a933ca3e75254c93062bf3e093db2a92dab3dce4956da8f613d. Firstfast1 onlyignoredskillsmirror; supported native mirrorregeneration0 alltracked unchanged; originalfail retained. These are actual ordinary/fast proofs; no canonicalfull/schemaPASS claimed, no XML qualification. Fresh isolated source review remains pending.

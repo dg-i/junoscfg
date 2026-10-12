@@ -1,3 +1,11 @@
+## Phase 5 STOP-R
+
+BASE255441927eb836ee9eeb7be10c077f18bb4b345e. Checked code HEADc68f3eae2eb3a0f430f1c0bdfdf81c6e84332c25. Implementation and actual ordinary/fast checkpoint complete; root needs genuinely fresh Reviewer next. No unresolved challenges: SC1 owner XML deferral, SC2 exact private delete expectation correction, SC3 measured stale-known retirement all accepted with independent reports retained verbatim. Source-only two runtime edits; no writer/producer/product or original assertion changes.
+
+Actual10257PASS/37existingSKIP/20strictXF coverage92.93>=91.47 ordinary0; correctedfast0 58.483031s; alltrackedbeforeafterexact/clean. Firstfast1 onlyignoredmirror missing, native regeneratedzero trackedchanges; firstreadiness failures solelyrecordlayout/exactchangelogpath retained. Raw receipts in post-operator-base; no full/schema claim. XML unreliable/deferred, controls historical. Daemon-process/NEW-R15/#13numericbridge/P1/P6/P7/P8 remain carries. Efficiency UNMEASURED. Root integration/archive/version/tag not performed.
+
+Prior checkpoints below retain chronological lineage and are operationally superseded.
+
 ## Current operator-base checkpoint
 
 BASE 255441927eb836ee9eeb7be10c077f18bb4b345e. Root preserved atomic f06ca06 and rebased to e2c57be1cdc9ffc0983c31b50c675e54a3a1f00d; all 18 owned paths and all 83 source/products byte-exact. Incoming operator record only parks T3. Renewed focused 158 nodes pass. Native readiness and ordinary/fast on clean committed metadata head remain pending; source complete, no unresolved SC. Previous base and preparation phases below are lineage, superseded operationally by this checkpoint.

@@ -73,3 +73,7 @@ Root accepts exact supplemental delete expectation correction in a separate priv
 ## Final operator-only rebase lineage
 
 Actual current BASE 255441927eb836ee9eeb7be10c077f18bb4b345e, rebase head e2c57be1cdc9ffc0983c31b50c675e54a3a1f00d. Incoming .agent-ready/activation.json only parks the new T3 preparation; root verified all 18 owned paths/all83 source/products byte-exact and preserved atomic f06ca06 ref/bundle. Renewed actual158focused nodes pass, so prior independent TC/SC2/SC3 and broader1754 preservation remain applicable. One ordinary coverage and one exact fast checkpoint will run on committed clean metadata head; final physical25 doublepass/sentinel remains owner-deferred.
+
+## Phase 5 actual checkpoint freeze
+
+Actual checked clean HEADc68f3eae2eb3a0f430f1c0bdfdf81c6e84332c25/BASE255441927eb836ee9eeb7be10c077f18bb4b345e. Ordinary0 10257PASS/37existingSKIP/20strictXF,92.93% unchangedfloor91.47; nativecorrectedfast0 58.483031s; no tracked changes across either. Firstfast failed only ignored missing Claude skills mirror; supported native regeneration changed no tracked bytes, then fast alone repeated. Readiness record-layout/exactpath failures retained; actualreadiness0 precedes ordinary. No full/schema/products generation or XML qualification. This STOP-R adds records only; independent Reviewer remains required.
