@@ -5,18 +5,19 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 1012, "binary_files": 5, "files": 23, "removed": 234} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | UNMEASURED |
 | Initial base | bbc125eb3fa259745a3c8cb9278b1b66f720adb0 |
 | Context expansion: src/junoscfg/convert/output/dict_walker.py | shared writer consumes a name child on known containers |
 | Context expansion: tests/support/shapes.py | one catalogue drives all format laws |
@@ -48,3 +49,7 @@
 | Actual current-base ordinary | Clean6082650/base3d60;10210 PASS/37 SKIP/20 strict XF;92.99% above unchanged91.47%; native200.931596s |
 | Actual current-base fast | Same clean6082650/base3d60 sequential; all checks pass;134.368354s; all tracked unchanged |
 | Deferred required tier | No canonical full/schema checkpoint;36 schema skips and1 optional device-grammar skip are not PASS |
+
+Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+Finalization evidence: native capture is bound to base `3d60e0a04c42c3afa9049e922d70a0cb47fd14b5` and clean application HEAD `8c49a67b09b1196302e9c49437939e6ba9609529`; original source/ordinary/fast proof HEAD608265030be20c639e2364e72e8a715c5cad7ce4 and fresh phase6 review HEAD62146d2c70b6302bd2b74cbf4d4847d898c03c96 remain separate. Historical Required roles row records the earlier pending state; both fresh reviews now PASS and root accepts them. All original context/evidence rows are preserved. No usage, human-effort or workflow telemetry was supplied; corresponding native fields remain UNMEASURED. No efficiency comparison is claimed. Actual integration/archive/minorversion/tag/cleanup remain pending root only. No canonical full or physical stability verification is claimed; required final25.2 double-pass/four raw stable products/canonical metadata excluding only generated_at/fresh uncached sentinel remains deferred to the entire makeover end.
