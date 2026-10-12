@@ -34,3 +34,5 @@ None: direct owner decision rejects unsupported commands and defers features. Su
 ## Delta log
 
 - Initial preflight: known contradictions resolved as above. Current clean base 8066ce3a3f41af0b379d9d5a8e5b964eb1f3bd33; product base 3f86ffc, v0.22.2. Runtime implementation and checkpoint admission remain parked.
+
+- Metadata gate correction: initial scaffold omitted type/zone/assurance. Initial fields failed; completed metadata before proposal work; caps passed. No runtime work occurred.

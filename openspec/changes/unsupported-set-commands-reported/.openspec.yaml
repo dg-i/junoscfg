@@ -1,2 +1,6 @@
 schema: agent-ready
 created: 2026-10-12
+type: bug
+zone: conversion
+domains: [conversion, validation]
+assurance: economy
