@@ -27,4 +27,6 @@ setup cost with preserved checks. Any discovered behavioral change requires recl
 
 ## Checkpoint
 
-Phase 0 complete; baseline a7da186. Next: maintenance intent. No product edits.
+Implementation complete on baseline a7da186. Focused tooling evidence: 192 existing
+passing tests preserved, one isolation test added; matched runtime 102.62s to 83.10s.
+Next: parent-coordinated fresh review, integration and canonical full check.

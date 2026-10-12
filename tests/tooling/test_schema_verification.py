@@ -8,7 +8,9 @@ import json
 import os
 import shutil
 import subprocess
+from functools import cache
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import pytest
 import tomllib
@@ -86,9 +88,26 @@ def commit_fixture(root):
     )
 
 
+@cache
+def prepared_runtime_input():
+    """Share immutable preparation bytes, never successful execution evidence.
+
+    Snapshot the installed runtime once as test input. Every production preflight
+    still observes it afresh and rejects a changed runtime. Returning bytes keeps
+    each caller's deliberately corrupted input independent of other tests.
+    """
+    with TemporaryDirectory(prefix="schema-runtime-input-") as directory:
+        root = Path(directory).resolve()
+        manifests = root / "tools/schema-verification"
+        manifests.mkdir(parents=True)
+        policy = {"runtime": "runtime.json", "shards": {SHARD: {}}}
+        (manifests / "policy.json").write_text(json.dumps(policy))
+        adapter().prepare_runtime(root)
+        return (root / "runtime.json").read_bytes()
+
+
 def small_repository(tmp_path, *, fault=""):
     """Exercise genuine small pytest sessions with immutable synthetic inputs."""
-    module = adapter()
     root = tmp_path / "repo"
     root.mkdir()
     git(root, "init", "-q")
@@ -185,7 +204,9 @@ class TestIdentifierCounts:
     (root / SUITE).write_text(source)
     write_products(root / "src/junoscfg/validate/data", generated_at="committed")
     commit_fixture(root)
-    module.prepare_runtime(root)
+    runtime = root / policy["runtime"]
+    runtime.parent.mkdir(parents=True)
+    runtime.write_bytes(prepared_runtime_input())
     return root, required, policy
 
 
@@ -294,7 +315,7 @@ class TestPhysicalInputs:
     def test_unknown_or_changed_runtime_refuses(self, tmp_path, fault):
         module = adapter()
         path = tmp_path / "runtime.json"
-        values = module.observe_versions()
+        values = json.loads(prepared_runtime_input())
         assert values and all(
             isinstance(v, str) and v not in ("", "unknown") for v in values.values()
         )
@@ -308,6 +329,25 @@ class TestPhysicalInputs:
 
 
 class TestCandidateIntegrity:
+    def test_prepared_inputs_are_isolated_without_execution_evidence(self, tmp_path):
+        roots = [tmp_path / name for name in ("first", "second")]
+        for directory in roots:
+            directory.mkdir()
+        first, _, policy = small_repository(roots[0])
+        runtime = first / policy["runtime"]
+        expected = runtime.read_bytes()
+        runtime.write_text("corrupted by one test")
+        second, _, _ = small_repository(roots[1])
+        assert (second / policy["runtime"]).read_bytes() == expected
+        adapter().verify_versions(second / policy["runtime"])
+        for root in (first, second):
+            assert sorted(
+                str(path.relative_to(root / ".agent-ready"))
+                for path in (root / ".agent-ready").rglob("*")
+                if path.is_file()
+            ) == ["schema/runtime.json"]
+            assert git(root, "status", "--porcelain") == ""
+
     def test_inherited_hook_context_preserves_parent_repository(self, tmp_path, monkeypatch):
         parent = tmp_path / "parent"
         parent.mkdir()

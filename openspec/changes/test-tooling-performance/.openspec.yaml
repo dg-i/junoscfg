@@ -8,7 +8,6 @@ verification:
   state: ready
   planned-paths:
     - tests/tooling/test_schema_verification.py
-    - tests/tooling/conftest.py
     - changelog.d/+test-tooling-performance.misc.md
     - .agent-ready/activation.json
   dependencies: []
