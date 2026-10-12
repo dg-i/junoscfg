@@ -106,3 +106,28 @@ logs and identities are retained in substitute-native-commands.json,
 substitute-retry-native-commands.json and their checkpoints in the canonical
 ignored evidence directory. This final record commit changes no runtime/test
 bytes. Integration, finalization, metrics, archive, version and tag remain open.
+
+## Economical finalization records and gates
+
+Root accepted the independent metadata/news affirmation of records HEAD
+ e3fbb077113d63c754ced890ca9d6879a2a82fe1, base a6ea0c6362ab1a8586a6f9bea9a5d9945bbcdf69.
+The affirmation is appended verbatim after the unchanged original review;
+its standalone SHA256 is 84d5cc2f9fdc67d6b71045d726e9fd8d474a6f47a061ecffbdf66809168b70bd.
+Native metrics capture uses the immutable base/e3fbb pair. Both files were
+inspected: 55 added lines over two product paths, six declared runtime
+ dependencies at both ends, and 63 root-lock packages at both ends. Session,
+workflow and human telemetry remain UNMEASURED because none was supplied.
+Measured ordinary/fast proof rows preserve their actual distinct commits/results.
+Metrics are records of maintenance preservation, not a claimed performance gain.
+
+On clean records candidate 6de8c57f16e0e7cbe2463041f5c98ad37adcd59a, native
+fields, caps, lane, reconcile and strict OpenSpec change validation each exited 0.
+All 1235 tracked before/after files match. Their exact argv/environment/head/base,
+raw outputs, timings and hashes are retained as finalizer-native-gates.json and
+finalizer-gate-*.out in the canonical ignored evidence directory. All lifecycle
+checkboxes describe completed preparation/verification only. Actual merge,
+archive, version/tag and cleanup remain pending Root action. Maintenance
+skip_specs means no main-spec edit; canonical full/physical schema remain not run.
+The final record-only task/evidence commit is rechecked with the same native gates
+and retained as the clean finalizer checkpoint; it changes no source/test/news
+meaning and does not change either reviewed verdict.

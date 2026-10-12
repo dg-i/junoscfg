@@ -18,7 +18,6 @@
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
 | generated lifecycle evidence | UNMEASURED |
-
 | Ordinary proof HEAD | 7828979f9990fc9f67b64136cd5ff45364f47265 |
 | Ordinary suite result | Exit 0; 9826 passed, 37 existing skips, 20 existing xfails; coverage 93.00%, unchanged floor 91.47%; 187.95s pytest, 196.818454583s wrapper |
 | Ordinary log SHA256 | ccf34d8823443ea78f1bad20abe92467ae173926ae45c146edf539d8567efa8f |
