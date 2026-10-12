@@ -5,11 +5,14 @@ zone: conversion
 domains: [conversion]
 assurance: economy
 skip_specs: true
+removes: "none, because documentation declares status without changing behavior"
 verification:
   state: ready
   planned-paths:
     - README.md
     - docs/roadmaps/xml-work-todo.md
+    - changelog.d/xml-status-and-todo.doc.md
   dependencies: []
-  changelog: "none: documentation status and deferred roadmap only; no behavior change"
-  generated-records: []
+  changelog: changelog.d/xml-status-and-todo.doc.md
+  generated-records:
+    - openspec/changes/xml-status-and-todo/events.jsonl

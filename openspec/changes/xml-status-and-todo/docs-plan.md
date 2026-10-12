@@ -28,3 +28,6 @@
 - Rendered output: offline locked MkDocs build to private output; inspect rendered README Markdown and roadmap HTML status/link/list.
 - Preservation: git diff names only the declared product documents and own change records; no API, tests, configuration or ban change.
 - Native checkpoint: root must admit docs-only full or a qualified substitute before execution; no real schema run in this phase.
+
+- changelog.d/xml-status-and-todo.doc.md: required stage news fragment, documentation-only.
+- Changelog QA: native towncrier stage accepts the `.doc.md` fragment.

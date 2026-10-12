@@ -49,3 +49,5 @@ None. Required execution permission is root-owned activation, not scope approval
 - Freeze established: docs-plan and hashes above; no changed technical behavior.
 
 - Root preserved/rebased onto activation-only BASE `6a956c1dbf31e7c6f32b7d2bb214a629f9db3951`; all ten owned paths retained byte-for-byte. No runtime or documentation source changed. Initial readiness on old activation failed and is not proof. Root admitted native docs-only full after confirming zero expensive tiers and no application adapter. Resume current-head QA/readiness/full.
+
+- First actual docs-full at100df9c failed three metadata/environment gates: missing required stage news, absent ignored skill mirror, and missing docs `removes` answer. All 1257 tracked hashes were unchanged; no application/schema executed. Root admitted one `.doc.md` fragment and explicit plan/metadata correction; supported skills regeneration repairs the ignored mirror. Runtime behavior, public skills, tests and assertions unchanged.
