@@ -21,7 +21,7 @@ declared-break:
     migration: Reconvert original input and update output expectations; do not retain
       malformed generated commands.
 verification:
-  state: parked
+  state: ready
   planned-paths:
   - src/junoscfg/validate/xsd_fixes.py
   - src/junoscfg/validate/xsd_parser.py
