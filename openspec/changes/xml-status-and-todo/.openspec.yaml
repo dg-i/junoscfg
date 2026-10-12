@@ -11,4 +11,5 @@ verification:
     - README.md
     - docs/roadmaps/xml-work-todo.md
   dependencies: []
+  changelog: "none: documentation status and deferred roadmap only; no behavior change"
   generated-records: []
