@@ -1,2 +1,11 @@
 schema: agent-ready
 created: 2026-10-12
+type: maintenance
+zone: anonymize
+assurance: economy
+skip_specs: true
+verification:
+  state: parked
+  planned-paths:
+    - tests/corpus/test_device_rule_values.py
+  dependencies: []

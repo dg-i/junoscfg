@@ -32,3 +32,8 @@ There is no material unresolved owner decision. New tests will cover the gap
 without duplicating existing unit corner cases or inventing feature requirements.
 Base: 26ec8ddac790ec7aae9dcbc936528bf9c31cde80.
 Next: commit preflight, then maintenance intent; passing coverage is not a red.
+
+## Native preflight correction
+The initial fields command reported unanswered type, zone and assurance; caps and
+normal preflight commit succeeded. Metadata now answers maintenance/anonymize/economy;
+the original fields failure is retained as an incomplete gate, not a PASS.
