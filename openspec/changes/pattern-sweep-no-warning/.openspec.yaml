@@ -1,0 +1,14 @@
+schema: agent-ready
+created: 2026-10-12
+type: maintenance
+zone: conversion
+assurance: economy
+skip_specs: true
+removes: none, because this adds test coverage without changing runtime behavior
+verification:
+  state: parked
+  planned-paths:
+    - tests/unit/convert/test_shipped_pattern_warnings.py
+  dependencies: []
+  changelog: 'none: test-only coverage of preserved warning-free pattern validation'
+  generated-records: []
