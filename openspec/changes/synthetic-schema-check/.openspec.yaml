@@ -12,5 +12,5 @@ verification:
     - docs/architecture/developer-guide.md
     - .agent-ready/activation.json
   dependencies: []
-  changelog: none
+  changelog: "none: internal supplementary test coverage only"
   generated-records: []
