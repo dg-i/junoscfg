@@ -1,4 +1,4 @@
 ## Checkpoint
 
-Owner-approved docs plan and source freeze complete.
-Resume phase 4 QA design; phase 3 skipped by docs route.
+QA tasks approved under owner unattended authority; no product docs changed.
+Resume phase 5. Native checkpoint waits for root admission and activation.
