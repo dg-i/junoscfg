@@ -17,6 +17,10 @@ verification:
   planned-paths:
     - tests/unit/convert/test_hidden_list_names.py
     - tests/unit/validate/test_hidden_list_hints.py
+    - src/junoscfg/display/constants.py
+    - src/junoscfg/convert/input/set_input.py
+    - src/junoscfg/convert/output/dict_walker.py
+    - changelog.d/+hidden-list-names.bugfix.md
   dependencies: [openspec/changes/archive/2026-10-12-keyed-single-entry-lists]
-  changelog: 'none: preparation only; required bug fragment will be declared before admission'
+  changelog: 'changelog.d/+hidden-list-names.bugfix.md: device-hidden keyed lists retain complete keys across admitted non-XML doors'
   generated-records: []

@@ -1,0 +1,1 @@
+Preserve complete entry keys for device-backed hidden lists in set, structured, JSON and YAML conversion, and omit their hidden element names when rendering set and structured output. XML input and output remain buggy and deferred.
