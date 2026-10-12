@@ -1,0 +1,243 @@
+{
+  "head": "0118eaf3a6060f845d3a05759f784e457febeba3",
+  "base": "0e65a5f8a4a7fc2d2199e0f2398aceb5f822690d",
+  "status": "",
+  "source_diff": "diff --git a/src/junoscfg/convert/CONTRACT.md b/src/junoscfg/convert/CONTRACT.md\nindex 48c187f..1c2fa99 100644\n--- a/src/junoscfg/convert/CONTRACT.md\n+++ b/src/junoscfg/convert/CONTRACT.md\n@@ -1,27 +1,18 @@\n # junoscfg.convert \u2014 contract\n \n-Interface: `__all__` in `__init__.py`, module entry and expose list in `tach.toml`.\n-\n ## Not for\n \n-Not a format-to-format shortcut: every conversion goes through the dict IR; a\n-second path for a pair is the duplicate `ARCHITECTURE.md` calls a defect.\n+Not a format-to-format shortcut: every conversion goes through the dict IR; a second path for a pair is the duplicate `ARCHITECTURE.md` calls a defect.\n \n ## Invariants\n \n-- Every supported pair round-trips through the IR without losing content \u2014\n-  enforced by `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`.\n+- Every supported pair round-trips through the IR without losing content \u2014 enforced by `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`.\n - XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML apply schema-backed leaf-list normalization at the common boundary, while JSON keeps its supplied value shapes \u2014 enforced by `tests/unit/convert/test_convert_api.py::TestLeafListPromotion`.\n-- No writer changes the IR it is given; the JSON writer normalizes its own copy \u2014 enforced by\n-  `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`.\n+- No writer changes the IR it is given; the JSON writer normalizes its own copy \u2014 enforced by `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`.\n - One configuration yields one IR whatever format it arrived in \u2014 enforced by `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr`.\n-- An incomplete set statement or leaf, a keyed entry without its key from JSON,\n-  YAML or XML, and a meta command on a partial or surplus key are kept whole and\n-  reported `UNPLACED`; set input keeps one, as its tokens, in its level's\n-  `junoscfg:unplaced` record, never at a placed node's key \u2014 enforced by\n-  `tests/unit/convert/test_set_input.py::TestAKeptStatementHasARecordOfItsOwn::test_a_bare_keyword_never_meets_its_placed_node`, `tests/unit/convert/test_field_validator.py::TestAnIncompleteStatementIsUnplaced::test_each_door_reports_it`, `tests/unit/convert/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it` and `tests/unit/convert/test_set_input.py::TestAMetaCommandIsNeverPartiallyApplied::test_a_partial_or_surplus_key_is_kept_whole`.\n-\n+- An incomplete set statement or leaf, a keyed entry without its key from JSON, YAML or XML, and a meta command on a partial or surplus key are kept whole and reported `UNPLACED`; set input keeps one, as its tokens, in its level's `junoscfg:unplaced` record, never at a placed node's key \u2014 enforced by `tests/unit/convert/test_set_input.py::TestAKeptStatementHasARecordOfItsOwn::test_a_bare_keyword_never_meets_its_placed_node`, `tests/unit/convert/test_field_validator.py::TestAnIncompleteStatementIsUnplaced::test_each_door_reports_it`, `tests/unit/convert/test_field_validator.py::TestAnEntryWithoutItsKeyIsUnplaced::test_each_structured_door_reports_it` and `tests/unit/convert/test_set_input.py::TestAMetaCommandIsNeverPartiallyApplied::test_a_partial_or_surplus_key_is_kept_whole`.\n - An anonymizing conversion's messages and errors quote no word of the configuration \u2014 enforced by `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration`.\n+- Field-validation warnings are carried as diagnostics whether or not errors exist; strict conversion raises on errors only. A missing schema-mandatory field remains a warning: it may be required at commit, and the configuration loads without it \u2014 enforced by `tests/unit/convert/test_conversion_diagnostics.py::TestAFieldWarningNeedsNoError` and `tests/unit/convert/test_field_validator.py::TestMandatoryValidation::test_the_message_names_the_commit_boundary`.\n \n ## Precedent\n \ndiff --git a/src/junoscfg/convert/__init__.py b/src/junoscfg/convert/__init__.py\nindex db6d9de..e44edaf 100644\n--- a/src/junoscfg/convert/__init__.py\n+++ b/src/junoscfg/convert/__init__.py\n@@ -228,18 +228,16 @@ def _convert(\n         from junoscfg.convert.field_validator import FieldValidationError, FieldValidator\n \n         result = FieldValidator(withhold_values=anonymizing).validate(ir)\n-        if not result.valid:\n-            if strict:\n-                raise FieldValidationError(result)\n-            else:\n-                diagnostics.extend(\n-                    Diagnostic(\n-                        source=\"field-validate\",\n-                        path=item.path,\n-                        message=item.message,\n-                    )\n-                    for item in (*result.errors, *result.warnings)\n-                )\n+        if strict and not result.valid:\n+            raise FieldValidationError(result)\n+        diagnostics.extend(\n+            Diagnostic(\n+                source=\"field-validate\",\n+                path=item.path,\n+                message=item.message,\n+            )\n+            for item in (*result.errors, *result.warnings)\n+        )\n \n     if path:\n         from junoscfg.display import filter_dict_by_path\ndiff --git a/src/junoscfg/convert/field_validator.py b/src/junoscfg/convert/field_validator.py\nindex 9c3153b..d9b6e72 100644\n--- a/src/junoscfg/convert/field_validator.py\n+++ b/src/junoscfg/convert/field_validator.py\n@@ -889,7 +889,10 @@ class FieldValidator:\n                 result.warnings.append(\n                     FieldError(\n                         path=dot_path,\n-                        message=f\"Missing mandatory field {child_name!r}\",\n+                        message=(\n+                            f\"Missing mandatory field {child_name!r}: \"\n+                            \"may be required at commit; the configuration loads without it\"\n+                        ),\n                         value=None,\n                         expected=f\"required field {child_name!r}\",\n                     )",
+  "source_tree": "46f81cb22f3103a0929cc9d12e8349191caced11",
+  "capture_tree": "a85143b207dab7c4406c525929f7be8ccd74bf92",
+  "criteria_and_test_sha256": {
+    "openspec/changes/diagnostics-load-vs-commit/.openspec.yaml": "f0d62d7b2e4eb3eb0318327936b8abc7c0d8216b369d4d5e79f043f0d9050484",
+    "openspec/changes/diagnostics-load-vs-commit/proposal.md": "c6b66721d08f3bef2bf463c6d19b46dedf739abee5a755dc05b56c379f10fd47",
+    "openspec/changes/diagnostics-load-vs-commit/evidence-freeze.md": "fc42f8ec7c262bcabcff71579d9dfcb863cf6fef2222360cf72d2cc67fc61b69",
+    "openspec/changes/diagnostics-load-vs-commit/instruction-integrity.md": "cd611185709a3942fa84bb0b0fe487070fd175df55a0e9a05b8eafcf6f82b303",
+    "openspec/changes/diagnostics-load-vs-commit/tasks.md": "0d9422d9cf24c8dd87f9d7861be4bce4aff78639fb3cff2be27bf84c5d21e909",
+    "openspec/changes/diagnostics-load-vs-commit/codemap.md": "706917c0d0b65ac710d0c46b35df91a173ea94122a568a0ffafcd11ebdb82e5b",
+    "openspec/changes/diagnostics-load-vs-commit/specs/conversion/diagnostics/spec.md": "8cbdf8db47f8e0dcfa84e11912a814ae8ec0f62525aa2468dd1171d1955469c3",
+    "tests/unit/convert/test_conversion_diagnostics.py": "d84298f5b6a102cce17f08918a0eeb67b3531c66542dc5a2c51900d2b0aff914",
+    "tests/unit/convert/test_field_validator.py": "cb420775ebcc605a4418e8e3e000102c207d17fec815cf75d9bb2805eb8fa699"
+  },
+  "recorded_red": {
+    "tests": 14,
+    "failures": 14,
+    "errors": 0,
+    "skipped": 0,
+    "identities": [
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[set-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[set-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[structured-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[structured-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[json-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[json-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[yaml-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[yaml-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[xml-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[xml-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_an_error_beside_it_changes_nothing",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_the_cli_prints_it[lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_the_cli_prints_it[strict]",
+      "tests.unit.convert.test_field_validator.TestMandatoryValidation::test_the_message_names_the_commit_boundary"
+    ]
+  },
+  "independent_red": {
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identities": [
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[set-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[set-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[structured-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[structured-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[json-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[json-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[yaml-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[yaml-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[xml-lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_every_door_reports_it[xml-strict]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_an_error_beside_it_changes_nothing",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_the_cli_prints_it[lenient]",
+      "tests.unit.convert.test_conversion_diagnostics.TestAFieldWarningNeedsNoError::test_the_cli_prints_it[strict]",
+      "tests.unit.convert.test_field_validator.TestMandatoryValidation::test_the_message_names_the_commit_boundary"
+    ]
+  },
+  "migration_hash_matches": {
+    "current-red.xml": true,
+    "current-red.out": true,
+    "current-base.json": true,
+    "current-base-anon.json": true,
+    "compare.py": true
+  },
+  "baseline_counts": {
+    "current-base.json": 96,
+    "current-base-anon.json": 1152
+  },
+  "public_door_preservation_probes": [
+    {
+      "anonymized": false,
+      "error_present": false,
+      "strict": false,
+      "diagnostics": [
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": false,
+      "error_present": false,
+      "strict": true,
+      "diagnostics": [
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": false,
+      "error_present": true,
+      "strict": false,
+      "diagnostics": [
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "chassis",
+          "message": "'dump-on-panic' could not be placed in the schema: kept as written, not validated"
+        },
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": false,
+      "error_present": true,
+      "strict": true,
+      "exception": "FieldValidationError",
+      "is_field_validation_error": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": true,
+      "error_present": false,
+      "strict": false,
+      "diagnostics": [
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": true,
+      "error_present": false,
+      "strict": true,
+      "diagnostics": [
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": true,
+      "error_present": true,
+      "strict": false,
+      "diagnostics": [
+        {
+          "source": "anonymize",
+          "severity": "warning",
+          "path": "chassis",
+          "message": "1 statement(s) here the schema does not place: each address in it is replaced, every other word is left as written"
+        },
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "chassis",
+          "message": "a statement could not be placed in the schema: kept as written, not validated (its text is withheld: the conversion anonymizes)"
+        },
+        {
+          "source": "field-validate",
+          "severity": "warning",
+          "path": "access.radius-server.secret",
+          "message": "Missing mandatory field 'secret': may be required at commit; the configuration loads without it"
+        }
+      ],
+      "public_result_doors_equal": true,
+      "no_original_or_pseudonym_in_messages": true,
+      "stderr_empty": true
+    },
+    {
+      "anonymized": true,
+      "error_present": true,
+      "strict": true,
+      "exception": "FieldValidationError",
+      "is_field_validation_error": true,
+      "stderr_empty": true
+    }
+  ],
+  "exact_14_match": true,
+  "runtime": {
+    "python": "3.13.15 (main, Sep  1 2026, 14:05:45) [Clang 22.1.3 ]",
+    "executable": "/Users/manon-dev/src/junoscfg-wt/diagnostics-load-vs-commit/.venv/bin/python"
+  },
+  "independent_comparison": {
+    "plain": {
+      "cases": 96,
+      "changed_diagnostics_only": 64,
+      "output_differences": 0,
+      "exception_class_differences": 0
+    },
+    "anonymizer": {
+      "cases": 1152,
+      "changed_diagnostics_only": 768,
+      "output_differences": 0,
+      "exception_class_differences": 0
+    }
+  },
+  "actual_rebase_input_equality": {
+    "src": true,
+    "tests": true,
+    "tests/data/device": true,
+    "uv.lock": true,
+    "pyproject.toml": true,
+    "tools": true,
+    ".agents/skills": true
+  },
+  "before_after_unchanged": true,
+  "final_artifact_sha256": {
+    "operator-only-rebase-proof.json": "f75540da09d35142452118c144a8494a9cbd5b184b2ba114bd47d817e6d92410",
+    "implementation-comparison.json": "9077c972dafb60457efaba3e9e431c21b4fd1096b17dca386ed3dfd6a658a766",
+    "current-head.json": "00456444b32bf04cfe77983583ce84eacdb0f144d40da747dc955907852da62f",
+    "current-head-anon.json": "2b276d6bd78b3c01f758b1dd3d067659aead168a88f480eb3bd5f1a136488472",
+    "implementation-focused.xml": "edf0711128699642f8a75508c75aebdbaac5c9c8e9bac4e621d4e156b66d4412",
+    "implementation-device.xml": "692971cf6eecf8b9d3b10fece3b9cd27aac0ec600d8773177bc4ac8558268437"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "verdict": "PASS",
+  "source_head": "e64d5fe2cf3d1437467352412e3a0f8b1341edc5",
+  "candidate_sha256": "5aba029130af78edfc550c7a92b323e12dd1da68520f4af420c90697563efcdd",
+  "delta_sha256": "8cbdf8db47f8e0dcfa84e11912a814ae8ec0f62525aa2468dd1171d1955469c3",
+  "exact_delta_application": true,
+  "original_purpose_and_legacy_result_requirement_preserved_byte_for_byte": true,
+  "requirement_count": 3,
+  "modified": 1,
+  "added": 1,
+  "removed": 0,
+  "owner_qualified_wording_preserved": true,
+  "group_non_goal_preserved": true,
+  "live_spec_not_applied_by_reviewer": true,
+  "disposable_archive_not_live_completion": true,
+  "bindings": {
+    "reviewed-main-spec-candidate.md": "5aba029130af78edfc550c7a92b323e12dd1da68520f4af420c90697563efcdd",
+    "main-spec-derivation-binding.json": "06fc0c23415350b7e694478b15140344db285cf1151da967f92c213ee5d0276c",
+    "main-spec-derivation.out": "09eb5ba2f0cc2bce497b5b26afcade40e4fd488d8efaeb90384f8f674c9a0b5e"
+  }
+}

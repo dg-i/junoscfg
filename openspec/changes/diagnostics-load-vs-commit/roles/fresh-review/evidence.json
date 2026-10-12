@@ -1,0 +1,104 @@
+{
+  "head": "0118eaf3a6060f845d3a05759f784e457febeba3",
+  "base": "0e65a5f8a4a7fc2d2199e0f2398aceb5f822690d",
+  "source_tree": "46f81cb22f3103a0929cc9d12e8349191caced11",
+  "test_tree": "5e18b8c21d400d6bc58222fd8f8ae9d15b0034ca",
+  "capture_tree": "a85143b207dab7c4406c525929f7be8ccd74bf92",
+  "owning_tests_run_by_reviewer": false,
+  "clean_observed": true,
+  "xml": {
+    "current-red.xml": {
+      "tests": 14,
+      "failures": 14,
+      "errors": 0,
+      "skipped": 0
+    },
+    "implementation-focused.xml": {
+      "tests": 178,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "implementation-device.xml": {
+      "tests": 4461,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 5
+    },
+    "independent-final-source-0118eaf/green.xml": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "comparisons": {
+    "plain": {
+      "cases": 96,
+      "diagnostics_only_changed": 64,
+      "output_changes": 0,
+      "exception_class_changes": 0
+    },
+    "anonymous": {
+      "cases": 1152,
+      "diagnostics_only_changed": 768,
+      "output_changes": 0,
+      "exception_class_changes": 0
+    }
+  },
+  "bindings": {
+    "current-base.json": "4a6617da9c24fa8b83e9647db152f9e832358ec35da8494852c780d6e150e6ee",
+    "current-base-anon.json": "6f3658741cc6675eeed945619401e3654b0722cfd2a2e3d24b23033006235048",
+    "current-head.json": "00456444b32bf04cfe77983583ce84eacdb0f144d40da747dc955907852da62f",
+    "current-head-anon.json": "2b276d6bd78b3c01f758b1dd3d067659aead168a88f480eb3bd5f1a136488472",
+    "implementation-comparison.json": "9077c972dafb60457efaba3e9e431c21b4fd1096b17dca386ed3dfd6a658a766",
+    "current-fast.out": "e8b3b3a4e4ae6c6e2563f078fdca69e3579e07380ab0518a98458b0048a1b6b0",
+    "current-fast-result.json": "f18fe46de00cc9cd081fc3c692ec8e87c96c2bafa2f347c5a1c0111481588f9a",
+    "operator-only-rebase-proof.json": "f75540da09d35142452118c144a8494a9cbd5b184b2ba114bd47d817e6d92410",
+    "current-red.xml": "62b9818b0871759d31ee72233dda1fa80a9465d8439af2296b300bda19de317f",
+    "implementation-focused.xml": "edf0711128699642f8a75508c75aebdbaac5c9c8e9bac4e621d4e156b66d4412",
+    "implementation-device.xml": "692971cf6eecf8b9d3b10fece3b9cd27aac0ec600d8773177bc4ac8558268437",
+    "independent-final-source-0118eaf/green.xml": "07e14358dc3ca204372afeb33fb01e6bae31246e05393b724d2e3bf8a34c2996",
+    "independent-final-source-0118eaf/evidence.json": "dc11a9877baf799538dc496684bd87507d63d65543dd9ee96a129024a1245e89",
+    "independent-final-source-0118eaf/bindings.json": "6236c564b979db22f3adb3a1c15d8d8b44027754026acf6761e3be5a78b14c53",
+    "independent-final-source-0118eaf/probe.py": "36ab754b6c6ca907d4f651a816cd1a20af7a6bb111604e036e16d12e880639d9",
+    "independent-final-source-0118eaf/probe.out": "fc8b8d09bb548bc6fec398a94cb0bf796df2ababa23a680a3f5f76df5c9018e7"
+  },
+  "base_input_equality": {
+    "src": true,
+    "tests": true,
+    "tests/data/device": true,
+    "uv.lock": true,
+    "pyproject.toml": true,
+    "tools": true,
+    ".agents/skills": true
+  },
+  "independent_evidence_fields": [
+    "head",
+    "base",
+    "status",
+    "source_diff",
+    "source_tree",
+    "capture_tree",
+    "criteria_and_test_sha256",
+    "recorded_red",
+    "independent_red",
+    "migration_hash_matches",
+    "baseline_counts",
+    "public_door_preservation_probes",
+    "exact_14_match",
+    "runtime",
+    "independent_comparison",
+    "actual_rebase_input_equality",
+    "before_after_unchanged",
+    "final_artifact_sha256"
+  ],
+  "activation": {
+    "parse_equal": true,
+    "local_sha256": "d3a63feeb6d51b6a717f9bf0463dc233b012f7ea807728032cf503f23567ba4c",
+    "shared_sha256": "d8abba9a23e3465415101b9dbbd73fc2d38c59b44c5ce34ed0041534b64ffea8",
+    "checkpoint": "9f03046ea0c17811025ce46b29bd576c84ba245d",
+    "policy": "strategy-a/1",
+    "only_diagnostics_ready": true
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "verdict": "PASS",
+  "head": "e64d5fe2cf3d1437467352412e3a0f8b1341edc5",
+  "base": "0e65a5f8a4a7fc2d2199e0f2398aceb5f822690d",
+  "R1": "resolved; comment qualification only",
+  "comment_exact_replacement": true,
+  "whole_test_AST_equal": true,
+  "ordinary_actual_head": "0118eaf3a6060f845d3a05759f784e457febeba3",
+  "ordinary_applicable_by_executable_input_equality": true,
+  "ordinary_before_1149_hashes_match_git": true,
+  "ordinary_exit": 0,
+  "ordinary_output_sha256": "c1f2e0773b973993e6b9f16d3a90fb59c5076ab345f0f72265821bd23d52774d",
+  "ordinary_counts": {
+    "passed": 9143,
+    "skipped": 37,
+    "xfailed": 20
+  },
+  "coverage_branch": true,
+  "coverage_percent": 92.93,
+  "floor_percent": 91.47,
+  "corrected_focused": {
+    "passed": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "corrected_fast_exit": 0,
+  "canonical_full_claim": false,
+  "real_schema_runs": 0,
+  "owning_execution_by_reviewer": false,
+  "changed_paths": [
+    "openspec/changes/diagnostics-load-vs-commit/evidence-freeze.md",
+    "openspec/changes/diagnostics-load-vs-commit/metrics.md",
+    "openspec/changes/diagnostics-load-vs-commit/tasks.md",
+    "tests/unit/convert/test_conversion_diagnostics.py"
+  ],
+  "direct_bindings": {
+    "ordinary-before.json": "70b13b74052fa798f5a81edc6c5a56b669df924f1d37b171a6329b216b91c36e",
+    "ordinary-after.json": "446ea6c83cbb401676e1e392e68462d391dea5f4dcb2edbf2fe9cd60b0289431",
+    "ordinary-coverage.out": "c1f2e0773b973993e6b9f16d3a90fb59c5076ab345f0f72265821bd23d52774d",
+    "review-comment-equivalence.json": "704ba568e2b0c867c65b0b1bb1403b386b0bf992810104d8ee27642314a6223d",
+    "review-correction-results.json": "936f2a8fd72bcd9b1ca7a346badfc74f697fe847f4c2a6d0ac09946358254605",
+    "review-correction-focused.out": "ac3c0c064f943d1cd0a7205ed51cd07be50d1135b870ca3ce299f824d3234db0",
+    "review-correction-focused.xml": "d0d148c2fea158dc99166f61657d79caa1ac85a60bad65a949639f4695216f02",
+    "review-correction-fast.out": "0f196b312043e98984691a8a9809d8ba92cd75d031e70755ca631c49b4ed2279"
+  }
+}
