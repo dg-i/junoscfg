@@ -14,7 +14,7 @@
 | ID | Sources and contradiction | Classification | Resolution owner and safe action | Effect |
 |---|---|---|---|---|
 | C1 | Full before review versus owner-approved harness review before costly qualification | automatically resolved by precedence | Owner approved updated plan; focused tests and fresh review precede coordinated full/schema qualification | No costly schema until root coordinates |
-| C2 | Template-owned stability execution versus approved one-suite/two-build plan | repository/skill correction | Application-owned spec/contract migration; retain installed template unchanged | Adapter owns generation-only comparison; remove redundant tier declarations |
+| C2 | Template-owned stability execution versus approved one-suite/two-build plan | repository/skill correction | Application-owned spec/contract migration; retain installed template unchanged | Template retains generation-only double-pass comparison; separate assertion and generation tiers |
 | C3 | Prescribed sibling worktree versus desktop managed worktree | automatically resolved by precedence | Runtime managed worktree tool | Isolated codex branch; main remains clean |
 
 ## Assurance
@@ -30,3 +30,5 @@ None: owner approved the updated plan and implementation. No consumer or CLI cha
 ## Delta log
 
 - Initial preflight: consistent with owner-approved scope; baseline master 9bdd15d. Resume phase 1 after fields/caps and commit.
+
+- Design delta: installed template couples output-hash revalidation to stability execution. Preserve that boundary using one assertion tier and a generation-only stability tier; three real builds, one assertion pass. The earlier two-build target was an estimate, not an acceptance threshold. No acceptance coverage or integrity semantics are removed.
