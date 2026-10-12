@@ -13,8 +13,8 @@ Tests: `tests/unit/convert/test_convert_roundtrip.py::TestKeyedSingletonValidati
 - **THEN** the complete one-entry array survives every reader/writer
 
 ### Requirement: Known containers do not borrow the name entry fallback
-WHEN a known schema container has a child named name THEN the shared writer SHALL traverse its children rather than consume name as an entry key; an absent schema SHALL retain the documented legacy fallback. Writers SHALL leave caller IR unchanged.
-Tests: `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownContainerNames::test_name_and_siblings_are_written_separately`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownContainerNames::test_an_unknown_schema_retains_the_entry_fallback`
+WHEN a known ordinary container has a name child explicitly marked as list-valued, container-valued, leaf-list, presence, or a keyworded leaf THEN the shared writer SHALL traverse its children rather than borrow the legacy name-entry fallback. Unavailable schema and unresolved scalar positional-name cases SHALL retain the historical fallback pending source-qualified structural correction or a future positive metadata answer. Writers SHALL leave caller IR unchanged.
+Tests: `tests/unit/convert/test_convert_roundtrip.py::TestSingletonNamePreservation::test_a_scalar_positional_name_keeps_its_child_key`, `tests/unit/convert/test_convert_roundtrip.py::TestSingletonNamePreservation::test_an_ordinary_name_child_keeps_all_children`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownNameChildShapes::test_the_known_child_shape_keeps_meaning`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownNameChildShapes::test_an_unkeyed_homogeneous_container_keeps_children`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownContainerNames::test_name_and_siblings_are_written_separately`, `tests/unit/convert/test_convert_roundtrip.py::TestKnownContainerNames::test_an_unknown_schema_retains_the_entry_fallback`
 
 #### Scenario: Transport-class
 - **WHEN** transport-class has two name entries and auto-create
@@ -23,3 +23,7 @@ Tests: `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_th
 #### Scenario: Keyworded name
 - **WHEN** corrected-schema snmp has name and location
 - **THEN** both render separately and round-trip; this control makes no device acceptance claim
+
+#### Scenario: Existing scalar positional-name ambiguity
+- **WHEN** one existing root or grouped SecurID entry has configuration-file content
+- **THEN** exact set output retains the child's entry key and all writers preserve the IR; no second-entry allowance or device validity follows

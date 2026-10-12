@@ -435,6 +435,10 @@ class TestTheOneLineFlag:
         is a list. Re-measured then: 102 nodes more carry `o`, none fewer,
         every one a node that became a list by it (48 `algorithm`, 16
         `host-discovery`, ...); 88 hold a child beyond their key fields.
+
+        Keyed singleton correction: only root/group SRGB paths add `o`;
+        the 1,286 key-only carriers stay unchanged. Independent whole-tree
+        comparison binds the exact 3,554 non-key-carrier paths below.
         """
         tree = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
         term = ("policy-options", "policy-statement", "term")
@@ -466,6 +470,6 @@ class TestTheOneLineFlag:
                         keys_only += 1
                 stack.append((here, child))
         with_others.sort()
-        assert (len(with_others), keys_only) == (3552, 1286)
+        assert (len(with_others), keys_only) == (3554, 1286)
         digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
-        assert digest == "b6e5fa4ba01787cdc0396e170b5a14884a423056017d4db7d8a9f644f1b17807"
+        assert digest == "b4c53cfcd0df5ab5237263a0aa18db90e7dde41ac76a378dd9607f3cfb397163"

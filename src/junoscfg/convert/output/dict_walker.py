@@ -568,9 +568,24 @@ class DictWalker:
         The key values in declared order, a field whose leaf is not
         `nokeyword` as its keyword and value, a choice of identifiers as its
         keyword and, where the alternative carries one, its value. A hash
-        outside a known list is keyed `name`, as it always was.
+        with no schema node is keyed `name`, as it always was. A known
+        ordinary name child (list, container, leaf-list, presence or keyworded
+        leaf) cannot be an entry key. Scalar positional-name ambiguity keeps
+        the historical fallback until the owning schema resolves it.
         """
-        fields = entry_keys(schema_node) if schema_node and schema_node.get("L") else ("name",)
+        if schema_node is not None and not schema_node.get("L"):
+            name_schema = schema_node.get("c", {}).get("name")
+            if name_schema is not None and (
+                name_schema.get("L")
+                or "c" in name_schema
+                or name_schema.get("ll")
+                or name_schema.get("p")
+                or (name_schema.get("l") and not name_schema.get("nk"))
+            ):
+                return None
+            fields = ("name",)
+        else:
+            fields = entry_keys(schema_node) if schema_node is not None else ("name",)
         parts: list[str] = []
         written: set[str] = set()
         for field in fields:

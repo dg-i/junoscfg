@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 import yaml
 
-from junoscfg import Format, validate_config
+from junoscfg import Format, convert_config, validate_config
 from junoscfg.convert import find_configuration, from_dict, to_dict
 from tests.support.artifacts import using_tree
 from tests.support.shapes import BY_NAME, SHAPES, WRITERS
@@ -405,3 +405,95 @@ class TestKeyedSingletonValidation:
     def test_supported_statement_validates(self, shape_name: str, fmt: Format) -> None:
         result = validate_config(BY_NAME[shape_name].sources[fmt], format=fmt)
         assert result.valid, result.errors
+
+
+class TestSingletonNamePreservation:
+    """Accepted SC1 C: preserve an existing single entry, without device/cardinality claims."""
+
+    @pytest.mark.parametrize("prefix", ["", "groups G1 "])
+    @pytest.mark.parametrize("writer", WRITERS)
+    def test_a_scalar_positional_name_keeps_its_child_key(
+        self, prefix: str, writer: Format
+    ) -> None:
+        source = "set " + prefix + "access securid-server SRV-A configuration-file sample-1\n"
+        before = json.loads(convert_config(source, from_format=Format.SET, to_format=Format.JSON))[
+            "configuration"
+        ]
+        output = convert_config(source, from_format=Format.SET, to_format=writer)
+        assert (
+            json.loads(convert_config(output, from_format=writer, to_format=Format.JSON))[
+                "configuration"
+            ]
+            == before
+        )
+        if writer in (Format.SET, Format.STRUCTURED):
+            assert convert_config(output, from_format=writer, to_format=Format.SET) == source
+        if writer is Format.SET:
+            assert output == source
+
+    @pytest.mark.parametrize("writer", WRITERS)
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "set snmp name sw1\nset snmp location lab\n",
+            "set routing-options transport-class name gold color 4000\n"
+            "set routing-options transport-class name bronze color 6000\n"
+            "set routing-options transport-class auto-create\n",
+        ],
+    )
+    def test_an_ordinary_name_child_keeps_all_children(self, source: str, writer: Format) -> None:
+        before = json.loads(convert_config(source, from_format=Format.SET, to_format=Format.JSON))[
+            "configuration"
+        ]
+        output = convert_config(source, from_format=Format.SET, to_format=writer)
+        assert (
+            json.loads(convert_config(output, from_format=writer, to_format=Format.JSON))[
+                "configuration"
+            ]
+            == before
+        )
+        if writer in (Format.SET, Format.STRUCTURED):
+            assert convert_config(output, from_format=writer, to_format=Format.SET) == source
+
+
+class TestKnownNameChildShapes:
+    """Independent SC1 C shape controls; ambiguity is preserved, not an identifier proof."""
+
+    @pytest.mark.parametrize(
+        "name_schema,value,expected",
+        [
+            ({"l": True}, "X", ["set node name X", "set node child Y"]),
+            (
+                {"L": True, "c": {"name": {"l": True, "nk": True}, "value": {"l": True}}},
+                [{"name": "X", "value": "Z"}],
+                ["set node name X value Z", "set node child Y"],
+            ),
+            (
+                {"c": {"label": {"l": True}}},
+                {"label": "X"},
+                ["set node name label X", "set node child Y"],
+            ),
+            (
+                {"l": True, "ll": True},
+                ["X", "Z"],
+                ["set node name X", "set node name Z", "set node child Y"],
+            ),
+            ({"p": True}, [None], ["set node name", "set node child Y"]),
+            ({"l": True, "nk": True}, "X", ["set node X child Y"]),
+        ],
+    )
+    def test_the_known_child_shape_keeps_meaning(
+        self, tmp_path: Path, name_schema: dict, value: Any, expected: list[str]
+    ) -> None:
+        tree = {"c": {"node": {"c": {"name": name_schema, "child": {"l": True}}}}}
+        config = {"node": {"name": value, "child": "Y"}}
+        before = copy.deepcopy(config)
+        with using_tree(tmp_path, tree):
+            output = from_dict(config, "set")
+        assert output.splitlines() == expected
+        assert config == before
+
+    def test_an_unkeyed_homogeneous_container_keeps_children(self, tmp_path: Path) -> None:
+        tree = {"c": {"node": {"h": True, "c": {"child": {"l": True}}}}}
+        with using_tree(tmp_path, tree):
+            assert from_dict({"node": {"child": "Y"}}, "set") == "set node child Y\n"

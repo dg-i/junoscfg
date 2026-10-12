@@ -43,8 +43,13 @@ verification:
   - src/junoscfg/validate/data/junos-schema-meta.json.gz
   - openspec/specs/schema-pipeline/entry-key-fields/spec.md
   - openspec/specs/conversion/entry-keys/spec.md
+  - src/junoscfg/validate/schema_generator.py
+  - tests/unit/validate/test_schema_generator.py
+  - tests/data/device/grammar-corpus.json
+  - tests/unit/anonymize/test_walker.py
+  - tests/unit/validate/test_artifact_builder.py
   dependencies:
-  - unsupported-set-commands-reported
+  - openspec/changes/archive/2026-10-12-unsupported-set-commands-reported
   changelog: changelog.d/keyed-single-entry-lists.bugfix
   generated-records:
   - src/junoscfg/validate/data/junos-json-schema.json.gz
@@ -53,3 +58,4 @@ verification:
   - src/junoscfg/validate/data/junos-set.lark.gz
   - src/junoscfg/validate/data/junos-schema-meta.json.gz
   - tests/data/device/known-differences.json
+  - tests/data/device/grammar-corpus.json

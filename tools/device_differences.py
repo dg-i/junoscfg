@@ -96,26 +96,6 @@ CLASSES = (
         lambda line, side, suffix, c: "$junos-" in line,
     ),
     Class(
-        "transport-class-dict",
-        "defect",
-        "`routing-options transport-class name N ...` is written with a Python dict as the "
-        "name, and every entry after the first is lost; a JSON number stays a number inside it",
-        lambda line, side, suffix, c: "transport-class" in line,
-    ),
-    Class(
-        "inactive-keyed-entry-repeated",
-        "defect",
-        "from set input, an inactive keyed entry such as `port-mirroring ... routing-instance "
-        "R` is written `... routing-instance R R`",
-        lambda line, side, suffix, c: suffix == "set" and "port-mirroring" in line,
-    ),
-    Class(
-        "inactive-keyed-entry-name-leak",
-        "defect",
-        "from curly input, the same entry is written `... routing-instance R name`",
-        lambda line, side, suffix, c: suffix == "conf" and "port-mirroring" in line,
-    ),
-    Class(
         "xml-element-name-leak",
         "defect",
         "from XML or JSON, an element the CLI hides appears in the set path (rf_list, "

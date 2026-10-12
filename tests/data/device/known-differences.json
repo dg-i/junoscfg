@@ -4,14 +4,6 @@
    "definition": "the device's display set prints an inactive route-filter as a bare `deactivate` with no `set` line for it",
    "kind": "device-quirk"
   },
-  "inactive-keyed-entry-name-leak": {
-   "definition": "from curly input, the same entry is written `... routing-instance R name`",
-   "kind": "defect"
-  },
-  "inactive-keyed-entry-repeated": {
-   "definition": "from set input, an inactive keyed entry such as `port-mirroring ... routing-instance R` is written `... routing-instance R R`",
-   "kind": "defect"
-  },
   "junos-variable-quoted": {
    "definition": "junoscfg quotes `$junos-...` variables the device prints bare; the device loads both as the same configuration",
    "kind": "equivalent"
@@ -19,10 +11,6 @@
   "omitted-curly": {
    "definition": "the device's curly prints a group with `apply-flags omit` as `/* OMITTED */`, so the curly rendering lacks that group's content; XML, JSON and set carry it",
    "kind": "device-quirk"
-  },
-  "transport-class-dict": {
-   "definition": "`routing-options transport-class name N ...` is written with a Python dict as the name, and every entry after the first is lost; a JSON number stays a number inside it",
-   "kind": "defect"
   },
   "trigger-after-one-line": {
    "definition": "junoscfg writes `within N trigger after 1` as one set line where the device prints two; whether set input loads both alike needs a device load test",
@@ -137,15 +125,7 @@
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
-   },
-   "missing": {
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 1.1.0.12": "transport-class-dict"
+    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter"
    }
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json": {
@@ -155,15 +135,7 @@
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
-   },
-   "missing": {
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 1.1.0.12": "transport-class-dict"
+    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter"
    }
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.set": {
@@ -173,15 +145,7 @@
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
-   },
-   "missing": {
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 1.1.0.12": "transport-class-dict"
+    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter"
    }
   },
   "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.xml": {
@@ -191,15 +155,7 @@
     "set policy-options policy-statement export_isis_metro_a_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 1 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
     "set policy-options policy-statement export_isis_metro_b_ribs term 4000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '1.1.0.12'}]}}\" auto-create": "transport-class-dict"
-   },
-   "missing": {
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name bronze tunnel-egress end-point 1.1.0.12": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 1.1.0.12": "transport-class-dict"
+    "set policy-options policy-statement export_isis_metro_b_ribs term 6000 from route-filter 1.1.0.0/24 prefix-length-range /32-/32": "bare-deactivate-route-filter"
    }
   },
   "jvd/vmx-23.2R2-S7.5/services-leaf1_qfx5130-48c.json": {
@@ -472,22 +428,13 @@
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf": {
    "extra": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A name": "inactive-keyed-entry-name-leak",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-name-leak",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
-    "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly"
    }
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json": {
@@ -505,9 +452,7 @@
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    },
    "missing": {
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
@@ -524,30 +469,16 @@
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    }
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.set": {
    "extra": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A VRF-A": "inactive-keyed-entry-repeated",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-repeated",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.xml": {
@@ -565,9 +496,7 @@
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group server-group SG-A address 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    },
    "missing": {
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
@@ -584,34 +513,20 @@
     "set routing-instances VRF-A forwarding-options dhcp-relay server-group SG-A 10.0.100.201": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf": {
    "extra": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A name": "inactive-keyed-entry-name-leak",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-name-leak",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
     "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
     "set groups GR-OMIT system apply-flags omit": "omitted-curly",
-    "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set groups GR-OMIT system location building \"omit probe\"": "omitted-curly"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json": {
@@ -642,9 +557,7 @@
     "set routing-instances VS-1 bridge-domains domain BD-300 vxlan vni 10300": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': 4000, 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    },
    "missing": {
     "set bridge-domains BD-100 domain-type bridge": "xml-element-name-leak",
@@ -674,32 +587,18 @@
     "set routing-instances VS-1 bridge-domains BD-300 vxlan vni 10300": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.set": {
    "extra": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A VRF-A": "inactive-keyed-entry-repeated",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
-    "deactivate forwarding-options port-mirroring family inet output routing-instance VRF-A": "inactive-keyed-entry-repeated",
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.xml": {
@@ -730,9 +629,7 @@
     "set routing-instances VS-1 bridge-domains domain BD-300 vxlan vni 10300": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" auto-create": "transport-class-dict",
-    "set routing-options transport-class name \"{'name': 'gold', 'color': '4000', 'tunnel-egress': {'end-point': [{'name': '10.255.0.3'}]}}\" fallback none": "transport-class-dict"
+    "set routing-options dynamic-tunnels dynamic-tunnel DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    },
    "missing": {
     "set bridge-domains BD-100 domain-type bridge": "xml-element-name-leak",
@@ -762,12 +659,7 @@
     "set routing-instances VS-1 bridge-domains BD-300 vxlan vni 10300": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE destination-networks 10.200.0.0/16": "xml-element-name-leak",
     "set routing-options dynamic-tunnels DT-GRE gre": "xml-element-name-leak",
-    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak",
-    "set routing-options transport-class auto-create": "transport-class-dict",
-    "set routing-options transport-class fallback none": "transport-class-dict",
-    "set routing-options transport-class name bronze color 6000": "transport-class-dict",
-    "set routing-options transport-class name gold color 4000": "transport-class-dict",
-    "set routing-options transport-class name gold tunnel-egress end-point 10.255.0.3": "transport-class-dict"
+    "set routing-options dynamic-tunnels DT-GRE source-address 10.255.0.1": "xml-element-name-leak"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.conf": {

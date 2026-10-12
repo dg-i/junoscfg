@@ -3,8 +3,9 @@ Device-backed keyed singleton entries are modelled as containers, so valid devic
 
 ## What Changes
 - Correct keyed singleton classification at the schema owner using declared positional identifier evidence; reuse existing list reader/writer branches.
-- Restrict the shared writer's name fallback to an unavailable schema node; known containers keep all children.
+- Known ordinary name-child shapes keep all children; unavailable schema and unresolved scalar positional-name ambiguity retain the historical fallback (accepted SC1 C).
 - **BREAKING**: affected singleton IR dictionaries become one-entry arrays; consumer/CLI output corrects omitted siblings and repeated inactive keys.
+- Repair context-incompatible named definition reuse in the owning JSON/YAML schema generator (accepted SC2), retaining compression, cycles and cutoff.
 - Preserve complete/incomplete key handling and existing true list behavior; add device-backed catalogue rows and negative container controls.
 - No new override, parameter, environment read or dependency is introduced.
 

@@ -494,3 +494,106 @@ class TestTriggerFlattening:
         assert "flat-dict" in group_trigger.flags
         assert "flat-dict" not in optical.flags
         assert "flat-dict" not in unrelated.flags
+
+
+class TestKeyedSingletonLists:
+    """Only admitted source-qualified paths change; copied references stay consistent."""
+
+    PATHS = (
+        ("forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"),
+        ("protocols", "mpls", "label-range", "srgb-label-range"),
+        ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+    )
+
+    @staticmethod
+    def entry(**overrides) -> SchemaNode:
+        fields = dict(
+            name="entry",
+            children={
+                "name": SchemaNode(name="name", is_leaf=True, is_key=True, flags={"nokeyword"}),
+                "child": SchemaNode(name="child", is_leaf=True),
+            },
+            combinator=Combinator.SEQ_CHOICE,
+            key_fields=("name",),
+        )
+        fields.update(overrides)
+        return SchemaNode(**fields)
+
+    @staticmethod
+    def at_path(root: SchemaNode, path: tuple[str, ...], entry: SchemaNode) -> None:
+        node = root
+        for name in path[:-1]:
+            node = node.children.setdefault(name, SchemaNode(name=name))
+        entry.name = path[-1]
+        node.children[path[-1]] = entry
+
+    @pytest.mark.parametrize("path", PATHS)
+    @pytest.mark.parametrize("prefix", [(), ("groups", "group")])
+    def test_a_declared_positional_identifier_makes_the_named_entry_a_list(self, path, prefix):
+        root = _make_root()
+        entry = self.entry()
+        self.at_path(root, prefix + path, entry)
+        children = tuple(entry.children.items())
+        keys = entry.key_fields
+        combinator = entry.combinator
+        fix = registered("keyed-singleton-lists")
+        assert fix.apply(root)
+        assert entry.is_list
+        assert tuple(entry.children.items()) == children
+        assert entry.key_fields == keys
+        assert entry.combinator is combinator
+        assert not fix.apply(root)
+
+    @pytest.mark.parametrize(
+        "case",
+        [
+            "value",
+            "keyworded",
+            "freeform",
+            "key-leaf-list",
+            "leaf",
+            "leaf-list",
+            "presence",
+            "unkeyed",
+            "other-key-order",
+            "other-path",
+        ],
+    )
+    def test_a_name_or_homogeneous_flag_does_not_promote_a_non_entry(self, case):
+        root = _make_root()
+        entry = self.entry(flags={"homogeneous"})
+        key = entry.children["name"]
+        path = self.PATHS[0]
+        if case == "value":
+            key.is_key = False
+        elif case == "keyworded":
+            key.flags.clear()
+        elif case == "freeform":
+            key.flags.add("freeform-nk")
+        elif case == "key-leaf-list":
+            key.is_list = True
+        elif case == "leaf":
+            entry.is_leaf = True
+        elif case == "leaf-list":
+            entry.is_leaf = True
+            entry.is_list = True
+        elif case == "presence":
+            entry.is_presence = True
+        elif case == "unkeyed":
+            del entry.children["name"]
+        elif case == "other-key-order":
+            entry.key_fields = ("name", "child")
+        elif case == "other-path":
+            path = ("access", "securid-server")
+        self.at_path(root, path, entry)
+        before = entry.is_list
+        assert not registered("keyed-singleton-lists").apply(root)
+        assert entry.is_list is before
+
+    def test_root_and_group_shared_entry_is_changed_once(self):
+        root = _make_root()
+        entry = self.entry()
+        for prefix in ((), ("groups", "group")):
+            self.at_path(root, prefix + self.PATHS[0], entry)
+        assert registered("keyed-singleton-lists").apply(root)
+        assert entry.is_list

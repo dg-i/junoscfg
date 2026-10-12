@@ -662,6 +662,40 @@ def _fix_ephemeral_instance(root: SchemaNode) -> bool:
     return False
 
 
+def _fix_keyed_singleton_lists(root: SchemaNode) -> bool:
+    """Correct the three device-backed singleton entry paths, not all name children.
+
+    The shipped XSD marks each name as a positional identifier despite
+    maxOccurs=1; device JSON holds an entry array. Groups reuse root schema
+    nodes. A positional value, leaf-list or unkeyed homogeneous container is
+    not an entry, and no second-entry cardinality promise follows.
+    """
+    paths = (
+        ("forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"),
+        ("protocols", "mpls", "label-range", "srgb-label-range"),
+        ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+    )
+    changed = False
+    for prefix in ((), ("groups", "group")):
+        for path in paths:
+            node = navigate(root, *prefix, *path)
+            if node is None or node.is_list or node.is_leaf or node.is_presence:
+                continue
+            name = node.children.get("name")
+            if (
+                name is not None
+                and name.is_key
+                and name.is_leaf
+                and not name.is_list
+                and "nokeyword" in name.flags
+                and "freeform-nk" not in name.flags
+                and node.key_fields in ((), ("name",))
+            ):
+                node.is_list = True
+                changed = True
+    return changed
+
+
 def _fix_flat_dict_elements(root: SchemaNode) -> bool:
     """Flatten only the event-options policy's after/count trigger.
 
@@ -966,6 +1000,13 @@ ALL_FIXES: list[XsdFix] = [
         "Fix login user class: single-value leaf, not a leaf-list",
         _ALL_TARGETS,
         _fix_user_class_single,
+    ),
+    XsdFix(
+        "keyed-singleton-lists",
+        "combinator",
+        "Model device-backed port-mirroring, SRGB and IS-IS singleton entries as lists",
+        _ALL_TARGETS,
+        _fix_keyed_singleton_lists,
     ),
     # Group H: Conversion hints (schema flags replacing runtime constants)
     XsdFix(

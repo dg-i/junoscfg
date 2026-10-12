@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import copy
+import json
+
 import pytest
+from jsonschema import Draft7Validator
 
 from junoscfg.validate import SchemaNode, generate_json_schema, parse_xsd
 from tests.support.paths import TEST_DATA
@@ -362,3 +366,237 @@ class TestEntryKeysAreTheTreesFields:
         entry = _entry(schema, "policy-options", "policy-statement", "from", "as-path-neighbors")
         assert set(entry["properties"]) == {"list-type", "list-name"}
         assert "required" not in entry
+
+
+# SC2: tiny synthetic definition contexts; no device syntax/cardinality claim.
+def _context_leaf(name: str) -> SchemaNode:
+    return SchemaNode(name, is_leaf=True)
+
+
+def _context_parent(listed: bool) -> SchemaNode:
+    return SchemaNode(
+        "parent",
+        type_ref="shared-parent",
+        children={
+            "entry": SchemaNode(
+                "entry",
+                is_list=listed,
+                children={
+                    "name": _context_leaf("name"),
+                    "value": _context_leaf("value"),
+                },
+            ),
+        },
+    )
+
+
+def _context_schema(order: list[tuple[str, bool]], variant: str) -> dict:
+    return generate_json_schema(
+        SchemaNode(
+            "configuration", children={name: _context_parent(listed) for name, listed in order}
+        ),
+        variant,
+    )
+
+
+class TestNamedDefinitionContexts:
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    @pytest.mark.parametrize(
+        "order",
+        [
+            [("ordinary", False), ("corrected", True)],
+            [("corrected", True), ("ordinary", False)],
+        ],
+    )
+    def test_a_corrected_descendant_array_is_admitted_in_its_own_context(self, variant, order):
+        schema = _context_schema(order, variant)
+        assert Draft7Validator(schema).is_valid(
+            {"configuration": {"corrected": {"entry": [{"name": "A", "value": "B"}]}}}
+        )
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    @pytest.mark.parametrize(
+        "order",
+        [
+            [("ordinary", False), ("corrected", True)],
+            [("corrected", True), ("ordinary", False)],
+        ],
+    )
+    def test_an_uncorrected_context_never_borrows_object_array_allowance(self, variant, order):
+        schema = _context_schema(order, variant)
+        assert not Draft7Validator(schema).is_valid(
+            {"configuration": {"ordinary": {"entry": [{"name": "A", "value": "B"}]}}}
+        )
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_equal_separately_allocated_subtrees_share_a_definition(self, variant):
+        first = _context_parent(True)
+        schema = generate_json_schema(
+            SchemaNode(
+                "configuration",
+                children={
+                    "a": first,
+                    "b": copy.deepcopy(first),
+                },
+            ),
+            variant,
+        )
+        props = schema["properties"]["configuration"]["properties"]
+        assert props["a"]["$ref"] == props["b"]["$ref"]
+        assert len(schema["$defs"]) == 1
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_every_ref_resolves_and_the_draft_schema_is_valid(self, variant):
+        schema = _context_schema([("ordinary", False), ("corrected", True)], variant)
+        refs = [node["$ref"] for node in _walk(schema) if "$ref" in node]
+        assert refs
+        for ref in refs:
+            target = schema
+            for part in ref[2:].split("/"):
+                target = target[part.replace("~1", "/").replace("~0", "~")]
+            assert isinstance(target, dict)
+        Draft7Validator.check_schema(schema)
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_a_real_named_cycle_closes_and_keeps_nested_constraints(self, variant):
+        node = SchemaNode(
+            "recursive", type_ref="recursive-type", children={"field": _context_leaf("field")}
+        )
+        node.children["next"] = node
+        schema = generate_json_schema(SchemaNode("configuration", children={"node": node}), variant)
+        json.dumps(schema)
+        Draft7Validator.check_schema(schema)
+        assert len(schema["$defs"]) == 1
+        assert Draft7Validator(schema).is_valid(
+            {"configuration": {"node": {"next": {"field": "A"}}}}
+        )
+        assert not Draft7Validator(schema).is_valid(
+            {"configuration": {"node": {"next": {"unknown": "A"}}}}
+        )
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_deep_first_reuse_cannot_weaken_a_shallow_definition(self, variant):
+        shared = SchemaNode(
+            "shared",
+            type_ref="at-depth",
+            children={
+                "bounded": SchemaNode("bounded", children={"allowed": _context_leaf("allowed")})
+            },
+        )
+        chain = shared
+        for i in range(10):
+            chain = SchemaNode("level" + str(i), children={"next": chain})
+        schema = generate_json_schema(
+            SchemaNode(
+                "configuration",
+                children={
+                    "deep": chain,
+                    "shallow": copy.deepcopy(shared),
+                },
+            ),
+            variant,
+        )
+        assert not Draft7Validator(schema).is_valid(
+            {"configuration": {"shallow": {"bounded": {"unknown": "A"}}}}
+        )
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_different_depths_share_a_definition_when_emitted_shapes_match(self, variant):
+        shared = SchemaNode(
+            "shared", type_ref="leaf-parent", children={"field": _context_leaf("field")}
+        )
+        schema = generate_json_schema(
+            SchemaNode(
+                "configuration",
+                children={
+                    "direct": shared,
+                    "wrapped": SchemaNode("wrapped", children={"next": copy.deepcopy(shared)}),
+                },
+            ),
+            variant,
+        )
+        props = schema["properties"]["configuration"]["properties"]
+        assert props["direct"]["$ref"] == props["wrapped"]["properties"]["next"]["$ref"]
+        assert len(schema["$defs"]) == 1
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_the_same_tree_produces_deterministic_definitions(self, variant):
+        root = SchemaNode(
+            "configuration", children={"a": _context_parent(False), "b": _context_parent(True)}
+        )
+        assert generate_json_schema(root, variant) == generate_json_schema(root, variant)
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    def test_the_existing_depth_cutoff_is_preserved(self, variant):
+        deep = SchemaNode("bottom", children={"known": _context_leaf("known")})
+        value = {"arbitrary": "A"}
+        for i in range(12):
+            deep = SchemaNode("level" + str(i), children={"next": deep})
+            value = {"next": value}
+        schema = generate_json_schema(SchemaNode("configuration", children={"deep": deep}), variant)
+        assert Draft7Validator(schema).is_valid({"configuration": {"deep": value}})
+
+    @pytest.mark.parametrize("variant", ["json", "yaml"])
+    @pytest.mark.parametrize("kind", ["leaf-presence", "key-field", "switch", "groups"])
+    def test_semantic_child_gates_do_not_share_incompatible_definitions(self, variant, kind):
+        if kind == "leaf-presence":
+            earlier = SchemaNode(
+                "parent", type_ref="shared", children={"value": _context_leaf("value")}
+            )
+            later = SchemaNode(
+                "parent",
+                type_ref="shared",
+                children={"value": SchemaNode("value", is_presence=True)},
+            )
+            accepted = {"value": 42}
+            rejected = {"value": 42}
+        elif kind == "key-field":
+            earlier = SchemaNode(
+                "parent",
+                type_ref="shared",
+                is_list=True,
+                key_fields=("a",),
+                children={"value": _context_leaf("value")},
+            )
+            later = SchemaNode(
+                "parent",
+                type_ref="shared",
+                is_list=True,
+                key_fields=("b",),
+                children={"value": _context_leaf("value")},
+            )
+            accepted = {"a": "X"}
+            rejected = {"a": "X"}
+        elif kind == "switch":
+            earlier = SchemaNode(
+                "parent",
+                type_ref="shared",
+                children={
+                    "enable-disable": SchemaNode(
+                        "enable-disable", is_leaf=True, flags={"nokeyword"}, enums=["disable"]
+                    )
+                },
+            )
+            later = copy.deepcopy(earlier)
+            later.children["enable-disable"].flags.clear()
+            accepted = {"disable": [None]}
+            rejected = {"disable": [None]}
+        else:
+            item = SchemaNode("item", is_list=True, children={"value": _context_leaf("value")})
+            earlier = SchemaNode(
+                "groups", type_ref="shared", flags={"transparent:item"}, children={"item": item}
+            )
+            later = SchemaNode(
+                "ordinary",
+                type_ref="shared",
+                flags={"transparent:item"},
+                children={"item": copy.deepcopy(item)},
+            )
+            accepted = [{"value": "X"}]
+            rejected = [{"value": "X"}]
+        schema = generate_json_schema(
+            SchemaNode("configuration", children={"earlier": earlier, "later": later}), variant
+        )
+        validator = Draft7Validator(schema)
+        assert validator.is_valid({"configuration": {"earlier": accepted}})
+        assert not validator.is_valid({"configuration": {"later": rejected}})

@@ -332,9 +332,8 @@ class TestTheWalkerReachesEveryPlacedValue:
         assert offered[("interfaces", "name")] == "ge-0/0/0"
 
     def test_each_entry_of_a_list_a_container_holds(self) -> None:
-        """`routing-instance` is a container the tree marks homogeneous, no
-        list; JSON holds it as the device wrote it, a list of one entry."""
-        assert not _schema_at(
+        """The admitted keyed list offers every value; extra IR entries are synthetic."""
+        assert _schema_at(
             "forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"
         ).get("L")
         output = {"routing-instance": [{"name": "VRF-A", "ip-address": "203.0.114.10"}]}
@@ -343,6 +342,21 @@ class TestTheWalkerReachesEveryPlacedValue:
         )
         path = ("forwarding-options", "port-mirroring", "family", "inet", "output")
         assert offered[(*path, "routing-instance", "ip-address")] == "203.0.114.10"
+        # Walker coverage only; this does not assert multiple entries load on a device.
+        output = {
+            "routing-instance": [
+                {"name": "VRF-A", "ip-address": "203.0.114.10"},
+                {"name": "VRF-B", "ip-address": "203.0.114.11"},
+            ]
+        }
+        seen = _walked(
+            {"forwarding-options": {"port-mirroring": {"family": {"inet": {"output": output}}}}}
+        ).seen
+        assert [
+            value
+            for value, _, offered_path in seen
+            if offered_path == (*path, "routing-instance", "ip-address")
+        ] == ["203.0.114.10", "203.0.114.11"]
 
     def test_a_key_field_the_tree_holds_no_leaf_for(self) -> None:
         """`apply-macro` is keyed `name`, which the tree holds no leaf for: the

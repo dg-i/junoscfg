@@ -393,7 +393,7 @@ artifacts at build time. These artifacts are bundled in the package for runtime 
 flowchart TD
     XSD["NETCONF XSD dump\n(output.xml)"] --> EXT["xsd_extractor.py\nextract &lt;xsd:schema&gt;"]
     EXT --> PARSE["xsd_parser.py\nparse → SchemaNode tree"]
-    PARSE --> FIX["xsd_fixes.py\napply 41 fixes (Groups A-H)"]
+    PARSE --> FIX["xsd_fixes.py\napply 42 fixes (Groups A-H)"]
     FIX --> BUILD["artifact_builder.py"]
     FIX --> SGEN["schema_generator.py"]
     FIX --> GGEN["grammar_generator.py"]
@@ -433,7 +433,7 @@ parsing. Fixes are organized into eight groups:
 | **D** | Missing elements | Add missing alternatives, arguments, and elements | 14 |
 | **E** | Wrong element names | Rename elements whose XSD names differ from CLI names | 5 |
 | **F** | Nokeyword/generic names | Mark elements as freeform or positional | 4 |
-| **G** | Structure/combinator | Fix element combinators (choice → seq_choice), presence flags | 6 |
+| **G** | Structure/combinator | Fix element combinators, presence flags and evidenced singleton entry lists | 7 |
 | **H** | Conversion hints | Encode runtime behavior into schema flags (transparent, oneliner, positional-key) | 8 |
 
 ### Persistence model

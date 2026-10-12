@@ -50,6 +50,105 @@ def _universal_properties(root: SchemaNode) -> dict[str, Any]:
     return {"^(" + "|".join(re.escape(name) for name in names) + ")$": {}}
 
 
+class _DefinitionContext:
+    """One generation's bounded emitted-shape memo and named definitions.
+
+    Object/depth identity avoids rescanning subtrees; definitions reuse the
+    interned semantic shape instead, so separately allocated copies still
+    share. A real named cycle is closed by the emission's active registration.
+    Shapes containing cycle markers are not memoized under another ancestor.
+    """
+
+    def __init__(self) -> None:
+        self.shapes: dict[tuple[Any, ...], int] = {}
+        self.memo: dict[tuple[int, int], int] = {}
+        self.definitions: dict[tuple[str, int], str] = {}
+        self.active: dict[int, str] = {}
+        self.names: set[str] = set()
+
+    def _intern(self, value: tuple[Any, ...]) -> int:
+        found = self.shapes.get(value)
+        if found is None:
+            found = len(self.shapes)
+            self.shapes[value] = found
+        return found
+
+    def shape(self, node: SchemaNode, depth: int) -> int:
+        return self._shape(node, depth, set())[0]
+
+    def _shape(self, node: SchemaNode, depth: int, active: set[int]) -> tuple[int, bool]:
+        # Match emission precedence: leaves and presence ignore depth;
+        # containers at the cutoff are unconstrained, even when childless.
+        if node.is_leaf:
+            return self._intern(("any",)), False
+        if node.is_presence:
+            return self._intern(("presence",)), False
+        if depth >= _MAX_DEPTH:
+            return self._intern(("cutoff",)), False
+        if not node.children:
+            return self._intern(("any",)), False
+        identity = id(node)
+        if node.type_ref and identity in active:
+            return self._intern(("recursive", node.type_ref)), True
+        key = (identity, depth)
+        cached = self.memo.get(key)
+        if cached is not None:
+            return cached, False
+        if node.type_ref:
+            active.add(identity)
+        properties: dict[str, int] = {}
+        cyclic = False
+        try:
+            for name, child in node.children.items():
+                if name == "groups" and depth > 0:
+                    child_shape = self._intern(("suppressed-groups",))
+                else:
+                    child_shape, child_cyclic = self._shape(child, depth + 1, active)
+                    cyclic |= child_cyclic
+                properties[name] = child_shape
+                for spelling in _switch_spellings(name, child):
+                    properties.setdefault(spelling, self._intern(("any",)))
+            if node.is_list:
+                for name in sorted(entry_key_names(node)):
+                    properties.setdefault(name, self._intern(("any",)))
+            transparent = next(
+                (flag.split(":", 1)[1] for flag in node.flags if flag.startswith("transparent:")),
+                None,
+            )
+            group_items = (
+                properties[transparent]
+                if node.name == "groups" and transparent and transparent in properties
+                else None
+            )
+            shape = self._intern(
+                (
+                    "list" if node.is_list else "container",
+                    tuple(sorted(properties.items())),
+                    group_items,
+                )
+            )
+        finally:
+            if node.type_ref:
+                active.remove(identity)
+        if not cyclic:
+            self.memo[key] = shape
+        return shape, cyclic
+
+    def register(self, type_ref: str, shape: int) -> tuple[str, bool]:
+        key = (type_ref, shape)
+        previous = self.definitions.get(key)
+        if previous is not None:
+            return previous, False
+        name = type_ref
+        suffix = 2
+        while name in self.names:
+            name = f"{type_ref}__{suffix}"
+            suffix += 1
+        self.names.add(name)
+        self.definitions[key] = name
+        return name, True
+
+
 def generate_json_schema(
     root: SchemaNode,
     variant: str = "json",
@@ -65,7 +164,7 @@ def generate_json_schema(
     """
     universal = _universal_properties(root)
     defs: dict[str, Any] = {}
-    seen_refs: set[str] = set()
+    context = _DefinitionContext()
 
     schema: dict[str, Any] = {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -73,7 +172,7 @@ def generate_json_schema(
         "description": "Validates Junos configuration hierarchy (structural only).",
         "type": "object",
         "properties": {
-            "configuration": _node_to_schema(root, variant, 0, defs, seen_refs, universal),
+            "configuration": _node_to_schema(root, variant, 0, defs, context, universal),
         },
         "additionalProperties": False,
     }
@@ -87,7 +186,7 @@ def generate_json_schema(
             }
         else:
             schema["properties"][child_name] = _node_to_schema(
-                child_node, variant, 1, defs, seen_refs, universal
+                child_node, variant, 1, defs, context, universal
             )
 
     if defs:
@@ -101,7 +200,7 @@ def _node_to_schema(
     variant: str,
     depth: int,
     defs: dict[str, Any],
-    seen_refs: set[str],
+    context: _DefinitionContext,
     universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Convert a SchemaNode to its JSON Schema representation."""
@@ -130,16 +229,24 @@ def _node_to_schema(
 
     # If this node has a type_ref, use $defs/$ref for deduplication
     if node.type_ref and node.children:
-        ref_name = node.type_ref
-        if ref_name not in seen_refs:
-            seen_refs.add(ref_name)
-            # Generate the def inline (not yet recursive-safe, but type_ref stops recursion)
-            defs[ref_name] = _container_or_list_schema(
-                node, variant, depth, defs, seen_refs, universal
-            )
+        active = context.active.get(id(node))
+        if active is not None:
+            return {"$ref": f"#/$defs/{active}"}
+        ref_name, fresh = context.register(node.type_ref, context.shape(node, depth))
+        if fresh:
+            # Register before children, so a real graph cycle closes on this
+            # context instead of recursively creating depth variants.
+            defs[ref_name] = {}
+            context.active[id(node)] = ref_name
+            try:
+                defs[ref_name] = _container_or_list_schema(
+                    node, variant, depth, defs, context, universal
+                )
+            finally:
+                del context.active[id(node)]
         return {"$ref": f"#/$defs/{ref_name}"}
 
-    return _container_or_list_schema(node, variant, depth, defs, seen_refs, universal)
+    return _container_or_list_schema(node, variant, depth, defs, context, universal)
 
 
 def _container_or_list_schema(
@@ -147,13 +254,13 @@ def _container_or_list_schema(
     variant: str,
     depth: int,
     defs: dict[str, Any],
-    seen_refs: set[str],
+    context: _DefinitionContext,
     universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Generate schema for list or container nodes."""
     # List node: array of items
     if node.is_list and node.children:
-        item_schema = _container_schema(node, variant, depth, defs, seen_refs, universal)
+        item_schema = _container_schema(node, variant, depth, defs, context, universal)
         # `anyOf`, not `oneOf`: a container accepts the bare-statement shapes
         # too, so an array matches both branches and `oneOf` -- which demands
         # exactly one -- rejected every list. These are alternatives, not
@@ -167,7 +274,7 @@ def _container_or_list_schema(
 
     # Container with children
     if node.children:
-        return _container_schema(node, variant, depth, defs, seen_refs, universal)
+        return _container_schema(node, variant, depth, defs, context, universal)
 
     # Fallback: accept anything
     return {}
@@ -185,7 +292,7 @@ def _container_schema(
     variant: str,
     depth: int,
     defs: dict[str, Any],
-    seen_refs: set[str],
+    context: _DefinitionContext,
     universal: dict[str, Any],
 ) -> dict[str, Any]:
     """Generate schema for a container node with children."""
@@ -197,7 +304,7 @@ def _container_schema(
             properties[child_name] = {"type": ["object", "array", "null"]}
         else:
             properties[child_name] = _node_to_schema(
-                child_node, variant, depth + 1, defs, seen_refs, universal
+                child_node, variant, depth + 1, defs, context, universal
             )
         # A folded on/off switch is written under its spelling, not under the
         # node name: the set reader emits `"disable": [null]`, so a container

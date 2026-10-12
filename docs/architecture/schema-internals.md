@@ -286,7 +286,7 @@ after parsing. Fixes are organized into groups:
 | D | Missing elements | 14 |
 | E | Wrong element names | 5 |
 | F | Nokeyword / generic name fixes | 4 |
-| G | Structure/combinator fixes | 6 |
+| G | Structure/combinator fixes | 7 |
 | H | Conversion hints (transparent, oneliner, etc.) | 8 |
 
 Groups A-G fix genuine XSD deficiencies. Group H encodes conversion-hint flags
@@ -297,6 +297,23 @@ a leaf named `timeout`, `limit`, `path` or `filename` keeps its keyword when
 the schema declares one. Trigger flattening is scoped to `event-options policy
 within trigger`, including its group copy. The shared writer uses normal traversal
 when a flat hint meets nested mappings or lists with values, preserving their content.
+
+The keyed-singleton correction covers the root and grouped copies of
+`forwarding-options port-mirroring family inet output routing-instance`,
+`protocols mpls label-range srgb-label-range` and
+`protocols isis interface level application-specific attribute-group`.
+Each must declare a scalar positional identifier; the fix changes list
+classification while retaining children and key order. An ordinary `name`
+child or a homogeneous flag alone never triggers it. This models the
+one-entry arrays in the committed device captures and does not establish
+that a second entry loads on a device.
+
+Named JSON/YAML definitions reuse compatible emitted descendant shapes and
+effective depth context, rather than a type name alone. Separately allocated
+compatible subtrees still share a definition; a corrected descendant or a
+cutoff-dependent shape gets a deterministic variant. A real recursive node
+closes on its registered definition. The discriminator memo belongs to one
+generation and does not change source cardinality or the depth cutoff.
 
 ### Example: Ephemeral Instance Fix (Group D/G)
 
