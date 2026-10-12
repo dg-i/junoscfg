@@ -130,3 +130,26 @@ unchanged 91.47% floor. This is Builder verification, not a fresh review verdict
 No source/fixture/assertion change, XML qualification or schema execution.
 Native readiness setup failures and the first overwritten-raw-log limitation
 remain qualified in checkpoint.md; no failed run supplies PASS evidence.
+
+
+## Fresh independent lightweight privacy review
+
+# Independent lightweight privacy review — PASS
+
+Reviewed immutable source `c6c4d09c289312651d101908f94e010f83521c6a` against base `5f75bdf54f1320b1276b4ae2efd1af3137d9b92b`. No blocking findings or unresolved specification challenges.
+
+The maintenance lane is appropriate: the product diff contains only the new corpus test and its required changelog entry; the remaining changes are its workflow records. Runtime, fixtures, existing tests, public surfaces, compatibility, and dependencies are unchanged. The existing 172-case contract file is byte-identical to the current base. I read the governing lane, instruction-integrity record, proposal, metadata, test/anonymize contracts, actual test diff, and independent TC evidence; no Builder private reasoning or implementation report was used.
+
+The 60 individual cases inventory held values from synthetic device display-set tokens, with the native JSON annotation inventoried separately. The six accepted SC1 combined cases cover two held devices and JSON, set, and structured input. Inventory equality rejects absent or extra originals, explicit preserved-IP exceptions prevent false coverage claims, and non-exempt mapped values must change. Complete combined IR comparison covers each occurrence, dictionary address keys, embedded address spans, ordered lists, multiplicity, and unchanged syntax; exact flat-map reversal is a separate assertion. Structured GR-OMIT is explicitly excluded only where the held device emits OMITTED. Sensitive/group/description overlap is intentional earlier-rule ownership; the new union law does not itself assert category ownership, which the unchanged pair/all-rule contract and independent TC owner partition cover. Typed errors and approved corner cases remain with their existing tests; this maintenance does not add acceptance promises.
+
+Independent execution on a fresh archive of the current source: **238 passed**, no skips or xfails (4.77 seconds reported by pytest). Runtime imports were asserted inside that archive; supported Python 3.13 and installed locked-package versions were checked. All six combined inventories matched the frozen independent TC inventory with the documented format adjustments.
+
+**42 negative controls rejected at assertions in the submitted test**, seven modes across six combined cases: one credential occurrence retained, missing credential map entry, unchanged credential mapping answer, corrupted reversal, list reversal, list occurrence removal, and altered super-user syntax. For every retained-credential case a separate direct check confirmed exact reversal still succeeds; the privacy assertion therefore adds protection beyond reversal. `privacy-attributed-results.json` records exact assertion lines and direct reversal results. The initial 42-control run and its raw evidence are retained; a second, attributed run strengthens failure-site evidence rather than overwriting it.
+
+The historical independent SC1 report (SHA-256 `b629fa2692037bdea814876095b4d85cca6339a94d961cb5a6ac3f7a65d90811`) reports 174 rejected controls on its older base. That history is not current-base execution proof. This review's focused and 42-control runs explicitly use the final source/base above.
+
+I verified 19 supplied raw receipt/log hashes, the ordinary/fast receipt log hashes, and their equal before/after maps. Supplied ordinary evidence on `0ca6cb1a7fbe9855001adf7e9ec551d0cf9c1d6f` records 10,356 passed, 37 skipped, 20 xfailed, 92.95% coverage against 91.47%; supplied fast evidence on the same proof commit exits zero with every check passed. The later source changes only its checkpoint/review/tasks records. These gates were inspected, not rerun. The overwritten first readiness failure log remains an explicit evidence limitation, not reconstructed raw proof; subsequent retained readiness evidence and the scope of those metadata corrections do not undermine the test/source assessment.
+
+All 1,323 tracked live and archived files remained byte-identical before and after independent checks; the live HEAD stayed fixed and clean. All review writes are confined to this private evidence directory. No ordinary/full/fast/schema/network/device execution was performed by this Reviewer. PASS is bounded to this test-only maintenance and the held non-XML cases; XML and physical schema qualification remain deferred under the owner's batch decision.
+
+Raw argv, source/base, UTC timestamps, durations, exit codes and log hashes are in focused.json, privacy.json and privacy-attributed.json. Full tracked manifests are retained before/after. run.py, probe.py and probe-attributed.py preserve the executed review procedure.

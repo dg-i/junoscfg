@@ -9,7 +9,7 @@
 ## 3. Review and evidence
 - [x] Independent Test/Challenge assessment accepted after bounded SC1 correction.
 - [x] Root lane/source-plan and READY admission; native readiness/lane passed.
-- [ ] Genuinely fresh Reviewer verdict.
+- [x] Genuinely fresh Reviewer verdict.
 - [x] Owner-approved ordinary and fast checkpoint on the admitted clean head.
 
 ## Finalization
@@ -21,3 +21,5 @@
 - [x] Add six all-rule device cases retaining the original 60 and 172 controls.
 - [x] Run 66 corpus baseline nodes; PASS with no skips/xfails/errors.
 - [x] Same independent TC demonstrates six meaningful combined-leak failures and 174 rejected mutants; Root accepts ADEQUATE.
+
+Root accepts genuinely fresh lightweight privacy PASS at c6c4d09c289312651d101908f94e010f83521c6a / base 5f75bdf54f1320b1276b4ae2efd1af3137d9b92b. Complete report SHA b0686b76642d384e6ce28d7daf473582612d8a6d7d203edb50310de3ae1cfcf0 appended verbatim, preserving historical TC/SC1 and first readiness overwritten-raw qualification. Native metrics and bounded clean gates follow normal reviewed-record application commit. Actual root integration/archive/version/tag/cleanup task stays open.
