@@ -13,11 +13,11 @@
 - [x] 2.4 Execute actual scaffold template and caps --homes; retain output and resolve only authorized ownership/inactive seeds.
 - [x] 2.5 Add delivered-guide navigation and executable schema recipe plus release fragment.
 - [x] 2.6 Provision physical private inputs, capture actual outcomes/durations, complete focused tests and fast gates.
-- [ ] 2.7 Commit immutable candidate and complete supported fast plus configured application tests/coverage; report review checkpoint with explicit owner-deferred schema evidence. Final entire-makeover checkpoint requires only the selected 25.2R2 physical version, unchanged double-pass/stability assertions and shipped sentinel.
+- [x] 2.7 Commit immutable candidate and complete supported fast plus configured application tests/coverage; report review checkpoint with explicit owner-deferred schema evidence. Final entire-makeover checkpoint requires only the selected 25.2R2 physical version, unchanged double-pass/stability assertions and shipped sentinel.
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Receive fresh isolated Reviewer verdict and apply accepted corrections with invalidated reruns.
+- [x] 3.1 Receive fresh isolated Reviewer verdict and apply accepted corrections with invalidated reruns.
 - [ ] 3.2 Complete bounded finalization and reviewed main specification.
 - [ ] 3.3 Capture truthful metrics and actual root-controlled activation evidence; record integration/archive/version/tag handoff for root release bookkeeping.
 
@@ -34,3 +34,5 @@ The isolated normal-hook affected suite passed; its test-door gate rejected priv
 Pre-full phase-5 preparation at 3757577e4ce75d4518d76fd831e7ee3972715718: independent application controls accepted, focused 43 passed in 75.06s. Initial fast set failed only missing generated .claude/skills in this worktree; installed offline agent-ready skills --regenerate restored that ignored mirror with no tracked edits, focused skills passed, and the corrected exact fast command passed every gate (raw schema-adapter-pre-full-fast-corrected.out). Physical inputs, focused outcomes/durations and fast gates are complete; actual real-schema outcomes belong to pending task 2.7. Normal implementation commit passed all hooks without exemptions. Final record-only commit and inactive readiness precede the one immutable canonical full. Installed wrapper execute applies actual second-pass stability with reuse=False, so inactive full runs both passes for each declared physical shard and the shipped sentinel uncached. No generation, activation or performance claim is made by this preparation.
 
 Direct owner scheduling amendment (2026-10-12): real schema runs are deferred until the end of the entire makeover and restricted to the existing physical 25.2R2-S1.5_qfx5120 version. All recipe capabilities and assertions remain available. Post-makeover TODO: drastically narrow the cases that trigger full schema regeneration. This carry remains pending; ordinary checks are not reported as canonical full success.
+
+Actual owner-amended checkpoint at fc97703: normal hooks and every supported fast gate passed; independent immutable 18-case controls passed in 83.51s; configured public ordinary suite passed 9129 tests with 37 existing skips and 20 strict xfails in 360.95s, branch coverage 92.93% against 91.47%. Same fresh Reviewer approved source integration under explicit owner deferral. Final entire-makeover selected 25.2R2 schema double-pass/stability/sentinel remains PENDING, never reported as passed. Tasks 3.2 and 3.3 remain open.
