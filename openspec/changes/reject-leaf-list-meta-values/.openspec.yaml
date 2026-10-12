@@ -5,3 +5,19 @@ zone: conversion
 domains: [conversion]
 assurance: economy
 skip_specs: true
+declared-break:
+  consumer:
+    why: 'Set conversion refuses metadata commands with trailing scalar-leaf value tokens instead of broadening the target.'
+    migration: 'Remove the entire unsupported metadata command and retain the set lines; use a bare whole-leaf target only when that operation is actually intended.'
+  cli:
+    why: 'Set conversion exits with a value-free ValueError for unsupported scalar-leaf metadata targets.'
+    migration: 'Remove the entire unsupported command and retain the set lines, or explicitly request the whole-leaf operation if intended; dropping a selector is not equivalent.'
+verification:
+  state: proposed
+  planned-paths:
+    - src/junoscfg/convert/input/set_input.py
+    - tests/unit/convert/test_scalar_meta_targets.py
+    - changelog.d/+reject-leaf-list-meta-values.bugfix.md
+  dependencies: []
+  changelog: changelog.d/+reject-leaf-list-meta-values.bugfix.md
+  generated-records: []
