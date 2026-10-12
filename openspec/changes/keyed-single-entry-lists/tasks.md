@@ -16,7 +16,9 @@
 
 ## 3. Review and evidence
 - [x] 3.1 Run supported fast and ordinary coverage checkpoint, retain exact provenance; full schemas remain deferred.
-- [ ] 3.2 Obtain genuinely fresh isolated Reviewer verdict; process challenges through formal owner route.
+- [x] 3.2 Obtain genuinely fresh isolated Reviewer verdict; process challenges through formal owner route.
 - [ ] 3.3 Bounded metrics/main-spec finalization after root acceptance; root alone owns merge/archive/version/tag.
 
 Actual clean checkpoint HEAD608265030be20c639e2364e72e8a715c5cad7ce4/base3d60e0a04c42c3afa9049e922d70a0cb47fd14b5: native readiness exit0, then `env UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run --locked pytest tests/ -q --cov --cov-report=term:skip-covered` exit0 (10210 passed,37 skipped,20 existing strict xfailed; coverage92.99%, unchanged floor91.47), then sequential `env UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set fast --base 3d60e0a04c42c3afa9049e922d70a0cb47fd14b5` exit0. All tracked hashes unchanged before/after each, status clean. Full physical/schema checkpoint remains deferred;36 schema skips and1 optional device-grammar skip are not PASS. Fresh phase6 Reviewer pending.
+
+Root accepts fresh independent phase6 PASS at reviewed62146d2 and exact generated-main-spec affirmation; both reports are retained verbatim in review.md. Review/main-spec rulings remain privately bound to exact report/spec hashes. Phase7 application is approved; native capture and final clean gates are pending. Full physical25.2 verification is deferred to the entire makeover end; two implementation builds are not stability verification.
