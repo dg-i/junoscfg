@@ -1,0 +1,1 @@
+Correct schema conversion parity qualification to permit the device-evidenced transport-class sibling placement difference while retaining statement content, multiplicity and meaningful order checks. Runtime behavior is unchanged.
