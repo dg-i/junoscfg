@@ -1,8 +1,8 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "4479c76108cab3fc41a0ca44738323a1b6bd840e",
+  "checkpoint": "8f9e0693350d05c6d3c11777052077470bb7b358",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root accepts completed bounded comparison tool implementation and resulting main-spec review. Comparison branch/change parked after integration; master ready for operator housekeeping, keyed branch source-only admission remains bounded with SC1 correction pending/no generation. Other work parked. Full schemas only entire-END25.2.",
+  "authority": "Root accepts independent SC1 interim C595PASS with explicit nofallback wording narrowing under valid input preservation. No SEC classification/cardinality expansion; original three owning paths/rootgroup sixslots only. Keyed branch ready source correction and conditional onepublic25.2 productgeneration after preserved currentbase restoration/projection check. Comparison completed archived v0.24.1 parked. Other work parked. Full schemas only entire-END selected25.2.",
   "captured_at": "2026-10-12T04:53:07.014006+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready"
+    "master": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
