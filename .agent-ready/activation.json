@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "d2c49f5e1b57211b7823fd84ea893b70a336ce89",
+  "checkpoint": "26ec8ddac790ec7aae9dcbc936528bf9c31cde80",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "XMLstatusdocs releasedlocalv0.25.1 normalhooks/version3PASS/78archives0; publicBUGGY/TODO ownerdeferral applies. Rootaccepted independenthiddenlist TC after1262candidatearchive+83base source hashes and allrawproof checks. HiddenbranchREADY for currentbase renewal then bounded3pathsourceonly phase5 conditional renewedtests/nativeadmission; no XSD/productgeneration/t-tkretirement/XMLqualification. Masterparked; allothersparked. Finalfullschema nonXMLbatchEND25only/no push/network/device.",
-  "captured_at": "2026-10-12T08:43:00.498748+00:00",
+  "authority": "Hiddenlistphase5 onlyserializedruntimewriter; rootindependentSC2delete-probe+SC3knownrecord corrections accepted with1277dirtysourcehashproof. T3anonymization per-ruleheldcapture testcoverage preparationONLY separatelyowned/newtests; branch/changePARKED notimplementation/fulladmission. Otherworkparked; rootmasterparked, XMLfunctionalworkdeferred. Final25schema onlynonXMLbatchEND.",
+  "captured_at": "2026-10-12T09:01:34.310285+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -66,7 +66,8 @@
     "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
-    "codex/xml-status-and-todo": "parked"
+    "codex/xml-status-and-todo": "parked",
+    "codex/anonymization-rule-coverage": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -129,6 +130,7 @@
     "hidden-list-names": "ready",
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked",
-    "xml-status-and-todo": "parked"
+    "xml-status-and-todo": "parked",
+    "anonymization-rule-coverage": "parked"
   }
 }
