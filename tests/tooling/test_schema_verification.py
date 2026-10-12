@@ -417,28 +417,33 @@ class TestGenerationIntegrity:
 
 
 class TestEvidenceConfiguration:
-    def test_three_bound_shards_and_one_sentinel_are_declared(self):
+    def test_shipped_assertion_and_generation_tiers_are_declared(self):
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
         tiers = config["batch"]["expensive-tiers"]
-        assert len(tiers) == 3
-        assert len({tier["name"] for tier in tiers}) == 3
-        assert sum(bool(tier.get("sentinel-command")) for tier in tiers) == 1
-        dumps = set()
-        for tier in tiers:
-            required = json.loads((PROJECT_ROOT / tier["required-manifest"]).read_text())
+        assert [tier["name"] for tier in tiers] == ["schema-25.2", "schema-25.2-generation"]
+        assertion, generation = tiers
+        assert "stability-manifest" not in assertion
+        assert not any(tier.get("sentinel-command") for tier in tiers)
+        assert assertion["paths"] == generation["paths"]
+        assert "tools/schema_verification.py" not in assertion["paths"]
+        assert "pyproject.toml" not in assertion["paths"]
+        assert "uv.lock" in assertion["paths"]
+        policy = json.loads((PROJECT_ROOT / "tools/schema-verification/policy.json").read_text())
+        assert set(policy["shards"]) == {"schema-21.4", "schema-23.2", "schema-25.2"}
+        for shard, recipe in policy["shards"].items():
+            required = json.loads((PROJECT_ROOT / recipe["required"]).read_text())
             assert len(required["tests"]) == len(set(required["tests"])) == 12
-            assert required["shards"] == [tier["name"]]
-            paths = [name for name in tier["inputs"] if name.endswith(".xsd")]
-            assert len(paths) == 1
-            dumps.update(paths)
-            assert tier["version-files"]
-            stable = json.loads((PROJECT_ROOT / tier["stability-manifest"]).read_text())
-            assert len(stable) == 5 and all(name.endswith(PRODUCTS) for name in stable[:4])
-            assert stable[4] == (
-                f".agent-ready/schema/{tier['name']}/artifacts/junos-schema-meta.normalized.json"
-            )
-            assert "tools.schema_verification" in tier["command"]
-        assert len(dumps) == 3
+            assert required["shards"] == [shard]
+            generated = json.loads((PROJECT_ROOT / recipe["generation-required"]).read_text())
+            assert generated == {
+                "tests": ["public-build", "artifact-integrity"],
+                "shards": [f"{shard}-generation"],
+            }
+        stable = json.loads((PROJECT_ROOT / generation["stability-manifest"]).read_text())
+        assert len(stable) == 5 and all(name.endswith(PRODUCTS) for name in stable[:4])
+        assert stable[4].endswith("junos-schema-meta.normalized.json")
+        assert assertion["result-manifest"] in generation["inputs"]
+        assert all(tier["version-files"] for tier in tiers)
 
     def test_safe_seeds_preserve_policy_and_link_guides(self):
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
@@ -465,7 +470,7 @@ class TestEvidenceConfiguration:
 
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
         tiers = config["batch"]["expensive-tiers"]
-        assert len(tiers) == 3
+        assert len(tiers) == 2
         store = tmp_path / ".agent-ready/verification"
         store.mkdir(parents=True)
         retained = store / "historical.json"
@@ -479,5 +484,5 @@ class TestEvidenceConfiguration:
 
         monkeypatch.setattr(verification, "execute", execute)
         assert verification.run_tiers(tmp_path, None, enabled=False) == 0
-        assert len(executions) == 4 and all(reuse is False for _, reuse in executions)
+        assert len(executions) == 2 and all(reuse is False for _, reuse in executions)
         assert retained.read_text() == '{"historical":true}'

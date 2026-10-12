@@ -20,6 +20,11 @@ Tests: `tests/tooling/test_schema_qualification.py::TestGenerationQualification:
 WHEN qualification is configured THEN routine automatic tiers SHALL select only the shipped release on generator/schema relevant paths, with assertions before generation stability; older releases SHALL remain available for explicit compatibility qualification. Existing activation, caps, surfaces and template-owned evidence validity SHALL remain authoritative; assertion exports are local diagnostics, while qualified generation exports are hash-bound stability outputs.
 Tests: `tests/tooling/test_schema_verification.py::TestEvidenceConfiguration::test_shipped_assertion_and_generation_tiers_are_declared`, `tests/tooling/test_schema_verification.py::TestEvidenceConfiguration::test_rollback_retains_evidence_and_uncached_declarations`
 
+#### Scenario: Safe scaffold recommendations are resolved
+
+- **WHEN** scaffold recommends generic api, canonical sources or larger limits
+- **THEN** existing application policies remain authoritative; qualification selection does not alter activation or those policies
+
 #### Scenario: Workflow-only correction
 
 - **WHEN** wrapper tests, documentation or bookkeeping change without generator/schema paths changing
