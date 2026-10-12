@@ -21,3 +21,12 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+| Context expansion: tools/device_differences.py | Distinguish device-law classifier from record/diff tool; no edit |
+| Context expansion: src/junoscfg/anonymize/CONTRACT.md | Public configuration type used by preserved optional record modes; no behavior edit |
+| Context expansion: src/junoscfg/CONTRACT.md | Public conversion door; no surface edit |
+| Batch id | nightly-makeover T4 |
+| Batch review mode | isolated fresh review after implementation |
+| Batch check executions | UNMEASURED |
+| Batch integration-only findings | UNMEASURED |
+| Batch escaped regressions | UNMEASURED |
