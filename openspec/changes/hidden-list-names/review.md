@@ -46,3 +46,128 @@ Source-only classification is feasible at display/constants.py using existing L/
 ## Limits and disposition
 
 No ordinary/full/fast checks, real XSD tier, product generation, JVD execution, devices, network fetch, push or public-tree mutation ran. XML input/output remains buggy and deferred; passing historical controls does not qualify it. Daemon-process, NEW-R15, numeric normalization, meta-walker redesign and missing P1/P6/P7/P8 evidence remain outside scope. Phase-5 completion requires the non-XML public acceptance and independent valid-target/key probes green while preserving all valid negatives; any XML-only failure must retain its explicit deferred disposition, never be weakened or skipped.
+
+## Specification challenges continued
+
+### SC2 — Independent delete target probe assumes a redundant set line
+
+- Artifact: private independent test_meta_complete_hidden_key_has_exact_target delete parameter writer assertion.
+- Counterexample: after admitted complete-key parsing, the exact IR target assertion passes for all four verbs; hidden bare entry marked operation=delete writes only delete, while the independent probe expects both set and delete. Executed focused result 1 failure/3 passes, post-docs-base/sc2-meta-delete.log. Existing DictWalker._process_hash explicitly suppresses set on delete-only keyed nodes, independently of hidden transparency.
+- User impact: forcing an extra set for a deleted hidden bare entry would change existing shared writer semantics merely to satisfy an incorrect supplemental expectation. The intended delete target must still be exact.
+- Proposed correction: preserve all four exact IR-target assertions; supplemental delete parameter should expect only the delete command, other three still both commands. Original public acceptance remains unchanged; retain negative controls. No writer semantic change.
+- Decision: ACCEPTED by root after independent assessment, root-sc2-delete-ruling.json; use the separate assessed corrected private proposal only, retaining the original independent test/report/manifest unchanged. Existing writer and all public assertions remain unchanged.
+
+### SC3 — Retire resolved known differences after shared structural correction
+
+- Artifact: tests/data/device/known-differences.json recorded xml-element-name-leak rows.
+- Counterexample: actual held-device controls fail 8 cases because recorded lines have disappeared after the admitted structural reader/writer correction; 16 pass. Independent existing-tool regeneration proves 420 stale rows removed, no added/reclassified rows, 544 to 124 total, eight residual hello-padding rows and all unrelated inventories/class metadata byte-exact.
+- User impact: stale expected differences falsely fail preserved device laws; broad removal would conceal unrelated defects. XML controls are historical preservation, not XML qualification.
+- Proposed correction: native existing tools/device_differences.py regeneration only tests/data/device/known-differences.json, matching independently assessed proposal SHA aa2dca4629e6770b94f3a85810c96e02102bbb83967b71558cac06a4e8b7a75e. No test assertion/tool source edits.
+- Decision: ACCEPTED by root, root-sc3-known-retirement-ruling.json; all 1277 frozen hashes and independent raw manifest/proposal verified. Native fixture write authorized once, protected files and proposed bytes must match.
+
+## sc2-delete-assessment independent report
+
+Report SHA-256 ffc4197f90e6c4eb3c1a17dadc5b93b6deaa3cf30981b0c4e495474f48524ef2, appended verbatim.
+
+# SC2 independent supplemental-control assessment
+
+**Verdict: proposed narrow private probe correction is ADEQUATE; recommend accepting SC2.** It corrects an unsupported redundant-set expectation while retaining every exact IR target assertion. It does not authorize a public source, test or verdict edit. Root decision remains required before adoption. Original TC report, original private test and original evidence manifest remain byte-exact.
+
+Candidate immutable HEAD: `995ead09fb611f619f8c4f82df9e0df790d4d877`. Current BASE: `26ec8ddac790ec7aae9dcbc936528bf9c31cde80`. The candidate is **dirty, explicitly not clean**: its tracked review.md, display/constants.py and convert/input/set_input.py are modified. Snapshot `runtime/` was constructed from exact HEAD archive and overlaid with all tracked working file bytes; `binding.json` binds the complete frozen manifest, archive hashes and original probe hashes. All **1277 tracked candidate hashes** remained equal before/after and match root's sc2-frozen-dirty.json. `verification.json` binds full runtime source hashes. Relative to current BASE, only constants.py and set_input.py runtime bytes differ; dict_walker.py and convert/CONTRACT.md are byte-exact.
+
+This assessment used the public SC2 entry, contracts, actual source and independent executed probes. It did not use Builder private reasoning. All executions are private snapshots, cached locked Python 3.13 context, UV_OFFLINE=1 with archive-local PYTHONPATH. Actual argv, UTC starts/ends, durations, cwd, environment, return codes, raw paths and hashes are in execution.json and verification.json.
+
+| Snapshot | Focused control | Observed result |
+|---|---|---|
+| Current BASE | Original four exact hidden meta targets | 4 FAIL at the unmet hidden IR target, 8 deselected |
+| Current BASE | Proposed correction, same four IR targets | 4 FAIL at the same unmet hidden IR target, 8 deselected |
+| Current BASE | Existing bare ordinary composite and legacy-tk deleted entries | 2 PASS |
+| Frozen dirty runtime | Original four hidden meta targets | 3 PASS, 1 delete output-assertion FAIL, 8 deselected |
+| Frozen dirty runtime | Separate proposed corrected copy | 4 PASS, 8 deselected |
+| Frozen dirty runtime | Existing ordinary composite / legacy-tk controls | 2 PASS |
+| Frozen dirty runtime | All original public acceptance | 47 PASS |
+| Frozen dirty runtime | All proposed private supplemental controls | 12 PASS |
+
+No collection/setup errors or skips occurred. Deselection is deliberate `-k meta_complete` selection, with complete supplemental execution separately proving all 12 nodes. No broader suite, full/fast checks, schema tier, product generation, devices, network or public-tree mutation ran.
+
+## Concrete counterevidence and existing meaning
+
+Input:
+
+```
+set policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact
+delete policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact
+```
+
+The frozen runtime places the exact intended entry:
+
+```
+{'address': '198.51.100.0/24', 'exact': [None], '@': {'operation': 'delete'}}
+```
+
+It emits only:
+
+```
+delete policy-options route-filter-list RFL-MIXED 198.51.100.0/24 exact
+```
+
+The original probe passes its parent-not-tagged and exact complete-key entry assertions, then fails because its output set wrongly requires the redundant `set` line. Raw counterexample: runtime-original-meta.log.
+
+The unchanged DictWalker._process_hash gets `_entry_key`, removes every consumed key field, and checks whether remaining non-attribute content exists. Here address and the exact choice are both key fields, so there is no remaining content. Its existing branch explicitly emits the bare set only when `"delete" not in attrs`, then emits attributes. This rule already governs ordinary composite route-filter entries and legacy transparent prefix-list-item entries; independent baseline and runtime controls confirm both produce only delete and leave their input IR unchanged. This behavior does not depend on the new hidden-list predicate. Changing the writer merely to satisfy the original supplemental expectation would change established shared behavior.
+
+The convert contract requires correct IR, no writer input mutation, preservation of incomplete/partial meta paths, and round-trip meaning; it does not promise retention of a redundant set command before deletion. The hidden-list delta promises complete key identity and removal of hidden names, not new delete output semantics. Thus the exact IR target assertions remain valid and mandatory; the redundant-set assertion is the unsupported part.
+
+## Proposed correction and preservation boundary
+
+`test_proposed_corrected.py` is a separate copy of the original supplemental probe. Within test_meta_complete_hidden_key_has_exact_target, change only the last assertion from `{line, meta}` to `({meta} if command == 'delete' else {line, meta})`. Every prior IR assertion remains unchanged for all four verbs; activate, protect and deactivate still require both lines. The other eight supplemental controls and all 47 public tests are unchanged. This correction applies to this bare keyed probe, not every deleted entry with non-key content.
+
+The corrected copy remains meaningfully red on current BASE (all four exact hidden IR targets fail), so it does not bypass the defect. On the frozen runtime it passes all four precise targets, with all partial-key/partial-meta negatives, full upto value identity and unknown-suffix controls passing in the complete 12-node execution. This is correction of one independently demonstrated test expectation, not weakening an evidenced kept requirement.
+
+No new device validity is inferred for arbitrary meta command combinations; the assessment preserves the existing supported command semantics and contract boundary. Root should record its valid-test-preservation ruling before replacing the working supplemental expectation. Original artifacts remain retained as counterevidence.
+
+## sc3-known-differences-assessment independent report
+
+Report SHA-256 33bc5f74d90c14fa3e734f8b48e4dc50a41c2969c45f6e245a81f30b75b34ba6, appended verbatim.
+
+# SC3 independent known-differences assessment
+
+**Verdict: ADEQUATE narrow native regeneration proposal; recommend accepting SC3 and declaring tests/data/device/known-differences.json as the admitted path before public regeneration.** Root ruling under the existing valid-test-preservation requirement is still necessary. This report changes no public fixture, test, source or verdict.
+
+Immutable candidate HEAD `995ead09fb611f619f8c4f82df9e0df790d4d877`; current BASE `26ec8ddac790ec7aae9dcbc936528bf9c31cde80`. Candidate remains explicitly **dirty, not clean**, with exactly the frozen review.md, constants.py and set_input.py changes. Private runtime snapshot copies all original frozen tracked bytes from the SC2 snapshot, which was HEAD archive plus tracked dirty overlay. All **1277 tracked public candidate hashes** still match the frozen manifest after this assessment. Full runtime source hashes, native tool hash, captured inputs and original fixture identity are in binding.json. No runtime source/product/capture/native-tool byte was changed privately; the sole changed tracked path inside the private snapshot is its copied known-differences.json. verification.json proves that boundary.
+
+## Executed evidence
+
+Actual commands use the cached locked Python environment, UV_OFFLINE=1, explicit private runtime src/tests imports, and no bytecode/cacheprovider writes. Complete argv, UTC starts/ends, durations, environment, raw log paths and hashes are in execution.json. This is replay of held committed device captures, not external JVD execution, new device work or new acceptance inference.
+
+| Private frozen runtime operation | Outcome |
+|---|---|
+| Exact TestJunoscfgWritesTheDevicesSet before fixture regeneration | 8 assertion FAIL, 16 PASS |
+| Unmodified native tools/device_differences.py | exit 0; 124 lines in 20 renderings |
+| Same exact 24 held-device nodes after regeneration | 24 PASS |
+
+No collection/setup errors or skips occurred. Before failures are the eight recorded-but-gone controls (four JSON and four retained historical XML inputs), matching the root raw observation. The tests' assertion explicitly requires shrinking records for repaired differences. The native tool compares current conversion with each held device display-set oracle and refuses unclaimed new differences. Its source remains exact, and the newly generated fixture is preserved independently as proposed-known-differences.json.
+
+## Exact delta and negative proof
+
+Native regeneration changes the complete record from **544 to 124 difference entries**, retiring **420** entries. These count side/line/rendering records, not independently qualified syntax patterns. There are **zero added entries** and **zero reclassified entries**. Every retired entry has class xml-element-name-leak, belongs to a JSON or XML held rendering, and names route-filter-list, server-group, predefined-variable-defaults, bridge-domains or dynamic-tunnels. No hello-padding entry is removed. The full retired line/rendering/side/class list is retired-lines.json.
+
+| Class | Before | Proposed after | Preservation |
+|---|---:|---:|---|
+| xml-element-name-leak | 428 | 8 | Only the 420 repaired hidden-name entries retire |
+| bare-deactivate-route-filter | 24 | 24 | Complete inventory byte-exact |
+| junos-variable-quoted | 64 | 64 | Complete inventory byte-exact |
+| omitted-curly | 4 | 4 | Complete inventory byte-exact |
+| trigger-after-one-line | 8 | 8 | Complete inventory byte-exact |
+| trigger-after-split | 16 | 16 | Complete inventory byte-exact |
+
+All class metadata is unchanged; every unrelated class inventory is byte-exact under deterministic canonical serialization, with before/after SHA-256 in verification.json. The eight residual xml-element-name-leak hello-padding entries are byte-exact. Native tool, all capture inputs, manifest and original test source are unchanged. Both the actual difference inventory and negative delta checks are independent of hand-written proposed counts.
+
+## Why correction preserves the kept requirement
+
+The owning native tool documents running after a fix and explains that test_device_renderings fails until the record matches. TestJunoscfgWritesTheDevicesSet compares exact observed versus recorded sets in both directions; stale expected lines explicitly fail as “recorded but gone (shrink the record)”. Keeping obsolete records would violate that invariant. Regeneration preserves the same assertion, device oracle, classifications and every remaining defect; it does not skip or weaken a kept negative test. The shared compare-device-output contract identifies tools/device_differences.py as the device-law classifier, so the native answer remains authoritative rather than a replacement generator.
+
+Only the copied fixture was regenerated here. Public adoption should use the exact native tool against the bound runtime after root approves this one path and the challenge disposition; compare output identity against this private proposal and retain the no-added-lines, unchanged-unrelated-class and residual hello-padding checks. Do not change the classifier or tests to obtain a pass.
+
+Historical XML-source failures disappear incidentally through the shared hidden-name writer treatment. Their existing controls remain intact; these 24 passes do **not** qualify XML input/output or reopen the deferred XML scope. Source-only runtime classification, no public schema/product generation, and all other scope limits remain in force. No full, fast or ordinary suite, real XSD/schema tier, devices, network, push or public mutation ran.
+
+Proposed fixture SHA-256: `aa2dca4629e6770b94f3a85810c96e02102bbb83967b71558cac06a4e8b7a75e`.

@@ -25,4 +25,7 @@
 | Context expansion: src/junoscfg/validate/ | Owning schema hints drive conversion; no runtime/schema edit during preparation |
 | Context expansion: tests/data/device/synthetic/ | Device-backed set/JSON/XML expectations |
 
+| Context expansion: tools/device_differences.py | Existing native known-difference retirement tool; unchanged source, root-accepted SC3 |
+| Context expansion: tests/data/device/known-differences.json | Exactly measured obsolete rows retire; unrelated classes and residual hello-padding retained |
+
 Machine provenance will be recorded when measured; unavailable values remain UNMEASURED.

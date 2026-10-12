@@ -21,6 +21,7 @@ verification:
     - src/junoscfg/convert/input/set_input.py
     - src/junoscfg/convert/output/dict_walker.py
     - changelog.d/+hidden-list-names.bugfix.md
+    - tests/data/device/known-differences.json
   dependencies: [openspec/changes/archive/2026-10-12-keyed-single-entry-lists]
   changelog: 'changelog.d/+hidden-list-names.bugfix.md: device-hidden keyed lists retain complete keys across admitted non-XML doors'
   generated-records: []

@@ -15,6 +15,7 @@ from junoscfg.display import (
     entry_keys,
     is_algebra_token,
     is_policy_algebra,
+    is_transparent_list_key,
     key_is_positional,
     load_schema_tree,
     passes_tag_to_child,
@@ -604,26 +605,30 @@ def _merge_tokens(
                     continue  # Process sibling tokens
                 return
 
-            # Check transparent-list-key children (tk flag).
-            # E.g., prefix-list-item inside prefix-list, contents inside
-            # syslog file.  The token is the entry name for the hidden list.
+            # A hidden list consumes its complete declared key, just as a
+            # keyworded list does. Partial keys remain whole at this level.
             tk_matched = False
             for cname, cnode in children.items():
-                if not isinstance(cnode, dict) or not cnode.get("tk"):
+                if not isinstance(cnode, dict) or not is_transparent_list_key(cnode):
                     continue
-                name = _parse_value(token)
-                lst = current.setdefault(cname, [])
-                entry = _find_or_create_entry(lst, {"name": name}, index)
-                _mark(entry, here)
-                i += 1
-                if i < len(tokens):
-                    owner, owner_i = current, i - 1
-                    base = i
-                    current = entry
-                    current_schema = cnode
-                    tk_matched = True
-                else:
-                    return  # Entry created, no more tokens
+                read = _read_key(cnode, tokens, i)
+                if read is None:
+                    continue
+                key, after = read
+                if after < len(tokens) and not statement_children(cnode):
+                    continue
+                entry = _find_or_create_entry(current.setdefault(cname, []), key, index)
+                on_key = here
+                for k in range(i, after):
+                    on_key |= tags.pop(k, frozenset())
+                _mark(entry, on_key)
+                if after == len(tokens):
+                    return
+                owner, owner_i = current, i
+                i = base = after
+                current = entry
+                current_schema = cnode
+                tk_matched = True
                 break
             if tk_matched:
                 continue
@@ -853,15 +858,19 @@ def _apply_meta(
                 current_schema = tc_child
                 continue
 
-            # Check transparent-list-key children (tk flag).
+            # Meta targets use the same complete hidden key as set input.
             tk_matched = False
             for cname, cnode in children.items():
-                if not isinstance(cnode, dict) or not cnode.get("tk"):
+                if not isinstance(cnode, dict) or not is_transparent_list_key(cnode):
                     continue
-                name = _parse_value(token)
-                lst = current.setdefault(cname, [])
-                entry = _find_or_create_entry(lst, {"name": name}, index)
-                i += 1
+                read = _read_key(cnode, tokens, i)
+                if read is None:
+                    continue
+                key, after = read
+                if after < len(tokens) and not statement_children(cnode):
+                    continue
+                entry = _find_or_create_entry(current.setdefault(cname, []), key, index)
+                i = after
                 if i >= len(tokens):
                     entry.setdefault("@", {})[attr_key] = attr_value
                     return

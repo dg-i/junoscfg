@@ -63,8 +63,20 @@ def get_transparent_child(schema_node: dict[str, Any] | None) -> str | None:
 
 
 def is_transparent_list_key(schema_node: dict[str, Any] | None) -> bool:
-    """Whether a schema node is a transparent list key."""
-    return schema_node is not None and bool(schema_node.get("tk"))
+    """Whether a keyed list hides its element name in display output.
+
+    Existing explicit hints remain compatible. Otherwise the list and its
+    nokeyword status must be declared, with every actual key child present;
+    the implicit name default alone does not make an unkeyed model hidden.
+    """
+    if schema_node is None:
+        return False
+    if schema_node.get("tk"):
+        return True
+    if not schema_node.get("L") or not schema_node.get("nk") or schema_node.get("l"):
+        return False
+    children = schema_node.get("c", {})
+    return all(name in children for name in entry_key_names(schema_node))
 
 
 def is_positional_key(schema_node: dict[str, Any] | None) -> bool:

@@ -13,3 +13,7 @@ Independent current-base TC accepted by root (root-current-tc-ruling.json): repo
 ## Post-docs release admission
 
 Current implementation BASE 26ec8ddac790ec7aae9dcbc936528bf9c31cde80, renewed red head 3a731d1c05f492616eb1acc96b56637816217291. Root preserved the previous candidate and all 15 own paths and proved 82/83 TC source/product files byte-exact; only application version changed from 0.25.0 to 0.25.1. Renewed original acceptance remains 24 failures/23 passes and independent controls five failures/seven passes, no errors/skips. Raw receipts: private_test_data/makeover-work/hidden-list-names/post-docs-base/renewed-red.json. Root admits automatic source-only phase 5 after metadata READY/native gates; independent current TC remains applicable. No product generation or XML qualification.
+
+## Atomic source repair
+
+Two runtime files changed: display/constants.py classifies actual keyed L+nk models and preserves tk fallback; convert/input/set_input.py uses existing _read_key for complete normal/meta hidden targets. Existing DictWalker automatically consumes the helper, no edit. Producer/products/source contracts/exports and all original test assertions unchanged. SC2 and SC3 accepted through independent assessment/root rulings; reports appended verbatim. Native known retirement matches exact admitted proposal SHA, 420 obsolete rows removed and all unrelated/residual rows retained. Actual158 focused nodes pass. Ordinary coverage/fast/readiness checkpoint still pending on committed code HEAD; final full real schemas remain owner-deferred.
