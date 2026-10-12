@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "e293b72564ef579a393102e4578f253efa8bdc8f",
+  "checkpoint": "9ed05e44059a11b44539281d57806e73a09b3374",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Owner latestdefers allXMLfunctionalwork; rootadmits docs-only XMLstatus/TODO branch bf40e58 exact docsBASEe293, installednativeplan verified excludesapplicationadapter and selectsZEROexpensivetiers with enabledtrue. Only that docsfull mayrun; fullschema stillENDnonXMLbatch25only. Hidden-listcurrentbase preparation parked awaitingTC; allotherwritersparked.",
-  "captured_at": "2026-10-12T08:20:34.160625+00:00",
+  "authority": "Rootreviewed XMLstatusdocs/TODO, verified finalizer1262tracked/68evidence and exact6ownrecords, native DOCSfull25gates0/noapplicationor schema. OwnerlatestdefersXMLfunctionalwork. RootmasterREADY onlyarchive/localpatchv0.25.1; docsbranchparked; hiddenpreparationTCadequate rootaccepted but stillparked pendingcurrentbaserebase/phase5admission. Fullschema entire nonXMLbatchEND25only.",
+  "captured_at": "2026-10-12T08:36:08.798887+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,10 +63,10 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
-    "codex/xml-status-and-todo": "ready"
+    "codex/xml-status-and-todo": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -129,6 +129,6 @@
     "hidden-list-names": "parked",
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked",
-    "xml-status-and-todo": "ready"
+    "xml-status-and-todo": "parked"
   }
 }
