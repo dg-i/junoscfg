@@ -5,3 +5,25 @@ zone: schema
 domains: [schema-pipeline]
 assurance: economy
 removes: expensive schema execution selected solely by the editable root package version
+verification:
+  state: parked
+  planned-paths:
+    - tools/schema_dependencies.py
+    - tools/schema_dependencies.CONTRACT.md
+    - tools/schema-verification/dependencies.json
+    - tools/schema-verification/dependencies.required.json
+    - tools/schema_verification.py
+    - tools/schema_verification.CONTRACT.md
+    - tests/tooling/test_schema_dependencies.py
+    - tests/tooling/test_schema_dependency_trigger_challenge.py
+    - tests/tooling/test_schema_verification.py
+    - tests/tooling/test_schema_qualification.py
+    - pyproject.toml
+    - docs/how-to/run-a-batch-of-changes.md
+    - docs/how-to/verification-evidence.md
+    - changelog.d/+reduce-schema-qualification-triggers.misc.md
+    - .agent-ready/activation.json
+    - openspec/specs/schema-pipeline/verification-evidence/spec.md
+  dependencies: []
+  changelog: changelog.d/+reduce-schema-qualification-triggers.misc.md
+  generated-records: []
