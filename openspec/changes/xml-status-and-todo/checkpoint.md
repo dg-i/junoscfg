@@ -1,4 +1,4 @@
 ## Checkpoint
 
-Phase 0 committed as `44c068d`; owner-approved intent complete.
-Resume phase 2 documentation plan. No runtime or schema proof claimed.
+Owner-approved docs plan and source freeze complete.
+Resume phase 4 QA design; phase 3 skipped by docs route.
