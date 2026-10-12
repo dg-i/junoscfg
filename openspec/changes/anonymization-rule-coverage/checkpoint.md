@@ -44,3 +44,10 @@ and its old base; current-base focused renewal and ordinary/fast pending.
 Six optional private capture files verified at 112002 bytes; three physical
 schema files are directory-symlinked only for ordinary fixture availability.
 No schema execution is authorized here. Fresh privacy review remains required.
+
+Current-base focused renewal: 238 PASS, plus all three optional private capture
+nodes PASS; tracked bytes unchanged. Native ignored skills mirror regenerated
+with tracked bytes unchanged. Initial readiness failed because the historical
+tasks heading lacked the native exact lifecycle delimiter; only that heading
+was corrected, leaving pending review/check boxes unchecked. Actual failure
+receipt is retained; no evidence was promoted from it.

@@ -6,7 +6,7 @@
 - [x] Add independently derived non-XML device-value inventory/reversal coverage.
 - [x] Run 60 new cases and 172 unchanged contract controls; preserve evidence.
 
-## Review and evidence
+## 3. Review and evidence
 - [x] Independent Test/Challenge assessment accepted after bounded SC1 correction.
 - [ ] Root lane/source-plan and READY admission.
 - [ ] Genuinely fresh Reviewer verdict.
