@@ -16,7 +16,7 @@
 
 - [x] Obtain genuinely fresh independent maintenance review: APPROVE, no findings; report committed in b51b131.
 - [x] Prepare clean product-complete handoff with focused evidence: 192 original passing tests preserved, one added; 102.62s to 83.10s.
-- [ ] Parent rebase onto integrated selection change and complete native admission.
+- [x] Parent rebase onto integrated selection change and complete native admission.
 - [ ] Parent run canonical full checkpoint on the integrated immutable candidate and resolve failures.
 - [ ] Parent merge, bump version at merge time and complete archive/tag housekeeping.
 
