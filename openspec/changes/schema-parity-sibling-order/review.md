@@ -69,3 +69,46 @@ Commands (repository root):
 Negative controls: gold/bronze entry-order reversal, policy-term reversal, ordered leaf-list reversal, duplicate added statement, set-to-deactivate change, color value change, endpoint/reference change, extra internal space, quote/escaping spelling change, reversal of the two control lines. All rejected by narrow raw comparator. Observed sibling movement accepted; retained public IRs equal. These are adversarial controls, not a full suite.
 
 Provenance: all FOUR retained generated product gzip files exactly equal shipped raw bytes (JSON schema, YAML schema, Lark grammar, structure tree); metadata gzip differs but decoded objects equal after removal of generated_at alone. Exact hashes in probe-results.json. No schema build, full tests, network, device access or commits performed. No pass2/sentinel started. Report does not override overall FAIL.
+
+
+## Fresh independent maintenance review
+
+# Fresh independent review: PASS
+
+Frozen SOURCE: `9aa68e2501c862325d7fe30c421b1463faa52467`.
+BASE: `305bfecb2c73b112993f614f1fe05c9353d83cf9`.
+No actionable findings. This narrowly justified test correction preserves the valid contract. This verdict is a code/test review, not a successful final schema qualification or a substitute for the scheduled ordinary/fast checks.
+
+## Authority and scope
+
+Reviewed agent-ready-change's maintenance lane and fresh isolated review rules; original owner attachment section 6; root-test-correction-ruling.json; independent-parity-order-challenge assessment and probe results; frozen diff, proposal, metadata and tasks; tests/CONTRACT.md; ARCHITECTURE.md; conversion entry-keys and writers specs; existing read_ir helper and device capture API. No Builder private reasoning was provided or used. Implementation claims were assessed against contracts and independently executed probes.
+
+Section 6 explicitly permits correction of demonstrably overstrict tests after challenge and independent review, while prohibiting erasure of meaningful content or sole reliance on a shared parser. ARCHITECTURE introduction and tests/CONTRACT require configuration meaning rather than device byte layout. Entry-keys' Transport-class scenario preserves named entries and sibling settings; the writers spec's key-order guarantee applies to the caller's unchanged IR, not identical serialization order between two routes. These requirements remain unchanged.
+
+The independent challenge is adequate within its stated limit. In both frozen native device captures, JSON has an ordered name array [gold, bronze] alongside auto-create [null] and fallback {none:[null]}; native SET shows the same five exact lines. I independently loaded and checked these data in probe.py. Permitting the sibling placement movement follows the captured structure and governing equivalence contract. No new live-device acceptance experiment or generalized Junos reordering guarantee is claimed.
+
+## Diff and comparator assessment
+
+The only existing executable file edit is tests/corpus/test_schema_data.py: a local assertion helper plus replacement of one exact-string assertion. One tooling test file is added. Other changes are the changelog and change records. Git tree identity checks show src, openspec/specs, tests/data, examples, tests/support, tests/CONTRACT.md, ARCHITECTURE.md, pyproject.toml, uv.lock and tools exactly unchanged from BASE. Thus runtime, schema artifacts, fixtures, specifications, helper implementation, configuration and gates are untouched.
+
+The helper stable-partitions only the two exact LF-terminated root transport-class control statements within a contiguous root transport-class block. It retains their relative order, every other statement's relative order, and surrounding positions. Every original line is emitted exactly once, so an additional Counter assertion would be redundant: equality of the resulting lists already proves raw content and multiplicity equality. No tokens, quoting, escaping, line endings, whitespace, values, activation commands or references are normalized. Missing/noncontiguous blocks retain exact comparison. Grouped paths do not match the root prefix. The final existing read_ir equality is supplementary.
+
+Removed coverage is solely the controls' placement relative to other statements inside that contiguous block. This matches the accepted challenge algorithm and root ruling. It does not admit entry swaps, control swaps, movement across unrelated statements or reordering elsewhere. The tests remain more conservative than general semantic equivalence, which is appropriate to this bounded correction.
+
+## Independently executed evidence
+
+All commands ran in a private git archive of SOURCE, using primary's Python environment with PYTHONPATH explicitly selecting archive/src and archive. No command ran tests in the Builder worktree. The report directory contains executable run.py/probe.py, full focused.log/probe.log, probe-results.json and receipts.json with exact commands, environment, exits, durations and hashes.
+
+- Focused pytest: `python -B -m pytest -q -p no:cacheprovider tests/tooling/test_schema_set_parity.py`: exit 0; **19 passed in 0.30s**, no skips.
+- Independent probe: exit 0; **152 assertions/checks passed**. Includes every permutation of five captured lines: precisely **10 accepted / 110 rejected**, matching independent expectations for preserved control subsequence and entry subsequence.
+- Additional controls reject added/missing control, added/missing entry, changed value/reference, activation/protection, spaces, quotes, escapes, CRLF/final-newline changes, unknown-statement order, outside-block movement, noncontiguous blocks, grouped paths, policy-term order and leaf-list order. These controls execute with read_ir replaced by a constant equal result, proving raw-order/content protection does not depend on the parser.
+- A forced read_ir mismatch rejects an otherwise allowed movement, proving the supplementary check executes.
+- The original corpus method was called directly with retained failed-pass1-artifacts and passed. No generation fixture was invoked.
+- Fresh direct and via-JSON conversions exactly reproduce their respective retained failure outputs. The old exact equality independently fails; raw statement multisets match; the new helper accepts the pair.
+- All **1,332 tracked archive blobs** match SOURCE Git blob identities both before and after execution. All **11 retained evidence files**, including retained outputs/artifacts and challenge/root records, have identical before/after SHA256 values recorded in receipts.json.
+
+Initial read-only discovery used an unmatched shell glob and produced a glob diagnostic; explicit spec paths were subsequently read. No test conclusions depend on that diagnostic. All reported test/probe commands completed successfully.
+
+## Limits and next obligation
+
+No commits, source/shared edits, schema generation, full suite, gates, network, device access or other schema runs were performed. Original pass1 remains failed. Root must retain the required ordinary/fast evidence and execute the reviewed candidate's selected schema qualification/sentinel according to existing policy. This review authorizes no removal of those obligations.
