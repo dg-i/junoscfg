@@ -8,4 +8,6 @@ verification:
   state: parked
   planned-paths:
     - tests/corpus/test_device_rule_values.py
+    - changelog.d/+anonymization-rule-coverage.bugfix.md
   dependencies: []
+  changelog: changelog.d/+anonymization-rule-coverage.bugfix.md

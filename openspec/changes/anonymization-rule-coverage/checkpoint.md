@@ -26,3 +26,10 @@ STOP-T/STOP-T2, initial TC challenge, oracle errors and original assertions rema
 retained. Next: wait for Root final integration base and rebase authorization;
 then focused renewal, READY admission, ordinary/fast and fresh privacy review.
 No rebase, runtime edit, ordinary/fast/full/schema execution in this handoff.
+
+Records-only news preparation: Root authorized the exact planned fragment
+changelog.d/+anonymization-rule-coverage.bugfix.md. Installed stage.run_towncrier
+requires news in beta for the added non-record test file; the archived
+pattern-sweep-no-warning maintenance precedent uses the same required-fragment
+convention. No source, test, fixture or behavior changes; fresh privacy review
+still required. No readiness, rebase, ordinary/fast/schema command was run.
