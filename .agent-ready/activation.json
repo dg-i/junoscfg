@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "69f072604e0585acd008cb4df3fc043dc515c182",
+  "checkpoint": "5187ac92734dce8c9ebd4e8404a98f76871fd399",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Userreducedscope currentconfirmed metadata-loss safety repair; bounded deprecatedto_set terminaltag refusal preparationONLY additionally admitted; standardbuglane necessary to preserve semantic tests and declare compatibilitymigration. Both safetybranchesparked awaiting independentTC. T3parked untilfinalruntimebase; no generalmetadatarefactor.",
-  "captured_at": "2026-10-12T10:33:06.735091+00:00",
+  "authority": "Rootaccepted independent scalar-meta TC e9bb128c:1286trackedhashes/12meaningfulred40controls/68privatechecks. Admit only boundedscalar-meta refusal phase5 and ownerordinary+fast substitute; deprecatedstandardbug preparation remainsPARKED, T3 awaitingfinalruntimebase. No schema/fulluntilend25only.",
+  "captured_at": "2026-10-12T10:38:48.670947+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -68,7 +68,7 @@
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
     "codex/anonymization-rule-coverage": "parked",
-    "codex/reject-leaf-list-meta-values": "parked",
+    "codex/reject-leaf-list-meta-values": "ready",
     "codex/reject-deprecated-tagged-statements": "parked"
   },
   "changes": {
@@ -134,7 +134,7 @@
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked",
     "anonymization-rule-coverage": "parked",
-    "reject-leaf-list-meta-values": "parked",
+    "reject-leaf-list-meta-values": "ready",
     "reject-deprecated-tagged-statements": "parked"
   }
 }
