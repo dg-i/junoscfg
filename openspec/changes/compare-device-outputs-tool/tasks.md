@@ -9,6 +9,6 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Fresh isolated solo-repository Reviewer evaluates implementation and all four acceptance requirements.
+- [ ] 3.1 At the later implementation checkpoint, record the phase-6 policy omission: standard feature, economy, normal risk; independent Test/Challenge and source Reviewer omitted below the high-risk floor. Reclassify and obtain mandatory independent roles if actual high risk appears.
 - [ ] 3.2 Capture immutable base/head metrics and final integration evidence.
-- [ ] 3.3 Finalizer performs bounded spec application and housekeeping; root alone admits, integrates and archives.
+- [ ] 3.3 Finalizer completes required bounded resulting main-spec review, spec application and housekeeping in phase 7; root alone admits, integrates and archives.

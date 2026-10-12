@@ -21,7 +21,7 @@ No package runtime, public API, junoscfg CLI, schema, validation, anonymizer, de
 
 ## Acceptance criteria
 
-The four exact test IDs in the delta use generated synthetic compressed captures and fake conversion results. They assert matrix completeness, immutable inputs, diagnostic sorting/deduplication, field warnings/errors, exception class only and continuation, plain plus every anonymization rule, all diff field/key cases and both developer command doors. Missing files retain template skip behavior. Independent Test/Challenge omitted under economy below the high-risk floor. Fresh solo-repository Reviewer remains required after implementation.
+The four exact test IDs in the delta use generated synthetic compressed captures and fake conversion results. They assert matrix completeness, immutable inputs, diagnostic sorting/deduplication, field warnings/errors, exception class only and continuation, plain plus every anonymization rule, all diff field/key cases and both developer command doors. Missing files retain template skip behavior. Independent Test/Challenge omitted under economy below the high-risk floor. Source Reviewer is also omitted under economy for this normal-risk standard feature; bounded resulting main-spec review remains required in phase 7.
 
 ## Performance expectations
 
@@ -35,9 +35,11 @@ None, because root approved the bounded preparatory scope. Root admission remain
 
 - Assurance preference: economy.
 - Risk floor: normal; conversion yellow, developer tooling only; no named product surface, migration, trust boundary, declared break or cross-domain product change.
-- Roles required: Builder, fresh solo-repository Reviewer, Finalizer; independent Test/Challenge omitted by policy.
+- Roles required: Builder and Finalizer, including bounded resulting main-spec review in phase 7. Independent Test/Challenge and source Reviewer omitted under economy below the high-risk floor; solo lightweight review applies only to fix/maintenance.
 - Resume point: phase 3 design, then phase 4 tests; stop prepared checkpoint. Last valid evidence a18016d gates; branch remains PARKED.
 
 ## Delta log
 
 - Freeze established from a18016d and hashed source/manifest above. Final integration must rebase onto current main and rerun affected/fast tests; older base evidence never relabelled.
+
+- Root-authorized role-policy delta after prepared ca95319: original freeze d067e7a incorrectly required a fresh solo-repository source Reviewer for a standard feature. Original frozen history is retained. Installed Sessions/phase-6 policy requires omission under economy below the high-risk floor. Only role/task/checkpoint instructions change; four acceptance requirements and tests, source/manifest identities, criteria, risk rationale and preparation outcomes remain valid. No independent source verdict is claimed. Bounded resulting main-spec review remains required in phase 7. Production remains PARKED; root has not admitted phase 5 or the current-base transition.

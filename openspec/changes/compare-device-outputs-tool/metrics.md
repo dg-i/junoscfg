@@ -26,10 +26,12 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Context expansion: src/junoscfg/anonymize/CONTRACT.md | Public configuration type used by preserved optional record modes; no behavior edit |
 | Context expansion: src/junoscfg/CONTRACT.md | Public conversion door; no surface edit |
 | Batch id | nightly-makeover T4 |
-| Batch review mode | isolated fresh review after implementation |
+| Batch review mode | economy normal standard feature: independent Test/Challenge and source Reviewer omitted; bounded resulting main-spec review required in phase 7 |
 | Batch check executions | UNMEASURED |
 | Batch integration-only findings | UNMEASURED |
 | Batch escaped regressions | UNMEASURED |
 
 | Prepared acceptance | 4 deliberate failures, missing shared tool; private reference 4 passed; not implementation evidence |
 | Phase checkpoint | Phase 4 PREPARED / PARKED, root admission required before phase 5 |
+
+| Role-policy delta | Root corrected mandatory solo source review after ca95319; original frozen history preserved; source/test/criteria evidence unchanged |
