@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "bdb4b726235884110e5765e67071b126da598f7b",
+  "checkpoint": "4a2f859ec658fd31609d6e8b1a67e5c052037236",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "User-authorized reduced completion scope; independently reviewed hidden-list source and main specs verified by root. Root master READY only for integration/archive/local version/tag; hidden-list Builder parked, T3 preparation parked awaiting current-base admission. Others parked; XML and general migrations deferred; final selected25 schema only at end.",
-  "captured_at": "2026-10-12T10:20:16.663485+00:00",
+  "authority": "Hidden-list reviewed change completed localv0.26.0. User reduced scope: preparation of bounded scalar metadata surplus-token refusal admitted, newbranch/change parked until independentTC/rootphase5. T3 parked awaiting finalruntimebase; allothersparked. Finalselected25 schema onlyend.",
+  "captured_at": "2026-10-12T10:26:33.937717+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,11 +63,12 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready",
+    "master": "parked",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
-    "codex/anonymization-rule-coverage": "parked"
+    "codex/anonymization-rule-coverage": "parked",
+    "codex/reject-leaf-list-meta-values": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -127,10 +128,11 @@
     "unsupported-set-commands-reported": "parked",
     "compare-device-outputs-tool": "parked",
     "keyed-single-entry-lists": "parked",
-    "hidden-list-names": "ready",
+    "hidden-list-names": "parked",
     "audit-entry-key-from-kernel": "parked",
     "pattern-sweep-no-warning": "parked",
     "xml-status-and-todo": "parked",
-    "anonymization-rule-coverage": "parked"
+    "anonymization-rule-coverage": "parked",
+    "reject-leaf-list-meta-values": "parked"
   }
 }
