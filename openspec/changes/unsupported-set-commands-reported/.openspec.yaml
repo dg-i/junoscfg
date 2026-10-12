@@ -14,7 +14,7 @@ declared-break:
     why: Unsupported raw set conversion exits 2 instead of emitting partial output.
     migration: Supply canonical display set input and treat exit 2 as an input refusal.
 verification:
-  state: ready
+  state: parked
   planned-paths:
     - .agent-ready/activation.json
     - src/junoscfg/input.py

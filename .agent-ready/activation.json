@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "f530b00ff64a96d445876846e18e9b51ef923966",
+  "checkpoint": "3c7eaaaaea4a301971e24101df118345d6afaafc",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Root accepts renewed independent unsupported-command STOP-T ADEQUATE on current v0.23.0 runtime; only #15 admitted for scoped implementation and ordinary checkpoint. #11 preparation/T4 remain parked; all real full schema verification at entire makeover end only25.2R2.",
-  "captured_at": "2026-10-12T03:51:05.887687+00:00",
+  "authority": "Root accepted independent unsupported-command source/main-spec PASS and verified bounded Finalizer; fast-forward merged. Master ready for local archive/release; all change branches parked. Full schema verification only entire makeover end selected25.2R2.",
+  "captured_at": "2026-10-12T04:36:23.100399+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -58,9 +58,9 @@
     "codex/structured-conversion-diagnostics": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/keyword-leaves-keep-keyword": "parked",
-    "codex/unsupported-set-commands-reported": "ready",
+    "codex/unsupported-set-commands-reported": "parked",
     "codex/compare-device-outputs-tool": "parked",
     "codex/keyed-single-entry-lists": "parked"
   },
@@ -119,7 +119,7 @@
     "structured-conversion-diagnostics": "parked",
     "xml-direct-to-ir": "parked",
     "keyword-leaves-keep-keyword": "parked",
-    "unsupported-set-commands-reported": "ready",
+    "unsupported-set-commands-reported": "parked",
     "compare-device-outputs-tool": "parked",
     "keyed-single-entry-lists": "parked"
   }
