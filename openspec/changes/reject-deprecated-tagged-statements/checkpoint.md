@@ -1,1 +1,1 @@
-Next incomplete phase: 2 spec/evidence freeze. Last valid evidence: preflight commit 79c475d and root-approved bounded intent direction; SC1 correction remains reserved for independent admission. No product edits.
+Next incomplete phase: 4 new regression / independent Test-Challenge, with phase 2 implementation closure conditional on SC1 ruling. Last valid evidence: immutable base 5187ac9 and frozen baseline; no source/contract/existing-test edits. PARKED.

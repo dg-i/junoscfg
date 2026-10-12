@@ -25,4 +25,7 @@
 | Context expansion: openspec/specs/validation/structured-validation/spec.md | Freeze and proposed clarification of affected deprecated validation guarantee. |
 | Context expansion: tests/contract/test_every_door.py | Existing deprecated validator exclusions and richer public door coverage. |
 
+| Context expansion: src/junoscfg/display/set_converter.py | Owning shared kernel excluded from domain-ranked slice; necessary lexical guard responsibility. |
+| Context expansion: src/junoscfg/display/CONTRACT.md | Owning shared-kernel contract and deprecated boundary. |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
