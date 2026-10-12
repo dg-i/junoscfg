@@ -6,10 +6,10 @@
 - [x] 2.1 Add conservative complete-lock fingerprint and truthful cheap guard.
 - [x] 2.2 Replace uv.lock schema trigger and enforce consistency at adapter entry points.
 - [x] 2.3 Update synthetic fixtures, contract and operator instructions; run focused tests.
-- [ ] 2.4 Commit the corrected implementation for source review.
+- [x] 2.4 Commit the corrected implementation for source review.
 
 ## 3. Review and evidence
-- [ ] 3.1 Obtain fresh source review and resolve findings before expensive execution.
+- [x] 3.1 Obtain fresh source review and resolve findings before expensive execution.
 - [ ] 3.2 Run one root-coordinated canonical full checkpoint including selected schema qualification.
 - [ ] 3.3 Record final reviewed evidence.
 
@@ -17,4 +17,4 @@
 - [ ] 4.1 Synchronize reviewed specs and metrics.
 - [ ] 4.2 Prepare clean live change for root merge/archive.
 
-Resume: phase 5 focused verification. Independent Test/Challenge ee74780: 22 red before implementation and criteria PASS. Own initial acceptance tests red before implementation; direct four-adapter probes red after complete fixture setup. Initial focused normalization/guard/challenge/config run: 37 passed in 5.83s. All affected adapter/qualification/dependency tests: 119 passed in 90.51s. Fields, caps, reconcile, strict OpenSpec and diff checks passed. No real schema execution.
+Resume: reviewed main-spec synchronization, then one root-coordinated canonical full checkpoint. Source commit 7e4201acfc930013d4a64d9076f5d2fe5e85461f received fresh Reviewer APPROVE; see review.md. Full-check receipts and final metrics remain pending. Independent Test/Challenge ee74780: 22 red before implementation and criteria PASS. Own initial acceptance tests red before implementation; direct four-adapter probes red after complete fixture setup. Initial focused normalization/guard/challenge/config run: 37 passed in 5.83s. All affected adapter/qualification/dependency tests: 119 passed in 90.51s. Fields, caps, reconcile, strict OpenSpec and diff checks passed. No real schema execution.

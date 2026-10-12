@@ -3,6 +3,7 @@
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
+| Context expansion: main private_test_data/schema-trigger-reduction/historical-trigger-analysis.json | Reviewer independently checked 150 commits reachable from base 1bbd7a70e4ffdb135661b55e61eddc1b5f4098c7: 13 original filename matches, 10 root-version-only matches. Counts describe per-commit filename selection, not execution history or branch-checkpoint replay. |
 | distinct files read per phase, by artefact type | UNMEASURED |
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
