@@ -23,6 +23,8 @@ verification:
     - tests/unit/convert/test_set_commands.py
     - docs/guide/annotations.md
     - docs/guide/conversion.md
+    - docs/api/input.md
+    - mkdocs.yml
     - changelog.d/unsupported-set-commands-reported.bugfix
   dependencies: []
   changelog: changelog.d/unsupported-set-commands-reported.bugfix

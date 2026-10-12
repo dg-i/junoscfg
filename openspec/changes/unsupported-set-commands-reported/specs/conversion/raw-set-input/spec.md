@@ -2,7 +2,7 @@
 
 ### Requirement: Raw set conversion refuses unsupported command lines
 WHEN a visible physical raw set line is outside the existing nonempty `set `, `deactivate `, `protect `, `delete ` or `activate ` command dispatch THEN the system SHALL refuse the complete input before constructing or rendering a partial configuration, with InputError (a ValueError) carrying its original physical line number and a value-free message `Unsupported command in set input on line N`. Existing unquoted bracket refusal retains precedence. Validation or strictness options SHALL NOT bypass this refusal.
-Tests: `tests/unit/convert/test_set_commands.py::test_unsupported_commands_are_refused`, `tests/unit/convert/test_set_commands.py::test_conversion_doors_refuse_before_rendering`, `tests/unit/convert/test_set_commands.py::test_cli_refusal_has_no_partial_output`, `tests/unit/convert/test_set_commands.py::test_anonymized_refusal_withholds_source`
+Tests: `tests/unit/convert/test_set_commands.py::test_unsupported_commands_are_refused`, `tests/unit/convert/test_set_commands.py::test_conversion_doors_refuse_before_rendering`, `tests/unit/convert/test_set_commands.py::test_cli_refusal_has_no_partial_output`, `tests/unit/convert/test_set_commands.py::test_anonymized_refusal_withholds_source`, `tests/unit/convert/test_set_commands.py::test_audit_rejects_before_emitting_findings`
 
 #### Scenario: Interactive commands and bare commands
 - **WHEN** input includes annotate, insert, replace (including pattern), rename, copy, edit, top, up, wildcard, unprotect, load, commit, status, show, arbitrary unknown commands, or a supported verb with no path
@@ -13,7 +13,7 @@ Tests: `tests/unit/convert/test_set_commands.py::test_unsupported_commands_are_r
 - **THEN** the refusal names that original physical line and includes no source values.
 
 #### Scenario: Public conversion and CLI doors
-- **WHEN** to_dict, pipeline, pipeline_result, convert_config, convert_config_result or CLI conversion/import reads an unsupported line
+- **WHEN** to_dict, pipeline, pipeline_result, convert_config, convert_config_result or CLI conversion/audit reads an unsupported line
 - **THEN** it refuses independently of validation and strictness; CLI conversion exits 2 and has no partial output; anonymization withholds source and preserves the physical line.
 
 ### Requirement: Existing supported raw set content remains intact

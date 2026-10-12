@@ -26,3 +26,7 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Context expansion: src/junoscfg/cli.py | Verify convert/import/validation/audit caller failure codes; no edits |
 | Context expansion: src/junoscfg/__init__.py | Verify named conversion and validation doors; no edits |
 | Context expansion: src/junoscfg/audit/__init__.py | Confirm audit consumes parsed IR; no edits |
+| Phase 4 focused acceptance | Initial 41 failed/7 passed; independent-door expansion 77 failed/7 passed on unchanged runtime base |
+| Phase 4 operational exception | Root-authorized SKIP=affected-tests only for deliberate red acceptance commit; other hooks required |
+| Context expansion: docs/api/input.md | Root-approved documentation extension for new shared helper and actual existing exports |
+| Context expansion: mkdocs.yml | Root-approved exact new input API nav entry; no edit yet |

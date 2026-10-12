@@ -1,7 +1,7 @@
 ## 1. Preparation and tests
 - [x] 1.1 Record effective instructions and proposal with declared public breaks.
 - [x] 1.2 Freeze bounded specs, codemap, ownership and deferred feature scope.
-- [ ] 1.3 Commit current-base red acceptance and green preservation controls; report STOP-T.
+- [x] 1.3 Commit current-base red acceptance and green preservation controls; report STOP-T.
 - [ ] 1.4 Obtain independent Test/Challenge ruling and reread/rebase after #10 merge.
 
 ## 2. Implementation

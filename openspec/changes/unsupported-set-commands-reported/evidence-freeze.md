@@ -11,7 +11,7 @@ Base 8066ce3a3f41af0b379d9d5a8e5b964eb1f3bd33. Current set_input.py set_to_dict 
 No edit features, grammar widening, comment round trips, schema work, new fallback/options/dependencies, root/CLI edits or shared convert contract edits.
 
 ## Acceptance criteria
-Every Tests identifier in the deltas must exist. Red evidence must show current runtime silently accepts unsupported lines or exposes their values; green preservation controls pin comments, values, supported metadata and bracket precedence. Public reader, conversion result/string, anonymized, CLI convert/import/validation doors covered. Independent Test/Challenge required before runtime changes, and fresh Reviewer after implementation.
+Every Tests identifier in the deltas must exist. Red evidence must show current runtime silently accepts unsupported lines or exposes their values; green preservation controls pin comments, values, supported metadata and bracket precedence. Public reader, conversion result/string, anonymized, CLI conversion/validation/audit doors covered. Independent Test/Challenge required before runtime changes, and fresh Reviewer after implementation.
 
 ## Performance expectations
 One lexical preflight pass, linear in input lines; no schema loading needed to classify unsupported commands. No new benchmark promised because correctness boundary is this change's scope.
@@ -27,3 +27,7 @@ None, because exact scope and phase authorization are direct owner decisions. In
 
 ## Delta log
 - Freeze established on unchanged runtime base. OpenSpec phase-1 validate initially required future deltas; phase-2 validate supplies them without skip_specs. Failed initial metadata gates corrected before proposal progression.
+
+- Root ownership extension: docs/api/input.md and exact mkdocs.yml nav entry approved for a plainly named shared helper. Existing actual input exports will be documented; no API semantic rename. This affects planned documentation paths only, invalidates no acceptance criterion. Current CLI has no standalone import command; import-format conversion is covered through -i set.
+- Phase 4: conversion doors parameterized independently to avoid an early first-door failure hiding the remaining doors. Expanded suite has 77 meaningful red failures and 7 unchanged-content controls. No criterion weakened or runtime changed. Two raw runs retained privately with hashes/base identity. Expanded run shell wrapper attempted assignment to read-only zsh status after pytest; pytest raw failure summary is preserved; wrapper exit is recorded honestly without claiming independently captured pytest status.
+- Narrow root-authorized operational exception: SKIP=affected-tests ONLY for the deliberately red phase-4 acceptance-only commit; all other hooks run. Focused red evidence replaces no future check, and no implementation/finalization/release skip is authorized.
