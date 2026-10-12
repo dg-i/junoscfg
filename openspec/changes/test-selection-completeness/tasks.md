@@ -8,12 +8,12 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.0 Parent coordinates activation, readiness and canonical full checkpoint at committed candidate before review.
+- [x] 3.0 Parent coordinates activation, readiness and canonical full checkpoint at committed candidate before review.
 
-- [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
+- [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.
 - [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
 - [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
 
 ## Checkpoint
 
-Phase 5 implementation complete; next parent-coordinated readiness and canonical full checkpoint, then fresh isolated review. Expected-red checkpoint 0b2e8d3 skipped only affected-tests hook; all other hooks passed. Implementation commit runs all hooks normally.
+Implementation and fresh review approved. Canonical full checkpoint passed at 51e91f69d9ef5f3fe25527bb904a77cf0c4bd1eb; 10439 passed, 13 skipped, 20 xfailed. Main specification applied exactly from reviewed delta. Next: native metrics and archive-ready handoff.
