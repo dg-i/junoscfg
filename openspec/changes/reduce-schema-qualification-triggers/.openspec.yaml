@@ -6,7 +6,7 @@ domains: [schema-pipeline]
 assurance: economy
 removes: expensive schema execution selected solely by the editable root package version
 verification:
-  state: parked
+  state: ready
   planned-paths:
     - tools/schema_dependencies.py
     - tools/schema_dependencies.CONTRACT.md
