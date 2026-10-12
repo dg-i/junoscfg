@@ -44,3 +44,7 @@
 | SC3 focused correction | 17 passed;1 optional device-grammar skipped, not PASS; protected source/product/test hashes unchanged |
 | Current verification base | 3d60e0a04c42c3afa9049e922d70a0cb47fd14b5; rebased475997a2;32 owned delta files exact |
 | Product-build version qualification | Earlier physical build, unchanged generator/products; incoming app0.24.2 only; metadata generator0.2.0 independent |
+| Actual current-base readiness | Clean6082650/base3d60; exit0;0.222014s; all tracked unchanged |
+| Actual current-base ordinary | Clean6082650/base3d60;10210 PASS/37 SKIP/20 strict XF;92.99% above unchanged91.47%; native200.931596s |
+| Actual current-base fast | Same clean6082650/base3d60 sequential; all checks pass;134.368354s; all tracked unchanged |
+| Deferred required tier | No canonical full/schema checkpoint;36 schema skips and1 optional device-grammar skip are not PASS |
