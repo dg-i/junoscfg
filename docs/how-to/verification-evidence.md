@@ -93,7 +93,12 @@ and the existing application test adapter, or pytest when no adapter is declared
 Path selection includes renames and deletions. An invalidated checkpoint requires
 a rerun even after review corrections; "one checkpoint" is not a maximum.
 
-For junoscfg, routine tiers qualify only the shipped schema. Assertion execution
+For junoscfg, a cheap dependency guard runs on lock/projection changes and
+reports only its consistency obligation. The checked projection excludes only
+the editable root package version; changing any other parsed lock data requires
+refreshing it and selects real qualification. Missing/stale projections refuse
+even under expensive-only checks and direct adapters. Routine real-schema tiers
+qualify only the shipped schema. Assertion execution
 has no stability manifest; the separate generation tier has one and runs public
 generation twice. Its inputs include the assertion result and exported products,
 so changed prerequisite bytes invalidate generation evidence. Generation outputs,

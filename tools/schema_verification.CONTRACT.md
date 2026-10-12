@@ -36,6 +36,9 @@ uses the same readiness and candidate snapshot admission before taking capacity.
   cache is introduced. Failures clear generation completion before propagating.
 - Pytest phase and public-build durations are measured diagnostics, never
   completion evidence. Shared setup cost belongs to its triggering test.
+- Dependency fingerprint consistency is checked before every assertion, generation,
+  sentinel or explicit qualification execution. It excludes only the unique
+  editable root version; all other lock content remains relevant.
 - Automatic qualification selects the shipped release on schema/generator
   paths. All declared releases remain available through explicit qualify.
 - Runtime preparation writes an ignored input before the immutable checkpoint;

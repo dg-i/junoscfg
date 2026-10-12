@@ -189,7 +189,7 @@ code, tests or generated artifacts changed.
 
 ## Run the schema tier when the generators change
 
-Two declarations in `[tool.template.batch].expensive-tiers` qualify the shipped
+Two real-schema declarations in `[tool.template.batch].expensive-tiers` qualify the shipped
 25.2 release: one assertion pass, followed by public generation executed twice
 for stability. All 12 existing schema assertions remain, including direct-tree
 and serialized-tree grammar paths. Generation compares its four raw artifacts
@@ -199,9 +199,31 @@ committed shipped artifacts. The separately scheduled sentinel is removed.
 Automatic selection covers XSD parsing/fixes, artifact generators, their shared
 compression/key helpers and package door, shipped data,
 the schema corpus, schema fixture definitions in `tests/conftest.py`, its
-schema-specific support, and `uv.lock`. Wrapper tests,
+schema-specific support, and the checked dependency fingerprint. Wrapper tests,
 workflow documentation, shared configuration and bookkeeping alone do not select
 real schemas. The full checkpoint still runs ordinary tests of that machinery.
+
+A first cheap tier, `schema-dependency-guard`, handles `uv.lock` and dependency
+projection changes. The committed `tools/schema-verification/dependencies.json`
+fingerprints the entire parsed lockfile except the version of the unique editable
+root `junoscfg` package. A version-only release bump therefore runs the cheap
+guard, without selecting real schema work. All dependency versions, sources,
+artifact hashes, Python constraints, development dependencies and other parsed
+fields remain relevant. Formatting-only TOML edits do not alter parsed content.
+
+After an actual lock-content change, refresh the projection deliberately:
+
+```sh
+uv run --locked --group dev python -B -m tools.schema_dependencies write
+```
+
+Commit the changed lock and projection together. The projection change selects
+both real-schema tiers. A stale or missing projection fails the cheap guard even
+for `check --set expensive`, fails ordinary tests, and blocks direct schema
+adapters before costly work. Guard completion means only dependency consistency;
+it never claims schema assertions ran. The guard does not need XSD dumps or the
+prepared runtime file. Template evidence identity and cache rules are unchanged;
+this reduction affects when qualification is selected, not which results it reuses.
 
 Keep the three known dumps under `private_test_data/schemas/` as physical files,
 not symlinks. Never use a staged `new.xsd` during immutable qualification.

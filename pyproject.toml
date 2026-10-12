@@ -622,8 +622,15 @@ serialized-paths = [
 # The owner's preference of 2026-10-11: economy below the mandatory high-risk floor.
 
 [[tool.template.batch.expensive-tiers]]
+name = "schema-dependency-guard"
+paths = ["uv.lock", "tools/schema-verification/dependencies.json", "tools/schema-verification/dependencies.required.json", "tools/schema_dependencies.py", "tools/schema_dependencies.CONTRACT.md"]
+command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_dependencies", "check"]
+required-manifest = "tools/schema-verification/dependencies.required.json"
+result-manifest = ".agent-ready/schema/dependencies-result.json"
+
+[[tool.template.batch.expensive-tiers]]
 name = "schema-25.2"
-paths = ["src/junoscfg/display/constants.py", "src/junoscfg/display/__init__.py", "src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/__init__.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "uv.lock"]
+paths = ["src/junoscfg/display/constants.py", "src/junoscfg/display/__init__.py", "src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/__init__.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "tools/schema-verification/dependencies.json"]
 command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "run", "schema-25.2"]
 inputs = ["private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd", ".agent-ready/schema/runtime.json"]
 version-files = [".agent-ready/schema/runtime.json"]
@@ -632,7 +639,7 @@ result-manifest = ".agent-ready/schema/schema-25.2/result.json"
 
 [[tool.template.batch.expensive-tiers]]
 name = "schema-25.2-generation"
-paths = ["src/junoscfg/display/constants.py", "src/junoscfg/display/__init__.py", "src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/__init__.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "uv.lock"]
+paths = ["src/junoscfg/display/constants.py", "src/junoscfg/display/__init__.py", "src/junoscfg/validate/xsd_*.py", "src/junoscfg/validate/__init__.py", "src/junoscfg/validate/schema_node.py", "src/junoscfg/validate/artifact_builder.py", "src/junoscfg/validate/schema_generator.py", "src/junoscfg/validate/grammar_generator.py", "src/junoscfg/validate/data/**", "tests/corpus/test_schema_data.py", "tests/conftest.py", "tests/support/schema_data.py", "tests/support/regen.py", "tools/schema-verification/dependencies.json"]
 command = ["uv", "run", "--locked", "--group", "dev", "--inexact", "python", "-B", "-m", "tools.schema_verification", "generation", "schema-25.2"]
 inputs = ["private_test_data/schemas/25.2R2-S1.5_qfx5120.xsd", ".agent-ready/schema/runtime.json", ".agent-ready/schema/schema-25.2/result.json", ".agent-ready/schema/schema-25.2/artifacts/junos-json-schema.json.gz", ".agent-ready/schema/schema-25.2/artifacts/junos-yaml-schema.json.gz", ".agent-ready/schema/schema-25.2/artifacts/junos-structure-tree.json.gz", ".agent-ready/schema/schema-25.2/artifacts/junos-set.lark.gz", ".agent-ready/schema/schema-25.2/artifacts/junos-schema-meta.json.gz", ".agent-ready/schema/schema-25.2/artifacts/junos-schema-meta.normalized.json"]
 version-files = [".agent-ready/schema/runtime.json"]

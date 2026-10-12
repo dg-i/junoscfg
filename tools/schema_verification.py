@@ -21,6 +21,7 @@ from agent_ready_checks import lane, readiness, verification
 
 from junoscfg.validate import ArtifactBuilder
 from tests.support.schema_data import read_version
+from tools.schema_dependencies import check_dependencies
 
 POLICY = "tools/schema-verification/policy.json"
 PRODUCTS = (
@@ -249,6 +250,7 @@ def _candidate_input(name, explicit):
 
 
 def _preflight(root, policy, shard, extra=()):
+    check_dependencies(root)
     recipe = policy["shards"][shard]
     names = {Path(row["dump"]).name for row in policy["shards"].values()}
     directory = _path(root, recipe["dump"]).parent
@@ -424,6 +426,7 @@ def _qualify(root, shard):
             raise ValueError(
                 "qualification not ready: " + "; ".join(([snapshot] if snapshot else []) + problems)
             )
+    check_dependencies(root)
     policy = _policy(root)
     recipe = policy["shards"][shard]
     command = [sys.executable, "-B", "-m", "tools.schema_verification"]

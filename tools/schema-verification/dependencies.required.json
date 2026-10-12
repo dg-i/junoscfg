@@ -1,0 +1,6 @@
+{
+  "tests": [
+    "schema-dependency-consistency"
+  ],
+  "shards": []
+}

@@ -98,6 +98,16 @@ def small_repository(tmp_path, *, fault=""):
     shutil.copyfile(
         PROJECT_ROOT / "tools/schema_verification.py", root / "tools/schema_verification.py"
     )
+    shutil.copyfile(
+        PROJECT_ROOT / "tools/schema_dependencies.py", root / "tools/schema_dependencies.py"
+    )
+    (root / "uv.lock").write_text(
+        'version = 1\n[[package]]\nname = "junoscfg"\n'
+        'version = "0.28.3"\nsource = { editable = "." }\n'
+    )
+    from tools.schema_dependencies import write_dependencies
+
+    write_dependencies(root)
     for name in ("paths.py", "schema_data.py"):
         shutil.copyfile(PROJECT_ROOT / "tests/support" / name, root / "tests/support" / name)
     dump = root / "private_test_data/schemas" / DUMP
@@ -110,7 +120,7 @@ def small_repository(tmp_path, *, fault=""):
     ]
     required = {"tests": nodeids, "shards": [SHARD]}
     manifests = root / "tools/schema-verification"
-    manifests.mkdir()
+    manifests.mkdir(exist_ok=True)
     (manifests / "schema-21.4.required.json").write_text(json.dumps(required))
     stable = [f".agent-ready/schema/{SHARD}/artifacts/{name}" for name in PRODUCTS]
     stable.append(f".agent-ready/schema/{SHARD}/artifacts/junos-schema-meta.normalized.json")
@@ -420,14 +430,21 @@ class TestEvidenceConfiguration:
     def test_shipped_assertion_and_generation_tiers_are_declared(self):
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
         tiers = config["batch"]["expensive-tiers"]
-        assert [tier["name"] for tier in tiers] == ["schema-25.2", "schema-25.2-generation"]
-        assertion, generation = tiers
+        assert [tier["name"] for tier in tiers] == [
+            "schema-dependency-guard",
+            "schema-25.2",
+            "schema-25.2-generation",
+        ]
+        guard, assertion, generation = tiers
+        assert "uv.lock" in guard["paths"]
+        assert "stability-manifest" not in guard
         assert "stability-manifest" not in assertion
         assert not any(tier.get("sentinel-command") for tier in tiers)
         assert assertion["paths"] == generation["paths"]
         assert "tools/schema_verification.py" not in assertion["paths"]
         assert "pyproject.toml" not in assertion["paths"]
-        assert "uv.lock" in assertion["paths"]
+        assert "uv.lock" not in assertion["paths"]
+        assert "tools/schema-verification/dependencies.json" in assertion["paths"]
         assert "tests/conftest.py" in assertion["paths"]
         assert "src/junoscfg/validate/__init__.py" in assertion["paths"]
         assert "src/junoscfg/display/constants.py" in assertion["paths"]
@@ -447,7 +464,7 @@ class TestEvidenceConfiguration:
         assert len(stable) == 5 and all(name.endswith(PRODUCTS) for name in stable[:4])
         assert stable[4].endswith("junos-schema-meta.normalized.json")
         assert assertion["result-manifest"] in generation["inputs"]
-        assert all(tier["version-files"] for tier in tiers)
+        assert all(tier["version-files"] for tier in (assertion, generation))
 
     def test_safe_seeds_preserve_policy_and_link_guides(self):
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
@@ -474,7 +491,7 @@ class TestEvidenceConfiguration:
 
         config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text())["tool"]["template"]
         tiers = config["batch"]["expensive-tiers"]
-        assert len(tiers) == 2
+        assert len(tiers) == 3
         store = tmp_path / ".agent-ready/verification"
         store.mkdir(parents=True)
         retained = store / "historical.json"
@@ -488,5 +505,5 @@ class TestEvidenceConfiguration:
 
         monkeypatch.setattr(verification, "execute", execute)
         assert verification.run_tiers(tmp_path, None, enabled=False) == 0
-        assert len(executions) == 2 and all(reuse is False for _, reuse in executions)
+        assert len(executions) == 3 and all(reuse is False for _, reuse in executions)
         assert retained.read_text() == '{"historical":true}'
