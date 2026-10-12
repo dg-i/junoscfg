@@ -17,8 +17,7 @@
 - [x] Obtain genuinely fresh independent maintenance review: APPROVE, no findings; report committed in b51b131.
 - [x] Prepare clean product-complete handoff with focused evidence: 192 original passing tests preserved, one added; 102.62s to 83.10s.
 - [x] Parent rebase onto integrated selection change and complete native admission.
-- [ ] Parent run canonical full checkpoint on the integrated immutable candidate and resolve failures.
-- [ ] Parent merge, bump version at merge time and complete archive/tag housekeeping.
+- [x] Parent run canonical full checkpoint on the integrated immutable candidate and resolve failures.
+- [x] Prepare reviewed, verified archive-ready handoff for the authorized default-branch merge and version/tag housekeeping.
 
-The outstanding items are parent-owned review/evidence and integration operations;
-none is represented as executed. The implementation reviewed at 996dc27 remains unchanged.
+The integrated candidate passed every full-check gate. The implementation reviewed at 996dc27 remains unchanged; default-branch merge, version bump and archive/tag follow this handoff.

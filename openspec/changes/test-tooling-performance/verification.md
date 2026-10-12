@@ -17,4 +17,6 @@ A representative profile found runtime preparation 0.70s and fresh runtime verif
 
 A four-run synthetic child startup probe measured plugin autoload at 0.128s enabled and 0.119s disabled; no plugin configuration was changed because the saving was negligible.
 
-Next: independent maintenance review and parent-coordinated canonical full checkpoint on the integrated candidate. No runtime behavior, dependencies, collection obligations or production verification policy changed.
+Final integrated checkpoint: `e65c09b44d2d334ccb0e64602d99fc7bfb80975b`, base `4f8aba5fc1638c4b3b5530837d9fde5b32ff0947`. The canonical full command passed every gate: 10440 passed, 13 skipped, 20 xfailed in 213.46s; coverage 92.97%. Total checkpoint elapsed 245.796s. Receipt: `.agent-ready/verification/77c4215372f4427abbfc3f4443e80625.json`; log SHA-256 `f57cdd25d9b4f5a3152378b8ab66611ccd6c6676143f3a272215b215a05148bd`. Receipts and raw benchmark artifacts are retained locally under the default checkout's ignored `.agent-ready/verification/` directory.
+
+No runtime behavior, dependencies, collection obligations or production verification policy changed.

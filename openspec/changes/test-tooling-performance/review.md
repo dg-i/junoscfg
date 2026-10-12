@@ -30,3 +30,21 @@ Reviewer parsed the recorded `/tmp/tooling-before.xml` and `/tmp/tooling-after.x
 ## Remaining gate
 
 Parent must run the canonical full checkpoint on the integrated candidate after any merge-base refresh and resolve failures before merge. This approval does not substitute for full-suite coverage or the repository's other policy gates.
+# Final integrated checkpoint confirmation
+
+Verdict: APPROVE. The previously outstanding canonical full checkpoint is confirmed for the integrated candidate.
+
+Candidate HEAD: `e65c09b44d2d334ccb0e64602d99fc7bfb80975b`.
+Receipt base: `4f8aba5fc1638c4b3b5530837d9fde5b32ff0947`.
+Receipt: `.agent-ready/verification/77c4215372f4427abbfc3f4443e80625.json` in the test-tooling-performance worktree.
+
+Independent read-only confirmation established:
+
+- Receipt records `complete: true`, exit status 0, full suite command, and duration 245796.098875 ms.
+- Every file hash listed in the receipt identity matches the current file bytes; no mismatches.
+- The associated log SHA-256 is `f57cdd25d9b4f5a3152378b8ab66611ccd6c6676143f3a272215b215a05148bd`, independently recomputed and equal to the receipt.
+- The hash-bound log reports **10440 passed, 13 skipped, 20 xfailed in 213.46s**, followed by `every check passed` and `portable full checkpoint exit 0`.
+- Reading the existing coverage database through coverage's report API gives 92.96852849447122%, rounding to **92.97%**. The percentage is corroborated by that database, not printed in the hash-bound summary log.
+- The exact test-file diff from original base `a7da186460b5d5991c27a7301fb61e421bd22ece` to reviewed `996dc27cdb4fec30f19e71d211ab17bb004af945` is byte-identical to the integrated base-to-candidate diff. Diff SHA-256: `8ca9230d26fa995363e1d88a54a2d148d51605527db26385d6406ed64de44af3`.
+
+No additional tests were run and no candidate files were modified. At inspection an untracked `openspec/changes/test-tooling-performance/events.jsonl` was present; this confirmation concerns the stated committed candidate and receipt-bound files, not final archival housekeeping. No new actionable findings.
