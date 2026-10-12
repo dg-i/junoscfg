@@ -1,0 +1,1 @@
+Report field-validation warnings even when no errors exist, and qualify missing mandatory fields as potentially required at commit while allowing warning-only strict conversions.

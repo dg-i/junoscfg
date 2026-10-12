@@ -210,6 +210,15 @@ than validating the stringified list as a whole.
 
 **Mandatory field checks.** Mandatory field warnings are suppressed for children of
 flat-dict elements, since these children are functionally optional in the configuration.
+A missing schema-mandatory field remains a warning: it may be required at commit,
+and the configuration loads without it. For example:
+
+```text
+Missing mandatory field 'secret': may be required at commit; the configuration loads without it
+```
+
+This warning also appears when no field-validation error exists. Strict mode raises
+on errors only; a configuration with warnings alone still converts.
 
 **Unplaced statements.** A statement the bundled schema cannot place, because the device
 runs another release or platform, or because the set reader takes one value where the
@@ -245,8 +254,11 @@ they are; a key field's closed enum is enforced. Not reported: `@` attributes, t
 
 ### Default Behavior
 
-Field-level validation runs automatically during conversion via `convert_config()` and the
-CLI. Warnings are printed to stderr but do not cause failure:
+Field-level validation runs automatically during conversion. `convert_config_result()`
+and `pipeline_result()` carry findings as diagnostics; library calls write nothing to
+stderr, and string-only `convert_config()` discards diagnostics. The CLI prints
+findings to stderr without changing configuration output. Warnings do not cause
+failure, including under `--strict`:
 
 ```text
 field-validate: system.syslog.file.facility: Invalid value 'bogus': must be one of [any, kernel, ...]

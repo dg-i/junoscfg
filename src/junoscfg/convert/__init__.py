@@ -228,18 +228,16 @@ def _convert(
         from junoscfg.convert.field_validator import FieldValidationError, FieldValidator
 
         result = FieldValidator(withhold_values=anonymizing).validate(ir)
-        if not result.valid:
-            if strict:
-                raise FieldValidationError(result)
-            else:
-                diagnostics.extend(
-                    Diagnostic(
-                        source="field-validate",
-                        path=item.path,
-                        message=item.message,
-                    )
-                    for item in (*result.errors, *result.warnings)
-                )
+        if strict and not result.valid:
+            raise FieldValidationError(result)
+        diagnostics.extend(
+            Diagnostic(
+                source="field-validate",
+                path=item.path,
+                message=item.message,
+            )
+            for item in (*result.errors, *result.warnings)
+        )
 
     if path:
         from junoscfg.display import filter_dict_by_path

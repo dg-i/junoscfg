@@ -889,7 +889,10 @@ class FieldValidator:
                 result.warnings.append(
                     FieldError(
                         path=dot_path,
-                        message=f"Missing mandatory field {child_name!r}",
+                        message=(
+                            f"Missing mandatory field {child_name!r}: "
+                            "may be required at commit; the configuration loads without it"
+                        ),
                         value=None,
                         expected=f"required field {child_name!r}",
                     )

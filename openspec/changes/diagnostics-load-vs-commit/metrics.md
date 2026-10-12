@@ -27,3 +27,7 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Current-base output baseline | 96 plain conversions; 1,152 anonymizer combinations; recorded before product implementation |
 | Context expansion: tests/data/device/manifest.json | Device/anonymizer corpus for current-base output-preservation evidence |
 | Schema scheduling amendment | OWNER-SCHEMA-SCHEDULE-2026-10-12: no real schema/canonical full now; ordinary coverage plus fast before review |
+
+| Implementation owning tests | 177 passed, one existing strict xfail |
+| Implementation device checks | 4,456 passed, five existing strict xfails |
+| Device/anonymizer before-after | 64/96 plain; 768/1,152 anonymizer; diagnostics only, zero output/exception-class differences |
