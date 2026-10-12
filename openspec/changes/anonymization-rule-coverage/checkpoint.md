@@ -18,3 +18,11 @@ STOP-T2 preparation: SC1 accepted by Root; original STOP-T remains historical.
 Six bounded combined cases added with independent full eligible-value inventory
 and occurrence checks; no source edit. Base unchanged. Corpus 66 PASS, 4.32s.
 Next: same independent TC reassessment, then Root current-base renewal/admission.
+
+STOP-T3 record handoff: independent SC1 reassessment ADEQUATE and Root
+acceptance recorded verbatim in review.md. Candidate 443d1c3, unchanged base
+26ec8dd; 238 PASS and accepted mutation sensitivity evidence above. Original
+STOP-T/STOP-T2, initial TC challenge, oracle errors and original assertions remain
+retained. Next: wait for Root final integration base and rebase authorization;
+then focused renewal, READY admission, ordinary/fast and fresh privacy review.
+No rebase, runtime edit, ordinary/fast/full/schema execution in this handoff.

@@ -7,7 +7,7 @@
 - [x] Run 60 new cases and 172 unchanged contract controls; preserve evidence.
 
 ## Review and evidence
-- [ ] Independent Test/Challenge assessment of privacy inventory completeness.
+- [x] Independent Test/Challenge assessment accepted after bounded SC1 correction.
 - [ ] Root lane/source-plan and READY admission.
 - [ ] Genuinely fresh Reviewer verdict.
 - [ ] Owner-approved ordinary and fast checkpoint on the admitted clean head.
@@ -20,4 +20,4 @@
 - [x] Preserve original STOP-T ref and verified bundle before revision.
 - [x] Add six all-rule device cases retaining the original 60 and 172 controls.
 - [x] Run 66 corpus baseline nodes; PASS with no skips/xfails/errors.
-- [ ] Same independent TC demonstrates the combined-leak mutation now fails.
+- [x] Same independent TC demonstrates six meaningful combined-leak failures and 174 rejected mutants; Root accepts ADEQUATE.

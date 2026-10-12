@@ -88,3 +88,33 @@ is not enabled, preserving community syntax. Native reserved values remain and
 mapping reversal is exact. The corpus baseline now has 66 passing nodes (4.32s).
 The same independent TC must reassess actual combined-leak sensitivity; Builder
 PASS is not that verdict. No ordinary/fast/full/schema verification was run.
+
+## SC1 independent reassessment and Root acceptance
+
+Root accepted the independent ADEQUATE reassessment in
+private_test_data/makeover-work/anonymization-rule-coverage/root-tc-sc1-reassessment-ruling.json
+on 2026-10-12. The immutable assessed candidate is
+443d1c3e06931b738b8981914c44f7c17136339b, base
+26ec8ddac790ec7aae9dcbc936528bf9c31cde80. Focused evidence is 238 PASS
+(66 held cases plus 172 unchanged controls); the original combined credential
+leak fault now causes six meaningful failures and 174 additional combined
+mutants are rejected. This resolves SC1 test adequacy only. Current-base renewal,
+Root READY admission, ordinary/fast checks and a genuinely fresh privacy
+Reviewer remain pending; no runtime defect or XML/schema qualification is claimed.
+The independent reassessment follows verbatim.
+
+# Independent SC1 reassessment — ADEQUATE
+
+The accepted held-device combination blind spot is closed on immutable HEAD 443d1c3e06931b738b8981914c44f7c17136339b, base 26ec8ddac790ec7aae9dcbc936528bf9c31cde80. The correction adds precisely six full-all-rule cases, two synthetic devices times three non-XML inputs. It preserves the original 60 tests as an exact byte prefix and the original 172-control file unchanged. The first TC report/scripts/logs/manifest were not overwritten.
+
+A fresh git archive supplies imports and device captures. All 1,270 tracked candidate and archive files stayed equal before/after, HEAD fixed and clean. Supported Python version and installed locked-package versions were verified using required tomllib. No product source, shared fixture, schema, XML claim, or tracked record was edited by this role.
+
+Focused execution: 238 passed, 66 new cases plus 172 unchanged controls, no skip/xfail/error. The exact original combined-device credential mutation now produces six expected assertion failures and 232 passes: every added case rejects it at the full IR occurrence comparison. The direct control still demonstrates that the retained captured credential can reverse exactly, so this is the privacy-sensitive assertion needed by SC1 rather than reliance on reversal.
+
+174 bounded combined controls are rejected: each of nine active owning map categories, across all six cases, receives a retained-original mutation, missing-mapping mutation and unchanged-mapping-answer mutation (162); every case additionally rejects an independent inventory omission of admin and corrupt reversal (12). No product matches/transform predicates manufacture oracle truth. Combined eligible inventories independently use the original frozen statement/path/shape inventory from the first TC. They account for the exact structured GR-OMIT omission and native JSON 3ffe:b00::/32 annotation. A separate independent partition verifies each captured original belongs to the earlier active rule's mapping, including overlaps between group/description and sensitive-pattern values. It does not demand phantom later-rule map entries.
+
+All mapping categories, all held eligible occurrences, canonical IR shape and exact reversal are asserted by the new combined law. Declared reserved-IP exceptions remain explicit; all non-preserved mapped values must change. Native JSON also checks dictionary-key and embedded IP spans. Source comments do not become an invented trigger requirement. AS occurrences in community syntax are outside the enabled AS-in-string option, consistent with approved controls. No new feature or additional device-pair matrix was introduced. Existing 45 synthetic pairs and all-rule controls remain the authoritative independent interaction catalogue.
+
+The preservation-oriented maintenance lane legitimately passes baseline; no runtime defect is inferred from the original coverage blind spot or the injected mutants. The prior initial oracle corrections remain qualified as test-oracle errors. This ADEQUATE verdict resolves SC1's test adequacy challenge for this frozen candidate. Final integration must rebase after runtime predecessors and rerun focused evidence on the resulting source, followed by the required fresh Reviewer and authorized lifecycle gates. This work is independent Test/Challenge, not phase-6 source review, and qualifies no XML/T1/T2/full/fast/schema/generation result.
+
+Exact argv, UTC, durations, runtime import identity, per-device inventories and log SHA-256 receipts are in verdict.json, focused.json, probe-execution.json, original-gap-rejection.json and probe-results.json.
