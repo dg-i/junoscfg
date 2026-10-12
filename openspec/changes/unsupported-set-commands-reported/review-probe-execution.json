@@ -1,0 +1,36 @@
+[
+  {
+    "argv": [
+      "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported/.venv/bin/python",
+      "-B",
+      "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/unsupported-set-commands-reported/fresh-review/probes.py"
+    ],
+    "cwd": "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "started": "2026-10-12T04:20:51.181707+00:00",
+    "finished": "2026-10-12T04:21:04.062604+00:00",
+    "exit": 0,
+    "stdout_sha256": "329b26ba4a2ebb3cadc03961d5eb5118085aa2b9bfb300453c484872ba498e57",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "argv": [
+      "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported/.venv/bin/python",
+      "-B",
+      "-c",
+      "from junoscfg.convert import to_dict; import json; print(json.dumps(to_dict('set system host-name','set'),sort_keys=True))"
+    ],
+    "cwd": "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported",
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONPATH": "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/unsupported-set-commands-reported/base-bbc125eb/src"
+    },
+    "started": "2026-10-12T04:21:04.062870+00:00",
+    "finished": "2026-10-12T04:21:04.618145+00:00",
+    "exit": 0,
+    "stdout_sha256": "b2ee93383924c43580f48728ca8c87f7a25dc5dc7bac944e6db73198f3aba20c",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

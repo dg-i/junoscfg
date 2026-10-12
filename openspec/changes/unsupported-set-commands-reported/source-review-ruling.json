@@ -1,0 +1,13 @@
+{
+  "decision": "Accept independent sourcePASS, no pending findings/specification challenges; permit bounded resulting-main-spec review",
+  "source_head": "b6030b7cb80179d8d98596bada8b56c0d3199ee8",
+  "base": "bbc125eb3fa259745a3c8cb9278b1b66f720adb0",
+  "reviewer": "review_unsupported_commands_fresh genuinelyfresh fork-none",
+  "report_sha256": "3b4d2b49057b3ded5b03e35b01d9ec61b1d36c7d1ce42d173c8160481c03e005",
+  "root_verification": "Direct read whole report; verified exact report/evidence hashes and every current tracked byte against reviewer before snapshot; releasedwindow/unchangedsourceconfirmed.",
+  "review_tests": 175,
+  "separate_probes": "Public boundary profiling/pre-IR rejection and preserved dispatch/privacy/control probes PASS; cache/harness setup failures preserved separately.",
+  "actual_checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+  "next": "Derived2mainspecs require independentreview before boundedFinalizer applies; live6/9tasks not complete, no merge/archiveapproval yet.",
+  "schema_carry": "Final ENTIREMAKEOVER selected25.2 originaldoublepass+normalizedmetadata+freshsentinel remains"
+}

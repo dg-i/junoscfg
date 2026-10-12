@@ -1,0 +1,272 @@
+{
+  "base": "bbc125eb3fa259745a3c8cb9278b1b66f720adb0",
+  "metrics_reviewed_head": "b6030b7cb80179d8d98596bada8b56c0d3199ee8",
+  "actual_checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+  "source_and_main_spec_reports": "verbatim accepted independent artifacts",
+  "report_hashes": {
+    "review.md": "3b4d2b49057b3ded5b03e35b01d9ec61b1d36c7d1ce42d173c8160481c03e005",
+    "main-spec-review.md": "3bd8402c107ab3821f7b1a9210f59cbdd0ad405bf3315b10b3f558f161c419b7",
+    "builder-review.md": "6ac6ec9c50c65decf5b017510ea71081866ec5a11ba09462626526e4eea1fed5",
+    "review-bindings.json": "261dabfa8840bfb499a7c1104b3a795a6c9e92a5b4b4b80eeb0159350c817bc3",
+    "main-spec-review-bindings.json": "67a54576437a828c1d9ca8a6bcbc7f19d11c5d687128cd4d38283630b453c409",
+    "review-preserved-evidence.json": "375d414104676173374663c6dd2f5f0319a8f6b5e69cc9aafdb19ba3ba1af973",
+    "review-probe-execution.json": "d6e81f6344348119e1db99c8b29395a3755365f352cf56b30943fb8bd91e3b53",
+    "source-review-ruling.json": "4f3c65d06c60c58fce719dc7913c6548d1ce8dc8ee30f4c0540d6b3998415fd6",
+    "main-spec-review-ruling.json": "195df6e17418d26f21839965a06bcfa05609a40494a459f204272e372438d2f2"
+  },
+  "observed_commands": {
+    "supported-fast-missing-mirror.json": {
+      "original_sha256": "2f7f4e8fc7629ada3cfce52d81c116a3f7b7fd51da30fc7800eec95245e53f5e",
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "--group",
+        "dev",
+        "--with",
+        "griffe",
+        "--with",
+        "tach",
+        "--with",
+        "towncrier",
+        "--with",
+        "vulture",
+        "agent-ready",
+        "check",
+        "--set",
+        "fast",
+        "--base",
+        "bbc125eb3fa259745a3c8cb9278b1b66f720adb0"
+      ],
+      "exit": 1,
+      "seconds": 58.602254709,
+      "raw_sha256": "c2c9ced02144c15ba38f52f333f958a1c928b3643fb1c5a6b9049d2d7c067049",
+      "checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+      "tracked_identical": true
+    },
+    "skills-mirror-setup.json": {
+      "original_sha256": "02a9744979000a00ccf90d75db95a80c0344f75ae5d514d6a884aec67c039264",
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "--group",
+        "dev",
+        "agent-ready",
+        "skills",
+        "--regenerate"
+      ],
+      "exit": 0,
+      "seconds": 0.133054791,
+      "raw_sha256": "7d5b8f45ec9f332f9c945c5e35c890c65d5bcdb245b883204db0746d463c1bbf",
+      "checked_head": null,
+      "tracked_identical": null
+    },
+    "supported-fast.json": {
+      "original_sha256": "96d6f0460ce40ba861bf5bd78148894ffb29984927b7045034057f2624b33b51",
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "--group",
+        "dev",
+        "--with",
+        "griffe",
+        "--with",
+        "tach",
+        "--with",
+        "towncrier",
+        "--with",
+        "vulture",
+        "agent-ready",
+        "check",
+        "--set",
+        "fast",
+        "--base",
+        "bbc125eb3fa259745a3c8cb9278b1b66f720adb0"
+      ],
+      "exit": 0,
+      "seconds": 56.969440917,
+      "raw_sha256": "0b4e4ab37c37aeba345b7e165ecc7d3694da10b3625a38691ad851fe2b9c91f1",
+      "checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+      "tracked_identical": true
+    },
+    "ordinary-suite.json": {
+      "original_sha256": "1a7c0742e533696de2bbd60c4f4f84df6c41de6a5f3d7d65bae02daa702bf0c3",
+      "command": [
+        "env",
+        "UV_OFFLINE=1",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/",
+        "-q",
+        "--cov",
+        "--cov-report=term:skip-covered"
+      ],
+      "exit": 0,
+      "seconds": 193.82792974999998,
+      "raw_sha256": "968e647cf18bcfb520cfd7876bd1556947aa2396a6908fd200af41fbfded4ad2",
+      "checked_head": "573e46a309195eba9723f648ff594a77f7d059df",
+      "tracked_identical": true,
+      "native_summary": "9820 passed, 37 skipped, 20 xfailed in185.70s",
+      "native_seconds": 185.7,
+      "wrapper_seconds": 193.82792974999998,
+      "coverage_percent": 93.0,
+      "floor": 91.47,
+      "skip_reason": "36 existing opt-in --schema and1 existing --device-grammar case"
+    },
+    "focused-green.json": {
+      "original_sha256": "ad875ac5b3c4b969923617946adeb40496ac11fdd16fd3836160de2e116d8c76",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/unit/convert/test_set_commands.py",
+        "tests/unit/input/test_input.py",
+        "tests/unit/validate/test_set_validator.py",
+        "tests/unit/convert/test_set_input.py",
+        "-q"
+      ],
+      "exit": 0,
+      "seconds": 1.696857792,
+      "raw_sha256": null,
+      "checked_head": null,
+      "tracked_identical": null
+    },
+    "old-validation-wording-failure.json": {
+      "original_sha256": "890e394ecde283feacc7675169c093f71c010bbc48b3b16d44bb8c7e7b8ea40f",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/unit/validate/test_set_validator.py::TestSetValidator::test_no_set_prefix_error",
+        "-q",
+        "--tb=short"
+      ],
+      "exit": 1,
+      "seconds": 0.467314959,
+      "raw_sha256": null,
+      "checked_head": null,
+      "tracked_identical": null
+    },
+    "old-contract-row-failure.json": {
+      "original_sha256": "ca84c6462be87aca7e25bf1bbe73c805e937d8f84b3aeda812e920045153f470",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/contract/test_every_message.py::TestARunThatDoesNotAnonymizeKeepsItsMessages::test_the_message_quotes_the_configuration[cli-validate-only-line]",
+        "-q",
+        "--tb=short"
+      ],
+      "exit": 1,
+      "seconds": null,
+      "raw_sha256": null,
+      "checked_head": null,
+      "tracked_identical": null
+    },
+    "corrected-contract-row-green.json": {
+      "original_sha256": "c87a81ad954123af25240fd2bc435d52e44e008d53fa559ad637de482860ba44",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/contract/test_every_message.py::TestARunThatDoesNotAnonymizeKeepsItsMessages::test_the_message_quotes_the_configuration[cli-validate-only-line]",
+        "tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it[cli-validate-only-line]",
+        "-q"
+      ],
+      "exit": 0,
+      "seconds": null,
+      "raw_sha256": null,
+      "checked_head": null,
+      "tracked_identical": null
+    }
+  },
+  "reviewer_focused": [
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--offline",
+        "--locked",
+        "--no-sync",
+        "--group",
+        "dev",
+        "pytest",
+        "tests/unit/convert/test_set_commands.py",
+        "tests/unit/validate/test_set_validator.py::TestSetValidator::test_no_set_prefix_error",
+        "tests/contract/test_every_message.py",
+        "-q",
+        "--tb=short",
+        "-p",
+        "no:cacheprovider",
+        "--junitxml=/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/unsupported-set-commands-reported/fresh-review/focused.xml"
+      ],
+      "environment": {
+        "UV_OFFLINE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "started": "2026-10-12T04:19:05.592459+00:00",
+      "finished": "2026-10-12T04:19:26.727792+00:00",
+      "exit": 0,
+      "raw_sha256": "2a00933f0417e7c1e578986fb8cbc113b7bf72605c7de9d82374397c02e58a54"
+    }
+  ],
+  "reviewer_focused_cases": 175,
+  "reviewer_probes": [
+    {
+      "argv": [
+        "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported/.venv/bin/python",
+        "-B",
+        "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/unsupported-set-commands-reported/fresh-review/probes.py"
+      ],
+      "cwd": "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported",
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "started": "2026-10-12T04:20:51.181707+00:00",
+      "finished": "2026-10-12T04:21:04.062604+00:00",
+      "exit": 0,
+      "stdout_sha256": "329b26ba4a2ebb3cadc03961d5eb5118085aa2b9bfb300453c484872ba498e57",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported/.venv/bin/python",
+        "-B",
+        "-c",
+        "from junoscfg.convert import to_dict; import json; print(json.dumps(to_dict('set system host-name','set'),sort_keys=True))"
+      ],
+      "cwd": "/Users/manon-dev/src/junoscfg-wt/unsupported-set-commands-reported",
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONPATH": "/Users/manon-dev/src/junoscfg/private_test_data/makeover-work/unsupported-set-commands-reported/base-bbc125eb/src"
+      },
+      "started": "2026-10-12T04:21:04.062870+00:00",
+      "finished": "2026-10-12T04:21:04.618145+00:00",
+      "exit": 0,
+      "stdout_sha256": "b2ee93383924c43580f48728ca8c87f7a25dc5dc7bac944e6db73198f3aba20c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "reviewer_setup_failures_retained": "private fresh-review original execution-evidence.json and original probe-execution-original.json; source report describes exact setup/harness correction, not product failure",
+  "usage_effort_efficiency": "UNMEASURED; no bound native usage/effort telemetry supplied",
+  "schema_carry": "Entire makeover end: physical25.2R2 original doublepass, byte stability and public sentinel remain pending; none executed here",
+  "root_integration": "pending; no merge/archive/version/tag/readiness/cleanup performed"
+}

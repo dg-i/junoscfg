@@ -1,0 +1,37 @@
+{
+  "decision": "Accept independent exact resulting-main-spec PASS; release boundedFinalizer",
+  "source_head": "b6030b7cb80179d8d98596bada8b56c0d3199ee8",
+  "base": "bbc125eb3fa259745a3c8cb9278b1b66f720adb0",
+  "main_spec_report_sha256": "3bd8402c107ab3821f7b1a9210f59cbdd0ad405bf3315b10b3f558f161c419b7",
+  "candidate_specs": [
+    {
+      "path": "openspec/specs/conversion/raw-set-input/spec.md",
+      "candidate_sha256": "3b10db7cf93cee1a34780312be1cd5670cab4b22da14a0e7a9cf3babbf167477",
+      "source_main_sha256": "a16f889b83d197a155e0f7e9d8e8f09357540bc3c7657852f654bb9b6a07725c",
+      "source_delta_path": "openspec/changes/unsupported-set-commands-reported/specs/conversion/raw-set-input/spec.md",
+      "source_delta_sha256": "1f0a8eea230ad19e738ce9b9b6546c161c3efecaab609d839bc759540f9bfdf3",
+      "exact_old_plus_added": true,
+      "retained_requirements": 3,
+      "added_requirements": 2,
+      "modified_requirements": 0,
+      "removed_requirements": 0,
+      "purpose_preserved_byte_exact": true
+    },
+    {
+      "path": "openspec/specs/validation/raw-set-input/spec.md",
+      "candidate_sha256": "652f3a7e15afc9e2c6666d9d96f3d6727ba3d84a21ae7cb44c2eabe2f27c33ea",
+      "source_main_sha256": "a3dd9072b398b28eefce2e44dd2cab536873d580a7cd7a4ae1ec4483d16c30d3",
+      "source_delta_path": "openspec/changes/unsupported-set-commands-reported/specs/validation/raw-set-input/spec.md",
+      "source_delta_sha256": "1b49c1fa59071b5ed5770dd561387c723f2c54bf730d818018621df8c35c4a6c",
+      "exact_old_plus_added": true,
+      "retained_requirements": 3,
+      "added_requirements": 1,
+      "modified_requirements": 0,
+      "removed_requirements": 0,
+      "purpose_preserved_byte_exact": true
+    }
+  ],
+  "root_verified": "Directly read report, comparedreportSHA and both currentcandidateSHA; additions2conversion/1validation, no modifiedremoved/newPurpose.",
+  "finalizer_scope": "Apply exactreviewedcandidates/verbatimverdicts and provenance, supportedmetrics/lifecycle/contextrows; no product/test/config/runtime changes or livearchive/integration.",
+  "schema_carry": "Entirebatch final25.2 remainsopen operationalcarry outsidethis boundedchange"
+}

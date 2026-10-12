@@ -1,0 +1,11 @@
+# Independent resulting-main-spec review
+
+Verdict: **PASS** for the two candidate main specs derived in the disposable directory `/private/tmp/junoscfg-unsupported-spec-m462j2gd` from source HEAD `b6030b7cb80179d8d98596bada8b56c0d3199ee8`, base `bbc125eb3fa259745a3c8cb9278b1b66f720adb0`.
+
+Read both complete candidates, both source main specs and both frozen deltas. Independently verified that each candidate is exactly its retained main spec plus the frozen ADDED requirement blocks, with only the necessary blank separator and removal of the delta's ADDED section wrapper. Conversion retains all three existing requirements and adds exactly two; validation retains all three existing requirements and adds exactly one. Existing Purpose text, scenarios, tests, bracket boundaries, structured-list promise, validation exits/privacy and corpus exclusions remain byte-exact. No requirement is modified, removed or renamed; no placeholder or new claim is introduced.
+
+The additions preserve the approved rejection-only outcome: pre-IR complete-input refusal, physical-line/value-free messages, bracket precedence, preservation of existing supported content, and shared validation classification. They grant no editing-feature support, path-grammar widening or broader metadata validation. Both Purpose sections remain their existing substantive text.
+
+Candidate hashes: conversion `3b10db7cf93cee1a34780312be1cd5670cab4b22da14a0e7a9cf3babbf167477`; validation `652f3a7e15afc9e2c6666d9d96f3d6727ba3d84a21ae7cb44c2eabe2f27c33ea`. Original source-review report hash and root derivation raw hash match their recorded values. Root's disposable derivation exit 0 and +3/~0/-0 output are corroborated by independent candidate comparison. The scratch 6/9 task warning and scratch archive are derivation evidence only; they confer no live completion or archive approval.
+
+No findings or specification challenges. No source/test rerun, tracked edits, application of candidate specs, metrics, live archive, integration, schema, device or network work occurred. Original source report and execution evidence remain untouched. Exact candidate and source hashes, before/after full tracked inventory and live identity are preserved in `main-spec-bindings.json`. Bounded review window **RELEASED**. Usage/efficiency **UNMEASURED**.

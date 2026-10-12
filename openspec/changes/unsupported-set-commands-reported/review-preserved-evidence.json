@@ -1,0 +1,47 @@
+{
+  "stop_r_hashes": {
+    "supported-fast.out": true,
+    "supported-fast.json": true,
+    "ordinary-suite.out": true,
+    "ordinary-suite.json": true,
+    "focused-green.out": true,
+    "before-plain-bbc125eb.json": true,
+    "before-rules-bbc125eb.json": true,
+    "after-plain-implementation.json": true,
+    "after-rules-implementation.json": true,
+    "compare-plain.out": true,
+    "compare-rules.out": true,
+    "old-validation-wording-failure.out": true,
+    "old-contract-row-failure.out": true,
+    "corrected-contract-row-green.out": true
+  },
+  "plain": {
+    "before_count": 96,
+    "after_count": 96,
+    "differences": 0
+  },
+  "rules": {
+    "before_count": 1152,
+    "after_count": 1152,
+    "differences": 0
+  },
+  "ordinary-suite.json": {
+    "exit": 0,
+    "actual_head": "573e46a309195eba9723f648ff594a77f7d059df",
+    "before_after_identical": true,
+    "raw_hash_matches": true
+  },
+  "supported-fast.json": {
+    "exit": 0,
+    "actual_head": "573e46a309195eba9723f648ff594a77f7d059df",
+    "before_after_identical": true,
+    "raw_hash_matches": true
+  },
+  "post_check_paths": [
+    "openspec/changes/unsupported-set-commands-reported/checkpoint.md",
+    "openspec/changes/unsupported-set-commands-reported/evidence-freeze.md",
+    "openspec/changes/unsupported-set-commands-reported/metrics.json",
+    "openspec/changes/unsupported-set-commands-reported/metrics.md",
+    "openspec/changes/unsupported-set-commands-reported/tasks.md"
+  ]
+}

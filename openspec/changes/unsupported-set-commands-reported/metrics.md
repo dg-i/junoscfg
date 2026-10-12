@@ -1,5 +1,3 @@
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -7,21 +5,19 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 294, "binary_files": 0, "files": 13, "removed": 27} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
-
-Machine evidence and per-field provenance: [metrics.json](metrics.json).
-
+| generated lifecycle evidence | UNMEASURED |
 | Context expansion: src/junoscfg/input.py | Shared lexical boundary outside conversion/validation domain slice |
 | Context expansion: src/junoscfg/cli.py | Verify convert/import/validation/audit caller failure codes; no edits |
 | Context expansion: src/junoscfg/__init__.py | Verify named conversion and validation doors; no edits |
@@ -41,3 +37,12 @@ Machine evidence and per-field provenance: [metrics.json](metrics.json).
 | Ordinary raw SHA256 | 968e647cf18bcfb520cfd7876bd1556947aa2396a6908fd200af41fbfded4ad2 |
 | Check identity | all tracked/index/HEAD/tree/status identical before and after fast and ordinary |
 | Deferred verification | full real schema only at entire-makeover end, physical25.2R2 with original doublepass/stability/sentinel; not executed here |
+
+Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+| Independent source review | PASS accepted by root;175 focused cases plus separate public ordering/privacy/UNPLACED probes; exact verbatim report in review.md |
+| Independent resulting main specs | PASS accepted by root; exact2 candidate hashes preserved in main-spec-review.md and binding |
+| Initial fast setup failure | exit1 due solely missing ignored instruction mirror; public offline mirror setup exit0; failed and corrected records retained |
+| Ordinary duration distinction | native185.70s; wrapper193.82792975s; same checked573 head;9820passed/37existing opt-in skipped/20xfail;coverage93.00%, floor91.47 |
+| Observed command/review evidence | [finalization-evidence.json](finalization-evidence.json), hashes and original argv/exits; usage/effort/efficiency UNMEASURED |
+| Final schema carry | Pending entire-makeover physical25.2R2 doublepass/stability/public sentinel; no per-change full/schema success claimed |

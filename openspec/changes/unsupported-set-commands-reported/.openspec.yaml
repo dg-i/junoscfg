@@ -29,6 +29,8 @@ verification:
     - docs/api/input.md
     - mkdocs.yml
     - tach.toml
+    - openspec/specs/conversion/raw-set-input/spec.md
+    - openspec/specs/validation/raw-set-input/spec.md
     - changelog.d/unsupported-set-commands-reported.bugfix
   dependencies: []
   changelog: changelog.d/unsupported-set-commands-reported.bugfix
