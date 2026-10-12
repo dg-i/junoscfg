@@ -21,3 +21,8 @@
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
+
+| Context expansion: src/junoscfg/input.py | Shared lexical boundary outside conversion/validation domain slice |
+| Context expansion: src/junoscfg/cli.py | Verify convert/import/validation/audit caller failure codes; no edits |
+| Context expansion: src/junoscfg/__init__.py | Verify named conversion and validation doors; no edits |
+| Context expansion: src/junoscfg/audit/__init__.py | Confirm audit consumes parsed IR; no edits |
