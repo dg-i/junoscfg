@@ -20,3 +20,6 @@
 | Base | b10ba77134fe6d36d1f2ab5859710498ab010764 |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
+| Context expansion: src/junoscfg/display/constants.py | shared positional semantics consumed by schema/conversion |
+| Context expansion: src/junoscfg/convert/output/dict_walker.py | owning shared writer below codemap cut |
+| Context expansion: tests/support/shapes.py | one catalogue drives all reader/output family laws |
