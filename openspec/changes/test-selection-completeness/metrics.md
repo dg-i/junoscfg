@@ -17,3 +17,6 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: tools/affected_tests.py | Tooling owner outside generated runtime-only slice; no module contract exists |
+| Context expansion: .pre-commit-config.yaml | Selector invocation and deleted-file filtering |
+| Context expansion: tests/CONTRACT.md | Authoritative layer and selection rules |
