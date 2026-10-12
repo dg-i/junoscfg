@@ -69,3 +69,7 @@ Current implementation BASE 26ec8ddac790ec7aae9dcbc936528bf9c31cde80, renewed re
 ## Accepted SC2/SC3 evidence delta
 
 Root accepts exact supplemental delete expectation correction in a separate private proposal; original TC evidence remains immutable. All four exact IR target assertions and three other meta output expectations retained. Root admits only tests/data/device/known-differences.json extension, regenerated once through existing unchanged tools/device_differences.py. Independently assessed proposal retires 420 stale xml-element-name-leak rows (544 to 124), retaining eight hello-padding rows and all unrelated classes byte-exact, no added/reclassified rows. No original test assertion changed. Authority root-sc2-delete-ruling.json/root-sc3-known-retirement-ruling.json; both independent reports appended verbatim. These are preservation controls, not XML completion. No XSD/product generation.
+
+## Final operator-only rebase lineage
+
+Actual current BASE 255441927eb836ee9eeb7be10c077f18bb4b345e, rebase head e2c57be1cdc9ffc0983c31b50c675e54a3a1f00d. Incoming .agent-ready/activation.json only parks the new T3 preparation; root verified all 18 owned paths/all83 source/products byte-exact and preserved atomic f06ca06 ref/bundle. Renewed actual158focused nodes pass, so prior independent TC/SC2/SC3 and broader1754 preservation remain applicable. One ordinary coverage and one exact fast checkpoint will run on committed clean metadata head; final physical25 doublepass/sentinel remains owner-deferred.

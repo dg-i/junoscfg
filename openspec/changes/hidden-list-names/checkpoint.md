@@ -1,3 +1,7 @@
+## Current operator-base checkpoint
+
+BASE 255441927eb836ee9eeb7be10c077f18bb4b345e. Root preserved atomic f06ca06 and rebased to e2c57be1cdc9ffc0983c31b50c675e54a3a1f00d; all 18 owned paths and all 83 source/products byte-exact. Incoming operator record only parks T3. Renewed focused 158 nodes pass. Native readiness and ordinary/fast on clean committed metadata head remain pending; source complete, no unresolved SC. Previous base and preparation phases below are lineage, superseded operationally by this checkpoint.
+
 ## Current-base preparation STOP-T
 
 Base: e293b72564ef579a393102e4578f253efa8bdc8f. Preparation rebase head b82c9e0143fe0a56fcfead8b75b041d5d0990bc5; root preserved old STOP-T ref and bundle and verified all 13 owned paths byte-exact. Archived dependency: openspec/changes/archive/2026-10-12-keyed-single-entry-lists (#11, local v0.25.0). Phase 4 refreshed; independent current-base Test/Challenge and root admission remain pending. Verification stays parked; no phase 5.
