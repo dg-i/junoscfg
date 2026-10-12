@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "73a0097848033ddf79804d3fecead7108c8cf63e",
+  "checkpoint": "9f03046ea0c17811025ce46b29bd576c84ba245d",
   "actor": "Codex root under user-authorized local makeover",
-  "authority": "Direct user exclusive-ownership authorization, local makeover activation scope, ok go ahead, and owner schema-scheduling amendment OWNER-SCHEMA-SCHEDULE-2026-10-12; all other sessions/jobs parked; actual reviewed local integration and explicit root master-ready/adapter-parked transition under unattended owner authorization",
-  "captured_at": "2026-10-12T01:46:30.822064+00:00",
+  "authority": "Direct user exclusive-ownership authorization, local makeover activation scope, ok go ahead, and owner schema-scheduling amendment OWNER-SCHEMA-SCHEDULE-2026-10-12; all other sessions/jobs parked; actual reviewed local integration and explicit root master-ready/adapter-parked transition under unattended owner authorization; current-base diagnostics migration assessed under exact qualified-warning owner ruling and independently approved STOP-T report at migrated checkpoint9f03046; root migration/admission ruling",
+  "captured_at": "2026-10-12T02:04:04.142321+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -16,7 +16,7 @@
     "change/batch-process-rules": "parked",
     "change/ci-python-matrix": "parked",
     "change/device-oracle": "parked",
-    "change/diagnostics-load-vs-commit": "parked",
+    "change/diagnostics-load-vs-commit": "ready",
     "change/docs-corrections": "parked",
     "change/enforce-interface-type-checking": "parked",
     "change/entry-keys-from-the-tree": "parked",
@@ -58,7 +58,7 @@
     "codex/structured-conversion-diagnostics": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "ready"
+    "master": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -70,7 +70,7 @@
     "anonymized-run-messages": "parked",
     "ci-python-matrix": "parked",
     "device-oracle": "parked",
-    "diagnostics-load-vs-commit": "parked",
+    "diagnostics-load-vs-commit": "ready",
     "entry-keys-from-the-tree": "parked",
     "flat-entries-from-the-tree": "parked",
     "json-schema-from-the-written-tree": "parked",
@@ -111,7 +111,7 @@
     "refresh-architecture-measurements": "parked",
     "reject-set-bracket-syntax": "parked",
     "remove-redundant-conversion-shims": "parked",
-    "schema-verification-evidence": "ready",
+    "schema-verification-evidence": "parked",
     "structured-conversion-diagnostics": "parked",
     "xml-direct-to-ir": "parked"
   }
