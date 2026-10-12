@@ -1,0 +1,10 @@
+{
+  "tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.set.gz": "8dea1a470739faaa8eab6ad38d77dd42970979091d10409f1b0147c2786e8538",
+  "tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json.gz": "b09a2a33efaac088986642c761f8dff637fa5eaab738fc8668e1306aa064d48a",
+  "tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.xml.gz": "3dca22951b578d19a67161a48399f873614df894f96f319822972342a3cee997",
+  "tests/data/device/synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf.gz": "0dc5b341504b48455f5c53b465c7b9a537d6061fde77f2cb9a57e533916bd506",
+  "tests/data/device/synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.set.gz": "4019a8ae712eaef8c9e32e76feee70808b50f1b6ad39bbe115bdf94308780b9e",
+  "tests/data/device/synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json.gz": "e84d93d72333307cede226993371b0929401846fd6def836f30325a38a681e81",
+  "tests/data/device/synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.xml.gz": "ae83b836225c341a29b7d09f376dfbe0e9de2b98899805b676eb6ba1c6601f1c",
+  "tests/data/device/synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf.gz": "bc919c9d95071b0abbfe949e4454127c40483f450d42aeb48876b0adc3fc3b63"
+}
