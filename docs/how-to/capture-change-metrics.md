@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Capture change metrics
 
 Run `uv run --locked --group dev agent-ready metrics <change> --base-sha

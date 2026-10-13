@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Qualify parallel verification and selective expensive checks
 
 Use this guide when optimising a measured verification bottleneck. The native

@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Verification admission and evidence
 
 Policy identifier: `strategy-a/1`. Readiness grants permission to run a command;
@@ -82,11 +85,25 @@ unique `name`, `paths` globs, and a `command` argument list. Add:
   `[".venv/bin/python"]`, paired with `runtime-packages`: canonical names of the
   installed distribution closure used by the tier. The runtime is probed before
   every receipt lookup and after successful execution; stale preparation is not proof.
+- `runtime-modules`: optional complete Python execution-root list alongside the
+  runtime command/packages. This narrows only the observed tier runtime: ordinary
+  whole-command identity remains broad. It binds transitive static source imports
+  and package initializers in the roots' distributions, plus complete external
+  distribution dependency closures. Interpreter/stdlib, startup hooks, import
+  order, unowned shadows and altered bytecode remain bound. If `pytest` is declared,
+  all installed `pytest11` plugin providers and their dependencies participate.
+  Root distribution version, metadata and unreachable modules are excluded.
+  Declare every tool/engine execution root; reflection/dynamic imports, editable
+  roots, custom loaders, namespace packages or ambiguous ownership refuse narrow
+  proof. This is an application execution contract, not a sandbox. A qualified
+  application may compare this current observation with an immutable validated
+  successful tier receipt; observation alone never establishes success.
 - `selection-command`: optional application classifier argument list. It receives
   `--base <resolved-commit>` and must exit zero with exactly `{"selected": true}` or
   `{"selected": false}` on stdout. It replaces path matching while admission is
   enabled and runs on every invocation before reuse. Errors or ambiguous output
-  select conservatively. The application owns complete input/runtime classification;
+  select conservatively. Stderr diagnostics are preserved in native command output.
+  The application owns complete input/runtime classification;
   a freshly prepared context alone cannot establish successful qualification.
 - `stability-manifest`: optional JSON array of generated file paths; a cache miss
   runs the command twice and requires those files to be byte-identical.

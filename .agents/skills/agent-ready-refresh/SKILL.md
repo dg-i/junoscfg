@@ -3,6 +3,9 @@ name: agent-ready-refresh
 description: Bring a repository up to the current template and check versions. Run agent-ready update, resolve what Copier could not merge, work the checks that fail afterwards, and ask about the rest. Run it on the update pull requests the scheduled workflow opens, or by hand.
 ---
 
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Refresh
 
 The template and the check package move on after onboarding. `agent-ready
@@ -18,6 +21,13 @@ existing changes so its scoped recovery command cannot discard local edits.
 Read this file and `docs/how-to/improve-verification.md`.
 
 ## Run the update
+
+Read `docs/how-to/template-ownership.md` when present; an older adoption may
+receive it in this update. Review the complete update diff for local
+customizations, even without conflict markers. After committing and verifying
+the exact update, use a separate reviewed application change to add any missing
+warning and guide pointer to `AGENTS.md` and the human contributor guide.
+Do not mix those manual edits into the updater receipt.
 
 Run `uv run --locked --group dev agent-ready update --no-checks` from the
 repository root. Use the current updater when the pinned copy predates the
@@ -75,7 +85,9 @@ its required Towncrier fragment; include it in the reviewed update workflow.
 ## The rule that governs every finding
 
 **The template owns its files; this repository owns everything else.** The
-agent-ready skill bodies and the CI workflows are the template's.
+agent-ready skill bodies are the template's. CI workflows are maintained by
+the template in greenfield; Copier preserves existing workflows in brownfield.
+`docs/how-to/template-ownership.md` lists maintained files and application seeds.
 The template owns `checks-tag` in `.agent-ready/template.toml`; this repository
 owns its `[local-policy.<id>]` tables. The seeds it wrote once, `pyproject.toml`,
 `.pre-commit-config.yaml`, `ARCHITECTURE.md`, `tach.toml`, the source and the

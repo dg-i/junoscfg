@@ -1,3 +1,5 @@
+# Template-maintained in greenfield; preserved when existing in brownfield.
+# Local edits can conflict with updates. See docs/how-to/template-ownership.md.
 name: checks
 
 on:

@@ -1,3 +1,5 @@
+# Maintained by the agent-ready template. Local edits can conflict with updates.
+# See docs/how-to/template-ownership.md before editing; review every update diff.
 # The change folder, as OpenSpec tracks it. A fork of OpenSpec's spec-driven
 # schema carrying the artefacts the workflow adds; `openspec schema validate
 # agent-ready` checks it, and the template re-validates it on each OpenSpec

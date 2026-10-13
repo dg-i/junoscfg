@@ -1,3 +1,7 @@
+<!-- This schema template is maintained by agent-ready; local edits can conflict with updates.
+Completed change artefacts belong to the application.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 ## Findings
 
 <!-- Ranked. Only what affects correctness or violates a contract; the stage sets the finding classes. -->

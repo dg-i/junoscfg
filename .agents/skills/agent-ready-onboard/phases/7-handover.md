@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Phase 7 — Handover
 
 ## Outcome
@@ -7,6 +10,10 @@ guides adapted, `[tool.template.stage]` completed with `components` and
 `break-bumps`, `onboarded` dated, and the first workflow change recorded.
 
 ## Instructions and guides
+
+Keep the template ownership warning and pointer to
+`docs/how-to/template-ownership.md` in `AGENTS.md` and link that guide from
+`docs/how-to/work-with-agents.md` when adapting it for the human contributors.
 
 Codex reads `AGENTS.md`; Claude Code 2.1.274 loads it through the one-line
 `CLAUDE.md` bridge, `@AGENTS.md`, and `agent-ready scaffold agents` writes both.
@@ -36,14 +43,15 @@ Repository changes use `agent-ready-change`; `openspec-*` skills explain OpenSpe
 
 ## Ownership and retirement
 
-Agent-ready skills and CI workflows are template-owned. In
+Agent-ready skills are template-owned. CI workflows are template-maintained in
+greenfield; existing brownfield workflows are preserved. See the ownership guide. In
 `.agent-ready/template.toml`, the template owns `checks-tag`; the application owns
 `[local-policy.<id>]`. For each update recommendation, record its scope, id,
 adapter, upstream issue or `local-only` reason, and review date. Fields rejects invalid or expired
 policy, and all correctness checks still run.
 Point the owner to `docs/how-to/remove-agent-ready.md` for a reversible exit.
 Report desired changes upstream; `agent-ready update` updates unedited copies
-and exposes edited copies as conflicts for refresh.
+and may merge local edits or expose conflicts for refresh. Review every update diff.
 Seeds are application-owned: `pyproject.toml`, `.pre-commit-config.yaml`,
 `ARCHITECTURE.md`, `tach.toml`, source, tests and the two human guides. Updates
 preserve them; refresh assesses changed checks and `agent-ready scaffold template`.
