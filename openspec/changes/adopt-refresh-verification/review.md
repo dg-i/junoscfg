@@ -42,3 +42,32 @@ renewed hook recommendation identifier and metadata before merge. Pending full
 verification is accurately left incomplete in tasks.md.
 
 No actionable defects or specification challenges found.
+
+## Budget follow-up and completed evidence review
+
+Verdict: **APPROVE** the owner-approved documentation follow-up from 275 to a
+provisional 900-second whole-checkpoint budget. The proposed document was reviewed
+before application while the immutable full checkpoint ran. Historical schema
+observations of 1261.679596 seconds and 1695.965102 seconds match the cited archive
+records. The clarification preserves the original decision history, distinguishes
+workloads and openly records that uncached qualification exceeds the new budget.
+It does not change a timeout, test obligation or qualification policy.
+
+Reviewed final verification.md against the canonical log and the two named native
+schema receipts. The canonical log reports every check passed and 10440 passed,
+37 skipped, 20 xfailed in 211.47 seconds. Its SHA-256 matches the recorded
+4da24119aeeba0c28d330b9a7542f62ed671197755087742de08b57cb43e3c09.
+Both schema receipts are complete with exit zero and matching retained log hashes.
+The assertion receipt records 842.184589 seconds and its log reports all 12
+selected assertions passed; the generation log records two public builds at
+216.411960 and 218.113168 seconds. The 1661.945-second surrounding-command duration
+is the orchestrator's measurement, not independently retimed by this reviewer.
+No discrepancy was found in the final success record. Earlier failed attempts
+remain distinguished from success. Retention copying and final documentation
+checks remain finalization responsibilities.
+
+The canonical fields gate passed, resolving the initial review's pending native
+metadata validation. The orchestrator also confirmed the updater emitted the
+exact renewed hook identifier; no hook bytes changed. No actionable findings or
+specification challenges remain, and no runtime/schema rerun was performed by
+this reviewer for the documentation-only follow-up.

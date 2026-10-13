@@ -14,5 +14,5 @@
 ## 3. Review and evidence
 
 - [x] Obtain a fresh lightweight maintenance review: APPROVE, no findings.
-- [ ] Run the canonical full checkpoint and record timing against the 275-second budget.
-- [ ] Commit metrics, merge, archive, bump version and tag under owner authorization.
+- [x] Run the canonical full checkpoint: all gates passed in 1661.945 seconds; owner raised the provisional budget to 900 seconds, with the cold-workload gap explicit.
+- [ ] Commit final metrics and prepare the authorized merge/archive/version/tag handoff.

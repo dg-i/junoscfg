@@ -3,8 +3,8 @@
   "metrics": {
     "declared_runtime_dependencies": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -25,8 +25,8 @@
     },
     "files_read": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -37,8 +37,8 @@
     },
     "human_effort": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no human-effort record supplied",
       "source": {
         "kind": "not_provided",
@@ -47,10 +47,193 @@
       "status": "unmeasured",
       "value": null
     },
+    "lifecycle": {
+      "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-refresh-v012/openspec/changes/adopt-refresh-verification/events.jsonl",
+        "sha256": "feb323930ea8c62af586632248e2934fcae5e11c2925cccdd69d253496ec668f"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
+        "carry": {},
+        "change": "adopt-refresh-verification",
+        "checks": [
+          {
+            "checkpoint": "1a01aa8b0d300362dac6d195bbae1a5c63f3e9f3324c81ac201a74163f6e88a9",
+            "duration_ms": 326.8040409893729,
+            "evidence": ".agent-ready/verification/349722fbe7ef4b4fb348205cabf399fa.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "477117f48ce785f452b57bfc35ab813dc41ef066f1ff6f32e8fc547157d34403",
+            "duration_ms": 442.484958039131,
+            "evidence": ".agent-ready/verification/f6a3f9b27f81456ca2a4e58ba329eadd.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "e13a4451cceeb3bdbdf2a3114440e7c8a700b5f4db107454cc7687dac92322b7",
+            "duration_ms": 322.2547500045039,
+            "evidence": ".agent-ready/verification/630d5b5dbbe6423da0777571fddfd2bd.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "7b076a9ac8cef619dea2c3a75d6c9f189047d0e654a9e7731a9ffcacd65a5068",
+            "duration_ms": 827563.0453330232,
+            "evidence": ".agent-ready/verification/bbb73ea8630f40f5a47b62f091db212b.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "464b0920257ed9a5882fcfec4ca8e0e69957dadef981de5460f54adf7a3d808f",
+            "duration_ms": 434378.30250000115,
+            "evidence": ".agent-ready/verification/bc1384bbe4e4439f932de9257b7c4588.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "9f90faf0908a7231842358d1f61598001ca5a124fd08369d8248f199392dff38",
+            "duration_ms": 339.7740829968825,
+            "evidence": ".agent-ready/verification/5f99bae8881e431eb72b5da327aeb619.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "1ca0cf6e8a946883c3d93bf7be120275ec9a0d1d74f78372cd6f7aba882aeb59",
+            "duration_ms": 842184.5885000075,
+            "evidence": ".agent-ready/verification/e42f8ddd1bad4b08a81ae1e7a18a56f1.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "30158533e8cee87becddbe4b3defd878fda5c9aa952ea8d33d51c89cd8a7888c",
+            "duration_ms": 436881.4879159909,
+            "evidence": ".agent-ready/verification/65b52cb888794255bba2914966fa043a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "5db2741dcca61d020afa7a0bcbb24d7654d8b3171648a95a0bece85f4cc94528",
+            "duration_ms": 1659230.0249579712,
+            "evidence": ".agent-ready/verification/a91ded28d4324e2582712ba73be4be55.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "fbce438a58c5ba42dcc45d48db94db33e446c791",
+        "ledger_sha256": "feb323930ea8c62af586632248e2934fcae5e11c2925cccdd69d253496ec668f",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "08ce1cb5fa79a862adbe285844f0da7148871ae4f9957f7d938abbb8483612b9",
+              "44b139b20f96f267bdef9e0bdea1273c05e95fb03cb01e4d8c9d51277fdfe143",
+              "fbfd61e59e039b86bf86b228a8b2f59286caa3601d8dd15c3006b1b3fc2f130e",
+              "360fe0b5e0067d8bce7c376b09f7a7ea13491abcb9a3477dfb96971caa4fd415",
+              "ddba8c8ca798093bf20550c2f0b83991ec51ba74aeaaac11327516a9e0f86453",
+              "e23bfe240639acfd8feb54ac949aa494648b31fa7c299e853cd09fbdbd95eaeb",
+              "ab54e46455ad2cdb2e7642d2a6bc5cd525d167e29ab19d7cf984f867eab2827b",
+              "5ef56d9ff53342d75e25b9fef39d042d5d1f3b5b7271a479d75349568605abde"
+            ],
+            "value": 8
+          },
+          "full_runs": {
+            "events": [
+              "ce26654b9ae62fe86219aa486185fe372d1485a850520bb9b82d867e52b59266"
+            ],
+            "value": 1
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 8
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
     "lines_added_removed": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": null,
       "source": {
         "kind": "git_diff",
@@ -68,7 +251,7 @@
         },
         "selector": [
           "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-          "837c2daefbc323ae90b8e07373f116c61f2dccdc"
+          "fbce438a58c5ba42dcc45d48db94db33e446c791"
         ],
         "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
       },
@@ -82,8 +265,8 @@
     },
     "locked_packages": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": null,
       "source": {
         "content_sha256": {
@@ -104,8 +287,8 @@
     },
     "phase_span": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -116,8 +299,8 @@
     },
     "retries": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -128,8 +311,8 @@
     },
     "runtime_tokens": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no bound session log supplied",
       "source": {
         "kind": "not_provided",
@@ -140,8 +323,8 @@
     },
     "wall_clock_intent_to_merge": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "intent and merge timestamps were not supplied",
       "source": {
         "kind": "not_provided",
@@ -152,8 +335,8 @@
     },
     "workflow_telemetry": {
       "base_sha": "ef33c70f8c04b9712eb9897761d52d0439dbb33f",
-      "captured_at": "2026-10-12T23:49:15.865697Z",
-      "head_sha": "837c2daefbc323ae90b8e07373f116c61f2dccdc",
+      "captured_at": "2026-10-13T00:48:43.739185Z",
+      "head_sha": "fbce438a58c5ba42dcc45d48db94db33e446c791",
       "reason": "no workflow telemetry record supplied",
       "source": {
         "kind": "not_provided",

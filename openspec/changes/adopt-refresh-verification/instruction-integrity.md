@@ -39,3 +39,13 @@ Receipt reproduced byte-for-byte in this worktree with local attestation.
 Prior hook: 10439 passed, 13 skipped, 20 xfailed, one stale fingerprint failure.
 Full check refused unassessed branches before any tests. Next: approved intent,
 application edits, focused checks, fresh review and full verification.
+
+## Owner delta and final checkpoint
+
+The owner raised the provisional whole-full-check budget from 275 to 900 seconds
+on 2026-10-13. The independent reviewer approved the documentation-only delta,
+including the historical uncached workload gap; verification is not waived.
+Canonical full verification passed at fbce438a58c5ba42dcc45d48db94db33e446c791
+against ef33c70f8c04b9712eb9897761d52d0439dbb33f. No runtime edits follow it;
+only reviewed budget/evidence records and release housekeeping remain.
+Next: final fast checks, authorized merge, archive, version/tag and cadence record.
