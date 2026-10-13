@@ -36,3 +36,4 @@ None: scope and local integration are explicitly authorized and standing assuran
 - Initial preflight consistent; next: short-lane intent. Baseline master 5226534324d03d1af6c00701fdbf683f118923e8, clean. Entry timer 2026-10-13T12:34:19.152399+00:00 precedes instruction inspection.
 - Verification cadence: anchor 95585fbf1cd59fe4b9cb15be870f6a5020be49a3 is on first-parent history, 44 commits at entry; invitation already pending, retain and consolidate at job end.
 - No unavailable source is treated as read: audit has no local CONTRACT.md; native session token telemetry unavailable. Command timing and phase boundaries are measured independently.
+- Intent frozen under delegated authority: only private walker documentation. Next: edit and preservation evidence. No standard spec/design/test phases apply.
