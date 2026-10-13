@@ -21,7 +21,9 @@ None, because the owner approved the design, memory tradeoff and required record
 - Assurance preference: economy.
 - Risk floor: high, verification trust boundary.
 - Roles required: Builder, independent Test/Challenge, fresh Reviewer.
-- Resume point: implementation and native verification; focused tests underway.
+- Resume point: Phase 7 metrics capture and final record commit; implementation,
+  native qualification and fresh integrated review are complete. Last full evidence:
+  e8ff3cfcf7d92fc1aab6862305add4f36bb06e90, 10,448 passed, native checks exit zero.
 ## Delta log
 - Independent challenge required isolated source imports without stale bytecode or startup hooks;
   this implements the approved engine-identity promise. No requirement was weakened.

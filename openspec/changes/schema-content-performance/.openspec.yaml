@@ -12,6 +12,7 @@ verification:
     - changelog.d/+schema-content-performance.misc.md
     - docs/VERIFICATION.md
     - docs/how-to/verification-evidence.md
+    - openspec/specs/schema-pipeline/verification-evidence/spec.md
     - pyproject.toml
     - src/junoscfg/validate/artifact_builder.py
     - src/junoscfg/validate/schema_generator.py

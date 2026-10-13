@@ -6,7 +6,10 @@ verification tests passed. Fresh application review at 60670f0 found one P2:
 ordinary schema tests imported the optional development framework. The reviewed
 fixture correction restricts that import to native qualification; four executed
 valid/invalid JSON Schema and Lark regression cases pass without that framework.
-Final native evidence and correction confirmation remain pending.
+Fresh integrated review confirmed the correction and final evidence at
+e8ff3cfcf7d92fc1aab6862305add4f36bb06e90: 10,448 tests passed, all native
+checks exited zero, and the full checkpoint took 597.57 seconds. Final approval
+reported no surviving findings or acceptance-evidence gaps.
 
 The initially selected stronger reviewer became unavailable due workspace credit
 limits. Replacement fresh isolated reviews completed, but equivalent capability
@@ -20,4 +23,4 @@ Receipts retain local-store trust; captured bytes, worker, engine and dependency
 identity govern pure-check reuse. Whole-run identity remains separate. Fresh
 generation, original checker semantics and two standalone builds remain required.
 No acceptance criteria were weakened. Native timings and all-release evidence
-remain binding until recorded in verification.md.
+are recorded in verification.md.

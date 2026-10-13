@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 8b3093d00c8fab03de2bfcb7327d493df180e2f1.
+- Observed integration head: 6d5d41937b82db0e7e5b46c505edb08e72bdefc4.
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 8b3093d00c8fab03de2bfcb7327d493df180e2f1.
-- Invitation status: pending; 11 first-parent commits since the initial anchor.
+- Pending assessment head: 6d5d41937b82db0e7e5b46c505edb08e72bdefc4.
+- Invitation status: pending; 12 first-parent commits since the initial anchor.
 
 ## Feedback stages
 
@@ -98,3 +98,22 @@ Quality: preserve checker semantics and exact artifact comparisons. Duplication:
 reuse only successful identical pure checks. Cost: deque traversal and buffered
 JSON address measured bottlenecks. Reliability: template evidence binds runtime,
 dependency bytes and lineage, with independent failure/corruption tests.
+
+2026-10-13 schema-performance job-end assessment at integration head
+6d5d41937b82db0e7e5b46c505edb08e72bdefc4 (12 first-parent commits since the
+retained anchor): final full checkpoint passed at application head
+e8ff3cfcf7d92fc1aab6862305add4f36bb06e90 in 597.57 seconds, including native
+qualification; 10,448 passed, 37 skipped, 20 xfailed. Three warm shipped-release
+native qualifications took 112.638111417, 111.743011875 and 112.506422750 seconds
+(mean 112.296), each within 180 seconds. Cold full observation was 794.74 seconds
+with 318.009 seconds in schema portions; older-release native qualification
+passed for 21.4 and 23.2. These workload-specific observations meet the applicable
+budgets without establishing a long-term timing trend. Environment: Python
+3.14.7, macOS arm64, jsonschema 4.26.0, Lark 1.3.1, template 43433b0.
+Behavioural assurance retained checker semantics and exact artifact comparisons;
+independent tests cover corrupt/changed proof, and review caught an optional
+dependency regression that is now corrected. Corpus structure is unchanged;
+longitudinal flake rates remain UNMEASURED. Reviewer capability equivalence remains
+a recorded limitation. Evidence: the schema-content-performance change's
+verification.md and events.jsonl. One consolidated feedback invitation remains
+pending; no owner review or decline is inferred, and the cadence anchor is retained.
