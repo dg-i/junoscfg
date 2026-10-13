@@ -7,16 +7,16 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 6d5d41937b82db0e7e5b46c505edb08e72bdefc4.
+- Observed integration head: 507a3dc74248ce2d670f6a5e27023d34990e6965 (pre-merge assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 6d5d41937b82db0e7e5b46c505edb08e72bdefc4.
-- Invitation status: pending; 12 first-parent commits since the initial anchor.
+- Pending assessment head: 507a3dc74248ce2d670f6a5e27023d34990e6965.
+- Invitation status: pending; 24 first-parent commits at the pre-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
-The owner increased the provisional budget from 275 to **900 seconds for the
+Historical budget (superseded for the three workloads below): the owner increased the provisional budget from 275 to **900 seconds for the
 whole full checkpoint** on 2026-10-13,
 including surrounding checks. It is an investigation budget, never a timeout
 or permission to skip required checks. No separate target or tolerance was agreed.
@@ -138,6 +138,37 @@ and no-schema baseline 245.391 s. Experimental final cold runs were 342.148,
 checkpoint baseline: production retains native admission and stronger runtime
 identity. The experiment's 45-second gap remains explicit.
 
-Production measurements: UNMEASURED until the reviewed native dependency and
-complete canonical checkpoint run. Record every trial, maximum, cache conditions,
-selected tiers and preparation separately in the change verification record.
+Production baseline at product commit `44324d36bb489b13212e3f02be251429af41f95d`:
+
+| Full-checkpoint workload | Three complete-workflow observations (s) | Maximum (s) | Budget (s) | Remaining headroom (s) |
+|---|---|---:|---:|---:|
+| Cold qualification | 376.120, 381.742, 387.548 | 387.548 | 400 | 12.452 |
+| Warm qualification | 91.294, 92.090, 92.865 | 92.865 | 200 | 107.135 |
+| No schema qualification | 87.665, 88.396, 87.889 | 88.396 | 45 | -43.396 |
+
+All nine successful runs include the canonical full command; required prior native
+audit-record commits and normal hooks are included where applicable. Dependencies
+were installed. Cold resets isolate reusable whole/content evidence while retaining
+immutable audit provenance. Warm logs confirm native reuse; no-schema uses actual
+audit-only changes and selects no expensive tier. All ordinary tests still run:
+10,579 passed, 37 skipped, 20 xfailed; coverage 92.9679%, floor 91.47% unchanged.
+
+Environment: macOS arm64, Python 3.14.7, uv 0.12.18, 10 CPUs, 32 GiB; native engine
+4e8f8fa. Three final repetitions per workload; preparation is separately recorded.
+Two failed setup attempts (367.419 s missing historical audit sources; 0.861 s
+dirty prior-event ledger) and superseded cold trial 378.653 s remain in the
+production-verification-performance change's verification.md. These failures were
+correctly refused, not counted as successful samples. No product test failures
+occurred in the nine successful final runs.
+
+Agent assessment: adopt the reviewed scheduling and conservative selection changes.
+Cold and warm limits were met consistently on this machine; 45 seconds remains an
+explicit gap, not a raised budget. Ordinary verification alone takes about 65–74 s.
+Further work should profile fixtures and native identity overhead through the regular
+change process. Ten workers trade additional concurrency for time; peak memory and
+long-term flake rates remain unmeasured. These observations are feasibility evidence,
+not machine-independent guarantees. Assertions, corpus responsibilities, strict
+xfails, schema stability passes and coverage floor are preserved. Source audit
+maintenance is deliberate: producer/dependency changes require review before new
+consumer exemptions can be trusted. The pending cadence invitation remains open;
+no separate general review or satisfaction response is inferred.

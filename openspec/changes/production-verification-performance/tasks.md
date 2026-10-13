@@ -7,7 +7,7 @@
 - [x] 2.3 Update contracts, commands, baseline workload definitions and changelog.
 - [x] 2.4 Prepare immutable candidate for native full checkpoint.
 ## 3. Review and evidence
-- [ ] 3.0 Pass native full checkpoint and record repeated production timings.
-- [ ] 3.1 Fresh isolated review and accepted corrections.
+- [x] 3.0 Pass native full checkpoint and record repeated production timings.
+- [x] 3.1 Fresh isolated review and accepted corrections.
 - [ ] 3.2 Capture metrics and apply reviewed main specification.
 - [ ] 3.3 Archive, version and merge locally; the owner will push.
