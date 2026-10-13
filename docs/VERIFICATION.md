@@ -176,3 +176,18 @@ xfails, schema stability passes and coverage floor are preserved. Source audit
 maintenance is deliberate: producer/dependency changes require review before new
 consumer exemptions can be trusted. The pending cadence invitation remains open;
 no separate general review or satisfaction response is inferred.
+
+## Measured maintenance workflow
+
+2026-10-13 pre-integration assessment at master
+`5226534324d03d1af6c00701fdbf683f118923e8`: 44 first-parent commits since the
+retained anchor. The existing invitation remains pending; no owner review or
+decline is inferred. Change `clarify-audit-unknown-values` measured the complete
+maintenance route. Its first full attempt failed on review/changelog/inventory
+setup; ordinary tests passed. Corrected cold full passed in 377.724 s;
+no-schema full passed in 84.301 s after native proof justified
+nonselection. Both retained 10,579 passed tests and 92.97% coverage. Independent
+review approved the docstring-only edit. No assurance or corpus change was made.
+Raw phase/command/hook evidence and final integration assessment are retained in
+`private_test_data/workflow-measurement-2026-10-13/report.md`; the archived change
+records failures and cache conditions. These are single observations, not a trend.

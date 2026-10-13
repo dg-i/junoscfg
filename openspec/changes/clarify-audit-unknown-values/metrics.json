@@ -1,0 +1,569 @@
+{
+  "change": "clarify-audit-unknown-values",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "d44b6906776f6f8f618b64529a908d9cf24ffe80d5396fbe6160bff788321e2d",
+          "head": "d44b6906776f6f8f618b64529a908d9cf24ffe80d5396fbe6160bff788321e2d"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-clarify-audit-unknown-values/openspec/changes/clarify-audit-unknown-values/events.jsonl",
+        "sha256": "0011730ff0a2a947ce929c1619666fed906355d5e7b6435190863ca612ee8fac"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "5226534324d03d1af6c00701fdbf683f118923e8",
+        "carry": {},
+        "change": "clarify-audit-unknown-values",
+        "checks": [
+          {
+            "checkpoint": "7ee71b78e2a882bcfa605eb0efbba0847f31f847576b06492c8dc8f035388394",
+            "duration_ms": 755.9787919744849,
+            "evidence": ".agent-ready/verification/f3e9e0edc4944494b14cff6d1ca4722a.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "796c61d704bdeb3a96ee31cd4c857a4efdb72038b5f64b5252062090152628c2",
+            "duration_ms": 91134.19029198121,
+            "evidence": ".agent-ready/verification/14c67dc71e5646279267d5034a14ed71.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "3b0ad54ac0d9b9146abe0a9b5b48a059672af78539ebe2d36138f6ada02b59c5",
+            "duration_ms": 295860.89154199,
+            "evidence": ".agent-ready/verification/f2427751364d490baf462c2e72a2e076.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "87ce10d7261ac68e7d7058f548ac13f0a74d38c6012d58b4f3761a24a61c4bd0",
+            "duration_ms": 49966.618124977686,
+            "evidence": ".agent-ready/verification/cca6d7c346f048e294dea47fa15a175a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "9cb68ef6e1040770871a2873c03122b582603bc0c4d61f6b1ae5f474b83dd398",
+            "duration_ms": 373545.4686250305,
+            "evidence": ".agent-ready/verification/c91792b599894fc69e2caf384f2aee2e.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "4ab7de8740454afb87edc953b75fab098434a9d45af15d1400b9c0b42c72be87",
+            "duration_ms": 79904.71224999055,
+            "evidence": ".agent-ready/verification/132e6a30bc594c9ab15dca1407ee007a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "1d86f414cc392096654decdb7c5cc575a3e15616",
+        "ledger_sha256": "0011730ff0a2a947ce929c1619666fed906355d5e7b6435190863ca612ee8fac",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "b2f87cb9651e42e0f3b773bdf89a54cdd19d109b3be6c03edd91ea9458e17ea3",
+              "8b5399fb60da5e369bd5b3e74e2a754f55588a284c3ae221b87b0386d5ecd45f",
+              "3bf19d9cb85d36bd2f6e95d66624c2f101a0de04a34cf569bc880fc131a87c84"
+            ],
+            "value": 3
+          },
+          "full_runs": {
+            "events": [
+              "3116bbd9b7030af1bbb18cc3ce7c680e7593e2361f161c3ee36bcd3f5c5cc77a",
+              "e8724ee048404eaac48fdc03c1eedab21caa819c888c21f690cc3550e90a477e",
+              "673211a3a80436650ff61abe082ed717a245e89de2cca6e0c43f96c0cac39902"
+            ],
+            "value": 3
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 2,
+            "total": 4
+          },
+          {
+            "completed": 2,
+            "total": 4
+          },
+          {
+            "completed": 2,
+            "total": 4
+          },
+          {
+            "completed": 2,
+            "total": 4
+          },
+          {
+            "completed": 2,
+            "total": 4
+          },
+          {
+            "completed": 2,
+            "total": 4
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            "changelog.d/+clarify-audit-unknown-values.misc.md",
+            "src/junoscfg/audit/walker.py"
+          ],
+          "since": "5226534324d03d1af6c00701fdbf683f118923e8"
+        },
+        "selector": [
+          "5226534324d03d1af6c00701fdbf683f118923e8",
+          "1d86f414cc392096654decdb7c5cc575a3e15616"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 14,
+        "binary_files": 0,
+        "files": 3,
+        "removed": 9
+      }
+    },
+    "locked_packages": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "4a6aa2f888df5490917538204ca2479aecef072a0a68fad8d83d8a926b9473f2",
+          "head": "4a6aa2f888df5490917538204ca2479aecef072a0a68fad8d83d8a926b9473f2"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "5226534324d03d1af6c00701fdbf683f118923e8",
+      "captured_at": "2026-10-13T12:54:40.628331Z",
+      "head_sha": "1d86f414cc392096654decdb7c5cc575a3e15616",
+      "reason": null,
+      "source": {
+        "kind": "operator_workflow_telemetry",
+        "path": "/tmp/junoscfg-workflow-measurement/workflow-telemetry.json",
+        "schema": "workflow-telemetry/1",
+        "semantics": "operator-bound phase, model, cache, command, and intervention events",
+        "sha256": "149be988b86928a10f9e529d337b34fded88e183334378cd9019596361a66936"
+      },
+      "status": "reported",
+      "value": {
+        "entries": [
+          {
+            "commands": [
+              {
+                "duration_ms": 31.353125000000002,
+                "kind": "command",
+                "name": "inspection",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 175.12112499999998,
+                "kind": "command",
+                "name": "choose-change",
+                "outcome": "failed"
+              },
+              {
+                "duration_ms": 179.911875,
+                "kind": "command",
+                "name": "source-inspection",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 556.845625,
+                "kind": "command",
+                "name": "graph-query",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 18.0455,
+                "kind": "command",
+                "name": "worktree-create",
+                "outcome": "failed"
+              },
+              {
+                "duration_ms": 235.743334,
+                "kind": "command",
+                "name": "worktree-create-retry",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1484.978292,
+                "kind": "command",
+                "name": "openspec-new",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 524.0013329999999,
+                "kind": "command",
+                "name": "environment-setup",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 592.57725,
+                "kind": "command",
+                "name": "skills-regenerate",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 233.168291,
+                "kind": "command",
+                "name": "gate-help",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 72.351292,
+                "kind": "command",
+                "name": "runtime-inventory",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 371.912166,
+                "kind": "command",
+                "name": "environment-align",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1075.9675,
+                "kind": "command",
+                "name": "preflight-fields",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 824.1365000000001,
+                "kind": "command",
+                "name": "preflight-caps",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1895.287,
+                "kind": "command",
+                "name": "preflight-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 640.2480830000001,
+                "kind": "command",
+                "name": "intent-fields",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 822.696792,
+                "kind": "command",
+                "name": "intent-caps",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1417.256709,
+                "kind": "command",
+                "name": "intent-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 63.042,
+                "kind": "command",
+                "name": "preservation",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1997.098291,
+                "kind": "test",
+                "name": "focused-tests",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 291.623375,
+                "kind": "command",
+                "name": "evidence-preparation",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1481.444041,
+                "kind": "command",
+                "name": "runtime-prepare",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 545.211416,
+                "kind": "command",
+                "name": "activate",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 68.755208,
+                "kind": "command",
+                "name": "graph-memory",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 38644.140417,
+                "kind": "command",
+                "name": "implementation-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 651.397625,
+                "kind": "command",
+                "name": "readiness",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 2126.2032080000004,
+                "kind": "command",
+                "name": "schema-selection-initial",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 94272.264833,
+                "kind": "test",
+                "name": "full-cold",
+                "outcome": "failed"
+              },
+              {
+                "duration_ms": 232.091083,
+                "kind": "command",
+                "name": "repair-preparation",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 641.7961250000001,
+                "kind": "command",
+                "name": "repair-fields",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 836.823834,
+                "kind": "command",
+                "name": "repair-caps",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1738.648458,
+                "kind": "command",
+                "name": "repair-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 1392.5045,
+                "kind": "command",
+                "name": "review-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 377724.174667,
+                "kind": "test",
+                "name": "full-qualified",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 2738.085,
+                "kind": "command",
+                "name": "schema-selection-qualified",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 940.0293330000001,
+                "kind": "command",
+                "name": "prior-audit-commit",
+                "outcome": "passed"
+              },
+              {
+                "duration_ms": 84301.310125,
+                "kind": "test",
+                "name": "full-no-schema",
+                "outcome": "passed"
+              }
+            ],
+            "model": "unknown (exact runtime identifier unavailable)",
+            "owner_interventions": [],
+            "phase": "maintenance-through-successful-verification",
+            "provider": "OpenAI Codex",
+            "regenerations": 1,
+            "retries": 2,
+            "role": "builder",
+            "stalls": [],
+            "usage": null
+          }
+        ],
+        "summary": {
+          "cache_read_input_tokens": null,
+          "cache_reads": null,
+          "cache_write_input_tokens": null,
+          "cache_writes": null,
+          "command_duration_ms": 63543.39741500001,
+          "models": [
+            "unknown (exact runtime identifier unavailable)"
+          ],
+          "owner_interventions": 0,
+          "phases": [
+            "maintenance-through-successful-verification"
+          ],
+          "providers": [
+            "OpenAI Codex"
+          ],
+          "regenerations": 1,
+          "retries": 2,
+          "stall_duration_ms": 0,
+          "test_duration_ms": 558294.8479159999
+        }
+      }
+    }
+  },
+  "schema_version": 1
+}

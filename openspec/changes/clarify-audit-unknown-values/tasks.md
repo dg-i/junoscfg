@@ -8,5 +8,5 @@
 
 ## 3. Review and evidence
 
-- [ ] Run canonical full checkpoint and fresh independent lightweight review.
+- [x] Run canonical full checkpoint and fresh independent lightweight review.
 - [ ] Capture metrics, archive, patch version and integrate locally.
