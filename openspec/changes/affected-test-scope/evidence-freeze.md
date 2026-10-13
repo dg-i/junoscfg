@@ -53,3 +53,8 @@ None. Owner directly requests this behavior; uncertain cases retain broad execut
 One affected-test behavior change; upstream reviewed workflow adoption is a dependency
 with exact updater commit. Shared reusable evidence is used only after its API is
 qualified upstream. Strict lane/readiness/spec gates precede the stable full checkpoint.
+
+- Shared API qualification: ordinary execution uses existing verification.execute,
+  with tests for exact command, failed result and unavailable identity fallback.
+  No second cache or environment normalization. Focused acceptance was rerun after
+  adding the adapter; no prior full checkpoint existed to invalidate.

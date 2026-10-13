@@ -116,9 +116,8 @@ class TestSharedInputsReceiveCoverage:
     @pytest.mark.parametrize(
         "name",
         [
-            "tools/affected_tests.py",
-            "tools/schema_verification.py",
             "tools/schema-verification/policy.json",
+            "tools/verification-costs.json",
             "tach.toml",
             ".pre-commit-config.yaml",
         ],
@@ -145,7 +144,7 @@ class TestSharedInputsReceiveCoverage:
         "files, expected",
         [
             (
-                ["tools/affected_tests.py", "tests/tooling/test_affected_tests.py"],
+                ["tach.toml", "tests/tooling/test_affected_tests.py"],
                 ["tests/tooling/"],
             ),
             (
@@ -218,3 +217,136 @@ class TestTheDoorCheck:
     def test_a_surface_parameter_type_is_admitted(self, tmp_path, monkeypatch) -> None:
         source = "from junoscfg.anonymize import AnonymizeConfig\n"
         assert self._found(tmp_path, monkeypatch, source, "contract") == []
+
+
+class TestToolConsumersDetermineSelection:
+    @pytest.mark.parametrize(
+        "tool, expected",
+        [
+            ("generate_cli_reference", ["tests/tooling/test_cli_reference.py"]),
+            ("check_test_doors", ["tests/tooling/test_affected_tests.py"]),
+            (
+                "affected_tests",
+                [
+                    "tests/tooling/test_affected_execution.py",
+                    "tests/tooling/test_affected_tests.py",
+                ],
+            ),
+            ("compare_device_outputs", ["tests/tooling/test_compare_device_outputs.py"]),
+            ("schema_content_worker", ["tests/"]),
+            ("schema_verification", ["tests/"]),
+            ("schema_dependencies", ["tests/"]),
+        ],
+    )
+    def test_real_execution_consumers_are_selected(self, tool, expected):
+        assert affected.select([f"tools/{tool}.py"]) == expected
+
+    def test_bookkeeping_does_not_expand_a_tool_change(self):
+        tool = "tools/generate_cli_reference.py"
+        assert affected.select(
+            [
+                tool,
+                "openspec/changes/example/metrics.md",
+                "openspec/changes/example/workflow-events.jsonl",
+            ]
+        ) == affected.select([tool])
+
+    @pytest.fixture
+    def tree(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(affected, "ROOT", tmp_path)
+        monkeypatch.setattr(affected, "TESTS", tmp_path / "tests")
+
+        def write(path, source=""):
+            target = tmp_path / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(source)
+
+        write("tools/leaf.py")
+        write("tests/tooling/test_direct.py", "from tools.leaf import value")
+        return write
+
+    def test_transitive_imports_reach_tests_outside_tooling_and_terminate_cycles(self, tree):
+        tree("tools/leaf.py", "from tools import middle")
+        tree("tools/middle.py", "import tools.leaf")
+        tree("tests/tooling/test_direct.py", "from tools.middle import value")
+        tree("tests/unit/test_indirect.py", "from tests.tooling.test_direct import helper")
+        tree("tests/unit/test_unrelated.py")
+        assert affected.select(["tools/leaf.py"]) == [
+            "tests/tooling/test_direct.py",
+            "tests/unit/test_indirect.py",
+        ]
+
+    def test_relative_and_literal_dynamic_imports_are_dependencies(self, tree):
+        tree("tools/middle.py", "from . import leaf")
+        tree(
+            "tests/unit/test_dynamic.py",
+            'from importlib import import_module as load\nload("tools.middle")',
+        )
+        assert affected.select(["tools/leaf.py"]) == [
+            "tests/tooling/test_direct.py",
+            "tests/unit/test_dynamic.py",
+        ]
+
+    @pytest.mark.parametrize("shared", ["tests/conftest.py", "tests/support/helper.py"])
+    def test_shared_consumers_select_the_full_suite(self, tree, shared):
+        tree(shared, "import tools.leaf")
+        assert affected.select(["tools/leaf.py"]) == ["tests/"]
+
+    def test_nested_conftest_selects_its_directory(self, tree):
+        tree("tests/unit/conftest.py", "import tools.leaf")
+        assert affected.select(["tools/leaf.py"]) == [
+            "tests/tooling/test_direct.py",
+            "tests/unit/",
+        ]
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "def broken(",
+            "import importlib\nimportlib.import_module(chosen_at_runtime)",
+            "from importlib import import_module as load\nload(chosen_at_runtime)",
+            "import importlib.util\nimportlib.util.spec_from_file_location(name, path)",
+            "__import__(chosen_at_runtime)",
+            "import runpy\nrunpy.run_path(chosen_at_runtime)",
+        ],
+    )
+    def test_uncertain_discovery_never_silently_narrows(self, tree, source):
+        tree("tests/unit/test_unknown.py", source)
+        assert affected.select(["tools/leaf.py"]) == ["tests/"]
+
+    @pytest.mark.parametrize("path", ["tools/unmapped.py", "tools/deleted.py"])
+    def test_missing_or_unmapped_tools_keep_broad_tooling_coverage(self, tree, path):
+        if "unmapped" in path:
+            tree(path)
+        assert affected.select([path]) == ["tests/tooling/"]
+
+    def test_discovery_is_fresh_after_an_import_changes(self, tree):
+        assert affected.select(["tools/leaf.py"]) == ["tests/tooling/test_direct.py"]
+        tree("tests/unit/test_added.py", "import tools.leaf")
+        assert affected.select(["tools/leaf.py"]) == [
+            "tests/tooling/test_direct.py",
+            "tests/unit/test_added.py",
+        ]
+
+    @pytest.mark.parametrize(
+        "path, old, new",
+        [
+            ("tests/tooling/test_affected_tests.py", 'f"{name}.py"', 'f"other_{name}.py"'),
+            (
+                "tests/tooling/test_compare_device_outputs.py",
+                '"compare_device_outputs.py"',
+                '"other.py"',
+            ),
+            ("tests/conftest.py", '"tools/schema_content_worker.py"', '"tools/other.py"'),
+            (
+                "tools/schema_verification.py",
+                '"tools/schema_content_worker.py"',
+                '"tools/other.py"',
+            ),
+        ],
+    )
+    def test_changed_audited_loaders_require_broad_coverage(self, tree, path, old, new):
+        source = (PROJECT_ROOT / path).read_text()
+        assert old in source
+        tree(path, source.replace(old, new))
+        assert affected.select(["tools/leaf.py"]) == ["tests/"]

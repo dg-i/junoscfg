@@ -5,3 +5,20 @@ zone: schema
 assurance: economy
 domains: [schema-pipeline]
 removes: directory-only affected-test over-selection
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - tools/affected_tests.py
+  - tools/affected_tests.CONTRACT.md
+  - tests/tooling/test_affected_tests.py
+  - tests/tooling/test_affected_execution.py
+  - tests/CONTRACT.md
+  - docs/how-to/junoscfg-verification.md
+  - docs/VERIFICATION.md
+  - openspec/specs/schema-pipeline/test-selection/spec.md
+  - changelog.d/+affected-test-scope.misc.md
+  dependencies:
+  - openspec/changes/archive/2026-10-14-schema-qualification-scope
+  changelog: changelog.d/+affected-test-scope.misc.md
+  generated-records: []

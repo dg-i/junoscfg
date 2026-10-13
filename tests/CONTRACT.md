@@ -40,8 +40,12 @@ Where a test goes, which door it uses, and what it asserts.
 ## Which tests a change runs
 
 A change under `src/junoscfg/<package>/` runs its unit tests, the unit tests
-of its transitive importers, and `tests/contract/`. Tooling code/configuration,
-`tach.toml` and the pre-commit configuration run `tests/tooling/`. Shared
+of its transitive importers, and `tests/contract/`. Existing tooling modules run their transitive test consumers across tools and all
+tests, including imported test helpers. Consumers in shared support or root
+fixtures run the full suite; nested fixtures run their directory. Unknown loaders
+or malformed/unreadable dependency sources run the full suite. Deleted/unmapped
+tools, tooling configuration, `tach.toml` and the pre-commit configuration run
+`tests/tooling/`. Shared
 `tests/data/`, `tests/support/`, `tests/conftest.py`, the package root,
 shipped artifacts, `pyproject.toml` and the lock run the full default suite.
 A changed test selects itself; a conftest or deleted test selects its nearest
