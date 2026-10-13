@@ -8,5 +8,5 @@
 
 ## 3. Review and evidence
 
-- [ ] Obtain fresh lightweight review and pass canonical full verification.
+- [x] Obtain fresh lightweight review and pass canonical full verification.
 - [ ] Preserve metrics, validate, archive, bump the patch version and integrate locally.

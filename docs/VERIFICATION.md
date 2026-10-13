@@ -195,3 +195,13 @@ records failures and cache conditions. These are single observations, not a tren
 ## Shared workflow adoption
 
 2026-10-13 entry assessment at master `362301f834db3559f0f86f7ae0f6e378905dc3ad`: 52 first-parent commits since the retained cadence anchor; the existing invitation remains pending. Template v0.13.1 and checks 0.17.1 change workflow guidance and updater behavior. Verification engine source is unchanged from the production baseline, but the dependency identity changes and may invalidate qualification evidence. Preserve all three happy-flow targets and all assertions, coverage and corpus rules. Non-verification workflow reduction remains unproven; this refresh is not a comparable maintenance benchmark. Command evidence is retained in `private_test_data/workflow-refresh-2026-10-13/`.
+
+Job-end adoption assessment: canonical full passed in 353.552s, including newly
+selected schema qualification, with 10579 ordinary tests passing and 92.97%
+coverage. The complete suite took 69.973s and overlapped qualification. Existing
+project dependencies were retained; the canonical overlay installed 24 packages
+(24 ms installation substep, download/resolution not separately timed). No
+verification policy, assurance floor or corpus structure changed. Shared pages
+match v0.13.1 exactly, and independent review approved the companion split.
+The non-verification 50% improvement is not yet demonstrated by a comparable run.
+One pending cadence invitation is retained; no owner review or decline is inferred.
