@@ -43,6 +43,8 @@ WORKFLOW_CONFIG = {
     ".copier-answers.yml",
     ".gitignore",
     "tools/verification-costs.json",
+    ".agent-ready/template.toml",
+    ".agent-ready/update-receipt.json",
 }
 
 
@@ -160,12 +162,7 @@ def classify(path, patterns, old=None, new=None):
         return False
     if path.endswith((".md", ".rst")):
         return False
-    if path.startswith("openspec/changes/") and Path(path).name in {
-        ".openspec.yaml",
-        "metrics.json",
-        "events.jsonl",
-        "lifecycle.json",
-    }:
+    if path.startswith(("docs/", "changelog.d/", "openspec/")):
         return False
     return path != ".agent-ready/activation.json"
 

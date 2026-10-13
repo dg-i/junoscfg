@@ -26,6 +26,10 @@ qualified_context = native_generation_context
         ("tools/affected_tests.py", False),
         (".pre-commit-config.yaml", False),
         ("mkdocs.yml", False),
+        (".agent-ready/template.toml", False),
+        (".agent-ready/update-receipt.json", False),
+        ("docs/architecture/diagram.svg", False),
+        ("openspec/schemas/agent-ready/schema.yaml", False),
         ("tools/schema_verification.py", True),
         ("src/junoscfg/validate/json_yaml_validator.py", True),
         ("src/junoscfg/validate/set_validator.py", True),
@@ -154,3 +158,26 @@ def test_real_source_closure_excludes_binary_artifacts():
     assert "tests/support/paths.py" in sources
     assert all(name.endswith(".py") for name in sources)
     assert "tools/affected_tests.py" not in sources
+
+
+def test_explicit_input_overrides_documentation_category():
+    assert schema_selection.classify("docs/schema-input.json", ["docs/schema-input.json"])
+
+
+def test_transitive_tool_selects_qualification(qualified_context, capsys):
+    from tests.tooling.test_schema_selection import write_source_boundary
+    from tests.tooling.test_schema_verification import commit_fixture, git
+
+    root, base, patterns, metadata, engine, receipt = qualified_context
+    (root / "tools/schema_verification.py").write_text("from tools.helper import build\n")
+    helper = root / "tools/helper.py"
+    helper.write_text("def build():\n    return 1\n")
+    commit_fixture(root)
+    write_source_boundary(root)
+    commit_fixture(root)
+    base = git(root, "rev-parse", "HEAD").strip()
+    helper.write_text("def build():\n    return 2\n")
+    commit_fixture(root)
+    schema_dependencies.write_dependencies(root)
+    assert schema_selection.select(root, base)
+    assert "tools/helper.py" in capsys.readouterr().err

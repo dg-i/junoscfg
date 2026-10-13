@@ -85,7 +85,7 @@
     "tools/__init__.py": "e3ac405c096ebfa081a6853e9391da01238dd24b2c01c7da8f24d44e1143df8d",
     "tools/schema_content_worker.py": "374fc9f3fd670ea696f306a757f31153007bd9cf06401084bd0ffa0f68417d55",
     "tools/schema_dependencies.py": "997473bd0bb228a063d2c04a4735da30e24494621fb5174706ebd048c603a708",
-    "tools/schema_selection.py": "1a9c13a22f7cd85bdacb69b87434ebeaf78be7864e1b323e08e54facbe9aac4f",
+    "tools/schema_selection.py": "e61a22b34ef2b83875f4909e7d0455a88a68dea5d6442ed5ef4bb7614c5bfc73",
     "tools/schema_verification.py": "b0ac92ec0bb6542caeb80e1791f9311b454e965f7bdc7f272ff0dc28c488cdb9",
     "uv.lock": "ec4bf42df05cf67a1f6647d1cddaa169b8f4ad12281432005a114b36496535fb"
   }
