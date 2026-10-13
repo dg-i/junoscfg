@@ -115,3 +115,9 @@ checkpoint, and keep its tested inputs fixed until completion. Review/metric rec
 alone do not justify another full run; changed executing inputs do. Version, lock,
 shared fixtures and unknown configuration deliberately retain broad ordinary tests.
 That remaining release cost is policy, not an exemption inferred from bookkeeping.
+
+Ordinary evidence reuse is unavailable when private capture/schema directories,
+pytest or Junoscfg environment overrides, alternate pytest configuration or unknown
+configured options may introduce unbound inputs. The runner executes tests directly
+in those contexts; their status and options are unchanged. This is distinct from
+schema qualification's explicit private-input manifests and native evidence.

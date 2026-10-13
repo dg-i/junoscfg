@@ -64,3 +64,8 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
   workflow simplification; canonical OpenSpec CLI, specs and schema remain. No
   application test/coverage or review obligation is removed. Retirement and updater
   will receive fresh application review; no application full evidence yet exists.
+
+- Independent challenge identified ignored captures/schema discovery and external
+  option inputs not covered by ordinary tracked-byte proof. Ordinary reuse now
+  refuses these contexts and executes tests directly. This fulfills conservative
+  uncertainty criteria; new regression cases precede the first full checkpoint.

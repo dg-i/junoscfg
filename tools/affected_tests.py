@@ -23,6 +23,7 @@ against its base plus the working tree. That is what the pre-commit hook does.
 from __future__ import annotations
 
 import ast
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -309,6 +310,36 @@ def changed_files() -> list[str]:
     return sorted(set(branch) | set(working))
 
 
+def reuse_blocker() -> str | None:
+    """Refuse reuse when pytest may read undeclared external/private inputs."""
+    import tomllib
+
+    if any(value and key.startswith(("PYTEST_", "JUNOSCFG_")) for key, value in os.environ.items()):
+        return "pytest or Junoscfg environment overrides"
+    for name in (
+        "pytest.ini",
+        ".pytest.ini",
+        "pytest.toml",
+        ".pytest.toml",
+        "tox.ini",
+        "setup.cfg",
+    ):
+        if (ROOT / name).exists():
+            return "alternate pytest configuration"
+    for name in ("captures", "schemas"):
+        path = ROOT / "private_test_data" / name
+        if path.exists() or path.is_symlink():
+            return "private corpus or schema discovery inputs"
+    try:
+        config = tomllib.loads((ROOT / "pyproject.toml").read_text())
+        options = config["tool"]["pytest"]["ini_options"]["addopts"]
+    except (OSError, ValueError, KeyError):
+        return "unclassified pytest configuration"
+    if options != ["--strict-markers", "--strict-config", "-ra"]:
+        return "unclassified pytest options"
+    return None
+
+
 def main(argv: list[str]) -> int:
     """Print the selection, or with ``--run`` run it."""
     run = "--run" in argv
@@ -322,7 +353,10 @@ def main(argv: list[str]) -> int:
     command = [sys.executable, "-m", "pytest", "-q", "--no-header", *selection]
     from agent_ready_checks import readiness, verification
 
-    if readiness.config(ROOT).get("enabled", False):
+    blocker = reuse_blocker()
+    if blocker:
+        print(f"affected-test evidence unavailable; executing tests: {blocker}", file=sys.stderr)
+    if not blocker and readiness.config(ROOT).get("enabled", False):
         try:
             return verification.execute(
                 ROOT,

@@ -26,3 +26,10 @@ keeps full native input, base, environment and root identity; no local receipt s
 or exemption is added. Missing/unavailable identity runs the selected tests normally;
 a failed executed command returns failure without retry. Disabled policy executes
 tests directly. Successful focused/no-coverage evidence is never full-suite coverage.
+
+Private capture/schema directories, pytest/Junoscfg environment overrides, alternate
+pytest configuration and unclassified configured options force direct execution.
+The ordinary evidence authority cannot prove changing ignored/external input bytes
+from their unchanged pathname. This deliberately broad refusal does not remove
+options or tests; it returns the real pytest status. Schema qualification keeps its
+separate declared-input evidence protocol.

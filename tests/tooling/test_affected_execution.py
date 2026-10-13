@@ -13,6 +13,7 @@ def execution(monkeypatch):
     from agent_ready_checks import readiness, verification
 
     calls = []
+    monkeypatch.setattr(affected_tests, "reuse_blocker", lambda: None)
     monkeypatch.setattr(
         affected_tests, "select", lambda files: ["tests/tooling/test_cli_reference.py"]
     )
@@ -72,3 +73,46 @@ def test_unavailable_evidence_or_disabled_policy_executes_tests(execution, monke
     )
     assert affected_tests.main(["--run", "tools/generate_cli_reference.py"]) == 3
     assert calls[0][-1] == "tests/tooling/test_cli_reference.py"
+
+
+@pytest.mark.parametrize("input_kind", ["captures", "schemas", "override", "options", "alternate"])
+def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatch, input_kind):
+    from agent_ready_checks import verification
+
+    monkeypatch.setattr(affected_tests, "ROOT", tmp_path)
+    monkeypatch.setattr(affected_tests, "select", lambda files: ["tests/"])
+    for key in list(affected_tests.os.environ):
+        if key.startswith(("PYTEST_", "JUNOSCFG_")):
+            monkeypatch.delenv(key)
+    project = tmp_path / "pyproject.toml"
+    project.write_text(
+        '[tool.pytest.ini_options]\naddopts = ["--strict-markers", "--strict-config", "-ra"]\n'
+    )
+    assert affected_tests.reuse_blocker() is None
+    if input_kind in {"captures", "schemas"}:
+        directory = tmp_path / "private_test_data" / input_kind
+        directory.mkdir(parents=True)
+        (directory / "input.conf").write_text("changed private bytes")
+    elif input_kind == "override":
+        monkeypatch.setenv("PYTEST_ADDOPTS", "--regen-schema")
+    elif input_kind == "options":
+        project.write_text('[tool.pytest.ini_options]\naddopts = ["--device-grammar"]\n')
+    else:
+        (tmp_path / "pytest.ini").write_text("[pytest]\naddopts = --schema\n")
+    assert affected_tests.reuse_blocker() is not None
+    monkeypatch.setattr(
+        verification, "execute", lambda *args: pytest.fail("must not consult old success")
+    )
+    monkeypatch.setattr(
+        affected_tests.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=2)
+    )
+    assert affected_tests.main(["--run", "tests/corpus/test_device_truth.py"]) == 2
+
+
+@pytest.mark.parametrize(
+    "variable",
+    ["JUNOSCFG_ARTIFACTS", "JUNOSCFG_AUDIT_REGISTRY", "JUNOSCFG_XSD_SOURCE", "PYTEST_PLUGINS"],
+)
+def test_external_path_contents_are_not_proven_by_environment_strings(monkeypatch, variable):
+    monkeypatch.setenv(variable, "same-path-with-changed-content")
+    assert affected_tests.reuse_blocker() is not None

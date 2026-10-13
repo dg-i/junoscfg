@@ -106,3 +106,19 @@ attempts total 745.72s including an initial full run invalidated by source mutat
 its stable rerun passed in 285.64s. Setup/hooks/renders there are UNMEASURED, not zero.
 Supported retirement moves competing OpenSpec/OPSX discovery to an external intact
 recovery directory before the exact updater; agent-ready-change remains authoritative.
+
+Independent challenge found private capture and schema discovery inputs outside
+the ordinary tracked-byte identity, plus external configuration/environment paths.
+The earlier paired probe demonstrates the shared API only, not a sufficient input
+boundary for private-data checkouts. The adapter now runs directly whenever private
+capture/schema directories, pytest/Junoscfg overrides, alternate pytest config, or
+unknown configured options occur. This intentionally conservative cost preserves
+all assertions and input side effects. New guard tests initially exposed two mock
+fixtures that still inherited PYTEST_CURRENT_TEST (74 pass/2 fail); isolating the
+API-only fixture from the real guard corrects those tests without weakening guards.
+
+Updater attempt cost 9.24s and stopped on a CI merge conflict, without a receipt.
+Its 28 tracked outputs and sole new canonical short-lanes file were restored
+selectively; selector safety edits and unrelated ignored mirror entries were kept.
+The approved local CI matrix is pending owner confirmation required by refresh.
+No attempt is called successful adoption.

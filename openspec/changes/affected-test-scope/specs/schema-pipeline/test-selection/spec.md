@@ -30,7 +30,7 @@ Tests: `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::t
 ### Requirement: Ordinary execution retains exact evidence identity
 
 WHEN Strategy A is enabled THEN the ordinary affected-test runner SHALL use the shared command-evidence authority for its actual selected pytest command; unavailable identity SHALL execute tests normally, and failed execution SHALL return failure without automatic retry. WHEN the policy is disabled THEN tests SHALL run directly. Focused evidence SHALL NOT stand in for a different full coverage obligation.
-Tests: `tests/tooling/test_affected_execution.py::test_selected_command_is_the_shared_evidence_obligation`, `tests/tooling/test_affected_execution.py::test_shared_execution_failure_is_not_relabelled_or_retried`, `tests/tooling/test_affected_execution.py::test_unavailable_evidence_or_disabled_policy_executes_tests`
+Tests: `tests/tooling/test_affected_execution.py::test_selected_command_is_the_shared_evidence_obligation`, `tests/tooling/test_affected_execution.py::test_shared_execution_failure_is_not_relabelled_or_retried`, `tests/tooling/test_affected_execution.py::test_unavailable_evidence_or_disabled_policy_executes_tests`, `tests/tooling/test_affected_execution.py::test_undeclared_inputs_cannot_consult_a_success_receipt`
 
 #### Scenario: Missing identity cannot skip a test
 
@@ -41,3 +41,8 @@ Tests: `tests/tooling/test_affected_execution.py::test_selected_command_is_the_s
 
 - **WHEN** the shared command execution reports failure
 - **THEN** the hook fails without retrying or replacing its result
+
+#### Scenario: Ignored or external inputs remain conservative
+
+- **WHEN** private corpus/schema discovery, external overrides or unknown pytest options can change unbound execution inputs
+- **THEN** the runner executes tests directly without consulting old ordinary success evidence
