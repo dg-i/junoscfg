@@ -101,19 +101,24 @@ Tests: `tests/tooling/test_schema_qualification.py::TestTimingEvidence::test_exe
 - **THEN** the outcomes retain their identity and a separate timing mapping reports all three measured phases
 
 ### Requirement: Dependency selection ignores only editable root version
+WHEN dependency relevance is computed THEN the application SHALL fingerprint the complete locked records and transitive dependency edges used by schema execution, including relevant Python resolution constraints, sources and artifact hashes; unrelated packages and editable release versions SHALL NOT invalidate qualification. Missing or ambiguous required dependency records SHALL refuse. Updater-only agent-ready-checks releases SHALL be judged by actual executing module identity, not distribution version.
+Tests: `tests/tooling/test_schema_scope.py::test_dependency_projection`, `tests/tooling/test_schema_scope.py::test_updater_release_projection`
 
-WHEN dependency relevance is computed THEN the application SHALL fingerprint the complete parsed uv.lock with only the nonempty version field of the unique junoscfg package whose source is exactly editable dot removed; malformed TOML, absent or ambiguous root records, or an unexpected root source SHALL refuse. Every other parsed field SHALL remain represented.
-Tests: `tests/tooling/test_schema_dependencies.py::test_only_root_version_is_ignored`, `tests/tooling/test_schema_dependencies.py::test_ambiguous_or_invalid_root_refuses`
+#### Scenario: Unrelated updater dependency changes
+- **WHEN** only updater or documentation code changes in agent-ready-checks
+- **THEN** schema dependency identity remains equal while relevant executing engine changes invalidate proof
+
+#### Scenario: Transitive schema dependency changes
+- **WHEN** a locked dependency used by a schema producer or validator changes
+- **THEN** the dependency fingerprint changes and qualification is required
 
 #### Scenario: Release bookkeeping changes only the project version
-
 - **WHEN** only the unique editable root package version changes
 - **THEN** the dependency fingerprint remains identical and the lock edit selects only the cheap consistency tier
 
 #### Scenario: Any other lock data changes
-
-- **WHEN** a dependency version, source, artifact hash, root dependency, Python constraint or other parsed field changes
-- **THEN** the fingerprint changes and cannot be accepted until its committed projection is refreshed
+- **WHEN** a non-version lock field changes
+- **THEN** fields in the schema execution closure or its resolution constraints change the fingerprint and require a refreshed projection, while unrelated package fields preserve it
 
 ### Requirement: Dependency consistency is a truthful cheap obligation
 
@@ -163,11 +168,23 @@ Tests: `tests/tooling/test_verification_tests.py::test_complete_disjoint_executi
 - **THEN** the full command fails
 
 ### Requirement: Schema selection fails safely on uncertain relevance
-WHEN automatic qualification is considered THEN the application SHALL select all declared producer paths and relevant physical inputs, dependencies, runtime or schema configuration changes, preserve justified workflow-only and isolated consumer-body exemptions, and select qualification or refuse when classification is missing, malformed or uncertain. Release-only editable-root version changes SHALL retain their cheap guard exception. Input preparation SHALL NOT constitute successful qualification evidence.
-Tests: `tests/tooling/test_schema_selection.py::test_all_producers_and_unknown_paths_qualify`, `tests/tooling/test_schema_selection.py::test_consumer_body_and_workflow_exemptions`, `tests/tooling/test_schema_selection.py::test_import_time_uncertainty_qualifies`, `tests/tooling/test_schema_selection.py::test_runtime_or_input_change_cannot_skip`
+WHEN automatic qualification is considered THEN the application SHALL select schema producers, their transitive execution dependencies, relevant inputs, generation options and validation algorithms; irrelevant documentation, instructions, workflow tooling, release bookkeeping and dependency updates SHALL reuse valid native evidence. Missing or invalid relevant evidence SHALL select qualification with a specific reason. Unknown schema-impacting changes SHALL qualify or refuse. Ordinary tests, integrity, coverage and independent review SHALL remain unchanged.
+Tests: `tests/tooling/test_schema_scope.py::test_execution_path_selection`, `tests/tooling/test_schema_selection.py::test_native_generation_context_rejects_stale_proof`
+
+#### Scenario: Workflow-only edits with valid evidence
+- **WHEN** an unrelated tool, instruction or configuration changes
+- **THEN** qualification is not selected and ordinary verification remains required
+
+#### Scenario: Changed validation algorithm
+- **WHEN** a validation function body changes
+- **THEN** qualification is selected even if import-time structure is unchanged
+
+#### Scenario: No valid evidence
+- **WHEN** relevant proof is missing, corrupt, or incompatible
+- **THEN** qualification is selected and the failed condition is explained
 
 #### Scenario: An isolated consumer function changes
-- **WHEN** unchanged import-time structure proves the changed body does not participate in schema production
+- **WHEN** unchanged import-time structure and the audited execution relationship prove the changed body does not participate in schema production
 - **THEN** expensive qualification is omitted while complete ordinary compatibility and consumer checks run
 
 #### Scenario: A runtime or producer input changes

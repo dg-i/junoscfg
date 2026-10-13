@@ -58,3 +58,9 @@ This is one real observation below the accepted 95-second no-schema target,
 not a general performance trend. No cache/evidence bytes were copied or relabelled.
 The combined original-baseline lane obligation remains open until shared updater
 checkpoint handling is adopted and that full command passes.
+
+Phase-7 spec preparation: OpenSpec 1.13.0 archive applied the reviewed delta in
+`/private/tmp/junoscfg-schema-scope-spec-sync`, a disposable `git archive` snapshot.
+Only the resulting main specification was copied to the live branch. The live
+change remains open; the disposable archive is not completion evidence. Result
+matches the two reviewed MODIFIED requirements and preserves inherited scenarios.

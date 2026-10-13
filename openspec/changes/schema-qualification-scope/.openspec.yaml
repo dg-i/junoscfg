@@ -73,6 +73,7 @@ verification:
   - openspec/schemas/agent-ready/templates/review.md
   - openspec/schemas/agent-ready/templates/spec.md
   - openspec/schemas/agent-ready/templates/tasks.md
+  - openspec/specs/schema-pipeline/verification-evidence/spec.md
   - pyproject.toml
   - tests/tooling/test_schema_dependency_trigger_challenge.py
   - tests/tooling/test_schema_scope.py
