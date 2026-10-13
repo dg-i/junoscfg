@@ -103,9 +103,66 @@ class TestATestChangeSelectsItself:
         assert (
             affected.select(
                 [
-                    "docs/guide/cli-reference.md",
+                    "docs/guide/usage.md",
                     "README.md",
                     "tools/schema_verification.CONTRACT.md",
+                ]
+            )
+            == []
+        )
+
+
+class TestRepositoryFilesATestReadsReceiveCoverage:
+    """A test that reads a repository file names it from the project root; that
+    file then selects the test, wherever it lives and whatever its suffix."""
+
+    @pytest.mark.parametrize(
+        "name, expected",
+        [
+            (".github/workflows/ci.yml", ["tests/tooling/test_type_policy.py"]),
+            ("docs/guide/cli-reference.md", ["tests/tooling/test_cli_reference.py"]),
+            (".agent-ready/activation.json", ["tests/tooling/test_schema_verification.py"]),
+        ],
+    )
+    def test_a_file_a_test_reads_selects_that_test(self, name, expected) -> None:
+        assert affected.select([name]) == expected
+
+    @pytest.mark.parametrize("name", ["examples/junoscfg-oracle.json", "examples/removed.set"])
+    def test_a_directory_shared_support_reads_selects_everything(self, name) -> None:
+        assert affected.select([name]) == ["tests/"]
+
+    def test_package_data_selects_its_package(self) -> None:
+        assert affected.select(["src/junoscfg/audit/data/unused-types.yaml"]) == (
+            affected.select(["src/junoscfg/audit/registry.py"])
+        )
+
+    def test_a_marker_outside_every_package_selects_everything(self) -> None:
+        assert affected.select(["src/junoscfg/py.typed"]) == ["tests/"]
+
+    @pytest.mark.parametrize(
+        "name", [".gitignore", "mkdocs.yml", ".copier-answers.yml", "data/request-xml-schema.xml"]
+    )
+    def test_unclassified_configuration_keeps_tooling_coverage(self, name) -> None:
+        assert affected.select([name]) == ["tests/tooling/"]
+
+    def test_a_non_python_test_input_selects_its_directory(self) -> None:
+        assert affected.select(["tests/integration_test.sh"]) == ["tests/"]
+
+    def test_documents_and_change_records_nobody_reads_select_nothing(self) -> None:
+        assert (
+            affected.select(
+                [
+                    "openspec/changes/example/metrics.json",
+                    "openspec/changes/example/.openspec.yaml",
+                    "openspec/specs/schema-pipeline/test-selection/spec.md",
+                    "changelog.d/+example.misc.md",
+                    ".agent-ready/update-receipt.json",
+                    ".agents/skills/agent-ready-change/SKILL.md",
+                    ".claude/skills/agent-ready-change/SKILL.md",
+                    ".github/workflows/publish.yml",
+                    "docs/reviews/example.md",
+                    "src/junoscfg/validate/CONTRACT.md",
+                    "tests/CONTRACT.md",
                 ]
             )
             == []
@@ -313,6 +370,75 @@ class TestToolConsumersDetermineSelection:
     def test_uncertain_discovery_never_silently_narrows(self, tree, source):
         tree("tests/unit/test_unknown.py", source)
         assert affected.select(["tools/leaf.py"]) == ["tests/"]
+
+    @pytest.mark.parametrize(
+        "reader",
+        [
+            'from tests.support.paths import PROJECT_ROOT\nPROJECT_ROOT / "docs" / "page.md"',
+            "from tests.support.paths import PROJECT_ROOT as top\n"
+            'ROOT = top\nROOT / "docs/page.md"',
+            "from tools.pages import page",
+        ],
+    )
+    def test_a_named_root_path_is_a_dependency(self, tree, reader):
+        tree(
+            "tools/pages.py",
+            "from pathlib import Path\nHOME = Path(__file__).resolve().parents[1]\n"
+            'page = HOME / "docs" / "page.md"',
+        )
+        tree("tests/tooling/test_pages.py", "import tools.pages")
+        tree("tests/unit/test_reader.py", reader)
+        tree("tests/unit/test_unrelated.py", 'Path("docs") / "page.md"')
+        assert affected.select(["docs/page.md"]) == [
+            "tests/tooling/test_pages.py",
+            "tests/unit/test_reader.py",
+        ]
+
+    @pytest.mark.parametrize(
+        "body, expected",
+        [
+            (
+                "def test_reads():\n    PROJECT_ROOT / 'docs/page.md'",
+                ["tests/tooling/test_owner.py"],
+            ),
+            (
+                "class TestPage:\n"
+                "    async def test_reads(self):\n        PROJECT_ROOT / 'docs/page.md'",
+                ["tests/tooling/test_owner.py"],
+            ),
+            (
+                "def helper():\n    return PROJECT_ROOT / 'docs/page.md'",
+                ["tests/tooling/test_owner.py", "tests/unit/test_importer.py"],
+            ),
+        ],
+    )
+    def test_a_path_read_inside_a_test_reaches_no_importer(self, tree, body, expected):
+        tree("tests/tooling/test_owner.py", f"from tests.support.paths import PROJECT_ROOT\n{body}")
+        tree("tests/unit/test_importer.py", "from tests.tooling.test_owner import helper")
+        assert affected.select(["docs/page.md"]) == expected
+
+    def test_a_named_directory_covers_deleted_files_below_it(self, tree):
+        tree(
+            "tests/support/paths.py",
+            "PROJECT_ROOT = Path(__file__).resolve().parents[2]\n"
+            'EXAMPLES = PROJECT_ROOT / "examples"',
+        )
+        assert affected.select(["examples/gone.conf"]) == ["tests/"]
+
+    def test_a_dynamic_root_path_outside_tooling_is_uncertain(self, tree):
+        tree(
+            "tests/unit/test_dynamic.py",
+            "from tests.support.paths import PROJECT_ROOT\n(PROJECT_ROOT / name).read_text()",
+        )
+        assert affected.select(["docs/page.md"]) == ["tests/"]
+
+    def test_a_dynamic_root_path_in_tooling_reaches_unclassified_inputs(self, tree):
+        tree(
+            "tests/tooling/test_dynamic.py",
+            "from tests.support.paths import PROJECT_ROOT\n(PROJECT_ROOT / name).read_text()",
+        )
+        assert affected.select(["docs/page.md"]) == []
+        assert affected.select(["settings.cfg"]) == ["tests/tooling/"]
 
     @pytest.mark.parametrize("path", ["tools/unmapped.py", "tools/deleted.py"])
     def test_missing_or_unmapped_tools_keep_broad_tooling_coverage(self, tree, path):

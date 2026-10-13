@@ -39,8 +39,9 @@ Where a test goes, which door it uses, and what it asserts.
 
 ## Which tests a change runs
 
-A change under `src/junoscfg/<package>/` runs its unit tests, the unit tests
-of its transitive importers, and `tests/contract/`. Existing tooling modules run their transitive test consumers across tools and all
+A change under `src/junoscfg/<package>/`, code or package data, runs its unit
+tests, the unit tests of its transitive importers, and `tests/contract/`.
+Existing tooling modules run their transitive test consumers across tools and all
 tests, including imported test helpers. Consumers in shared support or root
 fixtures run the full suite; nested fixtures run their directory. Unknown loaders
 or malformed/unreadable dependency sources run the full suite. Deleted/unmapped
@@ -51,4 +52,9 @@ shipped artifacts, `pyproject.toml` and the lock run the full default suite.
 A changed test selects itself; a conftest or deleted test selects its nearest
 existing containing test directory. Covered descendants are omitted from the
 selection. The hook always invokes the selector, including deletion-only
-commits; unrelated documents select no tests. The full set adds branch coverage.
+commits. A test reads any other repository file through `PROJECT_ROOT /
+"constant/path"`, never a computed or working-directory path outside
+`tests/tooling/`: that file, or a directory named that way, then selects the
+module (only the module, when the read is inside a test function). Other
+configuration also runs `tests/tooling/`; documents and change records nobody
+names select no tests. The full set adds branch coverage.

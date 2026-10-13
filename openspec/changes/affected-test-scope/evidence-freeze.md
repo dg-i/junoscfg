@@ -69,3 +69,15 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
   option inputs not covered by ordinary tracked-byte proof. Ordinary reuse now
   refuses these contexts and executes tests directly. This fulfills conservative
   uncertainty criteria; new regression cases precede the first full checkpoint.
+
+- Executed counterexample (2026-10-14, adoption attempt): a commit changing only
+  `.github/workflows/ci.yml` selected no tests, yet `test_type_policy` reads that
+  file; the next lock-triggered hook failed it. Enumerating tracked files that
+  selected nothing also found `examples/` (named by shared support) and audit
+  package data. The added named-reader requirement closes these under-selections;
+  documents and change records stay unselected unless a module names them, and a
+  computed root path outside tooling selects the full suite. Selector regressions
+  were observed failing (18) before implementation.
+- Owner decision (2026-10-14): continue this branch; keep the approved local CI
+  verbatim through template adoption. Upstream preserved-workflow and skill
+  Markdown defects go through the template's own workflow before adoption.

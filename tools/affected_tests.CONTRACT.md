@@ -16,9 +16,21 @@ outside tooling. Discovery is rebuilt for each selection, with no persistent cac
 
 Deleted/unmapped tooling modules and non-Markdown tooling configuration select all
 tooling tests. Shared test data, project configuration, lock and shipped artifacts
-select the full suite. Test deletion/conftest rules retain their containing scope.
-Unrelated documents/bookkeeping select nothing. Selected ancestors subsume their
-descendants. This tool does not replace the full review checkpoint or schema tier.
+select the full suite. Package data selects like its package's source; a non-Python
+file at the package root selects the full suite. Test deletion/conftest rules retain
+their containing scope; other non-Python test inputs select their directory.
+
+A file outside `src/`, `tests/` and `tools/` is a dependency of every tools/tests
+module that names it, or a directory above it, as a constant path from the
+project root (`PROJECT_ROOT`, an alias, or `Path(__file__).resolve().parents[N]`
+landing on the root). Consumers follow the import graph above, except that a path
+named only inside a `test_*` function reaches that module alone. A computed root
+path outside tooling raises, selecting the full suite; tooling's own computed
+reads are covered because unclassified configuration also selects the tooling
+suite. Documents (`.md`, `.rst`, `.txt`) and change records (`openspec/`,
+`changelog.d/`, `.agent-ready/`, `.agents/`, `.claude/`, `.github/`, `docs/`) add
+nothing beyond their named readers. Selected ancestors subsume their descendants.
+This tool does not replace the full review checkpoint or schema tier.
 
 With Strategy A enabled, ordinary execution uses the shared verification.execute
 authority for the exact selected pytest command and current Python runtime. It

@@ -46,3 +46,28 @@ Tests: `tests/tooling/test_affected_execution.py::test_selected_command_is_the_s
 
 - **WHEN** private corpus/schema discovery, external overrides or unknown pytest options can change unbound execution inputs
 - **THEN** the runner executes tests directly without consulting old ordinary success evidence
+
+### Requirement: Repository files a test reads receive coverage
+
+WHEN a repository file outside the package, test and tooling trees changes THEN the selector SHALL include the test consumers of every tools/tests module naming that file, or a directory above it, as a constant path from the project root; a path named only inside a test function SHALL reach only its module. WHEN a computed root path outside tooling makes the reader uncertain THEN the full suite SHALL be selected. Unclassified configuration SHALL also select the tooling suite; documents and change records SHALL add nothing beyond their named readers. Package data SHALL select like its package's source, and a non-Python file at the package root SHALL select the full suite.
+Tests: `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_file_a_test_reads_selects_that_test`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_directory_shared_support_reads_selects_everything`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_package_data_selects_its_package`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_unclassified_configuration_keeps_tooling_coverage`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_documents_and_change_records_nobody_reads_select_nothing`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_named_root_path_is_a_dependency`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_path_read_inside_a_test_reaches_no_importer`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_dynamic_root_path_outside_tooling_is_uncertain`
+
+#### Scenario: Workflow file read by a policy test
+
+- **WHEN** .github/workflows/ci.yml changes
+- **THEN** tests/tooling/test_type_policy.py is selected
+
+#### Scenario: Shared support names a directory
+
+- **WHEN** a file under examples/ changes or is deleted
+- **THEN** the full default suite is selected
+
+#### Scenario: Shipped package data changes
+
+- **WHEN** src/junoscfg/audit/data/unused-types.yaml changes
+- **THEN** the selection equals that of a source change in the audit package
+
+#### Scenario: Unread change records stay inexpensive
+
+- **WHEN** only OpenSpec change records, changelog fragments, skills or unread documents change
+- **THEN** no tests are selected

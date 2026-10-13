@@ -96,8 +96,12 @@ importers and contract tests. Tooling modules follow audited reverse dependencie
 through tools and all test modules. Root fixtures/shared support select the full
 suite; nested fixtures select their directory. Unknown loaders, malformed dependency
 sources, deleted or unmapped tools and configuration retain conservative coverage.
-The precise boundary is `tools/affected_tests.CONTRACT.md`. OpenSpec metrics and
-review bookkeeping do not add test targets to an otherwise identical selection.
+Package data selects its package. A repository file a test or tool names from the
+project root selects that module's tests, so the CI workflow selects its type-policy
+test and `examples/` (named by shared support) the full suite; other unclassified
+configuration also selects the tooling suite. The precise boundary is
+`tools/affected_tests.CONTRACT.md`. OpenSpec metrics and review bookkeeping do not
+add test targets to an otherwise identical selection.
 
 Under Strategy A, the ordinary runner uses the template's existing command evidence
 API. A later identical selected pytest command can reuse successful native proof
@@ -115,6 +119,9 @@ checkpoint, and keep its tested inputs fixed until completion. Review/metric rec
 alone do not justify another full run; changed executing inputs do. Version, lock,
 shared fixtures and unknown configuration deliberately retain broad ordinary tests.
 That remaining release cost is policy, not an exemption inferred from bookkeeping.
+A template update moves the lock, so its commit runs the whole suite serially
+without coverage and the following full checkpoint runs it again in parallel with
+aggregate coverage: two distinct obligations, neither of which satisfies the other.
 
 Ordinary evidence reuse is unavailable when private capture/schema directories,
 pytest or Junoscfg environment overrides, alternate pytest configuration or unknown

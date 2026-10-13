@@ -11,7 +11,10 @@ suite. Tooling modules select transitive test consumers; uncertain discovery sel
 the full suite, and unmapped tools or tooling configuration select the tooling
 suite. Shared test data
 selects everything. Deleted tests select their nearest existing test directory.
-Anything else selects nothing; selected ancestors subsume their descendants.
+Package data selects its package. A file outside ``src``, ``tests`` and ``tools``
+selects the tests of every module naming it from the project root; other
+configuration also selects the tooling suite, while documents and change records
+select nothing more. Selected ancestors subsume their descendants.
 
 ``uv run python tools/affected_tests.py FILE...`` prints the selection;
 ``--run`` runs it with pytest. With no files it reads the change from git: the
@@ -40,6 +43,19 @@ RUNS_EVERYTHING = (
     "pyproject.toml",
     "uv.lock",
 )
+# Checked by the repository gates, not pytest. A test that reads one names it
+# from the project root, which makes it a reader below like any other file.
+DOCUMENTS = (".md", ".rst", ".txt")
+RECORDS = (
+    "openspec/",
+    "changelog.d/",
+    ".agent-ready/",
+    ".agents/",
+    ".claude/",
+    ".github/",
+    "docs/",
+)
+TOOLING = ("tools/", "tests/tooling/")
 
 
 def package_of(path: Path) -> str | None:
@@ -122,6 +138,91 @@ def _qualified(node: ast.AST, aliases: dict[str, str]) -> str:
     return ""
 
 
+def _is_root(node: ast.AST, path: Path, roots: set[str]) -> bool:
+    """A root name, or ``Path(__file__).resolve().parents[N]`` landing on ROOT."""
+    if isinstance(node, ast.Name):
+        return node.id in roots
+    if not (
+        isinstance(node, ast.Subscript)
+        and isinstance(node.slice, ast.Constant)
+        and isinstance(node.slice.value, int)
+        and ast.unparse(node.value) == "Path(__file__).resolve().parents"
+    ):
+        return False
+    parents = path.resolve().parents
+    return node.slice.value < len(parents) and parents[node.slice.value] == ROOT.resolve()
+
+
+def _root_path(node: ast.AST, path: Path, roots: set[str]) -> tuple[str, bool] | None:
+    """``("docs/x.md", True)`` for ``ROOT / "docs" / "x.md"``; False once a part is
+    computed, keeping the constant prefix; None when not anchored at the root."""
+    if _is_root(node, path, roots):
+        return "", True
+    if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)):
+        return None
+    left = _root_path(node.left, path, roots)
+    if left is None or not left[1]:
+        return left
+    if isinstance(node.right, ast.Constant) and isinstance(node.right.value, str):
+        return "/".join(filter(None, (left[0], node.right.value.strip("/")))), True
+    return left[0], False
+
+
+def _named_paths(owner: str, path: Path, nodes: list[ast.AST]) -> dict[str, str]:
+    """Repository paths the module names from the project root, each with the
+    consumer it reaches, or raise when a computed one outside tooling could be
+    any file. A path named only inside a test function is that module's alone:
+    importers reach a module's helpers, never its tests. Its consumer carries the
+    ``::`` suffix that stops the walk through importers."""
+    roots = {
+        alias.asname or alias.name
+        for node in nodes
+        if isinstance(node, ast.ImportFrom) and node.module == "tests.support.paths"
+        for alias in node.names
+        if alias.name == "PROJECT_ROOT"
+    }
+    assigned = [
+        node
+        for node in nodes
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+    ]
+    grown = True
+    while grown:
+        grown = False
+        for node in assigned:
+            name = node.targets[0].id
+            if name not in roots and _is_root(node.value, path, roots):
+                roots.add(name)
+                grown = True
+    inner = {id(node.left) for node in nodes if isinstance(node, ast.BinOp)}
+    in_tests = (
+        {
+            id(child)
+            for node in nodes
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name.startswith("test_")
+            for child in ast.walk(node)
+        }
+        if path.name.startswith("test_")
+        else set()
+    )
+    named: dict[str, str] = {}
+    for node in nodes:
+        if id(node) in inner:
+            continue
+        found = _root_path(node, path, roots) if isinstance(node, ast.BinOp) else None
+        if found is None:
+            continue
+        name, complete = found
+        if not complete and not owner.startswith(TOOLING):
+            raise ValueError(f"computed repository path: {owner}")
+        if name and named.get(name) != owner:
+            named[name] = f"{owner}::" if id(node) in in_tests else owner
+    return named
+
+
 def tooling_importers() -> dict[str, set[str]]:
     """Reverse imports across tools AND tests; reject opaque import mechanisms.
 
@@ -151,6 +252,8 @@ def tooling_importers() -> dict[str, set[str]]:
         owner = path.relative_to(ROOT).as_posix()
         tree = ast.parse(path.read_text(encoding="utf-8"))
         nodes = list(ast.walk(tree))
+        for name, consumer in _named_paths(owner, path, nodes).items():
+            graph.setdefault(name, set()).add(consumer)
         aliases: dict[str, str] = {}
         for node in nodes:
             if isinstance(node, ast.Import):
@@ -232,6 +335,9 @@ def tooling_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
     """Map reachable consumers to pytest paths, with broad unmapped fallback."""
     selected: set[str] = set()
     for consumer in dependents(rel, graph):
+        if consumer.endswith("::"):
+            selected.add(consumer.removesuffix("::"))
+            continue
         if consumer.startswith(("tests/support/", "tests/conftest.py")):
             return set(EVERYTHING)
         if consumer.startswith("tests/"):
@@ -241,6 +347,16 @@ def tooling_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
             elif path.name.startswith("test_"):
                 selected.add(consumer)
     return selected or {"tests/tooling/"}
+
+
+def reader_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
+    """The tests of every module that names *rel*, or a directory above it."""
+    selected: set[str] = set()
+    for name, owners in graph.items():
+        if rel == name or rel.startswith(f"{name}/"):
+            for owner in owners:
+                selected.update(tooling_selection(owner, graph))
+    return selected
 
 
 def select(files: list[str]) -> list[str]:
@@ -253,7 +369,9 @@ def select(files: list[str]) -> list[str]:
         if rel.startswith(RUNS_EVERYTHING) or rel == "src/junoscfg/__init__.py":
             return list(EVERYTHING)
         path = ROOT / rel
-        if rel.startswith("src/junoscfg/") and rel.endswith(".py"):
+        if rel.startswith("src/junoscfg/") and not rel.endswith(DOCUMENTS):
+            if "/" not in rel.removeprefix("src/junoscfg/") and path.suffix != ".py":
+                return list(EVERYTHING)  # a package marker such as py.typed
             graph = graph if graph is not None else importers()
             for package in dependents(package_of(path), graph):
                 if package and (TESTS / "unit" / package).is_dir():
@@ -271,14 +389,23 @@ def select(files: list[str]) -> list[str]:
                     return list(EVERYTHING)
             else:
                 chosen.add("tests/tooling/")
-        elif rel.startswith("tests/") and rel.endswith(".py"):
-            if path.is_file() and path.name != "conftest.py":
+        elif rel.startswith("tests/") and not rel.endswith(DOCUMENTS):
+            if path.suffix == ".py" and path.is_file() and path.name != "conftest.py":
                 chosen.add(rel)
             else:
                 directory = path.parent
                 while not directory.is_dir() and directory != TESTS:
                     directory = directory.parent
                 chosen.add(f"{directory.relative_to(ROOT).as_posix()}/")
+        elif not rel.startswith(("src/", "tests/", "tools/")):
+            try:
+                if tool_graph is None:
+                    tool_graph = tooling_importers()
+                chosen.update(reader_selection(rel, tool_graph))
+            except (OSError, UnicodeError, SyntaxError, ValueError):
+                return list(EVERYTHING)
+            if not rel.endswith(DOCUMENTS) and not rel.startswith(RECORDS):
+                chosen.add("tests/tooling/")
     return [
         target
         for target in sorted(chosen)
