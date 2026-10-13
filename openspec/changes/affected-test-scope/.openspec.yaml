@@ -1,0 +1,7 @@
+schema: agent-ready
+created: 2026-10-14
+type: bug
+zone: schema
+assurance: economy
+domains: [schema-pipeline]
+removes: directory-only affected-test over-selection
