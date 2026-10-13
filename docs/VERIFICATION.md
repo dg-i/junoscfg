@@ -205,3 +205,18 @@ verification policy, assurance floor or corpus structure changed. Shared pages
 match v0.13.1 exactly, and independent review approved the companion split.
 The non-verification 50% improvement is not yet demonstrated by a comparable run.
 One pending cadence invitation is retained; no owner review or decline is inferred.
+
+## Execution-scoped schema selection
+
+2026-10-14 change `schema-qualification-scope` retains the 400/200/95-second
+happy-flow targets, ordinary suite and 91.47% coverage floor. Initial combined
+checkpoint at `f401245` took 363.81s: all 10612 ordinary tests and both schema
+tiers passed, but the overall checkpoint failed spec scenario preservation and
+updater/application lane separation. This is not a passing cold-checkpoint sample.
+After a records-only correction, valid native proof selected no schema work;
+the complete checkpoint passed in 83.88s, ordinary suite 68.821s, coverage
+92.967863894%. Both schema content checks had executed fresh in the initial run.
+The independent reviewer also checked actual updater-only release source changes.
+These are single-workload observations, not a trend. Final integration assessment
+and shared lane correction remain in the change's verification record. The existing
+cadence invitation remains pending; no owner review or decline is inferred.

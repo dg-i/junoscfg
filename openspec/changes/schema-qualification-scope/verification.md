@@ -47,3 +47,14 @@ restored with the newly authorized semantics. Lane rejected the combined history
 containing an exact updater commit and normal application changes. This is being
 resolved upstream rather than weakening the gate. Native successful tier receipts
 remain valid evidence even though the overall checkpoint failed.
+
+Real evidence reuse demonstration: after documentation/evidence-only commit
+`9155303`, the selector against qualified head `f401245` returned exactly
+`{"selected": false}` in 3.57s. The canonical full command with that base then
+**passed every check in 83.88s**, selecting neither schema tier. Ordinary suite:
+10612 passed, 37 skipped, 20 xfailed in 68.821s; branch-enabled coverage
+92.967863894%, unchanged floor 91.47%. Log: `schema-scope-no-schema-full.log`.
+This is one real observation below the accepted 95-second no-schema target,
+not a general performance trend. No cache/evidence bytes were copied or relabelled.
+The combined original-baseline lane obligation remains open until shared updater
+checkpoint handling is adopted and that full command passes.
