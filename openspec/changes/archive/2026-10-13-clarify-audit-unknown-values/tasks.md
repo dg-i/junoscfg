@@ -9,4 +9,4 @@
 ## 3. Review and evidence
 
 - [x] Run canonical full checkpoint and fresh independent lightweight review.
-- [ ] Capture metrics, archive, patch version and integrate locally.
+- [x] Capture metrics and prepare archive/patch-version local integration (the final commit and tag are recorded in the external completion report).

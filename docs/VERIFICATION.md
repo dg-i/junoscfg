@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 507a3dc74248ce2d670f6a5e27023d34990e6965 (pre-merge assessment).
+- Observed integration head: 5226534324d03d1af6c00701fdbf683f118923e8 (pre-merge assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 507a3dc74248ce2d670f6a5e27023d34990e6965.
-- Invitation status: pending; 24 first-parent commits at the pre-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 5226534324d03d1af6c00701fdbf683f118923e8.
+- Invitation status: pending; 44 first-parent commits at the pre-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
