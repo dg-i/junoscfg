@@ -1,0 +1,481 @@
+{
+  "change": "schema-content-performance",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "ea0dcb88702f73cc8d8b92455d818842f19b6ba96449910cde3d5852fc917d54",
+          "head": "c77472d1c9a12ffddbf9e63c0d024d5590e89d5ba8c495c998e8eaf2edd4ad48"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/Users/manon-dev/src/junoscfg/openspec/changes/schema-content-performance/events.jsonl",
+        "sha256": "e45139849336707efadcef61c840921a57ee00228814d30ec25a8a380eda34b2"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+        "carry": {},
+        "change": "schema-content-performance",
+        "checks": [
+          {
+            "checkpoint": "9131c0c0a7c882ddfd6353acccf5952e68b39506e7ee6bf5a92e820a5eb8eef0",
+            "duration_ms": 453.31554202130064,
+            "evidence": ".agent-ready/verification/e84bf8232cf944418c2c25baceb40197.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "ee55ecb3e35af4dde61734cc9b6eeb438b0b84ccf2d48e3eb89d21361520f2db",
+            "duration_ms": 269760.22820797516,
+            "evidence": ".agent-ready/verification/2e99998e17cd431086dd6fa5daaba469.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "b8c4c457863e080b4f18bf2bbbaf8c7d311dac65d76ecb8c09181caefc0511df",
+            "duration_ms": 48248.66562499665,
+            "evidence": ".agent-ready/verification/6c73cf7042cc424fae4126723119f127.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "c0c02d8d9b167387d341e7aed421c534efabfb2c73abc372c9e7a77df58ac399",
+            "duration_ms": 793028.9480409701,
+            "evidence": ".agent-ready/verification/6db6621ef3e24a34ad0a605ac3e76c04.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "6e6674f0d613db99bb1a8c22e28eee4d9ee7886ebf55a3a2f177751d8adc0f2a",
+            "duration_ms": 61390.987124992535,
+            "evidence": ".agent-ready/verification/0d0d3a7265e94fda82f2afc1c7dd1b88.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "891bcac22eb1d9b034f032443c1137d3c40281be55a3c2adb3ccaa8a9ca6dddc",
+            "duration_ms": 48222.75558300316,
+            "evidence": ".agent-ready/verification/634062d1e0f942ca8881886246cee362.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "77c19eef6d9a2824ea50760bcf6b8eaa2780a4c878c9c2d08cdbadd7d1051c4e",
+            "duration_ms": 60166.68091597967,
+            "evidence": ".agent-ready/verification/94c1de0faaef4c02bad11341b05a13f7.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "b19aeb2e6a80c0dd425300aec521db0aa42d2833db2bace90c2e9317de62139c",
+            "duration_ms": 48036.917167017236,
+            "evidence": ".agent-ready/verification/4ba254b97eee4368b4c64474346d0041.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "862c7204797399f06de9690a35ce69986027d47179e5113b6d681a541fc2d349",
+            "duration_ms": 60421.90241703065,
+            "evidence": ".agent-ready/verification/2564ec718bb647fd84319787ed4c9acf.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "e2ce6b6ad999af2a8d66b4010c67b3536d3906110e85368e86a61d82ab7b4d67",
+            "duration_ms": 48030.94758396037,
+            "evidence": ".agent-ready/verification/feea5b50dab34346935d38b274ae2b83.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "73b49d9b0e3bc66531268e9ac16dd8b7a3acfe2cae51c94a040e1fd924a1bbf9",
+            "duration_ms": 239060.18270901404,
+            "evidence": ".agent-ready/verification/11712c5a6ab8494d9e82b5ba60bd524e.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "c5fdfa118b1972606f876e53d7ab0d185d609ce265b7b2b4ee3a6c4a4b9ad03b",
+            "duration_ms": 43291.84116597753,
+            "evidence": ".agent-ready/verification/d5e6b606d76e42049c91ccfde25a58f5.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "a5beb17d2820e2ea70c66ecb0d74ea31ff7a46a83e4f26aac98295e7b4d198f1",
+            "duration_ms": 256331.01116702892,
+            "evidence": ".agent-ready/verification/3f5def57a65d410097ed4e3736f25a9a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "1c966d1a57e21a5e410f7d3c706ac1caedae92704130bca2518b657065be9369",
+            "duration_ms": 46445.334334042855,
+            "evidence": ".agent-ready/verification/a5ff00dafe7a4a3ebcb695f391c89a85.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "3754df48e3faaf13ba2569f2aeb8fcbe7cd558703c1a018e6f971c581e4af73c",
+            "duration_ms": 453.95966700743884,
+            "evidence": ".agent-ready/verification/7f270640375645f689d54b7ac3e4675c.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "29d5f87d4bbf4def3c8d62eca1d2f2bfb89f14053a2a42a1bea350ca4ca3811a",
+            "duration_ms": 60694.445958011784,
+            "evidence": ".agent-ready/verification/839d1cc294c5412f839fb73fb5e3273b.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "ba7cb3d90bbdaa2bee17a4135b812526a994c0a6241edb2e618c69e8567da212",
+            "duration_ms": 47616.64462496992,
+            "evidence": ".agent-ready/verification/66599a8c851848148d6e4aeed5ae4351.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "4eb04104a049da0a4e3d80322266bcc67ee99eb4422978268d0d332c773472bc",
+            "duration_ms": 593751.7432090244,
+            "evidence": ".agent-ready/verification/890409effdb247ed836a5dd9a5e88035.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+        "ledger_sha256": "e45139849336707efadcef61c840921a57ee00228814d30ec25a8a380eda34b2",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "a13e55241b5efdaa633f4e0008d6669425a395dd0593b07a4e4738c0ada4b16f",
+              "335c0a4cb7718bcc762a60c5a300005d55f69d903fa5127f116df1d4d728a5bb",
+              "0d0877ed1da39253e20bc371c8956a912b2850208998209c427570019b812e9d",
+              "557fe3a7d63cc708f543b444ad6dc906fe9dea22438e636477b14a2f3675662e",
+              "204c7fe3e3a5db252f78793758fee5c9bd1475874854f3708747bbc8f6707ca3",
+              "564ba24f1380598b3b4e3c9640906bec44abeca1ec3ce163f9bef2b96bb85e99",
+              "b92a4616aa5c564be9728d45b3467c3dcb99e08a5e1638163c039c1d5ce9e7c7",
+              "936284284b4fea48b9d24d870d0857e733d7b829c4fea65a102709518275c080",
+              "e96cbe52150e1464d3a53063d1cb164ef3960b58ffd3c44a1c8d3d41800cca9f",
+              "bd8804024879c906961b20cbfb05d5cc0051c186931d080df67b03a603cf87e4",
+              "59bdd612ff650046b1be6dde602a12803b2ef411d76136c8d9a142d2a246ddc8",
+              "775b7673aec22ae97700852b2b5d27f1265e4ea777c04562c36d27b1b7719e1f",
+              "1bacadb0fbd37c31e0596b3654f1d3f5eba9d4777e348668ef49a634e13fafcd",
+              "96ef235c665dd7cf8fb73257fd1f418041173482ac821a259deee912ada680c4",
+              "fbd673e091672ebd290f61bbcc7b556469aba580ddcc76e70db16eaab97c2f4c",
+              "26ad4cfb7a539248dd5a19496c6ddd8879ed43a476049aa7baccfbf187b6b5be"
+            ],
+            "value": 16
+          },
+          "full_runs": {
+            "events": [
+              "7b5b88d89a175df7a3dcab6caead2a384eaeec94c58b5817465e1ee30e51354c",
+              "aa13ceb8fb70de8a34c9b0973b2e7f5b34c79fa7b32a0ce8165c3825a716b3bf"
+            ],
+            "value": 2
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          },
+          {
+            "completed": 3,
+            "total": 7
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            "changelog.d/+schema-content-performance.misc.md",
+            "docs/VERIFICATION.md",
+            "docs/how-to/verification-evidence.md",
+            "openspec/specs/schema-pipeline/verification-evidence/spec.md",
+            "pyproject.toml",
+            "src/junoscfg/validate/artifact_builder.py",
+            "src/junoscfg/validate/schema_generator.py",
+            "src/junoscfg/validate/schema_node.py",
+            "src/junoscfg/validate/xsd_fixes.py",
+            "tests/conftest.py",
+            "tests/corpus/test_schema_data.py",
+            "tests/tooling/test_schema_content.py",
+            "tests/tooling/test_schema_verification.py",
+            "tests/unit/validate/test_schema_node.py",
+            "tools/schema-verification/dependencies.json",
+            "tools/schema_content_worker.CONTRACT.md",
+            "tools/schema_content_worker.py",
+            "tools/schema_verification.CONTRACT.md",
+            "tools/schema_verification.py",
+            "uv.lock"
+          ],
+          "since": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4"
+        },
+        "selector": [
+          "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+          "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 320,
+        "binary_files": 0,
+        "files": 21,
+        "removed": 54
+      }
+    },
+    "locked_packages": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "25f7f756b3460ce14d1a8ec8d989296da9175dc61a9cba114b4b86f9747ba5dc",
+          "head": "b3d3ead3028a523a84b8c1ad24a0cf73d559562bc286f02fc1a2cd7d27936938"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "6d5d41937b82db0e7e5b46c505edb08e72bdefc4",
+      "captured_at": "2026-10-13T02:33:21.443896Z",
+      "head_sha": "d4d1e1c166cf17e1a53e5671b04fcb6aa73df380",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

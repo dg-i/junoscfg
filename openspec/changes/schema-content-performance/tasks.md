@@ -6,4 +6,4 @@
 - [x] Finish focused and full checks plus supported device releases.
 - [x] Measure cold qualification and three warm native shipped-release runs.
 - [x] Obtain fresh isolated review and address findings.
-- [ ] Record measured results and remaining limitations.
+- [x] Record measured results and remaining limitations.

@@ -1,8 +1,8 @@
 # Verification evidence
 
-Acceptance verification and fresh integrated review are complete. Metrics capture
-and the final evidence commit remain pending; the reviewer capability limitation
-in review.md remains explicit.
+Acceptance verification, fresh integrated review and metrics capture are complete.
+Metrics bind the base above to reviewed code/specification head d4d1e1c; the
+reviewer capability limitation in review.md remains explicit.
 
 ## Environment and execution
 
