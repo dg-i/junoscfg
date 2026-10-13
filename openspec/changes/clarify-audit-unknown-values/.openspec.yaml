@@ -5,3 +5,15 @@ zone: audit
 domains: [audit]
 assurance: economy
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+    - src/junoscfg/audit/walker.py
+    - .agent-ready/activation.json
+    - docs/VERIFICATION.md
+    - pyproject.toml
+    - src/junoscfg/__init__.py
+    - uv.lock
+  dependencies: []
+  changelog: 'none: private implementation documentation only'
+  generated-records: []

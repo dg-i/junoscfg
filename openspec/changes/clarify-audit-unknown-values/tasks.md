@@ -4,7 +4,7 @@
 
 ## 2. Implementation
 
-- [ ] Clarify the unknown-value docstring and run preservation evidence.
+- [x] Clarify the unknown-value docstring and run preservation evidence.
 
 ## 3. Review and evidence
 

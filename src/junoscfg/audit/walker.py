@@ -387,9 +387,11 @@ def _walk_unknown(
 ) -> None:
     """Blind walk for subtrees the schema does not describe.
 
-    Every string value is collected as an ``unknown`` occurrence so that
-    rule (d) — unknown position, potential reference — applies. Dict keys
-    are structural keywords in the IR and are not collected.
+    Nonempty strings and numeric values (coerced to strings by ``_emit``)
+    become ``unknown`` occurrences so rule (d) — unknown position, potential
+    reference — applies. Booleans and ``None`` are presence markers, not names.
+    Dict keys are structural keywords, not names; keys beginning with ``@``
+    mark attributes whose entire subtree is skipped.
     """
     if isinstance(obj, dict):
         for key, value in obj.items():
