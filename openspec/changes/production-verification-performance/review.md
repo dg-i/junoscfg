@@ -108,3 +108,11 @@ None. The known no-schema budget gap is reported under the approved freeze.
 Initial review and independent tests were coordinated around timed runs and the
 preliminary report stayed outside the candidate. This final report supersedes its
 pending verdict. No product corrections were required by this review.
+
+## Owner follow-up after this review
+
+The owner subsequently replaced the no-schema target of45 seconds with95 seconds
+after reading the results. This recorded instruction changes no product code,
+assurance criterion or measured value. All three no-schema runs meet the revised
+target; maximum88.395786167 seconds leaves6.604213833 seconds. The review above
+retains the original45-second assessment as historical evidence.

@@ -23,9 +23,17 @@
 | Experiment evidence | f277c896582ccfb94787a02ff06fae4f896f236f; full timings retained on isolated branch |
 | Production cold full-workflow maximum | 387.548091208 s; 3 successful final runs; budget 400 s; headroom 12.451908792 s; source: verification.md, Final production measurements |
 | Production warm full-workflow maximum | 92.864589875 s; 3 successful final runs; budget 200 s; headroom 107.135410125 s; source: verification.md, Final production measurements |
-| Production no-schema full-workflow maximum | 88.395786167 s; 3 successful final runs; budget 45 s; gap 43.395786167 s; source: verification.md, Final production measurements |
+| Production no-schema full-workflow maximum | 88.395786167 s; 3 successful final runs; owner-adjusted budget 95 s; headroom 6.604213833 s (original 45 s missed); source: verification.md, Final production measurements |
 | Production verification assurance | Each final run: 10,579 passed, 37 skipped, 20 xfailed; coverage 92.96786389413988%; floor 91.47%; source: verification.md |
 | Production measurement scope | Product 44324d36bb489b13212e3f02be251429af41f95d; immutable measured heads and preparation/cache conditions in verification.md; nine final successful runs, two failed setup attempts and one superseded trial retained separately |
 | Context expansion: finalization evidence | Reviewed phase 7, freeze, review, verification, lifecycle policy and generated main spec to apply approved requirements and capture immutable provenance |
+
+| Context expansion: src/junoscfg/__init__.py | Review package import path and normalized release version |
+| Context expansion: src/junoscfg/display/__init__.py | Review audited shared producer kernel imports |
+| Context expansion: src/junoscfg/validate | Review producer imports, lazy package door and contract |
+| Context expansion: tests/support/schema_data.py | Review schema fixture input readers |
+| Context expansion: tests/support/regen.py | Review public generation input readers |
+| Context expansion: agent-ready-python/checks/src/agent_ready_checks/verification.py | Diagnose historical ledger provenance and native execution ownership |
+| Context expansion: agent-ready-python/checks/src/agent_ready_checks/verification_runtime.py | Verify runtime observation and native_driver boundary |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

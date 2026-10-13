@@ -21,4 +21,5 @@ meaningful environment bytes bind proof. No app-owned cache or evidence waiver.
 ## Risks
 Parallel CPU/memory pressure and fixture state require negative controls and review.
 Shared native API changes are tested upstream before immutable dependency adoption.
-No-schema45 remains open; production results, not scratch timings, update baseline.
+No-schema target is now95 by explicit owner decision after measurement; retain the
+original45 miss. Production results, not scratch timings, update the baseline.

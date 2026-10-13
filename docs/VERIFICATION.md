@@ -123,7 +123,7 @@ pending; no owner review or decline is inferred, and the cadence anchor is retai
 The owner approved production adoption and a baseline update after the isolated
 experiment, then restricted integration to local merges (the owner will push).
 Current end-to-end budgets are **400 seconds cold**, **200 seconds warm** and
-**45 seconds without schema qualification**, with dependencies already installed.
+**95 seconds without schema qualification**, with dependencies already installed.
 These replace the provisional 900-second investigation budget for these three
 workloads; they do not change the broader release workload or waive assurance.
 Cold means no reusable qualification evidence; warm means valid input- and
@@ -136,7 +136,7 @@ and no-schema baseline 245.391 s. Experimental final cold runs were 342.148,
 344.763 and 346.223 s; warm 73.782, 74.182 and 72.950 s; no-schema 72.923,
 72.505 and 72.946 s. These are experiment measurements, not a production
 checkpoint baseline: production retains native admission and stronger runtime
-identity. The experiment's 45-second gap remains explicit.
+identity. The experiment missed the original 45-second target; that historical result is retained.
 
 Production baseline at product commit `44324d36bb489b13212e3f02be251429af41f95d`:
 
@@ -144,7 +144,7 @@ Production baseline at product commit `44324d36bb489b13212e3f02be251429af41f95d`
 |---|---|---:|---:|---:|
 | Cold qualification | 376.120, 381.742, 387.548 | 387.548 | 400 | 12.452 |
 | Warm qualification | 91.294, 92.090, 92.865 | 92.865 | 200 | 107.135 |
-| No schema qualification | 87.665, 88.396, 87.889 | 88.396 | 45 | -43.396 |
+| No schema qualification | 87.665, 88.396, 87.889 | 88.396 | 95 | 6.604 |
 
 All nine successful runs include the canonical full command; required prior native
 audit-record commits and normal hooks are included where applicable. Dependencies
@@ -162,8 +162,10 @@ correctly refused, not counted as successful samples. No product test failures
 occurred in the nine successful final runs.
 
 Agent assessment: adopt the reviewed scheduling and conservative selection changes.
-Cold and warm limits were met consistently on this machine; 45 seconds remains an
-explicit gap, not a raised budget. Ordinary verification alone takes about 65–74 s.
+All three current limits were met consistently on this machine. After inspecting
+the results, the owner explicitly replaced the no-schema target of 45 s with 95 s
+on 2026-10-13; the original missed target remains historical evidence. The new
+no-schema maximum has 6.604 s headroom, a modest margin. Ordinary verification alone takes about 65–74 s.
 Further work should profile fixtures and native identity overhead through the regular
 change process. Ten workers trade additional concurrency for time; peak memory and
 long-term flake rates remain unmeasured. These observations are feasibility evidence,

@@ -119,9 +119,9 @@ Product code: `44324d36bb489b13212e3f02be251429af41f95d`; later measured heads d
 |---|---:|---|---:|---:|---:|
 | Cold | 565.161 | 376.120239583, 381.742209625, 387.548091208 | 387.548091208 | 400 | 12.451908792 |
 | Warm whole-proof | 241.295 | 91.294149542, 92.089849375, 92.864589875 | 92.864589875 | 200 | 107.135410125 |
-| No schema | 245.391 | 87.665292500, 88.395786167, 87.889101542 | 88.395786167 | 45 | -43.395786167 |
+| No schema | 245.391 | 87.665292500, 88.395786167, 87.889101542 | 88.395786167 | 95 | 6.604213833 |
 
-Cold and warm meet their limits in all three successful comparable runs. No-schema misses every run; best demonstrated total is 87.665292500 s. The original pure-check warm baseline was 354.898 s; use the matched whole-proof baseline above when assessing orchestration. Production adds native admission and stronger runtime identity compared with the isolated experiment, so its final experimental numbers are not silently relabelled as production results.
+All three scenarios meet their current limits in all three successful comparable runs. No-schema missed the original 45-second target in every run; after viewing these results the owner explicitly replaced it with 95 seconds on 2026-10-13. Best demonstrated total is 87.665292500 s; headroom at the maximum is 6.604213833 s. The original pure-check warm baseline was 354.898 s; use the matched whole-proof baseline above when assessing orchestration. Production adds native admission and stronger runtime identity compared with the isolated experiment, so its final experimental numbers are not silently relabelled as production results.
 
 ### Cache conditions, selected checks and preparation
 
@@ -161,3 +161,11 @@ The ordinary suite takes roughly 65–74 seconds even without expensive qualific
 
 Adopt the reviewed native engine pin and application scheduling/selection through this regular change. Preserve the coverage floor, executed-test reports, serial schema stability passes, fail-closed unknown classification, and audited producer/consumer relationship manifest. The latter requires explicit review and refresh after relevant producer/dependency/configuration changes; successful qualification alone does not approve a new relationship. The source audit and negative controls support exempting the declared isolated consumer bodies, not all consumer code universally. No schema artifacts, public product semantics or prior assertions were weakened. Fresh review and independent challenge evidence are adjacent.
 
+
+## Owner target adjustment
+
+After final review and measurements, the owner explicitly approved 95 seconds
+instead of45 for the no-schema scenario. This changes the accepted target only;
+all timings, failures, code, assertions and coverage remain unchanged. Cold400
+and warm200 remain unchanged. All three current targets were demonstrated in
+three successful runs each; the narrow no-schema margin is not a guarantee.

@@ -11,14 +11,14 @@ support the design. Starting master 507a3dc74248ce2d670f6a5e27023d34990e6965.
 Native engine owns evidence; application owns truthful complete reports/selection.
 ## Non-goals
 No product syntax/schema artifacts, lowered assertions/floors, arbitrary receipt
-import or phase bypass. No false claim that 45 seconds was achieved.
+import or phase bypass. No false claim that the original 45-second target was achieved.
 ## Acceptance criteria
 Delta test identities; negative worker/coverage/selection/engine controls;
 independent Test/Challenge and fresh review of native engine and application;
 complete native checkpoint and measured production timings with cache conditions.
 ## Performance expectations
 Cold <=400 seconds and warm <=200 on the experiment machine; no-schema target
-45 seconds remains an explicitly measured gap if production cannot safely meet it.
+is 95 seconds following the explicit owner adjustment recorded below.
 Baselines: cold565.161, matched warm serial241.295, no-schema245.391 seconds.
 ## Outstanding decisions
 None: owner approved adoption and pushing master; concrete implementation choices
@@ -49,3 +49,8 @@ version and merge the application locally only after checks and independent revi
   new qualification alone cannot establish absence of such dependencies. No
   criterion change or assertion waiver. Final-code measurements replace initial
   candidate timings; all trials remain recorded.
+
+- Owner follow-up 2026-10-13: replace the no-schema target of 45 seconds with
+  95 seconds after measured maximum 88.395786167 seconds. All three observed
+  runs meet 95 seconds; headroom 6.604213833 seconds. Cold/warm limits, code,
+  assertions and evidence are unchanged. Original target and misses retained.
