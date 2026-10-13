@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "1aef9ef5ea749a3f6e4848f2d1b8b4941e053171",
-  "actor": "Codex schema qualification builder",
-  "authority": "Owner explicitly requested this isolated change, upstream adoption and local integration. Completed report-publication branch is parked; all other dispositions are preserved.",
-  "captured_at": "2026-10-13T22:13:17.348263+00:00",
+  "checkpoint": "1b3c79f390df5adb05c262155ba44ee6d1d9da38",
+  "actor": "Codex schema qualification finalizer",
+  "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
+  "captured_at": "2026-10-13T23:01:10.280056+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -85,7 +85,7 @@
     "codex/clarify-audit-unknown-values": "parked",
     "codex/refresh-workflow-economy": "parked",
     "codex/publish-workflow-overhead-review": "parked",
-    "codex/schema-qualification-scope": "ready"
+    "codex/schema-qualification-scope": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -164,6 +164,6 @@
     "clarify-audit-unknown-values": "parked",
     "adopt-workflow-economy": "parked",
     "publish-workflow-overhead-review": "parked",
-    "schema-qualification-scope": "ready"
+    "schema-qualification-scope": "parked"
   }
 }

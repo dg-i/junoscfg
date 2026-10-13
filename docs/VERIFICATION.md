@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 5226534324d03d1af6c00701fdbf683f118923e8 (pre-merge assessment).
+- Observed integration head: 1b3c79f390df5adb05c262155ba44ee6d1d9da38 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 5226534324d03d1af6c00701fdbf683f118923e8.
-- Invitation status: pending; 44 first-parent commits at the pre-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 1b3c79f390df5adb05c262155ba44ee6d1d9da38.
+- Invitation status: pending; 66 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -222,13 +222,17 @@ and shared lane correction are retained in the change's verification record. The
 cadence invitation remains pending; no owner review or decline is inferred.
 
 Final assessment for this change: the original-baseline checkpoint at `4290d37`
-took170.50s. Lane,10612 ordinary tests,92.967863894% coverage and both schema tiers
-passed; the aggregate command exited1 solely for missing ignored skill mirrors.
-Supported regeneration plus the isolated skills check (0.14s, exit0) closed that
+took 170.50s. Lane, 10612 ordinary tests, 92.967863894% coverage and both schema tiers
+passed; the aggregate command exited 1 solely for missing ignored skill mirrors.
+Supported regeneration plus the isolated skills check (0.14s, exit 0) closed that
 integrity failure without changing tracked execution inputs. Independent review
 approved reuse of the green components; the failed aggregate status is preserved.
-The83.88s successful no-schema demonstration was not repeated. No targets, tests,
+The 83.88s successful no-schema demonstration was not repeated. No targets, tests,
 coverage, hooks or review requirements changed. At pre-integration master `b20aa2b`,
 65 first-parent commits have elapsed since the retained cadence anchor; the existing
 invitation remains pending. Local integration and patch-release bookkeeping do not
 constitute owner feedback or a new cadence review.
+
+Job completion: local merge `1b3c79f` preserves the approved execution inputs;
+archive and v0.28.14 change only release/bookkeeping data. The existing pending
+cadence invitation is retained, with no new owner feedback inferred.

@@ -83,13 +83,13 @@ proof is retained; the changed executing shared lane legitimately changes native
 tier runtime identity, so the final checkpoint may requalify through normal rules.
 
 Final assurance at immutable `4290d373de23229f145b5b23fe027b6dd4506c7f`, original
-base `b20aa2b116fac222a2cf46306632b2dcb4ea442b`: full command170.50s, exit1 solely
-for missing ignored Claude skill mirrors. Original-baseline lane, all10612 ordinary
-tests (37 skips,20 strict xfails;64.576s), coverage92.967863894%, and both schema
-tiers passed. The12 required assertions took62.05s with existing content proof
+base `b20aa2b116fac222a2cf46306632b2dcb4ea442b`: full command 170.50s, exit 1 solely
+for missing ignored Claude skill mirrors. Original-baseline lane, all 10612 ordinary
+tests (37 skips, 20 strict xfails; 64.576s), coverage 92.967863894%, and both schema
+tiers passed. The 12 required assertions took 62.05s with existing content proof
 reused; independent generation stability passes remained required and passed.
 Supported mirror regeneration changed no tracked execution/canonical instruction
-input. Isolated failed skills gate then passed in0.14s. Full exit1 is retained,
+input. Isolated failed skills gate then passed in 0.14s. Full exit 1 is retained,
 not relabelled successful: final assurance is its green components plus that
 verified integrity repair. The existing independent reviewer closed P1/P2 and
 approved this bounded closure; no remaining findings or unreviewed substantive
@@ -100,3 +100,11 @@ were already applied and validated. The preparation task records readiness for
 integration; actual local merge, archive and patch release follow on master.
 Native evidence and raw logs remain in the isolated worktree; no proof is copied
 into another worktree's native evidence store. No push is authorized or performed.
+
+Local integration: merged as `1b3c79f390df5adb05c262155ba44ee6d1d9da38` on master,
+then archived with OpenSpec1.13.0 --skip-specs (reviewed main specs already merged).
+Patch release0.28.14 advances master's0.28.13 in both version owners and the lock.
+The release tag is v0.28.14. Normal archive/version commit hooks remain enabled.
+The completed branch/change are parked; unrelated dispositions and worktrees are
+preserved. Isolated qualification evidence remains at its original physical root.
+No push was performed.
