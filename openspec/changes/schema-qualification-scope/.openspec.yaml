@@ -1,2 +1,7 @@
 schema: agent-ready
 created: 2026-10-13
+type: bug
+zone: schema
+domains: [schema-pipeline]
+assurance: economy
+removes: whole-environment invalidation and unrelated schema qualification triggers
