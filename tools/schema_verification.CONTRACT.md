@@ -37,12 +37,14 @@ uses the same readiness and candidate snapshot admission before taking capacity.
 - Pytest phase and public-build durations are measured diagnostics, never
   completion evidence. Shared setup cost belongs to its triggering test.
 - Dependency fingerprint consistency is checked before every assertion, generation,
-  sentinel or explicit qualification execution. It excludes only the unique
-  editable root version; all other lock content remains relevant.
+  sentinel or explicit qualification execution. It binds the locked execution
+  dependency closure under schema_dependencies.CONTRACT.md.
 - Automatic qualification selects the shipped release on schema/generator
   paths. All declared releases remain available through explicit qualify.
 - Runtime preparation writes an ignored input before the immutable checkpoint;
   verification observes and compares it, never refreshes it during execution.
+  It binds schema libraries and their dependencies plus autoloaded pytest plugins,
+  not unrelated installed packages or editable application release metadata.
 
 - The two pure content checks retain Draft202012Validator.check_schema defaults
   and Lark(start="start") compilation. During qualification, the template may

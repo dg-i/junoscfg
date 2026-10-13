@@ -6,6 +6,7 @@ import fnmatch
 import hashlib
 import json
 import subprocess
+import sys
 from contextlib import suppress
 from pathlib import Path
 
@@ -14,21 +15,70 @@ import tomllib
 from tools.schema_dependencies import check_dependencies, fingerprint_text
 
 CONSUMERS = (
-    "src/junoscfg/convert/",
     "src/junoscfg/anonymize/",
     "src/junoscfg/audit/",
     "src/junoscfg/edityaml/",
 )
-VALIDATORS = {
-    f"src/junoscfg/validate/{name}.py"
-    for name in (
-        "validator",
-        "json_yaml_validator",
-        "xml_validator",
-        "set_validator",
-        "structured_validator",
-    )
+# These modules execute qualification or supply fixtures/data locations. Other
+# tools do not become schema dependencies merely by sharing this directory.
+EXECUTION_PATHS = {
+    "tools/schema_selection.py",
+    "tools/schema_dependencies.py",
+    "tools/schema_verification.py",
+    "tools/schema_content_worker.py",
+    "tests/conftest.py",
+    "tests/support/schema_data.py",
+    "tests/support/regen.py",
+    "tests/support/paths.py",
+    "tests/support/artifacts.py",
+    "tests/support/devices.py",
+    "tests/support/shapes.py",
+    "tests/corpus/test_schema_data.py",
 }
+WORKFLOW_CONFIG = {
+    ".pre-commit-config.yaml",
+    "mkdocs.yml",
+    "tach.toml",
+    "ruff.toml",
+    ".copier-answers.yml",
+    ".gitignore",
+    "tools/verification-costs.json",
+}
+
+
+def configuration(text):
+    """Bind audited schema readers, not unrelated tool/agent settings."""
+    value = tomllib.loads(text)
+    project = value.get("project", {})
+    tool = value.get("tool", {})
+    template = tool.get("template", {})
+    return {
+        "build-system": value.get("build-system"),
+        "requires-python": project.get("requires-python"),
+        "scripts": project.get("scripts"),
+        "tools": {
+            key: item
+            for key, item in tool.items()
+            if key
+            not in {
+                "template",
+                "uv",
+                "ruff",
+                "mypy",
+                "coverage",
+                "towncrier",
+                "hatch",
+                "deptry",
+                "tach",
+            }
+        },
+        "unknown": {
+            key: item
+            for key, item in value.items()
+            if key not in {"project", "tool", "build-system", "dependency-groups"}
+        },
+        "tiers": template.get("batch", {}).get("expensive-tiers"),
+    }
 
 
 def import_shape(source):
@@ -79,29 +129,36 @@ def classify(path, patterns, old=None, new=None):
                 return fingerprint_text(old) != fingerprint_text(new)
             if path.endswith("__init__.py"):
                 return version_shape(old) != version_shape(new)
-            before, after = tomllib.loads(old), tomllib.loads(new)
-            for value in (before, after):
-                version = value["project"].pop("version")
-                if not isinstance(version, str) or not version:
-                    return True
-            return before != after
+            return configuration(old) != configuration(new)
         except (SyntaxError, TypeError, ValueError, KeyError):
             return True
     if any(fnmatch.fnmatch(path, pattern) for pattern in patterns):
         return True
-    if path.startswith(CONSUMERS) or path in VALIDATORS:
+    if path.endswith((".md", ".rst")):
+        return False
+    if path in EXECUTION_PATHS or path.startswith(
+        ("src/junoscfg/validate/", "tools/schema-verification/")
+    ):
+        return True
+    if path.startswith(CONSUMERS):
         try:
             return old is None or new is None or import_shape(old) != import_shape(new)
         except (SyntaxError, TypeError, ValueError):
             return True
+    if path in WORKFLOW_CONFIG:
+        return False
+    if path.startswith("tools/") and path.endswith(".py"):
+        return False
+    if path.startswith((".agents/", ".claude/", ".codex/")) or path in {
+        "CLAUDE.md",
+        "CHANGELOG.md",
+    }:
+        return False
     if path.startswith("tests/tooling/") and path.endswith(".py"):
         return False
     if path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml")):
         return False
-    if path.endswith(".md") and (
-        path.startswith(("docs/", "openspec/", "changelog.d/"))
-        or path in {"README.md", "AGENTS.md"}
-    ):
+    if path.endswith((".md", ".rst")):
         return False
     if path.startswith("openspec/changes/") and Path(path).name in {
         ".openspec.yaml",
@@ -156,6 +213,57 @@ def declarations(root):
     ]
 
 
+def execution_sources(root, names):
+    """Close audited source roots over local imports, including package doors.
+
+    All product sources remain in the reviewed boundary: lazy exports and
+    callbacks cannot silently promote an excluded consumer into a producer.
+    Local tooling imports are followed so a helper outside tools/schema* stays
+    relevant. Changing an audited dynamic import requires a renewed audit.
+    """
+    modules = {}
+    for name in names:
+        if not name.endswith(".py"):
+            continue
+        module = name.removeprefix("src/")[:-3].replace("/", ".")
+        if module.endswith(".__init__"):
+            module = module[:-9]
+        modules[module] = name
+    pending = {
+        name
+        for name in names
+        if name.endswith(".py") and (name.startswith("src/junoscfg/") or name in EXECUTION_PATHS)
+    }
+    selected = set()
+    while pending:
+        name = pending.pop()
+        if name in selected:
+            continue
+        selected.add(name)
+        source = (root / name).read_text()
+        module = name.removeprefix("src/")[:-3].replace("/", ".")
+        package = module.rsplit(".", 1)[0]
+        for node in ast.walk(ast.parse(source)):
+            imports = []
+            if isinstance(node, ast.Import):
+                imports = [item.name for item in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                prefix = node.module or ""
+                if node.level:
+                    parents = package.split(".")
+                    prefix = ".".join(
+                        parents[: len(parents) - node.level + 1] + ([prefix] if prefix else [])
+                    )
+                imports = [prefix, *[prefix + "." + item.name for item in node.names]]
+            for imported in imports:
+                parts = imported.split(".")
+                for index in range(1, len(parts) + 1):
+                    target = modules.get(".".join(parts[:index]))
+                    if target:
+                        pending.add(target)
+    return selected
+
+
 def source_boundary(root):
     """Fingerprint the explicitly audited producer/consumer source relationship.
 
@@ -167,17 +275,18 @@ def source_boundary(root):
 
     patterns = [pattern for tier in declarations(root) for pattern in tier["paths"]]
     result = {}
-    for name in verification.tracked(root):
+    names = verification.tracked(root)
+    execution = execution_sources(root, names)
+    for name in names:
         if not name.endswith(".py") or not (
-            name.startswith(("src/junoscfg/", "tools/"))
-            or any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
+            name in execution or any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
         ):
             continue
         text = (root / name).read_text()
         normalized = "source\0" + text
         if name == "src/junoscfg/__init__.py":
             normalized = "root-version\0" + version_shape(text)
-        elif (name.startswith(CONSUMERS) or name in VALIDATORS) and not any(
+        elif name.startswith(CONSUMERS) and not any(
             fnmatch.fnmatch(name, pattern) for pattern in patterns
         ):
             # No isolation proof leaves the complete source bytes bound.
@@ -186,11 +295,8 @@ def source_boundary(root):
         result[name] = hashlib.sha256(normalized.encode()).hexdigest()
     if not result:
         raise ValueError("audited source boundary is empty")
-    configuration = tomllib.loads((root / "pyproject.toml").read_text())
-    version = configuration["project"].pop("version")
-    if not isinstance(version, str) or not version:
-        raise ValueError("audited configuration has no root release version")
-    result["pyproject.toml"] = hashlib.sha256(repr(configuration).encode()).hexdigest()
+    config = configuration((root / "pyproject.toml").read_text())
+    result["pyproject.toml"] = hashlib.sha256(repr(config).encode()).hexdigest()
     result["uv.lock"] = fingerprint_text((root / "uv.lock").read_text())["sha256"]
     return result
 
@@ -223,14 +329,19 @@ def established_context(root, base, patterns):
 
     from tools.schema_verification import verify_versions
 
+    reasons = {"no successful native generation receipt found"}
     try:
         if not verified_source_boundary(root):
+            print(
+                "schema qualification: audited execution boundary missing or changed",
+                file=sys.stderr,
+            )
             return False
         declared = next(
             tier for tier in declarations(root) if tier["name"] == "schema-25.2-generation"
         )
         if not declared.get("runtime-command"):
-            return False
+            raise ValueError("generation declaration has no runtime command")
         from agent_ready_checks import verification_runtime
 
         verify_versions(root / ".agent-ready/schema/runtime.json")
@@ -244,23 +355,28 @@ def established_context(root, base, patterns):
         current = verification.manifest(root, names)
         directory = root / verification.STORE
         if directory.is_symlink():
-            return False
+            raise ValueError("native evidence directory is a symlink")
         for path in directory.glob("*.json"):
             try:
                 if path.is_symlink():
+                    reasons.add("native receipt is a symlink")
                     continue
                 record = verification.read_json(path)
                 identity = record["identity"]
                 if path.stem != record["id"] or identity["declaration"] != declared:
+                    reasons.add("receipt identity or generation declaration differs")
                     continue
                 if identity.get("tier_runtime") != current_engine or identity["root"] != str(
                     root.resolve()
                 ):
+                    reasons.add("executing runtime or physical worktree differs")
                     continue
                 if not verification.valid(root, identity, record):
+                    reasons.add("receipt completion, output hashes or provenance is invalid")
                     continue
                 recorded = identity["files"]
                 if any(recorded.get(name) != value for name, value in explicit_hashes.items()):
+                    reasons.add("declared schema input or prerequisite artifact differs")
                     continue
                 safe = True
                 # Untracked declared input differences have already been checked.
@@ -277,11 +393,13 @@ def established_context(root, base, patterns):
                     ).hexdigest() != recorded.get(name):
                         previous = historical_version_text(root, base, name, recorded.get(name))
                     if classify(name, patterns, previous, new_text(root, name)):
+                        reasons.add(f"relevant receipt input differs: {name}")
                         safe = False
                         break
                 if safe:
                     return True
-            except (OSError, ValueError, KeyError, TypeError):
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                reasons.add(f"malformed or unreadable native receipt: {error}")
                 continue
     except (
         ImportError,
@@ -291,8 +409,9 @@ def established_context(root, base, patterns):
         TypeError,
         StopIteration,
         subprocess.SubprocessError,
-    ):
-        return False
+    ) as error:
+        reasons.add(str(error))
+    print("schema qualification: " + "; ".join(sorted(reasons)), file=sys.stderr)
     return False
 
 
@@ -300,12 +419,21 @@ def select(root, base):
     """Select relevant changes or uncertain context; never refresh preparation."""
     check_dependencies(root)
     patterns = [pattern for tier in declarations(root) for pattern in tier["paths"]]
+    from agent_ready_checks import verification
+
+    patterns.extend(
+        execution_sources(root, verification.tracked(root))
+        - {name for name in verification.tracked(root) if name.startswith(CONSUMERS)}
+    )
     changed = git_text(root, "diff", "--name-only", "--no-renames", base + "...HEAD").splitlines()
-    if any(
-        classify(path, patterns, old_text(root, base, path), new_text(root, path))
-        for path in changed
-    ):
-        return True
+    for path in changed:
+        if classify(path, patterns, old_text(root, base, path), new_text(root, path)):
+            print(
+                f"schema qualification: relevant or uncertain execution input changed: {path}",
+                file=sys.stderr,
+            )
+            return True
+
     return not established_context(root, base, patterns)
 
 

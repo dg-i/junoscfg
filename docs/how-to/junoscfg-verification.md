@@ -8,10 +8,13 @@ for native readiness, receipts and runtime identity;
 ## Schema qualification
 
 For junoscfg, a cheap dependency guard runs on lock/projection changes and
-reports only its consistency obligation. The checked projection excludes only
-the editable root package version; changing any other parsed lock data requires
-refreshing it and selects real qualification. Missing/stale projections refuse
-even under expensive-only checks and direct adapters. Routine real-schema tiers
+reports only its consistency obligation. The checked projection binds locked
+schema execution libraries and their transitive dependency records, sources,
+artifact hashes and Python resolution constraints. Unrelated packages and root
+release metadata do not change it. Shared checks code is bound by its native
+execution-module closure, so updater-only releases do not invalidate proof.
+Missing/stale relevant projections refuse even under expensive-only checks and
+direct adapters. Routine real-schema tiers
 qualify only the shipped schema. Assertion execution
 has no stability manifest; the separate generation tier has one and runs public
 generation twice. Its inputs include the assertion result and exported products,
@@ -55,28 +58,32 @@ and `affected-test-hook` restores serial native scheduling.
 ## Conservative schema classification
 
 Both real-schema tiers use `tools.schema_selection` as their native selection
-command. Producer paths, relevant dependencies, schema inputs and unknown changes
-select qualification. Recognized consumer function-body changes may avoid it only
-when import-time structure is unchanged and validated native generation proof
-binds the current schema inputs, dependencies, artifacts and actual execution
-runtime. Decorators, class construction and import-time calls conservatively
-select qualification. Ordinary compatibility and consumer tests still run.
+command. Producers, validation algorithms, relevant dependencies, physical schema
+inputs and generation options select qualification. The reviewed boundary binds
+product sources, qualification adapters and fixture helpers, following their
+local imports transitively. An unreferenced `tools/` script does not participate
+merely because it is tooling. New producer imports/callbacks require audit.
 
-Missing, corrupt or incompatible proof, uncertain history or malformed selection
-output selects qualification. Preparation records installed versions but cannot
-establish proof. Runtime identity binds the actual project interpreter, dependency
-bytes, startup/import paths and relevant import environment; ignored import
-shadows and executable bytecode are not exempt. Re-preparing after a runtime or
-dependency change cannot turn old evidence into valid proof. Only the three root
-release-version files may use hash-proven ancestor text for successive release
-bumps; no consumer exemption is inferred from mismatched historical source.
+Documentation, instructions, workflow tooling, release bookkeeping and unrelated
+dependency updates preserve proof when relevant inputs remain equal. Pyproject
+comparison binds build/interpreter/entry-point settings, pytest configuration,
+expensive-tier declarations and unknown tool tables; ordinary gate settings and
+release metadata are independent. Validator function bodies always qualify.
+Existing isolated consumer bodies require unchanged import structure and an
+unchanged audited producer relationship; uncertain execution effects qualify.
 
-A committed `tools/schema-verification/consumer-boundary.json` records the audited
-source relationship. It binds all product and tooling Python sources, declared
-schema fixture sources, configuration and relevant lock data; only already-audited
-isolated consumer bodies and root release versions are normalized. Qualifying a
-changed producer does not by itself prove that future consumer changes are safe.
-A stale or missing audit therefore selects qualification even after a new success.
-Refresh this boundary only after reviewing producer imports/callbacks and the
-consumer compatibility checks; preparation and qualification never refresh it.
-This deliberately trades occasional extra qualification for safe uncertainty.
+A negative decision requires valid native generation proof with unchanged
+explicit inputs, output hashes and executing runtime. Preparation alone is not
+proof. Native `runtime-modules` binds the shared execution module closure and
+external dependency bytes, startup/import paths, shadows and pytest plugins;
+updater and documentation bytes are outside that closure. The lock projection
+and prepared observation use the same execution responsibility, rather than all
+installed packages. Ordinary whole-command identity and complete tests remain.
+
+Missing, corrupt or incompatible evidence selects qualification with a specific
+stderr reason. The JSON boolean protocol remains exact. Successive irrelevant
+commits can reuse original proof; historical configuration and lock text must
+match the original receipt hash. A changed relevant dependency, algorithm or
+engine cannot obtain a skip by rewriting instructions or refreshing metadata.
+The committed `consumer-boundary.json` is refreshed only after review of actual
+execution relationships, never by preparation or successful qualification alone.

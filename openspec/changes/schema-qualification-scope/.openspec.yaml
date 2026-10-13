@@ -2,6 +2,31 @@ schema: agent-ready
 created: 2026-10-13
 type: bug
 zone: schema
-domains: [schema-pipeline]
+domains:
+- schema-pipeline
 assurance: economy
 removes: whole-environment invalidation and unrelated schema qualification triggers
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - changelog.d/+schema-qualification-scope.misc.md
+  - docs/VERIFICATION.md
+  - docs/how-to/junoscfg-verification.md
+  - docs/how-to/run-a-batch-of-changes.md
+  - pyproject.toml
+  - tests/tooling/test_schema_dependency_trigger_challenge.py
+  - tests/tooling/test_schema_scope.py
+  - tests/tooling/test_schema_selection.py
+  - tests/tooling/test_schema_verification.py
+  - tools/schema-verification/consumer-boundary.json
+  - tools/schema-verification/dependencies.json
+  - tools/schema_dependencies.CONTRACT.md
+  - tools/schema_dependencies.py
+  - tools/schema_selection.CONTRACT.md
+  - tools/schema_selection.py
+  - tools/schema_verification.CONTRACT.md
+  - tools/schema_verification.py
+  dependencies: []
+  changelog: changelog.d/+schema-qualification-scope.misc.md
+  generated-records: []

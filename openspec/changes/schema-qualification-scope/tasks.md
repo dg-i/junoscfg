@@ -1,6 +1,6 @@
 ## 1. Tests and implementation
-- [ ] 1.1 Add bidirectional regression tests and record pre-fix failures.
-- [ ] 1.2 Implement execution-scoped selector, dependency identity and reasons.
+- [x] 1.1 Add bidirectional regression tests and record pre-fix failures.
+- [x] 1.2 Implement execution-scoped selector, dependency identity and reasons.
 - [ ] 1.3 Adopt reviewed shared runtime release and update contracts/instructions.
 - [ ] 1.4 Pass focused checks and measured canonical full checkpoint.
 

@@ -196,39 +196,28 @@ and serialized-tree grammar paths. Generation compares its four raw artifacts
 and metadata (excluding only `generated_at`) with the assertion exports and
 committed shipped artifacts. The separately scheduled sentinel is removed.
 
-Automatic selection covers XSD parsing/fixes, artifact generators, their shared
-compression/key helpers and package door, shipped data,
-the schema corpus, schema fixture definitions in `tests/conftest.py`, its
-schema-specific support, and the checked dependency fingerprint. Recognized wrapper tests,
-workflow documentation and bookkeeping can avoid real schemas only with valid
-qualification context. Unknown configuration changes select qualification.
-Consumer function-body changes are exempt only when import-time structure and
-qualification inputs remain demonstrably compatible; uncertainty selects the
-expensive checks. The full checkpoint still runs all ordinary tests, including
-compatibility and consumer tests. See the [selection and proof rules](junoscfg-verification.md#conservative-schema-classification).
+Automatic selection follows schema execution: producers, transitive helpers,
+validation algorithms, relevant inputs and generation options. Unreferenced tools,
+documentation, agent instructions, workflow settings and release metadata do not
+select qualification when valid native evidence remains applicable. Unknown
+schema-impacting changes, missing evidence and relevant identity mismatches select
+qualification with a specific diagnostic. Ordinary tests, integrity, coverage and
+independent review remain required. The [local execution and proof contract](junoscfg-verification.md#conservative-schema-classification)
+names the source/configuration and runtime boundaries.
 
-A first cheap tier, `schema-dependency-guard`, handles `uv.lock` and dependency
-projection changes. The committed `tools/schema-verification/dependencies.json`
-fingerprints the entire parsed lockfile except the version of the unique editable
-root `junoscfg` package. With valid qualification context, a version-only release bump runs the cheap
-guard without selecting real schema work. Missing or invalid context selects
-qualification conservatively. All dependency versions, sources,
-artifact hashes, Python constraints, development dependencies and other parsed
-fields remain relevant. Formatting-only TOML edits do not alter parsed content.
-
-After an actual lock-content change, refresh the projection deliberately:
+The cheap `schema-dependency-guard` validates a committed projection of actual
+locked execution dependencies and their transitive records. Unrelated dependency
+updates, including checks updater-only releases, preserve that projection; shared
+engine code is independently bound by native execution-module identity.
+After a relevant lock change, refresh deliberately:
 
 ```sh
 uv run --locked --group dev python -B -m tools.schema_dependencies write
 ```
 
-Commit the changed lock and projection together. The projection change selects
-both real-schema tiers. A stale or missing projection fails the cheap guard even
-for `check --set expensive`, fails ordinary tests, and blocks direct schema
-adapters before costly work. Guard completion means only dependency consistency;
-it never claims schema assertions ran. The guard does not need XSD dumps or the
-prepared runtime file. Template evidence identity and cache rules are unchanged;
-this reduction affects when qualification is selected, not which results it reuses.
+Commit the lock and changed projection together. Stale/missing projections fail
+before costly work and cannot claim schema completion. Refresh the reviewed
+source boundary only after inspecting changed execution relationships.
 
 Keep the three known dumps under `private_test_data/schemas/` as physical files,
 not symlinks. Never use a staged `new.xsd` during immutable qualification.
