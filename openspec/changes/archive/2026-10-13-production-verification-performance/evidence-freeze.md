@@ -17,7 +17,7 @@ Delta test identities; negative worker/coverage/selection/engine controls;
 independent Test/Challenge and fresh review of native engine and application;
 complete native checkpoint and measured production timings with cache conditions.
 ## Performance expectations
-Cold <=400 seconds and warm <=200 on the experiment machine; no-schema target
+Happy-flow targets: cold 400 seconds and warm 200 on the experiment machine; no-schema target
 is 95 seconds following the explicit owner adjustment recorded below.
 Baselines: cold565.161, matched warm serial241.295, no-schema245.391 seconds.
 ## Outstanding decisions
@@ -52,5 +52,9 @@ version and merge the application locally only after checks and independent revi
 
 - Owner follow-up 2026-10-13: replace the no-schema target of 45 seconds with
   95 seconds after measured maximum 88.395786167 seconds. All three observed
-  runs meet 95 seconds; headroom 6.604213833 seconds. Cold/warm limits, code,
+  runs meet 95 seconds; headroom 6.604213833 seconds. Cold/warm targets, code,
   assertions and evidence are unchanged. Original target and misses retained.
+
+- Owner clarification: 400/200/95 seconds are happy-flow targets, not hard
+  limits, timeouts or failure thresholds. Slower runs prompt investigation;
+  required behavioural verification still determines success. No runtime change.

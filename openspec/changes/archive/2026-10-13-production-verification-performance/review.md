@@ -111,8 +111,12 @@ pending verdict. No product corrections were required by this review.
 
 ## Owner follow-up after this review
 
-The owner subsequently replaced the no-schema target of45 seconds with95 seconds
+The owner subsequently replaced the no-schema target of 45 seconds with 95 seconds
 after reading the results. This recorded instruction changes no product code,
 assurance criterion or measured value. All three no-schema runs meet the revised
-target; maximum88.395786167 seconds leaves6.604213833 seconds. The review above
-retains the original45-second assessment as historical evidence.
+target; maximum 88.395786167 seconds leaves 6.604213833 seconds. The review above
+retains the original 45-second assessment as historical evidence.
+
+The owner additionally clarified that 400/200/95 seconds are happy-flow targets,
+not hard limits or verification failure thresholds. This documentary clarification
+introduces no runtime change; correctness checks remain mandatory.

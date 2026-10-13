@@ -122,10 +122,12 @@ pending; no owner review or decline is inferred, and the cadence anchor is retai
 
 The owner approved production adoption and a baseline update after the isolated
 experiment, then restricted integration to local merges (the owner will push).
-Current end-to-end budgets are **400 seconds cold**, **200 seconds warm** and
+Current happy-flow end-to-end targets are **400 seconds cold**, **200 seconds warm** and
 **95 seconds without schema qualification**, with dependencies already installed.
-These replace the provisional 900-second investigation budget for these three
-workloads; they do not change the broader release workload or waive assurance.
+These supersede the provisional timing guidance for these three workloads. They
+are desired happy-flow timings, not hard limits, timeouts or verification failure
+thresholds. Slower runs prompt investigation, not automatic rejection. Broader
+release workloads and behavioural assurance obligations are unchanged.
 Cold means no reusable qualification evidence; warm means valid input- and
 runtime-bound proof; the third scenario requires justified schema nonselection.
 
@@ -140,7 +142,7 @@ identity. The experiment missed the original 45-second target; that historical r
 
 Production baseline at product commit `44324d36bb489b13212e3f02be251429af41f95d`:
 
-| Full-checkpoint workload | Three complete-workflow observations (s) | Maximum (s) | Budget (s) | Remaining headroom (s) |
+| Full-checkpoint workload | Three complete-workflow observations (s) | Maximum (s) | Happy-flow target (s) | Margin to target (s) |
 |---|---|---:|---:|---:|
 | Cold qualification | 376.120, 381.742, 387.548 | 387.548 | 400 | 12.452 |
 | Warm qualification | 91.294, 92.090, 92.865 | 92.865 | 200 | 107.135 |
@@ -162,7 +164,7 @@ correctly refused, not counted as successful samples. No product test failures
 occurred in the nine successful final runs.
 
 Agent assessment: adopt the reviewed scheduling and conservative selection changes.
-All three current limits were met consistently on this machine. After inspecting
+All three happy-flow targets were met consistently on this machine. After inspecting
 the results, the owner explicitly replaced the no-schema target of 45 s with 95 s
 on 2026-10-13; the original missed target remains historical evidence. The new
 no-schema maximum has 6.604 s headroom, a modest margin. Ordinary verification alone takes about 65–74 s.

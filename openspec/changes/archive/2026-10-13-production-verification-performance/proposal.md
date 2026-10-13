@@ -30,3 +30,5 @@ Preserve full test identities, coverage floor and failure propagation. Independe
 challenge and review, run native full checks, update measured baselines, archive,
 merge locally as the owner authorized after the experiment report. The owner
 will push; no remote writes are authorized by the latest instruction.
+
+The owner clarified 400/200/95 seconds as happy-flow targets, not hard limits.
