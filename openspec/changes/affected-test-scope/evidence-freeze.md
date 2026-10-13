@@ -58,3 +58,9 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
   with tests for exact command, failed result and unavailable identity fallback.
   No second cache or environment normalization. Focused acceptance was rerun after
   adding the adapter; no prior full checkpoint existed to invalidate.
+
+- Reviewed upstream v0.14.0 requires retirement of competing vendored OpenSpec/OPSX
+  discovery before update. Supported reversible retirement is within the requested
+  workflow simplification; canonical OpenSpec CLI, specs and schema remain. No
+  application test/coverage or review obligation is removed. Retirement and updater
+  will receive fresh application review; no application full evidence yet exists.

@@ -90,3 +90,19 @@ pytest uses the identical sys.executable: shared driver identity already binds a
 installed distributions, interpreter, standard library and import context. Upstream
 qualification explicitly covers that supported declaration. These attempts are not
 claimed as evidence reuse and remain in total work.
+
+Native ordinary reuse: two separate uv invocations executed in 4.89s/5.20s because
+their environment identity differed; no environment exemption was added. A paired
+invocation inheriting one unchanged parent environment executed in 5.248s then
+reused the same successful key in 3.404s. Native record key
+abb44fe750f262776d712a065c90d4359b95d510720ada7e43c078492e6e3f2b; raw log
+/private/tmp/selection-native-paired.log. Reuse remains conditional, not a promise
+that arbitrary shell/hook contexts match.
+
+Reviewed upstream integration: checks-v0.18.0 at 2af76975fc687bf1e4ce3dccace09aed9d57d9ff;
+template v0.14.0 at b92995d83058d610587b06980b21a99ba0415b74. Fresh bounded review
+passed, final 830 tests and both render modes passed. Observed upstream test
+attempts total 745.72s including an initial full run invalidated by source mutation;
+its stable rerun passed in 285.64s. Setup/hooks/renders there are UNMEASURED, not zero.
+Supported retirement moves competing OpenSpec/OPSX discovery to an external intact
+recovery directory before the exact updater; agent-ready-change remains authoritative.
