@@ -43,3 +43,16 @@ requires that tracked file to match the shared activation inventory and include
 this new branch/change. Keep the authorized maintenance route; do not manipulate
 the comparison base, weaken the gate or launch an unrelated template repair.
 This is a workflow limitation, not a need to test new report behavior.
+
+## Explicit owner override
+
+The owner instructed: "no canonical full check for doumenation this is useless".
+This overrides the skill's canonical-full requirement for this report. The running
+full check and its children were terminated; no successful result is claimed.
+Document QA, independent review, normal commit hooks, strict artifact validation,
+archive and the repository's release/integration bookkeeping remain applicable.
+No broad verification policy or template file is changed by this exception.
+
+## Final owner instruction
+
+At 2026-10-13T21:56:01.553342+00:00, the owner requested merging the report with a version bump and tag, but without running tests. This supersedes the intervening request to omit release bookkeeping. Retain patch version 0.28.13 and its tag. Skip only the affected-tests commit hook via SKIP=affected-tests; keep the other hooks. Do not run the canonical full check or further pytest commands. This is a report-specific owner exception.

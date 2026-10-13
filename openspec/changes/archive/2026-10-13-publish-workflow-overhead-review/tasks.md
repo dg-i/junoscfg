@@ -9,5 +9,5 @@
 
 ## 3. Review and evidence
 
-- [ ] Obtain fresh lightweight review and pass canonical full verification.
-- [ ] Record evidence, validate and archive with the patch release for local integration.
+- [x] Obtain fresh lightweight review and document QA; canonical full explicitly cancelled by owner.
+- [x] Record publication evidence and prepare strict validation, archive and patch release for authorized local integration.
