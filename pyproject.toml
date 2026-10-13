@@ -489,7 +489,7 @@ reason = "it instruments future events but does not parse existing Codex exec an
 date = "2026-10-06"
 
 [tool.uv.sources]
-agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", rev = "fb0c334e872e0469d430eb84c7da1f33a5d81abc" }
+agent-ready-checks = { git = "file:///Users/manon-dev/src/agent-ready-python", subdirectory = "checks", rev = "43433b033c0f2dc9565c071ccdda595b2d72a097" }
 
 [tool.template.zones.kernel]
 paths = ["src/junoscfg/display/**", "src/junoscfg/input.py"]
