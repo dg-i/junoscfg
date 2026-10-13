@@ -6,6 +6,7 @@ Application-owned dependency relevance for schema qualification; no test cache.
   field of exactly one package named junoscfg with source `{editable: "."}`.
   Retain every other field, including root dependencies, Python constraints,
   third-party versions, sources and artifact hashes. Ambiguity refuses.
+- Historical lock text uses the same fingerprint_text rule as current files.
 - Lock, fingerprint and required-obligation inputs must be physical files;
   absent, malformed, symlinked or inconsistent inputs fail closed.
 - `write` deliberately refreshes the committed projection. `check` never does:

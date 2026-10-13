@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
+import subprocess
 
 import pytest
 from agent_ready_checks import verification
@@ -126,7 +128,32 @@ def test_guard_failure_removes_previous_success(tmp_path, fault):
     assert not (root / RESULT).exists()
 
 
-def test_native_selection_distinguishes_version_only_from_dependencies(tmp_path):
+def test_native_selection_distinguishes_version_only_from_dependencies(tmp_path, monkeypatch):
+    """Native tier routing uses real lock classification with explicit context state.
+
+    Receipt integrity belongs to the native-context tests; this fixture has no
+    installed project interpreter or schema products. Bridge only the selector
+    process and expose both valid-context and uncertain-context decisions.
+    """
+    selection = importlib.import_module("tools.schema_selection")
+    context = {"valid": True}
+    consulted = []
+
+    def established(root, base, patterns):
+        consulted.append((root, base))
+        return context["valid"]
+
+    monkeypatch.setattr(selection, "established_context", established)
+    original_run = subprocess.run
+
+    def selector_process(command, *args, **kwargs):
+        if "tools.schema_selection" in command:
+            compared_base = command[command.index("--base") + 1]
+            selected = selection.select(kwargs["cwd"], compared_base)
+            return subprocess.CompletedProcess(command, 0, json.dumps({"selected": selected}), "")
+        return original_run(command, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", selector_process)
     root = lock_repository(tmp_path)
     module = dependency_module()
     (root / "pyproject.toml").write_bytes((PROJECT_ROOT / "pyproject.toml").read_bytes())
@@ -141,6 +168,14 @@ def test_native_selection_distinguishes_version_only_from_dependencies(tmp_path)
     assert len(selected) == 1
     assert "tools.schema_dependencies" in selected[0]["command"]
     guard = selected[0]["name"]
+    assert consulted and all(compared == (root, base) for compared in consulted)
+    context["valid"] = False
+    assert [tier["name"] for tier in verification.tiers(root, base, selection=True)] == [
+        guard,
+        "schema-25.2",
+        "schema-25.2-generation",
+    ]
+    context["valid"] = True
     (root / "uv.lock").write_text(LOCK.replace('version = "1.0"', 'version = "2.0"'))
     with pytest.raises(ValueError):
         module.check_dependencies(root)

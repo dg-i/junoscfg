@@ -5,3 +5,33 @@ zone: schema
 domains: [schema-pipeline]
 assurance: economy
 removes: redundant verification execution and serial scheduling where assurance is preserved
+verification:
+  state: ready
+  planned-paths:
+    - .agent-ready/activation.json
+    - changelog.d/+production-verification-performance.misc.md
+    - docs/VERIFICATION.md
+    - docs/how-to/verification-evidence.md
+    - docs/how-to/run-a-batch-of-changes.md
+    - openspec/specs/schema-pipeline/verification-evidence/spec.md
+    - pyproject.toml
+    - uv.lock
+    - tools/schema-verification/dependencies.json
+    - tools/schema_dependencies.py
+    - tools/schema_dependencies.CONTRACT.md
+    - tools/schema_selection.py
+    - tools/schema_selection.CONTRACT.md
+    - tools/verification_tests.py
+    - tools/verification_tests.CONTRACT.md
+    - tools/verification_shard.py
+    - tools/verification-costs.json
+    - tests/tooling/conftest.py
+    - tests/tooling/test_schema_dependency_trigger_challenge.py
+    - tests/tooling/test_schema_qualification_challenge.py
+    - tests/tooling/test_schema_verification_challenge.py
+    - tests/tooling/test_schema_verification_metadata.py
+    - tests/tooling/test_schema_selection.py
+    - tests/tooling/test_verification_tests.py
+  dependencies: []
+  changelog: changelog.d/+production-verification-performance.misc.md
+  generated-records: []

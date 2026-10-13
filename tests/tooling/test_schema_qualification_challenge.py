@@ -105,7 +105,7 @@ raise SystemExit(adapter.run_generation(root, {SHARD!r}))
 
 
 @pytest.mark.parametrize("fault", ["semantic", "second-failure", "source", "input"])
-def test_failed_generation_cannot_publish_reusable_success(tmp_path, fault):
+def test_failed_generation_cannot_publish_reusable_success(tmp_path, fault, native_driver):
     root, recipe, _, _, _, declaration = generation_repository(tmp_path, fault)
     command = [sys.executable, "-B", "generation_probe.py"]
     assert verification.execute(root, command, "HEAD", declaration, reuse=False) != 0
@@ -134,7 +134,7 @@ def test_unfinished_assertions_refuse_before_public_build(tmp_path, monkeypatch,
     assert not (root / recipe["generation-result"]).exists()
 
 
-def test_wrapper_reuse_rejects_corrupted_generation_outputs(tmp_path):
+def test_wrapper_reuse_rejects_corrupted_generation_outputs(tmp_path, native_driver):
     root, recipe, required, obligations, outputs, declaration = generation_repository(tmp_path)
     command = [sys.executable, "-B", "generation_probe.py"]
     assert verification.execute(root, command, "HEAD", declaration, reuse=False) == 0

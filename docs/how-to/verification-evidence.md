@@ -158,3 +158,40 @@ in place. Byte comparison still covers compressed products; metadata excludes on
 `generated_at`. Cold/changed inputs remain slower. Clearing the ignored content
 store forces actual validation again; inspect an occupied lock before recovering
 an interrupted run. Local proof is not an import or cross-machine trust protocol.
+
+## Complete parallel verification
+
+The native full checkpoint runs four independent read-only gates concurrently,
+then respects mutation barriers. Its complete application adapter uses ten pytest
+workers with isolated caches and coverage files. Product modules remain together
+to retain fixture locality; tooling tests use measured scheduling hints. Every
+worker reports the entire collection, its assigned nodes, all execution phases
+and its exit status. Missing or duplicate assignments, partial reports, worker
+failures and unexpected outcomes fail the checkpoint. Coverage merges executed
+data and applies the existing branch-enabled floor. Scheduling costs never select
+or remove tests. The full checkpoint suppresses only its duplicate `affected-tests`
+hook when the complete suite is included; ordinary commit hooks remain active.
+
+Application tests may overlap selected schema tiers. Native readiness, shared
+capacity, serial tier dependencies and failure recording remain mandatory. The
+configuration is opt-in; removing `gate-workers`, `full-suite`, `overlap-tiers`
+and `affected-test-hook` restores serial native scheduling.
+
+## Conservative schema classification
+
+Both real-schema tiers use `tools.schema_selection` as their native selection
+command. Producer paths, relevant dependencies, schema inputs and unknown changes
+select qualification. Recognized consumer function-body changes may avoid it only
+when import-time structure is unchanged and validated native generation proof
+binds the current schema inputs, dependencies, artifacts and actual execution
+runtime. Decorators, class construction and import-time calls conservatively
+select qualification. Ordinary compatibility and consumer tests still run.
+
+Missing, corrupt or incompatible proof, uncertain history or malformed selection
+output selects qualification. Preparation records installed versions but cannot
+establish proof. Runtime identity binds the actual project interpreter, dependency
+bytes, startup/import paths and relevant import environment; ignored import
+shadows and executable bytecode are not exempt. Re-preparing after a runtime or
+dependency change cannot turn old evidence into valid proof. Only the three root
+release-version files may use hash-proven ancestor text for successive release
+bumps; no consumer exemption is inferred from mismatched historical source.

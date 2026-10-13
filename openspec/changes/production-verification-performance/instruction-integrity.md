@@ -25,4 +25,11 @@ Scope: production verification and its measured baseline. Budgets remain cold
 400 seconds, warm 200 seconds, no-schema 45 seconds; the known last gap is explicit.
 No requirement or coverage floor may be weakened to claim the budgets.
 Outstanding material decisions: none; this implements the owner's accepted report.
-Resume point: phase 1 after this committed preflight.
+Latest owner correction: merge locally only; the owner will push. This supersedes
+push authorization. Conflict classification: automatically resolved by precedence.
+No remote push is authorized now. Local dependency/application merges remain authorized.
+Resume point: implementation with independent acceptance evidence.
+
+Native independent review found symlink-directory and ignored namespace import
+identity omissions. These violate the existing engine-bound proof requirement;
+repair is within the approved criteria, not a new compatibility promise.

@@ -199,15 +199,20 @@ committed shipped artifacts. The separately scheduled sentinel is removed.
 Automatic selection covers XSD parsing/fixes, artifact generators, their shared
 compression/key helpers and package door, shipped data,
 the schema corpus, schema fixture definitions in `tests/conftest.py`, its
-schema-specific support, and the checked dependency fingerprint. Wrapper tests,
-workflow documentation, shared configuration and bookkeeping alone do not select
-real schemas. The full checkpoint still runs ordinary tests of that machinery.
+schema-specific support, and the checked dependency fingerprint. Recognized wrapper tests,
+workflow documentation and bookkeeping can avoid real schemas only with valid
+qualification context. Unknown configuration changes select qualification.
+Consumer function-body changes are exempt only when import-time structure and
+qualification inputs remain demonstrably compatible; uncertainty selects the
+expensive checks. The full checkpoint still runs all ordinary tests, including
+compatibility and consumer tests. See the [selection and proof rules](verification-evidence.md#conservative-schema-classification).
 
 A first cheap tier, `schema-dependency-guard`, handles `uv.lock` and dependency
 projection changes. The committed `tools/schema-verification/dependencies.json`
 fingerprints the entire parsed lockfile except the version of the unique editable
-root `junoscfg` package. A version-only release bump therefore runs the cheap
-guard, without selecting real schema work. All dependency versions, sources,
+root `junoscfg` package. With valid qualification context, a version-only release bump runs the cheap
+guard without selecting real schema work. Missing or invalid context selects
+qualification conservatively. All dependency versions, sources,
 artifact hashes, Python constraints, development dependencies and other parsed
 fields remain relevant. Formatting-only TOML edits do not alter parsed content.
 

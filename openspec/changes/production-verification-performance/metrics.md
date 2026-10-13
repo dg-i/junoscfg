@@ -20,4 +20,8 @@
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
 
+| Context expansion: agent-ready-python/checks/src/agent_ready_checks | Native evidence and scheduling own required upstream fix |
+| Context expansion: tools and tests/tooling | Application selection and complete execution reporting |
+| Experiment evidence | f277c896582ccfb94787a02ff06fae4f896f236f; full timings retained on isolated branch |
+
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

@@ -19,7 +19,9 @@ class TestMetadataStabilityAcrossExecutedPasses:
 
     @pytest.mark.parametrize("shard", ["schema-21.4", "schema-23.2"])
     @pytest.mark.parametrize("change", ["semantic", "generated_at"])
-    def test_only_generated_at_may_change(self, tmp_path, monkeypatch, shard, change):
+    def test_only_generated_at_may_change(
+        self, tmp_path, monkeypatch, shard, change, native_driver
+    ):
         """Reject semantic drift while allowing the established timestamp exception."""
         parent = tmp_path / "hook-parent"
         parent.mkdir()

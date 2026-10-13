@@ -30,7 +30,16 @@ must preserve these existing promises and conservative unknown handling.
 - Resume point: phase 4 after committed freeze and design.
 ## Delta log
 - Initial freeze based on approved experiment; production cannot adopt its waiver.
+- Owner correction after GitHub authentication check: merge locally only; owner
+  will push. No code/acceptance change or invalidated testing; remote push removed.
+- Independent challenge: successive version-only changes must retain cheap guard.
+  Resolve historical release files only through Git ancestry plus the native
+  receipt hash; do not loosen consumer history or manufacture context proof.
 ## Scope and completion
 One application outcome with required upstream engine dependency. Review and merge
 upstream dependency before installing its immutable commit; finalize, archive,
-version and push the application only after checks and independent review pass.
+version and merge the application locally only after checks and independent review pass.
+
+- Full hook exposed fixture/environment incompatibilities after stronger engine
+  binding. Repair only synthetic fixture setup; retain all prior assertions.
+  No acceptance weakening or requirement change. Details in verification.md.

@@ -117,3 +117,27 @@ longitudinal flake rates remain UNMEASURED. Reviewer capability equivalence rema
 a recorded limitation. Evidence: the schema-content-performance change's
 verification.md and events.jsonl. One consolidated feedback invitation remains
 pending; no owner review or decline is inferred, and the cadence anchor is retained.
+
+## Production verification adoption
+
+The owner approved production adoption and a baseline update after the isolated
+experiment, then restricted integration to local merges (the owner will push).
+Current end-to-end budgets are **400 seconds cold**, **200 seconds warm** and
+**45 seconds without schema qualification**, with dependencies already installed.
+These replace the provisional 900-second investigation budget for these three
+workloads; they do not change the broader release workload or waive assurance.
+Cold means no reusable qualification evidence; warm means valid input- and
+runtime-bound proof; the third scenario requires justified schema nonselection.
+
+Historical experiment, based on master
+`507a3dc74248ce2d670f6a5e27023d34990e6965`: cold baseline 565.161 s,
+original pure-proof warm 354.898 s, matched whole-proof serial warm 241.295 s,
+and no-schema baseline 245.391 s. Experimental final cold runs were 342.148,
+344.763 and 346.223 s; warm 73.782, 74.182 and 72.950 s; no-schema 72.923,
+72.505 and 72.946 s. These are experiment measurements, not a production
+checkpoint baseline: production retains native admission and stronger runtime
+identity. The experiment's 45-second gap remains explicit.
+
+Production measurements: UNMEASURED until the reviewed native dependency and
+complete canonical checkpoint run. Record every trial, maximum, cache conditions,
+selected tiers and preparation separately in the change verification record.

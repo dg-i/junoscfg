@@ -158,7 +158,7 @@ class TestQualifiedLifecycleRecordBoundary:
         assert not (root / policy["shards"][SHARD]["result"]).exists()
 
     def test_native_tracked_events_allow_the_next_real_wrapper_execution(
-        self, tmp_path, monkeypatch
+        self, tmp_path, monkeypatch, native_driver
     ):
         from agent_ready_checks import verification
 

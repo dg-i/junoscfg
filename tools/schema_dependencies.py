@@ -42,9 +42,14 @@ def _write_json(path: Path, value) -> None:
 def fingerprint(root: Path) -> dict:
     """Represent every parsed lock field except the validated editable-root version."""
     try:
-        data = tomllib.loads(_physical(root, "uv.lock").read_text(encoding="utf-8"))
+        return fingerprint_text(_physical(root, "uv.lock").read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         raise ValueError("schema dependency lock is missing or invalid") from error
+
+
+def fingerprint_text(text: str) -> dict:
+    """Apply the same relevance rule to a historical committed lockfile."""
+    data = tomllib.loads(text)
     packages = data.get("package")
     if not isinstance(packages, list) or any(not isinstance(item, dict) for item in packages):
         raise ValueError("schema dependency package inventory is invalid")

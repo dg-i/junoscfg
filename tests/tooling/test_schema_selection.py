@@ -9,6 +9,9 @@ import pytest
 import tomllib
 
 from tests.support.paths import PROJECT_ROOT
+from tests.tooling.test_schema_dependency_trigger_challenge import (
+    isolated_git_environment as isolated_git_environment,
+)
 from tests.tooling.test_schema_verification import commit_fixture, git
 
 OLD = "def consume(value):\n    return value\n"
@@ -197,3 +200,164 @@ def test_only_editable_root_lock_version_is_exempt(root_only):
     if not root_only:
         changed = changed.replace('version = "1.0"', 'version = "2.0"')
     assert selector().classify("uv.lock", producer_patterns(), LOCK, changed) is (not root_only)
+
+
+@pytest.fixture
+def native_generation_context(tmp_path, monkeypatch):
+    """Execute a tiny native generation command; retain real receipt/hash validation."""
+    import copy
+    import sys
+
+    from agent_ready_checks import verification, verification_runtime
+
+    from tests.tooling.test_schema_dependency_trigger_challenge import LOCK
+    from tools import schema_verification
+
+    root = tmp_path / "native-context"
+    root.mkdir()
+    files = {
+        "src/junoscfg/convert/consumer.py": OLD,
+        "src/junoscfg/validate/schema_generator.py": "def build():\n    return 1\n",
+        "src/junoscfg/__init__.py": '__version__ = "0.28.3"\n',
+        "README.md": "fixture\n",
+        "pyproject.toml": '[project]\nname = "junoscfg"\nversion = "0.28.3"\n',
+        "uv.lock": LOCK,
+        ".gitignore": ".agent-ready/\nprivate_test_data/\n",
+        "required.json": '{"tests": ["generation"], "shards": []}',
+        "stability.json": '[".agent-ready/product.txt"]',
+    }
+    for name, contents in files.items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(contents)
+    git(root, "init", "-q")
+    commit_fixture(root)
+    base = git(root, "rev-parse", "HEAD").strip()
+    metadata = {"python": "fixture-runtime", "version:junoscfg": "0.28.3"}
+    engine = {"stdlib": "original", "dependencies": "original"}
+    runtime = root / ".agent-ready/schema/runtime.json"
+    runtime.parent.mkdir(parents=True)
+    runtime.write_text(json.dumps(metadata))
+    dump = root / "private_test_data/schemas/fixture.xsd"
+    dump.parent.mkdir(parents=True)
+    dump.write_text("synthetic schema input")
+    command = [
+        sys.executable,
+        "-c",
+        "from pathlib import Path; "
+        "Path('.agent-ready/result.json').write_bytes(Path('required.json').read_bytes()); "
+        "Path('.agent-ready/product.txt').write_text('stable product')",
+    ]
+    declared = {
+        "name": "schema-25.2-generation",
+        "paths": ["src/junoscfg/validate/schema_generator.py"],
+        "command": command,
+        "runtime-command": [sys.executable],
+        "runtime-packages": ["pytest"],
+        "inputs": ["private_test_data/schemas/fixture.xsd", ".agent-ready/schema/runtime.json"],
+        "version-files": [".agent-ready/schema/runtime.json"],
+        "required-manifest": "required.json",
+        "result-manifest": ".agent-ready/result.json",
+        "stability-manifest": "stability.json",
+    }
+    module = selector()
+    monkeypatch.setattr(module, "declarations", lambda path: [declared])
+    monkeypatch.setattr(schema_verification, "observe_versions", lambda: dict(metadata))
+    monkeypatch.setattr(verification_runtime, "runtime", lambda path, tier: copy.deepcopy(engine))
+
+    def observed_identity(path, argv, reference, tier):
+        return {
+            "root": str(path.resolve()),
+            "base": reference,
+            "command": argv,
+            "declaration": tier,
+            "tier_runtime": copy.deepcopy(engine),
+            "files": verification.manifest(path, verification.tracked(path) + tier["inputs"]),
+        }
+
+    monkeypatch.setattr(verification, "identity", observed_identity)
+    monkeypatch.setattr(verification, "record_event", lambda *args, **kwargs: None)
+    assert verification.execute(root, command, base, declared, reuse=False) == 0
+    identity = observed_identity(root, command, base, declared)
+    receipt = root / verification.STORE / (verification.digest(identity) + ".json")
+    assert verification.valid(root, identity, verification.read_json(receipt))
+    return root, base, declared["paths"], metadata, engine, receipt
+
+
+@pytest.mark.parametrize(
+    "change,expected",
+    [
+        ("unchanged", True),
+        ("consumer-body", True),
+        ("release-reprepared", True),
+        ("input", False),
+        ("missing-input", False),
+        ("runtime-stale-metadata", False),
+        ("runtime-reprepared", False),
+        ("dependency-reprepared", False),
+        ("producer", False),
+        ("consumer-old-hash-mismatch", False),
+        ("output", False),
+        ("failed-record", False),
+        ("corrupt-record", False),
+    ],
+)
+def test_native_generation_context_rejects_stale_proof(native_generation_context, change, expected):
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    runtime = root / ".agent-ready/schema/runtime.json"
+    consumer = root / "src/junoscfg/convert/consumer.py"
+    if change == "consumer-body":
+        consumer.write_text(NEW)
+    elif change == "release-reprepared":
+        (root / "src/junoscfg/__init__.py").write_text('__version__ = "0.28.4"\n')
+        metadata["version:junoscfg"] = "0.28.4"
+        runtime.write_text(json.dumps(metadata))
+    elif change == "input":
+        (root / "private_test_data/schemas/fixture.xsd").write_text("changed input")
+    elif change == "missing-input":
+        (root / "private_test_data/schemas/fixture.xsd").unlink()
+    elif change == "runtime-stale-metadata":
+        metadata["python"] = "changed runtime"
+    elif change in {"runtime-reprepared", "dependency-reprepared"}:
+        key = "stdlib" if change == "runtime-reprepared" else "dependencies"
+        engine[key] = "changed bytes at the same package version"
+        metadata["content:" + key] = "changed"
+        runtime.write_text(json.dumps(metadata))
+    elif change == "producer":
+        (root / "src/junoscfg/validate/schema_generator.py").write_text(
+            "def build():\n    return 2\n"
+        )
+    elif change == "consumer-old-hash-mismatch":
+        consumer.write_text(NEW)
+        commit_fixture(root)
+        base = git(root, "rev-parse", "HEAD").strip()
+        consumer.write_text("def consume(value):\n    return repr(value)\n")
+    elif change == "output":
+        (root / ".agent-ready/product.txt").write_text("changed product")
+    elif change == "failed-record":
+        value = json.loads(receipt.read_text())
+        value["exit_status"] = 1
+        receipt.write_text(json.dumps(value))
+    elif change == "corrupt-record":
+        receipt.write_text("not JSON")
+    assert selector().established_context(root, base, patterns) is expected
+
+
+@pytest.mark.parametrize("version_path", ["src/junoscfg/__init__.py", "pyproject.toml", "uv.lock"])
+def test_successive_release_only_changes_keep_cheap_guard_exception(
+    native_generation_context, version_path
+):
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    version = root / version_path
+    original = version.read_text()
+    runtime = root / ".agent-ready/schema/runtime.json"
+    version.write_text(original.replace("0.28.3", "0.28.4"))
+    metadata["version:junoscfg"] = "0.28.4"
+    runtime.write_text(json.dumps(metadata))
+    assert selector().established_context(root, base, patterns) is True
+    commit_fixture(root)
+    second_base = git(root, "rev-parse", "HEAD").strip()
+    version.write_text(original.replace("0.28.3", "0.28.5"))
+    metadata["version:junoscfg"] = "0.28.5"
+    runtime.write_text(json.dumps(metadata))
+    assert selector().established_context(root, second_base, patterns) is True
