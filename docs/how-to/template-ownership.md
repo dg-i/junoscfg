@@ -50,3 +50,17 @@ Run `agent-ready update` on a clean update branch. Read its report and follow
 `agent-ready-refresh` to resolve conflicts and failing checks. Review the
 whole diff for local customizations, including changes merged without a
 conflict. Commit only after the intended application behaviour is verified.
+
+An exact locally attested updater commit may remain within a later ordinary
+application change. The lane gate verifies the complete updater checkpoint and
+excludes only paths whose comparison-base and current states compose exactly
+through verified updater output. Application edits before or after an update
+remain governed, including shared configuration paths. Edited template skill
+bytes or modes, mixed updater commits, missing attestations and ambiguous merge
+checkpoints do not gain an exemption. This does not admit the combined history
+to the template-update lane or replace an application change.
+
+Receipts can include ignored generated Claude skill mirrors. Historical proof
+accepts these only through the canonical `.agents/skills/` mapping: exact
+before/after source hashes and repository ignore rules in both immutable
+snapshots must agree. Other absent recorded paths receive no exemption.
