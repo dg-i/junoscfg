@@ -10,10 +10,11 @@ verification:
   planned-paths:
     - src/junoscfg/audit/walker.py
     - .agent-ready/activation.json
+    - changelog.d/+clarify-audit-unknown-values.misc.md
     - docs/VERIFICATION.md
     - pyproject.toml
     - src/junoscfg/__init__.py
     - uv.lock
   dependencies: []
-  changelog: 'none: private implementation documentation only'
+  changelog: changelog.d/+clarify-audit-unknown-values.misc.md
   generated-records: []
