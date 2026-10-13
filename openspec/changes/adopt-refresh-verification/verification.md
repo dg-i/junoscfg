@@ -45,3 +45,5 @@ Native full receipt: `.agent-ready/verification/a91ded28d4324e2582712ba73be4be55
 native duration 1659.230025 seconds, exit zero. Native log SHA-256:
 `19371dfce2e00530392cf221827a54471990534a815de43f732f8be05140d7e3`.
 The outer 1661.945-second measurement includes command startup/return overhead.
+
+Final documentation follow-up: canonical `--set fast --base ef33c70` passed on db42944. No runtime changes followed the full checkpoint.
