@@ -46,6 +46,7 @@ verification:
   - .copier-answers.yml
   - .github/workflows/ci.yml
   - changelog.d/+schema-qualification-scope.misc.md
+  - changelog.d/agent-ready-3327b4747b2e83ce2c288141e37e0068e25f55e4-ad61faf7f37a350543e392d303dd99fc623f5cfa.misc.rst
   - changelog.d/agent-ready-4b5d22ace12f2d779153373ec108069b0626ea7a-825741373d44082920e586a4898a68908f80cafb.misc.rst
   - docs/VERIFICATION.md
   - docs/how-to/capture-change-metrics.md

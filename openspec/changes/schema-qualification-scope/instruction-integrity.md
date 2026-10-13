@@ -41,3 +41,9 @@ archive and bump both version files from master, tag vVERSION. Never push.
 Evidence: old selector, source boundary and fingerprint inspected; graph traversal
 provided architectural orientation but lacks current selector details, so actual
 source/contracts are authoritative. Resume: phase 1; outstanding decisions: none.
+
+Owner steering on 2026-10-14: reuse valid completed assurance, finish only binding
+obligations, batch bookkeeping, resolve cheap gates before one final combined-base
+full run, freeze verification snapshots, retain the successful 83.88s demonstration,
+and finish local merge/archive/version/tag without pushing. This narrows execution
+work without changing tests, coverage, integrity, hooks or independent review.

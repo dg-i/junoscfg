@@ -64,3 +64,20 @@ Phase-7 spec preparation: OpenSpec 1.13.0 archive applied the reviewed delta in
 Only the resulting main specification was copied to the live branch. The live
 change remains open; the disposable archive is not completion evidence. Result
 matches the two reviewed MODIFIED requirements and preserves inherited scenarios.
+
+Binding shared lane correction completed upstream: feature `9755e99`, checks
+`8f21be09833035dd4a1c63c09d19165d420cbcbc` (checks-v0.17.4), template/main
+`3327b4747b2e83ce2c288141e37e0068e25f55e4` (v0.13.4), all locally merged/tagged.
+Fresh independent review found no actionable issue. Required suite: 821 passed in
+243.87s; greenfield/brownfield renders 37.844/5.252s; 74 focused tests in10.06s;
+mechanical release tests6 in0.70s. Real historical probe proved60 updater paths,
+all31 changed skills, and no application source/tests/tools/change exemptions.
+Exact updater-only admission is unchanged; historical proof binds immutable
+checkpoints, composed bytes/modes, local attestation and canonical ignored mirrors.
+
+Supported exact application adoption: `6bdaf5b`; all ordinary commit hooks passed.
+The application reviewer inspected this narrow followup readonly and found no new
+issue. The original-baseline full checkpoint remains required for closure.
+No completed no-schema demonstration is repeated. Earlier successful schema content
+proof is retained; the changed executing shared lane legitimately changes native
+tier runtime identity, so the final checkpoint may requalify through normal rules.
