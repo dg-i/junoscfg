@@ -74,3 +74,19 @@ plus 0.47s setup. All normal hooks passed. Initial selection regressions observe
 adapter integration first found one stale expected selection because its new test
 became a genuine consumer (66 passed/1 failed, 3.62s); updating the expected consumer
 set produced 67 passed in 3.60s, 3.82s wall. No assertion was removed.
+
+Matched optimized commit at implementation 2329653: **4.40s** wall (2.41 user,
+0.83 system), plus 0.37s setup. Same generator docstring edit, same locked packages,
+Python 3.14.7, all ordinary hooks enabled, separate fresh physical root. Baseline
+setup+commit 173.84s versus optimized 4.77s. One observation each; concurrent shared
+checks and cache differences prevent claiming a longitudinal trend. Implementation
+commit itself ran all applicable hooks in 9.05s. Cheap lane/readiness passed before
+any full checkpoint.
+
+First native reuse demonstration executed rather than reused: the adapter supplied
+runtime-command without its required runtime-packages (2.44s and 2.37s, both 3 tests
+passed). The conservative fallback worked. Corrected declaration omits both because
+pytest uses the identical sys.executable: shared driver identity already binds all
+installed distributions, interpreter, standard library and import context. Upstream
+qualification explicitly covers that supported declaration. These attempts are not
+claimed as evidence reuse and remain in total work.

@@ -328,7 +328,7 @@ def main(argv: list[str]) -> int:
                 ROOT,
                 command,
                 None,
-                {"name": "affected-tests", "runtime-command": [sys.executable]},
+                {"name": "affected-tests"},
             )
         except (OSError, ValueError) as error:
             # A deleted tracked input or unavailable identity cannot prove reuse.

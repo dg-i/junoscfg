@@ -87,3 +87,31 @@ match the original receipt hash. A changed relevant dependency, algorithm or
 engine cannot obtain a skip by rewriting instructions or refreshing metadata.
 The committed `consumer-boundary.json` is refreshed only after review of actual
 execution relationships, never by preparation or successful qualification alone.
+
+## Ordinary tests and commit cost
+
+`tools/affected_tests.py` reads staged paths for ordinary commits; without staged
+paths it uses the branch and working-tree diff. Source-package changes retain unit
+importers and contract tests. Tooling modules follow audited reverse dependencies
+through tools and all test modules. Root fixtures/shared support select the full
+suite; nested fixtures select their directory. Unknown loaders, malformed dependency
+sources, deleted or unmapped tools and configuration retain conservative coverage.
+The precise boundary is `tools/affected_tests.CONTRACT.md`. OpenSpec metrics and
+review bookkeeping do not add test targets to an otherwise identical selection.
+
+Under Strategy A, the ordinary runner uses the template's existing command evidence
+API. A later identical selected pytest command can reuse successful native proof
+only with matching source bytes, base, physical root, environment, executable and
+runtime identity. There is no application receipt cache and no import of raw logs.
+Unavailable identity runs the selected tests; a failed execution remains failure.
+Changing coverage flags or test selection changes the obligation. A focused or
+serial no-coverage run cannot satisfy the full suite with aggregate coverage.
+
+The canonical full checkpoint already excludes the affected-test hook through the
+shared runner and executes `tools.verification_tests` once with coverage. Ordinary
+commits still run all applicable hooks. Batch coherent edits before committing;
+resolve fields, caps, lane, readiness and strict OpenSpec validation before the full
+checkpoint, and keep its tested inputs fixed until completion. Review/metric records
+alone do not justify another full run; changed executing inputs do. Version, lock,
+shared fixtures and unknown configuration deliberately retain broad ordinary tests.
+That remaining release cost is policy, not an exemption inferred from bookkeeping.

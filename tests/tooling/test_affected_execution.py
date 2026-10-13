@@ -39,7 +39,7 @@ def test_selected_command_is_the_shared_evidence_obligation(execution):
         "tests/tooling/test_cli_reference.py",
     ]
     assert base is None  # Shared stage resolver binds the actual change base.
-    assert declaration == {"name": "affected-tests", "runtime-command": [sys.executable]}
+    assert declaration == {"name": "affected-tests"}
 
 
 def test_shared_execution_failure_is_not_relabelled_or_retried(execution, monkeypatch):
