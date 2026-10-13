@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Phase 2 — Spec
 
 Type `docs` follows phase 2 in `types/docs.md` and stops before the code route

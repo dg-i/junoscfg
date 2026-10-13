@@ -21,11 +21,11 @@ resolution-markers = ["python_full_version >= '3.11'"]
 name = "junoscfg"
 version = "0.28.3"
 source = { editable = "." }
-dependencies = [{ name = "library" }]
+dependencies = [{ name = "lxml" }]
 [package.metadata]
-requires-dist = [{ name = "library", specifier = ">=1" }]
+requires-dist = [{ name = "lxml", specifier = ">=1" }]
 [[package]]
-name = "library"
+name = "lxml"
 version = "1.0"
 source = { registry = "https://example.invalid/simple" }
 wheels = [{ url = "https://example.invalid/pkg.whl", hash = "sha256:abc", size = 10 }]
@@ -69,7 +69,7 @@ def lock_repository(tmp_path):
         ("revision = 3", "revision = 4"),
         ('requires-python = ">=3.10"', 'requires-python = ">=3.11"'),
         ("python_full_version >= '3.11'", "python_full_version >= '3.12'"),
-        ('dependencies = [{ name = "library" }]', 'dependencies = [{ name = "other" }]'),
+        ('dependencies = [{ name = "lxml" }]', 'dependencies = [{ name = "other" }]'),
         ('specifier = ">=1"', 'specifier = ">=2"'),
         ('version = "1.0"', 'version = "2.0"'),
         ('registry = "https://example.invalid/simple"', 'registry = "https://other.invalid"'),

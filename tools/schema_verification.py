@@ -129,24 +129,22 @@ def observe_versions():
         "python": sys.version,
         "python-executable": hashlib.sha256(Path(sys.executable).read_bytes()).hexdigest(),
     }
-    for distribution in sorted(
-        importlib.metadata.distributions(), key=lambda d: d.metadata["Name"]
-    ):
-        name = distribution.metadata["Name"].lower()
-        version = distribution.version
-        if not version or version.lower() == "unknown" or distribution.files is None:
-            raise ValueError("runtime package identity is unavailable")
-        digest = hashlib.sha256()
-        for relative in sorted(distribution.files, key=str):
-            if relative.suffix == ".pyc" or "__pycache__" in relative.parts:
-                continue
-            path = distribution.locate_file(relative)
-            if not path.is_file():
-                raise ValueError("runtime package content is unavailable")
-            digest.update(str(relative).encode())
-            digest.update(path.read_bytes())
-        values[f"version:{name}"] = version
-        values[f"content:{name}"] = digest.hexdigest()
+    from agent_ready_checks.verification_content import engine_identity
+
+    from tools.schema_dependencies import SCHEMA_PACKAGES
+
+    packages = list(SCHEMA_PACKAGES)
+    # Autoloaded pytest plugins execute inside qualification, even if unrelated
+    # to schema assertions. Their installed providers are therefore inputs.
+    for distribution in importlib.metadata.distributions():
+        if any(entry.group == "pytest11" for entry in distribution.entry_points):
+            packages.append(distribution.metadata["Name"])
+    identity = engine_identity(sorted(set(packages)))
+    values["execution-engine"] = verification.digest(identity)
+    for name, distribution in identity["distributions"].items():
+        if not distribution.get("absent"):
+            values[f"version:{name}"] = distribution["version"]
+            values[f"content:{name}"] = verification.digest(distribution["files"])
     from lxml import etree
 
     for key in ("LIBXML_VERSION", "LIBXML_COMPILED_VERSION", "LIBXSLT_VERSION"):

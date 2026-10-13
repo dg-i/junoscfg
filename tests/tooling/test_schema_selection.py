@@ -59,9 +59,8 @@ def test_all_producers_and_unknown_paths_qualify(path):
 @pytest.mark.parametrize(
     "path",
     [
-        "src/junoscfg/convert/json.py",
+        "src/junoscfg/audit/json.py",
         "src/junoscfg/anonymize/rules.py",
-        "src/junoscfg/validate/json_yaml_validator.py",
         "docs/guide/usage.md",
         "openspec/changes/fixture/tasks.md",
         "README.md",
@@ -95,9 +94,7 @@ def test_consumer_body_and_workflow_exemptions(path):
     ],
 )
 def test_import_time_uncertainty_qualifies(old, new):
-    assert (
-        selector().classify("src/junoscfg/convert/json.py", producer_patterns(), old, new) is True
-    )
+    assert selector().classify("src/junoscfg/audit/json.py", producer_patterns(), old, new) is True
 
 
 @pytest.mark.parametrize(
@@ -120,7 +117,7 @@ def test_consumer_selection_requires_successful_context_after_preparation(
 ):
     module = selector()
     (tmp_path / "pyproject.toml").write_bytes((PROJECT_ROOT / "pyproject.toml").read_bytes())
-    path = tmp_path / "src/junoscfg/convert/json.py"
+    path = tmp_path / "src/junoscfg/audit/json.py"
     path.parent.mkdir(parents=True)
     path.write_text(OLD)
     git(tmp_path, "init", "-q")
@@ -216,7 +213,7 @@ def native_generation_context(tmp_path, monkeypatch):
     root = tmp_path / "native-context"
     root.mkdir()
     files = {
-        "src/junoscfg/convert/consumer.py": OLD,
+        "src/junoscfg/audit/consumer.py": OLD,
         "src/junoscfg/validate/schema_generator.py": "def build():\n    return 1\n",
         "src/junoscfg/__init__.py": '__version__ = "0.28.3"\n',
         "README.md": "fixture\n",
@@ -309,7 +306,7 @@ def native_generation_context(tmp_path, monkeypatch):
 def test_native_generation_context_rejects_stale_proof(native_generation_context, change, expected):
     root, base, patterns, metadata, engine, receipt = native_generation_context
     runtime = root / ".agent-ready/schema/runtime.json"
-    consumer = root / "src/junoscfg/convert/consumer.py"
+    consumer = root / "src/junoscfg/audit/consumer.py"
     if change == "consumer-body":
         consumer.write_text(NEW)
     elif change == "release-reprepared":
@@ -400,11 +397,11 @@ def test_audited_boundary_normalizes_only_isolated_consumer_bodies(
         "pyproject.toml",
         "tools/schema_verification.py",
         "src/junoscfg/__init__.py",
-        "src/junoscfg/convert/consumer.py",
+        "src/junoscfg/audit/consumer.py",
         "src/junoscfg/validate/schema_generator.py",
     }
     assert selector().verified_source_boundary(root) is True
-    consumer = root / "src/junoscfg/convert/consumer.py"
+    consumer = root / "src/junoscfg/audit/consumer.py"
     if change == "eligible-body":
         consumer.write_text(NEW)
     elif change == "root-version":
@@ -416,10 +413,10 @@ def test_audited_boundary_normalizes_only_isolated_consumer_bodies(
     elif change == "unsafe-import":
         consumer.write_text(NEW + "result = consume(1)\n")
     elif change == "new-source":
-        (root / "src/junoscfg/convert/added.py").write_text("def added():\n    return 1\n")
-        git(root, "add", "src/junoscfg/convert/added.py")
+        (root / "src/junoscfg/audit/added.py").write_text("def added():\n    return 1\n")
+        git(root, "add", "src/junoscfg/audit/added.py")
     elif change == "deleted-source":
-        git(root, "rm", "src/junoscfg/convert/consumer.py")
+        git(root, "rm", "src/junoscfg/audit/consumer.py")
     elif change in {"lock-root-version", "lock-dependency"}:
         lock = root / "uv.lock"
         before_version, after_version = (
@@ -468,11 +465,11 @@ def test_invalid_audited_boundary_cannot_authorize_receipt(native_generation_con
     elif fault == "extra-field":
         record["unknown"] = "value"
     elif fault == "missing-source":
-        del record["sources"]["src/junoscfg/convert/consumer.py"]
+        del record["sources"]["src/junoscfg/audit/consumer.py"]
     elif fault == "unknown-source":
-        record["sources"]["src/junoscfg/convert/unknown.py"] = "0" * 64
+        record["sources"]["src/junoscfg/audit/unknown.py"] = "0" * 64
     elif fault == "changed-hash":
-        record["sources"]["src/junoscfg/convert/consumer.py"] = "0" * 64
+        record["sources"]["src/junoscfg/audit/consumer.py"] = "0" * 64
     elif fault == "symlink":
         target = root / "boundary-copy.json"
         target.write_text(original)
@@ -552,7 +549,7 @@ def test_newly_qualified_producer_dependency_does_not_expand_consumer_exemption(
         selector().classify(
             consumer.relative_to(root).as_posix(), patterns, original, consumer.read_text()
         )
-        is False
+        is True
     )
     assert (root / BOUNDARY).read_bytes() == audited
     assert selector().verified_source_boundary(root) is False
@@ -580,7 +577,7 @@ def test_qualified_input_change_does_not_refresh_audited_boundary(
         (root / "tools/schema_verification.py").write_text("def prepare():\n    return 2\n")
     else:
         project = root / "pyproject.toml"
-        project.write_text(project.read_text() + "\n[tool.fixture]\nrelation = true\n")
+        project.write_text(project.read_text() + "\n[tool.pytest.ini_options]\naddopts = '-x'\n")
     commit_fixture(root)
     current = git(root, "rev-parse", "HEAD").strip()
     declaration = selector().declarations(root)[0]

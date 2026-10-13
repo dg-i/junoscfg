@@ -3,6 +3,9 @@ name: agent-ready-change
 description: Run one change through the provider-agnostic phased workflow, from instruction-integrity preflight to bounded finalization. Use for every change to this repository, including fix and maintenance lanes.
 ---
 
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Change
 
 One change is one branch, one pull request, one change folder under

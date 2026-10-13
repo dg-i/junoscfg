@@ -1,5 +1,7 @@
+# Maintained by the agent-ready template. Local edits can conflict with updates.
+# See docs/how-to/template-ownership.md before editing; review every update diff.
 # Written by Copier from the template's answers; `copier update` reads it. Not hand-edited.
-_commit: v0.13.1
+_commit: v0.13.4
 _src_path: /Users/manon-dev/src/agent-ready-python
 description: A Python package maintained with coding agents
 github_workflows: true

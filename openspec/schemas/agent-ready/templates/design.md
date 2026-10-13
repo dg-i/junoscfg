@@ -1,3 +1,7 @@
+<!-- This schema template is maintained by agent-ready; local edits can conflict with updates.
+Completed change artefacts belong to the application.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 ## Context
 
 <!-- The current state and the constraints that shape the approach. The motivation is in proposal.md; do not restate it. -->

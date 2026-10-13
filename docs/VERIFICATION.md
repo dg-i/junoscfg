@@ -205,3 +205,30 @@ verification policy, assurance floor or corpus structure changed. Shared pages
 match v0.13.1 exactly, and independent review approved the companion split.
 The non-verification 50% improvement is not yet demonstrated by a comparable run.
 One pending cadence invitation is retained; no owner review or decline is inferred.
+
+## Execution-scoped schema selection
+
+2026-10-14 change `schema-qualification-scope` retains the 400/200/95-second
+happy-flow targets, ordinary suite and 91.47% coverage floor. Initial combined
+checkpoint at `f401245` took 363.81s: all 10612 ordinary tests and both schema
+tiers passed, but the overall checkpoint failed spec scenario preservation and
+updater/application lane separation. This is not a passing cold-checkpoint sample.
+After a records-only correction, valid native proof selected no schema work;
+the complete checkpoint passed in 83.88s, ordinary suite 68.821s, coverage
+92.967863894%. Both schema content checks had executed fresh in the initial run.
+The independent reviewer also checked actual updater-only release source changes.
+These are single-workload observations, not a trend. Final integration assessment
+and shared lane correction are retained in the change's verification record. The existing
+cadence invitation remains pending; no owner review or decline is inferred.
+
+Final assessment for this change: the original-baseline checkpoint at `4290d37`
+took170.50s. Lane,10612 ordinary tests,92.967863894% coverage and both schema tiers
+passed; the aggregate command exited1 solely for missing ignored skill mirrors.
+Supported regeneration plus the isolated skills check (0.14s, exit0) closed that
+integrity failure without changing tracked execution inputs. Independent review
+approved reuse of the green components; the failed aggregate status is preserved.
+The83.88s successful no-schema demonstration was not repeated. No targets, tests,
+coverage, hooks or review requirements changed. At pre-integration master `b20aa2b`,
+65 first-parent commits have elapsed since the retained cadence anchor; the existing
+invitation remains pending. Local integration and patch-release bookkeeping do not
+constitute owner feedback or a new cadence review.

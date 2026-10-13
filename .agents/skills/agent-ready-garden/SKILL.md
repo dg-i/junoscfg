@@ -3,6 +3,9 @@ name: agent-ready-garden
 description: Audit shared documents, specs, contracts, code maps, and the observable agent-instruction surface; propose removing unread artefact types; review decisions due for renewal; and sweep for split answers. Run before each release or monthly, whichever is sooner.
 ---
 
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Garden
 
 The garden is the only scheduled writer of shared documents; everywhere else, a

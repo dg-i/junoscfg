@@ -1,4 +1,4 @@
-"""Conservative lock fingerprint and cheap schema dependency consistency guard."""
+"""Execution dependency lock fingerprint and cheap schema dependency consistency guard."""
 
 from __future__ import annotations
 
@@ -14,6 +14,18 @@ import tomllib
 MANIFEST = "tools/schema-verification/dependencies.json"
 REQUIRED = "tools/schema-verification/dependencies.required.json"
 RESULT = ".agent-ready/schema/dependencies-result.json"
+# Audited execution roots: generators/validators, public CLI regeneration and
+# the assertion harness. Native runtime identity additionally discovers plugins.
+SCHEMA_PACKAGES = (
+    "click",
+    "jsonschema",
+    "lark",
+    "lxml",
+    "pytest",
+    "pytest-cov",
+    "pyyaml",
+)
+
 OBLIGATIONS = {"tests": ["schema-dependency-consistency"], "shards": []}
 
 
@@ -40,7 +52,7 @@ def _write_json(path: Path, value) -> None:
 
 
 def fingerprint(root: Path) -> dict:
-    """Represent every parsed lock field except the validated editable-root version."""
+    """Represent the locked transitive execution closure and resolution constraints."""
     try:
         return fingerprint_text(_physical(root, "uv.lock").read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
@@ -59,12 +71,55 @@ def fingerprint_text(text: str) -> dict:
     version = roots[0].get("version")
     if not isinstance(version, str) or not version.strip():
         raise ValueError("schema dependency root version is missing or invalid")
-    del roots[0]["version"]
+    inventory = {}
+    for package in packages:
+        name = package.get("name")
+        if not isinstance(name, str):
+            raise ValueError("schema dependency has no package name")
+        inventory.setdefault(name.lower().replace("_", "-"), []).append(package)
+    pending = set(SCHEMA_PACKAGES) & set(inventory)
+    if not pending:
+        raise ValueError("schema execution dependency inventory is empty")
+    selected = {}
+    while pending:
+        name = pending.pop()
+        if name in selected:
+            continue
+        records = inventory.get(name)
+        if not records:
+            raise ValueError(f"unresolved schema dependency: {name}")
+        # Bind all marker/platform variants rather than guessing this machine's
+        # branch of a universal lock. All source, wheel and dependency bytes stay.
+        selected[name] = records
+        for record in records:
+            edges = list(record.get("dependencies", []))
+            for group in record.get("optional-dependencies", {}).values():
+                edges.extend(group)
+            for edge in edges:
+                dependency = edge.get("name")
+                if not isinstance(dependency, str):
+                    raise ValueError("invalid schema dependency edge")
+                pending.add(dependency.lower().replace("_", "-"))
+    root = dict(roots[0])
+    del root["version"]
+    for key in ("dependencies",):
+        root[key] = [edge for edge in root.get(key, []) if edge.get("name") in selected]
+    # Only requirements for execution dependencies participate in root metadata.
+    # The installed module closure independently binds checks engine code.
+    for key in ("optional-dependencies", "dev-dependencies"):
+        root.pop(key, None)
+    metadata = root.get("metadata", {})
+    root["metadata"] = {
+        key: [edge for edge in value if edge.get("name") in selected]
+        for key, value in metadata.items()
+        if key == "requires-dist"
+    }
+    data["package"] = [root, *[record for name in sorted(selected) for record in selected[name]]]
     try:
         canonical = json.dumps(data, sort_keys=True, separators=(",", ":"), allow_nan=False)
     except (TypeError, ValueError) as error:
         raise ValueError("schema dependency lock contains unsupported values") from error
-    return {"format": 1, "sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest()}
+    return {"format": 2, "sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest()}
 
 
 def write_dependencies(root: Path) -> None:

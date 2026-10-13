@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Phase 5 — Implement
 
 ## Documentation-only route
@@ -46,7 +49,10 @@ implementation, and fixes.
    A declared expensive tier runs once when the diff touches its paths, or once
    at a batch boundary for independent changes sharing the exact combined input;
    rerun whenever its evidence is invalidated, including a review-fix round.
-   Reuse a cache only when corpus, configuration, tool version, and relevant commit match. A cache never replaces a gate.
+   Reuse evidence only when its authority-specific input and execution identity
+   matches validated successful proof. Relevant corpus, configuration, executable
+   dependencies and policy participate; version or commit labels alone never
+   establish success or invalidation. A cache never replaces a gate.
 5. Tick each test and implementation task as it lands. `npx --yes
    @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
    graph; `tasks.md` is the lifecycle authority.

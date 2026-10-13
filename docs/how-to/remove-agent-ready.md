@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Remove agent-ready from an application repository
 
 Work on a clean branch. Record the application's native acceptance invocation

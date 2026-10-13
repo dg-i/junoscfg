@@ -123,6 +123,7 @@ def small_repository(tmp_path, *, fault=""):
     (root / "uv.lock").write_text(
         'version = 1\n[[package]]\nname = "junoscfg"\n'
         'version = "0.28.3"\nsource = { editable = "." }\n'
+        '[[package]]\nname = "lxml"\nversion = "1"\nsource = {registry = "https://example.invalid"}\n'
     )
     from tools.schema_dependencies import write_dependencies
 

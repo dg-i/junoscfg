@@ -3,6 +3,9 @@ name: agent-ready-onboard
 description: Bring a repository under this workflow, one approved phase at a time. Use for a new project or for retrofitting an existing one.
 ---
 
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Onboard
 
 Invoke as `agent-ready-onboard <phase>`, one phase per session, each ending in a

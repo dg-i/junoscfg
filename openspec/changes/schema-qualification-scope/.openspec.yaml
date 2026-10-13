@@ -1,0 +1,94 @@
+schema: agent-ready
+created: 2026-10-13
+type: bug
+zone: schema
+domains:
+- schema-pipeline
+assurance: economy
+removes: whole-environment invalidation and unrelated schema qualification triggers
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - .agent-ready/template.toml
+  - .agent-ready/update-receipt.json
+  - .agents/skills/agent-ready-change/SKILL.md
+  - .agents/skills/agent-ready-change/batches.md
+  - .agents/skills/agent-ready-change/phases/0-preflight.md
+  - .agents/skills/agent-ready-change/phases/1-intent.md
+  - .agents/skills/agent-ready-change/phases/2-spec.md
+  - .agents/skills/agent-ready-change/phases/3-design.md
+  - .agents/skills/agent-ready-change/phases/4-tests.md
+  - .agents/skills/agent-ready-change/phases/5-implement.md
+  - .agents/skills/agent-ready-change/phases/6-review.md
+  - .agents/skills/agent-ready-change/phases/7-archive.md
+  - .agents/skills/agent-ready-change/types/docs.md
+  - .agents/skills/agent-ready-change/types/pivot.md
+  - .agents/skills/agent-ready-change/types/spike.md
+  - .agents/skills/agent-ready-change/types/stage-up.md
+  - .agents/skills/agent-ready-garden/SKILL.md
+  - .agents/skills/agent-ready-garden/guides/instruction-audit-output.md
+  - .agents/skills/agent-ready-garden/jobs/1-audit.md
+  - .agents/skills/agent-ready-garden/jobs/2-remove.md
+  - .agents/skills/agent-ready-garden/jobs/3-review.md
+  - .agents/skills/agent-ready-garden/jobs/4-sweep.md
+  - .agents/skills/agent-ready-garden/jobs/5-instructions.md
+  - .agents/skills/agent-ready-onboard/SKILL.md
+  - .agents/skills/agent-ready-onboard/phases/0-interview.md
+  - .agents/skills/agent-ready-onboard/phases/1-architecture.md
+  - .agents/skills/agent-ready-onboard/phases/2-toolbox.md
+  - .agents/skills/agent-ready-onboard/phases/3-pinning.md
+  - .agents/skills/agent-ready-onboard/phases/4-gates.md
+  - .agents/skills/agent-ready-onboard/phases/5-contracts.md
+  - .agents/skills/agent-ready-onboard/phases/6-specs.md
+  - .agents/skills/agent-ready-onboard/phases/7-handover.md
+  - .agents/skills/agent-ready-refresh/SKILL.md
+  - .copier-answers.yml
+  - .github/workflows/ci.yml
+  - changelog.d/+schema-qualification-scope.misc.md
+  - changelog.d/agent-ready-3327b4747b2e83ce2c288141e37e0068e25f55e4-ad61faf7f37a350543e392d303dd99fc623f5cfa.misc.rst
+  - changelog.d/agent-ready-4b5d22ace12f2d779153373ec108069b0626ea7a-825741373d44082920e586a4898a68908f80cafb.misc.rst
+  - docs/VERIFICATION.md
+  - docs/how-to/capture-change-metrics.md
+  - docs/how-to/hosting.md
+  - docs/how-to/improve-verification.md
+  - docs/how-to/junoscfg-verification.md
+  - docs/how-to/lifecycle-ledger.md
+  - docs/how-to/observe-artifact-readership.md
+  - docs/how-to/parallel-verification.md
+  - docs/how-to/remove-agent-ready.md
+  - docs/how-to/review-scope.md
+  - docs/how-to/run-a-batch-of-changes.md
+  - docs/how-to/template-ownership.md
+  - docs/how-to/verification-evidence.md
+  - openspec/schemas/agent-ready/schema.yaml
+  - openspec/schemas/agent-ready/templates/checklist.md
+  - openspec/schemas/agent-ready/templates/codemap.md
+  - openspec/schemas/agent-ready/templates/design.md
+  - openspec/schemas/agent-ready/templates/docs-plan.md
+  - openspec/schemas/agent-ready/templates/evidence-freeze.md
+  - openspec/schemas/agent-ready/templates/instruction-integrity.md
+  - openspec/schemas/agent-ready/templates/metrics.md
+  - openspec/schemas/agent-ready/templates/proposal.md
+  - openspec/schemas/agent-ready/templates/retires.md
+  - openspec/schemas/agent-ready/templates/review.md
+  - openspec/schemas/agent-ready/templates/spec.md
+  - openspec/schemas/agent-ready/templates/tasks.md
+  - openspec/specs/schema-pipeline/verification-evidence/spec.md
+  - pyproject.toml
+  - tests/tooling/test_schema_dependency_trigger_challenge.py
+  - tests/tooling/test_schema_scope.py
+  - tests/tooling/test_schema_selection.py
+  - tests/tooling/test_schema_verification.py
+  - tools/schema-verification/consumer-boundary.json
+  - tools/schema-verification/dependencies.json
+  - tools/schema_dependencies.CONTRACT.md
+  - tools/schema_dependencies.py
+  - tools/schema_selection.CONTRACT.md
+  - tools/schema_selection.py
+  - tools/schema_verification.CONTRACT.md
+  - tools/schema_verification.py
+  - uv.lock
+  dependencies: []
+  changelog: changelog.d/+schema-qualification-scope.misc.md
+  generated-records: []

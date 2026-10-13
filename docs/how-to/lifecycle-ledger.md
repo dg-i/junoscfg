@@ -1,3 +1,6 @@
+<!-- Maintained by the agent-ready template. Local edits can conflict with updates.
+See docs/how-to/template-ownership.md before editing; review every update diff. -->
+
 # Lifecycle events and comparable cohorts
 
 Human intent, acceptance criteria, findings and decisions remain authoritative.

@@ -1,12 +1,14 @@
+# Maintained by the agent-ready template. Local edits can conflict with updates.
+# See docs/how-to/template-ownership.md before editing; review every update diff.
 # The template owns checks-tag and moves the lockfile to its tested release.
 # The application owns optional [local-policy.<id>] tables below it. Keep
 # those owner decisions during updates; agent-ready fields checks their expiry.
-checks-tag = "checks-v0.17.1"
+checks-tag = "checks-v0.17.4"
 
 # The commit the tag pointed at when this repository last moved to it, written
 # by `agent-ready init` and `agent-ready update`: a tag can move, and `uvx`
 # caches one build per ref, so a tool invocation names this commit.
-checks-commit = "4facc558a34acfdacae913b7f0e4cccbe3277a51"
+checks-commit = "ad61faf7f37a350543e392d303dd99fc623f5cfa"
 
 # Owner renewed this exact hook recommendation on 2026-10-13: preserve the
 # local Ruff version, test-door and affected-test hooks, Markdown exclusions,
