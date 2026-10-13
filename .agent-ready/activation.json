@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "96eac91ac780c66450201fa98869cfaf8b4442e4",
+  "checkpoint": "8b3093d00c8fab03de2bfcb7327d493df180e2f1",
   "actor": "Codex orchestrator for owner-approved refresh",
-  "authority": "Owner approved hook preservation, 275-second full-check budget, adoption, commit and merge on 2026-10-13. Existing parked work remains parked.",
-  "captured_at": "2026-10-12T23:46:55.848579+00:00",
+  "authority": "Owner approved refresh, hook preservation, 900-second provisional budget, commit and merge. Refresh merged; existing parked work remains parked.",
+  "captured_at": "2026-10-13T00:56:09.725616+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -63,7 +63,7 @@
     "codex/unsupported-set-commands-reported": "parked",
     "codex/xml-direct-to-ir": "parked",
     "device-oracle-show-version": "parked",
-    "master": "parked",
+    "master": "ready",
     "codex/audit-entry-key-from-kernel": "parked",
     "codex/pattern-sweep-no-warning": "parked",
     "codex/xml-status-and-todo": "parked",
@@ -76,7 +76,7 @@
     "codex/synthetic-schema-check": "parked",
     "codex/test-selection-completeness": "parked",
     "codex/test-tooling-performance": "parked",
-    "codex/agent-ready-refresh-v012": "ready",
+    "codex/agent-ready-refresh-v012": "parked",
     "codex/recover-alias-every-input": "parked"
   },
   "changes": {
@@ -150,6 +150,6 @@
     "synthetic-schema-check": "parked",
     "test-selection-completeness": "parked",
     "test-tooling-performance": "parked",
-    "adopt-refresh-verification": "ready"
+    "adopt-refresh-verification": "parked"
   }
 }

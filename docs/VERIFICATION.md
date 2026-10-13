@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
+- Observed integration head: 8b3093d00c8fab03de2bfcb7327d493df180e2f1.
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: NONE.
-- Invitation status: not due; initialized at the observed integration head.
+- Pending assessment head: 8b3093d00c8fab03de2bfcb7327d493df180e2f1.
+- Invitation status: pending; 11 first-parent commits since the initial anchor.
 
 ## Feedback stages
 
@@ -79,3 +79,10 @@ Owner chose 900 seconds to leave headroom and approved preserving current hooks.
 Agent judgment: retain assurance and corpus structure; collect comparable full
 checkpoint observations before choosing further optimizations. Prior tooling
 improvement has one matched observation, not a measured long-term trend.
+
+2026-10-13 job-end assessment: full checkpoint passed in 1661.945 seconds,
+including uncached schema qualification; 10440 tests passed and coverage was
+92.97%. Final fast checks passed. The 900-second budget gap is consistent with
+historical cold runs; no new timing regression is established. Refresh caught
+a stale dependency fingerprint. Flake trends remain unmeasured. One feedback
+invitation is pending; the initial cadence anchor is retained.
