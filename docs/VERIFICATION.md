@@ -191,3 +191,7 @@ review approved the docstring-only edit. No assurance or corpus change was made.
 Raw phase/command/hook evidence and final integration assessment are retained in
 `private_test_data/workflow-measurement-2026-10-13/report.md`; the archived change
 records failures and cache conditions. These are single observations, not a trend.
+
+## Shared workflow adoption
+
+2026-10-13 entry assessment at master `362301f834db3559f0f86f7ae0f6e378905dc3ad`: 52 first-parent commits since the retained cadence anchor; the existing invitation remains pending. Template v0.13.1 and checks 0.17.1 change workflow guidance and updater behavior. Verification engine source is unchanged from the production baseline, but the dependency identity changes and may invalidate qualification evidence. Preserve all three happy-flow targets and all assertions, coverage and corpus rules. Non-verification workflow reduction remains unproven; this refresh is not a comparable maintenance benchmark. Command evidence is retained in `private_test_data/workflow-refresh-2026-10-13/`.

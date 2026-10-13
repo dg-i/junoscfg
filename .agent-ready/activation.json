@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "8598610676f8ddcdaa621563059c827c8e6fe65a",
-  "actor": "Codex measured-maintenance orchestrator",
-  "authority": "Owner request 2026-10-13 to complete measured isolated maintenance and merge locally; existing dispositions preserved.",
-  "captured_at": "2026-10-13T12:38:58.702514+00:00",
+  "checkpoint": "7507c1f037e56d4eccb32f8e197a8d7f7706602f",
+  "actor": "Codex workflow adoption orchestrator",
+  "authority": "Owner request 2026-10-13 to backport, release and adopt shared template guidance; completed changes parked, existing parked dispositions retained.",
+  "captured_at": "2026-10-13T21:07:50.939838+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -79,10 +79,11 @@
     "codex/agent-ready-refresh-v012": "parked",
     "codex/recover-alias-every-input": "parked",
     "codex/schema-content-performance": "parked",
-    "codex/verification-production": "ready",
+    "codex/verification-production": "parked",
     "codex/verification-timing-experiment": "parked",
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
-    "codex/clarify-audit-unknown-values": "ready"
+    "codex/clarify-audit-unknown-values": "parked",
+    "codex/refresh-workflow-economy": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -157,7 +158,8 @@
     "test-tooling-performance": "parked",
     "adopt-refresh-verification": "parked",
     "schema-content-performance": "parked",
-    "production-verification-performance": "ready",
-    "clarify-audit-unknown-values": "ready"
+    "production-verification-performance": "parked",
+    "clarify-audit-unknown-values": "parked",
+    "adopt-workflow-economy": "ready"
   }
 }

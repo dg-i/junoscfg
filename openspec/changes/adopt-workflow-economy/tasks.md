@@ -4,7 +4,7 @@
 
 ## 2. Implementation
 
-- [ ] Apply the exact released updater, regenerate dependency projection and admission inventory, and run preservation evidence.
+- [x] Apply the exact released updater, regenerate dependency projection and admission inventory, and run preservation evidence.
 
 ## 3. Review and evidence
 

@@ -1,7 +1,7 @@
 {
   "format": 1,
   "sources": {
-    "pyproject.toml": "f8bb242353b975d16b6b273604ce3b8e4538431284d899f36aa4db5975499d35",
+    "pyproject.toml": "13444bb73b7f390645ffca21095db757c1f8b331345b653464485f29172e1ccf",
     "src/junoscfg/__init__.py": "7d6c4152a9f4f954b34babd1e2f443690ce903aaecb5dc0d1769f7ad26cc2fec",
     "src/junoscfg/anonymize/__init__.py": "637d933f07fdede4d65943e9d284bf0b44e89ae7ee7ffe60f2e25ae8b6b61f54",
     "src/junoscfg/anonymize/config.py": "2564c0b6c3487f107cc700e2fe6141e147be7cb4fda3355973f21ce7c7cea33f",
@@ -90,6 +90,6 @@
     "tools/schema_verification.py": "a650676f4ea396d069fd26e387b90d54b7af5932dab2e89b8b58442cb07bee49",
     "tools/verification_shard.py": "c8a3008fc72ad432c1d7e01abced228782826f4d2fd345984f55d58e2466fb26",
     "tools/verification_tests.py": "6c97f566069a22265ecc59d46417f38ac169a2e9b2e5b4b389e46974f7a2dfca",
-    "uv.lock": "fae26b8155723660489e3fd0a97ecd7f15baa2268487e369c62fa708b0e86404"
+    "uv.lock": "84db10439cc7603509e2f9bd88df15cf9b929e8d019dfeeb7bf1fc088412061b"
   }
 }

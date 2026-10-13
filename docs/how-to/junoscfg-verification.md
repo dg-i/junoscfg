@@ -2,7 +2,8 @@
 
 Application-owned qualification and execution policy. The shared
 [admission and evidence protocol](verification-evidence.md) remains authoritative
-for native readiness, receipts and runtime identity.
+for native readiness, receipts and runtime identity;
+[parallel verification](parallel-verification.md) defines the adapter contract.
 
 ## Schema qualification
 
@@ -24,28 +25,26 @@ cover explicit older-release qualification and timing reports.
 Schema qualification generates fresh JSON and grammar inputs on every run. The
 existing Draft202012 schema validation and Lark compilation can reuse successful
 proof only when exact input bytes, worker source, Python and dependency identities
-match. The template owns these receipts under `.agent-ready/verification/content`.
+match. The wrapper follows the shared
+[exact-content proof contract](verification-evidence.md#exact-content-proof).
 The shard's bound outcomes identify each check as `executed` or `reused`, including
-its receipt and hash. Missing or corrupt proof runs the actual check; a failure
-cannot use an older result. Ordinary `pytest --schema` runs execute both checks.
+its receipt and hash. Ordinary `pytest --schema` runs execute both checks.
 
 This reuse leaves both independent serial artifact builds and all other assertions
 in place. Byte comparison still covers compressed products; metadata excludes only
-`generated_at`. Cold/changed inputs remain slower. Clearing the ignored content
-store forces actual validation again; inspect an occupied lock before recovering
-an interrupted run. Local proof is not an import or cross-machine trust protocol.
+`generated_at`. Cold/changed inputs remain slower. Use the shared protocol
+when invalidating enclosing whole-command and content proof for a cold measurement.
 
 ## Complete parallel verification
 
 The native full checkpoint runs four independent read-only gates concurrently,
 then respects mutation barriers. Its complete application adapter uses ten pytest
 workers with isolated caches and coverage files. Product modules remain together
-to retain fixture locality; tooling tests use measured scheduling hints. Every
-worker reports the entire collection, its assigned nodes, all execution phases
-and its exit status. Missing or duplicate assignments, partial reports, worker
-failures and unexpected outcomes fail the checkpoint. Coverage merges executed
-data and applies the existing branch-enabled floor. Scheduling costs never select
-or remove tests. The full checkpoint suppresses only its duplicate `affected-tests`
+to retain fixture locality; tooling tests use measured scheduling hints. Its
+reporting and fail-closed completion follow the shared parallel-verification
+contract. Coverage merges executed data and applies the
+existing branch-enabled floor. Scheduling costs never select or remove tests.
+The full checkpoint suppresses only its duplicate `affected-tests`
 hook when the complete suite is included; ordinary commit hooks remain active.
 
 Application tests may overlap selected schema tiers. Native readiness, shared

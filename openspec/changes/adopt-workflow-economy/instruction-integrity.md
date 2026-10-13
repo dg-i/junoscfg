@@ -56,3 +56,7 @@ the reusable protocol ships, its local duplicate becomes a reference plus local
 cohort settings. Navigation and current links move with their owning guidance.
 The failed updater output is preserved in the ignored evidence bundle. Its stale
 fingerprint check failed as expected; no successful receipt was claimed.
+
+## Released adoption evidence
+
+Template v0.13.1 is a41925e16f53044aa48c8ad986c25b5eebad4969; checks-v0.17.1 is 4facc558a34acfdacae913b7f0e4cccbe3277a51. The checks source diff from production 4e8f8faf44a77c1e59fcd351fd00dc02aa677a58 changes only update.py. Verification engine, product and tooling sources are unchanged. The consumer-boundary delta is exactly pyproject.toml and uv.lock; refreshing that reviewed inventory preserves conservative selection. Existing native evidence is not relabelled. Qualification follows actual validity.

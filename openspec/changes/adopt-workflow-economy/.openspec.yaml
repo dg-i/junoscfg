@@ -4,3 +4,23 @@ type: maintenance
 zone: schema
 assurance: economy
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+    - .agent-ready/activation.json
+    - changelog.d/+adopt-workflow-economy.misc.md
+    - docs/BACKLOG.md
+    - docs/VERIFICATION.md
+    - docs/architecture/developer-guide.md
+    - docs/how-to/junoscfg-verification.md
+    - docs/how-to/observe-openspec-readership.md
+    - docs/how-to/run-a-batch-of-changes.md
+    - docs/roadmaps/2026-10-08-junoscfg-simplification.md
+    - mkdocs.yml
+    - tools/schema-verification/consumer-boundary.json
+    - tools/schema-verification/dependencies.json
+  dependencies: []
+  changelog: changelog.d/+adopt-workflow-economy.misc.md
+  generated-records:
+    - tools/schema-verification/dependencies.json
+    - tools/schema-verification/consumer-boundary.json
