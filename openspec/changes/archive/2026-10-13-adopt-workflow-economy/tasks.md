@@ -9,4 +9,4 @@
 ## 3. Review and evidence
 
 - [x] Obtain fresh lightweight review and pass canonical full verification.
-- [ ] Preserve metrics, validate, archive, bump the patch version and integrate locally.
+- [x] Preserve metrics and full/fast evidence; validate and prepare archive plus patch version for the authorized local integration.

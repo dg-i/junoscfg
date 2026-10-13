@@ -13,3 +13,5 @@ The full command installed 24 overlay packages (installation substep 24 ms; full
 Final fast validation and archive/version/integration evidence are retained with the command logs. Native metrics capture uses the implementation snapshot, not later review/bookkeeping commits. Total extended-refresh session time, complete role waits and human-wait intervals are UNMEASURED; no missing observations are estimated.
 
 The first final-fast attempt (9.624s) refused uncommitted governed evidence at the lane gate. Commit the evidence before the retry; no check was waived.
+
+Committed-evidence final-fast retry passed in 262.432889 seconds, including normal affected-tests hook selection of the ordinary suite. No expensive tier ran in this fast set. Required archive/version commit hooks remain enabled.
