@@ -43,3 +43,9 @@ version and merge the application locally only after checks and independent revi
 - Full hook exposed fixture/environment incompatibilities after stronger engine
   binding. Repair only synthetic fixture setup; retain all prior assertions.
   No acceptance weakening or requirement change. Details in verification.md.
+
+- Executed producer-to-consumer and module-hook counterexamples violate existing
+  independence criteria. Enforce reviewed source/dependency/configuration boundary;
+  new qualification alone cannot establish absence of such dependencies. No
+  criterion change or assertion waiver. Final-code measurements replace initial
+  candidate timings; all trials remain recorded.

@@ -220,6 +220,7 @@ def native_generation_context(tmp_path, monkeypatch):
         "src/junoscfg/validate/schema_generator.py": "def build():\n    return 1\n",
         "src/junoscfg/__init__.py": '__version__ = "0.28.3"\n',
         "README.md": "fixture\n",
+        "tools/schema_verification.py": "def prepare():\n    return 1\n",
         "pyproject.toml": '[project]\nname = "junoscfg"\nversion = "0.28.3"\n',
         "uv.lock": LOCK,
         ".gitignore": ".agent-ready/\nprivate_test_data/\n",
@@ -262,6 +263,9 @@ def native_generation_context(tmp_path, monkeypatch):
     }
     module = selector()
     monkeypatch.setattr(module, "declarations", lambda path: [declared])
+    write_source_boundary(root)
+    commit_fixture(root)
+    base = git(root, "rev-parse", "HEAD").strip()
     monkeypatch.setattr(schema_verification, "observe_versions", lambda: dict(metadata))
     monkeypatch.setattr(verification_runtime, "runtime", lambda path, tier: copy.deepcopy(engine))
 
@@ -361,3 +365,231 @@ def test_successive_release_only_changes_keep_cheap_guard_exception(
     metadata["version:junoscfg"] = "0.28.5"
     runtime.write_text(json.dumps(metadata))
     assert selector().established_context(root, second_base, patterns) is True
+
+
+BOUNDARY = "tools/schema-verification/consumer-boundary.json"
+
+
+def write_source_boundary(root):
+    """Represent an explicit fixture audit, never successful qualification."""
+    path = root / BOUNDARY
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"format": 1, "sources": selector().source_boundary(root)}))
+
+
+@pytest.mark.parametrize(
+    "change,unchanged",
+    [
+        ("eligible-body", True),
+        ("root-version", True),
+        ("producer-body", False),
+        ("unsafe-import", False),
+        ("new-source", False),
+        ("deleted-source", False),
+        ("lock-root-version", True),
+        ("lock-dependency", False),
+    ],
+)
+def test_audited_boundary_normalizes_only_isolated_consumer_bodies(
+    native_generation_context, change, unchanged
+):
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    before = selector().source_boundary(root)
+    assert set(before) == {
+        "uv.lock",
+        "pyproject.toml",
+        "tools/schema_verification.py",
+        "src/junoscfg/__init__.py",
+        "src/junoscfg/convert/consumer.py",
+        "src/junoscfg/validate/schema_generator.py",
+    }
+    assert selector().verified_source_boundary(root) is True
+    consumer = root / "src/junoscfg/convert/consumer.py"
+    if change == "eligible-body":
+        consumer.write_text(NEW)
+    elif change == "root-version":
+        (root / "src/junoscfg/__init__.py").write_text('__version__ = "0.28.4"\n')
+    elif change == "producer-body":
+        (root / "src/junoscfg/validate/schema_generator.py").write_text(
+            "def build():\n    return 2\n"
+        )
+    elif change == "unsafe-import":
+        consumer.write_text(NEW + "result = consume(1)\n")
+    elif change == "new-source":
+        (root / "src/junoscfg/convert/added.py").write_text("def added():\n    return 1\n")
+        git(root, "add", "src/junoscfg/convert/added.py")
+    elif change == "deleted-source":
+        git(root, "rm", "src/junoscfg/convert/consumer.py")
+    elif change in {"lock-root-version", "lock-dependency"}:
+        lock = root / "uv.lock"
+        before_version, after_version = (
+            ('version = "0.28.3"', 'version = "0.28.4"')
+            if change == "lock-root-version"
+            else ('version = "1.0"', 'version = "2.0"')
+        )
+        lock.write_text(lock.read_text().replace(before_version, after_version))
+    assert (selector().source_boundary(root) == before) is unchanged
+    assert selector().verified_source_boundary(root) is unchanged
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "missing",
+        "corrupt",
+        "empty",
+        "missing-format",
+        "wrong-format",
+        "boolean-format",
+        "extra-field",
+        "missing-source",
+        "unknown-source",
+        "changed-hash",
+        "symlink",
+    ],
+)
+def test_invalid_audited_boundary_cannot_authorize_receipt(native_generation_context, fault):
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    path = root / BOUNDARY
+    original = path.read_text()
+    record = json.loads(original)
+    if fault == "missing":
+        path.unlink()
+    elif fault == "corrupt":
+        path.write_text("not JSON")
+    elif fault == "empty":
+        record["sources"] = {}
+    elif fault == "missing-format":
+        del record["format"]
+    elif fault == "wrong-format":
+        record["format"] = 2
+    elif fault == "boolean-format":
+        record["format"] = True
+    elif fault == "extra-field":
+        record["unknown"] = "value"
+    elif fault == "missing-source":
+        del record["sources"]["src/junoscfg/convert/consumer.py"]
+    elif fault == "unknown-source":
+        record["sources"]["src/junoscfg/convert/unknown.py"] = "0" * 64
+    elif fault == "changed-hash":
+        record["sources"]["src/junoscfg/convert/consumer.py"] = "0" * 64
+    elif fault == "symlink":
+        target = root / "boundary-copy.json"
+        target.write_text(original)
+        path.unlink()
+        path.symlink_to(target)
+    if fault not in {"missing", "corrupt", "symlink"}:
+        path.write_text(json.dumps(record))
+    assert selector().verified_source_boundary(root) is False
+    assert selector().established_context(root, base, patterns) is False
+
+
+@pytest.mark.parametrize("dynamic_attribute", [False, True])
+def test_newly_qualified_producer_dependency_does_not_expand_consumer_exemption(
+    native_generation_context, dynamic_attribute
+):
+    import subprocess
+    import sys
+
+    from agent_ready_checks import verification
+
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    consumer = root / "src/junoscfg/validate/json_yaml_validator.py"
+    original = (
+        'def __getattr__(name):\n    if name == "schema_flag":\n'
+        "        return lambda: True\n    raise AttributeError(name)\n"
+        if dynamic_attribute
+        else "def schema_flag():\n    return True\n"
+    )
+    consumer.write_text(original)
+    (consumer.parent / "__init__.py").write_text("")
+    git(root, "add", consumer.relative_to(root).as_posix(), "src/junoscfg/validate/__init__.py")
+    # The audit precedes the new producer dependency. Executing new production
+    # successfully must not silently refresh this reviewed source boundary.
+    write_source_boundary(root)
+    commit_fixture(root)
+    audited = (root / BOUNDARY).read_bytes()
+    producer = root / "src/junoscfg/validate/schema_generator.py"
+    producer.write_text(
+        "from .json_yaml_validator import schema_flag\n\n"
+        "def build():\n"
+        "    return {'type': 'object', 'additionalProperties': schema_flag()}\n"
+    )
+    commit_fixture(root)
+    qualified_base = git(root, "rev-parse", "HEAD").strip()
+    declaration = selector().declarations(root)[0]
+    generate = (
+        "import json,sys; from pathlib import Path; sys.path.insert(0, 'src'); "
+        "from junoscfg.validate.schema_generator import build as generate; "
+    )
+    declaration["command"] = [
+        sys.executable,
+        "-B",
+        "-c",
+        generate + "Path('.agent-ready/product.txt').write_text(json.dumps(generate())); "
+        "Path('.agent-ready/result.json').write_bytes(Path('required.json').read_bytes())",
+    ]
+    assert (
+        verification.execute(root, declaration["command"], qualified_base, declaration, reuse=False)
+        == 0
+    )
+    identity = verification.identity(root, declaration["command"], qualified_base, declaration)
+    fresh_record = root / verification.STORE / (verification.digest(identity) + ".json")
+    assert verification.valid(root, identity, verification.read_json(fresh_record))
+    qualified = json.loads((root / ".agent-ready/product.txt").read_text())
+    consumer.write_text(original.replace("True", "False"))
+    commit_fixture(root)
+    changed = json.loads(
+        subprocess.check_output(
+            [sys.executable, "-B", "-c", generate + "print(json.dumps(generate()))"],
+            cwd=root,
+            text=True,
+        )
+    )
+    assert qualified["additionalProperties"] is True
+    assert changed["additionalProperties"] is False
+    assert (
+        selector().classify(
+            consumer.relative_to(root).as_posix(), patterns, original, consumer.read_text()
+        )
+        is False
+    )
+    assert (root / BOUNDARY).read_bytes() == audited
+    assert selector().verified_source_boundary(root) is False
+    assert selector().established_context(root, qualified_base, patterns) is False
+
+
+@pytest.mark.parametrize("change", ["dependency", "wrapper", "config"])
+def test_qualified_input_change_does_not_refresh_audited_boundary(
+    native_generation_context, change
+):
+    from agent_ready_checks import verification
+
+    from tools import schema_dependencies
+
+    root, base, patterns, metadata, engine, receipt = native_generation_context
+    audited = (root / BOUNDARY).read_bytes()
+    if change == "dependency":
+        lock = root / "uv.lock"
+        lock.write_text(lock.read_text().replace('version = "1.0"', 'version = "2.0"'))
+        schema_dependencies.write_dependencies(root)
+        engine["dependencies"] = "updated dependency implementation"
+        metadata["content:library"] = "updated dependency implementation"
+        (root / ".agent-ready/schema/runtime.json").write_text(json.dumps(metadata))
+    elif change == "wrapper":
+        (root / "tools/schema_verification.py").write_text("def prepare():\n    return 2\n")
+    else:
+        project = root / "pyproject.toml"
+        project.write_text(project.read_text() + "\n[tool.fixture]\nrelation = true\n")
+    commit_fixture(root)
+    current = git(root, "rev-parse", "HEAD").strip()
+    declaration = selector().declarations(root)[0]
+    assert (
+        verification.execute(root, declaration["command"], current, declaration, reuse=False) == 0
+    )
+    identity = verification.identity(root, declaration["command"], current, declaration)
+    record = root / verification.STORE / (verification.digest(identity) + ".json")
+    assert verification.valid(root, identity, verification.read_json(record))
+    assert (root / BOUNDARY).read_bytes() == audited
+    assert selector().verified_source_boundary(root) is False
+    assert selector().established_context(root, current, patterns) is False

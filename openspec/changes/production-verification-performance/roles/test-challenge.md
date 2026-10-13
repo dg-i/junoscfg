@@ -171,3 +171,54 @@ Focused locked-environment verification with the inherited real worktree Git ind
 Exit 0: 91 passed. Output: /private/tmp/schema-selection-hook-environment-green.log.
 Ruff passed for both edited test files. No implementation, assertions, full suite,
 commit, push or merge was changed or run by this follow-up.
+
+## Audited consumer boundary regression and repair
+
+Read-only probes reproduced the owner's producer/consumer hypothesis. A producer
+was changed to depend on an eligible consumer, committed and successfully qualified
+through real native execution and two stability passes. A later consumer-body-only
+change altered generated schema additionalProperties from true to false, while
+established_context returned true and select returned false. Both direct calls and
+module __getattr__ callbacks supplied by real imports reproduced the defect.
+Scripts and output remain under /private/tmp/consumer-producer-selection-probe.*
+and /private/tmp/consumer-getattr-selection-probe.*. Current source inspection found
+validate.__getattr__ protected by producer classification, local producer callbacks,
+and no current generator-to-eligible-consumer call; the missing enforced independence
+boundary still allowed future qualified producer edits to introduce one.
+
+The Builder's repair adds a committed audited relationship manifest. Qualification
+and metadata preparation cannot refresh it. Added 24 independent boundary cases
+in test_schema_selection.py. Existing native-context fixtures now explicitly create
+and commit a real boundary before execution; real execute, valid, two-pass output,
+Git and file-hash checks remain intact. New cases cover:
+
+- Exact source/configuration/lock inventory; new and deleted Python source changes.
+- Eligible body and root version normalization, with unsafe import-time structures
+  and producer bodies retaining complete source identity.
+- Missing, corrupt, empty, wrong-format, extra-field, incomplete, unknown-source,
+  changed-hash and symlinked boundary records.
+- Successfully qualified new producer dependencies followed by output-changing
+  body edits, including actual Python module __getattr__ import hooks.
+- Newly qualified dependency, verification-wrapper and configuration changes
+  retaining stale audit boundaries; neither qualification nor preparation refreshes
+  the recorded manifest.
+
+The first 19 cases were observed red before source_boundary existed. Five added
+lock/wrapper/configuration cases arrived while implementation landed, so explicit
+in-memory sensitivity controls were also run: removing the audit guard produced
+five failures, and omitting lock identity produced two failures. No implementation
+files were edited for those controls. Logs:
+/private/tmp/consumer-boundary-guard-disabled.log and
+/private/tmp/consumer-boundary-lock-omitted.log. The initial red log was subsequently
+replaced by the first 22-case green run; its 19 missing-helper errors remain in the
+phase tool output and handoff messages.
+
+After the expanded source/tools/declared-fixture/configuration/lock boundary settled:
+
+`GIT_INDEX_FILE=/Users/manon-dev/src/junoscfg/.git/worktrees/junoscfg5/index uv run --locked --group dev pytest -q tests/tooling/test_schema_selection.py tests/tooling/test_schema_dependency_trigger_challenge.py tests/tooling/test_verification_tests.py`
+
+Exit 0: 156 passed. Output: /private/tmp/consumer-boundary-final-focused.log.
+Ruff and diff-check passed. The defect is resolved under the existing generation
+independence criterion; no assertion was weakened. No implementation or whole-suite
+checkpoint was performed by Test/Challenge. Writes stop here for the Builder's
+commit and final verification.

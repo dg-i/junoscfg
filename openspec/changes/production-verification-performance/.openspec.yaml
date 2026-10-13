@@ -17,6 +17,7 @@ verification:
     - pyproject.toml
     - uv.lock
     - tools/schema-verification/dependencies.json
+    - tools/schema-verification/consumer-boundary.json
     - tools/schema_dependencies.py
     - tools/schema_dependencies.CONTRACT.md
     - tools/schema_selection.py

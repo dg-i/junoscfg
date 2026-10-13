@@ -195,3 +195,13 @@ shadows and executable bytecode are not exempt. Re-preparing after a runtime or
 dependency change cannot turn old evidence into valid proof. Only the three root
 release-version files may use hash-proven ancestor text for successive release
 bumps; no consumer exemption is inferred from mismatched historical source.
+
+A committed `tools/schema-verification/consumer-boundary.json` records the audited
+source relationship. It binds all product and tooling Python sources, declared
+schema fixture sources, configuration and relevant lock data; only already-audited
+isolated consumer bodies and root release versions are normalized. Qualifying a
+changed producer does not by itself prove that future consumer changes are safe.
+A stale or missing audit therefore selects qualification even after a new success.
+Refresh this boundary only after reviewing producer imports/callbacks and the
+consumer compatibility checks; preparation and qualification never refresh it.
+This deliberately trades occasional extra qualification for safe uncertainty.

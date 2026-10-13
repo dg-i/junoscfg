@@ -9,6 +9,9 @@ selection. Native verification alone admits and publishes reusable success.
   AST and no calls/decorators/class hooks that could execute those bodies on import.
 - Known workflow-only changes and solely editable-root version changes retain
   existing exceptions; the complete ordinary suite and cheap lock guard remain.
+- Consumer independence is explicitly audited in consumer-boundary.json. Every
+  other source byte and relevant dependency-lock field stays bound; new producer
+  relationships require review, not merely another successful qualification.
 - A negative decision also requires successful native generation evidence whose
   outputs, explicit inputs and actual executing engine still validate. Preparation
   metadata is never proof. Missing/corrupt/legacy evidence selects qualification.

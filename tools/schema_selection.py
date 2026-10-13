@@ -6,6 +6,7 @@ import fnmatch
 import hashlib
 import json
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 
 import tomllib
@@ -155,6 +156,63 @@ def declarations(root):
     ]
 
 
+def source_boundary(root):
+    """Fingerprint the explicitly audited producer/consumer source relationship.
+
+    Qualification success alone cannot audit a newly introduced call dependency.
+    Only already-audited isolated consumer bodies and root release versions are
+    normalized; every other source byte and relevant lock field remains bound.
+    """
+    from agent_ready_checks import verification
+
+    patterns = [pattern for tier in declarations(root) for pattern in tier["paths"]]
+    result = {}
+    for name in verification.tracked(root):
+        if not name.endswith(".py") or not (
+            name.startswith(("src/junoscfg/", "tools/"))
+            or any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
+        ):
+            continue
+        text = (root / name).read_text()
+        normalized = "source\0" + text
+        if name == "src/junoscfg/__init__.py":
+            normalized = "root-version\0" + version_shape(text)
+        elif (name.startswith(CONSUMERS) or name in VALIDATORS) and not any(
+            fnmatch.fnmatch(name, pattern) for pattern in patterns
+        ):
+            # No isolation proof leaves the complete source bytes bound.
+            with suppress(SyntaxError, TypeError, ValueError):
+                normalized = "consumer-imports\0" + import_shape(text)
+        result[name] = hashlib.sha256(normalized.encode()).hexdigest()
+    if not result:
+        raise ValueError("audited source boundary is empty")
+    configuration = tomllib.loads((root / "pyproject.toml").read_text())
+    version = configuration["project"].pop("version")
+    if not isinstance(version, str) or not version:
+        raise ValueError("audited configuration has no root release version")
+    result["pyproject.toml"] = hashlib.sha256(repr(configuration).encode()).hexdigest()
+    result["uv.lock"] = fingerprint_text((root / "uv.lock").read_text())["sha256"]
+    return result
+
+
+def verified_source_boundary(root):
+    """Missing or changed audit scope cannot authorize a negative selection."""
+    path = root / "tools/schema-verification/consumer-boundary.json"
+    try:
+        if path.is_symlink():
+            return False
+        value = json.loads(path.read_text())
+        return (
+            isinstance(value, dict)
+            and set(value) == {"format", "sources"}
+            and type(value["format"]) is int
+            and value["format"] == 1
+            and value["sources"] == source_boundary(root)
+        )
+    except (OSError, ValueError, TypeError, KeyError, subprocess.SubprocessError):
+        return False
+
+
 def established_context(root, base, patterns):
     """Require native successful generation proof for unchanged inputs and engine.
 
@@ -166,6 +224,8 @@ def established_context(root, base, patterns):
     from tools.schema_verification import verify_versions
 
     try:
+        if not verified_source_boundary(root):
+            return False
         declared = next(
             tier for tier in declarations(root) if tier["name"] == "schema-25.2-generation"
         )

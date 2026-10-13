@@ -68,3 +68,30 @@ integration cases passed in 87.77 s. The native driver's own boundary is covered
 by the independently reviewed upstream 774-test suite. Both template modes and
 all upstream fast checks passed; upstream main was locally fast-forwarded to the
 reviewed immutable pin. No remote writes occurred.
+
+## First native checkpoint and relationship challenge
+
+At immutable application candidate `c0590a69822b85ef7897486475b9154dc8b68cdf`,
+first cold canonical checkpoint passed in **378.652666334 s**. Cold preparation
+isolated the empty evidence location in 0.000076166 s. Every native gate passed;
+ordinary suite: 10,555 passed, 37 skipped, 20 xfailed, 10,612 collected, 74.111 s;
+combined coverage 92.96786389413988%, unchanged floor 91.47%. This candidate is
+superseded by the source-boundary correction below; retain this trial, do not
+count it among final-code repetitions.
+
+Independent subsequent probes introduced and qualified a producer that called a
+consumer function (and a module __getattr__ variant), then changed only that
+consumer body. Regeneration changed schema additionalProperties, yet the original
+selector omitted qualification. This is an implementation defect against existing
+generation-independence criteria, not a request to change them. Current producer
+imports/callback inspection found no such eligible consumer dependency; the gap
+was allowing newly qualified source relationships to inherit that audit silently.
+
+Repair: enforce an explicit reviewed source/configuration/dependency boundary.
+Successful qualification cannot refresh this audit. Missing/stale/unknown audit
+scope selects qualification. Root release versions and already-audited isolated
+consumer bodies remain normalized. All current source paths and new/deleted paths
+are compared; relevant wrappers and schema fixtures also remain bound. Independent
+regressions execute the future-relationship counterexamples and preserve genuine
+native receipt/hash/stability validation. Final review and final-code repeated
+measurements remain required before application integration.
