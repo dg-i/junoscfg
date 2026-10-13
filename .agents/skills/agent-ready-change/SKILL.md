@@ -61,9 +61,10 @@ still apply. Its complete route is:
    writes a lightweight `review.md` over the proposal, test, and diff; this is
    a second read, not the full phase-6 lifecycle. Apply corrections and return
    them to that reviewer.
-5. Run the canonical full-check command under **The tools**. After approval, merge, then archive
-   with `npx --yes @fission-ai/openspec@1.13.0 archive <slug> --yes
-   --skip-specs` in a separate archive-only commit or pull request.
+5. Run the canonical full-check command under **The tools** after the required
+   review is recorded. Record the verdict and command evidence in the existing
+   change records, resolving failures before retrying. Follow **Short-lane
+   closure** below; do not load standard phase files.
 
 A fix proposal names the failure mode that remains after the fix: a repair that
 turns a loud failure into a quiet wrong answer is worse than the failure. A
@@ -91,6 +92,58 @@ assets outside the change folder and rejects other suffixes. Documentation that
 accompanies a behaviour change stays in that behaviour change. The full check
 retains repository integrity and document hooks but skips the application test
 adapter; the reviewed QA plan supplies the evidence application tests cannot.
+
+## Short-lane closure
+
+Resolve the application's archive, version, and integration order at preflight;
+its explicit procedure governs. Otherwise, after owner acceptance, merge the
+live change and make a separate archive-only commit or pull request. Before
+integration, close completed tasks with evidence; leave unresolved tasks open.
+Run `npx --yes @fission-ai/openspec@1.13.0 validate <slug> --strict`.
+The common graph does not require omitted standard artifacts in these lanes.
+
+Metrics are not a short-lane obligation unless the owner or application requires
+them. When required, capture once while the folder is live, with full commit IDs
+obtained from Git, using `agent-ready metrics <slug> --base-sha SHA --head-sha SHA`.
+Review its output, then commit evidence; keep the capture head at the code commit.
+Do not manufacture telemetry for absent roles or omitted phases.
+
+With all applicable tasks complete and acceptance recorded, run `npx --yes
+@fission-ai/openspec@1.13.0 archive <slug> --yes --skip-specs` in the resolved
+integration order. Use the application's existing version tooling and interpreter
+when a bump is required. Stop dependent commands on any failure; confirm the
+version files agree before committing. Keep normal hooks enabled. Confirm the
+integrated commit, required tag, and worktree status, and retain the evidence paths.
+
+## Execution economy
+
+At preflight, resolve once: worktree and base commit, lane, required roles,
+applicable instruction/contract paths, canonical commands, existing evidence
+and its validity conditions, and the application's merge/version procedure.
+Keep these in the existing checkpoint; do not create another planning artifact.
+Read each relevant source once per unchanged revision. Use targeted reads for
+new evidence; do not reload whole phase files, logs, or graphs at every boundary.
+An instruction delta or invalidated evidence still requires reassessment.
+
+Prepare required changelog fragments and all declared verification inputs before
+full verification; a proposal's changelog decision does not override the stage
+gate. Preserve installed dependencies and valid caches under their documented
+rules. Never copy or relabel root-bound evidence to make it appear valid.
+
+Dispatch a required fresh Reviewer as soon as its lane's evidence is ready.
+Pass the worktree, immutable base/head IDs, criteria and exclusions, relevant
+artifact/contract paths, evidence paths, and verdict destination. Do not send
+Builder reasoning or a suggested verdict. The Reviewer may expand context for
+concrete findings. While it reads, prepare only independent finalization facts;
+do not mutate the reviewed snapshot. Consume the verdict when available rather
+than delaying the handoff to finish a report. Roles do not require separate
+sessions unless independence is required; the Builder can do bounded finalization.
+
+Use existing native logs and `agent-ready metrics` for required telemetry.
+Do not write a bespoke timing/reporting program for an ordinary change. Capture
+requested measurements as work happens, keeping raw observations separate from
+the final summary; missing observations remain `UNMEASURED`. See
+`docs/how-to/capture-change-metrics.md` only when capturing metrics.
 
 ## Sessions
 

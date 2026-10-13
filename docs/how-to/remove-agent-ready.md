@@ -9,12 +9,14 @@ git status --short
 git switch -c remove-agent-ready
 git rev-parse HEAD
 git ls-files
-rg -n --hidden 'agent-ready|template_update' .
+rg -n --hidden --glob '!.git' 'agent-ready|template_update' .
 ```
 
 Record the printed commit as `BASE` for rollback. Stop if the initial status is
 dirty. Review the tracked inventory and matches for ownership; a text match
-alone never authorizes deletion. Record any remote schedules you disable.
+alone never authorizes deletion. The search includes hidden application policy
+but excludes Git administration, which background maintenance may change.
+Record any remote schedules you disable.
 
 ## Remove the shipped skills
 
@@ -107,7 +109,7 @@ application documentation.
 git diff HEAD --check
 git diff HEAD --stat
 git diff HEAD
-rg -n --hidden 'agent-ready|template_update' .
+rg -n --hidden --glob '!.git' 'agent-ready|template_update' .
 ./scripts/check
 ```
 

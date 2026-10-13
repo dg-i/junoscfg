@@ -38,7 +38,8 @@ does not start while one of those questions is open.
    assurance but cannot waive the unchanged high-risk floor or an immutable gate.
 7. Before committing changed records, run `agent-ready fields` and
    `agent-ready caps`; correct their diagnostics in the same working round.
-   Commit the completed preflight before phase 1. The phase-1 fields gate reads
+   Resolve the execution facts under the skill's **Execution economy** section
+   in this same pass. Commit the completed preflight before phase 1. The phase-1 fields gate reads
    it together with the proposal; do not weaken that gate to make an unfinished
    proposal pass early.
 

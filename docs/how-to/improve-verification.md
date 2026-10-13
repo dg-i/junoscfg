@@ -51,6 +51,10 @@ test does not authorise a corpus rewrite. Give selected improvements an owner,
 expected benefit, success check and review point. Prefer one or two at a time.
 Evaluate prior improvements before selecting more; retain unsuccessful outcomes.
 
+For concurrency or selective expensive checks, use the
+[parallel verification qualification guide](parallel-verification.md). It defines
+complete execution controls, audited nonselection and admitted-workflow timing.
+
 ## Determine when a review is due
 
 At the first agent interaction, change completion, refresh completion and job end,

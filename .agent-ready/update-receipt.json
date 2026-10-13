@@ -1,58 +1,66 @@
 {
-  "base": "95585fbf1cd59fe4b9cb15be870f6a5020be49a3",
+  "base": "182d33a910d2d9db3743e61eabc8c0c11f4b8c88",
   "changes": {
     ".agent-ready/template.toml": {
-      "after": "1be66d142b75925cda6a640251c24b2c1d7111438ee9e849afe56f3be3e76e08",
-      "before": "f1df5503d89876b68bfd41d868e6852cbba654cacbd677ba68d02a3bafd04b9a"
+      "after": "9b09d0577107b606adc4b5ec1f2ee67cb5fec76af5c01107a65fa4fad46f0953",
+      "before": "bb1152e5180a475df0a1ed1562d6f0820af5c3d97abec868da63c937fdcd23ea"
     },
     ".agents/skills/agent-ready-change/SKILL.md": {
-      "after": "8f9f0bf3476a4af5327d3c2ebc9c39dac79ea01d5b7f7628b682c2a5167b697d",
-      "before": "920bddd0c558e6d73cac13e1642e184395aefd500a0d9582151e29320b88cca9"
+      "after": "bb3051d8073bc85e4fbf93dc678529b95c73f9a7f58f5b12a0060ee7ba4d8ede",
+      "before": "8f9f0bf3476a4af5327d3c2ebc9c39dac79ea01d5b7f7628b682c2a5167b697d"
     },
-    ".agents/skills/agent-ready-garden/SKILL.md": {
-      "after": "d4dec8f9d1f82a381385479804493c3a207f6046d7f4856e6f5093e7e1183bba",
-      "before": "be87ce32fba51cf621e07c1f57607db11c2c2f376222eee6381f9eeeabe94725"
-    },
-    ".agents/skills/agent-ready-onboard/phases/4-gates.md": {
-      "after": "7c43227ce4039139f42a25e901d21b4b846190e32c7f337a443f0aca290dee5d",
-      "before": "02328db52f0ee910029ac65f49d6a2f5033453b30fbb54da51cfaafa04eb4cf3"
-    },
-    ".agents/skills/agent-ready-onboard/phases/7-handover.md": {
-      "after": "1fcdeea0b403b5517b72ed84982a01931c14ff09ecdc34ac0d90eb633ae568ad",
-      "before": "29acdd95edbc2bca6bbec701b42fd2eb309454f344d008df6d32d8db84069b8d"
+    ".agents/skills/agent-ready-change/phases/0-preflight.md": {
+      "after": "e72fc6723c0c283cd29af600ce743dd90b115629ea685e09dc3aad979ed3db0b",
+      "before": "69cc6a1ac00938a45a5327f92cfc8a5ffcd9f3d107069f5e34a708cde2d13bbf"
     },
     ".agents/skills/agent-ready-refresh/SKILL.md": {
-      "after": "a43a8b11224085c4b347b32c6b701f96681da9b9bc9794d2568cff1297150ccd",
-      "before": "767ed1081f7f952d0fb63001d8a90a65358ce95cbfbf997ab9675ef4476f9377"
+      "after": "bf446c37d0629891574195d84545a9a1144af0a4422ab3138550698db9abe47f",
+      "before": "a43a8b11224085c4b347b32c6b701f96681da9b9bc9794d2568cff1297150ccd"
     },
     ".copier-answers.yml": {
-      "after": "6d9fe9231739efd3fe5c9a399b93fc0bbe3fdd2cb2b3d456706f446581f0a3fb",
-      "before": "e2914e68b8b645d56962887a4cec4e9223fc44d4e986a9af6de1a39458fa5331"
+      "after": "46f5d02993fbc643b0ea276e17e4106a5c022e343499b55218c3ac147b0aa847",
+      "before": "6d9fe9231739efd3fe5c9a399b93fc0bbe3fdd2cb2b3d456706f446581f0a3fb"
     },
-    "changelog.d/agent-ready-357984bf194f3f14af1dcf14dc36cdb7c1b84553-976629c389ed8718e80c510b5089b526283a0d39.misc.rst": {
-      "after": "1f578b7906a769343cb12427a35994aa71b3145312b6e59c1edfd299799c929b",
+    "changelog.d/agent-ready-a41925e16f53044aa48c8ad986c25b5eebad4969-4facc558a34acfdacae913b7f0e4cccbe3277a51.misc.rst": {
+      "after": "56f89c7af9e9db15eb4b934e1ea5da7c3e853be4431891bb38e28a007090ab1e",
       "before": null
     },
-    "docs/VERIFICATION.md": {
-      "after": "5e325c97738aa599143ac96292442557f5c0046fb947bacf376e61d9447d1f7a",
-      "before": null
+    "docs/how-to/capture-change-metrics.md": {
+      "after": "8a71f8e60f7541115ea1de39bd72913624c0a9c2e9f31094c06fbc24658102ad",
+      "before": "fc5499c7f0403e2b2a737f742d25acc8c967f6b175269c11448c79d9d8b9f424"
     },
     "docs/how-to/improve-verification.md": {
-      "after": "b5d5ea5e4e0eaa8cddc2524f69ddb8ca108edb27db423b4431d5a5c14a16286f",
+      "after": "f92d02bb13d3cc6333c60442cb07c13d5477937a931ebe02bfbcc22b0f22dc7c",
+      "before": "b5d5ea5e4e0eaa8cddc2524f69ddb8ca108edb27db423b4431d5a5c14a16286f"
+    },
+    "docs/how-to/observe-artifact-readership.md": {
+      "after": "3769a365c8a7b9c85990a7e3e097955a4d396a011a0d586be5729c118ea1ac09",
       "before": null
     },
+    "docs/how-to/parallel-verification.md": {
+      "after": "099dd89f051638f85ef6a99e40ea2dd55bd6df595f9c7017da90d78c736fe565",
+      "before": null
+    },
+    "docs/how-to/remove-agent-ready.md": {
+      "after": "53a9f4f275697635acd391fafd77e0b9700f9a9f87d963fa41bf2df3746c543b",
+      "before": "cda274c9e14de2e4844ebb05d51840dd0b7fa6418e7a3b7d64dad86e19f1b150"
+    },
+    "docs/how-to/verification-evidence.md": {
+      "after": "f474df28a4a9d533c3097535a11860544938cf93fb9f0354a6af3c1286e97798",
+      "before": "a10a72126235547bb3c24e83d3655b0f81ab653db49bc86ff751156691a597d5"
+    },
     "pyproject.toml": {
-      "after": "6414e40fdc8dc18c3735f3467c3ab619162ae1465c7f5bf01ddf3d8dd6a81420",
-      "before": "4b04275e514ea9410a894549799befd014127e0054e98e362a2ae49f2233066b"
+      "after": "8a30cebf3559885ca4e3b83bfd357efc0eb0bea496d7544033ccef12b1c34639",
+      "before": "b95165a3fbfeb69782348f2e47a60b0a8b4dbebd32a12915d5870fe3cf18b4e5"
     },
     "uv.lock": {
-      "after": "6efdc0bdeab81f511bf77fa1798155844d276978192a1e8e385403c2cc4e1658",
-      "before": "5ef833f3b068e472881ccb133948f8bf88a5f950c06539a8d5ee584e378dace9"
+      "after": "800bceb99403cef2fb77cf1d490918392daf20a69110d8a56c1fb6e966e824bb",
+      "before": "e32f4fe9ee599188dea213da7b6fe7793a7d273a4cc03fa3e74777630817ba08"
     }
   },
-  "checks": "976629c389ed8718e80c510b5089b526283a0d39",
+  "checks": "4facc558a34acfdacae913b7f0e4cccbe3277a51",
   "schema": "template-update/1",
   "source": "/Users/manon-dev/src/agent-ready-python",
-  "template": "357984bf194f3f14af1dcf14dc36cdb7c1b84553",
-  "template-ref": "v0.12.0"
+  "template": "a41925e16f53044aa48c8ad986c25b5eebad4969",
+  "template-ref": "v0.13.1"
 }

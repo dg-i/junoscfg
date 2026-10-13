@@ -112,3 +112,35 @@ nonnegative numbers; an explicit zero is a reported observation. Empty
 `entries` means no observation. The importer rejects unknown fields,
 identity mismatches, booleans, negative or nonfinite minutes. It records the
 path and SHA256 of the exact input bytes and never invents a value.
+
+## Measuring workflow overhead
+
+For a requested wall-clock comparison, record UTC start before instruction
+inspection and end at completed integration. Preserve command start/end, duration,
+exit status, phase boundaries, review dispatch/receipt, retries, dependency setup,
+and human-input waits in the available runtime or command logs. A monotonic clock
+measures duration within one process; do not subtract unrelated process clocks.
+Keep raw timestamp evidence beside the change's measurement report. Do not add
+unsupported timestamp fields to the importer format above.
+
+Report total elapsed and the union of verification intervals (including checks
+and hooks). Subtract that union from the total for residual workflow time;
+subtract human-wait intervals outside verification separately when reporting an
+automation-only comparison. Nested hooks and parallel commands count once toward
+elapsed time. Per-command durations may also be listed, but their additive sum
+is not elapsed time. The importer provides additive summaries, not interval unions.
+Uninstrumented checks make residual attribution incomplete; label that limitation
+rather than estimating their duration. Preserve failures and retries in the total.
+
+Compare equivalent lanes, assurance, integration scope and cache conditions;
+report omitted phases and any changed measurement coverage. A reduction target
+is neither a timeout nor permission to skip obligations. Until a comparable live
+change has been measured, describe improvements as unproven against that target.
+Use the next genuine change; do not invent product work to obtain a faster sample.
+
+## Observe artifact use
+
+Before proposing removal of a change artifact type, use the bounded
+[artifact-readership protocol](observe-artifact-readership.md). It distinguishes
+complete zero-reader observations from missing measurements and keeps cohort
+choices and results application-owned.

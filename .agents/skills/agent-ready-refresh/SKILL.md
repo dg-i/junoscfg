@@ -37,8 +37,11 @@ the workflows from shipping: `--data github_workflows=false`. The command
 checks that the target release and its check-package tag are readable before
 Copier changes files. `--data template_url=<url>` moves the Copier source and
 the check-package source together; the update refreshes the dev minimum and
-lockfile from the same release. If the source or tag cannot be read, the
-application remains untouched. A failure after Copier names the files it
+lockfile from the same release. A single Git source pinned by `rev` migrates to
+that release tag as part of the same update and receipt; its subdirectory and
+requirement markers are preserved. Ambiguous source arrays, mixed refs and branch
+pins are refused before Copier writes; resolve them through a reviewed application
+change. If the source or tag cannot be read, the application remains untouched. A failure after Copier names the files it
 changed and gives a recovery command scoped to those files on the update
 branch. Read that command before running it if the branch also carries local
 edits.
@@ -87,6 +90,18 @@ template's change does and what the local edit did, and ask whether the local
 edit still stands. If it does, the answer is a differently named copy or an
 issue on the template, never a silent merge; if it does not, take the
 template's side and say so in the pull request.
+
+Keep application-specific extensions in separately named, application-owned
+companion pages. Link from application-owned entry points to both the shared guide
+and the companion; do not add local pointers to template-owned pages. Each rule
+has one authoritative home: companions reference shared admission, evidence and
+measurement rules and contain only local policy, configuration and observations.
+Propose generally reusable additions upstream instead of maintaining a second copy.
+With the owner's decision, migrate existing local additions in a separate reviewed
+application change and restore the exact template-owned bytes at the recorded
+Copier version before updating. Do not change Copier answers to disguise local
+edits. Start the update from that clean committed base; later manual edits invalidate
+the exact updater receipt and use the normal change lane.
 
 ## Working the checks
 
