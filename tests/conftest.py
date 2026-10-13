@@ -204,3 +204,14 @@ def parsed_schema(schema_dump: Path) -> object:
         fixes_applied=applied,
         fixes_registered=get_fix_count(),
     )
+
+
+@pytest.fixture
+def schema_content_check(request: pytest.FixtureRequest):
+    """Run the existing checks, or verify template-owned proof during qualification."""
+    from tools.schema_verification import check_content
+
+    def check(path: Path, operation: str) -> None:
+        check_content(request.config, path, operation)
+
+    return check

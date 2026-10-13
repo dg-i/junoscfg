@@ -115,6 +115,14 @@ class TestFindAll:
         results = find_all(tree, "name")
         assert len(results) == 2
 
+    def test_breadth_first_identity_and_repeated_shared_descendants(self):
+        shared = SchemaNode("match")
+        first = SchemaNode("match", children={"shared": shared})
+        second = SchemaNode("match", children={"shared": shared})
+        root = SchemaNode("match", children={"first": first, "second": second})
+        actual = find_all(root, "match")
+        assert [id(node) for node in actual] == [id(first), id(second), id(shared), id(shared)]
+
 
 class TestWalk:
     def test_walk_visits_all(self):

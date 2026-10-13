@@ -142,3 +142,19 @@ the activation/configuration commit to restore the previous application policy;
 never delete historical evidence to make a check pass. A tool downgrade uses the
 reviewed update commit's revert and `uv sync --locked --offline` from the restored
 lockfile; Copier does not support arbitrary backwards updates.
+
+## Schema content proof
+
+Schema qualification generates fresh JSON and grammar inputs on every run. The
+existing Draft202012 schema validation and Lark compilation can reuse successful
+proof only when exact input bytes, worker source, Python and dependency identities
+match. The template owns these receipts under `.agent-ready/verification/content`.
+The shard's bound outcomes identify each check as `executed` or `reused`, including
+its receipt and hash. Missing or corrupt proof runs the actual check; a failure
+cannot use an older result. Ordinary `pytest --schema` runs execute both checks.
+
+This reuse leaves both independent serial artifact builds and all other assertions
+in place. Byte comparison still covers compressed products; metadata excludes only
+`generated_at`. Cold/changed inputs remain slower. Clearing the ignored content
+store forces actual validation again; inspect an occupied lock before recovering
+an interrupted run. Local proof is not an import or cross-machine trust protocol.

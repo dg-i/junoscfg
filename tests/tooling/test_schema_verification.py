@@ -193,14 +193,24 @@ def real_artifacts(tmp_path_factory):
 def finalization():
     yield
     {"assert False, 'actual failed teardown'" if fault == "teardown" else "pass"}
-def test_generated(schema_dump, real_artifacts):
+def test_generated(schema_dump, real_artifacts, request, tmp_path):
+    from tools.schema_verification import check_content
     assert (real_artifacts / "junos-set.lark.gz").is_file()
+    schema = tmp_path / "schema.json"
+    schema.write_text('{{"type":"string"}}')
+    grammar = tmp_path / "grammar.lark"
+    grammar.write_text('start: "a"')
+    check_content(request.config, schema, "json-schema-draft202012")
+    check_content(request.config, grammar, "lark-grammar")
 def test_pass(schema_dump, finalization):
     {extra}
 class TestIdentifierCounts:
     def test_the_counts_are_the_proposals(self, schema_dump):
         pytest.skip("no pinned count for 21.4R0")
 """
+    shutil.copyfile(
+        PROJECT_ROOT / "tools/schema_content_worker.py", root / "tools/schema_content_worker.py"
+    )
     (root / SUITE).write_text(source)
     write_products(root / "src/junoscfg/validate/data", generated_at="committed")
     commit_fixture(root)
@@ -391,6 +401,11 @@ class TestCandidateIntegrity:
             "outcome": "skipped",
             "reason": "no pinned count for 21.4R0",
         }
+        assert set(outcomes["content_checks"]) == {"json-schema-draft202012", "lark-grammar"}
+        assert {row["status"] for row in outcomes["content_checks"].values()} == {"executed"}
+        assert adapter().run_shard(root, SHARD) == 0
+        repeated = json.loads((root / recipe["outcomes"]).read_text())
+        assert {row["status"] for row in repeated["content_checks"].values()} == {"reused"}
         for name in PRODUCTS:
             assert (root / recipe["artifacts"] / name).read_bytes() == (
                 root / "src/junoscfg/validate/data" / name
@@ -482,6 +497,9 @@ class TestEvidenceConfiguration:
         assert not any(tier.get("sentinel-command") for tier in tiers)
         assert assertion["paths"] == generation["paths"]
         assert "tools/schema_verification.py" not in assertion["paths"]
+        assert "tools/schema_content_worker.py" in assertion["paths"]
+        assert assertion["evidence-files"] == [".agent-ready/schema/schema-25.2/outcomes.json"]
+        assert assertion["evidence-files"][0] in generation["inputs"]
         assert "pyproject.toml" not in assertion["paths"]
         assert "uv.lock" not in assertion["paths"]
         assert "tools/schema-verification/dependencies.json" in assertion["paths"]

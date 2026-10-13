@@ -397,5 +397,5 @@ def write_json_schema(
     """
     schema = generate_json_schema(root, variant)
     with open_artifact_write(output_path) as f:
-        json.dump(schema, f, separators=(",", ":"))
+        f.write(json.dumps(schema, separators=(",", ":")))
         f.write("\n")

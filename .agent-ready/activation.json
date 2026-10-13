@@ -2,7 +2,7 @@
   "policy": "strategy-a/1",
   "checkpoint": "8b3093d00c8fab03de2bfcb7327d493df180e2f1",
   "actor": "Codex orchestrator for owner-approved refresh",
-  "authority": "Owner approved refresh, hook preservation, 900-second provisional budget, commit and merge. Refresh merged; existing parked work remains parked.",
+  "authority": "Owner approved schema performance implementation and required readiness records on 2026-10-13; other dispositions preserved.",
   "captured_at": "2026-10-13T00:56:09.725616+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
@@ -77,7 +77,8 @@
     "codex/test-selection-completeness": "parked",
     "codex/test-tooling-performance": "parked",
     "codex/agent-ready-refresh-v012": "parked",
-    "codex/recover-alias-every-input": "parked"
+    "codex/recover-alias-every-input": "parked",
+    "codex/schema-content-performance": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -150,6 +151,7 @@
     "synthetic-schema-check": "parked",
     "test-selection-completeness": "parked",
     "test-tooling-performance": "parked",
-    "adopt-refresh-verification": "parked"
+    "adopt-refresh-verification": "parked",
+    "schema-content-performance": "ready"
   }
 }

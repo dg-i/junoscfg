@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -88,9 +89,9 @@ def navigate(root: SchemaNode, *path: str) -> SchemaNode | None:
 def find_all(root: SchemaNode, name: str) -> list[SchemaNode]:
     """Find all descendant nodes with the given name (breadth-first)."""
     results: list[SchemaNode] = []
-    queue = list(root.children.values())
+    queue = deque(root.children.values())
     while queue:
-        node = queue.pop(0)
+        node = queue.popleft()
         if node.name == name:
             results.append(node)
         queue.extend(node.children.values())

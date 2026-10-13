@@ -7,13 +7,14 @@ plus conversion-hint flags that encode runtime behavior into the schema tree
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from junoscfg.validate.schema_node import Combinator, SchemaNode, find_all, navigate
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,16 @@ class XsdFix:
 
 
 # ── Helper functions ──────────────────────────────────────────────────
+
+
+def _find_names(root: SchemaNode, names: set[str]) -> Iterator[SchemaNode]:
+    """Visit matching descendants in breadth-first order, including shared nodes."""
+    queue = deque(root.children.values())
+    while queue:
+        node = queue.popleft()
+        if node.name in names:
+            yield node
+        queue.extend(node.children.values())
 
 
 def _rename_element(root: SchemaNode, old_name: str, new_name: str) -> bool:
@@ -426,14 +437,14 @@ def _fix_enable_interface(root: SchemaNode) -> bool:
 
 def _fix_regexp_commands(root: SchemaNode) -> bool:
     """Use regular_expression for allow/deny-commands-regexps (ruler.rb line 318)."""
-    for name in (
+    names = {
         "allow-commands-regexps",
         "deny-commands-regexps",
         "allow-configuration-regexps",
         "deny-configuration-regexps",
-    ):
-        for node in find_all(root, name):
-            node.is_leaf = True
+    }
+    for node in _find_names(root, names):
+        node.is_leaf = True
     return True
 
 
@@ -721,10 +732,10 @@ def _fix_flat_entry_keys(root: SchemaNode) -> bool:
     flag that stood in for them is retired.
     """
     found = False
-    for name in ("attributes-match", "route-filter", "prefix-list-filter", "source-address-filter"):
-        for node in find_all(root, name):
-            node.flags.add("oneliner")
-            found = True
+    names = {"attributes-match", "route-filter", "prefix-list-filter", "source-address-filter"}
+    for node in _find_names(root, names):
+        node.flags.add("oneliner")
+        found = True
     return found
 
 
@@ -734,18 +745,16 @@ def _fix_positional_keys(root: SchemaNode) -> bool:
     "positional-key" — nesting positional keys (create scopes)
     "positional-key-flat" — non-nesting positional keys (standalone lines)
     """
-    nesting = ["filter-name", "aspath", "list_name"]
-    flat = ["filename", "as-number", "confederation-as", "path", "limit", "timeout"]
+    nesting = {"filter-name", "aspath", "list_name"}
+    flat = {"filename", "as-number", "confederation-as", "path", "limit", "timeout"}
     found = False
-    for name in nesting:
-        for node in find_all(root, name):
+    for node in _find_names(root, nesting | flat):
+        if node.name in nesting:
             node.flags.add("positional-key")
             found = True
-    for name in flat:
-        for node in find_all(root, name):
-            if "nokeyword" in node.flags and "freeform-nk" not in node.flags:
-                node.flags.add("positional-key-flat")
-                found = True
+        elif "nokeyword" in node.flags and "freeform-nk" not in node.flags:
+            node.flags.add("positional-key-flat")
+            found = True
     return found
 
 
@@ -755,12 +764,10 @@ def _fix_freeform_nk_keys(root: SchemaNode) -> bool:
     These keys have the nk flag for freeform validation but should be treated
     as normal keywords in conversion. e.g., vlan-id, vlan-name.
     """
-    names = ["vlan-id", "vlan-name"]
     found = False
-    for name in names:
-        for node in find_all(root, name):
-            node.flags.add("freeform-nk")
-            found = True
+    for node in _find_names(root, {"vlan-id", "vlan-name"}):
+        node.flags.add("freeform-nk")
+        found = True
     return found
 
 

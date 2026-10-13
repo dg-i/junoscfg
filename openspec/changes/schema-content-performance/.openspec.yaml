@@ -1,0 +1,32 @@
+schema: agent-ready
+created: 2026-10-13
+type: feature
+zone: schema
+domains: [schema-pipeline]
+assurance: economy
+removes: repeated pure checks for byte-identical input under identical checker implementations
+verification:
+  state: ready
+  planned-paths:
+    - .agent-ready/activation.json
+    - changelog.d/+schema-content-performance.misc.md
+    - docs/VERIFICATION.md
+    - docs/how-to/verification-evidence.md
+    - pyproject.toml
+    - src/junoscfg/validate/artifact_builder.py
+    - src/junoscfg/validate/schema_generator.py
+    - src/junoscfg/validate/schema_node.py
+    - src/junoscfg/validate/xsd_fixes.py
+    - tests/conftest.py
+    - tests/corpus/test_schema_data.py
+    - tests/tooling/test_schema_verification.py
+    - tests/unit/validate/test_schema_node.py
+    - tools/schema-verification/dependencies.json
+    - tools/schema_content_worker.CONTRACT.md
+    - tools/schema_content_worker.py
+    - tools/schema_verification.CONTRACT.md
+    - tools/schema_verification.py
+    - uv.lock
+  dependencies: []
+  changelog: changelog.d/+schema-content-performance.misc.md
+  generated-records: []

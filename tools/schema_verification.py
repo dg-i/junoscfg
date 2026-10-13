@@ -355,6 +355,7 @@ def generation_inputs(recipe):
     """Bind assertion completion and every consumed product to generation identity."""
     return [
         recipe["result"],
+        recipe["outcomes"],
         *[f"{recipe['artifacts']}/{name}" for name in (*PRODUCTS, META, NORMALIZED_META)],
     ]
 
@@ -434,7 +435,11 @@ def _qualify(root, shard):
     assertion = dict(
         common,
         name=shard,
-        **{"required-manifest": recipe["required"], "result-manifest": recipe["result"]},
+        **{
+            "required-manifest": recipe["required"],
+            "result-manifest": recipe["result"],
+            "evidence-files": [recipe["outcomes"]],
+        },
     )
     generation = dict(
         common,
@@ -479,6 +484,7 @@ class _Evidence:
         self.collected = []
         self.reports = []
         self.generated = False
+        self.content_results = {}
 
     def export(self, path):
         if self.generated:
@@ -499,6 +505,13 @@ class _Evidence:
             self.recipe["allowed-skips"],
             collected=self.collected,
         )
+        if set(self.content_results) != {"json-schema-draft202012", "lark-grammar"}:
+            raise ValueError("schema content evidence is incomplete")
+        from agent_ready_checks.verification_content import verify_reference
+
+        for reference in self.content_results.values():
+            verify_reference(self.root, reference)
+        outcomes["content_checks"] = self.content_results
         outcomes["durations"] = {
             node: {row["when"]: row["duration"] for row in self.reports if row["nodeid"] == node}
             for node in self.required["tests"]
@@ -506,6 +519,27 @@ class _Evidence:
         _write(_path(self.root, self.recipe["outcomes"]), outcomes)
         _write(_path(self.root, self.recipe["result"]), actual)
         print("schema executed outcomes: " + json.dumps(outcomes, sort_keys=True))
+
+
+def check_content(config, path, operation):
+    """Verify a pure operation, retaining its explicit evidence in shard outcomes."""
+    from agent_ready_checks.verification_content import execute_content
+
+    packages = {"json-schema-draft202012": ["jsonschema"], "lark-grammar": ["lark"]}
+    if operation not in packages:
+        raise ValueError("unknown schema content operation")
+    evidence = getattr(config, "_schema_evidence", None)
+    root = Path(config.rootpath)
+    worker = root / "tools/schema_content_worker.py"
+    if evidence is None:
+        # An ordinary corpus run executes the actual checker without reuse.
+        subprocess.run([sys.executable, "-I", "-B", str(worker), operation, str(path)], check=True)
+        return
+    result = execute_content(root, path, worker, operation, packages[operation])
+    if operation in evidence.content_results:
+        raise ValueError("duplicate schema content operation")
+    evidence.content_results[operation] = result
+    print("schema content evidence: " + json.dumps({"operation": operation, **result}))
 
 
 def pytest_addoption(parser):

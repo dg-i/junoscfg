@@ -385,7 +385,7 @@ def write_structure_tree(root: SchemaNode, output_path: str) -> None:
         data["_patterns"] = state.pattern_table
 
     with open_artifact_write(output_path) as f:
-        json.dump(data, f, separators=(",", ":"))
+        f.write(json.dumps(data, separators=(",", ":")))
         f.write("\n")
 
 

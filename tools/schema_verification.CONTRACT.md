@@ -44,5 +44,12 @@ uses the same readiness and candidate snapshot admission before taking capacity.
 - Runtime preparation writes an ignored input before the immutable checkpoint;
   verification observes and compares it, never refreshes it during execution.
 
-Not for changing schema assertions, generating into the shipped directory,
+- The two pure content checks retain Draft202012Validator.check_schema defaults
+  and Lark(start="start") compilation. During qualification, the template may
+  reuse successful proof bound to exact fresh input bytes and the isolated worker,
+  runtime and dependency implementation. Outcomes preserve each receipt/hash and
+  whether it executed or was reused. Ordinary corpus runs execute both checks.
+  Invalid or absent proof executes the check; failure never uses stale success.
+
+Not for weakening schema assertions, generating into the shipped directory,
 activating policy, importing legacy records, or adding another cache framework.

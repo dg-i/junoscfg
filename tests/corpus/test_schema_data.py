@@ -127,25 +127,23 @@ class TestPipelineIntegrity:
         assert stats["enum_values"] > 50_000
         assert stats["container_nodes"] > stats["list_nodes"]
 
-    def test_generated_grammar_compiles(self, parsed_schema: object, tmp_path: Path) -> None:
+    def test_generated_grammar_compiles(
+        self, parsed_schema: object, tmp_path: Path, schema_content_check
+    ) -> None:
         """The Lark grammar is generated, not written, so it can be invalid."""
-        import lark
-
         grammar_path = tmp_path / "junos-set.lark"
         write_lark_grammar(parsed_schema.tree, str(grammar_path))
         assert grammar_path.stat().st_size > 100_000
 
-        lark.Lark(grammar_path.read_text(), start="start")
+        schema_content_check(grammar_path, "lark-grammar")
 
-    def test_generated_json_schema_is_valid(self, parsed_schema: object, tmp_path: Path) -> None:
+    def test_generated_json_schema_is_valid(
+        self, parsed_schema: object, tmp_path: Path, schema_content_check
+    ) -> None:
         """A JSON Schema that is not itself valid rejects everything."""
-        import jsonschema
-
         path = tmp_path / "junos-json-schema.json"
         write_json_schema(parsed_schema.tree, str(path), variant="json")
-        schema = json.loads(path.read_text())
-
-        jsonschema.Draft202012Validator.check_schema(schema)
+        schema_content_check(path, "json-schema-draft202012")
 
 
 class TestRawXsdDoesNotCompile:

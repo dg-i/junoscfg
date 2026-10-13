@@ -86,3 +86,15 @@ including uncached schema qualification; 10440 tests passed and coverage was
 historical cold runs; no new timing regression is established. Refresh caught
 a stale dependency fingerprint. Flake trends remain unmeasured. One feedback
 invitation is pending; the initial cadence anchor is retained.
+
+## Schema performance implementation
+
+Owner-approved target on 2026-10-13: at most 180 seconds for warm shipped-release
+qualification, including native wrapper overhead; every further second saved is
+useful. Cold or changed-content checks remain separately measured. The owner
+accepted approximately 201 MiB additional serialization memory from research.
+The change `schema-content-performance` records implementation measurements.
+Quality: preserve checker semantics and exact artifact comparisons. Duplication:
+reuse only successful identical pure checks. Cost: deque traversal and buffered
+JSON address measured bottlenecks. Reliability: template evidence binds runtime,
+dependency bytes and lineage, with independent failure/corruption tests.
