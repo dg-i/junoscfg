@@ -94,7 +94,7 @@ separate `control-as-list-type` defect remains outside this refactor.
 - [ ] Measure OpenSpec artifact readership for one release, then propose
   deleting only artifact types with no recorded readers.
 
-Observation protocol: [capture change metrics](../how-to/capture-change-metrics.md#observe-openspec-artifact-readership-for-one-release).
+Observation protocol: [capture change metrics](../how-to/observe-openspec-readership.md#observe-openspec-artifact-readership-for-one-release).
 The baseline is `v0.14.0`; the observation cannot begin until that release is
 tagged and cannot conclude until the following release is tagged. Existing
 archives remain `UNMEASURED` and are not evidence of zero readers.

@@ -60,8 +60,10 @@ nav:
       - Solo Review: how-to/solo-review.md
       - Run a Batch of Changes: how-to/run-a-batch-of-changes.md
       - Capture Change Metrics: how-to/capture-change-metrics.md
+      - Observe OpenSpec Readership: how-to/observe-openspec-readership.md
       - Lifecycle Events: how-to/lifecycle-ledger.md
       - Verification Evidence: how-to/verification-evidence.md
+      - Junoscfg Verification: how-to/junoscfg-verification.md
       - Verification Baseline: VERIFICATION.md
       - Improve Verification: how-to/improve-verification.md
       - Remove agent-ready: how-to/remove-agent-ready.md

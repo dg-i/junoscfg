@@ -205,7 +205,7 @@ qualification context. Unknown configuration changes select qualification.
 Consumer function-body changes are exempt only when import-time structure and
 qualification inputs remain demonstrably compatible; uncertainty selects the
 expensive checks. The full checkpoint still runs all ordinary tests, including
-compatibility and consumer tests. See the [selection and proof rules](verification-evidence.md#conservative-schema-classification).
+compatibility and consumer tests. See the [selection and proof rules](junoscfg-verification.md#conservative-schema-classification).
 
 A first cheap tier, `schema-dependency-guard`, handles `uv.lock` and dependency
 projection changes. The committed `tools/schema-verification/dependencies.json`

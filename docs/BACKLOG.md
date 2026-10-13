@@ -329,7 +329,7 @@ published here. No new device execution or configuration capture was performed.
 - **Defect/impact:** without a release observation, there is no measured basis
   for deleting supposedly unread artifact types or claiming reduced overhead.
 - **Evidence/source:** [simplification roadmap item 7](roadmaps/2026-10-08-junoscfg-simplification.md)
-  and [observation protocol](how-to/capture-change-metrics.md#observe-openspec-artifact-readership-for-one-release).
+  and [observation protocol](how-to/observe-openspec-readership.md#observe-openspec-artifact-readership-for-one-release).
 - **Disposition:** retain the v0.14.0 baseline/protocol and verify whether the
   required release window has usable observations. Missing records remain
   UNMEASURED, not zero readers; propose removal only from actual evidence.

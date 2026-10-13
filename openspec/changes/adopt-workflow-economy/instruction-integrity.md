@@ -45,3 +45,14 @@ to this worktree. The engine decides reuse and qualification after the update.
 Material unresolved owner questions: none. Upstream release identity is pending
 execution, not an owner decision. Next: committed intent, tagged updater, bounded
 application repair, fresh review, canonical full, metrics and local integration.
+
+## Approved scope delta
+
+The owner approved upstreaming reusable guidance and retaining application rules
+in companion pages, then installing the tagged template. The two shared pages
+return to their exact recorded v0.12.0 baseline before the updater is rerun. All
+local additions are preserved verbatim in companions at this checkpoint; after
+the reusable protocol ships, its local duplicate becomes a reference plus local
+cohort settings. Navigation and current links move with their owning guidance.
+The failed updater output is preserved in the ignored evidence bundle. Its stale
+fingerprint check failed as expected; no successful receipt was claimed.

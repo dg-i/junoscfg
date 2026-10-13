@@ -753,7 +753,8 @@ The focused check targets roughly five seconds or less, measured separately
 with `pytest --durations=1`; it has no timing assertion. Synthetic fixtures do
 not exhaust Junos annotations or schema shapes, and the schemas intentionally
 do not enforce every leaf value constraint. The real qualification policy stays
-in [verification evidence](../how-to/verification-evidence.md).
+in [Junoscfg verification](../how-to/junoscfg-verification.md) and the shared
+[verification evidence protocol](../how-to/verification-evidence.md).
 
 ### Opt-in tiers
 
