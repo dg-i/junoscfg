@@ -34,3 +34,12 @@ existing command helper retain evidence; no new telemetry framework.
 Verification cadence: 60 first-parent commits since retained anchor95585fbf;
 existing invitation stays pending. This report does not change verification or
 assurance policy. No material owner decisions remain. Next: approved short intent.
+
+## Lane check after the owner's question
+
+The docs route skips the application adapter, but its installed file-boundary
+gate rejects the mandatory .agent-ready/activation.json change. Native readiness
+requires that tracked file to match the shared activation inventory and include
+this new branch/change. Keep the authorized maintenance route; do not manipulate
+the comparison base, weaken the gate or launch an unrelated template repair.
+This is a workflow limitation, not a need to test new report behavior.

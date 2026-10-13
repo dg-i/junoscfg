@@ -4,8 +4,8 @@
 
 ## 2. Implementation
 
-- [ ] Publish the report with portable references and verify its numbers, advice count and rendering.
-- [ ] Prepare admission inventory and required changelog fragment.
+- [x] Publish the report with portable references and verify its numbers, advice count and rendering.
+- [x] Prepare admission inventory and required changelog fragment.
 
 ## 3. Review and evidence
 

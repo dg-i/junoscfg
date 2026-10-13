@@ -4,3 +4,12 @@ type: maintenance
 zone: schema
 assurance: economy
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+    - docs/reviews/2026-10-13-non-verification-overhead.md
+    - .agent-ready/activation.json
+    - changelog.d/+publish-workflow-overhead-review.misc.md
+  dependencies: []
+  changelog: changelog.d/+publish-workflow-overhead-review.misc.md
+  generated-records: []
