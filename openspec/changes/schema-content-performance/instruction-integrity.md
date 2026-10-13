@@ -10,3 +10,5 @@ Assurance is economy from pyproject.toml; trust-boundary work invokes independen
 Test/Challenge and fresh Reviewer. Template changes belong in agent-ready-python,
 never in vendored application skills. No public surface break is intended.
 Outstanding material decisions: none. Platform write grants still govern upstream edits.
+The initially selected stronger Reviewer exhausted workspace credits; replacement
+fresh isolated reviews were used, without claiming equivalent model capability.

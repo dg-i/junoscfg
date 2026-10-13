@@ -19,6 +19,7 @@ verification:
     - src/junoscfg/validate/xsd_fixes.py
     - tests/conftest.py
     - tests/corpus/test_schema_data.py
+    - tests/tooling/test_schema_content.py
     - tests/tooling/test_schema_verification.py
     - tests/unit/validate/test_schema_node.py
     - tools/schema-verification/dependencies.json

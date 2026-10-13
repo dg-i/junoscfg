@@ -19,5 +19,7 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: agent-ready-python/checks/src/agent_ready_checks/verification_content.py | Dependency trust boundary review |
+| Context expansion: agent-ready-python/checks/src/agent_ready_checks/verification.py | Preservation of two-pass execution |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

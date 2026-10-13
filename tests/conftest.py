@@ -6,6 +6,8 @@ Helpers and data live in ``tests/support/``; see ``tests/CONTRACT.md``.
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -14,7 +16,7 @@ import pytest
 from junoscfg.display import find_artifact
 from tests.support import schema_data
 from tests.support.artifacts import make_artifacts_dir
-from tests.support.paths import ARTIFACT_DIR, EXAMPLES
+from tests.support.paths import ARTIFACT_DIR, EXAMPLES, PROJECT_ROOT
 from tests.support.regen import (
     REGEN_SOURCE_EXIT,
     XSD_SOURCE_ENV,
@@ -209,9 +211,23 @@ def parsed_schema(schema_dump: Path) -> object:
 @pytest.fixture
 def schema_content_check(request: pytest.FixtureRequest):
     """Run the existing checks, or verify template-owned proof during qualification."""
-    from tools.schema_verification import check_content
 
     def check(path: Path, operation: str) -> None:
-        check_content(request.config, path, operation)
+        if request.config.getoption("--schema-evidence-shard", default=None) is not None:
+            from tools.schema_verification import check_content
+
+            check_content(request.config, path, operation)
+        else:
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-I",
+                    "-B",
+                    str(PROJECT_ROOT / "tools/schema_content_worker.py"),
+                    operation,
+                    str(path),
+                ],
+                check=True,
+            )
 
     return check
