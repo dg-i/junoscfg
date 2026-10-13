@@ -1,2 +1,7 @@
 schema: agent-ready
 created: 2026-10-13
+type: feature
+zone: schema
+domains: [schema-pipeline]
+assurance: economy
+removes: redundant verification execution and serial scheduling where assurance is preserved
