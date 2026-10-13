@@ -122,3 +122,29 @@ Its 28 tracked outputs and sole new canonical short-lanes file were restored
 selectively; selector safety edits and unrelated ignored mirror entries were kept.
 The approved local CI matrix is pending owner confirmation required by refresh.
 No attempt is called successful adoption.
+
+Final guarded implementation at 84673fd: 76 focused tests passed in 3.37s; normal
+commit hooks passed in 7.78s. Final equivalent CLI docstring commit at a disposable
+checkout took **5.56s**, plus **0.35s** setup (baseline 173.37s + 0.47s). The adapter
+conservatively fell back when inherited tracked event records referenced another
+physical root's unavailable native files. Final paired attempts likewise ran tests
+(4.025s/2.233s); they are NOT evidence-reuse successes. No native files were copied
+or logs promoted. Upstream independent exact-command tests prove the conditional
+shared API; application guard regressions prove private/external inputs cannot
+consult old successes. Root-bound event availability remains a documented reuse
+limitation, and fallback preserves the test result.
+
+Adoption recovery is proven by the upstream worker in a disposable checkout:
+commit recorded template CI, run genuine updater, commit exact receipt, restore
+approved application CI verbatim, then verify only the final combined snapshot.
+Native historical proof recognizes all 19 changed canonical skill paths. No new
+upstream mechanism or release is needed. Actual application adoption awaits owner
+confirmation of retaining the CI customization, as agent-ready-refresh explicitly
+requires for Copier conflicts. The failed update was selectively restored.
+
+Checkpoint: application code 84673fdee0915fb249e965353dae789f149587e9; live branch
+codex/affected-test-scope at /private/tmp/junoscfg-affected-test-scope. Main remains
+6498ec9. No application full checkpoint, final independent review, archive, version
+bump or tag is claimed. Run those remaining obligations once after approved CI
+preservation and supported adoption; do not rerun completed focused work without
+input changes. Upstream releases are complete and local, no push.

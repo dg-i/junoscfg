@@ -1,7 +1,7 @@
 ## 1. Selection and evidence
 
-- [ ] 1.1 Add focused narrowing and conservative fallback regressions; observe old failures.
-- [ ] 1.2 Implement dependency-based tooling selection and document the contract.
+- [x] 1.1 Add focused narrowing and conservative fallback regressions; observe old failures.
+- [x] 1.2 Implement dependency-based tooling selection and document the contract.
 - [ ] 1.3 Adopt reviewed shared improvements through the supported updater.
 - [ ] 1.4 Measure representative workflows including setup, hooks and failed attempts.
 - [ ] 1.5 Pass cheap gates then canonical full checkpoint on a stable snapshot.
