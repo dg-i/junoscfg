@@ -5,6 +5,6 @@
 - [x] 1.4 Pass focused regression checks.
 
 ## 3. Review and evidence
-- [ ] 3.1 Independent review and accepted corrections.
-- [ ] 3.2 Capture metrics and reviewed main specs.
-- [ ] 3.3 Local merge, archive, version and tag; no push.
+- [x] 3.1 Independent review and accepted corrections.
+- [x] 3.2 Capture metrics and reviewed main specs.
+- [x] 3.3 Prepare approved release for authorized local merge/archive/version/tag; no push.

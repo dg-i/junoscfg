@@ -218,5 +218,17 @@ the complete checkpoint passed in 83.88s, ordinary suite 68.821s, coverage
 92.967863894%. Both schema content checks had executed fresh in the initial run.
 The independent reviewer also checked actual updater-only release source changes.
 These are single-workload observations, not a trend. Final integration assessment
-and shared lane correction remain in the change's verification record. The existing
+and shared lane correction are retained in the change's verification record. The existing
 cadence invitation remains pending; no owner review or decline is inferred.
+
+Final assessment for this change: the original-baseline checkpoint at `4290d37`
+took170.50s. Lane,10612 ordinary tests,92.967863894% coverage and both schema tiers
+passed; the aggregate command exited1 solely for missing ignored skill mirrors.
+Supported regeneration plus the isolated skills check (0.14s, exit0) closed that
+integrity failure without changing tracked execution inputs. Independent review
+approved reuse of the green components; the failed aggregate status is preserved.
+The83.88s successful no-schema demonstration was not repeated. No targets, tests,
+coverage, hooks or review requirements changed. At pre-integration master `b20aa2b`,
+65 first-parent commits have elapsed since the retained cadence anchor; the existing
+invitation remains pending. Local integration and patch-release bookkeeping do not
+constitute owner feedback or a new cadence review.

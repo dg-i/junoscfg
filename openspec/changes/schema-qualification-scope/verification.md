@@ -69,9 +69,9 @@ Binding shared lane correction completed upstream: feature `9755e99`, checks
 `8f21be09833035dd4a1c63c09d19165d420cbcbc` (checks-v0.17.4), template/main
 `3327b4747b2e83ce2c288141e37e0068e25f55e4` (v0.13.4), all locally merged/tagged.
 Fresh independent review found no actionable issue. Required suite: 821 passed in
-243.87s; greenfield/brownfield renders 37.844/5.252s; 74 focused tests in10.06s;
-mechanical release tests6 in0.70s. Real historical probe proved60 updater paths,
-all31 changed skills, and no application source/tests/tools/change exemptions.
+243.87s; greenfield/brownfield renders 37.844/5.252s; 74 focused tests in 10.06s;
+mechanical release tests: 6 in 0.70s. Real historical probe proved 60 updater paths,
+all 31 changed skills, and no application source/tests/tools/change exemptions.
 Exact updater-only admission is unchanged; historical proof binds immutable
 checkpoints, composed bytes/modes, local attestation and canonical ignored mirrors.
 
@@ -81,3 +81,22 @@ issue. The original-baseline full checkpoint remains required for closure.
 No completed no-schema demonstration is repeated. Earlier successful schema content
 proof is retained; the changed executing shared lane legitimately changes native
 tier runtime identity, so the final checkpoint may requalify through normal rules.
+
+Final assurance at immutable `4290d373de23229f145b5b23fe027b6dd4506c7f`, original
+base `b20aa2b116fac222a2cf46306632b2dcb4ea442b`: full command170.50s, exit1 solely
+for missing ignored Claude skill mirrors. Original-baseline lane, all10612 ordinary
+tests (37 skips,20 strict xfails;64.576s), coverage92.967863894%, and both schema
+tiers passed. The12 required assertions took62.05s with existing content proof
+reused; independent generation stability passes remained required and passed.
+Supported mirror regeneration changed no tracked execution/canonical instruction
+input. Isolated failed skills gate then passed in0.14s. Full exit1 is retained,
+not relabelled successful: final assurance is its green components plus that
+verified integrity repair. The existing independent reviewer closed P1/P2 and
+approved this bounded closure; no remaining findings or unreviewed substantive
+changes. No green test/schema/full run was repeated for the Markdown mirror repair.
+
+Finalization captures metrics against the same reviewed/tested head. Main specs
+were already applied and validated. The preparation task records readiness for
+integration; actual local merge, archive and patch release follow on master.
+Native evidence and raw logs remain in the isolated worktree; no proof is copied
+into another worktree's native evidence store. No push is authorized or performed.

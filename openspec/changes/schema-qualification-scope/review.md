@@ -1,5 +1,49 @@
 # Done
 
+**Final bounded review verdict: approved. P1 and P2 are closed; no review findings or binding review obligations remain.** This verdict covers implementation and verification evidence, not the later merge/archive/version/tag housekeeping.
+
+The original review below is retained unchanged as historical evidence. Its initial blocked status is superseded by this bounded follow-up.
+
+The shared lane correction was independently reviewed and released as checks `checks-v0.17.4` at peeled commit `8f21be09833035dd4a1c63c09d19165d420cbcbc` and template `v0.13.4` at peeled commit `3327b4747b2e83ce2c288141e37e0068e25f55e4`. Exact application adoption: `6bdaf5bc15ad22d11b19d8a25effa11bc82a6f88`. Final tested application head: `4290d373de23229f145b5b23fe027b6dd4506c7f`, against the original baseline `b20aa2b116fac222a2cf46306632b2dcb4ea442b`.
+
+# Evidence
+
+**P1 closure:** `private_test_data/schema-scope-final-full.log` shows the lane check passing against the original combined baseline and crediting 55 updater-only paths. The correction preserves exact `refresh_receipt.matches` admission and applies historical proof only within ordinary lane processing. Attested single-parent checkpoints, complete recorded path transitions, immutable canonical mirror/ignore evidence, and composed byte/mode equality constrain every credited path. Manual application transitions remain governed. Inspection of the staged and committed adoption found the expected release metadata, updater receipt, changelog fragment and ownership documentation; no application implementation correction was introduced.
+
+The same full run passed OpenSpec and every other check except generated skill mirrors. It executed 10,612 ordinary tests with 37 skips and 20 strict xfails, and both schema tiers succeeded. Native receipts are `ad96b3d19d81881218e1dcbb0f083987df0cd43f1390d97a651c910daaa144a2`, `15f07385b6f2fe09ed9e7f0a6ddf716ba29c6c246a57c299cbb8f8335d712a1c`, and `6f44be03ee764984293fe8345c8beea5b9a8955380e068f214f2dbb4b4eb9f34`.
+
+**Final gate closure:** the aggregate full command exited **1**, with the sole diagnostic `failing: skills`: four `.claude/skills/agent-ready-*` mirror directories were missing. The supported `agent-ready skills --regenerate` restored only ignored derived mirrors, and the isolated `agent-ready skills` rerun exited **0**; evidence is `private_test_data/schema-scope-skills-closeout.log`. Read-only Git inspection confirmed HEAD remained `4290d37`, with only native `events.jsonl` records modified. Tracked sources, tests, specs and canonical skills were unchanged. The regenerated Markdown mirrors do not invalidate the already-passed application/schema execution components. The full command is **not** relabelled successful; final assurance consists of its retained green components plus the successful repair of its sole failed integrity gate.
+
+This is an evidence-based failed-gate closeout, not a waiver or a comparison-base substitution. The user's explicit instruction to avoid repeating green checks when their inputs remain valid governs the bounded rerun. No further test/schema/full repetition is warranted for the mirror repair. P2's OpenSpec scenario correction remains closed and also passes in the original-baseline run.
+
+Upstream evidence inspected: `/private/tmp/updater-checkpoint-review.md`, `/private/tmp/updater-checkpoint-release-evidence.md`, and `/private/tmp/updater-checkpoint-integration-probe.json`. The upstream reviewer reports no actionable findings, focused tests and independent adversarial probes; the release evidence records its full package and rendered-template validation. I read the immutable fix and tests and confirmed release runtime files match reviewed feature `9755e995003889f34ba06124ab39760f59d28f1f`. No broader upstream re-review or repeated green tests were performed.
+
+# Changed paths
+
+Only `/private/tmp/junoscfg-schema-scope-review.md` was updated by this reviewer. The original findings/history remain below. The orchestrator owns recording closures in the live change and later integration housekeeping.
+
+# Commands and exit status
+
+- Read-only immutable upstream diff/tag checks — exit 0. Peeled tag references match the handoff; reviewed `lane.py`, `refresh_history.py`, and unchanged `refresh_receipt.py` have no release delta.
+- Read-only application staged/committed diff, status and retained log inspection — exit 0. No reviewer tests or gates were run concurrently with hooks or qualification.
+- Parent's original-baseline canonical full at `4290d37` — **exit 1**, solely `skills`; lane, ordinary suite, and both schema tiers passed.
+- Parent's supported mirror regeneration and isolated failed `agent-ready skills` rerun — **exit 0**, retained in the closeout log.
+- Earlier independent 148-test review result and native selector proof remain valid; they were not repeated.
+
+# Open questions for the owner
+
+None.
+
+# Deviations
+
+The aggregate original-baseline full command remains recorded as failed, followed by successful targeted closure of its sole integrity defect. The explicit owner instruction forbids unnecessary repetition of green checks; restoring ignored derived Markdown mirrors changed no tracked or schema execution input. This overrides any expectation to obtain another all-green aggregate invocation merely for presentation. The report remains at the requested temporary path.
+
+---
+
+# Initial review — retained history
+
+# Done
+
 Fresh isolated Phase 6 review of `schema-qualification-scope` completed. **Implementation verdict: approved, with no new implementation findings. Change completion is withheld until the combined application/updater baseline passes the required gates.**
 
 Reviewed immutable application diff `b20aa2b116fac222a2cf46306632b2dcb4ea442b..f401245cec541c02de7ab91ec0d20ffb810f3215` in `/Users/manon-dev/src/junoscfg-wt/schema-qualification-scope`. Reviewed the subsequent record-only correction through `9155303a9431652b5dd5e99f7411c96782b4c43c` separately. No Builder report or private reasoning was supplied.
