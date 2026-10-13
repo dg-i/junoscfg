@@ -31,6 +31,9 @@ recorded base. Final application head: e8ff3cfcf7d92fc1aab6862305add4f36bb06e90.
   retained in events.jsonl at the final application head.
 - All three available device releases completed native assertion and two-pass
   generation qualification with exit zero. Existing skips retained their meaning.
+- Final fast set passed at 45421d4 after specification and evidence updates;
+  log: `/private/tmp/schema-native-final-fast.log`. Archive validation passed all
+  90 changes. Release bookkeeping changes only the root version to 0.28.9.
 
 ## Measured qualification
 
