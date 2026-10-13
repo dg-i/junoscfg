@@ -35,3 +35,15 @@ initialized through the normal writer, then passed. No production workaround.
 Instruction delta: reviewed upstream adoption changes shared identity wording
 and ownership notices; local classification and executable checks remain here.
 No ordinary test, integrity, coverage or independent review requirement changed.
+
+Canonical full at `f401245cec541c02de7ab91ec0d20ffb810f3215`, base
+`b20aa2b116fac222a2cf46306632b2dcb4ea442b`: **failed workflow gates**, 363.81s
+(`/usr/bin/time -p`, private log `schema-scope-full.log`). Ordinary suite passed:
+10612 passed, 37 skipped, 20 xfailed in 70.923s; both real-schema tiers passed,
+12 required assertions in 261.11s and both generation stability passes.
+Content checks executed fresh. Qualification selected due to changed pyproject
+execution settings. OpenSpec rejected missing inherited scenario headings;
+restored with the newly authorized semantics. Lane rejected the combined history
+containing an exact updater commit and normal application changes. This is being
+resolved upstream rather than weakening the gate. Native successful tier receipts
+remain valid evidence even though the overall checkpoint failed.
