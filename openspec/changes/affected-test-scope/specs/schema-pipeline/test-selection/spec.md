@@ -49,18 +49,23 @@ Tests: `tests/tooling/test_affected_execution.py::test_selected_command_is_the_s
 
 ### Requirement: Repository files a test reads receive coverage
 
-WHEN a repository file outside the package, test and tooling trees changes THEN the selector SHALL include the test consumers of every tools/tests module naming that file, or a directory above it, as a constant path from the project root; a path named only inside a test function SHALL reach only its module. WHEN a computed root path outside tooling makes the reader uncertain THEN the full suite SHALL be selected. Unclassified configuration SHALL also select the tooling suite; documents and change records SHALL add nothing beyond their named readers. Package data SHALL select like its package's source, and a non-Python file at the package root SHALL select the full suite.
-Tests: `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_file_a_test_reads_selects_that_test`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_directory_shared_support_reads_selects_everything`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_package_data_selects_its_package`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_unclassified_configuration_keeps_tooling_coverage`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_documents_and_change_records_nobody_reads_select_nothing`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_named_root_path_is_a_dependency`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_path_read_inside_a_test_reaches_no_importer`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_dynamic_root_path_outside_tooling_is_uncertain`
+WHEN a repository file outside the package, test and tooling trees changes THEN the selector SHALL include the test consumers of every tools/tests module reading that file, or a directory above it, through a path anchored in the repository; a path read only inside a test function that no other module imports SHALL reach only its module. WHEN a module outside tooling passes the bare root or a computed path below it, or cannot be parsed or followed, THEN it SHALL be treated as reading every such file, without escalating unrelated selections. Unclassified configuration SHALL also select the tooling suite; documents and change records SHALL add nothing beyond their readers. Package data SHALL select like its package's source, and a non-Python file at the package root SHALL select the full suite. Changed paths SHALL include a moved file's old path.
+Tests: `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_file_a_test_reads_selects_that_test`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_a_directory_shared_support_reads_selects_everything`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_package_data_selects_its_package`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_unclassified_configuration_keeps_tooling_coverage`, `tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage::test_documents_and_change_records_nobody_reads_select_nothing`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_named_root_path_is_a_dependency`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_path_read_inside_a_test_reaches_no_importer`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_root_wide_read_outside_tooling_reaches_every_outside_file`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_other_spellings_of_a_root_read_are_found`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_test_another_module_runs_keeps_its_importers`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_an_unparsable_module_reaches_outside_files_without_escalating`, `tests/tooling/test_affected_tests.py::TestWithNoFilesTheChangeComesFromGit::test_a_rename_lists_the_old_path_too`
 
 #### Scenario: Workflow file read by a policy test
 
 - **WHEN** .github/workflows/ci.yml changes
 - **THEN** tests/tooling/test_type_policy.py is selected
 
-#### Scenario: Shared support names a directory
+#### Scenario: Shared support declares a directory
 
-- **WHEN** a file under examples/ changes or is deleted
+- **WHEN** a file under examples/ changes, is added or is deleted
 - **THEN** the full default suite is selected
+
+#### Scenario: A read file is moved
+
+- **WHEN** .github/workflows/ci.yml is renamed
+- **THEN** the changed paths include its old path, which selects its reader
 
 #### Scenario: Shipped package data changes
 

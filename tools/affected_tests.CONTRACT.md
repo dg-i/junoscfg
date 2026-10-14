@@ -16,21 +16,35 @@ outside tooling. Discovery is rebuilt for each selection, with no persistent cac
 
 Deleted/unmapped tooling modules and non-Markdown tooling configuration select all
 tooling tests. Shared test data, project configuration, lock and shipped artifacts
-select the full suite. Package data selects like its package's source; a non-Python
-file at the package root selects the full suite. Test deletion/conftest rules retain
-their containing scope; other non-Python test inputs select their directory.
+select the full suite. Package data (anything but Markdown) selects like its
+package's source; a non-Python file at the package root selects the full suite.
+Test deletion/conftest rules retain their containing scope; other non-Markdown
+test inputs select their directory. Changed paths come from Git without rename
+detection, so a moved file also lists its old path.
 
-A file outside `src/`, `tests/` and `tools/` is a dependency of every tools/tests
-module that names it, or a directory above it, as a constant path from the
-project root (`PROJECT_ROOT`, an alias, or `Path(__file__).resolve().parents[N]`
-landing on the root). Consumers follow the import graph above, except that a path
-named only inside a `test_*` function reaches that module alone. A computed root
-path outside tooling raises, selecting the full suite; tooling's own computed
-reads are covered because unclassified configuration also selects the tooling
-suite. Documents (`.md`, `.rst`, `.txt`) and change records (`openspec/`,
-`changelog.d/`, `.agent-ready/`, `.agents/`, `.claude/`, `.github/`, `docs/`) add
-nothing beyond their named readers. Selected ancestors subsume their descendants.
-This tool does not replace the full review checkpoint or schema tier.
+A tools/tests module reads a repository path when an expression it evaluates is
+anchored there: the project root (`Path(__file__)` with `.resolve()`, `.parent`,
+`.parents[N]`), or a module-level name assigned such a path, including names
+imported from another module or reached through a module alias, extended by `/`,
+`joinpath`, `glob`/`rglob` (up to the first wildcard), `resolve` or `absolute`.
+Assigning one to a name is not a read; its uses are, except in shared support,
+where declaring a directory makes it shared test input. A file outside `src/`,
+`tests/` and `tools/` selects the consumers of each module reading it or a
+directory above it; consumers follow the import graph above, except that a path
+read only inside a `test_*` function reaches that module alone unless another
+module imports its tests. Outside tooling, a read of the root itself or a path
+computed directly below it (passing the root anywhere, a computed `/` part) makes
+the module a reader of every outside file. Tooling's own computed reads are taken
+to read tooling inputs: unclassified configuration also selects the tooling suite,
+while documents (`.md`, `.rst`, `.txt`), change records (`openspec/`,
+`changelog.d/`, `.agent-ready/`, `.agents/`, `.claude/`, `.github/`, `docs/`,
+`mkdocs.yml`, `LICENSE`, `.copier-answers.yml`) and the gitignored
+`private_test_data/` add nothing beyond their readers. A module that cannot be
+parsed or whose imports cannot be followed reads every outside file; only a tool
+change escalates it to the full suite. A changed reader, or a deleted tests/tools
+module, also selects the selector's own repository-reader assertions.
+Selected ancestors subsume their descendants and node IDs below them. This tool
+does not replace the full review checkpoint or schema tier.
 
 With Strategy A enabled, ordinary execution uses the shared verification.execute
 authority for the exact selected pytest command and current Python runtime. It

@@ -52,9 +52,12 @@ shipped artifacts, `pyproject.toml` and the lock run the full default suite.
 A changed test selects itself; a conftest or deleted test selects its nearest
 existing containing test directory. Covered descendants are omitted from the
 selection. The hook always invokes the selector, including deletion-only
-commits. A test reads any other repository file through `PROJECT_ROOT /
-"constant/path"`, never a computed or working-directory path outside
-`tests/tooling/`: that file, or a directory named that way, then selects the
-module (only the module, when the read is inside a test function). Other
-configuration also runs `tests/tooling/`; documents and change records nobody
-names select no tests. The full set adds branch coverage.
+commits, and lists a moved file's old path. A test reads any other repository
+file through a constant path from `PROJECT_ROOT` (or a path constant from
+`tests/support/paths.py`), never a working-directory path: that file, or a
+directory named that way, then selects the module (only the module, when the read
+is inside a test function). A computed path or the bare root outside
+`tests/tooling/` makes the module a reader of every such file. Other configuration
+also runs `tests/tooling/`; documents and change records nobody reads select no
+tests. `tools/affected_tests.CONTRACT.md` has the exact rule. The full set adds
+branch coverage.

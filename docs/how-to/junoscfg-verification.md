@@ -96,10 +96,13 @@ importers and contract tests. Tooling modules follow audited reverse dependencie
 through tools and all test modules. Root fixtures/shared support select the full
 suite; nested fixtures select their directory. Unknown loaders, malformed dependency
 sources, deleted or unmapped tools and configuration retain conservative coverage.
-Package data selects its package. A repository file a test or tool names from the
-project root selects that module's tests, so the CI workflow selects its type-policy
-test and `examples/` (named by shared support) the full suite; other unclassified
-configuration also selects the tooling suite. The precise boundary is
+Package data selects its package. A repository file a test or tool reads by an
+anchored constant path selects that module's tests, so the CI workflow selects its
+type-policy test and `examples/` (declared by shared support) the full suite; a
+module passing the bare root or a computed path outside tooling reads every such
+file. Other unclassified configuration also selects the tooling suite. Renames
+list both paths. Package-wide source scanners are not yet selected for package
+changes (backlog SELECT-SCAN-001); the full checkpoint covers them. The precise boundary is
 `tools/affected_tests.CONTRACT.md`. OpenSpec metrics and review bookkeeping do not
 add test targets to an otherwise identical selection.
 

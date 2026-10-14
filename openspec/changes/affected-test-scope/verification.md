@@ -148,3 +148,35 @@ codex/affected-test-scope at /private/tmp/junoscfg-affected-test-scope. Main rem
 bump or tag is claimed. Run those remaining obligations once after approved CI
 preservation and supported adoption; do not rerun completed focused work without
 input changes. Upstream releases are complete and local, no push.
+
+## Resumed session (2026-10-14): adoption attempt and reader selection
+
+The owner approved continuing this branch and keeping the local CI verbatim.
+Adopting template v0.14.1 with the checks-v0.18.1 updater produced a clean exact
+receipt only from a commit restoring the template's recorded CI bytes. That
+commit selected no tests although `test_type_policy` reads `ci.yml`, and the
+lock-driven update commit then failed its hook (228.47s: 1 failed of 10650 plus
+MD012 in three shipped skill files). Nothing was committed and no hook was
+bypassed. The brownfield workflow merge and the Markdown defect are template
+defects; their fix goes through the template's own workflow before adoption.
+
+Selection now covers repository files tests read, package data and renames
+(c55f076, then the challenge corrections below). Independent challenge of c55f076
+(executed in a scratch archive) reported eight findings; dispositions:
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | Renames hid the old path from git listings | Fixed: `--no-renames`; executed git regression |
+| 2 | Only `ROOT / "const"` was recognized | Fixed: anchored-expression locator; bare-root or computed reads outside tooling read every outside file |
+| 3 | Real-tree assertions not selected by reader edits | Fixed: a changed reader or deleted tests/tools module selects the reader-assertion class |
+| 4 | Any uncertainty escalated every bookkeeping commit | Fixed: uncertainty is per module; only tool changes escalate |
+| 5 | Package-wide scanners missed by package changes | Deferred: pre-existing, backlog SELECT-SCAN-001; full checkpoint covers |
+| 6 | Tests run by another module stopped at their module | Fixed: imported `Test*`/`test_*` keep importers |
+| 7 | Text documents exempted inside src/tests | Fixed: only Markdown is exempt there |
+| 8 | Bookkeeping over-selection | Fixed: `private_test_data/`, `mkdocs.yml`, `LICENSE`, `.copier-answers.yml` are records |
+
+Tooling's own computed reads remain classified as reading tooling inputs, not
+documents or records: treating them otherwise would run the 157s schema tooling
+modules on every bookkeeping commit. This is an intentional, documented limit;
+the full checkpoint runs every test. Corrections were observed red on c55f076
+(26 failed of 104) and pass with the corrected selector (117 in 2.08s).
