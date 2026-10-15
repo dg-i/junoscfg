@@ -1105,6 +1105,30 @@ class TestIrYamlReader:
         with pytest.raises(ValueError, match="value at facts" + r"(\.0){64} is nested deeper"):
             to_dict(source, "yaml")
 
+    @pytest.mark.parametrize(
+        ("source", "said"),
+        [
+            (
+                "configuration:\n  system: &s\n    2026-10-15: [*s]\n",
+                "a YAML cycle at configuration.system.<date key>.0 has no JSON spelling",
+            ),
+            (
+                "configuration:\n  system:\n    64496: " + "[" * 62 + "x" + "]" * 62 + "\n",
+                "a YAML value at configuration.system.<int key>"
+                + ".0" * 62
+                + " is nested deeper than 64 levels",
+            ),
+        ],
+        ids=["a-date-key", "an-int-key"],
+    )
+    def test_a_key_that_is_not_a_string_is_named_by_its_kind(self, source: str, said: str) -> None:
+        """A refusal's path never holds a key's value: a key that is not a
+        string is named by its kind (Reviewer R3)."""
+        with pytest.raises(ValueError) as raised:
+            to_dict(source, "yaml")
+        assert str(raised.value) == "Invalid input: " + said
+        assert "2026" not in str(raised.value) and "64496" not in str(raised.value)
+
     def test_a_shared_block_and_a_date_read_as_before(self) -> None:
         """Only cycles and depth are refused: a shared block reads written out,
         an unquoted date stays a date, a value 64 levels deep reads, and a
@@ -1477,6 +1501,21 @@ class TestJunosYamlWriter:
             from_dict(ir, "yaml-new", wrap=wrap)
         expected = said.format(top="configuration." if wrap else "", deep=deep)
         assert str(raised.value) == "Cannot write yaml-new: " + expected
+
+    @pytest.mark.parametrize("flag", [True, {}], ids=["true", "empty-container"])
+    def test_a_flag_at_step_64_is_refused_where_its_null_would_sit(self, flag: object) -> None:
+        """The object stage spells a flag `[null]`, one step deeper than the IR
+        holds it; the writer judges the document it writes, so it never writes
+        what its own reader refuses (Reviewer R2)."""
+        ir = {"system": nested_ir(62, flag)}
+        with pytest.raises(ValueError) as raised:
+            from_dict(ir, "yaml-new")
+        assert str(raised.value) == (
+            "Cannot write yaml-new: the value at configuration.system"
+            + ".a" * 62
+            + ".0 is nested deeper than 64 levels"
+        )
+        assert from_dict({"system": nested_ir(61, flag)}, "yaml-new")
 
     def test_json_input_past_64_levels_is_refused_as_yaml_new(self) -> None:
         """Any reader's IR reaches the writer's ceiling: JSON input nesting past
