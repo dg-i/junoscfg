@@ -33,6 +33,10 @@ None: documents only, `skip_specs: true`.
 - Code and test docstrings and the main spec that say YAML "is not hostile" (C2, C3): true
   under the rule, outside the docs lane.
 - The trusted-input review's owner questions (ceiling at the shared door, YAML-BREAKS-001).
+- Own crashes the rule says to fix, reported by yaml-depth-ceiling as owner questions and
+  found again by this change's Reviewer: legacy `yaml` input with a non-string key
+  (`AttributeError` in `yaml_input.py`, its C5) and JSON nested about 1,500 deep
+  (`RecursionError`, its C6). Code changes, outside the docs lane; reported to the owner.
 
 ## Impact
 

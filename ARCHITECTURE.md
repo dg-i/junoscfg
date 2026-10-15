@@ -188,10 +188,10 @@ to route or suppress them.
 
 **Configuration input is trusted, in every format.** Whoever can write a
 malicious Junos configuration can do far worse with it on a device than exhaust
-junoscfg. So junoscfg neither guards against hostile input (alias bombs, size
-or time limits, resource exhaustion) nor works around PyYAML or another
-parser; its own defects (wrong output, a dropped statement, a crash or loop in
-its code) are fixed, and a caller with untrusted input bounds it first
+junoscfg. So junoscfg adds no limits (size, time) against hostile input such as
+alias bombs, nor works around a parser's limits on it (PyYAML's alias expansion
+or nesting failure); its own defects (wrong output, a dropped statement, a crash
+or loop in its code) are fixed, and a caller with untrusted input bounds it first
 (`docs/decisions/2026-10-15-configuration-input-is-trusted.md`).
 
 **Not applicable here.** No money, no wall-clock time, no user identity or

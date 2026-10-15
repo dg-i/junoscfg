@@ -1,1 +1,1 @@
-Record the rule that configuration input is trusted in every format: junoscfg adds no protection against hostile input and does not work around third-party parsers, and its own defects are still fixed (`ARCHITECTURE.md`, decision 2026-10-15-configuration-input-is-trusted).
+Record the rule that configuration input is trusted in every format: junoscfg adds no limits against hostile input and does not work around a parser's limits on such input, and its own defects are still fixed (`ARCHITECTURE.md`, decision 2026-10-15-configuration-input-is-trusted).
