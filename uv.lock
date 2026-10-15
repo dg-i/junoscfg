@@ -521,7 +521,7 @@ wheels = [
 
 [[package]]
 name = "junoscfg"
-version = "0.28.18"
+version = "0.28.19"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

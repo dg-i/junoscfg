@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 08970969efcc605acd03b5832e6bf9823884ca1c (post-merge, pre-archive assessment).
+- Observed integration head: c21e7b8c46a010bc89c39194ace0a97f4d34c553 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 08970969efcc605acd03b5832e6bf9823884ca1c.
-- Invitation status: pending; 75 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: c21e7b8c46a010bc89c39194ace0a97f4d34c553.
+- Invitation status: pending; 79 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -267,3 +267,13 @@ tiers selected by `src/junoscfg/convert/input/json_input.py`), within the unchan
 200s warm targets; the fast set passed at `084e1de`. No tests, coverage, hooks or review
 requirements were removed. The pending cadence invitation is retained; no owner feedback is
 inferred.
+
+Job completion (yaml-depth-ceiling): local merges `3a121e8` and `c21e7b8` remove the yaml-new
+alias size bound and replace the depth bound with a fixed 64-level ceiling; the
+timer-guarded bomb rows of yaml-new-alias-cycles are retired with the bound (an alias bomb
+is expanded by ruling) and `tests/support/aliases.py` no longer has the POSIX timer. The full
+checkpoint at `a10ba71` passed in 351s cold and the follow-up at `5d4244b` in 170s
+(schema-25.2 tiers selected by `src/junoscfg/convert/input/json_input.py`), within the
+unchanged 400s cold / 200s warm targets; the fast set passed on the merged `c21e7b8`. No
+tests, coverage, hooks or review requirements were removed beyond the retired bound's own
+rows. The pending cadence invitation is retained; no owner feedback is inferred.
