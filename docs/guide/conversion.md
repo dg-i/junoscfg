@@ -275,8 +275,9 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
   it, however often and wherever it is reused. A block that contains itself is
   refused as a `cycle`, and a value nested more than 64 levels below the
   document's root (no Junos configuration comes near it) is refused with its
-  path. An alias of a single value is read as that value. junoscfg assumes its
-  YAML input is not hostile: a file of nested aliases ("billion laughs") is
+  path. An alias of a single value is read as that value. junoscfg treats
+  configuration input as trusted, in every format
+  ([decision record](../decisions/2026-10-15-configuration-input-is-trusted.md)): a file of nested aliases ("billion laughs") is
   expanded at the cost of time and memory, and text nested past about 490
   levels fails inside PyYAML's own loader, so bound untrusted YAML before
   handing it to junoscfg.

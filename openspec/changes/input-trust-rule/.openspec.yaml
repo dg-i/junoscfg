@@ -1,0 +1,8 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: docs
+# ARCHITECTURE.md, docs/ and two module contracts; no zone owns these paths.
+zone: surface
+domains: []
+skip_specs: true

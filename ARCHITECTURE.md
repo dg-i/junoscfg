@@ -150,12 +150,11 @@ re-parsed. `yaml` is a second implementation: the IR dumped as YAML, read with
 `_ansible_*`/`_meta_*` cleanup and leaf-list promotion. A planned change renames
 `yaml` to `yaml-old` and `yaml-new` to `yaml`: the dispatch follows the table, and
 what else it touches is listed in
-`docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`. junoscfg assumes
-its YAML input is not hostile: `junoscfg.input.find_non_json_value` writes a
-shared block out however often it is reused and refuses only what junoscfg's own
-recursion cannot walk, a cycle and a value nested deeper than 64 levels, at every
-yaml-new door and in the `yaml` reader; a caller handling untrusted YAML bounds it
-first (`docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md`).
+`docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`. Input being trusted
+(below), `junoscfg.input.find_non_json_value` writes a shared block out however
+often it is reused and refuses only what junoscfg's own recursion cannot walk, a
+cycle and a value nested deeper than 64 levels, at every yaml-new door and in the
+`yaml` reader (`docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md`).
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in
@@ -186,6 +185,14 @@ and non-fatal conversion events are immutable `Diagnostic` values on a
 `ConversionResult`. Library calls never write those events to a terminal. The
 CLI renders their stable text to stderr, while in-process consumers decide how
 to route or suppress them.
+
+**Configuration input is trusted, in every format.** Whoever can write a
+malicious Junos configuration can do far worse with it on a device than exhaust
+junoscfg. So junoscfg neither guards against hostile input (alias bombs, size
+or time limits, resource exhaustion) nor works around PyYAML or another
+parser; its own defects (wrong output, a dropped statement, a crash or loop in
+its code) are fixed, and a caller with untrusted input bounds it first
+(`docs/decisions/2026-10-15-configuration-input-is-trusted.md`).
 
 **Not applicable here.** No money, no wall-clock time, no user identity or
 authorization: junoscfg is a pure text-to-text transformation with no session
