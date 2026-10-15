@@ -9,25 +9,22 @@ class per (reader, writer), that used to cover a few pairs each.
 
 Set output is also compared line for line where a row declares it: a set line
 is one statement, so its text is meaning, not layout.
+
+`yaml-new` is the Junos JSON object in YAML (spec conversion/junos-json-yaml):
+its output loads as the JSON output parses, key order included, the YAML
+spelling of any JSON source reads as that source, and a `yaml` file converted
+to `yaml-new` reads as the `yaml` file did.
 """
 
 from __future__ import annotations
 
-from typing import Any
+import json
 
 import pytest
+import yaml
 
 from junoscfg import Format, convert_config
-from tests.support.shapes import SHAPES, WRITERS, Shape, read_ir
-
-
-def _in_order(value: Any) -> Any:
-    """*value* with every mapping as its list of items, so that order counts."""
-    if isinstance(value, dict):
-        return [(key, _in_order(item)) for key, item in value.items()]
-    if isinstance(value, list):
-        return [_in_order(item) for item in value]
-    return value
+from tests.support.shapes import SHAPES, WRITERS, Shape, in_order, read_ir
 
 
 def _readers() -> list[object]:
@@ -69,7 +66,7 @@ class TestEveryReaderGivesTheShapeIr:
         Dictionaries compare equal in any order, so the order is compared on its own,
         for the rows that declare it (spec conversion/entry-keys).
         """
-        assert _in_order(read_ir(shape.sources[reader], reader)) == _in_order(shape.expected_ir())
+        assert in_order(read_ir(shape.sources[reader], reader)) == in_order(shape.expected_ir())
 
 
 class TestEveryWriterKeepsTheIr:
@@ -148,3 +145,54 @@ class TestAStructuredTagLeadsItsLine:
             while words and words[0] in _TAG_WORDS:
                 words.pop(0)
             assert not _TAG_WORDS & set(words), f"a tag inside {line.strip()!r}"
+
+
+def _with(fmt: Format) -> list[object]:
+    return [pytest.param(shape, id=shape.name) for shape in SHAPES if fmt in shape.sources]
+
+
+class TestJunosYamlIsTheJsonObject:
+    """yaml-new is the object the JSON writer builds and the JSON reader takes.
+
+    The owner's default for yaml-new (2026-10-15, change yaml-new-format):
+    the identical object to Junos JSON, so a file means the same in either.
+    """
+
+    @pytest.mark.parametrize(("shape", "reader"), _readers())
+    def test_the_output_is_the_json_object(self, shape: Shape, reader: Format) -> None:
+        source = shape.sources[reader]
+        written = convert_config(source, from_format=reader, to_format=Format.YAML_NEW)
+        expected = json.loads(convert_config(source, from_format=reader, to_format=Format.JSON))
+        assert in_order(yaml.safe_load(written)) == in_order(expected)
+
+    @pytest.mark.parametrize("shape", _with(Format.JSON))
+    def test_the_yaml_spelling_of_json_reads_as_json(self, shape: Shape) -> None:
+        """Every writer gives the same text for the JSON source and its YAML spelling.
+
+        The YAML writer dumps the IR as read, so its equal text is an equal IR.
+        """
+        source = shape.sources[Format.JSON]
+        spelled = yaml.safe_dump(json.loads(source), sort_keys=False, allow_unicode=True)
+        for writer in WRITERS:
+            assert convert_config(
+                spelled, from_format=Format.YAML_NEW, to_format=writer
+            ) == convert_config(source, from_format=Format.JSON, to_format=writer), writer.value
+
+
+class TestIrYamlMigratesToJunosYaml:
+    """`yaml` -> `yaml-new` is the migration path the planned rename relies on
+    (docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md)."""
+
+    @pytest.mark.parametrize("shape", _with(Format.YAML))
+    def test_the_converted_file_reads_as_the_yaml_did(self, shape: Shape) -> None:
+        source = shape.sources[Format.YAML]
+        migrated = convert_config(source, from_format=Format.YAML, to_format=Format.YAML_NEW)
+        assert read_ir(migrated, Format.YAML_NEW) == read_ir(source, Format.YAML)
+        for writer in WRITERS:
+            assert convert_config(
+                migrated, from_format=Format.YAML_NEW, to_format=writer
+            ) == convert_config(
+                convert_config(source, from_format=Format.YAML, to_format=Format.JSON),
+                from_format=Format.JSON,
+                to_format=writer,
+            ), writer.value

@@ -295,6 +295,12 @@ DOORS: dict[str, Door] = {
         _library(_OPEN_QUOTE, Format.STRUCTURED), (*_READ, "(line 2)"), "sw1-acme"
     ),
     "read-yaml": Door(_library(_BROKEN_YAML, Format.YAML), (*_READ, "(line 3)"), "sw1-acme"),
+    "read-yaml-new": Door(
+        _library(_BROKEN_YAML, Format.YAML_NEW), (*_READ, "(line 3)"), "sw1-acme"
+    ),
+    "read-yaml-new-date": Door(
+        _library(_YAML_DATE, Format.YAML_NEW, Format.JSON), _READ, "system.x-acme"
+    ),
     "read-xml": Door(_library(_BROKEN_XML, Format.XML), (*_READ, "(line 1)"), "sys-acme"),
     "read-json": Door(_library(_BROKEN_JSON, Format.JSON), (*_READ, "(line 1)"), "Expecting"),
     "read-note": Door(_library(_EMPTY_BLOCK, Format.STRUCTURED), ("empty block",), "R-ACME"),
@@ -381,6 +387,15 @@ DOORS: dict[str, Door] = {
         _cli(_BROKEN_YAML, ["-i", "yaml", "-e", "set"]),
         ("Invalid YAML", *_READ, "(line 3)"),
         "sw1-acme",
+    ),
+    "cli-read-yaml-new-date": Door(
+        _cli(_YAML_DATE, ["-i", "yaml-new", "-e", "json"]), _READ, "system.x-acme"
+    ),
+    # A meta key: the JSON schema yaml-new is judged by rejects it, the YAML one would not.
+    "cli-validate-only-yaml-new": Door(
+        _cli("configuration:\n  system:\n    _meta_acme: x\n", ["-i", "yaml-new", "-v"]),
+        ("Validation: FAILED (1 error(s))",),
+        "_meta_acme",
     ),
     "cli-read-xml": Door(
         _cli(_BROKEN_XML, ["-i", "xml", "-e", "set"]), (*_READ, "(line 1)"), "sys-acme"

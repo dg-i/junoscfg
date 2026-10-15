@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import datetime
+
 import pytest
 
-from junoscfg.input import normalize
+from junoscfg.input import find_non_json_value, normalize
 
 
 class TestRemoveComments:
@@ -68,3 +70,40 @@ class TestSquareBrackets:
 
     def test_empty_input_returns_empty(self) -> None:
         assert normalize("") == ""
+
+
+_SHARED: dict = {"k": "v"}
+_CYCLE: dict = {}
+_CYCLE["a"] = _CYCLE
+
+
+class TestFindNonJsonValue:
+    """The boundary yaml-new conversion and validation share (spec conversion/junos-json-yaml)."""
+
+    def test_a_json_document_has_none(self) -> None:
+        document = {"configuration": {"a": [None, True, 1, 2.5, "x", {"b": []}]}}
+        assert find_non_json_value(document) is None
+
+    @pytest.mark.parametrize(
+        ("document", "found"),
+        [
+            ({"a": [1, {"b": datetime.date(2026, 10, 15)}]}, ("date", "a.1.b")),
+            ({"a": {True: "x"}}, ("bool key", "a")),
+            ({None: "x"}, ("null key", "")),
+            ({"a": (1, 2)}, ("tuple", "a")),
+            (b"acme", ("bytes", "")),
+            ({"a": _SHARED, "b": [_SHARED]}, ("alias", "b.0")),
+            (_CYCLE, ("alias", "a")),
+        ],
+        ids=[
+            "date-in-a-list",
+            "bool-key",
+            "null-key-at-the-top",
+            "tuple",
+            "the-document",
+            "shared",
+            "cycle",
+        ],
+    )
+    def test_the_first_value_json_cannot_hold(self, document: object, found: tuple) -> None:
+        assert find_non_json_value(document) == found

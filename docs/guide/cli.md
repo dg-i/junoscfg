@@ -34,6 +34,12 @@ junoscfg schema -?         # Schema group help
 
 `conf` is a CLI alias for `structured` — they are interchangeable in `-i` and `-e` options.
 
+`yaml` is junoscfg's IR as YAML; `yaml-new` is the Junos JSON object as YAML and
+reads and validates exactly as `json` does. Auto-detected YAML is read as `yaml`;
+name `-i yaml-new` to read `yaml-new`. See
+[Two YAML formats](conversion.md#two-yaml-formats-yaml-and-yaml-new) for the
+differences, the migration and the planned rename.
+
 Auto-detection examines parsed input content: JSON objects/arrays, YAML mappings
 or lists, XML tags, display-set commands (`set`, `deactivate`, `protect`,
 `activate`, or `delete`), or structured curly-brace blocks.
@@ -69,6 +75,12 @@ junoscfg -i json -e set config.json
 # JSON to YAML
 junoscfg -i json -e yaml config.json
 
+# JSON to yaml-new (the same object, in YAML)
+junoscfg -i json -e yaml-new config.json
+
+# Migrate a YAML file to yaml-new
+junoscfg -i yaml -e yaml-new old.yaml
+
 # Set commands to JSON
 junoscfg -i set -e json config.set
 
@@ -97,7 +109,7 @@ junoscfg -v -i json config.json
 
 ### Examples — Path Filtering
 
-Path filtering is supported for all output formats: `set`, `structured`, `yaml`, and `json`.
+Path filtering is supported for all output formats: `set`, `structured`, `yaml`, `yaml-new` and `json`.
 
 ```bash
 # Filter to system section only

@@ -18,9 +18,11 @@ import json
 from typing import Any
 
 import pytest
+import yaml
 
 from junoscfg import Format, convert_config
 from tests.support.devices import DEVICE_DATA, FORMATS, captures, known_differences, recorded
+from tests.support.shapes import in_order
 
 CASES = [
     pytest.param(capture, suffix, id=f"{capture.key}.{suffix}")
@@ -115,6 +117,41 @@ class TestEveryDoorReadsTheDevicesUniversalStatements:
         assert sum(1 for found in held.values() if found) >= 3, held
         flags = [path for found in held.values() for path in found if path[-1] == "apply-flags"]
         assert len(flags) >= 2, flags
+
+
+class TestJunosYamlIsTheDevicesJson:
+    """yaml-new is the Junos JSON object in YAML, over every device capture.
+
+    Spec conversion/junos-json-yaml. The QFX5120 capture on 25.2R2-S1.5 spells
+    15 empty containers `{}` where the vMX capture of the same source on
+    23.2R2-S7.5 spells `[null]`
+    (tests/data/device/synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json.gz);
+    yaml-new writes what JSON output writes, `[null]`, and whether the QFX
+    loads that is an open device question (change yaml-new-format).
+    """
+
+    @pytest.mark.parametrize(("capture", "suffix"), CASES)
+    def test_every_rendering_writes_the_json_object(self, capture, suffix: str) -> None:
+        source = capture.rendering(suffix)
+
+        def write(writer: Format) -> str:
+            return convert_config(
+                source, from_format=FORMATS[suffix], to_format=writer, validate=False
+            )
+
+        written = yaml.safe_load(write(Format.YAML_NEW))
+        assert in_order(written) == in_order(json.loads(write(Format.JSON)))
+
+    @pytest.mark.parametrize(
+        "capture", [pytest.param(capture, id=capture.key) for capture in captures()]
+    )
+    def test_the_devices_json_in_yaml_reads_as_the_json(self, capture) -> None:
+        source = capture.rendering("json")
+        spelled = yaml.safe_dump(json.loads(source), sort_keys=False, allow_unicode=True)
+        for writer in (Format.YAML, Format.SET):
+            assert convert_config(
+                spelled, from_format=Format.YAML_NEW, to_format=writer, validate=False
+            ) == convert_config(source, from_format=Format.JSON, to_format=writer, validate=False)
 
 
 class TestTheRecordExplainsItself:

@@ -240,7 +240,9 @@ def convert(
       set          Flat "set" commands, one per line
       structured   Curly-brace hierarchical format (alias: conf)
       json         Junos native JSON
-      yaml         Standard YAML (1:1 mapping of Junos JSON)
+      yaml         YAML of junoscfg's IR; to be renamed yaml-old
+      yaml-new     Junos native JSON written as YAML; to become yaml
+      xml          Junos XML (input only)
 
     \b
     Examples — Conversion:
@@ -250,6 +252,7 @@ def convert(
       junoscfg convert -i conf -e set config.conf       "conf" alias for structured
       junoscfg convert -i json -e json config.json      Identity (normalize JSON)
       junoscfg convert -i set -e set config.set         Identity (normalize set)
+      junoscfg convert -i yaml -e yaml-new old.yaml     Migrate YAML to yaml-new
 
     \b
     Examples — Validation:
@@ -300,7 +303,7 @@ def convert(
 
     if not export_format and not validate:
         click.echo(
-            "Error: specify -e/--export-format (set, structured, json, yaml).",
+            "Error: specify -e/--export-format (set, structured, json, yaml, yaml-new).",
             err=True,
         )
         sys.exit(2)

@@ -141,7 +141,7 @@ _HAND_BUILT: dict[str, tuple[Any, Any]] = {
     ),
 }
 
-#: Every writer door; `wrap` reaches only the JSON and YAML writers.
+#: Every writer door; `wrap` reaches only the JSON and the two YAML writers.
 _WRITER_DOORS = [
     pytest.param("set", {}, id="set"),
     pytest.param("structured", {}, id="structured"),
@@ -149,6 +149,8 @@ _WRITER_DOORS = [
     pytest.param("json", {"wrap": False}, id="json-bare"),
     pytest.param("yaml", {}, id="yaml"),
     pytest.param("yaml", {"wrap": False}, id="yaml-bare"),
+    pytest.param("yaml-new", {}, id="yaml-new"),
+    pytest.param("yaml-new", {"wrap": False}, id="yaml-new-bare"),
 ]
 
 

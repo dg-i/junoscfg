@@ -3,7 +3,8 @@
 A configuration reaches validation through many doors: the public functions
 `validate_set`, `validate_json`, `validate_yaml`, `validate_structured` and
 `validate_config`, the `JunosValidator` facade and the `SetValidator` behind
-it (the session fixtures), and the CLI's `-v -i <format>`. Each row of the
+it (the session fixtures), and the CLI's `-v -i <format>`; yaml-new reaches
+the JSON schema through `validate_config`, the facade and the CLI. Each row of the
 catalogues below is one configuration, written in every format it can be
 written in, with the verdict the device gave; every door that takes one of
 those formats must give that verdict. A door that cannot express a row (a
@@ -140,6 +141,17 @@ DOORS = (
         "validate_config-yaml", "yaml", lambda t, _: _result(validate_config(t, format=Format.YAML))
     ),
     Door("cli-yaml", "yaml", _cli("yaml")),
+    Door(
+        "JunosValidator.validate_yaml_as_json",
+        "yaml-new",
+        lambda t, v: _result(v.facade.validate_yaml_as_json(t)),
+    ),
+    Door(
+        "validate_config-yaml-new",
+        "yaml-new",
+        lambda t, _: _result(validate_config(t, format=Format.YAML_NEW)),
+    ),
+    Door("cli-yaml-new", "yaml-new", _cli("yaml-new")),
     Door(
         "JunosValidator.validate_structured",
         "structured",

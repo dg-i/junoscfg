@@ -1,4 +1,10 @@
-"""Convert JSON dict IR to JSON string output."""
+"""Write the IR as the Junos JSON object, in JSON text or in YAML text.
+
+`junos_json_object` is the writer's object stage: the native Junos JSON
+spellings applied to its own copy of the IR. The format ``json`` serializes the
+object as JSON (`dict_to_json`), ``yaml-new`` as YAML (`dict_to_junos_yaml`);
+neither reparses the other's text (spec conversion/junos-json-yaml).
+"""
 
 from __future__ import annotations
 
@@ -6,12 +12,15 @@ import copy
 import json
 from typing import Any
 
+import yaml
+
 from junoscfg.convert.ir import wrap_configuration
 from junoscfg.display import load_schema_tree, schema_child
+from junoscfg.input import find_non_json_value
 
 
-def dict_to_json(config: Any, *, wrap: bool = True) -> str:
-    """Render the IR dict as a Junos JSON string.
+def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
+    """The Junos JSON object for the IR *config*.
 
     When *wrap* is true, wraps the config in ``{"configuration": ...}``.
     Dict input receives native-format normalization so the output can be
@@ -29,8 +38,72 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
         # A selected presence flag is rendered the same way it was when the
         # parent dict was normalized before the old output-text filter ran.
         config = [None]
-    output = wrap_configuration(config) if wrap else config
-    return json.dumps(output, indent=4, ensure_ascii=False) + "\n"
+    return wrap_configuration(config) if wrap else config
+
+
+def dict_to_json(config: Any, *, wrap: bool = True) -> str:
+    """Render the IR as Junos JSON text: `junos_json_object` serialized as JSON."""
+    return json.dumps(junos_json_object(config, wrap=wrap), indent=4, ensure_ascii=False) + "\n"
+
+
+def _unshared(value: Any) -> Any:
+    """*value* with every mapping and list its own object.
+
+    JSON has no anchors or aliases, so the YAML spelling of a JSON object
+    holds none either, even where a caller's selection shares one object twice
+    (PyYAML anchors a mapping or list it meets again).
+    """
+    if isinstance(value, dict):
+        return {key: _unshared(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_unshared(item) for item in value]
+    return value
+
+
+#: Line breaks YAML reads in a plain or single-quoted scalar but JSON keeps as
+#: characters: NEL, LINE SEPARATOR, PARAGRAPH SEPARATOR.
+_YAML_ONLY_BREAKS = ("\x85", "\u2028", "\u2029")
+
+
+class _JunosYamlDumper(yaml.SafeDumper):
+    """PyYAML's safe dumper, writing a string that holds a YAML-only line break
+    double-quoted, where the break is escaped and reads back as written."""
+
+
+def _represent_str(dumper: yaml.SafeDumper, value: str) -> yaml.ScalarNode:
+    style = '"' if any(mark in value for mark in _YAML_ONLY_BREAKS) else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", value, style=style)
+
+
+_JunosYamlDumper.add_representer(str, _represent_str)
+
+
+def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
+    """Render the IR as yaml-new: `junos_json_object` serialized as YAML.
+
+    Block style, keys in the object's order, Unicode as written: the layout
+    of the ``yaml`` writer, with no anchors or aliases.
+
+    Raises:
+        ValueError: If the object holds a value no JSON document can hold (a
+            date a ``yaml`` file gave unquoted, say), named by kind and path:
+            yaml-new holds what JSON holds, and its reader would refuse it.
+    """
+    document = _unshared(junos_json_object(config, wrap=wrap))
+    found = find_non_json_value(document)
+    if found is not None:
+        kind, path = found
+        where = f"at {path}" if path else "at the top level"
+        raise ValueError(
+            f"Cannot write yaml-new: a {kind} {where} has no JSON spelling; quote it in the source"
+        )
+    return yaml.dump(
+        document,
+        Dumper=_JunosYamlDumper,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    )
 
 
 def _coerce_scalar_leaves(

@@ -1,7 +1,8 @@
 """Junoscfg: Convert and validate Junos configurations between formats.
 
 Provides convenience functions for converting between display set, structured,
-XML, JSON, and YAML configuration formats, as well as validation against the
+XML, JSON, and YAML configuration formats (``yaml``, the IR as YAML, and
+``yaml-new``, the Junos JSON object as YAML), as well as validation against the
 Junos XSD schema.
 """
 
@@ -10,7 +11,11 @@ from __future__ import annotations
 from enum import Enum
 from typing import TextIO
 
-from junoscfg.convert import ConversionResult, FieldValidationError  # noqa: TC001
+from junoscfg.convert import (  # noqa: TC001
+    FORMAT_IMPLEMENTATIONS,
+    ConversionResult,
+    FieldValidationError,
+)
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
 __version__ = "0.28.15"
@@ -31,41 +36,31 @@ __all__ = [
 
 
 class Format(Enum):
-    """Configuration format identifiers for use with :func:`convert`."""
+    """Configuration format identifiers for use with :func:`convert`.
+
+    Each value is a key of :data:`junoscfg.convert.FORMAT_IMPLEMENTATIONS`,
+    which selects its reader and writer.
+    """
 
     SET = "set"
     STRUCTURED = "structured"
     JSON = "json"
+    #: The IR as YAML; planned to be renamed ``yaml-old``
+    #: (docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md).
     YAML = "yaml"
+    #: The Junos JSON object as YAML, equivalent to ``json``; planned to
+    #: become ``yaml``.
+    YAML_NEW = "yaml-new"
     XML = "xml"
 
 
-# Supported (from_format, to_format) conversion pairs. XML output is rejected
-# separately so callers retain its documented NotImplementedError.
+# Supported (from_format, to_format) conversion pairs: every reader with every
+# writer, identity included (parse and re-render for normalization). XML output
+# is rejected separately so callers retain its documented NotImplementedError.
+_READERS = (Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML_NEW, Format.XML)
+_WRITERS = (Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML_NEW)
 _SUPPORTED_CONVERSIONS: frozenset[tuple[Format, Format]] = frozenset(
-    {
-        (Format.JSON, Format.SET),
-        (Format.JSON, Format.STRUCTURED),
-        (Format.JSON, Format.YAML),
-        (Format.XML, Format.SET),
-        (Format.XML, Format.STRUCTURED),
-        (Format.XML, Format.YAML),
-        (Format.YAML, Format.SET),
-        (Format.YAML, Format.STRUCTURED),
-        (Format.YAML, Format.JSON),
-        (Format.XML, Format.JSON),
-        (Format.SET, Format.STRUCTURED),
-        (Format.SET, Format.JSON),
-        (Format.SET, Format.YAML),
-        (Format.STRUCTURED, Format.SET),
-        (Format.STRUCTURED, Format.JSON),
-        (Format.STRUCTURED, Format.YAML),
-        # Identity conversions (parse and re-render for normalization)
-        (Format.JSON, Format.JSON),
-        (Format.SET, Format.SET),
-        (Format.YAML, Format.YAML),
-        (Format.STRUCTURED, Format.STRUCTURED),
-    }
+    (reader, writer) for reader in _READERS for writer in _WRITERS
 )
 
 
@@ -342,9 +337,10 @@ def validate_config(
 
     Args:
         source: Configuration text.
-        format: Input format (``"xml"``, ``"json"``, ``"yaml"``, ``"set"``,
-            ``"structured"``, or a :class:`Format` enum member).
-            If ``None``, auto-detects set vs structured.
+        format: Input format (``"xml"``, ``"json"``, ``"yaml"``,
+            ``"yaml-new"``, ``"set"``, ``"structured"``, or a :class:`Format`
+            enum member). ``"yaml-new"`` is judged by the JSON schema, as the
+            JSON it spells. If ``None``, auto-detects set vs structured.
         artifacts_dir: Path to custom validation artifacts directory.
             Falls back to ``JUNOSCFG_ARTIFACTS`` env var, then bundled defaults.
 
@@ -355,18 +351,23 @@ def validate_config(
         junoscfg.validate.SchemaLoadError: When validation artifacts
             cannot be loaded.
     """
-    # Normalise Format enum to string
+    # Normalise Format enum to string, then to the implementation it selects
     fmt = format.value if isinstance(format, Format) else format
+    implemented = FORMAT_IMPLEMENTATIONS.get(fmt) if fmt else None
 
-    if fmt == "xml":
+    if implemented == "xml":
         return validate_xml(source, artifacts_dir=artifacts_dir)
-    elif fmt == "json":
+    elif implemented == "junos-json":
         return validate_json(source, artifacts_dir=artifacts_dir)
-    elif fmt == "yaml":
+    elif implemented == "junos-yaml":
+        from junoscfg.validate import JunosValidator
+
+        return JunosValidator(artifacts_dir=artifacts_dir).validate_yaml_as_json(source)
+    elif implemented == "ir-yaml":
         return validate_yaml(source, artifacts_dir=artifacts_dir)
-    elif fmt == "set":
+    elif implemented == "set":
         return validate_set(source, artifacts_dir=artifacts_dir)
-    elif fmt == "structured":
+    elif implemented == "structured":
         return validate_structured(source, artifacts_dir=artifacts_dir)
     else:
         from junoscfg.display import VALIDATION_FORMATS, detect_format

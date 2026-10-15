@@ -7,7 +7,8 @@ Not a format-to-format shortcut: every conversion goes through the dict IR; a se
 ## Invariants
 
 - Every supported pair round-trips through the IR without losing content — enforced by `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`.
-- XML input reuses the display kernel's `xml_to_dict()` walker; YAML and XML apply schema-backed leaf-list normalization at the common boundary, while JSON keeps its supplied value shapes — enforced by `tests/unit/convert/test_convert_api.py::TestLeafListPromotion`.
+- XML input reuses the display kernel's `xml_to_dict()` walker; `yaml` and XML apply schema-backed leaf-list normalization at the common boundary, while JSON and `yaml-new` keep their supplied value shapes — enforced by `tests/unit/convert/test_convert_api.py::TestLeafListPromotion` and `tests/unit/convert/test_convert_api.py::TestJunosYamlReader`.
+- `yaml-new` is the Junos JSON object in YAML, written and read by the JSON writer's and reader's object stages: its output loads as JSON output parses, and its input reads as the same object in JSON — enforced by `tests/contract/test_format_matrix.py::TestJunosYamlIsTheJsonObject`.
 - No writer changes the IR it is given; the JSON writer normalizes its own copy — enforced by `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_hand_built_ir_is_left_unchanged`.
 - The three evidenced root/group singleton entry paths preserve arrays, children and entry tags; ordinary list/container/leaf-list/presence/keyworded name children never borrow the legacy entry fallback, while unresolved scalar positional-name cases retain it — enforced by `tests/unit/convert/test_convert_roundtrip.py::TestKeyedSingletonValidation::test_supported_statement_validates`, `tests/unit/convert/test_convert_roundtrip.py::TestSingletonNamePreservation::test_a_scalar_positional_name_keeps_its_child_key` and `tests/unit/convert/test_convert_roundtrip.py::TestKnownNameChildShapes::test_the_known_child_shape_keeps_meaning`.
 - One configuration yields one IR whatever format it arrived in — enforced by `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr`.
@@ -19,4 +20,5 @@ Not a format-to-format shortcut: every conversion goes through the dict IR; a se
 
 - `junoscfg.convert.pipeline_result` — the implementation door for conversion; string-only `pipeline()` delegates to it and discards diagnostics.
 - `junoscfg.convert.output.dict_walker.WalkOutput` — the strategy every new output format implements instead of walking the IR again.
+- `junoscfg.convert.FORMAT_IMPLEMENTATIONS` — where a format name selects its implementation; a new format or a rename edits this table and `junoscfg.Format`, never the dispatch.
 - `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical boundary raw set readers apply before constructing the IR.

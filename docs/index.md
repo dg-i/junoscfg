@@ -7,7 +7,7 @@ It provides both a CLI tool and a Python library for converting, validating, and
 
 ## Features
 
-- **Format conversion** — Convert between display set, structured (curly-brace), XML, JSON, and YAML formats (20 format pairs, including identity conversions)
+- **Format conversion** — Convert between display set, structured (curly-brace), XML, JSON, YAML and yaml-new (the Junos JSON object as YAML) formats (30 format pairs, including identity conversions)
 - **Unified conversion API** — `convert_config()` with `Format` enum for any-to-any conversion
 - **Validation** — Validate configurations against the Junos XSD schema in any supported format
 - **Field-level validation** — Check leaf values against schema constraints (enums, patterns, IP addresses, integer bounds, mandatory fields)

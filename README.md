@@ -1,6 +1,9 @@
 # Junoscfg (Python)
 
 Convert and validate Junos configurations between JSON, structured, YAML, and display set formats.
+Two YAML formats exist side by side: `yaml` (junoscfg's IR as YAML) and `yaml-new`
+(exactly the Junos JSON object as YAML). `yaml-new` is planned to take over the
+name `yaml`; see [Two YAML formats](docs/guide/conversion.md#two-yaml-formats-yaml-and-yaml-new).
 
 **XML input and output: BUGGY; XML work is deferred.** XML input remains
 available but is not qualified by the current makeover. XML output is not
@@ -39,6 +42,9 @@ junoscfg -e structured config.set
 
 # Read from stdin
 echo '{"configuration":{"system":{"host-name":"test"}}}' | junoscfg -i json -e set
+
+# Move a YAML file to yaml-new, the Junos JSON object in YAML
+junoscfg -i yaml -e yaml-new old.yaml
 
 # Transform YAML for Ansible (literal extraction)
 junoscfg edityaml ansibilize -p "addr:interfaces.interface[*].name" config.yaml

@@ -17,5 +17,7 @@ Not format detection or parsing; `convert.input` chooses the parser.
 - `normalize` is the raw set normalizer; structured text uses `display.SetConverter`.
 - `find_unsupported_set_brackets` and `find_unsupported_set_commands` are the
   shared lexical boundaries consumed by raw set conversion and validation.
+- `find_non_json_value` is the boundary yaml-new conversion and validation share:
+  a loaded YAML document holds only what JSON holds.
 - `iter_visible_set_lines` retains physical lines and content after leading comments.
 - `InputError` carries `lineno` for refusals whose callers must withhold source text.

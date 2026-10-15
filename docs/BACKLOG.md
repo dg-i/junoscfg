@@ -21,7 +21,11 @@ Create an OpenSpec change only when an item is selected for implementation.
 
 ## YAML-JSON-001 — Share Junos JSON normalization with YAML
 
-- **Status:** open; future work, not selected for implementation.
+- **Status:** selected 2026-10-15 with an owner modification; implemented by the
+  OpenSpec change `yaml-new-format` (archived under `openspec/changes/archive/`)
+  as the parallel format `yaml-new`, with `yaml` unchanged. The rename of `yaml`
+  to `yaml-old` and `yaml-new` to `yaml` stays open future work under
+  [its decision record](decisions/2026-10-15-yaml-new-before-renaming-yaml.md).
 - **Finding and impact:** YAML output currently dumps the IR directly, while
   the Junos JSON writer normalizes its own copy. JSON representation fixes
   therefore do not automatically reach YAML, and output shapes can differ.

@@ -1,0 +1,376 @@
+{
+  "change": "yaml-new-format",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "f6d39bd5a5493fd4b663cb2f8151b4cebc972c7c2d53cce774757044d92981d3",
+          "head": "f6d39bd5a5493fd4b663cb2f8151b4cebc972c7c2d53cce774757044d92981d3"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-yaml-new-format/openspec/changes/yaml-new-format/events.jsonl",
+        "sha256": "3e45c4b9b9660f192a99b2ace3cd83015691d2a473d9a8b1536468f41995ea43"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+        "carry": {},
+        "change": "yaml-new-format",
+        "checks": [
+          {
+            "checkpoint": "b0ea961a9daf71a976e4beaa49ffe3789a9b6936065c6264c2378195e72222af",
+            "duration_ms": 73993.10454103397,
+            "evidence": ".agent-ready/verification/97435771856c49688c3bd40429c20d97.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "daff7bbb4cec54084e31b275cec6a564cd00cb54ddc41c2b25ae1fb93664ace0",
+            "duration_ms": 76333.5006669513,
+            "evidence": ".agent-ready/verification/40c755b8895e4007b7e2da91402c4b92.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "bfdc40a29a60e85321a6f283618e165f7c1c6efb78ab53b6fbe9c6e3b8794650",
+            "duration_ms": 262909.1632500058,
+            "evidence": ".agent-ready/verification/71eed6dcf46b453e998545d532eda01d.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "f14a789e1df77904563f4c9911516205bae03f31e19d1aa28113d0af3f142883",
+            "duration_ms": 52848.300874989945,
+            "evidence": ".agent-ready/verification/a332e7620e1947c1afab8c71eb9f8c7c.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "daff7bbb4cec54084e31b275cec6a564cd00cb54ddc41c2b25ae1fb93664ace0",
+            "duration_ms": 355931.2632920337,
+            "evidence": ".agent-ready/verification/39be8eb6462049fdb96de4cd2c6b157a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "3a17920400e241f0087223c4a7ea44ab2941f8f169670dcd83c46245b47067dc",
+            "duration_ms": 73933.00725001609,
+            "evidence": ".agent-ready/verification/504edc831bb647e8ab6d3ae22b310899.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "8c9fc44fc5028e5bd710ae50fefad428f82ca0906c301a5c6dfcb3e69ff7576a",
+            "duration_ms": 51119.707332982216,
+            "evidence": ".agent-ready/verification/fc2a6ee555ab4901a925ae26411de1c4.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "abf95137a0ab8748aac59610f706d99694f86513282133261728e17af4d31d45",
+            "duration_ms": 165480.92137498315,
+            "evidence": ".agent-ready/verification/5c082ed45f1c402288218f052c5bba44.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+        "ledger_sha256": "3e45c4b9b9660f192a99b2ace3cd83015691d2a473d9a8b1536468f41995ea43",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "381645c642c338fd6977e67d47e681f46431bc32282d44d9e2d2be1240100609",
+              "656367e610f56019d85568bf5025a65ca0c80865de68778d7c42eb24c58b7057",
+              "b6a874c6b5e241f5ec73b113bdaa065dcb7f7b56b4701009c0011af4118a5bf9",
+              "8e86ee0222bd8e099028f28f33ff5253ff1a95c399c4eba8186d61357f5777ab"
+            ],
+            "value": 4
+          },
+          "full_runs": {
+            "events": [
+              "0fd85cc28b3504045cea3ccfdfc054101a80c9d819a49f674792b6bd80f3078e",
+              "7dc2f942d76dad50ce96118fde09b23af40789e5c894b37eee5433d3b8e25e3b",
+              "0c41d2beb9e1c99d83389e9e3530cad0a3485cb3c1f5d61661aa7577a9bbe255",
+              "314d9613b37b493e0cb91aeba8c500d7789de9a393c9fa792cd471290b6f4e31"
+            ],
+            "value": 4
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            "ARCHITECTURE.md",
+            "README.md",
+            "changelog.d/+yaml-new-format.feature.md",
+            "docs/BACKLOG.md",
+            "docs/api/convert.md",
+            "docs/api/input.md",
+            "docs/architecture/developer-guide.md",
+            "docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md",
+            "docs/decisions/index.md",
+            "docs/guide/cli-reference.md",
+            "docs/guide/cli.md",
+            "docs/guide/conversion.md",
+            "docs/guide/validation.md",
+            "docs/index.md",
+            "openspec/specs/conversion/junos-json-yaml/spec.md",
+            "openspec/specs/validation/junos-json-yaml/spec.md",
+            "src/junoscfg/CONTRACT.md",
+            "src/junoscfg/__init__.py",
+            "src/junoscfg/cli.py",
+            "src/junoscfg/convert/CONTRACT.md",
+            "src/junoscfg/convert/__init__.py",
+            "src/junoscfg/convert/formats.py",
+            "src/junoscfg/convert/input/__init__.py",
+            "src/junoscfg/convert/input/json_input.py",
+            "src/junoscfg/convert/output/__init__.py",
+            "src/junoscfg/convert/output/json_output.py",
+            "src/junoscfg/input.CONTRACT.md",
+            "src/junoscfg/input.py",
+            "src/junoscfg/validate/json_yaml_validator.py",
+            "src/junoscfg/validate/validator.py",
+            "tach.toml",
+            "tests/contract/test_every_door.py",
+            "tests/contract/test_every_message.py",
+            "tests/contract/test_format_matrix.py",
+            "tests/contract/test_round_trip_validates.py",
+            "tests/corpus/test_device_renderings.py",
+            "tests/support/shapes.py",
+            "tests/unit/cli/test_audit_command.py",
+            "tests/unit/cli/test_cli.py",
+            "tests/unit/cli/test_cli_validate.py",
+            "tests/unit/convert/test_convert_api.py",
+            "tests/unit/convert/test_convert_roundtrip.py",
+            "tests/unit/input/test_input.py",
+            "tests/unit/validate/test_json_yaml_validator.py",
+            "tests/unit/validate/test_validator.py"
+          ],
+          "since": "332523c6aa9576930ee7afe35226d5e4bdd2930d"
+        },
+        "selector": [
+          "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+          "95b6820c5a6fe387185fc71edc4f8d58bb57f046"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 1470,
+        "binary_files": 0,
+        "files": 46,
+        "removed": 166
+      }
+    },
+    "locked_packages": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "5f67d1d87ad7bb9e05d545d0cd74a9b8fa91626ba984082de79fdf5f1f36dc19",
+          "head": "5f67d1d87ad7bb9e05d545d0cd74a9b8fa91626ba984082de79fdf5f1f36dc19"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "332523c6aa9576930ee7afe35226d5e4bdd2930d",
+      "captured_at": "2026-10-15T04:37:09.447002Z",
+      "head_sha": "95b6820c5a6fe387185fc71edc4f8d58bb57f046",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

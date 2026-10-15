@@ -33,12 +33,18 @@ def _rendering(shape: Shape, fmt: Format) -> str:
 
 
 def _errors(validator: Any, rendered: str, fmt: Format) -> list[Any]:
-    result = (
-        validator.validate_json(rendered)
-        if fmt is Format.JSON
-        else validator.validate_yaml(rendered)
-    )
-    return list(result.errors)
+    """The bundled schema's errors: yaml-new is judged as the JSON it spells."""
+    validate = {
+        Format.JSON: validator.validate_json,
+        Format.YAML: validator.validate_yaml,
+        Format.YAML_NEW: validator.validate_yaml_as_json,
+    }[fmt]
+    return list(validate(rendered).errors)
+
+
+#: Each rendering a schema judges: JSON, YAML and yaml-new.
+_SCHEMA_FORMATS = [Format.JSON, Format.YAML, Format.YAML_NEW]
+_SCHEMA_IDS = [fmt.value for fmt in _SCHEMA_FORMATS]
 
 
 class TestTheConverterOutputValidates:
@@ -50,7 +56,7 @@ class TestTheConverterOutputValidates:
     """
 
     @pytest.mark.parametrize("shape", VALID, ids=[shape.name for shape in VALID])
-    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
     def test_the_rendering_validates(
         self, shape: Shape, fmt: Format, bundled_validator: Any
     ) -> None:
@@ -58,7 +64,7 @@ class TestTheConverterOutputValidates:
         assert not errors, f"{shape.name}: {_rendering(shape, fmt)[:200]} -> {errors[:2]}"
 
     @pytest.mark.parametrize("shape", INVALID, ids=[shape.name for shape in INVALID])
-    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
     def test_a_row_that_is_not_valid_junos_is_rejected(
         self, shape: Shape, fmt: Format, bundled_validator: Any
     ) -> None:
@@ -100,7 +106,7 @@ class TestTheExampleRendersValid:
     rendering is read, the one junoscfg reads closest to the schema.
     """
 
-    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
     def test_every_statement_the_schema_places_renders_valid(
         self, fmt: Format, bundled_validator: Any
     ) -> None:
@@ -113,7 +119,7 @@ class TestTheExampleRendersValid:
         errors = _errors(bundled_validator, rendered, fmt)
         assert not errors, errors[:2]
 
-    @pytest.mark.parametrize("fmt", [Format.JSON, Format.YAML], ids=["json", "yaml"])
+    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
     @pytest.mark.parametrize(
         "suffix",
         [

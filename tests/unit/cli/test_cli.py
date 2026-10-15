@@ -113,6 +113,15 @@ class TestHelp:
         assert result.exit_code == 0
         assert option in result.stdout
 
+    @pytest.mark.parametrize("fmt", [f.value for f in Format])
+    def test_convert_help_describes_every_format(self, fmt: str) -> None:
+        """The Formats list names each one, yaml-new and the planned rename included."""
+        result = run(["convert", "--help"])
+        line = re.search(rf"^ +{re.escape(fmt)} +(\S.*)$", result.stdout, re.MULTILINE)
+        assert line, fmt
+        planned = {"yaml": "to be renamed yaml-old", "yaml-new": "to become yaml"}
+        assert planned.get(fmt, "") in line.group(1)
+
     @pytest.mark.parametrize("command", ["junoscfg", *_commands(main)])
     def test_fullhelp_has_a_section_per_command(self, command: str) -> None:
         result = run(["fullhelp"])
@@ -169,6 +178,35 @@ class TestConvertReadsAndWrites:
         result = run(["convert", "-i", import_format, "-e", export_format], A_LEAF[reader])
         assert result.exit_code == 0
         assert result.stdout == library(A_LEAF[reader], reader, writer)
+
+    def test_an_ir_yaml_file_migrates_to_junos_yaml(self, tmp_path: Path) -> None:
+        """The documented migration: `-i yaml -e yaml-new` drops the yaml reader's
+        meta keys and writes the Junos JSON object (docs/guide/conversion.md)."""
+        legacy = tmp_path / "old.yaml"
+        legacy.write_text(
+            "configuration:\n  system:\n    host-name: r1\n    _ansible_host: x\n"
+            "  routing-options:\n    static:\n      route:\n      - name: 0.0.0.0/0\n"
+            "        next-hop: 10.0.0.1\n"
+        )
+        result = run(["convert", "-i", "yaml", "-e", "yaml-new", str(legacy)])
+        assert result.exit_code == 0, result.output
+        assert result.stdout == library(legacy.read_text(), Format.YAML, Format.YAML_NEW)
+        assert "_ansible_host" not in result.stdout
+        as_json = library(legacy.read_text(), Format.YAML, Format.JSON)
+        assert library(result.stdout, Format.YAML_NEW, Format.JSON) == as_json
+
+    def test_a_value_json_cannot_hold_stops_the_migration(self, tmp_path: Path) -> None:
+        """A date the yaml file holds unquoted has no JSON spelling: the
+        migration exits 2 naming its path, rather than write a file yaml-new
+        refuses (Reviewer finding 1)."""
+        legacy = tmp_path / "old.yaml"
+        legacy.write_text("configuration:\n  system:\n    host-name: 2026-10-15\n")
+        result = run(["convert", "-i", "yaml", "-e", "yaml-new", str(legacy)])
+        assert result.exit_code == 2, result.output
+        assert "date at configuration.system.host-name has no JSON spelling" in result.stderr
+        assert result.stdout == ""
+        quoted = legacy.read_text().replace("2026-10-15", "'2026-10-15'")
+        assert library(quoted, Format.YAML, Format.YAML_NEW).endswith("host-name: '2026-10-15'\n")
 
     def test_a_file_argument_is_read(self, tmp_path: Path) -> None:
         source = tmp_path / "config.json"
@@ -384,10 +422,11 @@ class TestPathOptions:
             (Format.SET, "system.syslog"),
             (Format.STRUCTURED, "system"),
             (Format.YAML, "system"),
+            (Format.YAML_NEW, "system"),
             (Format.JSON, "system"),
             (Format.SET, "nonexistent"),
         ],
-        ids=["set", "structured", "yaml", "json", "set-not-found"],
+        ids=["set", "structured", "yaml", "yaml-new", "json", "set-not-found"],
     )
     def test_the_path_reaches_the_library(self, writer: Format, path: str, relative: bool) -> None:
         flags = ["--path", path] + (["--relative"] if relative else [])
