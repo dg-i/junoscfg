@@ -49,7 +49,8 @@ tools, tooling configuration, `tach.toml` and the pre-commit configuration run
 `tests/tooling/`. Shared
 `tests/data/`, `tests/support/`, `tests/conftest.py`, the package root,
 shipped artifacts, `pyproject.toml` and the lock run the full default suite.
-A changed test selects itself and the tests importing it; a conftest or deleted test selects its nearest
+A changed test selects itself, the tests importing it, the selector's own tests
+and readers of a directory above it, also when deleted; a conftest or deleted test selects its nearest
 existing containing test directory. Covered descendants are omitted from the
 selection. The hook always invokes the selector, including deletion-only
 commits, and lists a moved file's old path. A test reads any other repository

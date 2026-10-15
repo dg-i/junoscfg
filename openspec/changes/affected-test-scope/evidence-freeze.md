@@ -91,3 +91,14 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
   schema test modules import `commit_fixture`/`git` from it (pre-existing on
   master). A changed test module now also selects its importing test modules under
   the tool rules; ten selector regressions were observed failing first.
+- Fresh review (2026-10-15, head 5adc8ae): verdict do not merge; F1 deletion
+  narrower than edit, F2 selector real-tree assertions unselected, F3 root pytest
+  configuration, F4 contract overstatement and undetected indirect uses, F5
+  untracked files unbound to reuse identity, F6 retired-skill residue. Owner
+  decision (2026-10-15): fix all six in this change, none to backlog. Each fix has
+  a regression observed failing first (15 for F1–F3, 6 for F4, 1 for F5); F6 is
+  configuration text verified by fields, caps, skills and markdownlint. The
+  reviewer's executed deletion counterexamples now select the importers (probe in a
+  scratch worktree). Directory-reader and string-edge rules add about 4.5 s of small
+  tooling tests to tests/tools commits; bookkeeping, ci.yml and mkdocs.yml
+  selections are unchanged.

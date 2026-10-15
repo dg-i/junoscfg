@@ -94,8 +94,11 @@ execution relationships, never by preparation or successful qualification alone.
 paths it uses the branch and working-tree diff. Source-package changes retain unit
 importers and contract tests. Tooling modules follow audited reverse dependencies
 through tools and all test modules. Root fixtures/shared support select the full
-suite; nested fixtures select their directory. A changed test module also selects
-the test modules importing its helpers or tests. Unknown loaders, malformed dependency
+suite; nested fixtures select their directory. A changed or deleted test module also
+selects the test modules importing its helpers or tests; any tests/tools Python
+change selects the selector's own tests (about 2 s). Root `conftest.py` and
+alternate pytest configuration select the full suite; untracked files beside the
+tested code refuse evidence reuse. Unknown loaders, malformed dependency
 sources, deleted or unmapped tools and configuration retain conservative coverage.
 Package data selects its package. A repository file a test or tool reads by an
 anchored constant path selects that module's tests, so the CI workflow selects its

@@ -200,7 +200,9 @@ always-loaded-budget = 4600
 onboarded = 2026-10-06
 
 # A vendored skill is its upstream's: left out of frontmatter, parity, and
-# mirror checks, and kept rather than deleted when the mirror regenerates.
+# mirror checks, and kept rather than deleted when the mirror regenerates. The
+# OpenSpec workflow skills are retired from discovery; `openspec-*` stays listed
+# because `openspec update` can install them again until refresh retires them.
 vendored-skills = ["openspec-*", ".openspec-*", "source-command-*"]
 
 # Every cap the checks read lives here, and raising one takes a decision record
@@ -279,11 +281,9 @@ break-bumps = { consumer = "minor", cli = "minor" }
 "openspec/specs/**/*.md" = "split by capability into a directory under the domain's, never truncate"
 "docs/decisions/*.md" = "a decision states what was decided and what enforces it; the debate belongs in the pull request"
 
-# Measured and printed, never failed: skills a vendored CLI installs, since
-# rewriting one forks it, and the generated decisions index, which grows with
-# the records it lists.
+# Measured and printed, never failed: the generated decisions index, which
+# grows with the records it lists.
 [tool.template.caps-report-only]
-".agents/skills/openspec-*/SKILL.md" = 300
 "docs/decisions/index.md" = 60
 
 # Approved tools, and what was considered and rejected. An entry without a

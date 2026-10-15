@@ -36,7 +36,20 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "junoscfg"
 TESTS = ROOT / "tests"
 EVERYTHING = ("tests/",)
+# Files that configure every pytest run.
+PYTEST_CONFIGURATION = (
+    "pytest.ini",
+    ".pytest.ini",
+    "pytest.toml",
+    ".pytest.toml",
+    "tox.ini",
+    "setup.cfg",
+)
+# Where an untracked file can change what pytest collects or imports.
+UNTRACKED_INPUTS = ("tests", "src", "tools", "conftest.py")
 RUNS_EVERYTHING = (
+    *PYTEST_CONFIGURATION,
+    "conftest.py",
     "tests/conftest.py",
     "tests/support/",
     "tests/data/",
@@ -63,8 +76,8 @@ TOOLING = ("tools/", "tests/tooling/")
 # Gitignored operator data; the evidence refusal below guards it, and its tracked
 # README and ignore file are documentation.
 PRIVATE = "private_test_data/"
-# The selector's assertions about this repository's own readers.
-READER_TESTS = "tests/tooling/test_affected_tests.py::TestRepositoryFilesATestReadsReceiveCoverage"
+# The selector's assertions about this repository's real import and reader graph.
+SELECTOR_TESTS = "tests/tooling/test_affected_tests.py"
 
 
 def package_of(path: Path) -> str | None:
@@ -297,9 +310,14 @@ def _named_paths(owner, path, nodes, imported) -> tuple[dict[str, str], bool]:
     def harmless(node: ast.AST) -> bool:
         parent = parents.get(id(node))
         if isinstance(parent, (ast.Assign, ast.AnnAssign)):
-            # A name for it; its uses are what read, except in shared support,
-            # where declaring a directory makes it shared test input.
-            return not (owner.startswith("tests/support/") and located[id(node)][0])
+            # A name for a constant path; its uses are what read, except in shared
+            # support, where declaring a directory makes it shared test input. An
+            # attribute, a subscript or a computed path keeps no name to follow.
+            targets = parent.targets if isinstance(parent, ast.Assign) else [parent.target]
+            followed = (
+                len(targets) == 1 and isinstance(targets[0], ast.Name) and located[id(node)][1]
+            )
+            return followed and not (owner.startswith("tests/support/") and located[id(node)][0])
         if isinstance(parent, ast.Compare):
             return True
         return (
@@ -397,6 +415,11 @@ def tooling_importers() -> dict[str, set[str]]:
             target = modules.get(".".join(pieces[:size]))
             if target:
                 graph.setdefault(target, set()).add(owner)
+            elif pieces[0] in {"tools", "tests"}:
+                # A deleted module keeps its importers under the path it had.
+                missing = "/".join(pieces[:size])
+                graph.setdefault(f"{missing}.py", set()).add(owner)
+                graph.setdefault(f"{missing}/__init__.py", set()).add(owner)
 
     for owner, (path, tree, nodes) in parsed.items():
         try:
@@ -438,6 +461,17 @@ def _follow(owner, path, tree, nodes, imported, shared_tests, graph, edge) -> No
                 target = f"{module}.{alias.name}"
                 edge(target, owner)
                 aliases[alias.asname or alias.name] = target
+
+    # A module or script named in a string: a subprocess, importorskip, a loader.
+    for node in nodes:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            text = node.value.removeprefix("./")
+            if text.startswith(("tools/", "tests/")) and text.endswith(".py"):
+                graph.setdefault(text, set()).add(owner)
+            elif text.startswith(("tools.", "tests.")) and all(
+                piece.isidentifier() for piece in text.split(".")
+            ):
+                edge(text, owner)
 
     audited: set[ast.AST] = set()
     if owner in _FILE_LOADERS:
@@ -492,8 +526,10 @@ def _follow(owner, path, tree, nodes, imported, shared_tests, graph, edge) -> No
             raise ValueError(f"opaque loader: {owner}")
 
 
-def tooling_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
-    """Map reachable consumers to pytest paths, with broad unmapped fallback."""
+def tooling_selection(
+    rel: str, graph: dict[str, set[str]], fallback: tuple[str, ...] = ("tests/tooling/",)
+) -> set[str]:
+    """Map reachable consumers to existing pytest paths, or *fallback* when none."""
     selected: set[str] = set()
     for consumer in dependents(rel, graph):
         if consumer.endswith("::"):
@@ -505,31 +541,20 @@ def tooling_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
             path = Path(consumer)
             if path.name in {"conftest.py", "__init__.py"}:
                 selected.add(f"{path.parent.as_posix()}/")
-            elif path.name.startswith("test_"):
+            elif path.name.startswith("test_") and (ROOT / consumer).is_file():
                 selected.add(consumer)
-    return selected or {"tests/tooling/"}
+    return selected or set(fallback)
 
 
-def reader_selection(rel: str, graph: dict[str, set[str]]) -> set[str]:
-    """The tests of every module that names *rel*, a directory above it, or may
-    read any file."""
+def reader_selection(rel: str, graph: dict[str, set[str]], anything: bool = True) -> set[str]:
+    """The tests of every module that names *rel*, a directory above it, or, with
+    *anything*, may read any file."""
     selected: set[str] = set()
     for name, owners in graph.items():
-        if name == ANYTHING or rel == name or rel.startswith(f"{name}/"):
+        if (anything and name == ANYTHING) or rel == name or rel.startswith(f"{name}/"):
             for owner in owners:
                 selected.update(tooling_selection(owner, graph))
     return selected
-
-
-def readers(graph: dict[str, set[str]]) -> set[str]:
-    """Modules that name a path outside the package, tests and tools, or may read
-    any file: the readers the selector's own repository assertions depend on."""
-    return {
-        owner.removesuffix("::")
-        for name, owners in graph.items()
-        if name == ANYTHING or not name.startswith(("src/", "tests/", "tools/", "!"))
-        for owner in owners
-    }
 
 
 def select(files: list[str]) -> list[str]:
@@ -553,21 +578,30 @@ def select(files: list[str]) -> list[str]:
         elif rel in {".pre-commit-config.yaml", "tach.toml"} or (
             rel.startswith("tools/") and path.suffix != ".md"
         ):
-            if rel.startswith("tools/") and path.suffix == ".py" and path.is_file():
+            if rel.startswith("tools/") and path.suffix == ".py":
                 tool_graph = tool_graph if tool_graph is not None else tooling_importers()
                 if tool_graph.get(UNFOLLOWED):
                     return list(EVERYTHING)
                 chosen.update(tooling_selection(rel, tool_graph))
+                # Readers of a directory above it; a deleted tool's remaining
+                # importers and readers fail without it.
+                chosen.update(reader_selection(rel, tool_graph, anything=not path.is_file()))
+                if not path.is_file():
+                    chosen.add("tests/tooling/")
             else:
                 chosen.add("tests/tooling/")
         elif rel.startswith("tests/") and path.suffix != ".md":
-            if path.suffix == ".py" and path.is_file() and path.name != "conftest.py":
-                chosen.add(rel)
-                # Other test modules import its helpers and tests.
+            if path.suffix == ".py":
+                # Other test modules import its helpers and tests, also after
+                # it is deleted, and tools read the directories above it.
                 tool_graph = tool_graph if tool_graph is not None else tooling_importers()
                 if tool_graph.get(UNFOLLOWED):
                     return list(EVERYTHING)
-                chosen.update(tooling_selection(rel, tool_graph))
+                if path.name != "conftest.py":
+                    chosen.update(tooling_selection(rel, tool_graph, fallback=()))
+                chosen.update(reader_selection(rel, tool_graph, anything=not path.is_file()))
+            if path.suffix == ".py" and path.is_file() and path.name != "conftest.py":
+                chosen.add(rel)
             else:
                 directory = path.parent
                 while not directory.is_dir() and directory != TESTS:
@@ -578,10 +612,14 @@ def select(files: list[str]) -> list[str]:
             chosen.update(reader_selection(rel, tool_graph))
             if not rel.endswith(DOCUMENTS) and not rel.startswith(RECORDS):
                 chosen.add("tests/tooling/")
-        if rel.startswith(("tests/", "tools/")) and path.suffix == ".py":
-            tool_graph = tool_graph if tool_graph is not None else tooling_importers()
-            if rel in readers(tool_graph) or not path.is_file():
-                chosen.add(READER_TESTS)
+        # Any tests/tools edit, including one that removes a read or an import,
+        # can change the graph the selector's real-tree assertions pin.
+        if (
+            rel.startswith(("tests/", "tools/"))
+            and path.suffix == ".py"
+            and (ROOT / SELECTOR_TESTS).is_file()
+        ):
+            chosen.add(SELECTOR_TESTS)
     return [
         target
         for target in sorted(chosen)
@@ -625,16 +663,12 @@ def reuse_blocker() -> str | None:
 
     if any(value and key.startswith(("PYTEST_", "JUNOSCFG_")) for key, value in os.environ.items()):
         return "pytest or Junoscfg environment overrides"
-    for name in (
-        "pytest.ini",
-        ".pytest.ini",
-        "pytest.toml",
-        ".pytest.toml",
-        "tox.ini",
-        "setup.cfg",
-    ):
+    for name in PYTEST_CONFIGURATION:
         if (ROOT / name).exists():
             return "alternate pytest configuration"
+    # Evidence identity binds tracked bytes only.
+    if _git("ls-files", "--others", "--exclude-standard", "--", *UNTRACKED_INPUTS):
+        return "untracked files beside the tested code"
     for name in ("captures", "schemas"):
         path = ROOT / "private_test_data" / name
         if path.exists() or path.is_symlink():

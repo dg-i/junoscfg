@@ -123,8 +123,8 @@ class TestWithNoFilesTheChangeComesFromGit:
 
 class TestATestChangeSelectsItself:
     def test_a_test_file_selects_that_file(self) -> None:
-        name = "tests/tooling/test_affected_tests.py"
-        assert affected.select([name]) == [name]
+        name = "tests/unit/cli/test_cli.py"
+        assert name in affected.select([name])
 
     @pytest.mark.parametrize(
         ("name", "importer"),
@@ -140,7 +140,12 @@ class TestATestChangeSelectsItself:
         assert importer in affected.select([name])
 
     def test_a_conftest_selects_its_directory(self) -> None:
-        assert affected.select(["tests/unit/audit/conftest.py"]) == ["tests/unit/audit/"]
+        assert affected.select(["tests/unit/audit/conftest.py"]) == [
+            "tests/tooling/test_affected_execution.py",
+            affected.SELECTOR_TESTS,
+            "tests/tooling/test_schema_scope.py",
+            "tests/unit/audit/",
+        ]
 
     @pytest.mark.parametrize(
         "name",
@@ -150,6 +155,13 @@ class TestATestChangeSelectsItself:
             "src/junoscfg/__init__.py",
             "src/junoscfg/validate/data/junos-set.lark.gz",
             "uv.lock",
+            "conftest.py",
+            "pytest.ini",
+            ".pytest.ini",
+            "pytest.toml",
+            ".pytest.toml",
+            "tox.ini",
+            "setup.cfg",
         ],
     )
     def test_shared_ground_selects_everything(self, name: str) -> None:
@@ -176,7 +188,16 @@ class TestRepositoryFilesATestReadsReceiveCoverage:
         "name, expected",
         [
             (".github/workflows/ci.yml", ["tests/tooling/test_type_policy.py"]),
-            ("docs/guide/cli-reference.md", ["tests/tooling/test_cli_reference.py"]),
+            (
+                "docs/guide/cli-reference.md",
+                [
+                    # The generator reads it; the selector tests name the generator.
+                    "tests/tooling/test_affected_execution.py",
+                    "tests/tooling/test_affected_tests.py",
+                    "tests/tooling/test_cli_reference.py",
+                    "tests/tooling/test_schema_scope.py",
+                ],
+            ),
             (".agent-ready/activation.json", ["tests/tooling/test_schema_verification.py"]),
             ("mkdocs.yml", ["tests/tooling/test_schema_verification.py"]),
         ],
@@ -273,7 +294,14 @@ class TestSharedInputsReceiveCoverage:
             ),
             (
                 ["src/junoscfg/audit/engine.py", "tests/unit/audit/test_engine.py"],
-                ["tests/contract/", "tests/unit/audit/", "tests/unit/cli/"],
+                [
+                    "tests/contract/",
+                    "tests/tooling/test_affected_execution.py",
+                    "tests/tooling/test_affected_tests.py",
+                    "tests/tooling/test_schema_scope.py",
+                    "tests/unit/audit/",
+                    "tests/unit/cli/",
+                ],
             ),
         ],
     )
@@ -281,16 +309,41 @@ class TestSharedInputsReceiveCoverage:
         assert affected.select(files) == expected
 
 
-class TestDeletedTestsRetainCoverage:
+class TestTheSelectorsOwnAssertionsFollowTheGraph:
+    """The real-tree assertions pin the whole tools/tests graph, so any Python
+    change there, including one that removes a read or an import, selects them."""
+
     @pytest.mark.parametrize(
         "name",
-        ["tests/unit/audit/test_removed.py", "tests/unit/audit/gone/conftest.py"],
+        [
+            "tests/tooling/test_type_policy.py",
+            "tests/unit/cli/test_cli.py",
+            "tools/check_test_doors.py",
+        ],
     )
-    def test_deleted_test_selects_existing_ancestor(self, name: str) -> None:
+    def test_any_tests_or_tools_module_selects_the_selector_tests(self, name) -> None:
+        assert affected.SELECTOR_TESTS in affected.select([name])
+
+
+class TestDeletedTestsRetainCoverage:
+    @pytest.mark.parametrize(
+        "name, readers",
+        [
+            # test_affected_execution reads a directory above the deleted test.
+            ("tests/unit/audit/test_removed.py", ["tests/tooling/test_affected_execution.py"]),
+            ("tests/unit/audit/gone/conftest.py", ["tests/tooling/test_affected_execution.py"]),
+        ],
+    )
+    def test_deleted_test_selects_existing_ancestor(self, name: str, readers) -> None:
         assert not (PROJECT_ROOT / name).exists()
-        # A deleted module may have been a repository reader, so the reader
-        # assertions run too.
-        assert affected.select([name]) == [affected.READER_TESTS, "tests/unit/audit/"]
+        # A deleted module may have been a repository reader, so the selector's
+        # own real-tree assertions run too, with the tools reading tests/.
+        assert affected.select([name]) == [
+            *readers,
+            affected.SELECTOR_TESTS,
+            "tests/tooling/test_schema_scope.py",
+            "tests/unit/audit/",
+        ]
 
 
 class TestTheDoorCheck:
@@ -349,18 +402,12 @@ class TestToolConsumersDetermineSelection:
     @pytest.mark.parametrize(
         "tool, expected",
         [
-            (
-                "generate_cli_reference",
-                [affected.READER_TESTS, "tests/tooling/test_cli_reference.py"],
-            ),
-            ("check_test_doors", ["tests/tooling/test_affected_tests.py"]),
-            (
-                "affected_tests",
-                [
-                    "tests/tooling/test_affected_execution.py",
-                    "tests/tooling/test_affected_tests.py",
-                ],
-            ),
+            # Every tool also selects the tools that read tools/ and the tests
+            # naming them: test_affected_execution, test_affected_tests,
+            # test_schema_scope and test_verification_tests.
+            ("generate_cli_reference", ["tests/tooling/test_cli_reference.py"]),
+            ("check_test_doors", []),
+            ("affected_tests", []),
             ("compare_device_outputs", ["tests/tooling/test_compare_device_outputs.py"]),
             ("schema_content_worker", ["tests/"]),
             ("schema_verification", ["tests/"]),
@@ -368,6 +415,16 @@ class TestToolConsumersDetermineSelection:
         ],
     )
     def test_real_execution_consumers_are_selected(self, tool, expected):
+        if expected != ["tests/"]:
+            expected = sorted(
+                [
+                    *expected,
+                    "tests/tooling/test_affected_execution.py",
+                    "tests/tooling/test_affected_tests.py",
+                    "tests/tooling/test_schema_scope.py",
+                    "tests/tooling/test_verification_tests.py",
+                ]
+            )
         assert affected.select([f"tools/{tool}.py"]) == expected
 
     def test_bookkeeping_does_not_expand_a_tool_change(self):
@@ -445,6 +502,34 @@ class TestToolConsumersDetermineSelection:
         assert affected.select(["tools/leaf.py"]) == ["tests/"]
         assert affected.select(["tests/tooling/test_direct.py"]) == ["tests/"]
 
+    @pytest.mark.parametrize(
+        "source",
+        [
+            'import subprocess\nsubprocess.run(["python", "-m", "tools.leaf"])',
+            'import subprocess\nsubprocess.run(["python", "tools/leaf.py"])',
+            'import pytest\nleaf = pytest.importorskip("tools.leaf")',
+            "from tests.support.paths import PROJECT_ROOT\n"
+            "def test_x(name):\n    (PROJECT_ROOT / 'tools' / name).read_text()",
+        ],
+    )
+    def test_a_tool_named_indirectly_selects_its_user(self, tree, source):
+        tree("tests/unit/test_user.py", source)
+        assert "tests/unit/test_user.py" in affected.select(["tools/leaf.py"])
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "from tests.support.paths import PROJECT_ROOT\nclass TestX:\n"
+            "    def setup_method(self):\n"
+            "        self.page = PROJECT_ROOT / 'docs/page.md'",
+            "from tests.support.paths import PROJECT_ROOT\ndef helper(name):\n"
+            "    page = PROJECT_ROOT / 'docs' / name\n    return page.read_text()",
+        ],
+    )
+    def test_a_path_kept_in_an_attribute_or_computed_name_is_a_read(self, tree, source):
+        tree("tests/tooling/test_user.py", source)
+        assert "tests/tooling/test_user.py" in affected.select(["docs/page.md"])
+
     def test_a_test_module_selects_its_importers_transitively(self, tree):
         tree("tests/unit/helpers.py", "VALUE = 1")
         tree("tests/unit/test_first.py", "from tests.unit.helpers import VALUE")
@@ -455,6 +540,29 @@ class TestToolConsumersDetermineSelection:
             "tests/unit/test_first.py",
             "tests/unit/test_second.py",
         ]
+
+    def test_a_deleted_test_module_selects_its_remaining_importers(self, tree):
+        tree("tests/tooling/test_user.py", "from tests.corpus.test_gone import helper")
+        tree("tests/corpus/test_kept.py")
+        assert affected.select(["tests/corpus/test_gone.py"]) == [
+            "tests/corpus/",
+            "tests/tooling/test_user.py",
+        ]
+
+    def test_a_deleted_tool_selects_its_remaining_importers(self, tree):
+        tree("tests/unit/test_user.py", "import tools.gone")
+        assert affected.select(["tools/gone.py"]) == [
+            "tests/tooling/",
+            "tests/unit/test_user.py",
+        ]
+
+    def test_a_deleted_tool_the_root_conftest_names_selects_everything(self, tree):
+        tree(
+            "tests/conftest.py",
+            "from tests.support.paths import PROJECT_ROOT\n"
+            'WORKER = str(PROJECT_ROOT / "tools/gone.py")',
+        )
+        assert affected.select(["tools/gone.py"]) == ["tests/"]
 
     def test_a_test_module_the_root_conftest_imports_selects_everything(self, tree):
         tree("tests/conftest.py", "from tests.tooling.test_direct import fixture")

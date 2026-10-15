@@ -32,6 +32,9 @@ verification:
   - .agents/skills/openspec-update-change/SKILL.md
   - .agents/skills/openspec-verify-change/SKILL.md
   - docs/BACKLOG.md
+  - .gitignore
+  - .pre-commit-config.yaml
+  - pyproject.toml
   dependencies:
   - openspec/changes/archive/2026-10-14-schema-qualification-scope
   changelog: changelog.d/+affected-test-scope.misc.md

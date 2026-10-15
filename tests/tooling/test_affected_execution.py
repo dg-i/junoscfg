@@ -75,15 +75,19 @@ def test_unavailable_evidence_or_disabled_policy_executes_tests(execution, monke
     assert calls[0][-1] == "tests/tooling/test_cli_reference.py"
 
 
-@pytest.mark.parametrize("input_kind", ["captures", "schemas", "override", "options", "alternate"])
+@pytest.mark.parametrize(
+    "input_kind", ["captures", "schemas", "override", "options", "alternate", "untracked"]
+)
 def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatch, input_kind):
     from agent_ready_checks import verification
 
     monkeypatch.setattr(affected_tests, "ROOT", tmp_path)
     monkeypatch.setattr(affected_tests, "select", lambda files: ["tests/"])
+    # A commit hook exports GIT_DIR and friends; git here must see tmp_path only.
     for key in list(affected_tests.os.environ):
-        if key.startswith(("PYTEST_", "JUNOSCFG_")):
+        if key.startswith(("PYTEST_", "JUNOSCFG_", "GIT_")):
             monkeypatch.delenv(key)
+    affected_tests.subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     project = tmp_path / "pyproject.toml"
     project.write_text(
         '[tool.pytest.ini_options]\naddopts = ["--strict-markers", "--strict-config", "-ra"]\n'
@@ -97,14 +101,23 @@ def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatc
         monkeypatch.setenv("PYTEST_ADDOPTS", "--regen-schema")
     elif input_kind == "options":
         project.write_text('[tool.pytest.ini_options]\naddopts = ["--device-grammar"]\n')
-    else:
+    elif input_kind == "alternate":
         (tmp_path / "pytest.ini").write_text("[pytest]\naddopts = --schema\n")
+    else:
+        # Tracked bytes alone do not bind an untracked conftest or test.
+        (tmp_path / "tests").mkdir()
+        (tmp_path / "tests" / "conftest.py").write_text("collect_ignore_glob = ['*']\n")
     assert affected_tests.reuse_blocker() is not None
     monkeypatch.setattr(
         verification, "execute", lambda *args: pytest.fail("must not consult old success")
     )
+    git = affected_tests.subprocess.run
     monkeypatch.setattr(
-        affected_tests.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=2)
+        affected_tests.subprocess,
+        "run",
+        lambda command, **kwargs: (
+            git(command, **kwargs) if command[0] == "git" else SimpleNamespace(returncode=2)
+        ),
     )
     assert affected_tests.main(["--run", "tests/corpus/test_device_truth.py"]) == 2
 
