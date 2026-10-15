@@ -55,17 +55,16 @@ def junos_yaml_to_dict(source: str) -> dict[str, Any]:
     Raises:
         yaml.YAMLError: If the text is not YAML.
         ValueError: If the document holds a value no JSON document can hold
-            (a timestamp, a key that is not a string, binary data, a set, a
-            cycle) or an alias whose copies pass the bounds of
-            `find_non_json_value`, named by its kind and path, never by its
+            (a timestamp, a key that is not a string, binary data, a set), a
+            cycle, or a value nested deeper than 64 levels
+            (`find_non_json_value`), named by its kind and path, never by its
             value; or if it holds no configuration dict.
 
     A mapping or list shared through an alias is read written out, as JSON
-    spells it: the IR holds no object twice.
+    spells it, however often it is reused: the IR holds no object twice.
     """
     data = yaml.safe_load(source)
     found = find_non_json_value(data)
     if found is not None:
-        where = f"at {found.path}" if found.path else "at the top level"
-        raise ValueError(f"Invalid input: a YAML {found.kind} {where} {found.reason}")
+        raise ValueError(f"Invalid input: a YAML {found.kind} {found.where} {found.reason}")
     return ir_from_junos_json_object(unshared(data), label="YAML")

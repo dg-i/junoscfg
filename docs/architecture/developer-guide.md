@@ -197,8 +197,8 @@ Each input module parses a format into the unwrapped dict IR (the content inside
 
 | Module | Function | Notes |
 |--------|----------|-------|
-| `json_input.py` | `json_to_dict()`, `junos_yaml_to_dict()` | The Junos JSON object stage, `ir_from_junos_json_object()`, unwraps with `find_configuration()`; JSON text and yaml-new (YAML) text parse into it. yaml-new refuses a value JSON cannot hold, a cycle, and an alias past its bounds, and reads a shared block written out (`junoscfg.input.find_non_json_value`) |
-| `yaml_input.py` | `yaml_to_dict()` | The `yaml` format: parses YAML, drops `_ansible_*`/`_meta_*` keys, uses `find_configuration()`; leaf-lists are promoted after |
+| `json_input.py` | `json_to_dict()`, `junos_yaml_to_dict()` | The Junos JSON object stage, `ir_from_junos_json_object()`, unwraps with `find_configuration()`; JSON text and yaml-new (YAML) text parse into it. yaml-new refuses a value JSON cannot hold, a cycle, and a value nested deeper than 64 levels, and reads a shared block written out (`junoscfg.input.find_non_json_value`) |
+| `yaml_input.py` | `yaml_to_dict()` | The `yaml` format: parses YAML, refuses a cycle and a value nested deeper than 64 levels outside the meta keys (`find_non_json_value(scalars=False)`), drops `_ansible_*`/`_meta_*` keys, uses `find_configuration()`; leaf-lists are promoted after |
 | `xml_input.py` | `xml_to_dict()` | Reuses `display.xml_to_dict()` and returns its configuration mapping directly |
 | `set_input.py` | `set_to_dict()` | Tokenizes set commands, walks schema tree to build dict |
 | `structured_input.py` | `structured_to_dict()`, `structured_set_lines()` | `SetConverter.statements()` lexes levels and their tags by tokens, not lines; the set reader's schema walk (`statements_to_dict()`) builds the dict; `SetConverter.notes()` (an `/* OMITTED */` placeholder, an empty block) go to the `diagnostic_sink` as `structured-input` warnings; `structured_set_lines()` gives the set lines the walk read, in the input's tokens, for curly validation |

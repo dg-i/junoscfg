@@ -38,7 +38,7 @@ def unshared(value: Any) -> Any:
     JSON has no aliases, so a mapping or list reached twice, through a YAML
     alias or a caller sharing one object, stands for a copy of itself. Call
     only on what `junoscfg.input.find_non_json_value` accepted: it holds no
-    cycle, and its copies are bounded. Scalars are returned as they are.
+    cycle and nests at most 64 levels. Scalars are returned as they are.
     """
     if isinstance(value, dict):
         return {key: unshared(item) for key, item in value.items()}

@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 
 from junoscfg.convert.ir import find_configuration
+from junoscfg.input import find_non_json_value
 
 # Meta key prefixes stripped before conversion (Ansible inventory artifacts).
 _STRIP_PREFIXES = ("_ansible", "_meta_")
@@ -23,11 +24,17 @@ def yaml_to_dict(source: str) -> dict[str, Any]:
     ``{"configuration": ...}``).
 
     Raises:
-        ValueError: If the YAML does not contain a configuration dict.
+        ValueError: If the YAML does not contain a configuration dict, or if
+            what the meta-key cleanup walks holds a cycle or a value nested
+            deeper than 64 levels (`find_non_json_value`), named by its kind
+            and path, never by its value: junoscfg's own recursion stops there.
     """
     data = yaml.safe_load(source)
     if not isinstance(data, dict) or not data:
         raise ValueError("YAML input is empty or not a mapping.")
+    found = find_non_json_value(data, scalars=False, unwalked=_STRIP_PREFIXES)
+    if found is not None:
+        raise ValueError(f"Invalid input: a YAML {found.kind} {found.where} {found.reason}")
     cleaned = _strip_meta_keys(data)
     config = find_configuration(cleaned)
     if config is None:
