@@ -15,8 +15,8 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Fresh isolated review recorded in `review.md`
-- [ ] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
-- [ ] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head
+- [x] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
+- [x] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head
 - [ ] 3.4 Archive, patch bump, merge and tag without pushing
 
 ## Evidence
@@ -27,3 +27,5 @@
 - 1.4: four hits: the 64-level record (now citing the rule), the main spec (C3), `src/junoscfg/input.py` and `tests/unit/input/test_input.py` docstrings (C2).
 - 1.5: `pre-commit run markdownlint` on the eight changed documents passes.
 - 3.1: Reviewer verdict Merge at c542bc0 (`review.md`).
+- 3.2 at 433bf4d: canonical command, "every check passed", 337 s (schema-25.2 tiers selected by the two `src/junoscfg/**/CONTRACT.md` edits, after `tools.schema_verification prepare` with physical dumps). Earlier attempts stopped before any test: branch unassessed in the shared activation (assessed on master 1afcd29, `readiness --activate`), verification metadata absent, product tasks unticked, the gitignored skills mirror absent in the fresh worktree (`agent-ready skills --regenerate`), the run's own events log uncommitted, and the schema runtime unprepared.
+- 3.3: `agent-ready metrics input-trust-rule --base-sha 1afcd29… --head-sha 433bf4d…` (full IDs in `metrics.json`); base 1afcd29 excludes the merged-in activation commit.
