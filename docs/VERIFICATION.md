@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 19e13c588441d07646217097f5279daa66820831 (post-merge, pre-archive assessment).
+- Observed integration head: 08970969efcc605acd03b5832e6bf9823884ca1c (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 19e13c588441d07646217097f5279daa66820831.
-- Invitation status: pending; 73 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 08970969efcc605acd03b5832e6bf9823884ca1c.
+- Invitation status: pending; 75 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -258,3 +258,12 @@ checkpoint at `10a53b2` passed in 352s cold (schema-25.2 tiers selected by
 `src/junoscfg/convert/output/__init__.py`), within the unchanged 400s cold target; the
 fast set passed at `d9deb10`. No tests, coverage, hooks or review requirements were
 removed. The pending cadence invitation is retained; no owner feedback is inferred.
+
+Job completion (yaml-new-alias-cycles): local merge `0897096` lets yaml-new expand shared
+blocks and refuse cycles and alias bombs, adding timer-guarded bomb rows (a POSIX timer in
+`tests/support/aliases.py`) so an unbounded expansion fails instead of hanging. The full
+checkpoint at `8fecbdd` passed in 349s cold and the follow-up at `b30dcd2` in 167s (schema-25.2
+tiers selected by `src/junoscfg/convert/input/json_input.py`), within the unchanged 400s cold /
+200s warm targets; the fast set passed at `084e1de`. No tests, coverage, hooks or review
+requirements were removed. The pending cadence invitation is retained; no owner feedback is
+inferred.
