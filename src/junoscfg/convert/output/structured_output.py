@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from junoscfg.convert.output.dict_walker import DictWalker, WalkOutput
+from junoscfg.convert.output.dict_walker import Below, DictWalker, WalkOutput, path_words
 from junoscfg.display import ConfigStore, format_value, load_schema_tree, universal_statements
 
 
@@ -34,8 +34,10 @@ class StructuredWalkOutput(WalkOutput):
         self._withhold = withhold_values
 
     def emit(self, hierarchy: list[str]) -> None:
-        """Push *hierarchy* into the store as one path."""
-        self.config.push("\n".join(hierarchy))
+        """Push *hierarchy* into the store as one path; a relative selection whose
+        statement is its path alone leaves none, and writes nothing."""
+        if hierarchy:
+            self.config.push("\n".join(hierarchy))
 
     def emit_positional(self, path: list[str], value: str) -> None:
         """Push a positional-key leaf, merging *value* into the last segment."""
@@ -89,7 +91,12 @@ class StructuredWalkOutput(WalkOutput):
         for path_str in self._blocks:
             self.config.keep_block(path_str)
         dropped_tags: list[str] = []
+        untagged = 0
         for op, hierarchy in self._deferred:
+            if not hierarchy:
+                # A relative selection's own tag: no statement left to carry it.
+                untagged += 1
+                continue
             path_str = " ".join(hierarchy)
             if path_str in merged:
                 # `family` takes no tag on the device, and `inactive: family
@@ -112,6 +119,11 @@ class StructuredWalkOutput(WalkOutput):
                 f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
                 f"tags ({where}): it is written merged with each child"
             )
+        if untagged and self._diagnostic_sink is not None:
+            self._diagnostic_sink(
+                f"note: {untagged} tag(s) of the selected statement itself dropped: "
+                "relative structured output writes what lies below the path"
+            )
         if self._dropped_kept_tags and self._diagnostic_sink is not None:
             self._diagnostic_sink(
                 f"note: {self._dropped_kept_tags} meta command(s) on a statement kept whole "
@@ -129,14 +141,18 @@ def dict_to_structured(
     *,
     diagnostic_sink: Callable[[str], None] | None = None,
     withhold_values: bool = False,
+    below: list[str] | None = None,
 ) -> str:
-    """Render the IR dict as structured (curly-brace) configuration."""
+    """Render the IR dict as structured (curly-brace) configuration; with
+    *below*, *config* is the IR along that path and the statements are
+    written without its words (a relative selection)."""
     if not isinstance(config, dict):
         # The legacy rendered-text filter produced no structured statement
         # when a relative path selected a leaf rather than a hierarchy.
         return ""
 
-    output = StructuredWalkOutput(diagnostic_sink, withhold_values=withhold_values)
+    store = StructuredWalkOutput(diagnostic_sink, withhold_values=withhold_values)
+    output: WalkOutput = Below(store, path_words(below)) if below else store
     schema = load_schema_tree()
     walker = DictWalker(output, schema)
 
@@ -159,5 +175,5 @@ def dict_to_structured(
     walker._walk(filtered, [], schema_node=schema)  # noqa: SLF001
     output.finalize()
 
-    result = str(output.config)
+    result = str(store.config)
     return result if result else ""

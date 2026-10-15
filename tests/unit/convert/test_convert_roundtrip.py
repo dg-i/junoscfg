@@ -198,6 +198,55 @@ class TestNoWriterChangesTheIrItIsGiven:
         assert repr(held) == repr(selection)
         assert output == from_dict(copy.deepcopy(selection), fmt, **options)
 
+    @pytest.mark.parametrize("fmt", ["json", "yaml-new", "yaml", "set", "structured"])
+    @pytest.mark.parametrize(
+        ("ir", "below"),
+        [
+            (
+                {
+                    "system": {
+                        "syslog": {"host": [{"explicit-priority": {}, "name": "198.51.100.9"}]}
+                    }
+                },
+                ["system", "syslog", "host"],
+            ),
+            (
+                {"system": {"login": {"user": [{"name": "admin", "class": ["super-user"]}]}}},
+                ["system", "login"],
+            ),
+            ({"system": {"@": {"inactive": True}, "services": {"ssh": True}}}, ["system", "@"]),
+            ({"groups": {"group": [{"name": "G1", "system": {"host-name": "r2"}}]}}, ["groups"]),
+        ],
+        ids=["a-list", "a-mapping", "an-annotation", "groups"],
+    )
+    def test_a_selection_below_its_path_is_left_unchanged(
+        self, ir: dict[str, Any], below: list[str], fmt: str
+    ) -> None:
+        """A relative selection reaches every writer as the IR along its path:
+        the writer spells its own copy (relative-selections TC5)."""
+        held = copy.deepcopy(ir)
+        output = from_dict(held, fmt, below=below)
+        assert repr(held) == repr(ir)
+        assert output == from_dict(copy.deepcopy(ir), fmt, below=below)
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (
+                [{"explicit-priority": {}, "name": "x"}],
+                [{"name": "x", "explicit-priority": [None]}],
+            ),
+            (True, [None]),
+            ({}, [None]),
+        ],
+        ids=["a-list", "true", "empty"],
+    )
+    def test_a_bare_value_keeps_its_meaning(self, value: Any, expected: Any) -> None:
+        """`from_dict(value, wrap=False)` still writes a bare value as the value
+        under its path's last key (spec conversion/path-filtering;
+        relative-selections TC6)."""
+        assert json.loads(from_dict(value, "json", wrap=False)) == expected
+
     @pytest.mark.parametrize(
         "name", [name for name, (_, expected) in _HAND_BUILT.items() if expected is not None]
     )

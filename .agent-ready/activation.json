@@ -90,7 +90,8 @@
     "change/yaml-new-format": "parked",
     "change/relative-null-flags": "parked",
     "change/yaml-new-alias-cycles": "parked",
-    "change/yaml-depth-ceiling": "parked"
+    "change/yaml-depth-ceiling": "parked",
+    "change/relative-selections": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -174,6 +175,7 @@
     "yaml-new-format": "parked",
     "relative-null-flags": "parked",
     "yaml-new-alias-cycles": "parked",
-    "yaml-depth-ceiling": "parked"
+    "yaml-depth-ceiling": "parked",
+    "relative-selections": "ready"
   }
 }

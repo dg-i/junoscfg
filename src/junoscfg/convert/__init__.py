@@ -101,8 +101,9 @@ def pipeline_result(
         anon_config: An :class:`~junoscfg.anonymize.config.AnonymizeConfig`
                      instance, or None to skip anonymization.
         path: Dot-separated path to select before rendering.
-        relative: If True, render only the selected subtree rather than
-                  rebuilding its parent hierarchy. Requires *path*.
+        relative: If True, write what the absolute output writes at *path*,
+                  without the path (spec conversion/path-filtering). Requires
+                  *path*.
 
     Returns:
         The converted output and immutable diagnostics.
@@ -241,25 +242,53 @@ def _convert(
             for item in (*result.errors, *result.warnings)
         )
 
+    below: list[str] | None = None
     if path:
         from junoscfg.display import filter_dict_by_path
 
-        filtered = filter_dict_by_path(ir, path.split("."), relative=relative)
-        if filtered is None:
+        keys = _path_keys(ir, path.split("."))
+        if keys is None:
             return ConversionResult(output="", diagnostics=tuple(diagnostics))
-        ir = filtered
+        ir = filter_dict_by_path(ir, keys)
+        below = keys if relative else None
 
-    # Relative output is the bare subtree; only the JSON and YAML writers wrap.
+    # A relative selection is written as absolute output writes it, without its path.
     output = from_dict(
         ir,
         to_format,
-        wrap=not relative,
+        below=below,
         withhold_values=anonymizing,
         diagnostic_sink=lambda message: diagnostics.append(
             Diagnostic(source="structured-output", message=message, severity="note")
         ),
     )
     return ConversionResult(output=output, diagnostics=tuple(diagnostics))
+
+
+def _path_keys(ir: dict[str, Any], steps: list[str]) -> list[str] | None:
+    """The keys a dotted path names in *ir*, or ``None`` when one is absent.
+
+    Each step is matched against the keys present, the exact key first; a key
+    holding a dot (`ieee-802.1`, `inet.0`) is matched by joining steps only
+    where the shorter key does not lead to the path's end, so no path that
+    selected a value selects another.
+    """
+    node: Any = ir.get("configuration", ir)
+
+    def resolve(node: Any, rest: list[str]) -> list[str] | None:
+        if not rest:
+            return []
+        if not isinstance(node, dict):
+            return None
+        for length in range(1, len(rest) + 1):
+            key = ".".join(rest[:length])
+            if key in node:
+                tail = resolve(node[key], rest[length:])
+                if tail is not None:
+                    return [key, *tail]
+        return None
+
+    return resolve(node, steps)
 
 
 def validate_ir(config: dict[str, Any]) -> Any:

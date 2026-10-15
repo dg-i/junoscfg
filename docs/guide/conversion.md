@@ -207,12 +207,26 @@ print(filtered)
 # set domain-name example.com
 ```
 
-Path filtering is also available via the CLI with `--path` and `--relative`:
+These text filters match the path's words as written, without the schema; use
+`convert_config(path=..., relative=...)` or the CLI for output that knows the
+schema context. Path filtering is also available via the CLI with `--path` and
+`--relative`:
 
 ```bash
 junoscfg -i json -e set config.json --path "system.syslog"
 junoscfg -i json -e set config.json --path "system.syslog" --relative
 ```
+
+`convert_config(path=..., relative=True)` and `--relative` write what the absolute
+output writes at the path, without the path, in every format: JSON, `yaml-new` and
+`yaml` write the value there (a single leaf, a flag or an annotation spelled as the
+absolute output spells it), set and structured the statements less the words the
+path is written as (a list name the schema hides, such as `interface` under
+`interfaces`, has none), so a selected list writes its entries' statements and a
+selected leaf its value. A path whose value is `null` writes it; only a missing key
+writes nothing. A key holding a dot (`ieee-802.1`, `inet.0`) is matched as written,
+the exact key first. Structured output notes a tag on the selected statement itself,
+which it cannot write without the path; set writes it as a bare command.
 
 ## Operational Attributes
 

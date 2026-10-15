@@ -1,0 +1,62 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion]
+removes: >-
+  the pipeline's relative rendering of a bare subtree (wrap=False) with no schema context;
+  the pipeline's use of the bare-value spelling (from_dict wrap=False keeps it);
+  the rule that a relative path whose value is null selects nothing
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config and convert_config_result with path= (and relative=True)
+      change output only where it was wrong or empty: relative json and yaml-new now spell a
+      selection as absolute output does at that path (single leaves coerced, an annotation's
+      booleans kept); relative set and structured write the absolute statements without the
+      path's words (a list name the schema hides is no longer printed, a selected list
+      writes its statements instead of a Python repr or nothing, a selected leaf writes its
+      value in structured as set already did); a relative path to a null value writes it where it
+      wrote nothing (absolute output already did); a key holding a dot can be selected where nothing was written. AGENTS.md
+      promises equivalent, not identical, output: relative json, yaml-new and yaml equal
+      the absolute value at the path, and relative set and structured, put back under the
+      path's words, read as the absolute output; a tag on the selected statement itself has
+      no statement to carry it relative (set writes a bare command, structured notes the
+      drop, where base wrote a meaningless `inactive;`). Two outputs a test pinned change on purpose: a relative structured
+      leaf writes its value (`r1;`) where it wrote nothing, and relative json and yaml-new of
+      groups read from set input write the list of groups where they wrote
+      {"group": [...]}. No signature, name or accepted input changes on the
+      named surface. Patch, as AGENTS.md rules for everything that is not a break.
+    migration: >-
+      None required. A script comparing relative output text byte for byte updates its
+      expected text; junoscfg.convert.from_dict(value, fmt, wrap=False) keeps its meaning
+      for callers rendering a bare value.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg convert --path [--relative]
+      keeps its options and exit codes; only output that was wrong or empty changes.
+    migration: None required; a script comparing the text updates its expected output.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - changelog.d/+relative-selections.bugfix.md
+  - docs/guide/conversion.md
+  - docs/guide/cli.md
+  - openspec/specs/conversion/path-filtering/spec.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/display/CONTRACT.md
+  - src/junoscfg/convert/__init__.py
+  - src/junoscfg/convert/output/__init__.py
+  - src/junoscfg/convert/output/dict_walker.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/convert/output/set_output.py
+  - src/junoscfg/convert/output/structured_output.py
+  - src/junoscfg/convert/output/yaml_output.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_convert_roundtrip.py
+  - tests/corpus/test_device_renderings.py
+  dependencies: [openspec/changes/archive/2026-10-15-relative-null-flags]
+  changelog: changelog.d/+relative-selections.bugfix.md
+  generated-records: []

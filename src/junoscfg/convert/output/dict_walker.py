@@ -85,6 +85,99 @@ class WalkOutput(ABC):
         """Called after all emit calls are complete."""
 
 
+def path_words(path: list[str]) -> list[str]:
+    """The words a configuration path's keys are written as in set and
+    structured output: each key as the walker spells it, without the list
+    names the schema hides (`interface` under `interfaces`, `group` under
+    `groups`, a list hiding its own key). A key no statement names (an
+    annotation key, the kept-statements key) is passed over by `Below`."""
+    root = load_schema_tree()
+    node: dict[str, Any] | None = root
+    words: list[str] = []
+    for key in path:
+        set_key = resolve_key_alias(key)
+        child = schema_child(node, set_key, root)
+        hidden = get_transparent_child(node) == key or is_transparent_list_key(child)
+        if not hidden:
+            words.append(set_key)
+        node = child
+    return words
+
+
+class Below(WalkOutput):
+    """*inner* given every path without the leading *words*: a relative
+    selection written as absolute output writes it, without its path.
+
+    A word the path holds but a statement does not (a key the schema hides
+    in a way `path_words` does not model) is passed over, never matched
+    against what follows it.
+    """
+
+    def __init__(self, inner: WalkOutput, words: list[str]) -> None:
+        """Strip *words* from each path before *inner* receives it."""
+        self.inner = inner
+        self._words = words
+
+    def _below(self, hierarchy: list[str]) -> list[str]:
+        rest = list(hierarchy)
+        for word in self._words:
+            if not rest:
+                break
+            if rest[0] == word:
+                rest.pop(0)
+            elif rest[0].startswith(word + " "):
+                rest[0] = rest[0][len(word) + 1 :]
+        return rest
+
+    def emit(self, hierarchy: list[str]) -> None:
+        """Emit *hierarchy* below the words."""
+        self.inner.emit(self._below(hierarchy))
+
+    def emit_positional(self, path: list[str], value: str) -> None:
+        """Emit a positional leaf below the words."""
+        below = self._below(path)
+        if below:
+            self.inner.emit_positional(below, value)
+        else:
+            self.inner.emit([value])
+
+    def emit_deactivate(self, hierarchy: list[str]) -> None:
+        """Deactivate *hierarchy* below the words."""
+        self.inner.emit_deactivate(self._below(hierarchy))
+
+    def emit_replace(self, hierarchy: list[str]) -> None:
+        """Replace *hierarchy* below the words."""
+        self.inner.emit_replace(self._below(hierarchy))
+
+    def emit_protect(self, hierarchy: list[str]) -> None:
+        """Protect *hierarchy* below the words."""
+        self.inner.emit_protect(self._below(hierarchy))
+
+    def emit_activate(self, hierarchy: list[str]) -> None:
+        """Activate *hierarchy* below the words."""
+        self.inner.emit_activate(self._below(hierarchy))
+
+    def emit_delete(self, hierarchy: list[str]) -> None:
+        """Delete *hierarchy* below the words."""
+        self.inner.emit_delete(self._below(hierarchy))
+
+    def keep_block(self, hierarchy: list[str]) -> None:
+        """Keep *hierarchy* a block, below the words."""
+        self.inner.keep_block(self._below(hierarchy))
+
+    def drop_kept_tag(self) -> None:
+        """Pass a dropped tag on."""
+        self.inner.drop_kept_tag()
+
+    def mark_merged(self, hierarchy: list[str]) -> None:
+        """Mark *hierarchy* merged, below the words."""
+        self.inner.mark_merged(self._below(hierarchy))
+
+    def finalize(self) -> None:
+        """Finalize *inner*."""
+        self.inner.finalize()
+
+
 class DictWalker:
     """Walk a Junos JSON dict IR and emit output via a strategy object."""
 
@@ -619,7 +712,8 @@ class DictWalker:
         """Check if the output strategy is structured mode (for oneliner logic)."""
         from junoscfg.convert.output.structured_output import StructuredWalkOutput
 
-        return isinstance(self._output, StructuredWalkOutput)
+        output = self._output.inner if isinstance(self._output, Below) else self._output
+        return isinstance(output, StructuredWalkOutput)
 
     @staticmethod
     def _read_attrs(hash_: dict[str, Any]) -> set[str]:
