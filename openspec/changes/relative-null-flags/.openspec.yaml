@@ -21,7 +21,11 @@ declared-break:
       rules for everything that is not a break on a named surface.
     migration: >-
       None required. A caller comparing relative output text byte for byte
-      updates its expected text to the [null] spelling absolute output uses.
+      updates its expected text to the [null] spelling absolute output uses; a
+      program testing the parsed relative object's truthiness sees [null]
+      (truthy) where it saw {} (falsy). junoscfg.convert.from_dict(value,
+      wrap=False), a secondary door, now spells a bare {} as [null] too:
+      wrap=False means a relative selection, the value under its last path key.
   cli:
     why: >-
       Not a break, for the reasons given for consumer: junoscfg convert -e json

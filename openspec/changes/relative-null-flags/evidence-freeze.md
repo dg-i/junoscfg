@@ -43,8 +43,8 @@ structured and `yaml` output; absolute output.
 
 ## Acceptance criteria
 
-`test_a_relative_selection_is_spelled_as_absolute_output_spells_it` observed failing at the
-base and passing at head; existing TestPathFiltering and yaml-new tests pass; device
+Every test the delta names observed failing at the base (purity rows pass there by design)
+and passing at head; existing TestPathFiltering and yaml-new tests pass; device
 comparison 0 differences (no path selection); relative probe differences all explained.
 Independent Test/Challenge on the test and a fresh Reviewer record verdicts in review.md.
 
@@ -64,7 +64,14 @@ None blocking. Reported: C5 (coercion), C6/C8 (device question).
 
 ## Delta log
 
-- Freeze established at the commit adding this file, on base `ea18fab`.
+- Freeze established at the commit adding this file (`9da2785`), on base `ea18fab`.
+- Test/Challenge delta (report on `af71973`, review.md TC1 to TC13, S1 to S4). Consistency:
+  no owner instruction changes; the draft requirement is narrowed to presence flags and key
+  order with the groups wrapper and coercion named unchanged (S1, S4), `[true]` follows
+  absolute output (S2), annotations left as written (S3), a bare `{}` under `wrap=False` is
+  `[null]` (TC10 option b). Criteria added: writer purity for bare selections (TC3), the
+  rows of TC4 to TC7 and TC9. Invalidated: the acceptance-test list; rerun: the red run
+  (14 failed at base, 636 passed in TestPathFiltering and the purity class).
 
 ## Scope and completion
 

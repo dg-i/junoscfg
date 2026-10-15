@@ -176,6 +176,28 @@ class TestNoWriterChangesTheIrItIsGiven:
         assert repr(ir) == repr(spelling)
         assert output == from_dict(copy.deepcopy(spelling), fmt, **options)
 
+    @pytest.mark.parametrize(("fmt", "options"), [door for door in _WRITER_DOORS if door.values[1]])
+    @pytest.mark.parametrize(
+        "selection",
+        [
+            [{"explicit-priority": {}, "name": "198.51.100.9", "contents": [{"any": True}]}],
+            [{"name": "198.51.100.10", "@": {"inactive": True}, "explicit-priority": True}],
+            [True],
+            {},
+            True,
+        ],
+        ids=["a-list", "an-annotated-list", "a-list-of-true", "empty", "true"],
+    )
+    def test_a_bare_selection_is_left_unchanged(
+        self, selection: Any, fmt: str, options: dict[str, Any]
+    ) -> None:
+        """A relative selection that is not a mapping is the writer's input too:
+        its flags are spelled on the writer's copy (Test/Challenge finding 3)."""
+        held = copy.deepcopy(selection)
+        output = from_dict(held, fmt, **options)
+        assert repr(held) == repr(selection)
+        assert output == from_dict(copy.deepcopy(selection), fmt, **options)
+
     @pytest.mark.parametrize(
         "name", [name for name, (_, expected) in _HAND_BUILT.items() if expected is not None]
     )
