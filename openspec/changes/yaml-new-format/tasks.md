@@ -12,5 +12,5 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it. Fresh Reviewer: Changes required on c95e67f (R1–R3), correction review on a55c960 (N1 wording), Merge after 84aa719; review.md.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.

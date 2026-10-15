@@ -1,10 +1,3 @@
-<!-- Use this as the structure for your output file. Fill in the sections. -->
-<!-- This schema template is maintained by agent-ready; local edits can conflict with updates.
-Completed change artefacts belong to the application.
-See docs/how-to/template-ownership.md before editing; review every update diff. -->
-
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -12,18 +5,23 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 1470, "binary_files": 0, "files": 46, "removed": 166} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | {"archived": false, "base": "332523c6aa9576930ee7afe35226d5e4bdd2930d", "carry": {}, "change": "yaml-new-format", "checks": [{"checkpoint": "b0ea961a9daf71a976e4beaa49ffe3789a9b6936065c6264c2378195e72222af", "duration_ms": 73993.10454103397, "evidence": ".agent-ready/verification/97435771856c49688c3bd40429c20d97.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "daff7bbb4cec54084e31b275cec6a564cd00cb54ddc41c2b25ae1fb93664ace0", "duration_ms": 76333.5006669513, "evidence": ".agent-ready/verification/40c755b8895e4007b7e2da91402c4b92.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "bfdc40a29a60e85321a6f283618e165f7c1c6efb78ab53b6fbe9c6e3b8794650", "duration_ms": 262909.1632500058, "evidence": ".agent-ready/verification/71eed6dcf46b453e998545d532eda01d.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "f14a789e1df77904563f4c9911516205bae03f31e19d1aa28113d0af3f142883", "duration_ms": 52848.300874989945, "evidence": ".agent-ready/verification/a332e7620e1947c1afab8c71eb9f8c7c.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "daff7bbb4cec54084e31b275cec6a564cd00cb54ddc41c2b25ae1fb93664ace0", "duration_ms": 355931.2632920337, "evidence": ".agent-ready/verification/39be8eb6462049fdb96de4cd2c6b157a.json", "exit_status": 0, "reused": false, "tier": "full"}, {"checkpoint": "3a17920400e241f0087223c4a7ea44ab2941f8f169670dcd83c46245b47067dc", "duration_ms": 73933.00725001609, "evidence": ".agent-ready/verification/504edc831bb647e8ab6d3ae22b310899.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "8c9fc44fc5028e5bd710ae50fefad428f82ca0906c301a5c6dfcb3e69ff7576a", "duration_ms": 51119.707332982216, "evidence": ".agent-ready/verification/fc2a6ee555ab4901a925ae26411de1c4.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "abf95137a0ab8748aac59610f706d99694f86513282133261728e17af4d31d45", "duration_ms": 165480.92137498315, "evidence": ".agent-ready/verification/5c082ed45f1c402288218f052c5bba44.json", "exit_status": 0, "reused": false, "tier": "full"}], "head": "95b6820c5a6fe387185fc71edc4f8d58bb57f046", "ledger_sha256": "3e45c4b9b9660f192a99b2ace3cd83015691d2a473d9a8b1536468f41995ea43", "observations": {"active_agent_minutes": {"reason": "UNMEASURED", "value": null}, "cache_tokens": {"reason": "UNMEASURED", "value": null}, "escaped_regressions": {"reason": "UNMEASURED", "value": null}, "expensive_runs": {"events": ["381645c642c338fd6977e67d47e681f46431bc32282d44d9e2d2be1240100609", "656367e610f56019d85568bf5025a65ca0c80865de68778d7c42eb24c58b7057", "b6a874c6b5e241f5ec73b113bdaa065dcb7f7b56b4701009c0011af4118a5bf9", "8e86ee0222bd8e099028f28f33ff5253ff1a95c399c4eba8186d61357f5777ab"], "value": 4}, "full_runs": {"events": ["0fd85cc28b3504045cea3ccfdfc054101a80c9d819a49f674792b6bd80f3078e", "7dc2f942d76dad50ce96118fde09b23af40789e5c894b37eee5433d3b8e25e3b", "0c41d2beb9e1c99d83389e9e3530cad0a3485cb3c1f5d61661aa7577a9bbe255", "314d9613b37b493e0cb91aeba8c500d7789de9a393c9fa792cd471290b6f4e31"], "value": 4}, "intent_to_archive_minutes": {"reason": "UNMEASURED", "value": null}, "output_tokens": {"reason": "UNMEASURED", "value": null}, "post_review_code_churn": {"reason": "UNMEASURED", "value": null}, "review_findings": {"reason": "UNMEASURED", "value": null}}, "progress": [{"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}, {"completed": 5, "total": 8}], "roles": [], "schema": "lifecycle-summary/1"} |
+| YAML vs JSON shape, catalogue (484 shape/reader conversions; measure_base.py, test_the_output_is_the_json_object) | yaml: 388 identical, 57 key order only, 39 structural (base, unchanged); yaml-new: 484 identical to JSON, key order included |
+| yaml byte identity, base 332523c vs head | catalogue 1,936 of 1,936 conversions identical; device corpus 96 of 96 (tools/compare_device_outputs.py) |
+| canonical full checkpoint | a55c960: every check passed, 170 s, 13,288 passed / 22 xfailed / 37 skipped, coverage 93.11 %, schema-25.2 tiers exit 0; c95e67f: 360 s with the cold schema tiers |
+| review findings | Test/Challenge 8 binding + 12 advisory; Reviewer 3 binding + 7 advisory, correction review 1 binding (wording); all resolved; 4 pending owner decisions (PO-1 to PO-4) |
 | Context expansion: src/junoscfg/__init__.py, src/junoscfg/cli.py | the named surfaces gain the format and read the format table |
 | Context expansion: src/junoscfg/validate/validator.py, json_yaml_validator.py | the validation door for yaml-new (validation domain) |
 
