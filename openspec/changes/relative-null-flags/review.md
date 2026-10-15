@@ -41,6 +41,29 @@ this record:
 13. TC13 advisory: non-break reasoning sound; residual risk for a program testing the
     relative object's truthiness (`{}` falsy, `[null]` truthy). Added to `.openspec.yaml`.
 
+Fresh isolated Reviewer (separate agent, Opus, no Builder reasoning) on records head
+`a48d3d7`, code head `c929c31`, base `ea18fab`. Verdict: **Changes required**, records only;
+no code defect. It re-ran every stated figure and matched them (650 focused passed; 14 failed
+on base product code; device 0 of 96; relative probe 20 to 0 of 1,002; its own mutations M1
+and M3 caught, M2 survived as finding R4 notes). Resolutions in the records commit after this:
+
+14. R1 binding (records): the requirement promised annotations "left as written", but a
+    selection whose last key is an annotation (`--path system.@`) writes `{"inactive":
+    [null]}` relative where absolute writes `true` (executed; same at base, so not a
+    regression). Shared blind spot: neither tests nor probe select an `@` key. Resolved: the
+    delta names annotation selections among what it does not cover; pending owner decision
+    below, with a recommended default. No code change: a fix needs the last path key in the
+    writer, a parameter the ruling does not ask for.
+15. R2 advisory: with `wrap=True` a bare `True` is no longer special-cased
+    (`from_dict(True, "json")` writes `{"configuration": true}`, was `[null]`); no reader
+    produces it. Resolved: stated in `.openspec.yaml` (`removes`, consumer migration).
+16. R3 advisory: the non-break reasoning did not name `[true]` to `[[null]]`. Resolved: added
+    to `.openspec.yaml` consumer why; the decision stands.
+17. R4 advisory: the "unchanged" clauses were SHALL text no test pinned. Resolved: they are
+    now a statement of what the requirement does not cover, not a SHALL.
+18. R5 advisory, pre-existing: keys holding a dot (`ieee-802.1`) cannot be selected by a
+    path. Resolved: named in the delta's exclusions; pending owner decision below.
+
 ## Evidence
 
 - Canonical full checkpoint at `10a53b2` (code head `c929c31`): every check passed, 352 s;
@@ -78,5 +101,9 @@ within the owner's PO-1 ruling and adds no behaviour beyond it.
   (`set "[{'explicit-priority': {}, ...}]"`). Recommended default: backlog entry.
 - TC12: a selected `None` value writes nothing in relative output. Recommended default:
   backlog entry beside TC8.
+- R1: a relative selection whose last path key is an annotation (`@`, `@leaf`) spells its
+  booleans `[null]` (pre-existing). Recommended default: backlog entry; fix by passing the
+  last path key to the writer, which then leaves an annotation selection as written.
+- R5: a key holding a dot cannot be addressed by `--path`. Recommended default: backlog entry.
 - C8 (device question, open, not acted on): does a QFX5120 on 25.2R2-S1.5 accept `[null]`
   for `system services netconf ssh` via `load merge json`?

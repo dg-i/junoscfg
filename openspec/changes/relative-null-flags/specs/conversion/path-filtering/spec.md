@@ -9,11 +9,12 @@ and list-entry key order as the absolute output writes them at the corresponding
 flag inside a list (`[true]`) follows absolute output (`[[null]]`), whose device spelling
 stays open (NEW-R2); `name` leads every selected list entry; an `@` annotation's values are
 left as written. The selection is the value under its last path key: `junoscfg.convert.
-from_dict(value, "json", wrap=False)` spells a bare `{}` as `[null]`. Relative output stays
-unchanged by this requirement in what it does not name: the set reader's `groups` wrapper
-(`{"group": [...]}` relative, a list absolute) and schema-context scalar-leaf coercion
-(`"class": ["super-user"]` stays a list relative). The writer leaves the selection it is
-given unchanged.
+from_dict(value, "json", wrap=False)` spells a bare `{}` as `[null]`. The writer leaves the
+selection it is given unchanged. This requirement does not cover, and leaves as they were at
+`ea18fab`: a selection whose last path key is an annotation (`@`, `@leaf`), whose booleans
+are spelled `[null]` relative; the set reader's `groups` wrapper (`{"group": [...]}`
+relative, a list absolute); schema-context scalar-leaf coercion (`"class": ["super-user"]`
+stays a list relative); and keys holding a dot, which a path cannot address.
 Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_spelled_as_absolute_output_spells_it`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_annotation_in_a_selected_list_stays_boolean`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_the_scenarios_are_written_as_specified`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_selected_group_list_from_set_input`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_anonymized_selection_is_spelled_alike`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_bare_selection_is_left_unchanged`
 
 #### Scenario: A selected list holding an empty-container flag
