@@ -66,5 +66,5 @@ def junos_yaml_to_dict(source: str) -> dict[str, Any]:
     data = yaml.safe_load(source)
     found = find_non_json_value(data)
     if found is not None:
-        raise ValueError(f"Invalid input: a YAML {found.kind} {found.where} {found.reason}")
+        raise ValueError(found.read_refusal)
     return ir_from_junos_json_object(unshared(data), label="YAML")

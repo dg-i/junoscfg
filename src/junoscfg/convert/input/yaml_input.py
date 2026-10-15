@@ -34,7 +34,7 @@ def yaml_to_dict(source: str) -> dict[str, Any]:
         raise ValueError("YAML input is empty or not a mapping.")
     found = find_non_json_value(data, scalars=False, unwalked=_STRIP_PREFIXES)
     if found is not None:
-        raise ValueError(f"Invalid input: a YAML {found.kind} {found.where} {found.reason}")
+        raise ValueError(found.read_refusal)
     cleaned = _strip_meta_keys(data)
     config = find_configuration(cleaned)
     if config is None:

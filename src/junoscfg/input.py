@@ -72,6 +72,11 @@ class NonJsonValue(NamedTuple):
         """``at <path>``, or ``at the top level`` for the document itself."""
         return f"at {self.path}" if self.path else "at the top level"
 
+    @property
+    def read_refusal(self) -> str:
+        """The message a reader refuses the document with."""
+        return f"Invalid input: a YAML {self.kind} {self.where} {self.reason}"
+
 
 def find_non_json_value(
     data: Any, *, scalars: bool = True, unwalked: tuple[str, ...] = ()
@@ -128,7 +133,12 @@ def _visit(
                     continue
             found = _visit(value, depth + 1, open_, scalars, unwalked)
             if found is not None:
-                return found._replace(path=f"{step}.{found.path}" if found.path else str(step))
+                # A key that is not a string is named by its kind, never its value.
+                if isinstance(data, list) or isinstance(step, str):
+                    place = str(step)
+                else:
+                    place = f"<{_kind(step)} key>"
+                return found._replace(path=f"{place}.{found.path}" if found.path else place)
         return None
     finally:
         open_.discard(id(data))

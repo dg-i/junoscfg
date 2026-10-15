@@ -21,7 +21,8 @@ Shared lexical checks and normalization for configuration readers.
   shared through an alias is walked at every place, however often, as JSON
   would write it out; junoscfg assumes its YAML input is not hostile, so an
   alias bomb costs its expansion. `NonJsonValue.where` is `at <path>` or `at
-  the top level`. The yaml-new reader, writer and validation share it, and the
+  the top level`, and `read_refusal` the message both readers raise; a key
+  that is not a string is named in a path by its kind (`<date key>`). The yaml-new reader, writer and validation share it, and the
   `yaml` reader with `scalars=False` and its meta-key prefixes; the path never
   holds the offending value.
 

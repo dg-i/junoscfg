@@ -28,6 +28,30 @@ Verdict: changes required. Resolutions, all in the tests and records commit afte
    `TestFindNonJsonValue::test_a_cycle_closing_at_step_65_is_a_cycle`,
    `TestConvertReadsAndWrites::test_detected_yaml_refuses_a_cycle`.
 
+Fresh isolated Reviewer (separate agent, Opus, no Builder reasoning) on records head `87b1e30`,
+code head `431eb62`, base `adb6fb7`; probes under
+`private_test_data/makeover-work/yaml-depth-ceiling/review/`. Verdict: **Changes required**,
+one binding finding (records only). It found the walk correct, every door as specified,
+valid output byte-identical (its own base worktree: 0 of 96, 0 of 2,435, 0 of 240), the
+figures reproducible and the patch call sound. Resolutions in the follow-up commits:
+
+9. R1 binding (records): spec, guides and changelog promised a clean refusal for every value
+   past 64 levels, but text nested past about 489 levels fails inside PyYAML's loader with
+   `RecursionError` at every door (same at base). Fixed: both requirements, both guides and
+   the changelog say such text fails in PyYAML as at base (the owner rule leaves it).
+10. R2 advisory: the writer checked the IR, but the object stage spells a flag `true`/`{}` as
+    `[null]`, one step deeper, so it could write 65 levels its reader refuses. Fixed: the
+    writer also checks the object it writes;
+    `TestJunosYamlWriter::test_a_flag_at_step_64_is_refused_where_its_null_would_sit`
+    (failed before the fix).
+11. R3 advisory: with `scalars=False` a refusal path printed a non-string key's value
+    (`configuration.system.2026-10-15.0...`). Fixed: such a key is named by its kind
+    (`<date key>`);
+    `TestIrYamlReader::test_a_key_that_is_not_a_string_is_named_by_its_kind` (failed
+    before). The crash such keys cause later in `_strip_meta_keys` stays C5 for the owner.
+12. R4 advisory: the decision record omitted the meta-key exemption. Fixed.
+13. R5 advisory: the reader message was built twice. Fixed: `NonJsonValue.read_refusal`.
+
 ## Evidence
 
 - Canonical full checkpoint at `a10ba71` (code head `431eb62`): every check passed, 351 s;

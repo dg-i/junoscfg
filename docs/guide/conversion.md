@@ -263,7 +263,8 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
   document's root (no Junos configuration comes near it) is refused with its
   path. An alias of a single value is read as that value. junoscfg assumes its
   YAML input is not hostile: a file of nested aliases ("billion laughs") is
-  expanded at the cost of time and memory, so bound untrusted YAML before
+  expanded at the cost of time and memory, and text nested past about 490
+  levels fails inside PyYAML's own loader, so bound untrusted YAML before
   handing it to junoscfg.
 
 YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,

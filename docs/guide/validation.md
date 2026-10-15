@@ -58,7 +58,8 @@ result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 schema: `_ansible_*` and `_meta_*` keys are errors, as they are in JSON. A block
 shared through an alias is judged written out; a cycle, or a value nested more
 than 64 levels deep ([conversion](conversion.md#two-yaml-formats-yaml-and-yaml-new)),
-is an error naming its kind and path.
+is an error naming its kind and path (text nested past about 490 levels fails
+inside PyYAML's loader first).
 
 ```python
 from junoscfg import validate_config

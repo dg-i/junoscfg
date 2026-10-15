@@ -26,8 +26,9 @@ This record supersedes 2026-10-15-yaml-new-expands-aliases-within-a-bound.
 included, with no size bound. It refuses a mapping or list reached inside itself (kind
 `cycle`) and the first value more than 64 path steps below the document's root (kind `value`,
 "is nested deeper than 64 levels"), each at its path and never with a value. The yaml-new
-reader, writer and validation call it; the `yaml` reader calls it with `scalars=False`, so it
-refuses only a cycle and depth. 64 is the owner's figure. Measured at base `adb6fb7`: the
+reader, writer (on the IR and on the object it writes) and validation call it; the `yaml`
+reader calls it with `scalars=False`, so it refuses only a cycle and depth, outside the
+`_ansible_*`/`_meta_*` keys it drops unwalked. 64 is the owner's figure. Measured at base `adb6fb7`: the
 device corpus nests 17 levels, the shape catalogue 15, and the schema's deepest path 26
 counting `configuration` and list indexes. Scalar aliases and merge keys are expanded by
 PyYAML while loading (SC-B), left as they are and not backlogged.
@@ -38,6 +39,6 @@ junoscfg assumes its YAML input is not hostile. An alias bomb is expanded at eve
 can exhaust time and memory, so a caller handling untrusted YAML bounds it before calling
 junoscfg. Any reuse of a block reads and writes. No junoscfg stage meets nesting deeper than
 65 levels from a YAML door, so a cycle or deep alias chain is refused rather than crashing;
-text nested past about 490 levels still fails inside PyYAML's loader first. A document
+text nested past about 490 levels still fails inside PyYAML's loader first (left by the rule). A document
 nesting deeper than 64 levels is refused, although no Junos configuration does. Raising the
 ceiling is additive. JSON input keeps its own recursion (C6 of change yaml-depth-ceiling).
