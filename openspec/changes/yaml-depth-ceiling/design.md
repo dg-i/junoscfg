@@ -28,10 +28,12 @@ nested past about 490 levels fails inside `yaml.safe_load` at every door before 
    number in a message is the number of steps in the path it prints. The walk stops before
    descending past 64, so it recurses at most 65 levels and every later recursive stage
    (`unshared`, the object stage, the dumper, `_strip_meta_keys`) meets the same bound.
-3. **API.** `find_non_json_value(data, *, scalars=True) -> NonJsonValue | None`. With
-   `scalars=False` only cycles and depth are refused: the `yaml` reader's IR holds dates and
-   other YAML scalars, and its non-string keys are outside the rulings (C5 of the preflight).
-   No new exposed name; tach unchanged. `NonJsonValue` gains a `where` property ("at P", "at
+3. **API.** `find_non_json_value(data, *, scalars=True, unwalked=()) -> NonJsonValue |
+   None`. With `scalars=False` only cycles and depth are refused: the `yaml` reader's IR
+   holds dates and other YAML scalars, and its non-string keys are outside the rulings (C5
+   of the preflight). `unwalked` names key prefixes whose values the caller drops without
+   walking; the `yaml` reader passes its `_ansible`/`_meta_` prefixes, so the check covers
+   exactly what its own recursion walks (Test/Challenge SC1). No new exposed name. `NonJsonValue` gains a `where` property ("at P", "at
    the top level") so the three message builders stop repeating it.
 4. **Doors.** yaml-new reader, writer and validation keep their call and message shape. The
    `yaml` reader checks after its mapping test and before `_strip_meta_keys`, and raises

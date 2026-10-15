@@ -12,29 +12,39 @@ removes: >-
 declared-break:
   consumer:
     why: >-
-      Not a break. convert_config, convert_config_result and validate_config with yaml-new
-      accept every document they accepted that nests no deeper than 64 levels, and now also
-      the documents the two bounds refused (heavy reuse of a block, a block aliased deeper
-      than anything written). They refuse, newly, a document nesting deeper than 64 levels
-      (the refusal keeps ValueError, or an invalid result); with yaml input, convert_config
-      refuses a cycle with ValueError where it raised RecursionError, and a document deeper
-      than 64 levels it converted. No Junos configuration nests that deep: the schema's
-      deepest path is 25 steps below configuration (groups.group.logical-systems...),
-      the device corpus reaches 17 levels and the shape catalogue 15, so every refused
-      document is one no device holds, and AGENTS.md promises equivalent configurations,
-      not acceptance of arbitrary nesting. Text past about 490 levels already failed inside
-      PyYAML's loader, before junoscfg, and still does. Refusal wording changes (kind
-      `value`, reason "is nested deeper than 64 levels"; kind `alias` is gone). Patch, as
-      AGENTS.md rules for everything that is not a break on a named surface.
+      Not a break. What the named surfaces promise is the conversion and validation of Junos
+      configurations, and no configuration comes near 64 levels: the schema's deepest path
+      is 25 steps below configuration (no schema node recurses), about 30 with the
+      configuration wrapper, a flag's [null], an annotation and an rpc-reply wrapper; the
+      device corpus reaches 17 and the shape catalogue 15. convert_config,
+      convert_config_result and validate_config with yaml-new accept everything they did
+      that nests no deeper than 64 levels, and now also what the two bounds refused (heavy
+      reuse of a block, a block anchored beside configuration). Newly refused, all data no
+      configuration holds: with yaml-new input, or with yaml-new output from any reader, a
+      value nested 65 to about 490 levels deep anywhere in the document (deeper text
+      already failed inside PyYAML's loader at base, and still does), including keys beside
+      configuration; with yaml input, a cycle (it raised RecursionError) and such a value
+      outside the _ansible_* and _meta_* keys, whose content the reader drops unwalked, so
+      the Ansible collection's meta keys are left as they were. Refusals raise ValueError,
+      or an invalid result in validation; an anonymizing conversion re-raises a refusal as
+      RuntimeError with nothing quoted, as for every refusal at base. Refusal wording
+      changes (kind value, "is nested deeper than 64 levels"; kind alias is gone). Patch, as
+      AGENTS.md rules for everything that is not a break on a named surface; the owner may
+      overrule this to a minor.
     migration: >-
-      None required. A caller that relied on junoscfg to stop an alias bomb bounds untrusted
-      YAML before calling junoscfg; a caller matching refusal text matches the kind and path.
+      None for a configuration. A caller that relied on junoscfg to stop an alias bomb bounds
+      untrusted YAML before calling junoscfg; a caller keeping non-configuration data deeper
+      than 64 levels in a YAML document moves it under an _ansible_* or _meta_* key (yaml
+      input) or out of the document; a caller matching refusal text matches kind and path.
   cli:
     why: >-
       Not a break, for the reasons given for consumer: convert, audit and convert -v with -i
-      yaml-new, and convert and audit with -i yaml, keep their exit codes (refusal 2,
-      invalid 1); a yaml cycle exits 2 with a message where it crashed with a traceback.
-    migration: None required.
+      yaml-new, convert and audit with -i yaml or detected YAML, and convert -e yaml-new
+      from any input keep their exit codes for refusals (2, or 1 for -v and for an
+      anonymizing run's withheld failure); a document they newly refuse holds data 65 to
+      about 490 levels deep, which no configuration does; a yaml cycle exits 2 with a
+      message where it crashed with a traceback.
+    migration: None for a configuration; as for consumer otherwise.
 verification:
   state: ready
   planned-paths:

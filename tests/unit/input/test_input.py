@@ -164,6 +164,7 @@ class TestFindNonJsonValue:
             "configuration:\n  h: &h {name: a, contents: &c [x, y, z]}\n  i: *h\n  j: *c\n",
             "configuration: {a: &x [1], b: *x, c: *x, e: *x, f: *x, system: {host-name: r1}}",
             alias_bomb_yaml(5, 4),
+            alias_bomb_yaml(6, 10),
         ],
         ids=[
             "anchored-beside-the-configuration",
@@ -172,6 +173,7 @@ class TestFindNonJsonValue:
             "a-block-reached-three-times",
             "one-block-five-times",
             "four-to-the-fifth",
+            "ten-to-the-sixth",
         ],
     )
     def test_a_block_reused_any_number_of_times_is_walked_written_out(self, source: str) -> None:
@@ -228,6 +230,15 @@ class TestFindNonJsonValue:
         assert found is not None
         assert (found.kind, found.path, found.reason) == ("value", path, _TOO_DEEP)
         assert len(found.path.split(".")) == 65
+
+    def test_a_cycle_closing_at_step_65_is_a_cycle(self) -> None:
+        """The cycle test comes first: a mapping 64 steps deep that holds itself
+        is a cycle where it is reached again, not a value too deep."""
+        loop: dict = {}
+        loop["x"] = loop
+        found = find_non_json_value(nested_ir(64, loop))
+        assert found is not None
+        assert (found.kind, found.path) == ("cycle", "a" + ".a" * 63 + ".x")
 
     @pytest.mark.parametrize(
         ("document", "found"),

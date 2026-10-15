@@ -156,7 +156,14 @@ class TestYamlAsJsonValidation:
             ]
         reused = validator.validate_yaml_as_json(ANCHORED_BESIDE)
         assert reused == validator.validate_yaml_as_json(ANCHORED_BESIDE_WRITTEN_OUT)
-        assert validator.validate_yaml_as_json(hosts_sharing_contents(11)).valid is True
+        eleven = hosts_sharing_contents(11)
+        written_out = eleven.replace("contents: &c\n", "contents:\n").replace(
+            "        contents: *c\n",
+            "        contents:\n        - name: any\n          any: [null]\n",
+        )
+        assert validator.validate_yaml_as_json(eleven) == validator.validate_yaml_as_json(
+            written_out
+        )
 
     def test_an_empty_document_is_judged_as_json_null(self, validator):
         assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors

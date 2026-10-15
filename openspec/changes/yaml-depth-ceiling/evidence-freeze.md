@@ -28,8 +28,10 @@ old decision record is superseded (C1); the format-table requirement is modified
   1,461 catalogue conversions: 15 (14 json and yaml-new); the schema tree's deepest path,
   counting an index step for each list, is 25 steps below `configuration`
   (`groups.group.logical-systems.routing-instances.instance.bridge-domains.domain.protocols.
-  igmp-snooping.vlan.qualified-vlan.interface.static.group.source.name`), 26 with it. 64 is
-  more than twice every figure.
+  igmp-snooping.vlan.qualified-vlan.interface.static.group.source.name`), 26 with it; no
+  schema node recurses (Test/Challenge tc/schema_cycles.py). The scripts count no flag's
+  `[null]` index, `@` annotation or `rpc-reply` wrapper; those add at most about 4 steps
+  (about 30 in all). 64 is more than twice every figure.
 - Door probe (doors.py, doors-base.txt): yaml-new refuses a top-level anchor aliased under
   `configuration` (SC-A) and `NESTED_ONCE`; small and large bombs refused (SC-2); legacy
   `yaml` input raises `RecursionError` on a cycle and on the alias chain, hangs past 20 s on
@@ -75,6 +77,14 @@ None blocking. C5, C6, C7, C8 are reported.
 ## Delta log
 
 - Freeze established at the commit adding this file, on base `adb6fb7`.
+- Test/Challenge delta (report on `930e123`; review.md TC1 to TC8, SC1 to SC4). Consistency:
+  the rulings are unchanged. SC1: the `yaml` reader's check covers only what its cleanup
+  walks, so `_ansible_*`/`_meta_*` content is not refused (the owner rule fixes junoscfg's
+  own recursion only); the not-a-break reasoning is restated with the data newly refused
+  (keys beside `configuration`, `-e yaml-new` from any reader, anonymized `RuntimeError`).
+  Criteria added: rows for meta keys, a deep sibling, a cycle at step 65, `validate_config`
+  cycle, JSON input to yaml-new, two anonymized CLI doors, detected YAML, a 10^6-value
+  expansion. Invalidated: the acceptance-test list, design decision 3; rerun: the red run.
 
 ## Scope and completion
 

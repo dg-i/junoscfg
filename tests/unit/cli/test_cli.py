@@ -230,6 +230,13 @@ class TestConvertReadsAndWrites:
         assert said in result.stderr
         assert result.stdout == ""
 
+    def test_detected_yaml_refuses_a_cycle(self) -> None:
+        """YAML the CLI detects reads as `yaml`, which refuses a cycle with its
+        path, exit 2 (owner ruling on C5)."""
+        result = run(["convert", "-e", "json"], CYCLE)
+        assert result.exit_code == 2, result.output
+        assert "a YAML cycle at configuration.system.x has no JSON spelling" in result.stderr
+
     def test_a_yaml_new_shared_block_converts_as_written_out(self) -> None:
         shared = run(["convert", "-i", "yaml-new", "-e", "set"], SHARED_BLOCK)
         assert shared.exit_code == 0, shared.output

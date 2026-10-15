@@ -33,6 +33,7 @@ from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.aliases import (
     ANCHORED_BESIDE,
     ANCHORED_BESIDE_WRITTEN_OUT,
+    CYCLE,
     NESTED_ONCE,
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
@@ -528,6 +529,10 @@ class TestValidateConfig:
         assert deep.valid is False
         assert [(e.message, e.path) for e in deep.errors] == [
             ("YAML value is nested deeper than 64 levels", "configuration.system.x" + ".0" * 62)
+        ]
+        cycle = validate_config(CYCLE, format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
+        assert [(e.message, e.path) for e in cycle.errors] == [
+            ("YAML cycle has no JSON spelling", "configuration.system.x")
         ]
 
     def test_junos_yaml_is_judged_by_the_json_schema(self, artifacts_dir: str) -> None:
@@ -1068,6 +1073,38 @@ class TestIrYamlReader:
             assert str(raised.value) == said
             assert "acme" not in str(raised.value)
 
+    @pytest.mark.parametrize(
+        "source",
+        [
+            "configuration:\n  system:\n    host-name: r1\n    _meta_acme: "
+            + "[" * 70
+            + "x"
+            + "]" * 70,
+            "_ansible_acme: &a\n  x: *a\nconfiguration:\n  system:\n    host-name: r1\n",
+        ],
+        ids=["deep-under-a-meta-key", "a-cycle-under-an-ansible-key"],
+    )
+    def test_a_meta_key_subtree_is_not_walked(self, source: str) -> None:
+        """The cleanup drops `_ansible_*` and `_meta_*` keys without walking them,
+        so the reader does not refuse what they hold (Test/Challenge SC1): the
+        rule fixes junoscfg's own recursion and nothing beyond it."""
+        assert convert_config(source, from_format=Format.YAML, to_format=Format.SET) == (
+            "set system host-name r1\n"
+        )
+
+    def test_a_deep_sibling_of_the_configuration_is_refused(self) -> None:
+        """A key beside `configuration` is walked by the cleanup, so a value past
+        64 levels there is refused at its path, as in yaml-new."""
+        source = (
+            "facts: "
+            + "[" * 70
+            + "x"
+            + "]" * 70
+            + "\nconfiguration:\n  system:\n    host-name: r1\n"
+        )
+        with pytest.raises(ValueError, match="value at facts" + r"(\.0){64} is nested deeper"):
+            to_dict(source, "yaml")
+
     def test_a_shared_block_and_a_date_read_as_before(self) -> None:
         """Only cycles and depth are refused: a shared block reads written out,
         an unquoted date stays a date, a value 64 levels deep reads, and a
@@ -1440,6 +1477,29 @@ class TestJunosYamlWriter:
             from_dict(ir, "yaml-new", wrap=wrap)
         expected = said.format(top="configuration." if wrap else "", deep=deep)
         assert str(raised.value) == "Cannot write yaml-new: " + expected
+
+    def test_json_input_past_64_levels_is_refused_as_yaml_new(self) -> None:
+        """Any reader's IR reaches the writer's ceiling: JSON input nesting past
+        64 levels converts to JSON as before and is refused as yaml-new with its
+        path; an anonymizing conversion withholds it, as for every writer
+        refusal (RuntimeError)."""
+        source = json.dumps({"configuration": {"system": nested_ir(65)}})
+        assert convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
+        with pytest.raises(ValueError) as raised:
+            convert_config(source, from_format=Format.JSON, to_format=Format.YAML_NEW)
+        assert str(raised.value) == (
+            "Cannot write yaml-new: the value at configuration.system"
+            + ".a" * 63
+            + " is nested deeper than 64 levels"
+        )
+        with pytest.raises(RuntimeError) as withheld:
+            convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=Format.YAML_NEW,
+                anon_config=AnonymizeConfig(ips=True, salt="s"),
+            )
+        assert "system" not in str(withheld.value)
 
     def test_an_ir_64_levels_deep_and_any_reuse_is_written(self) -> None:
         """The deepest accepted IR, wrapped, and a block shared at several depths

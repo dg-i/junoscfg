@@ -408,6 +408,12 @@ DOORS: dict[str, Door] = {
     "cli-read-yaml-cycle": Door(
         _cli(_YAML_CYCLE, ["-i", "yaml", "-e", "json"]), _READ, "system.x-acme"
     ),
+    "cli-read-yaml-new-cycle": Door(
+        _cli(_YAML_CYCLE, ["-i", "yaml-new", "-e", "json"]), _READ, "system.x-acme"
+    ),
+    "cli-read-yaml-deep": Door(
+        _cli(_YAML_DEEP, ["-i", "yaml", "-e", "json"]), _READ, "system.x-acme"
+    ),
     # A meta key: the JSON schema yaml-new is judged by rejects it, the YAML one would not.
     "cli-validate-only-yaml-new": Door(
         _cli("configuration:\n  system:\n    _meta_acme: x\n", ["-i", "yaml-new", "-v"]),

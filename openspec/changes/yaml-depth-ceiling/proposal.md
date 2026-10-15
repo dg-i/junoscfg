@@ -18,11 +18,13 @@ of YAML aliases and PyYAML, and refuse harmless files (a top-level anchor aliase
   `validate_config`) and in the legacy `yaml` reader. Measured: device corpus 17 levels,
   shape catalogue 15, the schema's deepest path 25 plus the configuration wrapper.
 - Kept: the cycle refusal (kind `cycle`), now also in the legacy `yaml` reader.
-- `find_non_json_value(data, *, scalars=True)`: the `yaml` reader passes `scalars=False`
-  (its IR holds YAML's dates); no new name. Valid legacy `yaml` output is byte-identical.
+- `find_non_json_value(data, *, scalars=True, unwalked=())`: the `yaml` reader passes
+  `scalars=False` (its IR holds YAML's dates) and its meta-key prefixes, whose content it
+  drops unwalked; no new name. Valid legacy `yaml` output is byte-identical.
 - Records: specs, guides, contracts, API page, developer guide, ARCHITECTURE.md, a new
   decision record superseding 2026-10-15-yaml-new-expands-aliases-within-a-bound, changelog.
-- Not a break (`.openspec.yaml`): patch.
+- Not a break (`.openspec.yaml`): only data 65 to about 490 levels deep, which no
+  configuration holds, is newly refused; patch.
 
 ## Capabilities
 
