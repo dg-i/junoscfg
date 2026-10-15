@@ -30,7 +30,15 @@ Verdict: changes required. Resolutions, all in the tests and records commit afte
 
 ## Evidence
 
-Pending implementation.
+- Canonical full checkpoint at `a10ba71` (code head `431eb62`): every check passed, 351 s;
+  13,417 passed, 22 xfailed, 37 skipped; coverage 93.12 %; schema-25.2 tiers exit 0.
+- Byte identity base `adb6fb7` vs head: device corpus 0 of 96 conversions differ
+  (tools/compare_device_outputs.py); catalogue 0 of 2,435 (every shape x reader x
+  {set, structured, json, yaml, yaml-new}); device renderings written as yaml and yaml-new
+  and read back into every writer 0 of 240.
+- Door probe (doors-base.txt, doors-head.txt): the anchored-beside idiom, nested anchors and
+  a 4^5 bomb read at head; cycles refused at every door, the `yaml` reader included; values
+  past 64 levels refused with their path; the 10^9 bomb runs past 20 s (accepted).
 
 ## Specification challenges
 
