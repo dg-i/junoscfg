@@ -24,20 +24,24 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
 
     When *wrap* is true, wraps the config in ``{"configuration": ...}``.
     Dict input receives native-format normalization so the output can be
-    loaded on a Junos device. Relative path filtering may pass a scalar.
+    loaded on a Junos device. When *wrap* is false, *config* is a relative
+    selection, the value under its path's last key (a mapping, a list, ``{}``,
+    a flag or a scalar): its presence flags and entry key order are spelled as
+    under that key in the absolute object (spec conversion/path-filtering).
     The normalization works on the writer's own copy: the caller's IR is
     never changed (spec conversion/writers).
     """
+    config = copy.deepcopy(config)
     if isinstance(config, dict):
-        config = _native_groups(copy.deepcopy(config))
+        config = _native_groups(config)
         _normalize_presence_flags(config)
         tree = load_schema_tree()
         _coerce_scalar_leaves(config, tree, tree)
-        config = _ensure_name_first(config)
-    elif config is True:
-        # A selected presence flag is rendered the same way it was when the
-        # parent dict was normalized before the old output-text filter ran.
-        config = [None]
+    if not wrap:
+        held = {"selection": config}
+        _normalize_presence_flags(held)
+        config = held["selection"]
+    config = _ensure_name_first(config)
     return wrap_configuration(config) if wrap else config
 
 

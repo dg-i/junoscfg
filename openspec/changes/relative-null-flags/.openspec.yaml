@@ -1,0 +1,53 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion]
+removes: >-
+  none, because the change makes relative JSON output spell flags as absolute
+  output does; it removes only the special case for a selected `true`, which
+  the one rule covers for relative selections (wrap=False)
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config and convert_config_result with path= and
+      relative=True write [null] where they wrote {} or true for a selected
+      list or empty container, and put name first in list entries, in json and
+      yaml-new output. AGENTS.md promises equivalent, not identical, output:
+      {}, true and [null] load as the same configuration in every junoscfg
+      reader, and [null] is what absolute output and the vMX device already
+      write. A flag inside a list ([true], now [[null]] as absolute output
+      writes it) had no valid reading before or after; its device spelling
+      stays open (NEW-R2). No signature, name or accepted input changes. Patch, as AGENTS.md
+      rules for everything that is not a break on a named surface.
+    migration: >-
+      None required. A caller comparing relative output text byte for byte
+      updates its expected text to the [null] spelling absolute output uses; a
+      program testing the parsed relative object's truthiness sees [null]
+      (truthy) where it saw {} (falsy). junoscfg.convert.from_dict(value,
+      wrap=False), a secondary door, now spells a bare {} as [null] too:
+      wrap=False means a relative selection, the value under its last path key.
+      With wrap=True a non-mapping, which no reader produces, is no longer
+      special-cased: from_dict(True, "json") writes {"configuration": true}
+      where it wrote {"configuration": [null]}.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg convert -e json
+      or -e yaml-new with --path and --relative writes the same configuration
+      in the spelling absolute output uses; no option, choice or exit code
+      changes.
+    migration: >-
+      None required; a script comparing the text updates its expected output.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - changelog.d/+relative-null-flags.bugfix.md
+  - src/junoscfg/convert/output/__init__.py
+  - src/junoscfg/convert/output/json_output.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_convert_roundtrip.py
+  dependencies: []
+  changelog: changelog.d/+relative-null-flags.bugfix.md
+  generated-records: []

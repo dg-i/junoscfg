@@ -13,7 +13,7 @@ import datetime
 import json
 import random
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
@@ -26,8 +26,9 @@ from junoscfg import (
     convert_config_result,
     validate_config,
 )
+from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
-from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, to_dict
+from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, pipeline_result, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.artifacts import write_minimal_tree
 from tests.support.shapes import SHAPES, in_order, read_ir
@@ -185,6 +186,66 @@ def _put_back(output: str, fmt: Format, path: str) -> object:
     return value
 
 
+#: The writers whose output is the Junos JSON object.
+_OBJECT_WRITERS = [Format.JSON, Format.YAML_NEW]
+_OBJECT_WRITER_IDS = [writer.value for writer in _OBJECT_WRITERS]
+
+#: Presence flags spelled `{}`, `true` and `[true]`, `name` after a flag, and
+#: annotations whose `true` is a boolean, for relative selections.
+_SELECTED_SOURCE = json.dumps(
+    {
+        "configuration": {
+            "system": {
+                "services": {"ssh": True, "telnet": [True], "netconf": {"ssh": {}}},
+                "syslog": {
+                    "host": [
+                        {"explicit-priority": {}, "name": "198.51.100.9"},
+                        {"name": "198.51.100.10", "contents": [{"any": True, "name": "any"}]},
+                        {
+                            "@": {"inactive": True},
+                            "name": "198.51.100.11",
+                            "explicit-priority": True,
+                            "@explicit-priority": {"inactive": True},
+                        },
+                    ]
+                },
+            }
+        }
+    }
+)
+
+
+def _relative_and_absolute(
+    source: str,
+    to_format: Format,
+    path: str,
+    *,
+    from_format: Format = Format.JSON,
+    at: str | None = None,
+    anon_config: object | None = None,
+) -> tuple[Any, Any]:
+    """The loaded relative output for *path*, and the absolute output's value at
+    *at* (default *path*), both written to *to_format*."""
+    load = json.loads if to_format is Format.JSON else yaml.safe_load
+
+    def written(relative: bool) -> Any:
+        result = pipeline_result(
+            source,
+            from_format=from_format.value,
+            to_format=to_format.value,
+            validate=False,
+            anon_config=anon_config,
+            path=path,
+            relative=relative,
+        )
+        return load(result.output)
+
+    absolute = written(relative=False)["configuration"]
+    for token in (at or path).split("."):
+        absolute = absolute[token]
+    return written(relative=True), absolute
+
+
 class TestPathFiltering:
     """`path=` keeps one subtree of the IR; `relative=True` writes it without the path.
 
@@ -317,9 +378,8 @@ class TestPathFiltering:
     )
     def test_a_relative_selection_is_the_bare_subtree(self, path: str) -> None:
         """Relative yaml-new output is the JSON writer's bare object: a selected
-        presence flag, an empty container (`{}`) and a selected list, which the
-        JSON writer leaves as given, included (spec conversion/junos-json-yaml;
-        Test/Challenge B7)."""
+        presence flag, an empty container (`{}`) and a selected list included
+        (spec conversion/junos-json-yaml; Test/Challenge B7)."""
         source = json.dumps(
             {
                 "configuration": {
@@ -337,6 +397,72 @@ class TestPathFiltering:
             )
 
         assert yaml.safe_load(selected(Format.YAML_NEW)) == json.loads(selected(Format.JSON))
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "system",
+            "system.syslog",
+            "system.syslog.host",
+            "system.services.ssh",
+            "system.services.telnet",
+            "system.services.netconf.ssh",
+        ],
+        ids=["a-mapping", "a-mapping-holding-a-list", "a-list", "true", "a-list-of-true", "empty"],
+    )
+    def test_a_relative_selection_is_spelled_as_absolute_output_spells_it(
+        self, path: str, to_format: Format
+    ) -> None:
+        """Relative output spells presence flags and entry key order as absolute
+        output does at the path: `{}` and `true` flags are `[null]` and `name` leads
+        a list entry, in a selected list and as the selection itself, while an
+        annotation's `true` stays a boolean (spec conversion/path-filtering; owner
+        ruling on PO-1, yaml-new-format review B7; Test/Challenge findings 4, 5)."""
+        relative, absolute = _relative_and_absolute(_SELECTED_SOURCE, to_format, path)
+        assert json.dumps(relative) == json.dumps(absolute)
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    def test_an_annotation_in_a_selected_list_stays_boolean(self, to_format: Format) -> None:
+        """`[null]` is a flag's spelling, never an annotation's: `inactive: true`
+        turned into `[null]` would drop the deactivation (Test/Challenge finding 4)."""
+        relative, _ = _relative_and_absolute(_SELECTED_SOURCE, to_format, "system.syslog.host")
+        assert relative[2]["@"] == {"inactive": True}
+        assert relative[2]["@explicit-priority"] == {"inactive": True}
+        assert relative[2]["explicit-priority"] == [None]
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    def test_the_scenarios_are_written_as_specified(self, to_format: Format) -> None:
+        """The literal outputs of the path-filtering scenarios (Test/Challenge finding 7)."""
+        relative, _ = _relative_and_absolute(_SELECTED_SOURCE, to_format, "system.syslog.host")
+        assert relative[0] == {"name": "198.51.100.9", "explicit-priority": [None]}
+        empty, _ = _relative_and_absolute(
+            _SELECTED_SOURCE, to_format, "system.services.netconf.ssh"
+        )
+        assert empty == [None]
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    def test_a_selected_group_list_from_set_input(self, to_format: Format) -> None:
+        """The set reader's `{}` flags and `junoscfg:unplaced` `true` inside a selected
+        `groups.group` are written as absolute output writes `groups` (Test/Challenge
+        finding 6)."""
+        source = (
+            "set groups SAMPLE-GROUP system services ssh\n"
+            "set groups SAMPLE-GROUP apply-macro 12345 XXX XXXX XXX\n"
+        )
+        relative, absolute = _relative_and_absolute(
+            source, to_format, "groups.group", from_format=Format.SET, at="groups"
+        )
+        assert json.dumps(relative) == json.dumps(absolute)
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    def test_an_anonymized_selection_is_spelled_alike(self, to_format: Format) -> None:
+        """Anonymizing changes values, not spellings (Test/Challenge finding 9)."""
+        anonymize = AnonymizeConfig(ips=True)
+        relative, absolute = _relative_and_absolute(
+            _SELECTED_SOURCE, to_format, "system.syslog.host", anon_config=anonymize
+        )
+        assert json.dumps(relative) == json.dumps(absolute)
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
