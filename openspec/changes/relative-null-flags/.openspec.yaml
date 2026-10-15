@@ -4,3 +4,29 @@ assurance: economy
 type: bug
 zone: conversion
 domains: [conversion]
+removes: >-
+  none, because the change makes relative JSON output spell flags as absolute
+  output does; it removes only the special case for a selected `true`, which
+  the one rule now covers
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config and convert_config_result with path= and
+      relative=True write [null] where they wrote {} or true for a selected
+      list or empty container, and put name first in list entries, in json and
+      yaml-new output. AGENTS.md promises equivalent, not identical, output:
+      {}, true and [null] load as the same configuration in every junoscfg
+      reader, and [null] is what absolute output and the vMX device already
+      write. No signature, name or accepted input changes. Patch, as AGENTS.md
+      rules for everything that is not a break on a named surface.
+    migration: >-
+      None required. A caller comparing relative output text byte for byte
+      updates its expected text to the [null] spelling absolute output uses.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg convert -e json
+      or -e yaml-new with --path and --relative writes the same configuration
+      in the spelling absolute output uses; no option, choice or exit code
+      changes.
+    migration: >-
+      None required; a script comparing the text updates its expected output.
