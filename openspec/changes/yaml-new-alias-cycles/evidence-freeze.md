@@ -61,7 +61,7 @@ ruling directs; C5 and C8 are reported.
 
 - Roles required: instruction-integrity.md Assurance (Builder, independent Test/Challenge,
   fresh Reviewer, Finalizer).
-- Resume point: phase 3 design.
+- Resume point: phase 4 tests (design.md and the decision record committed).
 
 ## Delta log
 
