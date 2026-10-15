@@ -19,8 +19,14 @@ declared-break:
       writes its statements instead of a Python repr or nothing, a selected leaf writes its
       value in structured as set already did); a relative path to a null value writes it where it
       wrote nothing (absolute output already did); a key holding a dot can be selected where nothing was written. AGENTS.md
-      promises equivalent, not identical, output; every new output loads, put back under its
-      path, as the absolute output does. No signature, name or accepted input changes on the
+      promises equivalent, not identical, output: relative json, yaml-new and yaml equal
+      the absolute value at the path, and relative set and structured, put back under the
+      path's words, read as the absolute output; a tag on the selected statement itself has
+      no statement to carry it relative (set writes a bare command, structured notes the
+      drop, where base wrote a meaningless `inactive;`). Two outputs a test pinned change on purpose: a relative structured
+      leaf writes its value (`r1;`) where it wrote nothing, and relative json and yaml-new of
+      groups read from set input write the list of groups where they wrote
+      {"group": [...]}. No signature, name or accepted input changes on the
       named surface. Patch, as AGENTS.md rules for everything that is not a break.
     migration: >-
       None required. A script comparing relative output text byte for byte updates its

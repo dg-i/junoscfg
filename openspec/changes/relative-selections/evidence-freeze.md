@@ -65,6 +65,17 @@ None blocking.
 ## Delta log
 
 - Freeze established at the commit adding this file, on base `d3ed627`.
+- Test/Challenge delta (report on `1370b2c`; review.md TC1 to TC11, SC1 to SC5). The ruling
+  is unchanged. Criteria added: coercion of list and leaf selections; groups from set input
+  (json, yaml-new, set, structured); hidden list names as unit rows; a mid-path dotted key;
+  the exact key winning, and a dotted key beside a shorter one; paths through a list or a
+  leaf; the kept-statements key; annotation selections in set and structured (a note for
+  the dropped tag); writer purity under `below=`; `from_dict(wrap=False)` output; anonymized
+  coercion, annotation and set list; a stronger corpus law (set lines less the path's
+  words; structured put back and read; depth 4). Records: the claim of put-back narrowed,
+  the yaml writer's value stated, the dotted rule stated as the shortest join that resolves,
+  the two deliberate output changes named. Invalidated: the acceptance-test list; rerun:
+  the red run (64 failed at base for the intended reasons).
 
 ## Scope and completion
 

@@ -22,7 +22,7 @@ import yaml
 
 from junoscfg import Format, convert_config
 from tests.support.devices import DEVICE_DATA, FORMATS, captures, known_differences, recorded
-from tests.support.shapes import in_order
+from tests.support.shapes import in_order, read_ir
 
 CASES = [
     pytest.param(capture, suffix, id=f"{capture.key}.{suffix}")
@@ -258,31 +258,50 @@ def _value_at(document: Any, path: tuple[str, ...]) -> Any:
     return node
 
 
-def _one_prefix(absolute: list[str], relative: list[str]) -> bool:
-    """Whether every absolute line is its relative line with one common run of
-    words inserted after the command."""
-    if len(absolute) != len(relative):
-        return False
-    prefixes = set()
-    for whole, part in zip(absolute, relative, strict=True):
-        command, _, rest = part.partition(" ")
-        if not whole.startswith(command + " "):
-            return False
-        words = whole[len(command) + 1 :]
-        if rest:
-            if not words.endswith(" " + rest):
-                return False
-            words = words[: -len(rest) - 1]
-        prefixes.add(words)
-    return len(prefixes) <= 1
+def _below_the_path(line: str, path: tuple[str, ...]) -> str | None:
+    """An absolute set line without its path's words, or ``None`` when the line
+    is not under the path. Each key is consumed when it is the line's next word;
+    a key the line does not name (a list name the schema hides, an annotation
+    key, the kept-statements key) is passed. The keys the set writer renames
+    (`ieee-802.3ad`, `end-range`, the NAT `match` keys) sit inside lists, which
+    no path of mapping keys reaches."""
+    command, _, rest = line.partition(" ")
+    words = rest.split(" ") if rest else []
+    for key in path:
+        if words and words[0] == key:
+            words.pop(0)
+    remainder = " ".join(words)
+    return f"{command} {remainder}" if remainder else command
+
+
+def _put_back(relative: str, words: list[str], entries: str | None) -> str:
+    """Relative structured text put back under the path's *words*; *entries*
+    is the list or leaf name each top-level statement is written after."""
+    text = relative
+    if entries is not None:
+        lines = []
+        for line in text.splitlines():
+            if line and not line.startswith((" ", "}")):
+                tags = ""
+                while line.startswith(("inactive: ", "protect: ", "replace: ")):
+                    tag, _, line = line.partition(" ")
+                    tags += tag + " "
+                line = f"{tags}{entries} {line}"
+            lines.append(line + "\n")
+        text = "".join(lines)
+    for word in reversed(words):
+        text = f"{word} {{\n" + "".join(f"    {line}\n" for line in text.splitlines()) + "}\n"
+    return text
 
 
 class TestRelativeSelections:
     """`--path --relative` writes what absolute output writes at the path, without
     the path (spec conversion/path-filtering), for every path of mapping keys
-    to depth 3 of every device JSON capture: json, yaml-new and yaml give the
-    absolute document's value there, set the absolute lines less one common run
-    of path words, and structured never a Python repr."""
+    to depth 4 of every device JSON capture: json, yaml-new and yaml give the
+    absolute document's value there; every relative set line is its absolute
+    line without the path's words; relative structured text, put back under
+    those words, reads as the absolute text (a tag on the selected statement
+    itself, which structured output notes and cannot write, aside)."""
 
     @pytest.mark.parametrize(
         "capture", [pytest.param(capture, id=capture.key) for capture in captures()]
@@ -290,7 +309,8 @@ class TestRelativeSelections:
     def test_a_relative_selection_is_the_absolute_one_without_its_path(self, capture) -> None:
         source = capture.rendering("json")
         loaded = json.loads(source)
-        paths = _selectable_paths(loaded.get("configuration", loaded), (), 3)
+        configuration = loaded.get("configuration", loaded)
+        paths = _selectable_paths(configuration, (), 4)
         assert paths
 
         def written(to_format: Format, path: tuple[str, ...], relative: bool) -> str:
@@ -314,8 +334,30 @@ class TestRelativeSelections:
                 if relative != _value_at(load(written(to_format, path, False)), path):
                     problems.append(f"{to_format.value} {'.'.join(path)}")
             absolute_set = written(Format.SET, path, False).splitlines()
-            if not _one_prefix(absolute_set, written(Format.SET, path, True).splitlines()):
+            relative_set = written(Format.SET, path, True).splitlines()
+            if relative_set != [_below_the_path(line, path) for line in absolute_set]:
                 problems.append(f"set {'.'.join(path)}")
-            if "[{" in written(Format.STRUCTURED, path, True):
+            parent = configuration
+            for key in path[:-1]:
+                parent = parent[key]
+            value = parent[path[-1]]
+            words = list(path)
+            named = [
+                word for word in words if any(f" {word} " in f" {line} " for line in absolute_set)
+            ]
+            if not isinstance(value, (dict, list)) or isinstance(parent.get(f"@{path[-1]}"), dict):
+                continue
+            if isinstance(value, dict) and "@" in value:
+                continue
+            entries = (
+                named[-1] if isinstance(value, list) and named and named[-1] == words[-1] else None
+            )
+            relative_text = written(Format.STRUCTURED, path, True)
+            if not relative_text:
+                continue
+            put = _put_back(relative_text, named[:-1] if entries else named, entries)
+            if read_ir(put, Format.STRUCTURED) != read_ir(
+                written(Format.STRUCTURED, path, False), Format.STRUCTURED
+            ):
                 problems.append(f"structured {'.'.join(path)}")
         assert not problems, "\n".join(problems[:40])

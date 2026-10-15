@@ -474,13 +474,51 @@ class TestPathFiltering:
         assert json.dumps(relative) == json.dumps(absolute)
 
     @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
-    def test_an_anonymized_selection_is_spelled_alike(self, to_format: Format) -> None:
-        """Anonymizing changes values, not spellings (Test/Challenge finding 9)."""
+    @pytest.mark.parametrize(
+        ("source", "path", "from_format"),
+        [
+            (_SELECTED_SOURCE, "system.syslog.host", Format.JSON),
+            (
+                "configuration:\n  system:\n    login:\n      user:\n      - name: admin\n"
+                "        class: [super-user]\n",
+                "system.login.user",
+                Format.YAML,
+            ),
+            (
+                '{"configuration": {"system": {"@": {"inactive": true}, "host-name": "r1"}}}',
+                "system.@",
+                Format.JSON,
+            ),
+        ],
+        ids=["flags", "coercion", "annotation"],
+    )
+    def test_an_anonymized_selection_is_spelled_alike(
+        self, to_format: Format, source: str, path: str, from_format: Format
+    ) -> None:
+        """Anonymizing changes values, not spellings (Test/Challenge finding 9;
+        relative-selections TC7)."""
         anonymize = AnonymizeConfig(ips=True)
         relative, absolute = _relative_and_absolute(
-            _SELECTED_SOURCE, to_format, "system.syslog.host", anon_config=anonymize
+            source, to_format, path, from_format=from_format, anon_config=anonymize
         )
         assert json.dumps(relative) == json.dumps(absolute)
+
+    def test_an_anonymized_list_selection_in_set(self) -> None:
+        """Anonymized, a selected list in set output is still its statements
+        without the path (relative-selections TC7)."""
+        source = "set interfaces ge-0/0/0 unit 0 family inet address 203.0.114.1/24\n"
+
+        def written(relative: bool) -> str:
+            return convert_config(
+                source,
+                from_format=Format.SET,
+                to_format=Format.SET,
+                path="interfaces.interface",
+                relative=relative,
+                anon_config=AnonymizeConfig(ips=True, salt="s"),
+            )
+
+        assert written(True) == written(False).replace("set interfaces ", "set ", 1)
 
     @pytest.mark.parametrize(
         ("to_format", "relative", "absolute"),
@@ -520,73 +558,199 @@ class TestPathFiltering:
         else:
             assert written(False) == absolute
 
-    def test_a_key_holding_a_dot_is_selected(self) -> None:
+    @pytest.mark.parametrize(
+        ("source", "path", "relative", "expected"),
+        [
+            (
+                "set class-of-service classifiers ieee-802.1 C1 import default\n",
+                "class-of-service.classifiers.ieee-802.1",
+                False,
+                "set class-of-service classifiers ieee-802.1 C1 import default\n",
+            ),
+            (
+                "set class-of-service classifiers ieee-802.1 C1 import default\n",
+                "class-of-service.classifiers.ieee-802.1",
+                True,
+                "set C1 import default\n",
+            ),
+            (
+                "set routing-options dynamic-tunnels forwarding-rib inet.0 inet-import POL1\n",
+                "routing-options.dynamic-tunnels.forwarding-rib.inet.0.inet-import",
+                True,
+                "set POL1\n",
+            ),
+        ],
+        ids=["last-step-absolute", "last-step-relative", "mid-path"],
+    )
+    def test_a_key_holding_a_dot_is_selected(
+        self, source: str, path: str, relative: bool, expected: str
+    ) -> None:
         """A path is split at its dots and matched against the keys present, the
-        exact key first: `ieee-802.1` is selected with no new syntax, and an
-        exact `a` wins over a dotted `a.b` (PO-1 (e))."""
-        source = "set class-of-service classifiers ieee-802.1 C1 import default\n"
-        absolute = convert_config(
-            source,
-            from_format=Format.SET,
-            to_format=Format.SET,
-            path="class-of-service.classifiers.ieee-802.1",
+        exact key first: `ieee-802.1` and `inet.0` are selected with no new
+        syntax, at the end of a path or within it (PO-1 (e))."""
+        assert (
+            convert_config(
+                source, from_format=Format.SET, to_format=Format.SET, path=path, relative=relative
+            )
+            == expected
         )
-        assert absolute == source
-        relative = convert_config(
-            source,
-            from_format=Format.SET,
+
+    @pytest.mark.parametrize(
+        ("path", "expected"),
+        [("system.a.b", "exact"), ("system.a", {"b": "exact"}), ("system.c.d", "dotted")],
+    )
+    def test_the_exact_key_wins_over_a_dotted_one(self, path: str, expected: Any) -> None:
+        """Only a path the exact keys cannot finish is matched by joining steps,
+        so no path that selected a value before selects another; a dotted key
+        beside a shorter key that does not lead on is still reached."""
+        both = json.dumps(
+            {
+                "configuration": {
+                    "system": {"a": {"b": "exact"}, "a.b": "dotted", "c": {"x": 1}, "c.d": "dotted"}
+                }
+            }
+        )
+        written = convert_config(
+            both,
+            from_format=Format.JSON,
             to_format=Format.JSON,
-            path="class-of-service.classifiers.ieee-802.1",
+            path=path,
             relative=True,
+            validate=False,
         )
-        assert json.loads(relative) == [{"name": "C1", "import": "default"}]
-        both = '{"configuration": {"system": {"a": {"b": "exact"}, "a.b": "dotted"}}}'
+        assert json.loads(written) == expected
 
-        def selected(path: str) -> Any:
-            return json.loads(
-                convert_config(
-                    both,
-                    from_format=Format.JSON,
-                    to_format=Format.JSON,
-                    path=path,
-                    relative=True,
-                    validate=False,
-                )
+    def test_a_path_through_a_list_or_a_leaf_selects_nothing(self) -> None:
+        """A path addresses mapping keys only: one that steps into a list or a
+        leaf names no key, and writes nothing, as at base."""
+        source = "set system syslog host 198.51.100.9 any any\nset system host-name r1\n"
+        for path in ("system.syslog.host.name", "system.host-name.r1"):
+            assert (
+                convert_config(source, from_format=Format.SET, to_format=Format.JSON, path=path)
+                == ""
             )
 
-        assert selected("system.a.b") == "exact"
-        assert selected("system.a") == {"b": "exact"}
+    def test_the_kept_statements_key_writes_its_statements(self) -> None:
+        """`junoscfg:unplaced` holds kept statements and is written as no word:
+        selected, its statements are written without the path, as at base."""
+        source = "set system no-such-statement 1\nset system host-name r1\n"
 
-    def test_a_relative_selection_keeps_its_schema_context(self) -> None:
-        """The selection is written as absolute output writes it at its path: a
-        single leaf a `yaml` file gave as a list is coerced (PO-1 (a)), and a list
-        name the schema hides is not printed in set or structured output."""
-        source = (
-            "configuration:\n  system:\n    login:\n      user:\n      - name: admin\n"
-            "        class: [super-user]\n"
-        )
-        for to_format in _OBJECT_WRITERS:
-            relative, absolute = _relative_and_absolute(
-                source, to_format, "system.login", from_format=Format.YAML
-            )
-            assert relative == absolute == {"user": [{"name": "admin", "class": "super-user"}]}
-        interfaces = "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
-
-        def written(to_format: Format, is_relative: bool) -> str:
+        def written(to_format: Format) -> str:
             return convert_config(
-                interfaces,
+                source,
                 from_format=Format.SET,
                 to_format=to_format,
-                path="interfaces",
-                relative=is_relative,
+                path="system.junoscfg:unplaced",
+                relative=True,
+                validate=False,
             )
 
-        assert written(Format.SET, True) == "set ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
-        absolute_lines = written(Format.STRUCTURED, False).splitlines()
-        assert absolute_lines[0] == "interfaces {" and absolute_lines[-1] == "}"
-        inner = "".join(line.removeprefix("    ") + "\n" for line in absolute_lines[1:-1])
-        assert written(Format.STRUCTURED, True) == inner
+        assert written(Format.SET) == "set no-such-statement 1\n"
+        assert written(Format.STRUCTURED) == "no-such-statement 1;\n"
 
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    @pytest.mark.parametrize(
+        ("path", "expected"),
+        [
+            ("system.login", {"user": [{"name": "admin", "class": "super-user"}]}),
+            ("system.login.user", [{"name": "admin", "class": "super-user"}]),
+            ("system.host-name", "r1"),
+        ],
+        ids=["a-mapping", "a-list", "a-leaf"],
+    )
+    def test_a_relative_selection_keeps_its_schema_context(
+        self, to_format: Format, path: str, expected: Any
+    ) -> None:
+        """A single leaf a `yaml` file gave as a list is coerced in a selected
+        mapping, list or leaf, as the absolute output coerces it (PO-1 (a))."""
+        source = (
+            "configuration:\n  system:\n    host-name: [r1]\n    login:\n      user:\n"
+            "      - name: admin\n        class: [super-user]\n"
+        )
+        relative, absolute = _relative_and_absolute(
+            source, to_format, path, from_format=Format.YAML
+        )
+        assert relative == absolute == expected
+
+    @pytest.mark.parametrize(
+        ("source", "path", "to_format", "expected"),
+        [
+            (
+                "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n",
+                "interfaces",
+                Format.SET,
+                "set ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n",
+            ),
+            (
+                "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n",
+                "interfaces",
+                Format.STRUCTURED,
+                "ge-0/0/0 {\n    unit 0 {\n        family inet {\n"
+                "            address 10.0.0.1/24;\n        }\n    }\n}\n",
+            ),
+            (
+                "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
+                "set interfaces ge-0/0/1 description uplink\n",
+                "interfaces.interface",
+                Format.SET,
+                "set ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
+                "set ge-0/0/1 description uplink\n",
+            ),
+            (
+                "set routing-options dynamic-tunnels DT1 source-address 10.255.0.1\n"
+                "set routing-options dynamic-tunnels DT1 gre\n",
+                "routing-options.dynamic-tunnels.dynamic-tunnel",
+                Format.STRUCTURED,
+                "DT1 {\n    source-address 10.255.0.1;\n    gre;\n}\n",
+            ),
+            (
+                "set groups G1 system host-name r2\nset groups G1 system services ssh\n",
+                "groups.group",
+                Format.SET,
+                "set G1 system host-name r2\nset G1 system services ssh\n",
+            ),
+            (
+                "set groups G1 system host-name r2\nset groups G1 system services ssh\n",
+                "groups.group",
+                Format.STRUCTURED,
+                "G1 {\n    system {\n        host-name r2;\n        services ssh;\n    }\n}\n",
+            ),
+        ],
+        ids=[
+            "interfaces-set",
+            "interfaces-structured",
+            "interface-list-set",
+            "dynamic-tunnel-list-structured",
+            "group-list-set",
+            "group-list-structured",
+        ],
+    )
+    def test_a_list_name_the_schema_hides_is_not_written(
+        self, source: str, path: str, to_format: Format, expected: str
+    ) -> None:
+        """Set and structured output never print a list name the schema hides,
+        relative as absolute: `set interface ge-0/0/0` loads nowhere under
+        `edit interfaces` (PO-1 (a), measured on the device corpus)."""
+        assert (
+            convert_config(
+                source, from_format=Format.SET, to_format=to_format, path=path, relative=True
+            )
+            == expected
+        )
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    def test_a_selected_groups_is_the_list_of_groups(self, to_format: Format) -> None:
+        """`groups` from set input is `{"group": [...]}` in the IR and the list
+        of groups in the Junos JSON object; selected, it is the list."""
+        source = "set groups G1 system host-name r2\n"
+        relative, absolute = _relative_and_absolute(
+            source, to_format, "groups", from_format=Format.SET
+        )
+        assert relative == absolute == [{"name": "G1", "system": {"host-name": "r2"}}]
+
+    @pytest.mark.parametrize(
+        "to_format", [Format.SET, Format.STRUCTURED], ids=["set", "structured"]
+    )
     @pytest.mark.parametrize(
         ("path", "list_word", "parents"),
         [
@@ -595,7 +759,7 @@ class TestPathFiltering:
         ],
     )
     def test_a_selected_list_writes_its_statements(
-        self, path: str, list_word: str, parents: list[str]
+        self, path: str, list_word: str, parents: list[str], to_format: Format
     ) -> None:
         """A selected list writes its entries' statements without the path, in
         set and structured output, never a Python repr or nothing (PO-1 (b));
@@ -612,12 +776,14 @@ class TestPathFiltering:
                 source, from_format=Format.SET, to_format=to_format, path=path, relative=is_relative
             )
 
-        prefix = " ".join([*parents, list_word])
-        absolute = written(Format.SET, False)
-        expected = "".join(
-            line.replace(f"set {prefix} ", "set ", 1) + "\n" for line in absolute.splitlines()
-        )
-        assert written(Format.SET, True) == expected
+        if to_format is Format.SET:
+            prefix = " ".join([*parents, list_word])
+            absolute = written(Format.SET, False)
+            expected = "".join(
+                line.replace(f"set {prefix} ", "set ", 1) + "\n" for line in absolute.splitlines()
+            )
+            assert written(Format.SET, True) == expected
+            return
         relative = written(Format.STRUCTURED, True)
         assert relative and "[" not in relative
         entries = "".join(
@@ -650,6 +816,24 @@ class TestPathFiltering:
         )
         relative, absolute = _relative_and_absolute(source, to_format, path)
         assert relative == absolute == {"inactive": True}
+
+    def test_an_annotation_selection_in_set_and_structured(self) -> None:
+        """The tag on the selected statement itself has no statement left to
+        carry it: set writes the bare command (put back under the path it is
+        `deactivate system`), structured writes nothing and says so in a note."""
+        source = "set system host-name r1\ndeactivate system\n"
+
+        def written(to_format: Format) -> Any:
+            return convert_config_result(
+                source, from_format=Format.SET, to_format=to_format, path="system.@", relative=True
+            )
+
+        assert written(Format.SET).output == "set\ndeactivate\n"
+        structured = written(Format.STRUCTURED)
+        assert structured.output == ""
+        assert any(
+            "tag(s) of the selected statement itself" in d.message for d in structured.diagnostics
+        )
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
