@@ -563,6 +563,11 @@ def select(files: list[str]) -> list[str]:
         elif rel.startswith("tests/") and path.suffix != ".md":
             if path.suffix == ".py" and path.is_file() and path.name != "conftest.py":
                 chosen.add(rel)
+                # Other test modules import its helpers and tests.
+                tool_graph = tool_graph if tool_graph is not None else tooling_importers()
+                if tool_graph.get(UNFOLLOWED):
+                    return list(EVERYTHING)
+                chosen.update(tooling_selection(rel, tool_graph))
             else:
                 directory = path.parent
                 while not directory.is_dir() and directory != TESTS:

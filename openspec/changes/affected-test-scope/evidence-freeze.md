@@ -81,3 +81,13 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
 - Owner decision (2026-10-14): continue this branch; keep the approved local CI
   verbatim through template adoption. Upstream preserved-workflow and skill
   Markdown defects go through the template's own workflow before adoption.
+- Executed counterexample (2026-10-15, first full checkpoint at 35b26ef): two
+  variants of `test_only_generated_at_may_change` failed under parallel load on a
+  `.git/objects/maintenance.lock` in the fixture repository's byte snapshot. Git
+  2.56 (installed 2026-10-13) starts detached automatic maintenance after
+  `commit_fixture`'s commit; isolated reruns passed 3/3. The fixture commit now
+  disables automatic maintenance; a trace regression failed before the fix. The
+  same diagnosis showed a changed test module selected only itself, although eight
+  schema test modules import `commit_fixture`/`git` from it (pre-existing on
+  master). A changed test module now also selects its importing test modules under
+  the tool rules; ten selector regressions were observed failing first.

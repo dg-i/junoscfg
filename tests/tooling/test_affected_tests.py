@@ -126,6 +126,19 @@ class TestATestChangeSelectsItself:
         name = "tests/tooling/test_affected_tests.py"
         assert affected.select([name]) == [name]
 
+    @pytest.mark.parametrize(
+        ("name", "importer"),
+        [
+            (
+                "tests/tooling/test_schema_verification.py",
+                "tests/tooling/test_schema_verification_metadata.py",
+            ),
+            ("tests/unit/audit/registries.py", "tests/unit/audit/test_engine.py"),
+        ],
+    )
+    def test_a_test_module_selects_the_tests_that_import_it(self, name, importer) -> None:
+        assert importer in affected.select([name])
+
     def test_a_conftest_selects_its_directory(self) -> None:
         assert affected.select(["tests/unit/audit/conftest.py"]) == ["tests/unit/audit/"]
 
@@ -430,6 +443,22 @@ class TestToolConsumersDetermineSelection:
     def test_uncertain_discovery_never_silently_narrows(self, tree, source):
         tree("tests/unit/test_unknown.py", source)
         assert affected.select(["tools/leaf.py"]) == ["tests/"]
+        assert affected.select(["tests/tooling/test_direct.py"]) == ["tests/"]
+
+    def test_a_test_module_selects_its_importers_transitively(self, tree):
+        tree("tests/unit/helpers.py", "VALUE = 1")
+        tree("tests/unit/test_first.py", "from tests.unit.helpers import VALUE")
+        tree("tests/unit/test_second.py", "from tests.unit.test_first import VALUE")
+        tree("tests/unit/test_unrelated.py")
+        assert affected.select(["tests/unit/helpers.py"]) == [
+            "tests/unit/helpers.py",
+            "tests/unit/test_first.py",
+            "tests/unit/test_second.py",
+        ]
+
+    def test_a_test_module_the_root_conftest_imports_selects_everything(self, tree):
+        tree("tests/conftest.py", "from tests.tooling.test_direct import fixture")
+        assert affected.select(["tests/tooling/test_direct.py"]) == ["tests/"]
 
     @pytest.mark.parametrize(
         "reader",

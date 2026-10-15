@@ -18,6 +18,8 @@ Deleted/unmapped tooling modules and non-Markdown tooling configuration select a
 tooling tests. Shared test data, project configuration, lock and shipped artifacts
 select the full suite. Package data (anything but Markdown) selects like its
 package's source; a non-Python file at the package root selects the full suite.
+A changed test module selects itself and the test modules that import it,
+transitively, under the same fixture and uncertainty rules as a tool.
 Test deletion/conftest rules retain their containing scope; other non-Markdown
 test inputs select their directory. Changed paths come from Git without rename
 detection, so a moved file also lists its old path.

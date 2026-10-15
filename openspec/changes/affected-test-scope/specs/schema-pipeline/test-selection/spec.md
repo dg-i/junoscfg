@@ -2,8 +2,8 @@
 
 ### Requirement: Tooling and shared inputs receive coverage
 
-WHEN an existing tooling module has demonstrable test consumers THEN the selector SHALL include its transitive test consumers, including consumers outside tooling; WHEN dependency discovery is uncertain, a tool is deleted or unmapped, or tooling configuration changes THEN it SHALL retain conservative broad coverage. Shared fixtures, data, project configuration, lock and shipped artifacts SHALL retain full-suite selection. Unrelated change bookkeeping SHALL NOT broaden selection solely due to its directory or commit boundary.
-Tests: `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::test_tooling_inputs_select_tooling`, `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::test_shared_data_selects_everything`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_real_execution_consumers_are_selected`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_uncertain_discovery_never_silently_narrows`
+WHEN an existing tooling module has demonstrable test consumers THEN the selector SHALL include its transitive test consumers, including consumers outside tooling; WHEN dependency discovery is uncertain, a tool is deleted or unmapped, or tooling configuration changes THEN it SHALL retain conservative broad coverage. WHEN a test module changes THEN the selector SHALL include it and the test modules importing it, transitively, under the same fixture and uncertainty rules. Shared fixtures, data, project configuration, lock and shipped artifacts SHALL retain full-suite selection. Unrelated change bookkeeping SHALL NOT broaden selection solely due to its directory or commit boundary.
+Tests: `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::test_tooling_inputs_select_tooling`, `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::test_shared_data_selects_everything`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_real_execution_consumers_are_selected`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_uncertain_discovery_never_silently_narrows`, `tests/tooling/test_affected_tests.py::TestToolConsumersDetermineSelection::test_a_test_module_selects_its_importers_transitively`, `tests/tooling/test_affected_tests.py::TestATestChangeSelectsItself::test_a_test_module_selects_the_tests_that_import_it`
 
 #### Scenario: Tool script or device corpus changes
 
@@ -19,6 +19,11 @@ Tests: `tests/tooling/test_affected_tests.py::TestSharedInputsReceiveCoverage::t
 
 - **WHEN** a changed tool reaches tests/conftest.py or shared support
 - **THEN** the full suite is selected
+
+#### Scenario: A test module's helpers are imported elsewhere
+
+- **WHEN** tests/tooling/test_schema_verification.py, whose helpers other schema test modules import, changes
+- **THEN** those importing modules are selected with it
 
 #### Scenario: Independent bookkeeping adds no execution dependency
 
