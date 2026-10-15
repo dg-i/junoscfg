@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
   "checkpoint": "5cbff05e7df88d1ea4293c132aa45870723b5d1e",
-  "actor": "Claude relative-selections finalizer",
-  "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
-  "captured_at": "2026-10-15T15:42:09.315680+00:00",
+  "actor": "Claude input-trust-rule coordinator",
+  "authority": "Owner-authorized (2026-10-15, first-hand) docs change input-trust-rule: assess its branch and change as ready; every other disposition preserved.",
+  "captured_at": "2026-10-15T15:53:23.828186+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -91,7 +91,8 @@
     "change/relative-null-flags": "parked",
     "change/yaml-new-alias-cycles": "parked",
     "change/yaml-depth-ceiling": "parked",
-    "change/relative-selections": "parked"
+    "change/relative-selections": "parked",
+    "change/input-trust-rule": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -176,6 +177,7 @@
     "relative-null-flags": "parked",
     "yaml-new-alias-cycles": "parked",
     "yaml-depth-ceiling": "parked",
-    "relative-selections": "parked"
+    "relative-selections": "parked",
+    "input-trust-rule": "ready"
   }
 }
