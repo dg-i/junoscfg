@@ -72,6 +72,13 @@ json` as it loads `ssh {}`? Name the path only; never a whole configuration.
 ## Delta log
 
 - Freeze established at the commit adding this file, on base 332523c.
+- Test/Challenge delta (report on 0813986): eight binding test gaps and one omitted criterion
+  (validating a YAML-only value). Consistency: no requirement contradicted; validation/
+  junos-json-yaml gains the non-JSON-value outcome, conversion/junos-json-yaml names the loader
+  and whole-document scope, D4's check moves to `junoscfg.input.find_non_json_value` (kernel,
+  shared with validation), the table becomes a dict read per call (rename rehearsal). Invalidated:
+  none of the earlier evidence; reruns: focused tests, full suite in the commit hook (c84d07d),
+  canonical full before review. PO-1 (relative JSON list output) recorded for the owner.
 
 ## Scope and completion
 
