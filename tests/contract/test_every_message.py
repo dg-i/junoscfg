@@ -45,7 +45,7 @@ from ipanon import PassThroughCollisionError
 from junoscfg import FieldValidationError, Format, convert_config, convert_config_result
 from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
-from tests.support.aliases import alias_bomb_yaml
+from tests.support.aliases import nested_yaml
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -243,7 +243,7 @@ _READ = ("could not be read",)
 _WITHHELD = "; details withheld: the run anonymizes"
 _YAML_DATE = "configuration:\n  system:\n    x-acme: 2026-10-11\n"
 _YAML_CYCLE = "configuration: &a\n  system:\n    x-acme: *a\n"
-_YAML_BOMB = alias_bomb_yaml(word="acme")
+_YAML_DEEP = nested_yaml(62).replace("    x: ", "    x-acme: ")
 _FAILED = ("Validation: FAILED (1 error(s))", "line 1")
 
 
@@ -307,7 +307,11 @@ DOORS: dict[str, Door] = {
     "read-yaml-new-cycle": Door(
         _library(_YAML_CYCLE, Format.YAML_NEW, Format.JSON), _READ, "system.x-acme"
     ),
-    "read-yaml-new-alias-bomb": Door(_library(_YAML_BOMB, Format.YAML_NEW), _READ, "acme1."),
+    "read-yaml-new-deep": Door(_library(_YAML_DEEP, Format.YAML_NEW), _READ, "system.x-acme"),
+    "read-yaml-cycle": Door(
+        _library(_YAML_CYCLE, Format.YAML, Format.JSON), _READ, "system.x-acme"
+    ),
+    "read-yaml-deep": Door(_library(_YAML_DEEP, Format.YAML), _READ, "system.x-acme"),
     "read-xml": Door(_library(_BROKEN_XML, Format.XML), (*_READ, "(line 1)"), "sys-acme"),
     "read-json": Door(_library(_BROKEN_JSON, Format.JSON), (*_READ, "(line 1)"), "Expecting"),
     "read-note": Door(_library(_EMPTY_BLOCK, Format.STRUCTURED), ("empty block",), "R-ACME"),
@@ -398,8 +402,11 @@ DOORS: dict[str, Door] = {
     "cli-read-yaml-new-date": Door(
         _cli(_YAML_DATE, ["-i", "yaml-new", "-e", "json"]), _READ, "system.x-acme"
     ),
-    "cli-read-yaml-new-alias-bomb": Door(
-        _cli(_YAML_BOMB, ["-i", "yaml-new", "-e", "json"]), _READ, "acme1."
+    "cli-read-yaml-new-deep": Door(
+        _cli(_YAML_DEEP, ["-i", "yaml-new", "-e", "json"]), _READ, "system.x-acme"
+    ),
+    "cli-read-yaml-cycle": Door(
+        _cli(_YAML_CYCLE, ["-i", "yaml", "-e", "json"]), _READ, "system.x-acme"
     ),
     # A meta key: the JSON schema yaml-new is judged by rejects it, the YAML one would not.
     "cli-validate-only-yaml-new": Door(

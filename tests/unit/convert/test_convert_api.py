@@ -31,13 +31,16 @@ from junoscfg.cli import main
 from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, pipeline_result, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.aliases import (
+    ANCHORED_BESIDE,
+    ANCHORED_BESIDE_WRITTEN_OUT,
+    NESTED_ONCE,
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
-    alias_bomb,
-    alias_bomb_yaml,
     alias_chain_yaml,
+    hosts_sharing_contents,
+    nested_ir,
+    nested_yaml,
     shared_containers,
-    within,
 )
 from tests.support.artifacts import write_minimal_tree
 from tests.support.shapes import SHAPES, WRITERS, in_order, read_ir
@@ -510,21 +513,21 @@ class TestValidateConfig:
         result = validate_config(source, format=Format.JSON, artifacts_dir=artifacts_dir)
         assert result.valid is True
 
-    def test_a_yaml_new_shared_block_and_alias_bomb(self, artifacts_dir: str) -> None:
-        """The public door: a shared block is judged written out, a bomb is an
-        invalid result naming its alias (owner ruling on PO-2/SC-1)."""
-        shared = validate_config(SHARED_BLOCK, format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
-        written_out = validate_config(
-            SHARED_BLOCK_WRITTEN_OUT, format=Format.YAML_NEW, artifacts_dir=artifacts_dir
-        )
-        assert shared == written_out
-        with within(10):
-            bomb = validate_config(
-                alias_bomb_yaml(), format=Format.YAML_NEW, artifacts_dir=artifacts_dir
-            )
-        assert bomb.valid is False
-        assert [(e.message, e.path) for e in bomb.errors] == [
-            ("YAML alias expands the document past twice its size", "lol1.2")
+    def test_a_yaml_new_shared_block_and_deep_document(self, artifacts_dir: str) -> None:
+        """The public door: a shared block is judged written out, however it is
+        reused; a value past 64 levels is an invalid result naming its path
+        (owner rulings 2026-10-15 on SC-2 and SC-A)."""
+        for shared, written_out in (
+            (SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT),
+            (ANCHORED_BESIDE, ANCHORED_BESIDE_WRITTEN_OUT),
+        ):
+            assert validate_config(
+                shared, format=Format.YAML_NEW, artifacts_dir=artifacts_dir
+            ) == validate_config(written_out, format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
+        deep = validate_config(nested_yaml(62), format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
+        assert deep.valid is False
+        assert [(e.message, e.path) for e in deep.errors] == [
+            ("YAML value is nested deeper than 64 levels", "configuration.system.x" + ".0" * 62)
         ]
 
     def test_junos_yaml_is_judged_by_the_json_schema(self, artifacts_dir: str) -> None:
@@ -1021,6 +1024,62 @@ class TestTheYamlWriterDumpsTheIr:
         assert in_order(yaml.safe_load(written)) == in_order(expected)
 
 
+class TestIrYamlReader:
+    """The `yaml` reader refuses what junoscfg's own recursion cannot walk, a
+    cycle and a value past 64 levels, and reads everything else as before
+    (owner ruling 2026-10-15 on C5; spec conversion/junos-json-yaml)."""
+
+    @pytest.mark.parametrize(
+        ("source", "said"),
+        [
+            (
+                "configuration: &a\n  system:\n    host-name: acme-r1\n    x: *a\n",
+                "Invalid input: a YAML cycle at configuration.system.x has no JSON spelling",
+            ),
+            (
+                "configuration:\n  system: &s\n    _meta_acme: x\n    x: [*s]\n",
+                "Invalid input: a YAML cycle at configuration.system.x.0 has no JSON spelling",
+            ),
+            (
+                nested_yaml(62),
+                "Invalid input: a YAML value at configuration.system.x"
+                + ".0" * 62
+                + " is nested deeper than 64 levels",
+            ),
+            (
+                alias_chain_yaml(),
+                "Invalid input: a YAML value at s3"
+                + ".0" * 64
+                + " is nested deeper than 64 levels",
+            ),
+        ],
+        ids=["a-cycle", "a-cycle-beside-a-meta-key", "sixty-five-deep", "an-alias-chain"],
+    )
+    def test_a_cycle_or_a_value_past_64_levels_is_refused(self, source: str, said: str) -> None:
+        """Before its meta-key cleanup walks the document, the reader refuses
+        with the yaml-new reader's wording, kind and path, never a value: a
+        ValueError, where the cleanup raised RecursionError."""
+        for read in (
+            lambda: to_dict(source, "yaml"),
+            lambda: convert_config(source, from_format=Format.YAML, to_format=Format.SET),
+        ):
+            with pytest.raises(ValueError) as raised:
+                read()
+            assert str(raised.value) == said
+            assert "acme" not in str(raised.value)
+
+    def test_a_shared_block_and_a_date_read_as_before(self) -> None:
+        """Only cycles and depth are refused: a shared block reads written out,
+        an unquoted date stays a date, a value 64 levels deep reads, and a
+        block anchored beside the configuration reads as yaml always read it."""
+        assert to_dict(SHARED_BLOCK, "yaml") == to_dict(SHARED_BLOCK_WRITTEN_OUT, "yaml")
+        assert shared_containers(to_dict(SHARED_BLOCK, "yaml")) == []
+        dated = to_dict("configuration:\n  system:\n    host-name: 2026-10-15\n", "yaml")
+        assert dated["system"]["host-name"] == datetime.date(2026, 10, 15)
+        assert to_dict(nested_yaml(61), "yaml")["system"]["x"] is not None
+        assert to_dict(ANCHORED_BESIDE, "yaml") == to_dict(ANCHORED_BESIDE_WRITTEN_OUT, "yaml")
+
+
 class TestJunosYamlReader:
     """yaml-new input is read as the JSON reader reads the same object
     (spec conversion/junos-json-yaml; owner default 2026-10-15: the identical
@@ -1139,6 +1198,32 @@ class TestJunosYamlReader:
             assert shared_containers(to_dict(source, "yaml-new")) == []
 
     @pytest.mark.parametrize(
+        ("source", "written_out"),
+        [
+            (ANCHORED_BESIDE, ANCHORED_BESIDE_WRITTEN_OUT),
+            (NESTED_ONCE, None),
+            (hosts_sharing_contents(11), None),
+            (alias_chain_yaml(3, 20), None),
+        ],
+        ids=[
+            "anchored-beside-the-configuration",
+            "nested-anchors",
+            "eleven-hosts",
+            "a-chain-to-61",
+        ],
+    )
+    def test_a_block_the_old_bounds_refused_is_read_written_out(
+        self, source: str, written_out: str | None
+    ) -> None:
+        """Each row was refused by the size or the parsed-depth bound; with both
+        gone (owner rulings on SC-2, SC-A) it reads as written out and shares
+        nothing."""
+        ir = to_dict(source, "yaml-new")
+        assert shared_containers(ir) == []
+        if written_out is not None:
+            assert ir == to_dict(written_out, "yaml-new")
+
+    @pytest.mark.parametrize(
         ("source", "said"),
         [
             (
@@ -1146,32 +1231,35 @@ class TestJunosYamlReader:
                 "Invalid input: a YAML cycle at configuration.system.x has no JSON spelling",
             ),
             (
-                alias_bomb_yaml(word="acme"),
-                "Invalid input: a YAML alias at acme1.2 expands the document past twice its size",
+                nested_yaml(62),
+                "Invalid input: a YAML value at configuration.system.x"
+                + ".0" * 62
+                + " is nested deeper than 64 levels",
             ),
             (
-                alias_bomb_yaml(200, 2, word="acme"),
-                "Invalid input: a YAML alias at acme2.0 nests the document deeper"
-                " than it is written",
+                nested_yaml(400),
+                "Invalid input: a YAML value at configuration.system.x"
+                + ".0" * 62
+                + " is nested deeper than 64 levels",
             ),
             (
                 alias_chain_yaml(),
-                "Invalid input: a YAML alias at s1"
-                + ".0" * 300
-                + " nests the document deeper than it is written",
+                "Invalid input: a YAML value at s3"
+                + ".0" * 64
+                + " is nested deeper than 64 levels",
             ),
         ],
-        ids=["a-cycle", "billion-laughs", "two-to-the-200", "a-deep-chain"],
+        ids=["a-cycle", "sixty-five-deep", "four-hundred-deep", "an-alias-chain"],
     )
-    def test_a_cycle_or_an_alias_bomb_is_refused(self, source: str, said: str) -> None:
-        """A cycle is refused where it is reached again; a bomb at its outermost
-        alias when the expansion passes twice the parsed size or nests deeper
-        than the parsed document, before any later stage expands it: a
-        ValueError, never a RecursionError. Kind and path, never a value."""
-        with within(10), pytest.raises(ValueError) as raised:
+    def test_a_cycle_or_a_value_past_64_levels_is_refused(self, source: str, said: str) -> None:
+        """A cycle is refused where it is reached again, a value past 64 levels at
+        its path, before any later stage walks the document: a ValueError,
+        never a RecursionError. Kind and path, never a value."""
+        with pytest.raises(ValueError) as raised:
             to_dict(source, "yaml-new")
         assert str(raised.value) == said
-        assert "acme-r1" not in str(raised.value)
+        assert "acme" not in str(raised.value)
+        assert to_dict(nested_yaml(61), "yaml-new")["system"]["x"] is not None
 
     def test_an_empty_document_is_refused(self) -> None:
         with pytest.raises(ValueError, match="No 'configuration' key found in YAML input"):
@@ -1293,8 +1381,7 @@ class TestJunosYamlWriter:
         """A selection holding one object in two places is written as two copies:
         no YAML anchor or alias, which JSON has no spelling for. A bare list is
         written as given, so only the dumper can keep the alias out
-        (Test/Challenge B8). The object is shared at one depth: an alias nesting
-        deeper than anything written is refused (SC-A of yaml-new-alias-cycles)."""
+        (Test/Challenge B8)."""
         shared = {"host-name": "r1"}
         ir = [{"y": shared}, {"name": "h2", "x": shared}]
         written = from_dict(ir, "yaml-new", wrap=wrap)
@@ -1329,27 +1416,43 @@ class TestJunosYamlWriter:
         [
             (_CYCLIC_IR, "the cycle at {top}system.x has no JSON spelling"),
             (
-                alias_bomb(16),
-                "the alias at {top}system.lol"
-                + ".0" * 12
-                + ".1 expands the document past twice its size",
+                {"system": nested_ir(64)},
+                "the value at {top}system{deep} is nested deeper than 64 levels",
             ),
-            (alias_bomb(64), "expands the document past twice its size"),
-            (alias_bomb(200), "expands the document past twice its size"),
+            (
+                {"system": nested_ir(5000)},
+                "the value at {top}system{deep} is nested deeper than 64 levels",
+            ),
         ],
-        ids=["a-cycle", "two-to-the-16", "two-to-the-64", "two-to-the-200"],
+        ids=["a-cycle", "past-64", "five-thousand-deep"],
     )
-    def test_a_cycle_or_an_alias_bomb_is_refused_on_write(
+    def test_a_cycle_or_a_value_past_64_levels_is_refused_on_write(
         self, ir: dict, said: str, wrap: bool
     ) -> None:
-        """A caller's IR holding a cycle or a bomb is refused before the object
-        stage walks it: a ValueError naming kind and path, not a RecursionError
-        or an unbounded expansion (owner ruling on PO-2/SC-1). No CLI path hands
-        the writer a shared IR: the `yaml` reader writes every place out."""
-        with within(10), pytest.raises(ValueError) as raised:
+        """A caller's IR holding a cycle or a value past 64 levels (counted from
+        the document as it will be written, `configuration` included when
+        wrapped) is refused before the object stage walks it: a ValueError
+        naming kind and path, not a RecursionError (owner rulings on SC-A and
+        the cycle). No CLI path hands the writer a shared IR: every reader
+        writes each place out."""
+        deep = ".a" * (63 if wrap else 64)
+        with pytest.raises(ValueError) as raised:
             from_dict(ir, "yaml-new", wrap=wrap)
-        assert said.format(top="configuration." if wrap else "") in str(raised.value)
-        assert str(raised.value).startswith("Cannot write yaml-new: the ")
+        expected = said.format(top="configuration." if wrap else "", deep=deep)
+        assert str(raised.value) == "Cannot write yaml-new: " + expected
+
+    def test_an_ir_64_levels_deep_and_any_reuse_is_written(self) -> None:
+        """The deepest accepted IR, wrapped, and a block shared at several depths
+        and many times, are written as JSON writes them (owner rulings on SC-2,
+        SC-A)."""
+        block = {"host-name": "r1"}
+        for ir in (
+            {"system": nested_ir(62)},
+            {"a": block, "b": [block, [block] * 5], "c": {"d": {"e": block}}},
+        ):
+            written = from_dict(ir, "yaml-new")
+            assert "&" not in written and "*" not in written
+            assert yaml.safe_load(written) == json.loads(from_dict(ir, "json"))
 
     @pytest.mark.parametrize("mark", ["\x85", "\u2028", "\u2029"], ids=["nel", "ls", "ps"])
     def test_a_yaml_only_line_break_reads_back_as_written(self, mark: str) -> None:

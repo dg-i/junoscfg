@@ -17,7 +17,7 @@ from junoscfg import Format, convert_config
 from junoscfg.audit import STYLE_CHOICES, find_unused, render
 from junoscfg.cli import main
 from junoscfg.convert import to_dict
-from tests.support.aliases import SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, alias_bomb_yaml
+from tests.support.aliases import CYCLE, SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, nested_yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -71,15 +71,20 @@ class TestInputFormats:
         assert "no JSON spelling" in stderr
         assert run_cli(["audit", "unused", "-i", "yaml"], source)[0] == 0
 
-    def test_a_yaml_new_shared_block_and_alias_bomb(self) -> None:
-        """`audit -i yaml-new` reads a shared block written out and refuses a
-        bomb with its alias's path (owner ruling on PO-2)."""
-        shared = run_cli(["audit", "unused", "-i", "yaml-new"], SHARED_BLOCK)
-        assert shared == run_cli(["audit", "unused", "-i", "yaml-new"], SHARED_BLOCK_WRITTEN_OUT)
+    @pytest.mark.parametrize("reader", ["yaml-new", "yaml"])
+    def test_a_shared_block_cycle_and_deep_document(self, reader: str) -> None:
+        """`audit -i yaml-new` and `-i yaml` read a shared block written out and
+        refuse a cycle and a value past 64 levels with its path, exit 2 (owner
+        rulings on SC-A and C5)."""
+        shared = run_cli(["audit", "unused", "-i", reader], SHARED_BLOCK)
+        assert shared == run_cli(["audit", "unused", "-i", reader], SHARED_BLOCK_WRITTEN_OUT)
         assert shared[0] == 0
-        exit_code, _, stderr = run_cli(["audit", "unused", "-i", "yaml-new"], alias_bomb_yaml())
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", reader], CYCLE)
         assert exit_code == 2
-        assert "alias at lol1.2 expands the document past twice its size" in stderr
+        assert "cycle at configuration.system.x has no JSON spelling" in stderr
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", reader], nested_yaml(62))
+        assert exit_code == 2
+        assert "value at configuration.system.x" + ".0" * 62 + " is nested deeper" in stderr
 
     def test_autodetect_set(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused"], SET_CONFIG)
