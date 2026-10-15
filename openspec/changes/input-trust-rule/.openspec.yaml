@@ -5,4 +5,5 @@ type: docs
 # ARCHITECTURE.md, docs/ and two module contracts; no zone owns these paths.
 zone: surface
 domains: []
+removes: "none, because the change adds a documented rule and removes no behaviour or document"
 skip_specs: true
