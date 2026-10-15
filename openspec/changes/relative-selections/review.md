@@ -57,6 +57,9 @@ The Reviewer's out-of-scope note (absolute `--path system.host-name` drops the l
 
 ## Evidence
 
+- Follow-up canonical full checkpoint at `f677934` (after R1 to R7): every check passed, 166 s;
+  13,496 passed, 22 xfailed, 37 skipped; coverage 93.17 %; schema-25.2 tiers exit 0. Absolute
+  output rerun: 0 of 96, 0 of 2,435.
 - Canonical full checkpoint at `ab46c51`: every check passed, 350 s; 13,492 passed, 22 xfailed,
   37 skipped; coverage 93.11 %; schema-25.2 tiers exit 0.
 - Absolute output unchanged: device corpus 0 of 96, catalogue 0 of 2,435 (base: the
