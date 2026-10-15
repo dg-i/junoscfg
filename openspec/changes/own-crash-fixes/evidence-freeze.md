@@ -1,0 +1,98 @@
+## Resolved instructions
+
+instruction-integrity.md governs: the owner request of 2026-10-16 (three defects, one change,
+C1); the trusted-input rule (fix junoscfg's own crash or wrong output, no guards against
+hostile input, no parser work-arounds); the Builder's choice of the key rule, with the two
+tests that walked non-string keys changing with it (C2); ancestor tags reported, not acted on
+(C3); the shared readiness inventory (C4).
+
+## Requirements
+
+- specs/conversion/junos-json-yaml: ADDED "A `yaml` key that is not a string is refused",
+  ADDED "JSON input nests at most 64 levels"; MODIFIED "Each format name selects its
+  implementation through one table" (the `yaml` reader's refusals now include a key) and "A
+  block shared through an alias is written out, a cycle and nesting past 64 levels are
+  refused" (a key is no longer named by its kind inside a path; test list).
+- specs/validation/junos-json-yaml: ADDED "yaml validation refuses what the yaml reader refuses".
+- specs/conversion/path-filtering: ADDED "An absolute selection keeps the tags of the selected
+  statement".
+- Contradicted text: junos-json-yaml "(a key that is not a string named by its kind)";
+  decision 2026-10-15-yaml-nests-at-most-64-levels "JSON input keeps its own recursion (C6 of
+  change yaml-depth-ceiling)"; test `TestJunosYamlWriter::test_json_input_past_64_levels_is_refused_as_yaml_new`
+  ("JSON input nesting past 64 levels converts to JSON as before").
+
+## Evidence
+
+Base `2d4904b`, probes in the session scratchpad and
+`private_test_data/makeover-work/own-crash-fixes/`:
+
+- Key: `convert -i yaml -e set` of `configuration: {system: {host-name: r1}, 64496: x}` raises
+  `AttributeError` in `_strip_meta_keys`; `convert -v -i yaml` and `validate_config(format="yaml")`
+  raise `TypeError` inside jsonschema; `audit unused -i yaml` raises `AttributeError`; yaml-new
+  refuses with "Invalid input: a YAML int key at configuration has no JSON spelling". An
+  unquoted `on:` key crashes `yaml` with `AttributeError` on `bool`; the schema tree holds one
+  statement name YAML 1.1 loads as a non-string, `on` (10,459 names checked).
+- Depth (`depth.py`, `a` nested N times under `configuration`, every reader x every writer,
+  plus validation): JSON: `yaml` output fails from 450 (PyYAML's representer fed junoscfg's deep
+  IR), set and structured from 600 (`dict_walker`), every writer at 1,600
+  (`_normalize_annotations`); `audit unused -i json` at 1,600 (`_normalize_annotations`); JSON
+  validation never crashes (invalid). `yaml`/yaml-new: refused below 490, PyYAML's composer fails
+  at 600 (left by the rule). set and structured: no failure at 1,600 (the schema bounds
+  placement). XML: converts at 70; lxml refuses with `InputError` from 300 (limit 256), so no
+  junoscfg walk meets more than 256 levels from XML. `json.loads` itself fails past ~20,000.
+- Leaf tags: `--path system.host-name` drops `@host-name` (inactive, protect) in set,
+  structured, json, yaml, yaml-new; `--path system.domain-search` drops `@domain-search`;
+  `--path system.syslog` (container, `@` inside) and `--path interfaces.interface` (entry `@`
+  inside) keep their tags. Cause: `display.filter_dict_by_path` rebuilds `{key: value}` and
+  leaves the sibling `@key` behind. Relative leaf selections at base: set `set r1`, structured
+  `r1;`, json `"r1"` (no tag).
+- Ancestor tags (C3): `deactivate system`, `--path system.host-name` writes the leaf active in
+  every writer (not acted on).
+- Device-corpus selections (`probe_selections.py`, every mapping-key path to depth 5 over the
+  six JSON captures, five writers, absolute and relative): base recorded in `probe-base.json`.
+
+## Non-goals
+
+Relative selections; ancestor tags on the path; XML below lxml's 256 levels; parser limits
+(PyYAML ~490, `json.loads` ~20,000); `from_dict` handed a deep IR directly; JSON validation.
+
+## Acceptance criteria
+
+- Every test id in the three deltas exists, failed at base for the defect it pins (or, for a
+  guard of unchanged behaviour, passes at base and head), and passes at head.
+- `probe_selections.py` at head against base: absolute outputs differ only for selections
+  whose last key has a sibling `@key` in the IR, each difference adding exactly that tag;
+  every relative output identical.
+- The depth matrix at head: no `RecursionError` from junoscfg code for JSON at any depth
+  `json.loads` parses; the other rows unchanged.
+- Existing tests pass, the two C2 tests and `test_json_input_past_64_levels_is_refused_as_yaml_new`
+  updated as the deltas say.
+- Independent Test/Challenge (high risk floor) recorded in review.md before implementation is
+  final; the fresh Reviewer dispatched by the coordinator after the full check.
+
+## Performance expectations
+
+The JSON reader walks the parsed document once more, as yaml-new's reader does; measured on the
+largest device capture at head against base and recorded; no other stage changes cost.
+
+## Outstanding decisions
+
+None blocking. C3 (ancestor tags) is reported to the owner as a pending decision.
+
+## Execution and checkpoint
+
+- Roles required: Builder; independent Test/Challenge; fresh Reviewer (coordinator);
+  Finalizer (instruction-integrity.md, Assurance).
+- Resume point: phase 4, tests first, observed failing at base `2d4904b`.
+
+## Delta log
+
+- Freeze established: proposal `0d5dc84`, deltas and codemap in this commit.
+
+## Scope and completion
+
+Outcome: no traceback for a non-string `yaml` key or deeply nested JSON at any conversion,
+validation or audit door, and an absolute leaf or leaf-list selection that loads with the
+meaning its parent selection gives it. Exclusions as Non-goals. Applicable existing
+requirements: conversion/path-filtering (relative selections unchanged), junos-json-yaml (the
+64-level rule), validation/junos-json-yaml.
