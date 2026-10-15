@@ -19,6 +19,17 @@ from tests.support.aliases import (
 )
 
 _TOO_LARGE = "expands the document past twice its size"
+
+
+def _hosts_sharing_contents(hosts: int) -> str:
+    """*hosts* syslog hosts, the first anchoring a `contents` the others alias."""
+    text = (
+        "configuration:\n  system:\n    syslog:\n      host:\n"
+        "      - name: h0\n        contents: &c\n        - name: any\n          any: [null]\n"
+    )
+    return text + "".join(f"      - name: h{i}\n        contents: *c\n" for i in range(1, hosts))
+
+
 _TOO_DEEP = "nests the document deeper than it is written"
 
 
@@ -195,12 +206,20 @@ class TestFindNonJsonValue:
         assert found.reason == _TOO_DEEP
 
     def test_a_block_reached_three_times_through_nested_anchors_is_refused(self) -> None:
-        """Each anchor aliased once, yet `contents` is reached three times and
-        nests deeper than written: the bound counts written-out values, not
-        aliases (Test/Challenge finding 7, SC-C; interim, pending the owner)."""
+        """Each anchor aliased once, yet `contents` is reached three times: the
+        size bound counts written-out values, not aliases (SC-C), and in
+        `NESTED_ONCE` the third copy also nests deeper than written (SC-A).
+        Interim, pending the owner (Test/Challenge finding 7; Reviewer R2)."""
+        once = "configuration:\n  h: &h {name: a, contents: &c [x, y, z]}\n  i: *h\n  j: *c\n"
+        found = find_non_json_value(yaml.safe_load(once))
+        assert found is not None
+        assert (found.kind, found.path, found.reason) == ("alias", "configuration.j", _TOO_LARGE)
         found = find_non_json_value(yaml.safe_load(NESTED_ONCE))
         assert found is not None
-        assert (found.kind, found.path) == ("alias", "configuration.system.syslog.file.0.contents")
+        assert (found.path, found.reason) == (
+            "configuration.system.syslog.file.0.contents",
+            _TOO_DEEP,
+        )
 
     def test_the_bound_is_twice_the_parsed_document(self) -> None:
         """Parsed: the root, the block and its scalar, one more scalar: 4 values.
@@ -213,6 +232,27 @@ class TestFindNonJsonValue:
         found = find_non_json_value({**at_the_bound, "e": block})
         assert found is not None
         assert (found.kind, found.path) == ("alias", "e")
+
+    @pytest.mark.parametrize(
+        ("source", "path"),
+        [
+            (
+                "configuration: {a: &x [1], b: *x, c: *x, e: *x, f: *x, system: {host-name: r1}}",
+                "configuration.f",
+            ),
+            (_hosts_sharing_contents(11), "configuration.system.syslog.host.7.contents"),
+        ],
+        ids=["values-after-the-copies", "eleven-hosts"],
+    )
+    def test_the_refusal_names_an_alias_when_the_copies_end_early(
+        self, source: str, path: str
+    ) -> None:
+        """Only copies spend the bound, so the refusal names the alias whose copy
+        passed it, never a value met for the first time after the copies
+        (Reviewer R1)."""
+        found = find_non_json_value(yaml.safe_load(source))
+        assert found is not None
+        assert (found.kind, found.path, found.reason) == ("alias", path, _TOO_LARGE)
 
     def test_one_value_past_twice_is_refused(self) -> None:
         """Parsed 5 values; written out 9 passes and 11 is refused: the bound is

@@ -57,11 +57,43 @@ Builder consequences found while implementing, recorded under the challenges the
     (executed). Fixed: `test_a_shared_object_is_spelled_in_each_of_its_contexts` (json and
     yaml-new); it fails at base and under that mutation.
 
+Fresh isolated Reviewer (separate agent, Opus, no Builder reasoning) on records head
+`1d9db9e`, code head `4d30eec`, base `87e14cd`; probes under
+`private_test_data/makeover-work/yaml-new-alias-cycles/review/`. Verdict: **Changes
+required**, one binding finding. It found the ruling implemented at every door, no
+denial-of-service against base (bombs and chains refused in about 0.2 s at each door;
+recursion thresholds for deep alias-free text identical at base and head), nothing leaked by
+anonymized runs, the non-break call sound, and both backlog entries reproducible.
+Resolutions in the follow-up commit:
+
+14. R1 binding: the size budget could run out on a value met for the first time after the
+    copies, so the refusal named a non-alias (`configuration.system`, or a host's `name`
+    scalar; 16 of 20,000 random shared documents). Fixed as proposed: only visits inside a
+    copy spend a budget of the parsed size (the same accept set: the rest of the walk visits
+    exactly that many) and meet the depth ceiling. Row
+    `test_the_refusal_names_an_alias_when_the_copies_end_early` (`configuration.f`, eleven
+    hosts at `...host.7.contents`) fails on the old walk; every earlier pinned path is
+    unchanged.
+15. R2: SC-C's counterexample was refused by the depth bound, not the count. Fixed: the test
+    pins a size refusal of one-alias-per-anchor (`configuration.j`) and `NESTED_ONCE` with its
+    depth reason; SC-C restated; design.md Risks corrected.
+16. R3: ARCHITECTURE.md said "twice the parsed size or depth" and the kernel docstring left
+    out the depth bound. Fixed in both.
+17. R4: the changelog said the change only loosens; on `from_dict` with yaml-new it refuses
+    a caller's IR past the bounds. Fixed in the fragment; added to SC-A (an in-memory IR has
+    no text, so "deeper than written" is arbitrary there).
+18. R5: SC-2 and SC-A understated user impact. Fixed with the Reviewer's concrete examples.
+19. R6: the device figure does not cover yaml-new. Fixed: its scope stated here and in
+    tasks.md 2.3.
+
 ## Evidence
 
 - Canonical full checkpoint at `8fecbdd` (code head `4d30eec`): every check passed, 349 s;
   13,380 passed, 22 xfailed, 37 skipped; coverage 93.15 %; schema-25.2 tiers exit 0.
-- Device corpus base `87e14cd` vs head: 0 of 96 conversions differ.
+- Device corpus base `87e14cd` vs head: 0 of 96 conversions differ. The tool writes set,
+  structured, json and yaml, so this covers the JSON object stage's copy, not yaml-new; the
+  Reviewer's probe adds yaml-new over 24 renderings (no shared container in the reader's IR,
+  output equal to JSON output).
 - Door probe (doors-base.txt, doors-head.txt): shared block now read at every yaml-new door;
   cycle refused as `cycle`; bombs refused at `l1.2` in about 1 ms; legacy `yaml` unchanged.
 - Mutations (no size bound, 2P+1, no depth bound, global seen-set, containers only,
@@ -76,7 +108,8 @@ Builder consequences found while implementing, recorded under the challenges the
 - Counterexample: the owner's ruling names no limit, but pure expansion is exponential
   (billion laughs, 10^9 values from 9 lines; executed).
 - User impact: without a bound any yaml-new door can be made to hang; with it, a small file
-  reusing one block many times is refused (`a: &x {k: v}` with three more aliases).
+  reusing one block many times is refused (`a: &x {k: v}` with three more aliases; four
+  syslog hosts sharing one two-entry `contents`, Reviewer probe p3_idiom.py).
 - Proposed correction: written out, at most twice the parsed values. Grounded in the
   property the earlier rule had (linear in the loaded document) and in the ruling's
   "reached twice". Alternatives for the owner: a larger factor, or a fixed allowance added
@@ -94,8 +127,13 @@ Builder consequences found while implementing, recorded under the challenges the
   document's deepest value (aliases as leaves): no number, and no stage meets a depth an
   alias-free document of the same text could not have. It also refuses a block defined
   shallow (a sibling of `configuration`, say) and aliased deeper than anything else in the
-  file. Alternative for the owner: a fixed ceiling (such as 64 levels, beyond any Junos
-  hierarchy) with the walk kept within it.
+  file: the common YAML idiom of anchors in a top-level block (`x-contents: &c [...]`, then
+  `contents: *c` under `configuration`) is refused, while the same text converts with
+  `-i yaml`, and an unrelated deeper sibling makes it pass (Reviewer probes p3, p8). For a
+  caller's in-memory IR on `from_dict` there is no text, so "deeper than written" is
+  arbitrary there (an object shared one level deeper is refused). Alternatives for the
+  owner: a fixed ceiling (such as 64 levels, beyond any Junos hierarchy) or a depth
+  allowance added to the parsed depth, with the walk kept within it.
 - Decision: Pending owner decision. Interim action: the parsed-depth rule is implemented.
 
 ### SC-B Amplification inside PyYAML (pre-existing)
@@ -112,8 +150,9 @@ Builder consequences found while implementing, recorded under the challenges the
 
 - Artifact: the requirement's "every document that reaches each value at most twice" against
   the ruling's "a mapping or list reached twice through an alias is expanded".
-- Counterexample (executed): `NESTED_ONCE`, each anchor aliased once, `contents` reached
-  three times written out: refused.
+- Counterexample (executed): `configuration: {h: &h {name: a, contents: &c [x, y, z]}, i: *h,
+  j: *c}`, each anchor aliased once, `contents` reached three times written out: refused by
+  the size count at `configuration.j` (`NESTED_ONCE` is refused by the depth bound, SC-A).
 - User impact: nested sharing in a small file can be refused.
 - Proposed correction: the count is per written-out value (stated in spec and decision
   record); the owner may prefer a per-alias reading, which needs a different bound.

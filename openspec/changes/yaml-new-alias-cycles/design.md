@@ -51,8 +51,11 @@ only the finished document, after `junos_json_object` and `_unshared` have walke
    and the YAML dumper meets no shared object (no anchor). Validation: check, then validate
    the loaded object (read-only, bounded).
 5. **Walk.** Two passes: an iterative count of values and deepest depth (each container
-   once, document order; ends on cycles), then the recursive expanded walk with a step
-   budget and the depth ceiling, building paths on return as today. The walk recurses no
+   once, document order; ends on cycles), then the recursive expanded walk in which only
+   visits inside a copy spend a budget of the parsed size (the rest of the walk visits
+   exactly that many, so the total stays within twice) and only they meet the depth
+   ceiling, so a refusal is always met inside a copy and names its outermost alias
+   (Reviewer R1), building paths on return as today. The walk recurses no
    deeper than the parsed document, which PyYAML's own recursive composer already built.
 
 ## Risks
@@ -65,7 +68,7 @@ only the finished document, after `junos_json_object` and `_unshared` have walke
   PyYAML while loading (TC6, SC-B, pre-existing).
 - The depth bound refuses a block defined shallow and aliased deeper than anything else in
   the file (SC-A); the size bound counts written-out values, so nested anchors each aliased
-  once can pass it (SC-C).
+  once can be refused by it (SC-C).
 - Merge keys (`<<: *a`) are resolved by PyYAML at load as a shallow copy of keys; a container
   value they copy is shared and now written out (refused at base); a merge chain costs
   quadratic time in PyYAML itself (pre-existing, unchanged).

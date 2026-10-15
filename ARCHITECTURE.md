@@ -152,7 +152,7 @@ re-parsed. `yaml` is a second implementation: the IR dumped as YAML, read with
 what else it touches is listed in
 `docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`. yaml-new text is
 untrusted input: `junoscfg.input.find_non_json_value` writes a shared block out
-but refuses a cycle and an alias past twice the parsed size or depth
+but refuses a cycle and an alias past twice the parsed size or deeper than the parsed depth
 (`docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md`).
 
 **Generated artifacts are never hand-edited.** Everything under

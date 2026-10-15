@@ -79,18 +79,23 @@ def find_non_json_value(data: Any) -> NonJsonValue | None:
     - a mapping or list reached inside itself, kind ``cycle``, at the path where
       it is reached again;
     - an alias whose copies would make the document, written out, hold more
-      than twice the values it holds as parsed (mappings, lists and scalars; a
-      mapping or list reached again counted once), kind ``alias``, at the path
-      of the outermost alias being written out when that size is passed.
+      than twice the values it holds as parsed (mappings, lists and scalars,
+      each scalar per place; a mapping or list reached again counted once), or
+      nest deeper than the parsed document's deepest value (an alias a leaf,
+      as in the text), kind ``alias``, at the path of the outermost alias being
+      written out when a bound is passed.
 
-    Every document that reaches each value at most twice passes the bound; one
-    without aliases never reaches it. The walk stops within twice the parsed
-    size, so it, and every stage after it, stays linear in the parsed document
-    (decision 2026-10-15-yaml-new-expands-aliases-within-a-bound; the factor is
+    Every document that reaches each value at most twice and nests no deeper
+    than written passes the bounds; one without aliases never reaches them.
+    The walk stops within twice the parsed size and the parsed depth, so it,
+    and every stage after it, stays linear in the loaded object (decision
+    2026-10-15-yaml-new-expands-aliases-within-a-bound; both bounds are
     interim, pending the owner). Returns ``None`` for a JSON document.
     """
     size, depth = _as_parsed(data)
-    return _Walk(2 * size, depth).visit(data, 0, inside_copy=False)
+    # The walk outside copies visits exactly *size* values, so the copies may
+    # visit *size* more: twice the parsed size written out.
+    return _Walk(size, depth).visit(data, 0, inside_copy=False)
 
 
 def _as_parsed(data: Any) -> tuple[int, int]:
@@ -116,7 +121,8 @@ def _as_parsed(data: Any) -> tuple[int, int]:
 
 
 class _Walk:
-    """The written-out walk, with the bound's remaining steps and the open containers."""
+    """The written-out walk: the steps left to the copies, the parsed depth, and
+    the mappings and lists met so far and still open."""
 
     def __init__(self, budget: int, deepest: int) -> None:
         self.left = budget
@@ -125,19 +131,22 @@ class _Walk:
         self.open: set[int] = set()
 
     def visit(self, data: Any, depth: int, *, inside_copy: bool) -> NonJsonValue | None:
-        self.left -= 1
-        if self.left < 0:
-            return NonJsonValue("alias", "", _TOO_LARGE)
-        if depth > self.deepest:
-            return NonJsonValue("alias", "", _TOO_DEEP)
-        if not isinstance(data, (dict, list)):
+        container = isinstance(data, (dict, list))
+        if container and id(data) in self.open:
+            return NonJsonValue("cycle", "", _NO_SPELLING)
+        again = container and id(data) in self.seen
+        if inside_copy or again:
+            # Only a copy is charged, so a refusal is always met inside one.
+            self.left -= 1
+            if self.left < 0:
+                return NonJsonValue("alias", "", _TOO_LARGE)
+            if depth > self.deepest:
+                return NonJsonValue("alias", "", _TOO_DEEP)
+        if not container:
             if isinstance(data, _JSON_SCALARS):
                 return None
             return NonJsonValue(_kind(data), "", _NO_SPELLING)
         key = id(data)
-        if key in self.open:
-            return NonJsonValue("cycle", "", _NO_SPELLING)
-        again = key in self.seen
         self.seen.add(key)
         self.open.add(key)
         found = self._children(data, depth + 1, inside_copy=inside_copy or again)
