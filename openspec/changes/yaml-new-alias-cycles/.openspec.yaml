@@ -61,6 +61,6 @@ verification:
   - tests/unit/convert/test_convert_api.py
   - tests/unit/input/test_input.py
   - tests/unit/validate/test_json_yaml_validator.py
-  dependencies: [2026-10-15-relative-null-flags]
+  dependencies: [openspec/changes/archive/2026-10-15-relative-null-flags]
   changelog: changelog.d/+yaml-new-alias-cycles.feature.md
   generated-records: []
