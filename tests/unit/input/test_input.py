@@ -243,20 +243,46 @@ class TestFindNonJsonValue:
     @pytest.mark.parametrize(
         ("document", "found"),
         [
-            ({"a": [1, {"b": datetime.date(2026, 10, 15)}], 1: (2, b"x")}, None),
+            ({"a": [1, {"b": datetime.date(2026, 10, 15)}], "c": (2, b"x")}, None),
             (yaml.safe_load(CYCLE), ("cycle", "configuration.system.x")),
             (
-                {1: datetime.date(2026, 10, 15), "x": nested_ir(65)},
+                {"y": datetime.date(2026, 10, 15), "x": nested_ir(65)},
                 ("value", "x" + ".a" * 64),
             ),
         ],
-        ids=["yaml-scalars-and-keys", "a-cycle", "too-deep"],
+        ids=["yaml-scalars", "a-cycle", "too-deep"],
     )
     def test_without_scalars_only_a_cycle_or_depth_is_refused(
         self, document: object, found: tuple | None
     ) -> None:
         """The `yaml` reader's IR holds dates and other YAML scalars: with
-        `scalars=False` only what junoscfg's own recursion cannot walk is refused
-        (owner ruling on C5)."""
+        `scalars=False` no scalar value is refused, only what junoscfg's own
+        recursion cannot walk (owner ruling on C5), and a key that is not a
+        string (below)."""
         result = find_non_json_value(document, scalars=False)
         assert (tuple(result)[:2] if result else None) == found
+
+    @pytest.mark.parametrize(
+        ("document", "found"),
+        [
+            ({"a": [{"b": "x", 64496: "y"}]}, ("int key", "a.0")),
+            ({"a": {datetime.date(2026, 10, 15): nested_ir(70)}}, ("date key", "a")),
+            ({"a": {True: "x"}}, ("bool key", "a")),
+            ({None: "x"}, ("null key", "")),
+        ],
+        ids=["int-key", "date-key-before-its-deep-value", "bool-key", "null-key"],
+    )
+    def test_without_scalars_a_key_that_is_not_a_string_is_refused(
+        self, document: object, found: tuple
+    ) -> None:
+        """Every stage after the `yaml` reader takes a key as a statement name,
+        so a key that is not a string is refused whatever *scalars* says (owner
+        request 2026-10-16, change own-crash-fixes): where its mapping is,
+        before anything below it is walked."""
+        assert tuple(find_non_json_value(document, scalars=False) or ())[:2] == found
+
+    def test_a_key_under_an_unwalked_prefix_is_not_refused(self) -> None:
+        """The values of the keys the `yaml` reader drops are not walked, so a
+        key that is not a string inside one is not refused."""
+        document = {"configuration": {"_meta_acme": {1: "x"}, "system": {"host-name": "r1"}}}
+        assert find_non_json_value(document, scalars=False, unwalked=("_meta_",)) is None

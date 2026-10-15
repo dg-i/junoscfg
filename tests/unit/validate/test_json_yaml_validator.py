@@ -85,6 +85,56 @@ class TestYamlValidation:
         result = validator.validate_yaml("")
         assert result.valid is True
 
+    @pytest.mark.parametrize(
+        ("document", "kind", "path"),
+        [
+            (
+                "configuration:\n  system:\n    host-name: r1\n  64496: x\n",
+                "int key",
+                "configuration",
+            ),
+            ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
+            ("configuration:\n  system:\n    2026-10-15: x\n", "date key", "configuration.system"),
+        ],
+        ids=["int-key", "bool-key", "date-key"],
+    )
+    def test_a_key_that_is_not_a_string_is_invalid(self, validator, document, kind, path):
+        """A key that is not a string is an invalid result naming its kind and
+        path, as yaml-new validation gives, never a TypeError from jsonschema
+        (owner request 2026-10-16, change own-crash-fixes)."""
+        result = validator.validate_yaml(document)
+        assert result.valid is False
+        assert [(e.message, e.path) for e in result.errors] == [
+            (f"YAML {kind} has no JSON spelling", path)
+        ]
+
+    def test_a_cycle_or_a_value_past_64_levels_is_invalid(self, validator):
+        """The `yaml` reader refuses a cycle and a value past 64 levels;
+        validation reports them the same way (owner request 2026-10-16)."""
+        for source, message, path in (
+            (
+                "configuration: &a\n  system:\n    x: *a\n",
+                "YAML cycle has no JSON spelling",
+                "configuration.system.x",
+            ),
+            (
+                nested_yaml(62),
+                "YAML value is nested deeper than 64 levels",
+                "configuration.system.x" + ".0" * 62,
+            ),
+        ):
+            result = validator.validate_yaml(source)
+            assert result.valid is False
+            assert [(e.message, e.path) for e in result.errors] == [(message, path)]
+
+    def test_a_meta_key_value_is_not_walked(self, validator):
+        """What an `_ansible*` or `_meta_*` key holds is admitted unread by the
+        schema and dropped unwalked by the reader: a key that is not a string
+        or deep nesting there stays valid."""
+        for held in ("{64496: x}", "[" * 70 + "x" + "]" * 70):
+            source = f"configuration:\n  system:\n    host-name: r1\n    _meta_acme: {held}\n"
+            assert validator.validate_yaml(source).valid is True
+
 
 class TestYamlAsJsonValidation:
     """yaml-new validates as the JSON object it spells: the JSON schema, not the

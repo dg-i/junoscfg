@@ -55,7 +55,10 @@ verification:
   - src/junoscfg/display/CONTRACT.md
   - src/junoscfg/display/path_filter.py
   - src/junoscfg/validate/json_yaml_validator.py
+  - tests/contract/test_every_message.py
+  - tests/unit/cli/test_audit_command.py
   - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
   - tests/unit/convert/test_convert_api.py
   - tests/unit/display/test_display_filters.py
   - tests/unit/input/test_input.py

@@ -40,6 +40,7 @@ from tests.support.aliases import (
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
     alias_chain_yaml,
+    nested_ir,
     nested_yaml,
 )
 from tests.support.paths import PROJECT_ROOT
@@ -228,6 +229,31 @@ class TestConvertReadsAndWrites:
         result = run(["convert", "-i", reader, "-e", "json"], source)
         assert result.exit_code == 2, result.output
         assert said in result.stderr
+        assert result.stdout == ""
+
+    @pytest.mark.parametrize("reader", ["yaml", None], ids=["yaml", "detected"])
+    def test_a_yaml_key_that_is_not_a_string_exits_two(self, reader: str | None) -> None:
+        """The owner's example (2026-10-16, change own-crash-fixes): a number as
+        a key, which crashed the meta-key cleanup with a traceback, is refused
+        with its path, as yaml-new refuses it."""
+        source = "configuration:\n  system:\n    host-name: r1\n  64496: x\n"
+        flags = ["-i", reader] if reader else []
+        result = run(["convert", *flags, "-e", "set"], source)
+        assert result.exit_code == 2, result.output
+        assert "a YAML int key at configuration has no JSON spelling" in result.stderr
+        assert "Traceback" not in result.output and "64496" not in result.output
+        assert result.stdout == ""
+
+    def test_json_past_64_levels_exits_two(self) -> None:
+        """JSON nested 1,600 levels deep crashed with RecursionError (owner
+        request 2026-10-16, change own-crash-fixes); it is refused with its path."""
+        source = json.dumps({"configuration": nested_ir(1600)})
+        result = run(["convert", "-i", "json", "-e", "set"], source)
+        assert result.exit_code == 2, result.output
+        assert (
+            "a JSON value at configuration" + ".a" * 64 + " is nested deeper than 64 levels"
+            in result.stderr
+        )
         assert result.stdout == ""
 
     def test_detected_yaml_refuses_a_cycle(self) -> None:
@@ -483,6 +509,18 @@ class TestPathOptions:
         assert result.stdout == expected
         if path != "nonexistent":
             assert expected != library(self.SOURCE, Format.JSON, writer)
+
+    def test_path_keeps_a_selected_leafs_tags(self) -> None:
+        """The owner's example (2026-10-16, change own-crash-fixes): a selected
+        leaf keeps its `deactivate`, as `--path system` writes it, where it was
+        written active."""
+        source = (
+            "set system host-name r1\ndeactivate system host-name\n"
+            "set system domain-name example.net\n"
+        )
+        result = run(["convert", "-i", "set", "-e", "set", "--path", "system.host-name"], source)
+        assert result.exit_code == 0, result.output
+        assert result.stdout == "set system host-name r1\ndeactivate system host-name\n"
 
 
 #: An IP-typed leaf, a name server.

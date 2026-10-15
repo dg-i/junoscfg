@@ -273,6 +273,33 @@ class TestFilterDictByPath:
         result = filter_dict_by_path(data, ["interfaces"])
         assert result is None
 
+    def test_a_selected_leaf_keeps_its_annotation(self) -> None:
+        """A leaf's or leaf-list's tags sit beside it, under `@<key>`: rebuilt
+        absolute, the selection keeps them next to the key, where they were
+        dropped and the statement read active (owner request 2026-10-16, change
+        own-crash-fixes). Relative, the value alone is returned, as before."""
+        data = {
+            "configuration": {
+                "system": {
+                    "host-name": "r1",
+                    "@host-name": {"inactive": True, "protect": "protect"},
+                    "domain-name": "example.net",
+                }
+            }
+        }
+        assert filter_dict_by_path(data, ["system", "host-name"]) == {
+            "configuration": {
+                "system": {
+                    "host-name": "r1",
+                    "@host-name": {"inactive": True, "protect": "protect"},
+                }
+            }
+        }
+        assert filter_dict_by_path(data, ["system", "domain-name"]) == {
+            "configuration": {"system": {"domain-name": "example.net"}}
+        }
+        assert filter_dict_by_path(data, ["system", "host-name"], relative=True) == "r1"
+
     def test_relative_strips_prefix(self) -> None:
         data = {"configuration": {"system": {"syslog": {"file": "messages"}}}}
         result = filter_dict_by_path(data, ["system", "syslog"], relative=True)

@@ -67,6 +67,20 @@ class TestCliValidation:
             assert "value is nested deeper than 64 levels" in result.output
             assert path in result.output
 
+    def test_a_yaml_key_that_is_not_a_string_exits_one(self, artifacts_dir: str) -> None:
+        """`-v -i yaml` reports a key that is not a string with its path, as
+        yaml-new validation does, where jsonschema raised TypeError (owner
+        request 2026-10-16, change own-crash-fixes)."""
+        result = CliRunner().invoke(
+            main,
+            ["-v", "-i", "yaml", "--artifacts", artifacts_dir],
+            input="configuration:\n  system:\n    host-name: r1\n  64496: x\n",
+        )
+        assert result.exit_code == 1, result.output
+        assert "Validation: FAILED (1 error(s))" in result.output
+        assert "int key has no JSON spelling" in result.output
+        assert "Traceback" not in result.output and "64496" not in result.output
+
     def test_an_invalid_document_exits_one_with_its_errors(self, artifacts_dir: str) -> None:
         runner = CliRunner()
         result = runner.invoke(
