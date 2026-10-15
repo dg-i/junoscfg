@@ -7,7 +7,7 @@
 
 - [x] 2.1 Shared Junos JSON object stages in json_output/json_input; yaml-new reader and writer beside them; format table; dispatch through it; Format.YAML_NEW; validation door; CLI help.
 - [x] 2.2 Docs: user guide (yaml-new, migration, planned rename), API pages, README, CLI reference, ARCHITECTURE.md, convert contract, changelog fragment, backlog disposition.
-- [ ] 2.3 Evidence: yaml byte-identical to base (catalogue and device corpus comparison), device-evidence checks, full checkpoint.
+- [x] 2.3 Evidence: yaml byte-identical to base (catalogue 1,936 conversions and device corpus 96, 0 differ); device-evidence checks pass in the suite; canonical full checkpoint recorded in review.md before review.
 
 ## 3. Review and evidence
 
