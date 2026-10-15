@@ -18,8 +18,8 @@ behaviour changes; the importer is repository tooling with no test of its own. Z
 conversion: the probe questions the JSON writer's `[null]` spelling.
 
 Evidence (device first): on the QFX5120 25.2R2-S1.5 the owner ran `load merge json` of
-junoscfg's JSON for 15 statements the device itself writes as `{}`, plus the inactive
-`l3vpn` junoscfg writes as `{"@": {"inactive": true}}`. The device printed `load
+junoscfg's JSON for 15 statements the device itself writes as `{}`: 14 as junoscfg's
+`[null]` and the inactive `l3vpn` junoscfg writes as `{"@": {"inactive": true}}`. The device printed `load
 complete` and `show | display set` listed all 16 lines of the set source
 (private_test_data/qfx-null-probe/probe.out). This answers device question C8 for these
 paths: `[null]` loads as the same statements. The committed capture (four renderings
