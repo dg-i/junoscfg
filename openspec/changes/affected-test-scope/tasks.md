@@ -1,13 +1,20 @@
-## 1. Selection and evidence
+## 1. Verification
 
-- [x] 1.1 Add focused narrowing and conservative fallback regressions; observe old failures.
-- [x] 1.2 Implement dependency-based tooling selection and document the contract.
-- [ ] 1.3 Adopt reviewed shared improvements through the supported updater.
-- [ ] 1.4 Measure representative workflows including setup, hooks and failed attempts.
-- [ ] 1.5 Pass cheap gates then canonical full checkpoint on a stable snapshot.
+- [x] 1.1 Add focused narrowing, conservative fallback and repository-reader regressions;
+  observe them failing on the previous selector (2d43f0c, c55f076, 4bc64ce).
 
-## 2. Closure
+## 2. Change
 
-- [ ] 2.1 Complete fresh independent review and resolve binding findings.
-- [ ] 2.2 Capture metrics and synchronize reviewed main specification.
-- [ ] 2.3 Archive, bump patch version, integrate locally and tag without pushing.
+- [x] 2.1 Implement dependency- and reader-based selection and document the contracts.
+- [x] 2.2 Adopt reviewed template v0.14.4 through the supported updater with the
+  application CI preserved (bd6c8a8).
+
+## 3. Review and evidence
+
+- [ ] 3.1 Pass cheap gates, then one canonical full checkpoint on a stable snapshot;
+  record the command and checked HEAD here.
+- [ ] 3.2 Measure equivalent workflows including setup, hooks and failed attempts.
+- [ ] 3.3 Complete the risk-required fresh isolated review and resolve binding findings.
+- [ ] 3.4 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
+- [ ] 3.5 Finalizer synchronizes the reviewed main specification, archives, bumps the
+  patch version, integrates locally and tags without pushing.

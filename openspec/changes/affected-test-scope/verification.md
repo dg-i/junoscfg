@@ -180,3 +180,18 @@ documents or records: treating them otherwise would run the 157s schema tooling
 modules on every bookkeeping commit. This is an intentional, documented limit;
 the full checkpoint runs every test. Corrections were observed red on c55f076
 (26 failed of 104) and pass with the corrected selector (117 in 2.08s).
+
+## Adoption of template v0.14.4 (2026-10-15)
+
+v0.14.3 preserved the local CI but its updater commit was not credited beside a
+governed change: the ignored `.claude/` mirror lost unchanged files in the receipt.
+That is a template defect, fixed upstream as linked skill mirrors (template v0.14.4,
+checks-v0.18.4; upstream review `docs/reviews/2026-10-15-linked-skill-mirror.md`).
+The branch was reset to 4bc64ce and the release's one-time invocation
+(`uvx --from git+file://…@186dcb2…#subdirectory=checks agent-ready update --to v0.14.4`)
+ran in 8s: no conflict, `ci.yml` preserved, four mirror links, 30 receipt paths
+with no mirror entry. The exact updater commit bd6c8a8 ran its hook in 223s (the
+lock change selects the whole suite; documented double run). `lane` credits 31
+updater-only paths and `readiness` reports ready.
+
+Checkpoint: next is 3.1, the cheap gates then one canonical full checkpoint.

@@ -18,6 +18,19 @@ verification:
   - docs/VERIFICATION.md
   - openspec/specs/schema-pipeline/test-selection/spec.md
   - changelog.d/+affected-test-scope.misc.md
+  - .agents/skills/openspec-apply-change/SKILL.md
+  - .agents/skills/openspec-archive-change/SKILL.md
+  - .agents/skills/openspec-bulk-archive-change/SKILL.md
+  - .agents/skills/openspec-continue-change/SKILL.md
+  - .agents/skills/openspec-explore/SKILL.md
+  - .agents/skills/openspec-ff-change/SKILL.md
+  - .agents/skills/openspec-new-change/SKILL.md
+  - .agents/skills/openspec-onboard/SKILL.md
+  - .agents/skills/openspec-propose/SKILL.md
+  - .agents/skills/openspec-sync-specs/SKILL.md
+  - .agents/skills/openspec-update-change/SKILL.md
+  - .agents/skills/openspec-verify-change/SKILL.md
+  - docs/BACKLOG.md
   dependencies:
   - openspec/changes/archive/2026-10-14-schema-qualification-scope
   changelog: changelog.d/+affected-test-scope.misc.md
