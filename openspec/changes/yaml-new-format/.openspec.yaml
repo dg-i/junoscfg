@@ -30,7 +30,6 @@ verification:
   state: ready
   planned-paths:
   - .agent-ready/activation.json
-  - .agent-ready/vulture-whitelist.py
   - ARCHITECTURE.md
   - README.md
   - changelog.d/+yaml-new-format.feature.md

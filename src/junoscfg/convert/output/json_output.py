@@ -45,15 +45,18 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     return json.dumps(junos_json_object(config, wrap=wrap), indent=4, ensure_ascii=False) + "\n"
 
 
-class _NoAliasDumper(yaml.SafeDumper):
-    """A YAML dumper that writes a repeated object out each time.
+def _unshared(value: Any) -> Any:
+    """*value* with every mapping and list its own object.
 
     JSON has no anchors or aliases, so the YAML spelling of a JSON object
-    holds none either, even where a hand-built IR shares one object twice.
+    holds none either, even where a caller's selection shares one object twice
+    (PyYAML anchors a mapping or list it meets again).
     """
-
-    def ignore_aliases(self, data: Any) -> bool:  # noqa: ARG002 -- PyYAML's hook signature
-        return True
+    if isinstance(value, dict):
+        return {key: _unshared(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_unshared(item) for item in value]
+    return value
 
 
 def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
@@ -63,8 +66,8 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
     of the ``yaml`` writer, with no anchors or aliases.
     """
     return yaml.dump(
-        junos_json_object(config, wrap=wrap),
-        Dumper=_NoAliasDumper,
+        _unshared(junos_json_object(config, wrap=wrap)),
+        Dumper=yaml.SafeDumper,
         default_flow_style=False,
         allow_unicode=True,
         sort_keys=False,

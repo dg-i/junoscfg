@@ -23,13 +23,6 @@
 #   a rule's `spans` since change anonymize-embedded-values; tests and callers
 #   that rewrite one word by shape call `lexical`.
 #
-# - `Format.SET`, `STRUCTURED`, `JSON`, `YAML` and `YAML_NEW` are the consumer
-#   surface's members; the package reaches them by value (`Format(name)`, the
-#   CLI choices) since `_SUPPORTED_CONVERSIONS` is derived rather than listed
-#   (change yaml-new-format).
-# - `ignore_aliases` is the PyYAML dumper hook yaml-new's writer overrides; PyYAML
-#   calls it.
-#
 # Two genuinely dead private members were removed rather than whitelisted in
 # phase 4: CommunityRule._counter and _add_sibling. SetWalkOutput.meta_lines was
 # restored after `stage griffe` caught its removal as an undeclared API break.
@@ -68,9 +61,3 @@ category  # unused variable (src/junoscfg/validate/xsd_fixes.py:24)
 description  # unused variable (src/junoscfg/validate/xsd_fixes.py:25)
 applies_to  # unused variable (src/junoscfg/validate/xsd_fixes.py:26)
 lexical  # unused method (src/junoscfg/anonymize/rules/__init__.py)
-SET  # unused variable (src/junoscfg/__init__.py)
-STRUCTURED  # unused variable (src/junoscfg/__init__.py)
-JSON  # unused variable (src/junoscfg/__init__.py)
-YAML  # unused variable (src/junoscfg/__init__.py)
-YAML_NEW  # unused variable (src/junoscfg/__init__.py)
-_.ignore_aliases  # unused method (src/junoscfg/convert/output/json_output.py)

@@ -12,7 +12,7 @@ and promotes leaf-lists; JSON does neither and loads no schema.
 | Candidate | Coverage | Gap | Maintenance signal, lookup date | Verdict |
 |---|---|---|---|---|
 | JSON writer and reader in convert/output/json_output.py, convert/input/json_input.py | All Junos JSON rules, both directions | Object stage fused with text | In-repo, 2026-10-15 | Split each into object stage plus serializer/parser; share the object stage |
-| PyYAML (`yaml.safe_load`, `SafeDumper`), already a runtime dependency | YAML text both ways | Aliases for shared objects | pyyaml in uv.lock, 2026-10-15 | Use; a `SafeDumper` subclass ignoring aliases |
+| PyYAML (`yaml.safe_load`, `SafeDumper`), already a runtime dependency | YAML text both ways | Anchors for shared objects | pyyaml in uv.lock, 2026-10-15 | Use; the object is unshared before dumping |
 | JSON text round trip (`json.dumps` then the JSON reader) | Everything | Re-parses text; owner and backlog reject it | n/a | Rejected |
 
 ## Decisions
@@ -30,8 +30,8 @@ and promotes leaf-lists; JSON does neither and loads no schema.
    direction)`; `to_dict`, `from_dict` and `validate_config` dispatch on the id.
    `pipeline_result` passes `wrap=not relative` (set and structured ignore `wrap`), dropping its
    format list. `junoscfg.convert` exports the table; tach exposes it (C7).
-4. `Format.YAML_NEW = "yaml-new"` after `YAML`; `_SUPPORTED_CONVERSIONS` becomes every pair
-   but XML output, which is what its twenty rows already listed.
+4. `Format.YAML_NEW = "yaml-new"` after `YAML`; `_SUPPORTED_CONVERSIONS` becomes the product of
+   explicit reader and writer tuples, which is what its twenty rows already listed.
 5. Validation: `JsonYamlValidator.validate_yaml_as_json` (YAML parse errors as `validate_yaml`
    reports them, a non-JSON value as an error, then the JSON schema); `JunosValidator` delegates.
    `validate_yaml`'s parse-error result moves into a shared helper, unchanged.

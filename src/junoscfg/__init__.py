@@ -54,12 +54,13 @@ class Format(Enum):
     XML = "xml"
 
 
-# Supported (from_format, to_format) conversion pairs: every format reads and
-# writes every other, and itself (parse and re-render for normalization). XML
-# output is rejected separately so callers retain its documented
-# NotImplementedError.
+# Supported (from_format, to_format) conversion pairs: every reader with every
+# writer, identity included (parse and re-render for normalization). XML output
+# is rejected separately so callers retain its documented NotImplementedError.
+_READERS = (Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML_NEW, Format.XML)
+_WRITERS = (Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML_NEW)
 _SUPPORTED_CONVERSIONS: frozenset[tuple[Format, Format]] = frozenset(
-    (reader, writer) for reader in Format for writer in Format if writer is not Format.XML
+    (reader, writer) for reader in _READERS for writer in _WRITERS
 )
 
 
