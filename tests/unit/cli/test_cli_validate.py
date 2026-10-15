@@ -11,6 +11,7 @@ from __future__ import annotations
 from click.testing import CliRunner
 
 from junoscfg.cli import main
+from tests.support.aliases import alias_bomb_yaml
 
 
 class TestCliValidation:
@@ -41,15 +42,26 @@ class TestCliValidation:
         assert "bool key has no JSON spelling" in result.output
 
     def test_a_yaml_new_cycle_exits_one(self, artifacts_dir: str) -> None:
-        """A self-referencing alias is a value JSON cannot hold: an error, not a
-        RecursionError traceback (Reviewer finding 2)."""
+        """A self-referencing alias is a cycle JSON cannot hold: an error, not a
+        RecursionError traceback (Reviewer finding 2; owner ruling on PO-2)."""
         result = CliRunner().invoke(
             main,
             ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir],
             input="configuration: &a\n  system:\n    x: *a\n",
         )
         assert result.exit_code == 1, result.output
-        assert "alias has no JSON spelling" in result.output
+        assert "cycle has no JSON spelling" in result.output
+
+    def test_a_yaml_new_alias_bomb_exits_one(self, artifacts_dir: str) -> None:
+        """A billion-laughs document is an invalid result naming its alias,
+        refused before anything expands it (owner ruling on PO-2)."""
+        result = CliRunner().invoke(
+            main,
+            ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir],
+            input=alias_bomb_yaml(),
+        )
+        assert result.exit_code == 1, result.output
+        assert "alias expands the document past twice its size" in result.output
 
     def test_an_invalid_document_exits_one_with_its_errors(self, artifacts_dir: str) -> None:
         runner = CliRunner()

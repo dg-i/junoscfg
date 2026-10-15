@@ -35,6 +35,7 @@ from junoscfg import Format, convert_config, convert_config_result, validate_con
 from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.aliases import alias_bomb_yaml
 from tests.support.paths import PROJECT_ROOT
 from tests.support.shapes import SHAPES, WRITERS
 
@@ -194,6 +195,18 @@ class TestConvertReadsAndWrites:
         assert "_ansible_host" not in result.stdout
         as_json = library(legacy.read_text(), Format.YAML, Format.JSON)
         assert library(result.stdout, Format.YAML_NEW, Format.JSON) == as_json
+
+    @pytest.mark.parametrize("reader", ["yaml-new", "yaml"], ids=["yaml-new", "yaml-migration"])
+    def test_a_yaml_new_alias_bomb_exits_two(self, reader: str) -> None:
+        """A billion-laughs document is refused with its alias's path, exit 2,
+        whether yaml-new reads it or the yaml-new writer meets it on migration
+        (owner ruling on PO-2). Ten thousand values written out: the `yaml`
+        reader walks a bomb's expansion itself (pre-existing, outside the ruling)."""
+        result = run(["convert", "-i", reader, "-e", "yaml-new"], alias_bomb_yaml(levels=4))
+        assert result.exit_code == 2, result.output
+        assert "alias at lol1." in result.stderr
+        assert "expands the document past twice its size" in result.stderr
+        assert result.stdout == ""
 
     def test_a_value_json_cannot_hold_stops_the_migration(self, tmp_path: Path) -> None:
         """A date the yaml file holds unquoted has no JSON spelling: the

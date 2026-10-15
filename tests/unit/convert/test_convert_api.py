@@ -30,6 +30,13 @@ from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, pipeline_result, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.aliases import (
+    CYCLE,
+    SHARED_BLOCK,
+    SHARED_BLOCK_WRITTEN_OUT,
+    alias_bomb,
+    alias_bomb_yaml,
+)
 from tests.support.artifacts import write_minimal_tree
 from tests.support.shapes import SHAPES, in_order, read_ir
 
@@ -1047,12 +1054,6 @@ class TestJunosYamlReader:
                 "at version",
             ),
             ("2026-10-15\n", "date", "at the top level"),
-            (
-                "configuration:\n  system:\n    x: &a {k: v}\n    y: *a\n",
-                "alias",
-                "configuration.system.y",
-            ),
-            ("configuration: &a\n  system:\n    x: *a\n", "alias", "configuration.system.x"),
         ],
         ids=[
             "date",
@@ -1069,16 +1070,14 @@ class TestJunosYamlReader:
             "in-a-list",
             "beside-the-configuration",
             "the-document",
-            "an-alias",
-            "a-cycle",
         ],
     )
     def test_a_value_json_cannot_hold_is_refused(self, source: str, kind: str, where: str) -> None:
         """A YAML-only value has no JSON spelling; it is refused by its kind and
         path, never quoted, instead of failing later in a writer. The whole
         document is checked, wrappers and siblings of `configuration` too
-        (Test/Challenge B3, A5); an alias, a cycle included, is YAML-only too
-        (Reviewer finding 2; interim pending the owner's alias policy)."""
+        (Test/Challenge B3, A5). A shared block is not such a value: it is read
+        written out (owner ruling on PO-2/SC-1)."""
         with pytest.raises(ValueError, match="no JSON spelling") as raised:
             to_dict(source, "yaml-new")
         message = str(raised.value)
@@ -1086,6 +1085,37 @@ class TestJunosYamlReader:
         assert where in message
         for value in ("2026", "acme", "64496", "1.5", "on:"):
             assert value not in message
+
+    def test_a_shared_block_is_read_written_out(self) -> None:
+        """A block shared through an alias reads as the document written out, and
+        the IR holds no shared object (owner ruling on PO-2/SC-1)."""
+        ir = to_dict(SHARED_BLOCK, "yaml-new")
+        assert ir == to_dict(SHARED_BLOCK_WRITTEN_OUT, "yaml-new")
+        first, second = ir["system"]["syslog"]["host"]
+        assert first["contents"] == second["contents"]
+        assert first["contents"] is not second["contents"]
+        assert first["contents"][0] is not second["contents"][0]
+
+    @pytest.mark.parametrize(
+        ("source", "said"),
+        [
+            (CYCLE, "a YAML cycle at configuration.system.x has no JSON spelling"),
+            (alias_bomb_yaml(word="acme"), "expands the document past twice its size"),
+            (alias_bomb_yaml(200, 2, word="acme"), "expands the document past twice its size"),
+        ],
+        ids=["a-cycle", "billion-laughs", "two-to-the-200"],
+    )
+    def test_a_cycle_or_an_alias_bomb_is_refused(self, source: str, said: str) -> None:
+        """A cycle is refused where it is reached again; a bomb where its
+        expansion passes twice the parsed document, before any later stage
+        expands it. Kind and path, never a value."""
+        with pytest.raises(ValueError) as raised:
+            to_dict(source, "yaml-new")
+        message = str(raised.value)
+        assert said in message
+        if "cycle" not in said:
+            assert re.search(r"a YAML alias at acme1\.\d+ ", message), message
+            assert "acme," not in message and "[acme" not in message
 
     def test_an_empty_document_is_refused(self) -> None:
         with pytest.raises(ValueError, match="No 'configuration' key found in YAML input"):
@@ -1175,6 +1205,11 @@ def _value(rng: random.Random, depth: int) -> object:
     return {k: _value(rng, depth + 1) for k in keys}
 
 
+#: An IR whose `system` holds itself, as only a caller sharing objects builds it.
+_CYCLIC_IR: dict = {"system": {}}
+_CYCLIC_IR["system"]["x"] = _CYCLIC_IR["system"]
+
+
 class TestJunosYamlWriter:
     """yaml-new output is the JSON writer's object in YAML (spec conversion/junos-json-yaml)."""
 
@@ -1199,6 +1234,25 @@ class TestJunosYamlWriter:
             from_dict(ir, "yaml-new")
         assert "date at configuration.system.host-name" in str(raised.value)
         assert "2026" not in str(raised.value)
+
+    @pytest.mark.parametrize("wrap", [True, False], ids=["wrapped", "bare"])
+    @pytest.mark.parametrize(
+        ("ir", "said"),
+        [
+            (_CYCLIC_IR, "the cycle at {top}system.x has no JSON spelling"),
+            (alias_bomb(16), "expands the document past twice its size"),
+        ],
+        ids=["a-cycle", "two-to-the-16"],
+    )
+    def test_a_cycle_or_an_alias_bomb_is_refused_on_write(
+        self, ir: dict, said: str, wrap: bool
+    ) -> None:
+        """A caller's IR holding a cycle or a bomb is refused before the object
+        stage walks it: a ValueError naming kind and path, not a RecursionError
+        or an unbounded expansion (owner ruling on PO-2/SC-1)."""
+        with pytest.raises(ValueError) as raised:
+            from_dict(ir, "yaml-new", wrap=wrap)
+        assert said.format(top="configuration." if wrap else "") in str(raised.value)
 
     @pytest.mark.parametrize("mark", ["\x85", "\u2028", "\u2029"], ids=["nel", "ls", "ps"])
     def test_a_yaml_only_line_break_reads_back_as_written(self, mark: str) -> None:

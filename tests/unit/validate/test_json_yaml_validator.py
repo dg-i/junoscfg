@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from junoscfg.validate import JsonYamlValidator, SchemaLoadError
+from tests.support.aliases import SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, alias_bomb_yaml
 from tests.support.artifacts import make_artifacts_dir
 
 if TYPE_CHECKING:
@@ -111,7 +112,7 @@ class TestYamlAsJsonValidation:
             ),
             ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
             ("configuration:\n  system:\n    64496: x\n", "int key", "configuration.system"),
-            ("configuration: &a\n  system:\n    x: *a\n", "alias", "configuration.system.x"),
+            ("configuration: &a\n  system:\n    x: *a\n", "cycle", "configuration.system.x"),
         ],
         ids=["date", "bool-key", "int-key", "cycle"],
     )
@@ -123,6 +124,22 @@ class TestYamlAsJsonValidation:
         assert [(e.message, e.path) for e in result.errors] == [
             (f"YAML {kind} has no JSON spelling", path)
         ]
+
+    def test_a_shared_block_validates_written_out(self, validator):
+        """A block shared through an alias is judged as the document written out
+        (owner ruling on PO-2/SC-1)."""
+        shared = validator.validate_yaml_as_json(SHARED_BLOCK)
+        assert shared == validator.validate_yaml_as_json(SHARED_BLOCK_WRITTEN_OUT)
+        assert not any("JSON spelling" in e.message for e in shared.errors)
+
+    def test_an_alias_bomb_is_invalid(self, validator):
+        """A bomb is an invalid result naming its alias, never an expansion."""
+        result = validator.validate_yaml_as_json(alias_bomb_yaml())
+        assert result.valid is False
+        assert [e.message for e in result.errors] == [
+            "YAML alias expands the document past twice its size"
+        ]
+        assert result.errors[0].path.startswith("lol1.")
 
     def test_an_empty_document_is_judged_as_json_null(self, validator):
         assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors
