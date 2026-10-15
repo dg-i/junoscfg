@@ -24,10 +24,7 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
-
-Machine evidence and per-field provenance: [metrics.json](metrics.json).
-
-| Field | Value |
-|---|---|
 | Context expansion: src/junoscfg/__init__.py, src/junoscfg/cli.py | the named surfaces gain the format and read the format table |
 | Context expansion: src/junoscfg/validate/validator.py, json_yaml_validator.py | the validation door for yaml-new (validation domain) |
+
+Machine evidence and per-field provenance: [metrics.json](metrics.json).
