@@ -41,6 +41,22 @@ tests and records commit after this one:
 10. TC10: doors without alias rows. Fixed: `audit -i yaml-new`, `validate_config`, CLI
     convert of a shared block and of a cycle.
 
+Builder consequences found while implementing, recorded under the challenges they follow:
+
+11. The depth bound refuses the approved writer test's IR
+    (`test_a_shared_object_is_written_out_each_time`: an object shared at depth 1 and 2 in a
+    selection nowhere deeper). Its assertion (no anchor; equal to JSON output) is kept; its
+    IR now shares at one depth. A caller's IR on the secondary door `from_dict` sharing an
+    object deeper than anything written is refused (SC-A; `.openspec.yaml`).
+12. Two of the Builder's own kernel rows contradicted the design: `{"a": S, "b": [S]}` is the
+    depth edge (now pinned by `test_a_block_aliased_deeper_than_anything_written_is_refused`,
+    the passing row gains a deeper sibling), and the 2^64 writer path has 59 list steps, not
+    60 (the 2^16 path, 12, matches the Test/Challenge reference).
+13. Mutating the object stage's `unshared` back to `deepcopy` survived every test, although
+    at base the JSON writer coerced a shared login user's `class` in an unknown context too
+    (executed). Fixed: `test_a_shared_object_is_spelled_in_each_of_its_contexts` (json and
+    yaml-new); it fails at base and under that mutation.
+
 ## Specification challenges
 
 ### SC-2 The size bound (interim, set by the Builder under the owner's instruction)

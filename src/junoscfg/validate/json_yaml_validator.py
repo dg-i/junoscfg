@@ -90,9 +90,11 @@ class JsonYamlValidator:
 
         The loaded object is judged by the JSON schema, exactly as
         :meth:`validate_json` judges the same object; an empty document is
-        the object ``null``. A value no JSON document can hold (a timestamp,
-        a key that is not a string, an alias) is an error naming its kind and
-        path, as conversion refuses it.
+        the object ``null``. A mapping or list shared through an alias is
+        judged written out; a value no JSON document can hold (a timestamp, a
+        key that is not a string, a cycle) or an alias whose copies pass the
+        bounds of `find_non_json_value` is an error naming its kind and path,
+        as conversion refuses it.
 
         Args:
             source: YAML configuration as a string.
@@ -110,13 +112,12 @@ class JsonYamlValidator:
 
         found = find_non_json_value(data)
         if found is not None:
-            kind, path = found
             return ValidationResult(
                 valid=False,
                 errors=(
                     ValidationError(
-                        message=f"YAML {kind} has no JSON spelling",
-                        path=path or None,
+                        message=f"YAML {found.kind} {found.reason}",
+                        path=found.path or None,
                     ),
                 ),
             )

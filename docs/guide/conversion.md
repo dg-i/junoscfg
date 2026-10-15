@@ -255,9 +255,14 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
 - a scalar given for a leaf-list stays a scalar, as in JSON;
 - a value JSON cannot hold is refused with its path: an unquoted date or time
   (`2026-10-15`), a key that is not a string (`1: x`, `on: x`), binary data, a
-  set, an ordered map, or a mapping or list reused through an alias (`*name`;
-  write the block out). Quote such a value (`'2026-10-15'`). An alias of a single
-  value is read as that value.
+  set, an ordered map. Quote such a value (`'2026-10-15'`);
+- a block shared through an anchor and an alias (`contents: &c ...`, then
+  `contents: *c`) is read as if written out at each place, as JSON would hold
+  it. A block that contains itself is refused as a `cycle`. So that a few lines
+  of aliases cannot stand for an enormous document, an alias is refused when,
+  written out, the document would hold more than twice the values it holds as
+  written, or nest deeper than its deepest written value: write such a block
+  out instead. An alias of a single value is read as that value.
 
 YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,
 `yes` and `no` are booleans, `010` is the number 8 and `1:30` the number 90.

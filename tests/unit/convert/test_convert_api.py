@@ -1293,12 +1293,25 @@ class TestJunosYamlWriter:
         """A selection holding one object in two places is written as two copies:
         no YAML anchor or alias, which JSON has no spelling for. A bare list is
         written as given, so only the dumper can keep the alias out
-        (Test/Challenge B8)."""
+        (Test/Challenge B8). The object is shared at one depth: an alias nesting
+        deeper than anything written is refused (SC-A of yaml-new-alias-cycles)."""
         shared = {"host-name": "r1"}
-        ir = [shared, {"name": "h2", "x": shared}]
+        ir = [{"y": shared}, {"name": "h2", "x": shared}]
         written = from_dict(ir, "yaml-new", wrap=wrap)
         assert "&" not in written and "*" not in written
         assert yaml.safe_load(written) == json.loads(from_dict(ir, "json", wrap=wrap))
+
+    @pytest.mark.parametrize("writer", ["json", "yaml-new"])
+    def test_a_shared_object_is_spelled_in_each_of_its_contexts(self, writer: str) -> None:
+        """The object stage writes a shared object out before it spells it: a
+        login user's one-element `class` becomes a scalar there and nowhere
+        else, as for the IR written out (a copy that kept the sharing coerced
+        both)."""
+        user = {"name": "admin", "class": ["super-user"]}
+        shared = {"system": {"login": {"user": [user]}}, "unknown-acme": {"user": [user]}}
+        written_out = copy.deepcopy(shared)
+        written_out["unknown-acme"]["user"] = [copy.deepcopy(user)]
+        assert from_dict(shared, writer) == from_dict(written_out, writer)
 
     def test_a_value_json_cannot_hold_is_refused_on_write(self) -> None:
         """A date a `yaml` file held unquoted reaches the IR as a date; yaml-new

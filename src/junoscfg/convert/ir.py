@@ -30,3 +30,18 @@ def find_configuration(data: Any) -> dict[str, Any] | None:
 def wrap_configuration(config: dict[str, Any]) -> dict[str, Any]:
     """Wrap a configuration dict in the standard Junos JSON envelope."""
     return {"configuration": config}
+
+
+def unshared(value: Any) -> Any:
+    """*value* written out: every mapping and list its own object.
+
+    JSON has no aliases, so a mapping or list reached twice, through a YAML
+    alias or a caller sharing one object, stands for a copy of itself. Call
+    only on what `junoscfg.input.find_non_json_value` accepted: it holds no
+    cycle, and its copies are bounded. Scalars are returned as they are.
+    """
+    if isinstance(value, dict):
+        return {key: unshared(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [unshared(item) for item in value]
+    return value

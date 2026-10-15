@@ -123,7 +123,7 @@ class TestFindNonJsonValue:
     @pytest.mark.parametrize(
         "document",
         [
-            {"a": _SHARED, "b": [_SHARED]},
+            {"a": _SHARED, "b": [_SHARED], "c": {"d": {"e": "f"}}},
             yaml.safe_load(SHARED_BLOCK),
             {"a": _SHARED, "b": {"c": _SHARED}, "d": [_LIST, _LIST]},
             yaml.safe_load(
@@ -166,7 +166,7 @@ class TestFindNonJsonValue:
             ),
             (
                 {"configuration": alias_bomb(64)},
-                "configuration.system.lol" + ".0" * 60 + ".1",
+                "configuration.system.lol" + ".0" * 59 + ".1",
                 _TOO_LARGE,
             ),
             (yaml.safe_load(alias_bomb_yaml(200, 2)), "lol2.0", _TOO_DEEP),
@@ -184,6 +184,15 @@ class TestFindNonJsonValue:
             found = find_non_json_value(document)
         assert found is not None
         assert (found.kind, found.path, found.reason) == ("alias", path, reason)
+
+    def test_a_block_aliased_deeper_than_anything_written_is_refused(self) -> None:
+        """The depth bound's conservative edge: a block written at depth 1 and
+        aliased at depth 2, in a document nowhere deeper than 2 (SC-A; interim,
+        pending the owner). The same alias passes beside anything deeper."""
+        found = find_non_json_value({"a": _SHARED, "b": [_SHARED]})
+        assert found is not None
+        assert (found.kind, found.path) == ("alias", "b.0")
+        assert found.reason == _TOO_DEEP
 
     def test_a_block_reached_three_times_through_nested_anchors_is_refused(self) -> None:
         """Each anchor aliased once, yet `contents` is reached three times and

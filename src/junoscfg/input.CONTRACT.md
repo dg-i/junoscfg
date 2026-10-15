@@ -8,6 +8,9 @@ Not format detection or parsing; `convert.input` chooses the parser.
 
 - Comment stripping preserves quoted content — enforced by
   `tests/unit/input/test_input.py::TestRemoveComments::test_preserves_inline_content`.
+- `find_non_json_value` stops within twice the parsed values and the parsed depth,
+  so an alias bomb or a deep alias chain is refused, never expanded — enforced by
+  `tests/unit/input/test_input.py::TestFindNonJsonValue::test_an_alias_bomb_is_refused_in_linear_time`.
 - Unsupported raw set commands are refused before normalization or IR construction
   with value-free physical-line diagnostics — enforced by
   `tests/unit/convert/test_set_commands.py::test_unsupported_commands_are_refused`.
@@ -18,6 +21,8 @@ Not format detection or parsing; `convert.input` chooses the parser.
 - `find_unsupported_set_brackets` and `find_unsupported_set_commands` are the
   shared lexical boundaries consumed by raw set conversion and validation.
 - `find_non_json_value` is the boundary yaml-new conversion and validation share:
-  a loaded YAML document holds only what JSON holds.
+  a loaded YAML document holds only what JSON holds; a shared block is walked
+  written out, a cycle and an alias past the size or depth bound are refused
+  (decision 2026-10-15-yaml-new-expands-aliases-within-a-bound).
 - `iter_visible_set_lines` retains physical lines and content after leading comments.
 - `InputError` carries `lineno` for refusals whose callers must withhold source text.

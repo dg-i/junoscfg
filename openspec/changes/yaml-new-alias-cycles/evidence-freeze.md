@@ -74,6 +74,8 @@ ruling directs; C5 and C8 are reported.
   added: exact refusal paths, depth rows, counting rows, downstream sharing rows, door rows,
   timer guards. Invalidated: the acceptance-test list and design decisions 2 and 5; rerun:
   the red run.
+- Implementation delta (review.md items 11, 12): consequences of SC-A on one approved
+  writer test's data (assertion kept) and on two Builder kernel rows; no criterion changes.
 
 ## Scope and completion
 
