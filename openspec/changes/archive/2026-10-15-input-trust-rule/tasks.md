@@ -17,7 +17,7 @@
 - [x] 3.1 Fresh isolated review recorded in `review.md`
 - [x] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
 - [x] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head
-- [ ] 3.4 Archive, patch bump, merge and tag without pushing
+- [x] 3.4 Archive, patch bump, merge and tag without pushing (merge 1a79527, v0.28.21)
 
 ## Evidence
 

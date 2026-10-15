@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 5cbff05e7df88d1ea4293c132aa45870723b5d1e (post-merge, pre-archive assessment).
+- Observed integration head: 1a79527025466ae0b2ad1c2d3972f0159878b110 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 5cbff05e7df88d1ea4293c132aa45870723b5d1e.
-- Invitation status: pending; 81 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 1a79527025466ae0b2ad1c2d3972f0159878b110.
+- Invitation status: pending; 84 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -287,3 +287,11 @@ the unchanged 400s cold / 200s warm targets; after the correction review (tests 
 only) the focused tests and the fast set passed at `9d00c00`. No tests, coverage, hooks or
 review requirements were removed. The pending cadence invitation is retained; no owner
 feedback is inferred.
+
+Job completion (input-trust-rule): local merge `1a79527` records the owner's rule that
+configuration input is trusted in every format (`ARCHITECTURE.md` section 8, decision
+2026-10-15-configuration-input-is-trusted); documents and contracts only. The full
+checkpoint at `433bf4d` passed in 337s (schema-25.2 tiers selected by the two contract
+edits), within the unchanged 400s cold / 200s warm targets. No tests, coverage, hooks or
+review requirements changed. The pending cadence invitation is retained; no owner feedback
+is inferred.
