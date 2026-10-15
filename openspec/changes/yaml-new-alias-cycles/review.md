@@ -86,6 +86,13 @@ Resolutions in the follow-up commit:
 19. R6: the device figure does not cover yaml-new. Fixed: its scope stated here and in
     tasks.md 2.3.
 
+Correction review on `e0b5e20` (same Reviewer, read-only; code `b30dcd2`): R1 to R6
+resolved. R1 re-measured over 20,000 random shared documents: no size refusal names a
+non-alias (16 before); verdicts and paths equal the proposed variant, and the accept set is
+unchanged against `4d30eec`. Verdict: **Merge**. Its two cosmetic notes: the changelog
+fragment's long line is rewrapped (records only); the test helper's placement between two
+constants is accepted as is, since moving it would only reorder test code.
+
 ## Evidence
 
 - Follow-up canonical full checkpoint at `b30dcd2` (after R1 to R6): every check passed,
