@@ -67,6 +67,83 @@ Create an OpenSpec change only when an item is selected for implementation.
   `yaml-old` compatibility proposal. Create and link an OpenSpec change only
   when this item is selected, as required by [review scope](how-to/review-scope.md).
 
+## SIMPLIFY-001 — One schema-guided traversal instead of six
+
+- **Status:** open; future work, not selected for implementation.
+- **Finding and impact:** six modules each walk the dict IR (or token path)
+  alongside the schema tree, and each re-implements the same descent rules:
+  universal statements below the root, transparent containers (child entries
+  plus sibling keys such as `interface-range`), `apply-groups`, list entries
+  and unplaced records. Only the lookup `display.schema_child` is shared.
+  A descent rule fixed in one walker must be fixed again in the others;
+  [the field validator](../src/junoscfg/convert/field_validator.py) says so
+  itself ("as in every walker of the tree (ARCH-C06)"), and NEW-A-S2 was this
+  kind of divergence.
+- **Walkers:** `anonymize/walker.py` (`_Walker.node`), `audit/walker.py`
+  (`_walk_dict`), `convert/field_validator.py` (`_walk`, complexity 55),
+  `convert/output/dict_walker.py` (`_walk`, complexity 75),
+  `convert/input/set_input.py` (`_merge_tokens`, complexity 76 over 348 lines,
+  and `_apply_meta`, complexity 48, which walks the same token path a second
+  time to place a tag), and `display/to_yaml.py`.
+- **Fix instruction:**
+  1. Inventory each walker's descent rules into one table (rule × walker),
+     marking where they disagree; every disagreement is a defect or a
+     deliberate difference to record, never silently unified.
+  2. Add one traversal to the `display` kernel that owns descent only:
+     key resolution through `schema_child`/key aliases, universal statements,
+     transparent containers, entry lists, `apply-groups` and unplaced records.
+     It yields (path, key, value, schema node, kind) or calls per-kind hooks.
+  3. Port walkers one per change, smallest first (`audit`, `to_yaml`), keeping
+     each module's behaviour; the walker keeps only its own hooks.
+  4. In `set_input.py`, split `_merge_tokens` into token resolution and merge,
+     and let `_apply_meta` reuse the resolved path instead of re-walking;
+     coordinate with MAKEOVER-14, which owns metadata traversal behaviour.
+- **Acceptance:** the format matrix, device-set law and per-walker tests pass
+  unchanged in their assertions (tests may move to public doors, never lose
+  cases); a new descent rule is added in one place; no walker re-implements
+  transparent-container or universal-statement handling.
+- **Evidence:** graphify code graph rebuilt 2026-10-14 at `6498ec9` (v0.28.14),
+  plus AST branch counts per function; `get("t")`/`["t"]` transparent handling
+  appears in seven `src` files.
+- **Source and disposition:** owner-requested complexity-versus-value analysis,
+  2026-10-14; no review ID exists. Related: ARCH-C06
+  ([universal statements from the tree](../openspec/changes/archive/2026-10-11-universal-statements-from-tree/proposal.md)),
+  MAKEOVER-13, MAKEOVER-14. Create an OpenSpec change only when selected.
+
+## SIMPLIFY-002 — Anonymizer wildcard-pattern machinery
+
+- **Status:** open; future work, not selected for implementation.
+- **Finding and impact:** `anonymize/rules/__init__.py` (+325 net lines since
+  2026-09-01) and `anonymize/walker.py` (+422) carry a small glob engine
+  (`_glob_positions`, `_accepts`, `_class_members`, `_may_be_no_digit`,
+  `spells_through_syntax`, `prefix_pattern`) whose only job is anonymizing
+  group name patterns such as `<ge-*>` (ANON-P3, challenges S1–S3). The
+  behaviour is specified, but its cost is high for configurations that rarely
+  hold sensitive values inside wildcard names.
+- **Fix instruction:** keep the specified behaviour; measure how many corpus
+  and device configurations exercise each branch; then decide with the owner
+  whether to (a) simplify to one rule (for example, return every non-`*`
+  pattern by its schema path and rewrite nothing inside it), or (b) keep it but
+  isolate it in its own module behind `Rule.wildcard`. Option (a) changes a
+  spec and needs a declared ruling.
+- **Evidence:** as SIMPLIFY-001; growth from `git log --numstat` since 2026-09-01.
+- **Source and disposition:** same analysis, 2026-10-14. Do after SIMPLIFY-001
+  ports the anonymize walker, so the pattern code is measured on its own.
+
+## SIMPLIFY-003 — Field validation beside the `validate` package (lead)
+
+- **Status:** open; unverified lead, not selected for implementation.
+- **Finding and impact:** `convert/field_validator.py` (714 lines, three
+  `src` consumers; `_validate_leaf` complexity 32, `_validate_ip` 19)
+  validates leaf values while `validate/` runs XSD and grammar validation.
+  Whether the two check the same value types differently is not established.
+- **Fix instruction:** list each value check in both stacks against the schema
+  types it covers; if they overlap, give each type one owner and route the
+  other stack through it. If they do not, record why both exist in
+  [the conversion contract](../src/junoscfg/convert/CONTRACT.md) and close.
+- **Source and disposition:** same analysis, 2026-10-14. Its walk is ported
+  under SIMPLIFY-001 either way.
+
 ## Consolidated issue inventory
 
 Reconciled on 2026-10-12 against `34bea12` (v0.28.7 plus admission records).
