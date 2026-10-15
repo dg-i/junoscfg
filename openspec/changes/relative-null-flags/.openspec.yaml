@@ -1,0 +1,6 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion]
