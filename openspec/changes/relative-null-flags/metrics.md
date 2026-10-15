@@ -17,5 +17,6 @@
 | residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
 | requirement-to-test reconcile result | UNMEASURED |
 | pre-commit wall-clock, total and per hook | UNMEASURED |
+| Context expansion: src/junoscfg/display/path_filter.py | display kernel's `filter_dict_by_path` decides what a relative selection hands the writer |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
