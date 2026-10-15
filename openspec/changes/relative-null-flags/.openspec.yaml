@@ -34,3 +34,15 @@ declared-break:
       changes.
     migration: >-
       None required; a script comparing the text updates its expected output.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - changelog.d/+relative-null-flags.bugfix.md
+  - src/junoscfg/convert/output/__init__.py
+  - src/junoscfg/convert/output/json_output.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_convert_roundtrip.py
+  dependencies: []
+  changelog: changelog.d/+relative-null-flags.bugfix.md
+  generated-records: []

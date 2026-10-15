@@ -20,7 +20,9 @@ def from_dict(
 
     Args:
         config: The configuration content (without the ``"configuration"``
-                wrapper). Relative path filtering may supply a scalar.
+                wrapper), or with *wrap* false a relative selection: the value
+                under its path's last key, which may be a list, ``{}``, a flag
+                or a scalar.
         fmt: Format name, a key of
              :data:`~junoscfg.convert.formats.FORMAT_IMPLEMENTATIONS`
              (``"json"``, ``"yaml"``, ``"yaml-new"``, ``"xml"``, ``"set"``,
