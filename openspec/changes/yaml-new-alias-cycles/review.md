@@ -57,6 +57,16 @@ Builder consequences found while implementing, recorded under the challenges the
     (executed). Fixed: `test_a_shared_object_is_spelled_in_each_of_its_contexts` (json and
     yaml-new); it fails at base and under that mutation.
 
+## Evidence
+
+- Canonical full checkpoint at `8fecbdd` (code head `4d30eec`): every check passed, 349 s;
+  13,380 passed, 22 xfailed, 37 skipped; coverage 93.15 %; schema-25.2 tiers exit 0.
+- Device corpus base `87e14cd` vs head: 0 of 96 conversions differ.
+- Door probe (doors-base.txt, doors-head.txt): shared block now read at every yaml-new door;
+  cycle refused as `cycle`; bombs refused at `l1.2` in about 1 ms; legacy `yaml` unchanged.
+- Mutations (no size bound, 2P+1, no depth bound, global seen-set, containers only,
+  innermost path, reader sharing, object-stage deepcopy): each fails the focused tests.
+
 ## Specification challenges
 
 ### SC-2 The size bound (interim, set by the Builder under the owner's instruction)
