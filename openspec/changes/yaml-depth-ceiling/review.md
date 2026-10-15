@@ -60,6 +60,12 @@ byte identity rerun on its own base records (0 of 96, 0 of 2,435, 0 of 240). Ver
     where the delta lists them under the alias requirement. Fixed: every main-spec requirement
     block now equals its delta block.
 
+15. Integration note (after the merge, from `docs/reviews/2026-10-15-trusted-input-retirement.md`
+    that landed on master meanwhile, docs only): the unreleased fragment
+    `changelog.d/+yaml-new-alias-cycles.feature.md` still said "alias bombs stay harmless".
+    Fixed in a records-only follow-up merged the same way; no runtime change, so the
+    checkpoint evidence stands.
+
 ## Evidence
 
 - Follow-up canonical full checkpoint at `5d4244b` (after R1 to R5): every check passed,
