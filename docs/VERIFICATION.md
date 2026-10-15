@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: c21e7b8c46a010bc89c39194ace0a97f4d34c553 (post-merge, pre-archive assessment).
+- Observed integration head: 5cbff05e7df88d1ea4293c132aa45870723b5d1e (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: c21e7b8c46a010bc89c39194ace0a97f4d34c553.
-- Invitation status: pending; 79 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 5cbff05e7df88d1ea4293c132aa45870723b5d1e.
+- Invitation status: pending; 81 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -277,3 +277,13 @@ checkpoint at `a10ba71` passed in 351s cold and the follow-up at `5d4244b` in 17
 unchanged 400s cold / 200s warm targets; the fast set passed on the merged `c21e7b8`. No
 tests, coverage, hooks or review requirements were removed beyond the retired bound's own
 rows. The pending cadence invitation is retained; no owner feedback is inferred.
+
+Job completion (relative-selections): local merge `5cbff05` writes a `--path --relative`
+selection as absolute output writes it, without its path, in every format, and adds the
+device-corpus law `TestRelativeSelections` (depth 4; 575 selections at depth 5 in the
+change's evidence). The full checkpoint at `ab46c51` passed in 350s cold and the follow-up at
+`f677934` in 166s (schema-25.2 tiers selected by `src/junoscfg/convert/__init__.py`), within
+the unchanged 400s cold / 200s warm targets; after the correction review (tests and records
+only) the focused tests and the fast set passed at `9d00c00`. No tests, coverage, hooks or
+review requirements were removed. The pending cadence invitation is retained; no owner
+feedback is inferred.
