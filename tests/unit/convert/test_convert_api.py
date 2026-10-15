@@ -8,7 +8,9 @@ selection, and the value shapes one reader or writer settles.
 
 from __future__ import annotations
 
+import copy
 import json
+import random
 import re
 from typing import TYPE_CHECKING
 
@@ -22,7 +24,7 @@ from junoscfg import (
     convert_config_result,
     validate_config,
 )
-from junoscfg.convert import pipeline, to_dict
+from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.artifacts import write_minimal_tree
 from tests.support.shapes import read_ir
@@ -59,6 +61,24 @@ class TestFormatEnum:
     def test_format_from_string(self) -> None:
         assert Format("set") is Format.SET
         assert Format("json") is Format.JSON
+
+    def test_every_format_has_one_implementation(self) -> None:
+        """One table selects what each name reads and writes with
+        (docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md): `yaml`
+        keeps the IR dump, `yaml-new` is the Junos JSON object, and the
+        planned rename edits the table and the enum only."""
+        assert [f.value for f in Format] == list(FORMAT_IMPLEMENTATIONS)
+        assert Format("yaml-new") is Format.YAML_NEW
+        assert FORMAT_IMPLEMENTATIONS["yaml"] == "ir-yaml"
+        assert FORMAT_IMPLEMENTATIONS["yaml-new"] == "junos-yaml"
+        assert FORMAT_IMPLEMENTATIONS["json"] == "junos-json"
+
+    @pytest.mark.parametrize("name", ["yaml-old", "YAML", "toml"])
+    def test_an_unknown_name_is_refused(self, name: str) -> None:
+        with pytest.raises(ValueError, match=f"Unknown input format: {name}"):
+            to_dict("configuration: {}", name)
+        with pytest.raises(ValueError, match=f"Unknown output format: {name}"):
+            from_dict({"system": {}}, name)
 
 
 class TestPartialStructuredConfig:
@@ -111,7 +131,7 @@ _UNDER = {
     "system": {"system": {"host-name": "r1", "syslog": _SYSLOG}},
     "system.syslog": {"system": {"syslog": _SYSLOG}},
 }
-_WRITERS = [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML]
+_WRITERS = [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML_NEW]
 _WRITER_IDS = [writer.value for writer in _WRITERS]
 
 
@@ -226,6 +246,7 @@ class TestPathFiltering:
         [
             (Format.JSON, '"r1"\n'),
             (Format.YAML, "r1\n...\n"),
+            (Format.YAML_NEW, "r1\n...\n"),
             (Format.SET, "set r1\n"),
             (Format.STRUCTURED, ""),
         ],
@@ -250,6 +271,19 @@ class TestPathFiltering:
             path="nonexistent",
         )
         assert result == ""
+
+    @pytest.mark.parametrize("path", ["system", "system.services", "system.services.ssh"])
+    def test_a_relative_selection_is_the_bare_subtree(self, path: str) -> None:
+        """Relative yaml-new output is the JSON writer's bare object, a selected
+        presence flag included (spec conversion/junos-json-yaml)."""
+        source = '{"configuration": {"system": {"services": {"ssh": true}}}}'
+
+        def selected(fmt: Format) -> str:
+            return convert_config(
+                source, from_format=Format.JSON, to_format=fmt, path=path, relative=True
+            )
+
+        assert yaml.safe_load(selected(Format.YAML_NEW)) == json.loads(selected(Format.JSON))
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
@@ -746,3 +780,146 @@ class TestUnplacedContentKeepsItsKeywords:
         """A guard: keeping the keywords places nothing."""
         with pytest.raises(FieldValidationError, match="'bogus-container' could not be placed"):
             convert_config(self._SOURCE, from_format=Format.JSON, to_format=Format.SET, strict=True)
+
+
+class TestYamlNewReader:
+    """yaml-new input is read as the JSON reader reads the same object
+    (spec conversion/junos-json-yaml; owner default 2026-10-15: the identical
+    object to Junos JSON, so none of the yaml reader's conveniences)."""
+
+    def test_meta_keys_are_kept_as_json_keeps_them(self) -> None:
+        source = "configuration:\n  system:\n    host-name: r1\n    _meta_x: y\n"
+        as_json = json.dumps(yaml.safe_load(source))
+        assert to_dict(source, "yaml-new") == to_dict(as_json, "json")
+        assert to_dict(source, "yaml-new")["system"]["_meta_x"] == "y"
+        assert "_meta_x" not in to_dict(source, "yaml")["system"]
+
+    def test_a_scalar_leaf_list_stays_scalar_without_loading_schema(self, tmp_path: Path) -> None:
+        """Read with the artifacts pointed at an empty directory, as
+        `TestLeafListPromotion` reads JSON: any schema load there raises."""
+        source = (
+            "configuration:\n  protocols:\n    evpn:\n      extended-vni-list: 3001000-3001100\n"
+        )
+        with artifacts_in(tmp_path):
+            ir = to_dict(source, "yaml-new")
+        assert ir["protocols"]["evpn"]["extended-vni-list"] == "3001000-3001100"
+
+    @pytest.mark.parametrize(
+        ("source", "kind", "where"),
+        [
+            ("configuration:\n  system:\n    host-name: 2026-10-15\n", "date", "system.host-name"),
+            (
+                "configuration:\n  system:\n    x: 2026-10-15 10:00:00\n",
+                "datetime",
+                "system.x",
+            ),
+            ("configuration:\n  system:\n    1: x\n", "int key", "system"),
+            ("configuration:\n  system:\n    x: !!binary aGk=\n", "bytes", "system.x"),
+            ("configuration:\n  system:\n    x: !!set {a}\n", "set", "system.x"),
+            (
+                "configuration:\n  interfaces:\n    interface:\n    - name: ge-0/0/0\n"
+                "      description: 2026-01-01\n",
+                "date",
+                "interfaces.interface.0.description",
+            ),
+        ],
+        ids=["date", "datetime", "int-key", "binary", "set", "in-a-list"],
+    )
+    def test_a_value_json_cannot_hold_is_refused(self, source: str, kind: str, where: str) -> None:
+        """A YAML-only value has no JSON spelling; it is refused by its kind and
+        path, never quoted, instead of failing later in a writer."""
+        with pytest.raises(ValueError, match="no JSON spelling") as raised:
+            to_dict(source, "yaml-new")
+        message = str(raised.value)
+        assert kind in message
+        assert where in message
+        assert "2026" not in message and "aGk" not in message
+
+    def test_an_empty_document_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="No 'configuration' key found in YAML input"):
+            to_dict("", "yaml-new")
+
+    def test_a_malformed_document_raises_the_yaml_error(self) -> None:
+        with pytest.raises(yaml.YAMLError):
+            to_dict("configuration:\n  system: [r1\n", "yaml-new")
+
+
+#: Words YAML reads as something else unless quoted, and words JSON and YAML share.
+_TRICKY = [
+    "yes",
+    "no",
+    "on",
+    "off",
+    "null",
+    "~",
+    "true",
+    "1",
+    "0o17",
+    "0x1f",
+    "1e3",
+    "-",
+    "?",
+    "2026-10-15",
+    "a: b",
+    "#c",
+    "'q'",
+    '"d"',
+    "",
+    " sp",
+    "x\ny",
+    "üñí",
+    "*x",
+    "&y",
+    "!t",
+    "%p",
+    "@q",
+    "[1]",
+    "{a}",
+    "r1",
+    "ge-0/0/0",
+    "10.0.0.1/24",
+    "3ffe:b00::1",
+]
+
+
+def _value(rng: random.Random, depth: int) -> object:
+    """A JSON value: a string, number, flag, list or object, keys from `_TRICKY`."""
+    roll = rng.random()
+    if depth > 3 or roll < 0.45:
+        return rng.choice([*_TRICKY, 7, 2.5, True, None])
+    if roll < 0.6:
+        return [None]
+    if roll < 0.75:
+        return [_value(rng, depth + 1) for _ in range(rng.randint(1, 3))]
+    keys = [k for k in rng.sample(_TRICKY, rng.randint(1, 4)) if not k.startswith("@")]
+    return {k: _value(rng, depth + 1) for k in keys}
+
+
+class TestYamlNewWriter:
+    """yaml-new output is the JSON writer's object in YAML (spec conversion/junos-json-yaml)."""
+
+    def test_a_shared_object_is_written_out_each_time(self) -> None:
+        """An IR built with one object in two places is written as two copies:
+        no YAML anchor or alias, which JSON has no spelling for."""
+        shared = {"host-name": "r1"}
+        ir = {"system": shared, "groups": [{"name": "G", "system": shared}]}
+        written = from_dict(copy.deepcopy(ir), "yaml-new")
+        assert "&" not in written and "*" not in written
+        assert yaml.safe_load(written) == json.loads(from_dict(ir, "json"))
+
+    @pytest.mark.parametrize("seed", range(40))
+    def test_any_json_object_survives_yaml_new(self, seed: int) -> None:
+        """The round-trip property: json -> yaml-new -> json is json -> json, for
+        values derived from the JSON value type (no Hypothesis in the toolbox;
+        a seeded generator), with YAML's quoting hazards as keys and values."""
+        rng = random.Random(seed)
+        body = {k: _value(rng, 1) for k in rng.sample(_TRICKY, 4) if not k.startswith("@")}
+        source = json.dumps({"configuration": {"system": body}})
+
+        def convert(text: str, reader: Format, writer: Format) -> str:
+            return convert_config(text, from_format=reader, to_format=writer, validate=False)
+
+        via_yaml = convert(
+            convert(source, Format.JSON, Format.YAML_NEW), Format.YAML_NEW, Format.JSON
+        )
+        assert via_yaml == convert(source, Format.JSON, Format.JSON)

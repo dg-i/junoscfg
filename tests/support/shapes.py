@@ -15,8 +15,12 @@ written in (XML is input only), and says what must hold:
   where a row says the order is meaning (``ordered``);
 - set output is one line per statement, the device's ``display set``, where a
   row declares it (``set_output``);
-- the JSON and YAML renderings validate against the bundled schemas, unless
-  the row is not valid Junos as written (``valid``), when they are rejected.
+- the JSON, YAML and yaml-new renderings validate against the bundled schemas,
+  unless the row is not valid Junos as written (``valid``), when they are
+  rejected.
+
+``yaml-new`` is the Junos JSON object spelled in YAML: as a writer it reads back
+as JSON output does, so a row's ``read_back`` never names it apart from JSON.
 
 `tests/contract/test_format_matrix.py` checks every row through every reader
 and writer, and `tests/contract/test_round_trip_validates.py` checks every
@@ -45,10 +49,11 @@ SET = Format.SET
 STRUCTURED = Format.STRUCTURED
 JSON = Format.JSON
 YAML = Format.YAML
+YAML_NEW = Format.YAML_NEW
 XML = Format.XML
 
 #: Every format junoscfg writes; XML output is not implemented.
-WRITERS: tuple[Format, ...] = (SET, STRUCTURED, JSON, YAML)
+WRITERS: tuple[Format, ...] = (SET, STRUCTURED, JSON, YAML, YAML_NEW)
 
 #: The key under which a level keeps the statements the reader could not
 #: place, each as its own tokens (spec conversion/entry-keys). A consumer sees
@@ -59,6 +64,15 @@ UNPLACED_RECORD = "junoscfg:unplaced"
 def read_ir(text: str, fmt: Format) -> Any:
     """The IR *text* reads as: the ``configuration`` object of its JSON rendering."""
     return json.loads(convert_config(text, from_format=fmt, to_format=JSON))["configuration"]
+
+
+def in_order(value: Any) -> Any:
+    """*value* with every mapping as its list of items, so that key order counts."""
+    if isinstance(value, dict):
+        return [(key, in_order(item)) for key, item in value.items()]
+    if isinstance(value, list):
+        return [in_order(item) for item in value]
+    return value
 
 
 def _empty() -> Mapping[Any, Any]:
@@ -150,6 +164,7 @@ _add(
             STRUCTURED: "system {\n    host-name r1;\n}\n",
             JSON: _json({"system": {"host-name": "r1"}}),
             YAML: "configuration:\n  system:\n    host-name: r1\n",
+            YAML_NEW: "configuration:\n  system:\n    host-name: r1\n",
             XML: _xml("<system><host-name>r1</host-name></system>"),
         },
         ir={"system": {"host-name": "r1"}},
@@ -379,6 +394,8 @@ _add(
             ),
             YAML: "configuration:\n  groups:\n  - name: mygroup\n    system:\n      host-name: r1\n"
             "  - name: other\n    system:\n      domain-name: example.com\n",
+            YAML_NEW: "configuration:\n  groups:\n  - name: mygroup\n    system:\n"
+            "      host-name: r1\n  - name: other\n    system:\n      domain-name: example.com\n",
         },
         ir={
             "groups": [
@@ -493,7 +510,10 @@ _add(
                         "static": {"route": [{"name": "0.0.0.0/0", "next-hop": "10.0.0.1"}]}
                     }
                 }
-            )
+            ),
+            # yaml-new reads as JSON reads: the scalar stays a scalar.
+            YAML_NEW: "configuration:\n  routing-options:\n    static:\n      route:\n"
+            "      - name: 0.0.0.0/0\n        next-hop: 10.0.0.1\n",
         },
         ir={
             "routing-options": {
@@ -508,7 +528,8 @@ _add(
             }
             for w in (SET, STRUCTURED, YAML)
         },
-        why="next-hop is a leaf-list; the set, structured and YAML readers promote a scalar.",
+        why="next-hop is a leaf-list; the set, structured and YAML readers promote a scalar; "
+        "JSON and yaml-new keep it as supplied.",
     ),
     Shape(
         "a-firewall-term-with-scalar-leaf-lists-in-json",

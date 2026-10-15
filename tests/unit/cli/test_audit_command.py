@@ -29,7 +29,7 @@ set interfaces ge-0/0/0 description half-pol
 set policy-options policy-statement half-pol term 1 then accept
 """
 
-INPUT_FORMATS = ["set", "structured", "json", "yaml"]
+INPUT_FORMATS = ["set", "structured", "json", "yaml", "yaml-new"]
 
 
 def to_format(fmt: str) -> str:
@@ -53,6 +53,12 @@ class TestInputFormats:
         assert exit_code == 0
         assert "policy-options policy-statement dead-pol" in output
         assert "live-pol" not in output
+
+    def test_yaml_new_is_audited_as_json(self) -> None:
+        """yaml-new is the JSON object in YAML: the audit reads it as JSON
+        (spec conversion/junos-json-yaml)."""
+        as_json = run_cli(["audit", "unused", "-i", "json"], to_format("json"))
+        assert run_cli(["audit", "unused", "-i", "yaml-new"], to_format("yaml-new")) == as_json
 
     def test_autodetect_set(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused"], SET_CONFIG)

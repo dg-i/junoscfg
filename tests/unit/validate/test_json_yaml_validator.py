@@ -77,6 +77,35 @@ class TestYamlValidation:
         assert result.valid is True
 
 
+class TestYamlAsJsonValidation:
+    """yaml-new validates as the JSON object it spells: the JSON schema, not the
+    YAML one (spec validation/junos-json-yaml)."""
+
+    def test_valid_document(self, validator):
+        yaml_str = "configuration:\n  system:\n    host-name: router1\n"
+        assert validator.validate_yaml_as_json(yaml_str).valid is True
+
+    @pytest.mark.parametrize("key", ["_ansible_var", "_meta_info"])
+    def test_a_meta_key_is_rejected_as_json_rejects_it(self, validator, key):
+        document = {"configuration": {"system": {"host-name": "router1", key: "test"}}}
+        yaml_str = f"configuration:\n  system:\n    host-name: router1\n    {key}: test\n"
+        as_json = validator.validate_json(json.dumps(document))
+        result = validator.validate_yaml_as_json(yaml_str)
+        assert result.valid is False
+        assert result.errors == as_json.errors
+        assert validator.validate_yaml(yaml_str).valid is True
+
+    def test_a_parse_error_names_its_line(self, validator):
+        result = validator.validate_yaml_as_json("configuration:\n  system: [unclosed\n")
+        assert result.valid is False
+        assert "YAML parse error" in result.errors[0].message
+        assert result.errors[0].line == 3
+
+    def test_an_empty_document_is_judged_as_json_null(self, validator):
+        assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors
+        assert validator.validate_yaml_as_json("").valid is False
+
+
 class TestSchemaLoadError:
     def test_no_json_schema_raises(self):
         v = JsonYamlValidator()
@@ -87,3 +116,9 @@ class TestSchemaLoadError:
         v = JsonYamlValidator()
         with pytest.raises(SchemaLoadError):
             v.validate_yaml("")
+
+    def test_yaml_as_json_needs_the_json_schema(self, tmp_path):
+        minimal = make_artifacts_dir(tmp_path)
+        v = JsonYamlValidator(yaml_schema_path=minimal.yaml_schema)
+        with pytest.raises(SchemaLoadError, match="JSON schema"):
+            v.validate_yaml_as_json("configuration: {}")

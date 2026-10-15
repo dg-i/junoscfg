@@ -11,7 +11,7 @@ beside the IR-dump format `yaml`, which it is planned to replace under that name
 WHEN any reader's IR is written as `yaml-new`, wrapped or as a relative selection, THEN the
 system SHALL write YAML whose loaded value equals the parsed JSON output for the same IR and
 options, mapping keys in the same order, and that holds no YAML anchor or alias.
-Tests: `tests/contract/test_format_matrix.py::TestYamlNewSpellsTheJsonObject::test_the_output_is_the_json_object`, `tests/corpus/test_device_renderings.py::TestYamlNewIsTheDevicesJsonInYaml::test_every_rendering_writes_the_json_object`, `tests/unit/convert/test_convert_api.py::TestYamlNewWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_the_bare_subtree`
+Tests: `tests/contract/test_format_matrix.py::TestYamlNewSpellsTheJsonObject::test_the_output_is_the_json_object`, `tests/corpus/test_device_renderings.py::TestYamlNewIsTheDevicesJsonInYaml::test_every_rendering_writes_the_json_object`, `tests/unit/convert/test_convert_api.py::TestYamlNewWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/convert/test_convert_api.py::TestYamlNewWriter::test_any_json_object_survives_yaml_new`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_the_bare_subtree`
 
 #### Scenario: An empty container the device wrote as {}
 
@@ -56,7 +56,7 @@ WHEN a format name reaches `convert_config`, `validate_config`, `junoscfg.conver
 implementation `junoscfg.convert.FORMAT_IMPLEMENTATIONS` names for it; the values of
 `junoscfg.Format` SHALL be exactly the table's names; `yaml` SHALL keep its reader and
 writer unchanged, and YAML that the CLI detects SHALL still read as `yaml`.
-Tests: `tests/unit/convert/test_convert_api.py::TestFormatEnum::test_every_format_has_one_implementation`, `tests/unit/convert/test_convert_api.py::TestFormatEnum::test_an_unknown_name_is_refused`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_every_import_and_export_format_reaches_the_library`, `tests/unit/cli/test_audit_command.py::TestAuditReadsYamlNew::test_yaml_new_input_is_audited_as_json`
+Tests: `tests/unit/convert/test_convert_api.py::TestFormatEnum::test_every_format_has_one_implementation`, `tests/unit/convert/test_convert_api.py::TestFormatEnum::test_an_unknown_name_is_refused`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_every_import_and_export_format_reaches_the_library`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_yaml_new_is_audited_as_json`
 
 #### Scenario: Every door offers yaml-new
 
