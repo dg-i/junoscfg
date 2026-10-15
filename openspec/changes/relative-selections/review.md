@@ -21,7 +21,12 @@ implementation):
 
 ## Evidence
 
-Pending implementation.
+- Canonical full checkpoint at `ab46c51`: every check passed, 350 s; 13,492 passed, 22 xfailed,
+  37 skipped; coverage 93.11 %; schema-25.2 tiers exit 0.
+- Absolute output unchanged: device corpus 0 of 96, catalogue 0 of 2,435 (base: the
+  yaml-depth-ceiling head records, same runtime as `d3ed627`).
+- Corpus law at depth 5: every capture passes (law5-head.txt). Ten mutations each fail the
+  tests (mutations.txt).
 
 ## Specification challenges
 
