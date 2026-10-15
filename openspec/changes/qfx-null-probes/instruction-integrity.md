@@ -32,3 +32,14 @@ master's version, tag v0.28.22, no push.
 
 Verification cadence: 85 first-parent commits since anchor 95585fb; invitation pending,
 deferred to job end. No material owner decisions remain. Next: implementation.
+
+## Delta 2026-10-16 (resumed)
+
+The owner's brief (private_test_data/qfx-null-probe/prompt.md) restates this change
+and says to reuse or park the abandoned attempt. Reused: the branch, worktree and
+records stand, and the staged implementation already met every importer point of the
+brief. Changed: the changelog fragment is `changelog.d/+json-null-probes.misc.md` as
+the brief names it (planned paths updated); the docstring and README paragraphs were
+reflowed to the line length. No criterion changes and no completed work is
+invalidated; no owner decision is open. The shared activation inventory keeps this
+change `ready` until the archive parks it.

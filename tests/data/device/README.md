@@ -27,6 +27,15 @@ of the same configurations gave no junoscfg difference the vMX's did not, so
 they, and the JVD configurations whose classes others already show, stay in
 `private_test_data/`; the grammar corpus still draws on every line there.
 
+`json-null-probes` asks the QFX5120 about junoscfg's own JSON rather than a
+configuration: 15 statements the device prints as `{}`, written as junoscfg's
+`[null]`, and an inactive leaf written `{"@": {"inactive": true}}` where the
+device prints `{}` beside `"@l3vpn"`. Its source is JSON, loaded with `load
+override json`. A `load merge json` of it (2026-10-16) loaded without error,
+and every statement was then in the candidate, the leaf inactive. The capture
+of its renderings awaits the device; until then the import keeps the source
+and skips the capture (`CAPTURED` in the tool).
+
 | Directory | Holds | Licence |
 |---|---|---|
 | `synthetic/sources/` | configurations written for these captures, following `AGENTS.md`'s test-data values | junoscfg's (MIT) |
@@ -59,7 +68,10 @@ grammar rule the many do, and every line the shipped grammar rejects.
 1. Capture on the device as above, into `private_test_data/<folder>/`; the
    capture log names lab devices and stays there.
 2. `uv run python tools/import_device_captures.py` copies the renderings and
-   sources here, gzipped reproducibly, and writes the manifest.
+   sources here, gzipped reproducibly, and writes the manifest. A capture
+   that awaited the device imports once its date is set in `CAPTURED`; for
+   `json-null-probes` the renderings are `json-null-probes.{conf,xml,json,set}`
+   in `private_test_data/qfx-null-probe/`, taken after `load override json`.
 3. `uv run python tools/device_differences.py` rewrites the record; it stops
    on a line no class claims, which is classified before it is recorded.
 4. After a grammar change or new set lines: `uv run python

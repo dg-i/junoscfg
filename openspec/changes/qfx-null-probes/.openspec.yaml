@@ -8,10 +8,10 @@ verification:
   state: ready
   planned-paths:
     - .agent-ready/activation.json
-    - changelog.d/+qfx-null-probes.misc.md
+    - changelog.d/+json-null-probes.misc.md
     - tests/data/device/README.md
     - tests/data/device/synthetic/sources/json-null-probes.json.gz
     - tools/import_device_captures.py
   dependencies: []
-  changelog: changelog.d/+qfx-null-probes.misc.md
+  changelog: changelog.d/+json-null-probes.misc.md
   generated-records: []
