@@ -255,8 +255,9 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
 - a scalar given for a leaf-list stays a scalar, as in JSON;
 - a value JSON cannot hold is refused with its path: an unquoted date or time
   (`2026-10-15`), a key that is not a string (`1: x`, `on: x`), binary data, a
-  set, an ordered map, or an alias (`*name`; write the block out). Quote such a
-  value (`'2026-10-15'`).
+  set, an ordered map, or a mapping or list reused through an alias (`*name`;
+  write the block out). Quote such a value (`'2026-10-15'`). An alias of a single
+  value is read as that value.
 
 YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,
 `yes` and `no` are booleans, `010` is the number 8 and `1:30` the number 90.

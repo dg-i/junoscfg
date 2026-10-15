@@ -51,8 +51,8 @@ three binding items; resolutions in the follow-up commit:
     `test_a_value_json_cannot_hold_stops_the_migration`; spec and guide updated.
 11. R2 (binding) a self-referencing alias made yaml-new validation raise `RecursionError`
     (executed); an alias bomb walked the expanded tree. Fixed: `find_non_json_value` visits each
-    container once and reports a container met again as kind `alias`, so cycles and aliases are
-    refused in linear time by reader, writer check and validation; rows for an alias and a cycle
+    container once and reports a container met again as kind `alias`, so cycles and aliased
+    blocks are refused in linear time by reader, writer check and validation; rows for an alias and a cycle
     in the reader, kernel, validator and CLI tests. Interim policy pending the owner: SC-1, PO-2.
 12. R3 (binding, documentation) the decision record said the rename changes no dispatch code.
     Fixed: its Consequences now name the alias-warning mechanism, detection, `validate_yaml`,
@@ -81,10 +81,12 @@ added to validation/junos-json-yaml before review.
 - Artifact: specs/conversion/junos-json-yaml, "A YAML value JSON cannot hold is refused"; D4.
 - Counterexample: `configuration: &a\n  system:\n    x: *a\n` validated as yaml-new raised
   `RecursionError` (executed by the Reviewer on `c95e67f`).
-- User impact: a crash on hostile or mistaken input; refusing every alias also refuses
+- User impact: a crash on hostile or mistaken input; refusing aliased blocks also refuses
   hand-written yaml-new that shares a block through an alias, which the YAML parser accepts.
-- Proposed correction: refuse every alias (implemented as the interim: JSON has no aliases,
-  the writer emits none, and relaxing later is additive), or refuse cycles only.
+- Proposed correction: refuse a mapping or list reached through an alias (implemented as the
+  interim: JSON has no shared blocks, the writer emits none, it ends cycles and alias bombs,
+  and relaxing later is additive), or refuse cycles only. Scalar aliases and merge keys of flat
+  mappings expand to a JSON tree and are accepted either way (Reviewer N1, executed).
 - Decision: Pending owner decision (PO-2).
 
 ## Pending owner decisions
@@ -93,7 +95,8 @@ added to validation/junos-json-yaml before review.
   output writes `[null]` (base behaviour, `junos_json_object` normalizes mappings only).
   Fixing it changes `json` output, a non-goal of this change; yaml-new keeps equivalence.
   Options: a follow-up fix in the JSON writer, or a backlog entry. Not backlogged by the Builder.
-- PO-2 (SC-1): alias policy for yaml-new input. Interim: every alias refused.
+- PO-2 (SC-1): alias policy for yaml-new input. Interim: a mapping or list reached through an
+  alias is refused; scalar aliases and flat merge keys are accepted.
 - PO-3 (Reviewer A6, pre-existing): `yaml` input with an unquoted date drops the statement from
   set output (`host-name: 2026-10-15` gives no line). Out of scope (`yaml` stays as it is);
   follow-up fix or backlog entry is the owner's choice. Not backlogged by the Builder.
@@ -109,6 +112,9 @@ added to validation/junos-json-yaml before review.
   (code head `f5d677f`): every check passed, 360 s wall clock; suite 13,276 passed, 22 xfailed,
   37 skipped on 10 workers (72 s), coverage 93.09 %; schema-25.2 qualification and generation
   selected by `src/junoscfg/__init__.py`, both exit 0, run with physical dumps.
+- Follow-up canonical full checkpoint at `a55c960`: every check passed, 170 s; suite 13,288
+  passed, 22 xfailed, 37 skipped; coverage 93.11 %; schema-25.2 tiers exit 0. Base vs head
+  rerun: catalogue 1,936/0, device 96/0.
 - Earlier attempts, kept as evidence: the first refused admission (branch unassessed, fixed by
   declaring readiness in `27940a0`); the next two failed only the expensive tier (a symlinked
   dump directory; a vulture-whitelist edit that selected the tier, dropped in `f5d677f`).
@@ -119,6 +125,17 @@ Reviewer verdict on `c95e67f`: Changes required (R1 to R3). All three resolved a
 Reviewer named the follow-up obligations: focused tests and the fast set, and the full set
 again because runtime code changed. Follow-up evidence below.
 
+Correction review on `a55c960` (same Reviewer, archive copies, no git state change): R1, R2,
+R3 resolved (executed: date migration refused, exit 2; cycle invalid via `validate_config` and
+`-v`, exit 1; a 10^9-leaf alias bomb refused in 0.001 s); A1, A2 (yaml-new), A3, A5 fixed.
+New N1 (binding, documentation): the interim was described as "every alias refused" while
+code and spec refuse a mapping or list reached through an alias and accept scalar aliases and
+flat merge keys (executed). Fixed by rewording SC-1, PO-2, the freeze delta, design 8 and the
+guide (option a, documentation only). The Reviewer's verdict for that wording fix: **Merge**.
+
 ## Scope dispositions and follow-up evidence
 
-Test/Challenge findings B1 to B8 resolved in the change; PO-1 awaits the owner.
+Test/Challenge B1 to B8 and Reviewer R1 to R3 and N1 resolved in the change. Awaiting the
+owner, none backlogged by the Builder: PO-1 (relative JSON list output), PO-2/SC-1 (alias
+policy, interim in effect), PO-3 (`yaml` drops unquoted dates from set output), PO-4 (`yaml`
+NEL/LS/PS), and the device question C8 (QFX5120 25.2R2-S1.5 loading `[null]` for `{}`).
