@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 1b3c79f390df5adb05c262155ba44ee6d1d9da38 (post-merge, pre-archive assessment).
+- Observed integration head: f639ae2341a46c91812701f6b33021258dd67cee (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 1b3c79f390df5adb05c262155ba44ee6d1d9da38.
-- Invitation status: pending; 66 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: f639ae2341a46c91812701f6b33021258dd67cee.
+- Invitation status: pending; 69 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -236,3 +236,11 @@ constitute owner feedback or a new cadence review.
 Job completion: local merge `1b3c79f` preserves the approved execution inputs;
 archive and v0.28.14 change only release/bookkeeping data. The existing pending
 cadence invitation is retained, with no new owner feedback inferred.
+
+Job completion (affected-test scope): local merge `f639ae2` narrows ordinary
+affected-test selection to dependency and reader consumers and adopts template
+v0.14.4. The equivalent CLI-docstring commit fell from 173.37s to 8.67s; the final
+full checkpoint at `e20ed29` passed in 175s (schema evidence reused; 360s cold at
+`5adc8ae`), within the unchanged 400s cold / 200s warm targets. No tests, coverage,
+hooks or review requirements were removed. The pending cadence invitation is
+retained; no owner feedback is inferred.

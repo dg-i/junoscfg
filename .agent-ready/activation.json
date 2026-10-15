@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "1b3c79f390df5adb05c262155ba44ee6d1d9da38",
-  "actor": "Codex schema qualification finalizer",
+  "checkpoint": "f639ae2341a46c91812701f6b33021258dd67cee",
+  "actor": "Claude affected-test-scope finalizer",
   "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
-  "captured_at": "2026-10-13T23:01:10.280056+00:00",
+  "captured_at": "2026-10-15T02:57:46.102789+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -86,7 +86,7 @@
     "codex/refresh-workflow-economy": "parked",
     "codex/publish-workflow-overhead-review": "parked",
     "codex/schema-qualification-scope": "parked",
-    "codex/affected-test-scope": "ready"
+    "codex/affected-test-scope": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -166,6 +166,6 @@
     "adopt-workflow-economy": "parked",
     "publish-workflow-overhead-review": "parked",
     "schema-qualification-scope": "parked",
-    "affected-test-scope": "ready"
+    "affected-test-scope": "parked"
   }
 }

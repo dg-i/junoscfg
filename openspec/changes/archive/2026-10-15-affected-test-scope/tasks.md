@@ -17,5 +17,5 @@
 - [x] 3.2 Measure equivalent workflows including setup, hooks and failed attempts.
 - [x] 3.3 Complete the risk-required fresh isolated review and resolve binding findings.
 - [x] 3.4 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.5 Finalizer synchronizes the reviewed main specification, archives, bumps the
+- [x] 3.5 Finalizer synchronizes the reviewed main specification, archives, bumps the
   patch version, integrates locally and tags without pushing.
