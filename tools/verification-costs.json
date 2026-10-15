@@ -88,7 +88,7 @@
     "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_a_feature_package_selects_itself_the_cli_and_the_contracts": 0.11695249896729365,
     "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_a_package_nothing_else_imports_selects_only_itself": 0.1253250419977121,
     "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_an_importer_is_found_through_another": 0.12132708402350545,
-    "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_every_selected_directory_exists": 0.11534750094870105,
+    "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_every_selected_path_exists": 0.11534750094870105,
     "tests/tooling/test_affected_tests.py::TestASourceChangeSelectsItsPackageAndItsImporters::test_the_kernel_selects_every_package_that_imports_it": 0.11272141698282212,
     "tests/tooling/test_affected_tests.py::TestATestChangeSelectsItself::test_a_conftest_selects_its_directory": 0.00020450097508728504,
     "tests/tooling/test_affected_tests.py::TestATestChangeSelectsItself::test_a_document_selects_nothing": 0.00017850002041086555,

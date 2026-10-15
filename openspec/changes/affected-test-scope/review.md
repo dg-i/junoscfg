@@ -83,13 +83,35 @@ selector is runtime-relevant for the hook.
 
 ## Scope dispositions and follow-up evidence
 
-Owner decision 2026-10-15 (supersedes the Reviewer's backlog suggestions): fix F1–F6
-in this change; none goes to the backlog. Builder corrections and their evidence are
-in the evidence-freeze delta log; the follow-up review below covers them.
+Reviewer's proposal (first review): F1, F2, F3 and the F4 wording binding before
+archive; F4 detection and F5 to the backlog as independent hardening; F6 to the
+backlog as residue. Owner ruling 2026-10-15, superseding that proposal: fix F1–F6 in
+this change, none goes to the backlog. Builder corrections and evidence are in the
+evidence-freeze delta log.
 
-- F1, F2, F3, F4 wording: inside the frozen outcome; binding before archive.
-- F4 detection, F5: independent hardening without a current instance; backlog.
-- F6: residue of the retirement commit; backlog.
-- SELECT-SCAN-001 (package-wide scanners) confirmed pre-existing.
+- SELECT-SCAN-001 (package-wide scanners) confirmed pre-existing; backlog.
 - Not checked by the Reviewer: historical timings (raw logs needed) and a successful
   ordinary reuse (unreachable in a fresh root); evidence gaps for 3.2, not blockers.
+
+### Follow-up review of the corrections (fresh isolated Reviewer, head 07ec0fc)
+
+Verdict: merge once the canonical full check on 07ec0fc passes (it passed: 176 s,
+every check). F1–F6 resolved, each re-run with its counterexample above; the
+corrected tests fail 28 of 141 against the 5adc8ae selector; a selection sweep of
+1527 tracked files is never narrower than at 5adc8ae; bookkeeping selects nothing;
+the F5 guard was exercised inside real pre-commit hooks (plain, `-a`, partial and
+linked-worktree commits). Non-binding notes:
+
+1. N1: source-package edits did not select the selector's package-graph assertions
+   (pre-existing). Corrected: any src/tests/tools Python change selects them.
+2. N2: the stated overhead was understated (about 4 s per tests/ commit, 9 s per
+   tools/ commit). Corrected in the delta log and the verification how-to.
+3. N3: gitignored test modules under tests/ (for example under a `tmp/` directory)
+   and a failing git listing bypassed the reuse guard. Corrected with regressions.
+4. N4: one exact assertion became a membership test. Restored to an exact list.
+5. N5: the contract understated that every non-audited file loader escalates.
+   Wording corrected.
+6. N6: this section contradicted the owner ruling. Reconciled here.
+
+Owner ruling applied (fix in change, none deferred). N1 and N3 regressions were
+observed failing first; no follow-up finding is binding.

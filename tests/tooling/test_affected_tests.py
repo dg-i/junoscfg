@@ -53,6 +53,7 @@ class TestASourceChangeSelectsItsPackageAndItsImporters:
     def test_a_feature_package_selects_itself_the_cli_and_the_contracts(self) -> None:
         assert affected.select(["src/junoscfg/audit/engine.py"]) == [
             "tests/contract/",
+            affected.SELECTOR_TESTS,
             "tests/unit/audit/",
             "tests/unit/cli/",
         ]
@@ -69,9 +70,9 @@ class TestASourceChangeSelectsItsPackageAndItsImporters:
     def test_a_package_nothing_else_imports_selects_only_itself(self) -> None:
         assert "tests/unit/convert/" not in affected.select(["src/junoscfg/edityaml/rules.py"])
 
-    def test_every_selected_directory_exists(self) -> None:
+    def test_every_selected_path_exists(self) -> None:
         for path in affected.select(["src/junoscfg/input.py"]):
-            assert (PROJECT_ROOT / path).is_dir(), path
+            assert (PROJECT_ROOT / path).exists(), path
 
 
 class TestWithNoFilesTheChangeComesFromGit:
@@ -124,7 +125,15 @@ class TestWithNoFilesTheChangeComesFromGit:
 class TestATestChangeSelectsItself:
     def test_a_test_file_selects_that_file(self) -> None:
         name = "tests/unit/cli/test_cli.py"
-        assert name in affected.select([name])
+        assert affected.select([name]) == [
+            # The tools reading tests/, the selector's own tests, and a reader of
+            # the CLI test directory.
+            "tests/tooling/test_affected_execution.py",
+            "tests/tooling/test_affected_tests.py",
+            "tests/tooling/test_regen_source.py",
+            "tests/tooling/test_schema_scope.py",
+            name,
+        ]
 
     @pytest.mark.parametrize(
         ("name", "importer"),
@@ -213,7 +222,12 @@ class TestRepositoryFilesATestReadsReceiveCoverage:
         "name", ["src/junoscfg/audit/data/unused-types.yaml", "src/junoscfg/audit/data/words.txt"]
     )
     def test_package_data_selects_its_package(self, name) -> None:
-        assert affected.select([name]) == affected.select(["src/junoscfg/audit/registry.py"])
+        # Data changes no import graph, so the selector's own tests stay out.
+        assert affected.select([name]) == [
+            target
+            for target in affected.select(["src/junoscfg/audit/registry.py"])
+            if target != affected.SELECTOR_TESTS
+        ]
 
     def test_a_marker_outside_every_package_selects_everything(self) -> None:
         assert affected.select(["src/junoscfg/py.typed"]) == ["tests/"]
@@ -319,6 +333,7 @@ class TestTheSelectorsOwnAssertionsFollowTheGraph:
             "tests/tooling/test_type_policy.py",
             "tests/unit/cli/test_cli.py",
             "tools/check_test_doors.py",
+            "src/junoscfg/convert/diagnostics.py",
         ],
     )
     def test_any_tests_or_tools_module_selects_the_selector_tests(self, name) -> None:

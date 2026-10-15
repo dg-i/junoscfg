@@ -12,9 +12,9 @@ as a subprocess, `importorskip` or loader argument would, is an edge too.
 File loaders in the selector and device-comparison tests are explicit audited AST
 exceptions. Worker subprocess paths in the root fixture and schema verification
 adapter are explicit edges. Changes to these mechanisms require re-auditing the
-exception; a changed audited shape, or a non-literal argument to `import_module`,
-`__import__`, `spec_from_file_location`, `SourceFileLoader`, `runpy` or
-`exec_module`, selects the full suite. Other indirection, such as a module name
+exception; a changed audited shape, a non-literal argument to `import_module` or
+`__import__`, and any other `spec_from_file_location`, `SourceFileLoader`, `runpy`
+or `exec_module` call select the full suite. Other indirection, such as a module name
 built at run time and passed to a subprocess, is not detected; the full checkpoint
 covers it.
 Syntax/read failures also select the full suite because hidden consumers may live
@@ -53,9 +53,9 @@ while documents (`.md`, `.rst`, `.txt`), change records (`openspec/`,
 `mkdocs.yml`, `LICENSE`, `.copier-answers.yml`) and the gitignored
 `private_test_data/` add nothing beyond their readers. A module that cannot be
 parsed or whose imports cannot be followed reads every outside file; only a tool
-change escalates it to the full suite. Any changed or deleted tests/tools Python
-module also selects the selector's own tests, whose real-tree assertions pin the
-whole import and reader graph.
+change escalates it to the full suite. Any changed or deleted Python module under
+`src/`, `tests/` or `tools/` also selects the selector's own tests, whose real-tree
+assertions pin the package import graph and the tools/tests import and reader graph.
 Selected ancestors subsume their descendants and node IDs below them. This tool
 does not replace the full review checkpoint or schema tier.
 
@@ -67,8 +67,9 @@ a failed executed command returns failure without retry. Disabled policy execute
 tests directly. Successful focused/no-coverage evidence is never full-suite coverage.
 
 Private capture/schema directories, pytest/Junoscfg environment overrides, alternate
-pytest configuration, unclassified configured options and untracked files under
-`tests/`, `src/`, `tools/` or a root `conftest.py` force direct execution.
+pytest configuration, unclassified configured options, untracked files under
+`tests/`, `src/`, `tools/` or a root `conftest.py`, gitignored Python files there
+(pytest still collects them), and a git listing that fails force direct execution.
 The ordinary evidence authority cannot prove changing ignored/external input bytes
 from their unchanged pathname. This deliberately broad refusal does not remove
 options or tests; it returns the real pytest status. Schema qualification keeps its

@@ -99,6 +99,13 @@ qualified upstream. Strict lane/readiness/spec gates precede the stable full che
   a regression observed failing first (15 for F1–F3, 6 for F4, 1 for F5); F6 is
   configuration text verified by fields, caps, skills and markdownlint. The
   reviewer's executed deletion counterexamples now select the importers (probe in a
-  scratch worktree). Directory-reader and string-edge rules add about 4.5 s of small
-  tooling tests to tests/tools commits; bookkeeping, ci.yml and mkdocs.yml
-  selections are unchanged.
+  scratch worktree). Directory-reader and string-edge rules add small tooling tests:
+  about 4 s to a tests/ commit and about 9 s to a tools/ commit (follow-up review
+  re-measurement); bookkeeping, ci.yml and mkdocs.yml selections are unchanged.
+- Follow-up review (2026-10-15, head 07ec0fc): verdict merge; F1–F6 resolved, no
+  narrower selection across 1527 tracked files. Non-binding N1 (source edits did
+  not select the selector's package-graph assertions), N2 (overhead figure), N3
+  (gitignored test modules and a failing git listing bypassed the reuse guard), N4
+  (one exact assertion weakened), N5 (loader wording), N6 (review record). Applying
+  the owner's fix-in-change ruling, all six are corrected: N1 and N3 with
+  regressions observed failing first (3), N4 restored to an exact list.

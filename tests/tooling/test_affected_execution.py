@@ -76,7 +76,8 @@ def test_unavailable_evidence_or_disabled_policy_executes_tests(execution, monke
 
 
 @pytest.mark.parametrize(
-    "input_kind", ["captures", "schemas", "override", "options", "alternate", "untracked"]
+    "input_kind",
+    ["captures", "schemas", "override", "options", "alternate", "untracked", "ignored"],
 )
 def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatch, input_kind):
     from agent_ready_checks import verification
@@ -103,10 +104,15 @@ def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatc
         project.write_text('[tool.pytest.ini_options]\naddopts = ["--device-grammar"]\n')
     elif input_kind == "alternate":
         (tmp_path / "pytest.ini").write_text("[pytest]\naddopts = --schema\n")
-    else:
+    elif input_kind == "untracked":
         # Tracked bytes alone do not bind an untracked conftest or test.
         (tmp_path / "tests").mkdir()
         (tmp_path / "tests" / "conftest.py").write_text("collect_ignore_glob = ['*']\n")
+    else:
+        # pytest still collects a test module that .gitignore hides from git.
+        (tmp_path / ".gitignore").write_text("tmp/\n")
+        (tmp_path / "tests" / "unit" / "tmp").mkdir(parents=True)
+        (tmp_path / "tests" / "unit" / "tmp" / "test_ignored.py").write_text("")
     assert affected_tests.reuse_blocker() is not None
     monkeypatch.setattr(
         verification, "execute", lambda *args: pytest.fail("must not consult old success")
@@ -128,4 +134,17 @@ def test_undeclared_inputs_cannot_consult_a_success_receipt(tmp_path, monkeypatc
 )
 def test_external_path_contents_are_not_proven_by_environment_strings(monkeypatch, variable):
     monkeypatch.setenv(variable, "same-path-with-changed-content")
+    assert affected_tests.reuse_blocker() is not None
+
+
+def test_an_unreadable_worktree_refuses_reuse(tmp_path, monkeypatch):
+    for key in list(affected_tests.os.environ):
+        if key.startswith(("PYTEST_", "JUNOSCFG_", "GIT_")):
+            monkeypatch.delenv(key)
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
+    monkeypatch.setattr(affected_tests, "ROOT", tmp_path)
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.pytest.ini_options]\naddopts = ["--strict-markers", "--strict-config", "-ra"]\n'
+    )
+    # Not a repository: git cannot say which files are untracked.
     assert affected_tests.reuse_blocker() is not None

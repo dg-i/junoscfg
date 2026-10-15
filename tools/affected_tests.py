@@ -612,10 +612,10 @@ def select(files: list[str]) -> list[str]:
             chosen.update(reader_selection(rel, tool_graph))
             if not rel.endswith(DOCUMENTS) and not rel.startswith(RECORDS):
                 chosen.add("tests/tooling/")
-        # Any tests/tools edit, including one that removes a read or an import,
-        # can change the graph the selector's real-tree assertions pin.
+        # Any source, tests or tools edit, including one that removes a read or
+        # an import, can change the graphs the selector's real-tree assertions pin.
         if (
-            rel.startswith(("tests/", "tools/"))
+            rel.startswith(("src/", "tests/", "tools/"))
             and path.suffix == ".py"
             and (ROOT / SELECTOR_TESTS).is_file()
         ):
@@ -666,8 +666,27 @@ def reuse_blocker() -> str | None:
     for name in PYTEST_CONFIGURATION:
         if (ROOT / name).exists():
             return "alternate pytest configuration"
-    # Evidence identity binds tracked bytes only.
-    if _git("ls-files", "--others", "--exclude-standard", "--", *UNTRACKED_INPUTS):
+    # Evidence identity binds tracked bytes only. pytest also collects a module
+    # that .gitignore hides, and a listing git cannot produce proves nothing.
+    listings = [
+        subprocess.run(
+            ["git", "ls-files", "--others", *flags, "--exclude-standard", "--", *paths],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        for flags, paths in (
+            ((), UNTRACKED_INPUTS),
+            (
+                ("--ignored",),
+                (*(f":(glob){top}/**/*.py" for top in UNTRACKED_INPUTS[:3]), "conftest.py"),
+            ),
+        )
+    ]
+    if any(listing.returncode for listing in listings):
+        return "untracked files cannot be listed"
+    if any(listing.stdout.strip() for listing in listings):
         return "untracked files beside the tested code"
     for name in ("captures", "schemas"):
         path = ROOT / "private_test_data" / name

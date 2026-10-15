@@ -95,8 +95,9 @@ paths it uses the branch and working-tree diff. Source-package changes retain un
 importers and contract tests. Tooling modules follow audited reverse dependencies
 through tools and all test modules. Root fixtures/shared support select the full
 suite; nested fixtures select their directory. A changed or deleted test module also
-selects the test modules importing its helpers or tests; any tests/tools Python
-change selects the selector's own tests (about 2 s). Root `conftest.py` and
+selects the test modules importing its helpers or tests; any src/tests/tools Python
+change selects the selector's own tests. Tools that read `tests/` or `tools/` are
+selected too: a test edit adds about 4 s, a tool edit about 9 s (measured 2026-10-15). Root `conftest.py` and
 alternate pytest configuration select the full suite; untracked files beside the
 tested code refuse evidence reuse. Unknown loaders, malformed dependency
 sources, deleted or unmapped tools and configuration retain conservative coverage.

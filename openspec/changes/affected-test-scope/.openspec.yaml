@@ -13,6 +13,7 @@ verification:
   - tools/affected_tests.CONTRACT.md
   - tests/tooling/test_affected_tests.py
   - tests/tooling/test_affected_execution.py
+  - tools/verification-costs.json
   - tests/tooling/test_schema_verification.py
   - tests/CONTRACT.md
   - docs/how-to/junoscfg-verification.md
