@@ -58,6 +58,8 @@ verification:
   - docs/decisions/index.md
   - docs/guide/conversion.md
   - docs/guide/validation.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
   - src/junoscfg/convert/CONTRACT.md
   - src/junoscfg/convert/input/json_input.py
   - src/junoscfg/convert/input/yaml_input.py
