@@ -86,7 +86,8 @@
     "codex/refresh-workflow-economy": "parked",
     "codex/publish-workflow-overhead-review": "parked",
     "codex/schema-qualification-scope": "parked",
-    "codex/affected-test-scope": "parked"
+    "codex/affected-test-scope": "parked",
+    "change/yaml-new-format": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -166,6 +167,7 @@
     "adopt-workflow-economy": "parked",
     "publish-workflow-overhead-review": "parked",
     "schema-qualification-scope": "parked",
-    "affected-test-scope": "parked"
+    "affected-test-scope": "parked",
+    "yaml-new-format": "ready"
   }
 }

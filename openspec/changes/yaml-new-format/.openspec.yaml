@@ -26,3 +26,53 @@ declared-break:
     migration: >-
       None required. junoscfg convert -i yaml -e yaml-new old.yaml converts
       an existing YAML file to yaml-new.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - .agent-ready/vulture-whitelist.py
+  - ARCHITECTURE.md
+  - README.md
+  - changelog.d/+yaml-new-format.feature.md
+  - docs/BACKLOG.md
+  - docs/api/convert.md
+  - docs/api/input.md
+  - docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md
+  - docs/decisions/index.md
+  - docs/guide/cli-reference.md
+  - docs/guide/cli.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - docs/index.md
+  - src/junoscfg/CONTRACT.md
+  - src/junoscfg/__init__.py
+  - src/junoscfg/cli.py
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/__init__.py
+  - src/junoscfg/convert/formats.py
+  - src/junoscfg/convert/input/__init__.py
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/output/__init__.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - src/junoscfg/validate/validator.py
+  - tach.toml
+  - tests/contract/test_every_door.py
+  - tests/contract/test_every_message.py
+  - tests/contract/test_format_matrix.py
+  - tests/contract/test_round_trip_validates.py
+  - tests/corpus/test_device_renderings.py
+  - tests/support/shapes.py
+  - tests/unit/cli/test_audit_command.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_convert_roundtrip.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  - tests/unit/validate/test_validator.py
+  dependencies: []
+  changelog: changelog.d/+yaml-new-format.feature.md
+  generated-records: []
