@@ -65,7 +65,15 @@ ruling directs; C5 and C8 are reported.
 
 ## Delta log
 
-- Freeze established at the commit adding this file, on base `87e14cd`.
+- Freeze established at the commit adding this file (`d0b7d59`), on base `87e14cd`.
+- Test/Challenge delta (report on `66041f4`; review.md TC1 to TC10, SC-A to SC-C).
+  Consistency: the owner's ruling is unchanged; a second interim bound (depth, SC-A) is
+  added under the same instruction as SC-2, because the size bound alone lets an alias chain
+  overflow the recursion limit; the requirement names the outermost alias, the offending
+  value, per-written-out-value counting and PyYAML's own amplification (SC-B). Criteria
+  added: exact refusal paths, depth rows, counting rows, downstream sharing rows, door rows,
+  timer guards. Invalidated: the acceptance-test list and design decisions 2 and 5; rerun:
+  the red run.
 
 ## Scope and completion
 

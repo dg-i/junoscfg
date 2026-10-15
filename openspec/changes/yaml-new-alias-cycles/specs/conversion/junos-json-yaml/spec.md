@@ -3,20 +3,26 @@
 ### Requirement: A block shared through an alias is written out, a cycle and an alias bomb are refused
 
 WHEN a `yaml-new` document, or an IR handed to the `yaml-new` writer, reaches a mapping or
-list more than once (a YAML alias, or a caller sharing one object) THEN the system SHALL
-treat each place as its own copy, as JSON spells it: the reader gives the IR of the document
-written out, holding no shared object, and the writer writes each copy. WHEN such a mapping
-or list is reached inside itself (a cycle) THEN the system SHALL refuse it as kind `cycle`
-at the path where it is reached again. WHEN the document written out would hold more than
-twice the values the parsed document holds (mappings, lists and scalars; a mapping or list
-reached again counted once) THEN the system SHALL refuse the alias being written out when
-that size is passed as kind `alias` at its path, so that the check stops within twice the
-parsed document's size and no later stage expands more. Every document that reaches each
-value at most twice SHALL pass the bound; a document without aliases never reaches it. Each
-refusal names its kind, path and reason and never a value or key: reader and writer raise
-`ValueError`, validation gives an invalid result. The bound is interim (SC-2, pending the
-owner).
-Tests: `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_shared_block_is_walked_where_it_is_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_in_a_shared_block_is_found_where_first_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_is_refused_where_it_is_reached_again`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_an_alias_bomb_is_refused_in_linear_time`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_the_bound_is_twice_the_parsed_document`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_cycle_or_an_alias_bomb_is_refused`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_cycle_or_an_alias_bomb_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_new_alias_bomb_exits_two`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
+list more than once (a YAML alias, a merge key's container value, or a caller sharing one
+object) THEN the system SHALL treat each place as its own copy, as JSON spells it: the
+reader gives the IR of the document written out, holding no mapping or list twice, and the
+writer writes each copy. WHEN such a mapping or list is reached inside itself (a cycle) THEN
+the system SHALL refuse it as kind `cycle` at the path where it is reached again. WHEN the
+document written out would hold more than twice the values the parsed document holds
+(mappings, lists and scalars, each scalar per place; a mapping or list reached again counted
+once), or would nest deeper than the parsed document's deepest value (an alias counted as a
+leaf, as in the text) THEN the system SHALL refuse the outermost alias being written out
+when that bound is passed, as kind `alias` at its path, so that the check stops within twice
+the parsed values and the parsed depth and no later stage expands more. The bounds count
+written-out values, not aliases: every document that reaches each value at most twice and
+nests no deeper than written SHALL pass; a document without aliases never reaches them.
+Each refusal names its kind, path and reason (`has no JSON spelling`, `expands the document
+past twice its size`, `nests the document deeper than it is written`) and never the
+offending value or key: reader and writer raise `ValueError`, validation gives an invalid
+result. Both bounds are interim (SC-2, SC-A, pending the owner). Scalar aliases and merge
+keys are expanded by PyYAML while loading, before the check, and are not bounded here
+(SC-B).
+Tests: `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_shared_block_is_walked_where_it_is_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_in_a_shared_block_is_found_where_first_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_is_refused_where_it_is_reached_again`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_an_alias_bomb_is_refused_in_linear_time`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_block_reached_three_times_through_nested_anchors_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_the_bound_is_twice_the_parsed_document`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_one_value_past_twice_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_scalars_count_toward_the_bound`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_an_alias_free_document_of_repeated_scalars_passes`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_converts_as_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_the_ir_of_a_shared_block_shares_nothing`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_cycle_or_an_alias_bomb_is_refused`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_cycle_or_an_alias_bomb_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_new_alias_bomb_exits_two`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_new_shared_block_converts_as_written_out`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_yaml_new_shared_block_and_alias_bomb`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
 
 #### Scenario: Two syslog hosts sharing one contents block
 
@@ -31,7 +37,12 @@ Tests: `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_shared_bloc
 #### Scenario: Billion laughs
 
 - **WHEN** nine levels of ten aliases each (10^9 values written out) are read as yaml-new
-- **THEN** `ValueError` names kind `alias` and a path, within milliseconds, and no value
+- **THEN** `ValueError` says a YAML alias at `lol1.2` expands the document past twice its size, within milliseconds
+
+#### Scenario: An alias chain deeper than the recursion limit
+
+- **WHEN** four flow lists 300 deep, each innermost an alias of the one before, are read as yaml-new
+- **THEN** `ValueError` says the alias nests the document deeper than it is written, never a `RecursionError`
 
 ## MODIFIED Requirements
 

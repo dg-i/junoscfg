@@ -8,7 +8,18 @@ import pytest
 import yaml
 
 from junoscfg.input import find_non_json_value, normalize
-from tests.support.aliases import CYCLE, SHARED_BLOCK, alias_bomb, alias_bomb_yaml
+from tests.support.aliases import (
+    CYCLE,
+    NESTED_ONCE,
+    SHARED_BLOCK,
+    alias_bomb,
+    alias_bomb_yaml,
+    alias_chain_yaml,
+    within,
+)
+
+_TOO_LARGE = "expands the document past twice its size"
+_TOO_DEEP = "nests the document deeper than it is written"
 
 
 class TestRemoveComments:
@@ -115,8 +126,12 @@ class TestFindNonJsonValue:
             {"a": _SHARED, "b": [_SHARED]},
             yaml.safe_load(SHARED_BLOCK),
             {"a": _SHARED, "b": {"c": _SHARED}, "d": [_LIST, _LIST]},
+            yaml.safe_load(
+                "configuration:\n  system:\n    d: &d {services: {ssh: [null]}}\n"
+                "    e:\n      <<: *d\n      x: 1\n"
+            ),
         ],
-        ids=["shared-twice", "a-yaml-anchor", "two-blocks-at-two-depths"],
+        ids=["shared-twice", "a-yaml-anchor", "two-blocks-at-two-depths", "a-merge-key"],
     )
     def test_a_shared_block_is_walked_where_it_is_reached(self, document: object) -> None:
         """JSON has no aliases: a mapping or list reached again stands for a copy
@@ -141,18 +156,42 @@ class TestFindNonJsonValue:
         assert (found.kind, found.path, found.reason) == ("cycle", path, "has no JSON spelling")
 
     @pytest.mark.parametrize(
-        "document",
-        [yaml.safe_load(alias_bomb_yaml()), alias_bomb(), yaml.safe_load(alias_bomb_yaml(200, 2))],
-        ids=["billion-laughs", "two-to-the-64", "two-to-the-200"],
+        ("document", "path", "reason"),
+        [
+            (yaml.safe_load(alias_bomb_yaml()), "lol1.2", _TOO_LARGE),
+            (
+                {"configuration": alias_bomb(16)},
+                "configuration.system.lol" + ".0" * 12 + ".1",
+                _TOO_LARGE,
+            ),
+            (
+                {"configuration": alias_bomb(64)},
+                "configuration.system.lol" + ".0" * 60 + ".1",
+                _TOO_LARGE,
+            ),
+            (yaml.safe_load(alias_bomb_yaml(200, 2)), "lol2.0", _TOO_DEEP),
+            (yaml.safe_load(alias_chain_yaml()), "s1" + ".0" * 300, _TOO_DEEP),
+        ],
+        ids=["billion-laughs", "two-to-the-16", "two-to-the-64", "two-to-the-200", "a-deep-chain"],
     )
-    def test_an_alias_bomb_is_refused_in_linear_time(self, document: object) -> None:
-        """The walk stops within twice the parsed document: it returns at all
-        (an unbounded walk of 2**200 values never would), naming the alias."""
-        found = find_non_json_value(document)
+    def test_an_alias_bomb_is_refused_in_linear_time(
+        self, document: object, path: str, reason: str
+    ) -> None:
+        """The walk stops within twice the parsed size and never deeper than the
+        parsed document, at the outermost alias being written out (an unbounded
+        walk of 2**200 values, or one 1,200 deep, would hang or overflow)."""
+        with within(10):
+            found = find_non_json_value(document)
         assert found is not None
-        assert found.kind == "alias"
-        assert found.reason == "expands the document past twice its size"
-        assert found.path
+        assert (found.kind, found.path, found.reason) == ("alias", path, reason)
+
+    def test_a_block_reached_three_times_through_nested_anchors_is_refused(self) -> None:
+        """Each anchor aliased once, yet `contents` is reached three times and
+        nests deeper than written: the bound counts written-out values, not
+        aliases (Test/Challenge finding 7, SC-C; interim, pending the owner)."""
+        found = find_non_json_value(yaml.safe_load(NESTED_ONCE))
+        assert found is not None
+        assert (found.kind, found.path) == ("alias", "configuration.system.syslog.file.0.contents")
 
     def test_the_bound_is_twice_the_parsed_document(self) -> None:
         """Parsed: the root, the block and its scalar, one more scalar: 4 values.
@@ -165,3 +204,24 @@ class TestFindNonJsonValue:
         found = find_non_json_value({**at_the_bound, "e": block})
         assert found is not None
         assert (found.kind, found.path) == ("alias", "e")
+
+    def test_one_value_past_twice_is_refused(self) -> None:
+        """Parsed 5 values; written out 9 passes and 11 is refused: the bound is
+        twice the parsed size, not one more (Test/Challenge finding 4a)."""
+        block = {"k": "v"}
+        odd = {"a": block, "b": block, "c": "x", "d": block, "f": "y"}
+        assert find_non_json_value(odd) is None
+        assert tuple(find_non_json_value({**odd, "e": block}) or ())[:2] == ("alias", "e")
+
+    def test_scalars_count_toward_the_bound(self) -> None:
+        """A scalar-heavy block reached three times is refused although the
+        containers alone would pass (Test/Challenge finding 4b)."""
+        block = ["v"] * 3000
+        document = {"pad": [[] for _ in range(2000)], "a": block, "b": block, "c": block}
+        assert tuple(find_non_json_value(document) or ())[:2] == ("alias", "c")
+
+    def test_an_alias_free_document_of_repeated_scalars_passes(self) -> None:
+        """Python shares `None`, `True`, small numbers and short strings; a
+        scalar is counted per place, never per object (Test/Challenge finding 4c)."""
+        words = ["null"] * 50 + ["true"] * 50 + ["0"] * 50 + ["a"] * 50
+        assert find_non_json_value(yaml.safe_load("x: [" + ", ".join(words) + "]")) is None

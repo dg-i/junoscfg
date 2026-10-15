@@ -10,8 +10,8 @@ Owner ruling 2026-10-15 on PO-2/SC-1: refuse cycles only, keep alias-bomb protec
   reached; it refuses a cycle (kind `cycle`) and an expansion past a bound (kind `alias`),
   each with its path and never its value, in time linear in the parsed document. It returns
   `NonJsonValue(kind, path, reason)`, a new kernel name.
-- Interim bound (SC-2, pending the owner): written out, the document may hold at most twice
-  the values it holds as parsed; every document reaching each value at most twice passes.
+- Interim bounds (SC-2, SC-A, pending the owner): written out, the document may hold at most
+  twice the values it holds as parsed, and nest no deeper than its parsed depth.
 - The yaml-new reader expands an accepted document to a tree; the yaml-new writer checks the
   IR before its object stage; `validate_config` judges the expanded object. The JSON
   object stage copies a shared IR written out, as JSON output already spells it.
@@ -32,4 +32,5 @@ None, because the yaml-new capabilities exist.
 
 ## Non-goals
 
-Legacy `yaml` input (C5); scalar aliases and merge keys (accepted already); device claims.
+Legacy `yaml` input (C5); amplification inside PyYAML by scalar aliases and merge chains
+(SC-B); device claims.

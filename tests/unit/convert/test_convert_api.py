@@ -31,14 +31,16 @@ from junoscfg.cli import main
 from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, pipeline_result, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.aliases import (
-    CYCLE,
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
     alias_bomb,
     alias_bomb_yaml,
+    alias_chain_yaml,
+    shared_containers,
+    within,
 )
 from tests.support.artifacts import write_minimal_tree
-from tests.support.shapes import SHAPES, in_order, read_ir
+from tests.support.shapes import SHAPES, WRITERS, in_order, read_ir
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -507,6 +509,23 @@ class TestValidateConfig:
         source = '{"configuration": {"system": {"host-name": "r1"}}}'
         result = validate_config(source, format=Format.JSON, artifacts_dir=artifacts_dir)
         assert result.valid is True
+
+    def test_a_yaml_new_shared_block_and_alias_bomb(self, artifacts_dir: str) -> None:
+        """The public door: a shared block is judged written out, a bomb is an
+        invalid result naming its alias (owner ruling on PO-2/SC-1)."""
+        shared = validate_config(SHARED_BLOCK, format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
+        written_out = validate_config(
+            SHARED_BLOCK_WRITTEN_OUT, format=Format.YAML_NEW, artifacts_dir=artifacts_dir
+        )
+        assert shared == written_out
+        with within(10):
+            bomb = validate_config(
+                alias_bomb_yaml(), format=Format.YAML_NEW, artifacts_dir=artifacts_dir
+            )
+        assert bomb.valid is False
+        assert [(e.message, e.path) for e in bomb.errors] == [
+            ("YAML alias expands the document past twice its size", "lol1.2")
+        ]
 
     def test_junos_yaml_is_judged_by_the_json_schema(self, artifacts_dir: str) -> None:
         """An Ansible meta key: the YAML schema allows it, JSON's does not, and
@@ -1096,26 +1115,63 @@ class TestJunosYamlReader:
         assert first["contents"] is not second["contents"]
         assert first["contents"][0] is not second["contents"][0]
 
+    @pytest.mark.parametrize("writer", WRITERS, ids=[w.value for w in WRITERS])
+    @pytest.mark.parametrize("anonymized", [False, True], ids=["plain", "anonymized"])
+    def test_a_shared_block_converts_as_written_out(self, writer: Format, anonymized: bool) -> None:
+        """Every later stage sees the document written out: an anonymizer or a
+        writer meeting one object twice would treat it twice or anchor it
+        (Test/Challenge finding 5)."""
+        anon = AnonymizeConfig(ips=True, salt="s") if anonymized else None
+
+        def converted(source: str) -> str:
+            return convert_config_result(
+                source, from_format=Format.YAML_NEW, to_format=writer, anon_config=anon
+            ).output
+
+        for shared, written_out in (
+            (SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT),
+            (_SHARED_PREFIXES, _SHARED_PREFIXES_WRITTEN_OUT),
+        ):
+            assert converted(shared) == converted(written_out)
+
+    def test_the_ir_of_a_shared_block_shares_nothing(self) -> None:
+        for source in (SHARED_BLOCK, _SHARED_PREFIXES):
+            assert shared_containers(to_dict(source, "yaml-new")) == []
+
     @pytest.mark.parametrize(
         ("source", "said"),
         [
-            (CYCLE, "a YAML cycle at configuration.system.x has no JSON spelling"),
-            (alias_bomb_yaml(word="acme"), "expands the document past twice its size"),
-            (alias_bomb_yaml(200, 2, word="acme"), "expands the document past twice its size"),
+            (
+                "configuration: &a\n  system:\n    host-name: acme-r1\n    x: *a\n",
+                "Invalid input: a YAML cycle at configuration.system.x has no JSON spelling",
+            ),
+            (
+                alias_bomb_yaml(word="acme"),
+                "Invalid input: a YAML alias at acme1.2 expands the document past twice its size",
+            ),
+            (
+                alias_bomb_yaml(200, 2, word="acme"),
+                "Invalid input: a YAML alias at acme2.0 nests the document deeper"
+                " than it is written",
+            ),
+            (
+                alias_chain_yaml(),
+                "Invalid input: a YAML alias at s1"
+                + ".0" * 300
+                + " nests the document deeper than it is written",
+            ),
         ],
-        ids=["a-cycle", "billion-laughs", "two-to-the-200"],
+        ids=["a-cycle", "billion-laughs", "two-to-the-200", "a-deep-chain"],
     )
     def test_a_cycle_or_an_alias_bomb_is_refused(self, source: str, said: str) -> None:
-        """A cycle is refused where it is reached again; a bomb where its
-        expansion passes twice the parsed document, before any later stage
-        expands it. Kind and path, never a value."""
-        with pytest.raises(ValueError) as raised:
+        """A cycle is refused where it is reached again; a bomb at its outermost
+        alias when the expansion passes twice the parsed size or nests deeper
+        than the parsed document, before any later stage expands it: a
+        ValueError, never a RecursionError. Kind and path, never a value."""
+        with within(10), pytest.raises(ValueError) as raised:
             to_dict(source, "yaml-new")
-        message = str(raised.value)
-        assert said in message
-        if "cycle" not in said:
-            assert re.search(r"a YAML alias at acme1\.\d+ ", message), message
-            assert "acme," not in message and "[acme" not in message
+        assert str(raised.value) == said
+        assert "acme-r1" not in str(raised.value)
 
     def test_an_empty_document_is_refused(self) -> None:
         with pytest.raises(ValueError, match="No 'configuration' key found in YAML input"):
@@ -1205,6 +1261,25 @@ def _value(rng: random.Random, depth: int) -> object:
     return {k: _value(rng, depth + 1) for k in keys}
 
 
+#: One prefix-list item list shared by two prefix lists through an alias.
+_SHARED_PREFIXES = (
+    "configuration:\n"
+    "  policy-options:\n"
+    "    prefix-list:\n"
+    "    - name: PL-A\n"
+    "      prefix-list-item: &items\n"
+    "      - name: 203.0.114.0/24\n"
+    "      - name: 198.0.2.0/24\n"
+    "    - name: PL-B\n"
+    "      prefix-list-item: *items\n"
+)
+_SHARED_PREFIXES_WRITTEN_OUT = _SHARED_PREFIXES.replace(
+    "prefix-list-item: &items\n", "prefix-list-item:\n"
+).replace(
+    "      prefix-list-item: *items\n",
+    "      prefix-list-item:\n      - name: 203.0.114.0/24\n      - name: 198.0.2.0/24\n",
+)
+
 #: An IR whose `system` holds itself, as only a caller sharing objects builds it.
 _CYCLIC_IR: dict = {"system": {}}
 _CYCLIC_IR["system"]["x"] = _CYCLIC_IR["system"]
@@ -1240,19 +1315,28 @@ class TestJunosYamlWriter:
         ("ir", "said"),
         [
             (_CYCLIC_IR, "the cycle at {top}system.x has no JSON spelling"),
-            (alias_bomb(16), "expands the document past twice its size"),
+            (
+                alias_bomb(16),
+                "the alias at {top}system.lol"
+                + ".0" * 12
+                + ".1 expands the document past twice its size",
+            ),
+            (alias_bomb(64), "expands the document past twice its size"),
+            (alias_bomb(200), "expands the document past twice its size"),
         ],
-        ids=["a-cycle", "two-to-the-16"],
+        ids=["a-cycle", "two-to-the-16", "two-to-the-64", "two-to-the-200"],
     )
     def test_a_cycle_or_an_alias_bomb_is_refused_on_write(
         self, ir: dict, said: str, wrap: bool
     ) -> None:
         """A caller's IR holding a cycle or a bomb is refused before the object
         stage walks it: a ValueError naming kind and path, not a RecursionError
-        or an unbounded expansion (owner ruling on PO-2/SC-1)."""
-        with pytest.raises(ValueError) as raised:
+        or an unbounded expansion (owner ruling on PO-2/SC-1). No CLI path hands
+        the writer a shared IR: the `yaml` reader writes every place out."""
+        with within(10), pytest.raises(ValueError) as raised:
             from_dict(ir, "yaml-new", wrap=wrap)
         assert said.format(top="configuration." if wrap else "") in str(raised.value)
+        assert str(raised.value).startswith("Cannot write yaml-new: the ")
 
     @pytest.mark.parametrize("mark", ["\x85", "\u2028", "\u2029"], ids=["nel", "ls", "ps"])
     def test_a_yaml_only_line_break_reads_back_as_written(self, mark: str) -> None:

@@ -18,8 +18,11 @@ declared-break:
       kind cycle, no longer alias; the trailing hint is dropped), and a cyclic
       IR handed to the yaml-new writer raises ValueError instead of
       RecursionError. junoscfg.input gains NonJsonValue, the type
-      find_non_json_value returns (a tuple of kind, path, reason). Loosening
-      accepted input is additive: patch, as AGENTS.md rules.
+      find_non_json_value returns (a tuple of kind, path, reason). On the
+      secondary door junoscfg.convert.from_dict, a caller's IR sharing an object
+      past either bound is now refused by the yaml-new writer where it was
+      written; no reader produces such an IR. Loosening accepted input is
+      additive: patch, as AGENTS.md rules.
     migration: >-
       None required. A caller matching refusal text matches the kind and path,
       which are kept; a file that wrote a shared block out may now use an alias.

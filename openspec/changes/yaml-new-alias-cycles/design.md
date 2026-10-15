@@ -28,7 +28,16 @@ only the finished document, after `junos_json_object` and `_unshared` have walke
    was. A document without aliases visits exactly its parsed size and never reaches it.
    Alternatives (a fixed node count, go-yaml's alias ratio, SnakeYAML's 50 collection aliases)
    need a number the owner did not state, or still allow exponential growth (a fixed alias
-   count with nesting).
+   count with nesting). Strictly, a block reached twice needs only 2P-1 (the root is reached
+   once); 2P is the simpler statement and the difference is one value.
+2a. **Depth bound (SC-A, interim, from Test/Challenge TC3).** A walk of the written-out
+   document may not go deeper than the parsed document's deepest value, an alias counted as
+   a leaf as in the text; past it the outermost alias is refused (`alias`, "nests the
+   document deeper than it is written"). Without it a 17 KB alias chain nests 1,200 deep
+   within the size bound and every recursive stage raises `RecursionError`. With it no stage
+   meets a depth an alias-free document of the same text could not hold, and no number is
+   needed. The counting pass is iterative, in document order, so an anchor is met before its
+   aliases as in the text.
 3. **API.** `find_non_json_value(data) -> NonJsonValue | None`, `NonJsonValue(kind, path,
    reason)` a `NamedTuple` exported from `junoscfg.input` (tach expose gains it). `reason` is
    "has no JSON spelling" or "expands the document past twice its size", so every door says
@@ -41,15 +50,23 @@ only the finished document, after `junos_json_object` and `_unshared` have walke
    instead of `deepcopy`, so a shared IR is written out the same in `json` and `yaml-new`
    and the YAML dumper meets no shared object (no anchor). Validation: check, then validate
    the loaded object (read-only, bounded).
-5. **Walk.** Two passes: an iterative count (each container once; ends on cycles), then the
-   recursive expanded walk with a step budget, building paths on return as today.
+5. **Walk.** Two passes: an iterative count of values and deepest depth (each container
+   once, document order; ends on cycles), then the recursive expanded walk with a step
+   budget and the depth ceiling, building paths on return as today. The walk recurses no
+   deeper than the parsed document, which PyYAML's own recursive composer already built.
 
 ## Risks
 
 - The bound refuses heavy reuse of a block in a small file (a three-value block reached four
   times in a file of only that block). Interim, reported; loosening is additive.
-- Recursion depth: the expanded walk recurses as the old walk did; a document deeper than
-  Python's recursion limit fails in PyYAML's own composer first.
-- Merge keys (`<<: *a`) are resolved by PyYAML at load as a shallow copy of keys; they are not
-  aliases here and cost at most quadratic time in PyYAML itself (pre-existing, unchanged).
+- Recursion depth: alias chains reach any depth (Test/Challenge TC3), hence the depth bound;
+  a document whose text nests past the recursion limit fails in PyYAML's composer first.
+- Linear in the loaded object, not the text: scalar aliases and merge keys are expanded by
+  PyYAML while loading (TC6, SC-B, pre-existing).
+- The depth bound refuses a block defined shallow and aliased deeper than anything else in
+  the file (SC-A); the size bound counts written-out values, so nested anchors each aliased
+  once can pass it (SC-C).
+- Merge keys (`<<: *a`) are resolved by PyYAML at load as a shallow copy of keys; a container
+  value they copy is shared and now written out (refused at base); a merge chain costs
+  quadratic time in PyYAML itself (pre-existing, unchanged).
 - Legacy `yaml` input keeps its cycle recursion and bomb expansion (C5, out of the ruling).

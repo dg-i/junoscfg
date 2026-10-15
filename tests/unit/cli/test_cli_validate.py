@@ -11,7 +11,7 @@ from __future__ import annotations
 from click.testing import CliRunner
 
 from junoscfg.cli import main
-from tests.support.aliases import alias_bomb_yaml
+from tests.support.aliases import alias_bomb_yaml, alias_chain_yaml
 
 
 class TestCliValidation:
@@ -62,6 +62,17 @@ class TestCliValidation:
         )
         assert result.exit_code == 1, result.output
         assert "alias expands the document past twice its size" in result.output
+
+    def test_a_yaml_new_deep_alias_chain_exits_one(self, artifacts_dir: str) -> None:
+        """An alias chain nesting past the recursion limit is an invalid result,
+        not a RecursionError traceback (Test/Challenge finding 3)."""
+        result = CliRunner().invoke(
+            main,
+            ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir],
+            input=alias_chain_yaml(),
+        )
+        assert result.exit_code == 1, result.output
+        assert "alias nests the document deeper than it is written" in result.output
 
     def test_an_invalid_document_exits_one_with_its_errors(self, artifacts_dir: str) -> None:
         runner = CliRunner()

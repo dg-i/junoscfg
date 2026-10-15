@@ -17,6 +17,7 @@ from junoscfg import Format, convert_config
 from junoscfg.audit import STYLE_CHOICES, find_unused, render
 from junoscfg.cli import main
 from junoscfg.convert import to_dict
+from tests.support.aliases import SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, alias_bomb_yaml
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -69,6 +70,16 @@ class TestInputFormats:
         assert exit_code == 2
         assert "no JSON spelling" in stderr
         assert run_cli(["audit", "unused", "-i", "yaml"], source)[0] == 0
+
+    def test_a_yaml_new_shared_block_and_alias_bomb(self) -> None:
+        """`audit -i yaml-new` reads a shared block written out and refuses a
+        bomb with its alias's path (owner ruling on PO-2)."""
+        shared = run_cli(["audit", "unused", "-i", "yaml-new"], SHARED_BLOCK)
+        assert shared == run_cli(["audit", "unused", "-i", "yaml-new"], SHARED_BLOCK_WRITTEN_OUT)
+        assert shared[0] == 0
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", "yaml-new"], alias_bomb_yaml())
+        assert exit_code == 2
+        assert "alias at lol1.2 expands the document past twice its size" in stderr
 
     def test_autodetect_set(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused"], SET_CONFIG)

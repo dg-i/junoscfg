@@ -5,7 +5,7 @@ enforced-by: tests
 review-by: 2027-04-15
 ---
 
-# yaml-new expands aliases within a linear bound
+# yaml-new expands aliases within linear bounds
 
 ## Context
 
@@ -22,20 +22,25 @@ only cycles are refused and denial-of-service protection stays.
 
 `junoscfg.input.find_non_json_value`, the boundary the yaml-new reader, the yaml-new writer
 and yaml-new validation share, walks a shared mapping or list at every place it is reached.
-It refuses a mapping or list reached inside itself (kind `cycle`), and an alias whose
-expansion makes the written-out document hold more than twice the values the parsed
-document holds (kind `alias`), each at its path and never with a value. Every document that
-reaches each value at most twice passes; a document without aliases never reaches the
-bound. The factor two is interim, pending the owner (SC-2 in
-`openspec/changes/archive/*-yaml-new-alias-cycles/review.md`): it is the smallest bound that
-accepts a block reached twice and keeps every stage linear in the parsed document, the
-property the earlier rule had. The reader then reads the document written out, the writer
+It refuses a mapping or list reached inside itself (kind `cycle`), and the outermost alias
+whose expansion makes the written-out document hold more than twice the values the parsed
+document holds, or nest deeper than the parsed document's deepest value (kind `alias`),
+each at its path and never with the offending value. The count is per written-out value,
+not per alias: every document reaching each value at most twice, no deeper than written,
+passes; a document without aliases never reaches either bound. Both bounds are interim,
+pending the owner (SC-2 and SC-A in
+`openspec/changes/archive/*-yaml-new-alias-cycles/review.md`): the factor two is the
+smallest that accepts a block reached twice, and together they keep every stage linear in
+the loaded object and no deeper than an alias-free document, the property the earlier rule
+had. Scalar aliases and merge keys are expanded by PyYAML while loading and are not
+bounded here (SC-B). The reader then reads the document written out, the writer
 checks the IR before building the object, and validation judges the object written out.
 
 ## Consequences
 
 Hand-written yaml-new may share blocks through aliases. A file reusing one block many times
-in a small document can pass the bound and be refused; writing the block out, or a looser
+in a small document, or aliasing a block deeper than anything written, can pass a bound and
+be refused; writing the block out, or a looser
 bound the owner may choose, accepts it, and loosening is additive. A cyclic or bomb IR from
 a caller now gets a `ValueError` from the yaml-new writer instead of a `RecursionError` or an
 unbounded expansion. The legacy `yaml` format is outside this boundary: its reader still

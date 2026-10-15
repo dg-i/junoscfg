@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING
 import pytest
 
 from junoscfg.validate import JsonYamlValidator, SchemaLoadError
-from tests.support.aliases import SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, alias_bomb_yaml
+from tests.support.aliases import (
+    SHARED_BLOCK,
+    SHARED_BLOCK_WRITTEN_OUT,
+    alias_bomb_yaml,
+    alias_chain_yaml,
+    within,
+)
 from tests.support.artifacts import make_artifacts_dir
 
 if TYPE_CHECKING:
@@ -134,12 +140,16 @@ class TestYamlAsJsonValidation:
 
     def test_an_alias_bomb_is_invalid(self, validator):
         """A bomb is an invalid result naming its alias, never an expansion."""
-        result = validator.validate_yaml_as_json(alias_bomb_yaml())
+        with within(10):
+            result = validator.validate_yaml_as_json(alias_bomb_yaml())
+            deep = validator.validate_yaml_as_json(alias_chain_yaml())
         assert result.valid is False
-        assert [e.message for e in result.errors] == [
-            "YAML alias expands the document past twice its size"
+        assert [(e.message, e.path) for e in result.errors] == [
+            ("YAML alias expands the document past twice its size", "lol1.2")
         ]
-        assert result.errors[0].path.startswith("lol1.")
+        assert [(e.message, e.path) for e in deep.errors] == [
+            ("YAML alias nests the document deeper than it is written", "s1" + ".0" * 300)
+        ]
 
     def test_an_empty_document_is_judged_as_json_null(self, validator):
         assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors
