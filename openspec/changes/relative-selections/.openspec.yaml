@@ -6,7 +6,7 @@ zone: conversion
 domains: [conversion]
 removes: >-
   the pipeline's relative rendering of a bare subtree (wrap=False) with no schema context;
-  the relative pass that spelled a selection as the value under a key named "selection";
+  the pipeline's use of the bare-value spelling (from_dict wrap=False keeps it);
   the rule that a relative path whose value is null selects nothing
 declared-break:
   consumer:
@@ -46,6 +46,7 @@ verification:
   - docs/guide/cli.md
   - openspec/specs/conversion/path-filtering/spec.md
   - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/display/CONTRACT.md
   - src/junoscfg/convert/__init__.py
   - src/junoscfg/convert/output/__init__.py
   - src/junoscfg/convert/output/dict_walker.py

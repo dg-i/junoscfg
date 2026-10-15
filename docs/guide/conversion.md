@@ -207,7 +207,10 @@ print(filtered)
 # set domain-name example.com
 ```
 
-Path filtering is also available via the CLI with `--path` and `--relative`:
+These text filters match the path's words as written, without the schema; use
+`convert_config(path=..., relative=...)` or the CLI for output that knows the
+schema context. Path filtering is also available via the CLI with `--path` and
+`--relative`:
 
 ```bash
 junoscfg -i json -e set config.json --path "system.syslog"

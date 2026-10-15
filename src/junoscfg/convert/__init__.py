@@ -101,8 +101,9 @@ def pipeline_result(
         anon_config: An :class:`~junoscfg.anonymize.config.AnonymizeConfig`
                      instance, or None to skip anonymization.
         path: Dot-separated path to select before rendering.
-        relative: If True, render only the selected subtree rather than
-                  rebuilding its parent hierarchy. Requires *path*.
+        relative: If True, write what the absolute output writes at *path*,
+                  without the path (spec conversion/path-filtering). Requires
+                  *path*.
 
     Returns:
         The converted output and immutable diagnostics.

@@ -883,7 +883,7 @@ class TestPathFiltering:
     def test_a_relative_yaml_new_selection_is_measured_as_written(self) -> None:
         """The 64-level ceiling counts the document written: a relative selection
         from its own root, as before this change (relative-selections R1)."""
-        source = json.dumps({"configuration": {"system": {"a": {"b": nested_ir(62)}}}})
+        source = json.dumps({"configuration": {"system": {"a": {"b": nested_ir(63)}}}})
 
         def written(path: str) -> str:
             return convert_config(
@@ -895,7 +895,7 @@ class TestPathFiltering:
                 validate=False,
             )
 
-        assert yaml.safe_load(written("system.a.b")) == nested_ir(62)
+        assert yaml.safe_load(written("system.a.b")) == nested_ir(63)
         with pytest.raises(ValueError, match="is nested deeper than 64 levels"):
             written("system")
 

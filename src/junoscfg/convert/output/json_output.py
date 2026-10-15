@@ -23,10 +23,12 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
 
     When *wrap* is true, wraps the config in ``{"configuration": ...}``.
     Dict input receives native-format normalization so the output can be
-    loaded on a Junos device. When *wrap* is false, *config* is a relative
-    selection, the value under its path's last key (a mapping, a list, ``{}``,
-    a flag or a scalar): its presence flags and entry key order are spelled as
-    under that key in the absolute object (spec conversion/path-filtering).
+    loaded on a Junos device. When *wrap* is false, *config* is a bare value
+    a caller holds (`from_dict(value, wrap=False)`), the value under some
+    path's last key (a mapping, a list, ``{}``, a flag or a scalar): its
+    presence flags and entry key order are spelled as under such a key, with
+    no schema context. The pipeline writes a relative selection from the IR
+    along its path instead (``below=``; spec conversion/path-filtering).
     The normalization works on the writer's own copy, with every shared
     mapping or list written out as JSON spells it: the caller's IR is never
     changed (spec conversion/writers).
@@ -106,16 +108,24 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True, below: list[str] | Non
             its ``true``: yaml-new holds what JSON holds, and its reader would
             refuse anything else.
     """
-    wrap = wrap or below is not None
-    found = find_non_json_value(wrap_configuration(config) if wrap else config)
+    if below is None:
+        found = find_non_json_value(wrap_configuration(config) if wrap else config)
+    else:
+        # A relative selection is measured as it is written: from its own root.
+        selection = config
+        for key in below:
+            selection = selection[key]
+        found = find_non_json_value(selection)
     document = None
     if found is None:
-        document = junos_json_object(config, wrap=wrap)
+        document = junos_json_object(config, wrap=wrap or below is not None)
+        if below is not None:
+            document = _selected(document, below)
         found = find_non_json_value(document)
     if found is not None:
         raise ValueError(f"Cannot write yaml-new: the {found.kind} {found.where} {found.reason}")
     return yaml.dump(
-        document if below is None else _selected(document, below),
+        document,
         Dumper=_JunosYamlDumper,
         default_flow_style=False,
         allow_unicode=True,

@@ -89,7 +89,8 @@ def path_words(path: list[str]) -> list[str]:
     """The words a configuration path's keys are written as in set and
     structured output: each key as the walker spells it, without the list
     names the schema hides (`interface` under `interfaces`, `group` under
-    `groups`), annotation keys (`@`, `@leaf`) and the kept-statements key."""
+    `groups`, a list hiding its own key). A key no statement names (an
+    annotation key, the kept-statements key) is passed over by `Below`."""
     root = load_schema_tree()
     node: dict[str, Any] | None = root
     words: list[str] = []
@@ -97,7 +98,7 @@ def path_words(path: list[str]) -> list[str]:
         set_key = resolve_key_alias(key)
         child = schema_child(node, set_key, root)
         hidden = get_transparent_child(node) == key or is_transparent_list_key(child)
-        if not hidden and not key.startswith("@") and key != UNPLACED_STATEMENTS:
+        if not hidden:
             words.append(set_key)
         node = child
     return words
