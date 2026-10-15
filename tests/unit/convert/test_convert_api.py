@@ -477,16 +477,21 @@ class TestPathFiltering:
     @pytest.mark.parametrize(
         ("source", "path", "from_format"),
         [
-            (_SELECTED_SOURCE, "system.syslog.host", Format.JSON),
             (
-                "configuration:\n  system:\n    login:\n      user:\n      - name: admin\n"
-                "        class: [super-user]\n",
-                "system.login.user",
+                _SELECTED_SOURCE.replace("198.51.100.", "203.0.114."),
+                "system.syslog.host",
+                Format.JSON,
+            ),
+            (
+                "configuration:\n  system:\n    name-server:\n    - name: 203.0.114.53\n"
+                "    login:\n      user:\n      - name: admin\n        class: [super-user]\n",
+                "system",
                 Format.YAML,
             ),
             (
-                '{"configuration": {"system": {"@": {"inactive": true}, "host-name": "r1"}}}',
-                "system.@",
+                '{"configuration": {"system": {"@": {"inactive": true}, "host-name": "r1",'
+                ' "name-server": [{"name": "203.0.114.53"}]}}}',
+                "system",
                 Format.JSON,
             ),
         ],
@@ -502,6 +507,7 @@ class TestPathFiltering:
             source, to_format, path, from_format=from_format, anon_config=anonymize
         )
         assert json.dumps(relative) == json.dumps(absolute)
+        assert "203.0.114." not in json.dumps(relative)
 
     def test_an_anonymized_list_selection_in_set(self) -> None:
         """Anonymized, a selected list in set output is still its statements
@@ -738,26 +744,44 @@ class TestPathFiltering:
             == expected
         )
 
-    def test_an_entry_named_like_a_hidden_list_keeps_its_name(self) -> None:
+    @pytest.mark.parametrize(
+        ("ir", "path", "expected"),
+        [
+            (
+                {"interfaces": {"interface": [{"name": "interface", "description": "x"}]}},
+                "interfaces.interface",
+                "set interface description x\n",
+            ),
+            (
+                {
+                    "routing-options": {
+                        "dynamic-tunnels": {
+                            "dynamic-tunnel": [{"name": "dynamic-tunnel", "gre": [None]}]
+                        }
+                    }
+                },
+                "routing-options.dynamic-tunnels.dynamic-tunnel",
+                "set dynamic-tunnel gre\n",
+            ),
+        ],
+        ids=["a-transparent-container", "a-transparent-list-key"],
+    )
+    def test_an_entry_named_like_a_hidden_list_keeps_its_name(
+        self, ir: dict, path: str, expected: str
+    ) -> None:
         """The words a path is written as come from the schema, not from the
-        statements: an entry named `interface` under the hidden `interface`
-        list is written with its name."""
-        source = json.dumps(
-            {
-                "configuration": {
-                    "interfaces": {"interface": [{"name": "interface", "description": "x"}]}
-                }
-            }
-        )
+        statements: an entry named like the hidden list it is in (both ways the
+        schema hides one) is written with its name."""
+        source = json.dumps({"configuration": ir})
         written = convert_config(
             source,
             from_format=Format.JSON,
             to_format=Format.SET,
-            path="interfaces.interface",
+            path=path,
             relative=True,
             validate=False,
         )
-        assert written == "set interface description x\n"
+        assert written == expected
 
     @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
     def test_a_selected_groups_is_the_list_of_groups(self, to_format: Format) -> None:
@@ -855,6 +879,79 @@ class TestPathFiltering:
         assert any(
             "tag(s) of the selected statement itself" in d.message for d in structured.diagnostics
         )
+
+    def test_a_relative_yaml_new_selection_is_measured_as_written(self) -> None:
+        """The 64-level ceiling counts the document written: a relative selection
+        from its own root, as before this change (relative-selections R1)."""
+        source = json.dumps({"configuration": {"system": {"a": {"b": nested_ir(62)}}}})
+
+        def written(path: str) -> str:
+            return convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=Format.YAML_NEW,
+                path=path,
+                relative=True,
+                validate=False,
+            )
+
+        assert yaml.safe_load(written("system.a.b")) == nested_ir(62)
+        with pytest.raises(ValueError, match="is nested deeper than 64 levels"):
+            written("system")
+
+    @pytest.mark.parametrize(
+        "to_format", [Format.SET, Format.STRUCTURED], ids=["set", "structured"]
+    )
+    def test_every_tag_below_a_selection_is_written_below_it(self, to_format: Format) -> None:
+        """Delete, activate, replace, protect and deactivate tags below a selected
+        statement are written as absolute output writes them, without the path
+        (relative-selections R2)."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "syslog": {
+                            "host": [
+                                {"@": {"operation": "delete"}, "name": "198.51.100.9"},
+                                {"@": {"active": "active"}, "name": "198.51.100.10", "any": {}},
+                                {"@": {"protect": "protect"}, "name": "198.51.100.11", "any": {}},
+                                {"@": {"inactive": True}, "name": "198.51.100.12", "any": {}},
+                            ],
+                            "file": [
+                                {"@": {"operation": "replace"}, "name": "messages", "any": {}}
+                            ],
+                        }
+                    }
+                }
+            }
+        )
+
+        def written(relative: bool) -> str:
+            return convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=to_format,
+                path="system.syslog",
+                relative=relative,
+                validate=False,
+            )
+
+        absolute = written(False)
+        if to_format is Format.SET:
+            expected = "".join(
+                line.replace(" system syslog ", " ", 1) + "\n" for line in absolute.splitlines()
+            )
+            assert written(True) == expected
+            assert "delete host 198.51.100.9" in expected and "activate host" in expected
+            return
+        relative = written(True)
+        assert "replace: file messages" in relative
+        put_back = (
+            "system {\n    syslog {\n"
+            + "".join(f"        {line}\n" for line in relative.splitlines())
+            + "    }\n}\n"
+        )
+        assert read_ir(put_back, Format.STRUCTURED) == read_ir(absolute, Format.STRUCTURED)
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
