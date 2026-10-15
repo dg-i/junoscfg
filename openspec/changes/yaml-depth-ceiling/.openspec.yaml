@@ -51,6 +51,7 @@ verification:
   - .agent-ready/activation.json
   - ARCHITECTURE.md
   - changelog.d/+yaml-depth-ceiling.feature.md
+  - changelog.d/+yaml-new-alias-cycles.feature.md
   - docs/api/input.md
   - docs/architecture/developer-guide.md
   - docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md
