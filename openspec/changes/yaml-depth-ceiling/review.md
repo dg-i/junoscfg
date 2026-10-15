@@ -54,6 +54,10 @@ figures reproducible and the patch call sound. Resolutions in the follow-up comm
 
 ## Evidence
 
+- Follow-up canonical full checkpoint at `5d4244b` (after R1 to R5): every check passed,
+  170 s; 13,421 passed, 22 xfailed, 37 skipped; coverage 93.13 %; schema-25.2 tiers exit 0.
+  Byte identity rerun: 0 of 96, 0 of 2,435, 0 of 240. Mutations of the final code: all eight
+  caught (mutations.txt).
 - Canonical full checkpoint at `a10ba71` (code head `431eb62`): every check passed, 351 s;
   13,417 passed, 22 xfailed, 37 skipped; coverage 93.12 %; schema-25.2 tiers exit 0.
 - Byte identity base `adb6fb7` vs head: device corpus 0 of 96 conversions differ
