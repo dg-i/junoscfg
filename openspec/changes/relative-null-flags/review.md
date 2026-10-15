@@ -41,6 +41,17 @@ this record:
 13. TC13 advisory: non-break reasoning sound; residual risk for a program testing the
     relative object's truthiness (`{}` falsy, `[null]` truthy). Added to `.openspec.yaml`.
 
+## Evidence
+
+- Canonical full checkpoint at `10a53b2` (code head `c929c31`): every check passed, 352 s;
+  13,323 passed, 22 xfailed, 37 skipped; coverage 93.12 %; schema-25.2 tiers exit 0.
+- Device corpus base `ea18fab` vs head: 0 of 96 conversions differ
+  (`tools/compare_device_outputs.py`). Relative probe over the device JSON captures: 20 of
+  1,002 selections differed from absolute output at base (all QFX5120 25.2R2-S1.5, the
+  device's `{}` spelling), 0 at head.
+- Mutations of `junos_json_object` (no relative pass, no copy, name-first on mappings only,
+  annotations normalized): 16, 52, 4 and 3 failures.
+
 ## Specification challenges
 
 Raised by Test/Challenge against the Builder's unapproved draft delta (S1 to S4); the
