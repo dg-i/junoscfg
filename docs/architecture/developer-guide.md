@@ -115,8 +115,10 @@ The `__init__.py` at package root provides the unified public API (`convert_conf
 ## Conversion Pipeline
 
 All conversions route through the unified `convert/` pipeline. The `convert_config()`
-function in `src/junoscfg/__init__.py` dispatches to `convert.pipeline()` for all 20
-format pairs.
+function in `src/junoscfg/__init__.py` dispatches to `convert.pipeline()` for all 30
+format pairs. `to_dict()` and `from_dict()` select a reader and a writer through
+`FORMAT_IMPLEMENTATIONS` in `src/junoscfg/convert/formats.py`, which maps each format
+name to its implementation (`yaml` to `ir-yaml`, `yaml-new` to `junos-yaml`).
 
 ```mermaid
 flowchart TD
@@ -195,8 +197,8 @@ Each input module parses a format into the unwrapped dict IR (the content inside
 
 | Module | Function | Notes |
 |--------|----------|-------|
-| `json_input.py` | `json_to_dict()` | Parses JSON, uses `find_configuration()` to unwrap |
-| `yaml_input.py` | `yaml_to_dict()` | Parses YAML, uses `find_configuration()` |
+| `json_input.py` | `json_to_dict()`, `junos_yaml_to_dict()` | The Junos JSON object stage, `ir_from_junos_json_object()`, unwraps with `find_configuration()`; JSON text and yaml-new (YAML) text parse into it. yaml-new refuses a value JSON cannot hold (`junoscfg.input.find_non_json_value`) |
+| `yaml_input.py` | `yaml_to_dict()` | The `yaml` format: parses YAML, drops `_ansible_*`/`_meta_*` keys, uses `find_configuration()`; leaf-lists are promoted after |
 | `xml_input.py` | `xml_to_dict()` | Reuses `display.xml_to_dict()` and returns its configuration mapping directly |
 | `set_input.py` | `set_to_dict()` | Tokenizes set commands, walks schema tree to build dict |
 | `structured_input.py` | `structured_to_dict()`, `structured_set_lines()` | `SetConverter.statements()` lexes levels and their tags by tokens, not lines; the set reader's schema walk (`statements_to_dict()`) builds the dict; `SetConverter.notes()` (an `/* OMITTED */` placeholder, an empty block) go to the `diagnostic_sink` as `structured-input` warnings; `structured_set_lines()` gives the set lines the walk read, in the input's tokens, for curly validation |
@@ -207,8 +209,8 @@ Each output module renders the dict IR to a target format:
 
 | Module | Function | Notes |
 |--------|----------|-------|
-| `json_output.py` | `dict_to_json()` | Wraps in `{"configuration": ...}`, dumps JSON |
-| `yaml_output.py` | `dict_to_yaml()` | Wraps and dumps YAML |
+| `json_output.py` | `dict_to_json()`, `dict_to_junos_yaml()` | The Junos JSON object stage, `junos_json_object()`, normalizes a copy (native `groups`, `[null]` flags, scalar leaves, key order) and wraps; JSON and yaml-new serialize it |
+| `yaml_output.py` | `dict_to_yaml()` | The `yaml` format: wraps and dumps the IR as YAML |
 | `set_output.py` | `dict_to_set()` | Uses `DictWalker` + `SetWalkOutput` |
 | `structured_output.py` | `dict_to_structured()` | Uses `DictWalker` + `StructuredWalkOutput` |
 | `output/__init__.py` | rejects unsupported XML output | `convert_config()` |

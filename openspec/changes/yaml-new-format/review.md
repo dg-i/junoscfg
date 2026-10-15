@@ -40,6 +40,32 @@ base code. Each finding and how the Builder resolved it, fixed in `c84d07d`:
    A8 tests renamed by implementation, rename consequence in the decision record; A9 help test
    asserts the rename wording; A10 to A12 accepted as reported.
 
+Fresh isolated Reviewer (separate agent, same model as the Builder, no Builder reasoning),
+on records head `c95e67f`, code head `f5d677f`, base `332523c`. Verdict: **Changes required**,
+three binding items; resolutions in the follow-up commit:
+
+10. R1 (binding) the documented migration wrote yaml-new its reader refuses: a `yaml` file's
+    unquoted date passed through `-i yaml -e yaml-new` (executed). Fixed: `dict_to_junos_yaml`
+    runs `find_non_json_value` and raises `ValueError` with kind and path (CLI exit 2); tests
+    `test_a_value_json_cannot_hold_is_refused_on_write`,
+    `test_a_value_json_cannot_hold_stops_the_migration`; spec and guide updated.
+11. R2 (binding) a self-referencing alias made yaml-new validation raise `RecursionError`
+    (executed); an alias bomb walked the expanded tree. Fixed: `find_non_json_value` visits each
+    container once and reports a container met again as kind `alias`, so cycles and aliases are
+    refused in linear time by reader, writer check and validation; rows for an alias and a cycle
+    in the reader, kernel, validator and CLI tests. Interim policy pending the owner: SC-1, PO-2.
+12. R3 (binding, documentation) the decision record said the rename changes no dispatch code.
+    Fixed: its Consequences now name the alias-warning mechanism, detection, `validate_yaml`,
+    `_READERS`/`_WRITERS` and CLI text; ARCHITECTURE.md points there.
+13. Advisory: A1 developer guide updated (30 pairs, the table, the object stages); A2 NEL, LS
+    and PS now written double-quoted (escaped) by yaml-new, test
+    `test_a_yaml_only_line_break_reads_back_as_written`, `yaml` keeps PyYAML's behaviour (PO-4);
+    A3 unknown implementation ids raise (`test_an_unknown_implementation_is_refused`);
+    A4 accepted (secondary door, beta); A5 guide qualified for relative selections (PO-1);
+    A6 pre-existing `yaml` date drop (PO-3); A7 ARCHITECTURE.md line checked, within cap.
+    Re-measured by the Reviewer: base figures, 1,936/0 and 96/0, the 15 QFX `{}`; its legacy
+    routing mutation failed 187 tests where the Builder counted 143 (both caught).
+
 ## Already provided
 
 The JSON writer's and reader's normalization (reused, not copied); PyYAML `SafeDumper`;
@@ -50,22 +76,48 @@ The JSON writer's and reader's normalization (reused, not copied); PyYAML `SafeD
 None recorded by Test/Challenge as a criteria contradiction; B2's omitted criterion was
 added to validation/junos-json-yaml before review.
 
+### SC-1 Aliases in yaml-new input
+
+- Artifact: specs/conversion/junos-json-yaml, "A YAML value JSON cannot hold is refused"; D4.
+- Counterexample: `configuration: &a\n  system:\n    x: *a\n` validated as yaml-new raised
+  `RecursionError` (executed by the Reviewer on `c95e67f`).
+- User impact: a crash on hostile or mistaken input; refusing every alias also refuses
+  hand-written yaml-new that shares a block through an alias, which the YAML parser accepts.
+- Proposed correction: refuse every alias (implemented as the interim: JSON has no aliases,
+  the writer emits none, and relaxing later is additive), or refuse cycles only.
+- Decision: Pending owner decision (PO-2).
+
 ## Pending owner decisions
 
 - PO-1 (from B7): relative JSON output of a selected list keeps `{}` and `true` where absolute
   output writes `[null]` (base behaviour, `junos_json_object` normalizes mappings only).
   Fixing it changes `json` output, a non-goal of this change; yaml-new keeps equivalence.
   Options: a follow-up fix in the JSON writer, or a backlog entry. Not backlogged by the Builder.
+- PO-2 (SC-1): alias policy for yaml-new input. Interim: every alias refused.
+- PO-3 (Reviewer A6, pre-existing): `yaml` input with an unquoted date drops the statement from
+  set output (`host-name: 2026-10-15` gives no line). Out of scope (`yaml` stays as it is);
+  follow-up fix or backlog entry is the owner's choice. Not backlogged by the Builder.
+- PO-4 (Reviewer A2, pre-existing): `yaml` output writes NEL/LS/PS unescaped and reads them back
+  as line breaks; yaml-new escapes them. Out of scope for `yaml`; owner's choice as above.
 
 ## Evidence
 
 - Catalogue, base vs head, every shape x reader x {set, structured, json, yaml}: 1,936
   conversions, 0 differ (484 yaml outputs byte-identical).
 - Device corpus, `tools/compare_device_outputs.py`: 0 of 96 conversions differ.
+- Canonical full checkpoint `agent-ready check --set full --base 332523c` at `c95e67f`
+  (code head `f5d677f`): every check passed, 360 s wall clock; suite 13,276 passed, 22 xfailed,
+  37 skipped on 10 workers (72 s), coverage 93.09 %; schema-25.2 qualification and generation
+  selected by `src/junoscfg/__init__.py`, both exit 0, run with physical dumps.
+- Earlier attempts, kept as evidence: the first refused admission (branch unassessed, fixed by
+  declaring readiness in `27940a0`); the next two failed only the expensive tier (a symlinked
+  dump directory; a vulture-whitelist edit that selected the tier, dropped in `f5d677f`).
 
 ## Verdict
 
-Pending the fresh isolated Reviewer.
+Reviewer verdict on `c95e67f`: Changes required (R1 to R3). All three resolved as above; the
+Reviewer named the follow-up obligations: focused tests and the fast set, and the full set
+again because runtime code changed. Follow-up evidence below.
 
 ## Scope dispositions and follow-up evidence
 

@@ -9,6 +9,7 @@ selection, and the value shapes one reader or writer settles.
 from __future__ import annotations
 
 import copy
+import datetime
 import json
 import random
 import re
@@ -94,6 +95,14 @@ class TestFormatEnum:
         assert validate_config(source, format=Format.YAML_NEW).valid is True
         cli = CliRunner().invoke(main, ["convert", "-i", "yaml", "-e", "json"], input=source)
         assert '"_meta_x": "y"' in cli.stdout
+
+    def test_an_unknown_implementation_is_refused(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A table row naming no implementation fails loudly, never as another one."""
+        monkeypatch.setitem(FORMAT_IMPLEMENTATIONS, "set", "bogus")
+        with pytest.raises(ValueError, match="Unknown implementation 'bogus'"):
+            to_dict("set system host-name r1\n", "set")
+        with pytest.raises(ValueError, match="Unknown implementation 'bogus'"):
+            from_dict({"system": {}}, "set")
 
     @pytest.mark.parametrize("name", ["yaml-old", "YAML", "toml"])
     def test_an_unknown_name_is_refused(self, name: str) -> None:
@@ -912,6 +921,12 @@ class TestJunosYamlReader:
                 "at version",
             ),
             ("2026-10-15\n", "date", "at the top level"),
+            (
+                "configuration:\n  system:\n    x: &a {k: v}\n    y: *a\n",
+                "alias",
+                "configuration.system.y",
+            ),
+            ("configuration: &a\n  system:\n    x: *a\n", "alias", "configuration.system.x"),
         ],
         ids=[
             "date",
@@ -928,13 +943,16 @@ class TestJunosYamlReader:
             "in-a-list",
             "beside-the-configuration",
             "the-document",
+            "an-alias",
+            "a-cycle",
         ],
     )
     def test_a_value_json_cannot_hold_is_refused(self, source: str, kind: str, where: str) -> None:
         """A YAML-only value has no JSON spelling; it is refused by its kind and
         path, never quoted, instead of failing later in a writer. The whole
         document is checked, wrappers and siblings of `configuration` too
-        (Test/Challenge B3, A5)."""
+        (Test/Challenge B3, A5); an alias, a cycle included, is YAML-only too
+        (Reviewer finding 2; interim pending the owner's alias policy)."""
         with pytest.raises(ValueError, match="no JSON spelling") as raised:
             to_dict(source, "yaml-new")
         message = str(raised.value)
@@ -1001,6 +1019,8 @@ _TRICKY = [
     "",
     " sp",
     "x\ny",
+    "a\x85b",
+    "c\u2028d",
     "üñí",
     "*x",
     "&y",
@@ -1043,6 +1063,26 @@ class TestJunosYamlWriter:
         written = from_dict(ir, "yaml-new", wrap=wrap)
         assert "&" not in written and "*" not in written
         assert yaml.safe_load(written) == json.loads(from_dict(ir, "json", wrap=wrap))
+
+    def test_a_value_json_cannot_hold_is_refused_on_write(self) -> None:
+        """A date a `yaml` file held unquoted reaches the IR as a date; yaml-new
+        refuses to write it rather than write what its reader refuses
+        (Reviewer finding 1). The path is named, the value is not."""
+        ir = {"system": {"host-name": datetime.date(2026, 10, 15)}}
+        with pytest.raises(ValueError, match="no JSON spelling") as raised:
+            from_dict(ir, "yaml-new")
+        assert "date at configuration.system.host-name" in str(raised.value)
+        assert "2026" not in str(raised.value)
+
+    @pytest.mark.parametrize("mark", ["\x85", "\u2028", "\u2029"], ids=["nel", "ls", "ps"])
+    def test_a_yaml_only_line_break_reads_back_as_written(self, mark: str) -> None:
+        """NEL, LINE SEPARATOR and PARAGRAPH SEPARATOR are line breaks to YAML
+        and characters to JSON: written escaped, they read back as written
+        (Reviewer A2; `yaml` keeps PyYAML's behaviour, owner decision PO-4)."""
+        ir = {"system": {"host-name": f"a{mark}b"}}
+        written = from_dict(ir, "yaml-new")
+        assert yaml.safe_load(written) == json.loads(from_dict(ir, "json"))
+        assert to_dict(written, "yaml-new") == ir
 
     def test_the_device_spellings_are_written_as_json_writes_them(self) -> None:
         """`groups` in its set-reader wrapper is the list of groups, a single

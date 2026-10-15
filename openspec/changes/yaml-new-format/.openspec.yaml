@@ -36,6 +36,7 @@ verification:
   - docs/BACKLOG.md
   - docs/api/convert.md
   - docs/api/input.md
+  - docs/architecture/developer-guide.md
   - docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md
   - docs/decisions/index.md
   - docs/guide/cli-reference.md

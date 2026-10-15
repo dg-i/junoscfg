@@ -91,8 +91,8 @@ class JsonYamlValidator:
         The loaded object is judged by the JSON schema, exactly as
         :meth:`validate_json` judges the same object; an empty document is
         the object ``null``. A value no JSON document can hold (a timestamp,
-        a key that is not a string) is an error naming its kind and path, as
-        conversion refuses it.
+        a key that is not a string, an alias) is an error naming its kind and
+        path, as conversion refuses it.
 
         Args:
             source: YAML configuration as a string.
@@ -115,7 +115,7 @@ class JsonYamlValidator:
                 valid=False,
                 errors=(
                     ValidationError(
-                        message=f"YAML {kind} has no JSON spelling; quote it",
+                        message=f"YAML {kind} has no JSON spelling",
                         path=path or None,
                     ),
                 ),

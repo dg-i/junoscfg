@@ -38,6 +38,9 @@ and promotes leaf-lists; JSON does neither and loads no schema.
 6. CLI choices derive from `Format`; help text names yaml-new and the planned rename. Detection
    keeps returning `yaml` (YAML-new and YAML text cannot be told apart).
 7. `yaml` reader and writer modules are not edited, so their bytes cannot change.
+8. The writer unshares the object, refuses a value JSON cannot hold (the migration's dates), and
+   double-quotes strings holding NEL/LS/PS; the shared check reports a container met twice as an
+   alias (cycles, alias bombs), interim pending the owner (SC-1).
 
 ## Risks
 

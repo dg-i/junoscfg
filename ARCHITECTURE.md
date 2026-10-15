@@ -148,8 +148,9 @@ stage and one writer stage, `ir_from_junos_json_object` in
 spellings of them, so `yaml-new` means what `json` means and no text is
 re-parsed. `yaml` is a second implementation: the IR dumped as YAML, read with
 `_ansible_*`/`_meta_*` cleanup and leaf-list promotion. A planned change renames
-`yaml` to `yaml-old` and `yaml-new` to `yaml` by editing the table and `Format`
-(`docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`).
+`yaml` to `yaml-old` and `yaml-new` to `yaml`: the dispatch follows the table, and
+what else it touches is listed in
+`docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`.
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in

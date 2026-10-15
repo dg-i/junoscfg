@@ -45,26 +45,37 @@ def find_non_json_value(data: Any) -> tuple[str, str] | None:
     """The first value of a loaded document that no JSON document can hold.
 
     yaml-new is the Junos JSON object spelled in YAML (spec
-    conversion/junos-json-yaml); its conversion and its validation both refuse
-    a document that holds anything else. Returns ``(kind, path)``: the kind is
-    the value's type (``date``, ``bytes``, ``set``, ``tuple``, ...) or
-    ``<type> key`` for a mapping key that is not a string, ``null`` for
-    ``None``; the path is dotted keys and list indexes from the document root,
-    ``""`` for the document itself, and never holds the offending value or key.
-    Returns ``None`` when every value is a mapping with string keys, a list, a
-    string, a number, a boolean or null.
+    conversion/junos-json-yaml); its conversion, its writer and its validation
+    all refuse a document that holds anything else. Returns ``(kind, path)``:
+    the kind is the value's type (``date``, ``bytes``, ``set``, ``tuple``, ...),
+    ``<type> key`` for a mapping key that is not a string (``null`` for
+    ``None``), or ``alias`` for a mapping or list met a second time, which only
+    a YAML alias, or a caller sharing one object, produces: JSON has neither,
+    and a cycle would otherwise never end. The path is dotted keys and list
+    indexes from the document root, ``""`` for the document itself, and never
+    holds the offending value or key. Returns ``None`` when the document is a
+    tree of mappings with string keys, lists, strings, numbers, booleans and
+    nulls. The walk visits each mapping and list once.
     """
+    return _non_json(data, set())
+
+
+def _non_json(data: Any, seen: set[int]) -> tuple[str, str] | None:
+    if isinstance(data, (dict, list)):
+        if id(data) in seen:
+            return "alias", ""
+        seen.add(id(data))
     if isinstance(data, dict):
         for key, value in data.items():
             if not isinstance(key, str):
                 return f"{_kind(key)} key", ""
-            found = find_non_json_value(value)
+            found = _non_json(value, seen)
             if found is not None:
                 kind, below = found
                 return kind, f"{key}.{below}" if below else key
     elif isinstance(data, list):
         for index, item in enumerate(data):
-            found = find_non_json_value(item)
+            found = _non_json(item, seen)
             if found is not None:
                 kind, below = found
                 return kind, f"{index}.{below}" if below else str(index)

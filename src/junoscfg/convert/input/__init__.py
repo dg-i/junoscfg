@@ -54,10 +54,12 @@ def to_dict(
         from junoscfg.convert.input.set_input import set_to_dict
 
         ir = set_to_dict(source)
-    else:
+    elif implemented == "structured":
         from junoscfg.convert.input.structured_input import structured_to_dict
 
         ir = structured_to_dict(source, diagnostic_sink)
+    else:
+        raise ValueError(f"Unknown implementation {implemented!r} for input format {fmt}")
 
     if implemented in {"ir-yaml", "xml"}:
         from junoscfg.convert.input.normalization import normalize_leaf_lists

@@ -10,8 +10,11 @@ beside the IR-dump format `yaml`, which it is planned to replace under that name
 
 WHEN any reader's IR is written as `yaml-new`, wrapped or as a relative selection, THEN the
 system SHALL write YAML whose loaded value equals the parsed JSON output for the same IR and
-options, mapping keys in the same order, and that holds no YAML anchor or alias.
-Tests: `tests/contract/test_format_matrix.py::TestJunosYamlIsTheJsonObject::test_the_output_is_the_json_object`, `tests/corpus/test_device_renderings.py::TestJunosYamlIsTheDevicesJson::test_every_rendering_writes_the_json_object`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_any_json_object_survives_junos_yaml`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_the_device_spellings_are_written_as_json_writes_them`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_the_bare_subtree`
+options, mapping keys in the same order, holds no YAML anchor or alias, and escapes the
+line breaks YAML alone reads as breaks (NEL, LINE and PARAGRAPH SEPARATOR); WHEN that object
+holds a value JSON cannot hold THEN the writer SHALL raise `ValueError` naming its kind and
+path, never its value.
+Tests: `tests/contract/test_format_matrix.py::TestJunosYamlIsTheJsonObject::test_the_output_is_the_json_object`, `tests/corpus/test_device_renderings.py::TestJunosYamlIsTheDevicesJson::test_every_rendering_writes_the_json_object`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_any_json_object_survives_junos_yaml`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_the_device_spellings_are_written_as_json_writes_them`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_value_json_cannot_hold_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_yaml_only_line_break_reads_back_as_written`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_the_bare_subtree`
 
 #### Scenario: An empty container the device wrote as {}
 
@@ -46,7 +49,8 @@ Tests: `tests/contract/test_format_matrix.py::TestJunosYamlIsTheJsonObject::test
 
 WHEN anywhere in a `yaml-new` document, wrappers and siblings of `configuration` included,
 a value is not a mapping with string keys, a list, a string, a number, a boolean or null
-(a timestamp, a key of another type, binary data, a set, an ordered map's pairs) THEN the
+(a timestamp, a key of another type, binary data, a set, an ordered map's pairs, a mapping
+or list met a second time through a YAML alias, a cycle included) THEN the
 system SHALL raise `ValueError` naming the value's kind and path, never the value or key;
 an anonymizing conversion withholds the path as it does for every refusal to read.
 Tests: `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_value_json_cannot_hold_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_the_first_value_json_cannot_hold`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_value_json_cannot_hold_is_refused`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
@@ -80,8 +84,9 @@ Tests: `tests/unit/convert/test_convert_api.py::TestFormatEnum::test_every_forma
 WHEN a configuration read as `yaml` is written as `yaml-new` THEN reading the result as
 `yaml-new` SHALL give the IR the `yaml` source gave, with the yaml reader's metadata
 cleanup and leaf-list promotion applied once, and `junoscfg convert -i yaml -e yaml-new`
-SHALL write the same text.
-Tests: `tests/contract/test_format_matrix.py::TestIrYamlMigratesToJunosYaml::test_the_converted_file_reads_as_the_yaml_did`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_an_ir_yaml_file_migrates_to_junos_yaml`
+SHALL write the same text; a value the `yaml` file holds that JSON cannot hold (an unquoted
+date) SHALL stop the migration with its kind and path, CLI exit 2.
+Tests: `tests/contract/test_format_matrix.py::TestIrYamlMigratesToJunosYaml::test_the_converted_file_reads_as_the_yaml_did`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_an_ir_yaml_file_migrates_to_junos_yaml`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_value_json_cannot_hold_stops_the_migration`
 
 #### Scenario: A legacy file with meta keys
 

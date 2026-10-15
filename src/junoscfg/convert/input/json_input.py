@@ -55,9 +55,9 @@ def junos_yaml_to_dict(source: str) -> dict[str, Any]:
     Raises:
         yaml.YAMLError: If the text is not YAML.
         ValueError: If the document holds a value no JSON document can hold
-            (a timestamp, a key that is not a string, binary data, a set),
-            named by its kind and path, never by its value; or if it holds no
-            configuration dict.
+            (a timestamp, a key that is not a string, binary data, a set, an
+            alias), named by its kind and path, never by its value; or if it
+            holds no configuration dict.
     """
     data = yaml.safe_load(source)
     found = find_non_json_value(data)
@@ -66,6 +66,6 @@ def junos_yaml_to_dict(source: str) -> dict[str, Any]:
         where = f"at {path}" if path else "at the top level"
         raise ValueError(
             f"Invalid input: a YAML {kind} {where} has no JSON spelling; "
-            "yaml-new holds what JSON holds, so quote it"
+            "yaml-new holds only what JSON holds"
         )
     return ir_from_junos_json_object(data, label="YAML")

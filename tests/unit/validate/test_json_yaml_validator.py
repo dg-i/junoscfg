@@ -111,8 +111,9 @@ class TestYamlAsJsonValidation:
             ),
             ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
             ("configuration:\n  system:\n    64496: x\n", "int key", "configuration.system"),
+            ("configuration: &a\n  system:\n    x: *a\n", "alias", "configuration.system.x"),
         ],
-        ids=["date", "bool-key", "int-key"],
+        ids=["date", "bool-key", "int-key", "cycle"],
     )
     def test_a_value_json_cannot_hold_is_invalid(self, validator, document, kind, path):
         """Never an exception and never valid: the verdict conversion's refusal
@@ -120,7 +121,7 @@ class TestYamlAsJsonValidation:
         result = validator.validate_yaml_as_json(document)
         assert result.valid is False
         assert [(e.message, e.path) for e in result.errors] == [
-            (f"YAML {kind} has no JSON spelling; quote it", path)
+            (f"YAML {kind} has no JSON spelling", path)
         ]
 
     def test_an_empty_document_is_judged_as_json_null(self, validator):

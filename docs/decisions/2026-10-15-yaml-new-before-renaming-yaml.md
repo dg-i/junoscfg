@@ -33,10 +33,10 @@ minor release before a change removes them.
 
 ## Consequences
 
-The rename is two table rows, the enum and the docs; dispatch code does not change. Until
-then two YAML formats coexist, and YAML detected without `-i` reads as `yaml`. A `yaml-new`
-reader keeps `_ansible_*` and `_meta_*` keys and scalar leaf-lists as JSON does, so before
-the rename the consumer's pipelines (`edityaml ansibilize` output fed back as `yaml`) must
-be measured; the rename change owns that measurement. It also re-points tests that use
-`Format.YAML` as the IR-dump oracle to `yaml-old`; `test_the_rename_is_a_change_to_the_table`
-rehearses the swap today.
+Conversion and validation dispatch follow the table; `test_the_rename_is_a_change_to_the_table`
+rehearses the swap today. The rename change also owns: a way for the `yaml-new` alias to warn,
+which the table cannot express; detection, which returns `yaml`, so undeclared YAML changes
+meaning; `validate_yaml` and `JunosValidator.validate_yaml`, which keep the YAML schema and
+must follow `yaml-old` or be re-pointed; `_READERS`/`_WRITERS` in `__init__.py`, CLI help and
+error text; tests using `Format.YAML` as the IR-dump oracle; and measuring the consumer's
+pipelines, since yaml-new keeps `_ansible_*`/`_meta_*` keys and scalar leaf-lists as JSON does.

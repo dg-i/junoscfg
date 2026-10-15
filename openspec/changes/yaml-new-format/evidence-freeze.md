@@ -79,6 +79,11 @@ json` as it loads `ssh {}`? Name the path only; never a whole configuration.
   shared with validation), the table becomes a dict read per call (rename rehearsal). Invalidated:
   none of the earlier evidence; reruns: focused tests, full suite in the commit hook (c84d07d),
   canonical full before review. PO-1 (relative JSON list output) recorded for the owner.
+- Reviewer delta (verdict on c95e67f, Changes required): R1 migration of an unquoted date, R2
+  cycles/aliases, R3 rename record. Consistency: requirements extended (writer refusal, alias
+  kind, migration refusal); no earlier criterion contradicted. SC-1/PO-2 alias policy pending
+  the owner with the interim "refuse every alias"; PO-3, PO-4 pre-existing `yaml` behaviour.
+  Invalidated: the c95e67f full checkpoint (runtime code changed). Reruns: focused, fast, full.
 
 ## Scope and completion
 

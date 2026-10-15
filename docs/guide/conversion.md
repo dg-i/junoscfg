@@ -248,13 +248,15 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
 
 - presence flags and empty containers are `[null]` (a `- null` list), single
   leaves are scalars, `groups` is the list of groups, and a `junoscfg:unplaced`
-  record is written as JSON writes it;
+  record is written as JSON writes it (a `--path --relative` selection is
+  written exactly as JSON writes it too);
 - `_ansible_*` and `_meta_*` keys are kept, as JSON keeps them, so field and
   schema validation report them;
 - a scalar given for a leaf-list stays a scalar, as in JSON;
 - a value JSON cannot hold is refused with its path: an unquoted date or time
   (`2026-10-15`), a key that is not a string (`1: x`, `on: x`), binary data, a
-  set or an ordered map. Quote such a value (`'2026-10-15'`).
+  set, an ordered map, or an alias (`*name`; write the block out). Quote such a
+  value (`'2026-10-15'`).
 
 YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,
 `yes` and `no` are booleans, `010` is the number 8 and `1:30` the number 90.
@@ -278,7 +280,8 @@ new_text = convert_config(old_text, from_format=Format.YAML, to_format=Format.YA
 ```
 
 The result reads as `yaml-new` to the same configuration the old file read as
-`yaml`. Remove `_ansible_*` and `_meta_*` keys that your own tooling adds before
+`yaml`. A value JSON cannot hold, such as an unquoted date, stops the migration
+with its path; quote it in the old file and convert again. Remove `_ansible_*` and `_meta_*` keys that your own tooling adds before
 feeding a file to `yaml-new`.
 
 ### Planned rename

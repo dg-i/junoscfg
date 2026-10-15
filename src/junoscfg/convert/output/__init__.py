@@ -56,8 +56,10 @@ def from_dict(
         from junoscfg.convert.output.set_output import dict_to_set
 
         return dict_to_set(config)
-    from junoscfg.convert.output.structured_output import dict_to_structured
+    if implemented == "structured":
+        from junoscfg.convert.output.structured_output import dict_to_structured
 
-    return dict_to_structured(
-        config, diagnostic_sink=diagnostic_sink, withhold_values=withhold_values
-    )
+        return dict_to_structured(
+            config, diagnostic_sink=diagnostic_sink, withhold_values=withhold_values
+        )
+    raise ValueError(f"Unknown implementation {implemented!r} for output format {fmt}")

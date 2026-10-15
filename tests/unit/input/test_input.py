@@ -72,6 +72,11 @@ class TestSquareBrackets:
         assert normalize("") == ""
 
 
+_SHARED: dict = {"k": "v"}
+_CYCLE: dict = {}
+_CYCLE["a"] = _CYCLE
+
+
 class TestFindNonJsonValue:
     """The boundary yaml-new conversion and validation share (spec conversion/junos-json-yaml)."""
 
@@ -87,8 +92,18 @@ class TestFindNonJsonValue:
             ({None: "x"}, ("null key", "")),
             ({"a": (1, 2)}, ("tuple", "a")),
             (b"acme", ("bytes", "")),
+            ({"a": _SHARED, "b": [_SHARED]}, ("alias", "b.0")),
+            (_CYCLE, ("alias", "a")),
         ],
-        ids=["date-in-a-list", "bool-key", "null-key-at-the-top", "tuple", "the-document"],
+        ids=[
+            "date-in-a-list",
+            "bool-key",
+            "null-key-at-the-top",
+            "tuple",
+            "the-document",
+            "shared",
+            "cycle",
+        ],
     )
     def test_the_first_value_json_cannot_hold(self, document: object, found: tuple) -> None:
         assert find_non_json_value(document) == found

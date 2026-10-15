@@ -195,6 +195,19 @@ class TestConvertReadsAndWrites:
         as_json = library(legacy.read_text(), Format.YAML, Format.JSON)
         assert library(result.stdout, Format.YAML_NEW, Format.JSON) == as_json
 
+    def test_a_value_json_cannot_hold_stops_the_migration(self, tmp_path: Path) -> None:
+        """A date the yaml file holds unquoted has no JSON spelling: the
+        migration exits 2 naming its path, rather than write a file yaml-new
+        refuses (Reviewer finding 1)."""
+        legacy = tmp_path / "old.yaml"
+        legacy.write_text("configuration:\n  system:\n    host-name: 2026-10-15\n")
+        result = run(["convert", "-i", "yaml", "-e", "yaml-new", str(legacy)])
+        assert result.exit_code == 2, result.output
+        assert "date at configuration.system.host-name has no JSON spelling" in result.stderr
+        assert result.stdout == ""
+        quoted = legacy.read_text().replace("2026-10-15", "'2026-10-15'")
+        assert library(quoted, Format.YAML, Format.YAML_NEW).endswith("host-name: '2026-10-15'\n")
+
     def test_a_file_argument_is_read(self, tmp_path: Path) -> None:
         source = tmp_path / "config.json"
         source.write_text(A_LEAF[Format.JSON])
