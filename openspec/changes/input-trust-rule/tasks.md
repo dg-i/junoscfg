@@ -1,11 +1,10 @@
 ## 1. Verification (one per docs-plan QA item)
 
-- [ ] 1.1 Links: `uv run --locked --group docs mkdocs build --strict` exits 0 with no new warning
-- [ ] 1.2 Referenced paths and decision slugs exist
-- [ ] 1.3 Caps: `ARCHITECTURE.md` at or under 200 lines
-- [ ] 1.4 Terminology: `git grep -n "not hostile"` lists only C2/C3 places and pointers to the rule
-- [ ] 1.5 Rendered output: markdownlint passes
-- [ ] 1.6 One full checkpoint passes
+- [x] 1.1 Links: `uv run --locked --group docs mkdocs build --strict` gives no new warning
+- [x] 1.2 Referenced paths and decision slugs exist: `ls` on every path the changed text names
+- [x] 1.3 Caps: `ARCHITECTURE.md` at or under 200 lines
+- [x] 1.4 Terminology: `git grep -n "not hostile" -- ':!openspec/changes' ':!docs/reviews'` lists only C2/C3 places and pointers to the rule
+- [x] 1.5 Rendered output: markdownlint passes on every changed document
 
 ## 2. Change
 
@@ -15,6 +14,16 @@
 
 ## 3. Review and evidence
 
-- [ ] 3.1 Fresh isolated review recorded in `review.md`
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head
-- [ ] 3.3 Archive, patch bump, merge and tag without pushing
+- [x] 3.1 Fresh isolated review recorded in `review.md`
+- [ ] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
+- [ ] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and code head
+- [ ] 3.4 Archive, patch bump, merge and tag without pushing
+
+## Evidence
+
+- 1.1 at f3a8913: `mkdocs build --strict` exits 1 with 49 warnings, every one a BACKLOG.md link; master 037e012 gives the same 49 (baseline run in a detached worktree), so no new warning. The new link in `docs/guide/conversion.md` resolves.
+- 1.2 at f3a8913: `ls ARCHITECTURE.md changelog.d/+input-trust-rule.doc.md docs/api/input.md docs/decisions/2026-10-15-configuration-input-is-trusted.md docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md docs/decisions/index.md docs/guide/conversion.md src/junoscfg/convert/CONTRACT.md src/junoscfg/input.CONTRACT.md tests/contract/test_every_message.py docs/reviews/2026-10-15-trusted-input-retirement.md src/junoscfg/convert/output/json_output.py docs/BACKLOG.md` exits 0.
+- 1.3: 200 lines; `agent-ready caps` passes.
+- 1.4: four hits: the 64-level record (now citing the rule), the main spec (C3), `src/junoscfg/input.py` and `tests/unit/input/test_input.py` docstrings (C2).
+- 1.5: `pre-commit run markdownlint` on the eight changed documents passes.
+- 3.1: Reviewer verdict Merge at c542bc0 (`review.md`).

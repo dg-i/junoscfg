@@ -35,3 +35,4 @@ None, because the owner gave the rule first-hand and no question remains.
 ## Delta log
 
 - Freeze established 2026-10-15 under the owner's first-hand instruction.
+- Review 2026-10-15: B1–B3 corrected in c542bc0; the full-checkpoint task moved to section 3 because readiness requires every product task ticked before it runs.
