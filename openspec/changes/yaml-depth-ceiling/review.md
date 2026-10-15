@@ -52,6 +52,14 @@ figures reproducible and the patch call sound. Resolutions in the follow-up comm
 12. R4 advisory: the decision record omitted the meta-key exemption. Fixed.
 13. R5 advisory: the reader message was built twice. Fixed: `NonJsonValue.read_refusal`.
 
+Correction review on `3ac4b19` (same Reviewer, read-only; code `5d4244b`): R1 to R5 resolved,
+byte identity rerun on its own base records (0 of 96, 0 of 2,435, 0 of 240). Verdict:
+**Merge**. Its one advisory:
+
+14. N1 advisory (records): the main spec listed the two new tests under the writer requirement
+    where the delta lists them under the alias requirement. Fixed: every main-spec requirement
+    block now equals its delta block.
+
 ## Evidence
 
 - Follow-up canonical full checkpoint at `5d4244b` (after R1 to R5): every check passed,
