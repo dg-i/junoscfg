@@ -88,7 +88,8 @@
     "codex/schema-qualification-scope": "parked",
     "codex/affected-test-scope": "parked",
     "change/yaml-new-format": "parked",
-    "change/relative-null-flags": "parked"
+    "change/relative-null-flags": "parked",
+    "change/yaml-new-alias-cycles": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -170,6 +171,7 @@
     "schema-qualification-scope": "parked",
     "affected-test-scope": "parked",
     "yaml-new-format": "parked",
-    "relative-null-flags": "parked"
+    "relative-null-flags": "parked",
+    "yaml-new-alias-cycles": "ready"
   }
 }

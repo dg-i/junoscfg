@@ -35,6 +35,13 @@ from junoscfg import Format, convert_config, convert_config_result, validate_con
 from junoscfg.anonymize import AnonymizeConfig
 from junoscfg.cli import main
 from junoscfg.display import artifacts_dir as artifacts_in
+from tests.support.aliases import (
+    CYCLE,
+    SHARED_BLOCK,
+    SHARED_BLOCK_WRITTEN_OUT,
+    alias_bomb_yaml,
+    alias_chain_yaml,
+)
 from tests.support.paths import PROJECT_ROOT
 from tests.support.shapes import SHAPES, WRITERS
 
@@ -194,6 +201,37 @@ class TestConvertReadsAndWrites:
         assert "_ansible_host" not in result.stdout
         as_json = library(legacy.read_text(), Format.YAML, Format.JSON)
         assert library(result.stdout, Format.YAML_NEW, Format.JSON) == as_json
+
+    @pytest.mark.parametrize(
+        ("source", "said"),
+        [
+            (
+                CYCLE,
+                "a YAML cycle at configuration.system.x has no JSON spelling",
+            ),
+            (
+                alias_bomb_yaml(),
+                "a YAML alias at lol1.2 expands the document past twice its size",
+            ),
+            (
+                alias_chain_yaml(),
+                "a YAML alias at s1" + ".0" * 300 + " nests the document deeper than it is written",
+            ),
+        ],
+        ids=["a-cycle", "billion-laughs", "a-deep-chain"],
+    )
+    def test_a_yaml_new_alias_bomb_exits_two(self, source: str, said: str) -> None:
+        """A cycle or a bomb is refused with its path, exit 2, never a traceback
+        (owner ruling on PO-2; Test/Challenge findings 3, 10)."""
+        result = run(["convert", "-i", "yaml-new", "-e", "json"], source)
+        assert result.exit_code == 2, result.output
+        assert said in result.stderr
+        assert result.stdout == ""
+
+    def test_a_yaml_new_shared_block_converts_as_written_out(self) -> None:
+        shared = run(["convert", "-i", "yaml-new", "-e", "set"], SHARED_BLOCK)
+        assert shared.exit_code == 0, shared.output
+        assert shared.stdout == library(SHARED_BLOCK_WRITTEN_OUT, Format.YAML_NEW, Format.SET)
 
     def test_a_value_json_cannot_hold_stops_the_migration(self, tmp_path: Path) -> None:
         """A date the yaml file holds unquoted has no JSON spelling: the

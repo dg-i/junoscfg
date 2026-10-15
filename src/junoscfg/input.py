@@ -8,6 +8,7 @@ from __future__ import annotations
 
 __all__ = [
     "InputError",
+    "NonJsonValue",
     "find_non_json_value",
     "find_unsupported_set_brackets",
     "find_unsupported_set_commands",
@@ -16,7 +17,7 @@ __all__ = [
 ]
 
 import re
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, Any, NamedTuple, TextIO
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -40,48 +41,136 @@ class InputError(ValueError):
 #: The Python types of a JSON document's scalars.
 _JSON_SCALARS = (str, int, float, bool, type(None))
 
+#: Why a value, a key or a cycle is refused.
+_NO_SPELLING = "has no JSON spelling"
+#: Why an alias is refused whose copies pass the size bound.
+_TOO_LARGE = "expands the document past twice its size"
+#: Why an alias is refused whose copies nest deeper than the document is written.
+_TOO_DEEP = "nests the document deeper than it is written"
+_BOUNDS = (_TOO_LARGE, _TOO_DEEP)
 
-def find_non_json_value(data: Any) -> tuple[str, str] | None:
-    """The first value of a loaded document that no JSON document can hold.
+
+class NonJsonValue(NamedTuple):
+    """Where a loaded document stops being a JSON document, and why.
+
+    ``kind`` is a value's type (``date``, ``bytes``, ``set``, ``tuple``, ...),
+    ``<type> key`` for a mapping key that is not a string (``null`` for
+    ``None``), ``cycle`` or ``alias``; ``path`` is dotted keys and list indexes
+    from the document root, ``""`` for the document itself; ``reason`` says why
+    in words every door prints. None of them holds a value or a key.
+    """
+
+    kind: str
+    path: str
+    reason: str
+
+
+def find_non_json_value(data: Any) -> NonJsonValue | None:
+    """The first place a loaded document stops being a JSON document.
 
     yaml-new is the Junos JSON object spelled in YAML (spec
     conversion/junos-json-yaml); its conversion, its writer and its validation
-    all refuse a document that holds anything else. Returns ``(kind, path)``:
-    the kind is the value's type (``date``, ``bytes``, ``set``, ``tuple``, ...),
-    ``<type> key`` for a mapping key that is not a string (``null`` for
-    ``None``), or ``alias`` for a mapping or list met a second time, which only
-    a YAML alias, or a caller sharing one object, produces: JSON has neither,
-    and a cycle would otherwise never end. The path is dotted keys and list
-    indexes from the document root, ``""`` for the document itself, and never
-    holds the offending value or key. Returns ``None`` when the document is a
-    tree of mappings with string keys, lists, strings, numbers, booleans and
-    nulls. The walk visits each mapping and list once.
+    all refuse a document that holds anything else. JSON has no aliases, so a
+    mapping or list reached again, through a YAML alias or a caller sharing one
+    object, stands for a copy of itself and is checked at every place it is
+    reached. Refused, in document order:
+
+    - a value of a type JSON lacks, or a mapping key that is not a string;
+    - a mapping or list reached inside itself, kind ``cycle``, at the path where
+      it is reached again;
+    - an alias whose copies would make the document, written out, hold more
+      than twice the values it holds as parsed (mappings, lists and scalars,
+      each scalar per place; a mapping or list reached again counted once), or
+      nest deeper than the parsed document's deepest value (an alias a leaf,
+      as in the text), kind ``alias``, at the path of the outermost alias being
+      written out when a bound is passed.
+
+    Every document that reaches each value at most twice and nests no deeper
+    than written passes the bounds; one without aliases never reaches them.
+    The walk stops within twice the parsed size and the parsed depth, so it,
+    and every stage after it, stays linear in the loaded object (decision
+    2026-10-15-yaml-new-expands-aliases-within-a-bound; both bounds are
+    interim, pending the owner). Returns ``None`` for a JSON document.
     """
-    return _non_json(data, set())
+    size, depth = _as_parsed(data)
+    # The walk outside copies visits exactly *size* values, so the copies may
+    # visit *size* more: twice the parsed size written out.
+    return _Walk(size, depth).visit(data, 0, inside_copy=False)
 
 
-def _non_json(data: Any, seen: set[int]) -> tuple[str, str] | None:
-    if isinstance(data, (dict, list)):
-        if id(data) in seen:
-            return "alias", ""
-        seen.add(id(data))
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if not isinstance(key, str):
-                return f"{_kind(key)} key", ""
-            found = _non_json(value, seen)
-            if found is not None:
-                kind, below = found
-                return kind, f"{key}.{below}" if below else key
-    elif isinstance(data, list):
+def _as_parsed(data: Any) -> tuple[int, int]:
+    """The values *data* holds as parsed (each mapping and list once, with its
+    scalars) and its deepest nesting, where a mapping or list reached again is
+    a leaf, as an alias is in the text. Iterative: it never recurses."""
+    seen: set[int] = set()
+    count = deepest = 0
+    pending = [(data, 0)]
+    while pending:
+        value, depth = pending.pop()
+        deepest = max(deepest, depth)
+        if isinstance(value, (dict, list)):
+            if id(value) in seen:
+                continue
+            seen.add(id(value))
+            children = list(value.values() if isinstance(value, dict) else value)
+            # Reversed, so the walk meets each value in document order and an
+            # anchor before its aliases, as the text holds them.
+            pending.extend((child, depth + 1) for child in reversed(children))
+        count += 1
+    return count, deepest
+
+
+class _Walk:
+    """The written-out walk: the steps left to the copies, the parsed depth, and
+    the mappings and lists met so far and still open."""
+
+    def __init__(self, budget: int, deepest: int) -> None:
+        self.left = budget
+        self.deepest = deepest
+        self.seen: set[int] = set()
+        self.open: set[int] = set()
+
+    def visit(self, data: Any, depth: int, *, inside_copy: bool) -> NonJsonValue | None:
+        container = isinstance(data, (dict, list))
+        if container and id(data) in self.open:
+            return NonJsonValue("cycle", "", _NO_SPELLING)
+        again = container and id(data) in self.seen
+        if inside_copy or again:
+            # Only a copy is charged, so a refusal is always met inside one.
+            self.left -= 1
+            if self.left < 0:
+                return NonJsonValue("alias", "", _TOO_LARGE)
+            if depth > self.deepest:
+                return NonJsonValue("alias", "", _TOO_DEEP)
+        if not container:
+            if isinstance(data, _JSON_SCALARS):
+                return None
+            return NonJsonValue(_kind(data), "", _NO_SPELLING)
+        key = id(data)
+        self.seen.add(key)
+        self.open.add(key)
+        found = self._children(data, depth + 1, inside_copy=inside_copy or again)
+        self.open.discard(key)
+        if found is not None and found.reason in _BOUNDS and again and not inside_copy:
+            # This is the alias being written out: name its place.
+            return found._replace(path="")
+        return found
+
+    def _children(self, data: dict | list, depth: int, *, inside_copy: bool) -> NonJsonValue | None:
+        if isinstance(data, dict):
+            for step, value in data.items():
+                if not isinstance(step, str):
+                    return NonJsonValue(f"{_kind(step)} key", "", _NO_SPELLING)
+                found = self.visit(value, depth, inside_copy=inside_copy)
+                if found is not None:
+                    return found._replace(path=f"{step}.{found.path}" if found.path else step)
+            return None
         for index, item in enumerate(data):
-            found = _non_json(item, seen)
+            found = self.visit(item, depth, inside_copy=inside_copy)
             if found is not None:
-                kind, below = found
-                return kind, f"{index}.{below}" if below else str(index)
-    elif not isinstance(data, _JSON_SCALARS):
-        return _kind(data), ""
-    return None
+                place = str(index)
+                return found._replace(path=f"{place}.{found.path}" if found.path else place)
+        return None
 
 
 def _kind(value: Any) -> str:

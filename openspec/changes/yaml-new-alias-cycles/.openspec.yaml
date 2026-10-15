@@ -1,0 +1,66 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: feature
+zone: kernel
+domains: [conversion, validation]
+removes: >-
+  none, because the change loosens accepted input; it removes only the interim refusal of a
+  mapping or list reached again through an alias (SC-1), replaced by the cycle and bound rule
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config, convert_config_result and validate_config
+      with yaml-new accept a document that shares a mapping or list through an
+      alias, which they refused; every document they accepted before reads,
+      writes and validates as before. Refusals keep their exception type
+      (ValueError) and invalid-result shape; their wording changes (a cycle is
+      kind cycle, no longer alias; the trailing hint is dropped), and a cyclic
+      IR handed to the yaml-new writer raises ValueError instead of
+      RecursionError. junoscfg.input gains NonJsonValue, the type
+      find_non_json_value returns (a tuple of kind, path, reason). On the
+      secondary door junoscfg.convert.from_dict, a caller's IR sharing an object
+      past either bound is now refused by the yaml-new writer where it was
+      written; no reader produces such an IR. Loosening accepted input is
+      additive: patch, as AGENTS.md rules.
+    migration: >-
+      None required. A caller matching refusal text matches the kind and path,
+      which are kept; a file that wrote a shared block out may now use an alias.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: convert -i yaml-new,
+      audit -i yaml-new and convert -v -i yaml-new accept shared blocks; exit
+      codes are unchanged (refusal 2, invalid 1).
+    migration: None required.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - ARCHITECTURE.md
+  - changelog.d/+yaml-new-alias-cycles.feature.md
+  - docs/BACKLOG.md
+  - docs/api/input.md
+  - docs/architecture/developer-guide.md
+  - docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md
+  - docs/decisions/index.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/ir.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - tach.toml
+  - tests/contract/test_every_message.py
+  - tests/support/aliases.py
+  - tests/unit/cli/test_audit_command.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  dependencies: [openspec/changes/archive/2026-10-15-relative-null-flags]
+  changelog: changelog.d/+yaml-new-alias-cycles.feature.md
+  generated-records: []

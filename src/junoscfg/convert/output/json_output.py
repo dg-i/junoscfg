@@ -8,13 +8,12 @@ neither reparses the other's text (spec conversion/junos-json-yaml).
 
 from __future__ import annotations
 
-import copy
 import json
 from typing import Any
 
 import yaml
 
-from junoscfg.convert.ir import wrap_configuration
+from junoscfg.convert.ir import unshared, wrap_configuration
 from junoscfg.display import load_schema_tree, schema_child
 from junoscfg.input import find_non_json_value
 
@@ -28,10 +27,11 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
     selection, the value under its path's last key (a mapping, a list, ``{}``,
     a flag or a scalar): its presence flags and entry key order are spelled as
     under that key in the absolute object (spec conversion/path-filtering).
-    The normalization works on the writer's own copy: the caller's IR is
-    never changed (spec conversion/writers).
+    The normalization works on the writer's own copy, with every shared
+    mapping or list written out as JSON spells it: the caller's IR is never
+    changed (spec conversion/writers).
     """
-    config = copy.deepcopy(config)
+    config = unshared(config)
     if isinstance(config, dict):
         config = _native_groups(config)
         _normalize_presence_flags(config)
@@ -48,20 +48,6 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
 def dict_to_json(config: Any, *, wrap: bool = True) -> str:
     """Render the IR as Junos JSON text: `junos_json_object` serialized as JSON."""
     return json.dumps(junos_json_object(config, wrap=wrap), indent=4, ensure_ascii=False) + "\n"
-
-
-def _unshared(value: Any) -> Any:
-    """*value* with every mapping and list its own object.
-
-    JSON has no anchors or aliases, so the YAML spelling of a JSON object
-    holds none either, even where a caller's selection shares one object twice
-    (PyYAML anchors a mapping or list it meets again).
-    """
-    if isinstance(value, dict):
-        return {key: _unshared(item) for key, item in value.items()}
-    if isinstance(value, list):
-        return [_unshared(item) for item in value]
-    return value
 
 
 #: Line breaks YAML reads in a plain or single-quoted scalar but JSON keeps as
@@ -86,23 +72,23 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
     """Render the IR as yaml-new: `junos_json_object` serialized as YAML.
 
     Block style, keys in the object's order, Unicode as written: the layout
-    of the ``yaml`` writer, with no anchors or aliases.
+    of the ``yaml`` writer, with no anchors or aliases (a shared object is
+    written out at each place).
 
     Raises:
-        ValueError: If the object holds a value no JSON document can hold (a
-            date a ``yaml`` file gave unquoted, say), named by kind and path:
-            yaml-new holds what JSON holds, and its reader would refuse it.
+        ValueError: If the IR holds a value no JSON document can hold (a date
+            a ``yaml`` file gave unquoted, say), a cycle, or a shared object
+            whose copies pass the bounds of `find_non_json_value`, named by
+            kind and path, never by its value; checked before the object stage
+            walks the IR. yaml-new holds what JSON holds, and its reader would
+            refuse it.
     """
-    document = _unshared(junos_json_object(config, wrap=wrap))
-    found = find_non_json_value(document)
+    found = find_non_json_value(wrap_configuration(config) if wrap else config)
     if found is not None:
-        kind, path = found
-        where = f"at {path}" if path else "at the top level"
-        raise ValueError(
-            f"Cannot write yaml-new: a {kind} {where} has no JSON spelling; quote it in the source"
-        )
+        where = f"at {found.path}" if found.path else "at the top level"
+        raise ValueError(f"Cannot write yaml-new: the {found.kind} {where} {found.reason}")
     return yaml.dump(
-        document,
+        junos_json_object(config, wrap=wrap),
         Dumper=_JunosYamlDumper,
         default_flow_style=False,
         allow_unicode=True,

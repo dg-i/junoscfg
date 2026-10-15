@@ -168,6 +168,46 @@ Create an OpenSpec change only when an item is selected for implementation.
   (2026-10-14), finding 5; pre-existing behaviour outside that change's frozen
   outcome.
 
+## YAML-DATE-001 — `yaml` input drops a statement holding an unquoted date
+
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-15 on yaml-new-format PO-3: backlog.
+- **Finding and impact:** PyYAML reads an unquoted date such as `2026-10-15` as a
+  `datetime.date`. The legacy `yaml` reader keeps it in the IR, and the set
+  writer then writes no line for that statement, so set output silently loses
+  it; JSON output of the same IR fails with `TypeError`. `yaml-new` refuses such a
+  value with its path, and its writer refuses it on migration.
+- **Reproducer:** `convert_config("configuration:\n  system:\n    host-name:
+  2026-10-15\n    location:\n      building: b1\n", from_format=Format.YAML,
+  to_format=Format.SET)` gives only `set system location building b1` (reproduced
+  at `87e14cd`).
+- **Proposed direction:** refuse a value JSON cannot hold on `yaml` input too, as
+  `yaml-new` does through `junoscfg.input.find_non_json_value`, or read a date as
+  its text; the rename of `yaml` to `yaml-old` decides which.
+- **Source change:** `yaml-new-format` review, Reviewer A6
+  ([review](../openspec/changes/archive/2026-10-15-yaml-new-format/review.md)),
+  pending owner decision PO-3; recorded by change `yaml-new-alias-cycles`.
+
+## YAML-BREAKS-001 — `yaml` output writes NEL, LS and PS unescaped
+
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-15 on yaml-new-format PO-4: backlog.
+- **Finding and impact:** the legacy `yaml` writer leaves NEL (U+0085), LINE
+  SEPARATOR (U+2028) and PARAGRAPH SEPARATOR (U+2029) unescaped in a single-quoted
+  scalar, and YAML 1.1 reads them as line breaks. A value holding NEL reads back
+  changed (`a\x85b` as `a b`; `a\x85\x85b` as `a\nb`); LS and PS are written raw
+  too, and PyYAML happened to read them back unchanged in the five positions
+  probed, which another YAML 1.1 reader need not. `yaml-new` writes all three
+  double-quoted and escaped (`test_a_yaml_only_line_break_reads_back_as_written`).
+- **Reproducer:** `from_dict({"system": {"host-name": "a\x85b"}}, "yaml")`, loaded
+  with `yaml.safe_load`, gives `host-name: "a b"` (reproduced at `87e14cd`).
+- **Proposed direction:** give the `yaml` writer the yaml-new string representer
+  (`_JunosYamlDumper` in `src/junoscfg/convert/output/json_output.py`), or retire
+  the question with the rename of `yaml` to `yaml-old`.
+- **Source change:** `yaml-new-format` review, Reviewer A2
+  ([review](../openspec/changes/archive/2026-10-15-yaml-new-format/review.md)),
+  pending owner decision PO-4; recorded by change `yaml-new-alias-cycles`.
+
 ## Consolidated issue inventory
 
 Reconciled on 2026-10-12 against `34bea12` (v0.28.7 plus admission records).

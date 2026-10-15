@@ -12,10 +12,15 @@ Shared lexical checks and normalization for configuration readers.
   and visible content after leading comments.
 - `normalize(source)` reads text or a text stream, removes ignored comments
   and blank lines, normalizes carriage returns and joins bracket continuations.
-- `find_non_json_value(data)` returns the `(kind, path)` of the first value of a
-  loaded document that JSON cannot hold (a timestamp, a non-string key, binary
-  data, a set), or `None`. yaml-new conversion and validation refuse such a
-  document; the path never holds the value.
+- `find_non_json_value(data)` returns a `NonJsonValue(kind, path, reason)` for
+  the first place a loaded document stops being a JSON document, or `None`: a
+  value JSON cannot hold (a timestamp, a non-string key, binary data, a set), a
+  `cycle`, or an `alias` whose copies would make the document, written out,
+  hold more than twice its parsed values or nest deeper than its parsed depth.
+  A mapping or list shared through an alias is otherwise walked at every place,
+  as JSON would write it out; the walk stays linear in the loaded object. The
+  yaml-new reader, writer and validation share it; the path never holds the
+  offending value.
 
 Raw set readers apply bracket and command checks before normalization. The
 checks classify lexical syntax; they do not validate configuration paths.
