@@ -1,0 +1,28 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: feature
+zone: conversion
+domains: [conversion, validation]
+removes: none, because the format is added beside the unchanged yaml; the rename and yaml's retirement are a later deprecated change
+declared-break:
+  consumer:
+    why: >-
+      Not a break. junoscfg.Format gains the member YAML_NEW ("yaml-new");
+      convert_config, convert_config_result and validate_config accept it.
+      No existing name, signature, value or output changes: yaml output and
+      input stay byte-identical. Patch, as AGENTS.md rules for everything that
+      is not a break on a named surface.
+    migration: >-
+      None required. A user who wants YAML that is exactly the Junos JSON
+      object converts once with convert_config(text, from_format=Format.YAML,
+      to_format=Format.YAML_NEW). The later rename of yaml to yaml-old is
+      declared and deprecated in its own change.
+  cli:
+    why: >-
+      Not a break. -i/--import-format, -e/--export-format and audit -i gain
+      the choice yaml-new and the help lists it; every existing choice and
+      output stays as it was.
+    migration: >-
+      None required. junoscfg convert -i yaml -e yaml-new old.yaml converts
+      an existing YAML file to yaml-new.
