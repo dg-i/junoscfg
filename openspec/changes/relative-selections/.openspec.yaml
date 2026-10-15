@@ -7,7 +7,7 @@ domains: [conversion]
 removes: >-
   the pipeline's relative rendering of a bare subtree (wrap=False) with no schema context;
   the relative pass that spelled a selection as the value under a key named "selection";
-  the rule that a path whose value is null selects nothing
+  the rule that a relative path whose value is null selects nothing
 declared-break:
   consumer:
     why: >-
@@ -17,8 +17,8 @@ declared-break:
       booleans kept); relative set and structured write the absolute statements without the
       path's words (a list name the schema hides is no longer printed, a selected list
       writes its statements instead of a Python repr or nothing, a selected leaf writes its
-      value in structured as set already did); a path to a null value writes it where it
-      wrote nothing; a key holding a dot can be selected where nothing was written. AGENTS.md
+      value in structured as set already did); a relative path to a null value writes it where it
+      wrote nothing (absolute output already did); a key holding a dot can be selected where nothing was written. AGENTS.md
       promises equivalent, not identical, output; every new output loads, put back under its
       path, as the absolute output does. No signature, name or accepted input changes on the
       named surface. Patch, as AGENTS.md rules for everything that is not a break.

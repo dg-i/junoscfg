@@ -270,15 +270,19 @@ class TestPathFiltering:
     def test_pipeline_filters_ir_before_rendering(self, monkeypatch: pytest.MonkeyPatch) -> None:
         rendered: list[dict] = []
 
+        paths: list[list[str] | None] = []
+
         def capture(
             config: dict,
             _format: str,
             *,
             wrap: bool = True,
+            below: list[str] | None = None,
             diagnostic_sink: object | None = None,
             withhold_values: bool = False,
         ) -> str:
             rendered.append(config)
+            paths.append(below)
             return "rendered"
 
         monkeypatch.setattr("junoscfg.convert.from_dict", capture)
@@ -308,7 +312,8 @@ class TestPathFiltering:
             )
             == "rendered"
         )
-        assert rendered[-1] == {"file": [{"name": "messages"}]}
+        assert rendered[-1] == {"system": {"syslog": {"file": [{"name": "messages"}]}}}
+        assert paths[-1] == ["system", "syslog"]
 
         assert (
             pipeline(
@@ -353,7 +358,7 @@ class TestPathFiltering:
             (Format.YAML, "r1\n...\n"),
             (Format.YAML_NEW, "r1\n...\n"),
             (Format.SET, "set r1\n"),
-            (Format.STRUCTURED, ""),
+            (Format.STRUCTURED, "r1;\n"),
         ],
     )
     def test_relative_leaf_preserves_output(self, to_format: Format, expected: str) -> None:
@@ -476,6 +481,175 @@ class TestPathFiltering:
             _SELECTED_SOURCE, to_format, "system.syslog.host", anon_config=anonymize
         )
         assert json.dumps(relative) == json.dumps(absolute)
+
+    @pytest.mark.parametrize(
+        ("to_format", "relative", "absolute"),
+        [
+            (Format.JSON, "null\n", None),
+            (Format.YAML, "null\n...\n", None),
+            (Format.YAML_NEW, "null\n...\n", None),
+            (Format.SET, "set\n", "set system services netconf ssh\n"),
+            (Format.STRUCTURED, "", "system {\n    services {\n        netconf ssh;\n    }\n}\n"),
+        ],
+        ids=["json", "yaml", "yaml-new", "set", "structured"],
+    )
+    def test_a_path_to_null_selects_it(
+        self, to_format: Format, relative: str, absolute: str | None
+    ) -> None:
+        """A YAML `ssh:` is null: the path selects it relative too, where relative
+        output wrote nothing; only a missing key writes nothing (PO-1 (c))."""
+        source = "configuration:\n  system:\n    services:\n      netconf:\n        ssh:\n"
+
+        def written(is_relative: bool) -> str:
+            return convert_config(
+                source,
+                from_format=Format.YAML,
+                to_format=to_format,
+                path="system.services.netconf.ssh",
+                relative=is_relative,
+                validate=False,
+            )
+
+        assert written(True) == relative
+        if absolute is None:
+            load = json.loads if to_format is Format.JSON else yaml.safe_load
+            document = load(written(False))
+            assert document == {
+                "configuration": {"system": {"services": {"netconf": {"ssh": None}}}}
+            }
+        else:
+            assert written(False) == absolute
+
+    def test_a_key_holding_a_dot_is_selected(self) -> None:
+        """A path is split at its dots and matched against the keys present, the
+        exact key first: `ieee-802.1` is selected with no new syntax, and an
+        exact `a` wins over a dotted `a.b` (PO-1 (e))."""
+        source = "set class-of-service classifiers ieee-802.1 C1 import default\n"
+        absolute = convert_config(
+            source,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            path="class-of-service.classifiers.ieee-802.1",
+        )
+        assert absolute == source
+        relative = convert_config(
+            source,
+            from_format=Format.SET,
+            to_format=Format.JSON,
+            path="class-of-service.classifiers.ieee-802.1",
+            relative=True,
+        )
+        assert json.loads(relative) == [{"name": "C1", "import": "default"}]
+        both = '{"configuration": {"system": {"a": {"b": "exact"}, "a.b": "dotted"}}}'
+
+        def selected(path: str) -> Any:
+            return json.loads(
+                convert_config(
+                    both,
+                    from_format=Format.JSON,
+                    to_format=Format.JSON,
+                    path=path,
+                    relative=True,
+                    validate=False,
+                )
+            )
+
+        assert selected("system.a.b") == "exact"
+        assert selected("system.a") == {"b": "exact"}
+
+    def test_a_relative_selection_keeps_its_schema_context(self) -> None:
+        """The selection is written as absolute output writes it at its path: a
+        single leaf a `yaml` file gave as a list is coerced (PO-1 (a)), and a list
+        name the schema hides is not printed in set or structured output."""
+        source = (
+            "configuration:\n  system:\n    login:\n      user:\n      - name: admin\n"
+            "        class: [super-user]\n"
+        )
+        for to_format in _OBJECT_WRITERS:
+            relative, absolute = _relative_and_absolute(
+                source, to_format, "system.login", from_format=Format.YAML
+            )
+            assert relative == absolute == {"user": [{"name": "admin", "class": "super-user"}]}
+        interfaces = "set interfaces ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
+
+        def written(to_format: Format, is_relative: bool) -> str:
+            return convert_config(
+                interfaces,
+                from_format=Format.SET,
+                to_format=to_format,
+                path="interfaces",
+                relative=is_relative,
+            )
+
+        assert written(Format.SET, True) == "set ge-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
+        absolute_lines = written(Format.STRUCTURED, False).splitlines()
+        assert absolute_lines[0] == "interfaces {" and absolute_lines[-1] == "}"
+        inner = "".join(line.removeprefix("    ") + "\n" for line in absolute_lines[1:-1])
+        assert written(Format.STRUCTURED, True) == inner
+
+    @pytest.mark.parametrize(
+        ("path", "list_word", "parents"),
+        [
+            ("system.login.user", "user", ["system", "login"]),
+            ("system.syslog.host", "host", ["system", "syslog"]),
+        ],
+    )
+    def test_a_selected_list_writes_its_statements(
+        self, path: str, list_word: str, parents: list[str]
+    ) -> None:
+        """A selected list writes its entries' statements without the path, in
+        set and structured output, never a Python repr or nothing (PO-1 (b));
+        put back under the path they read as the absolute output."""
+        source = (
+            "set system login user admin class super-user\n"
+            "set system syslog host 198.51.100.9 explicit-priority\n"
+            "set system syslog host 198.51.100.9 any any\n"
+            "set system syslog host 198.51.100.10 any any\n"
+        )
+
+        def written(to_format: Format, is_relative: bool) -> str:
+            return convert_config(
+                source, from_format=Format.SET, to_format=to_format, path=path, relative=is_relative
+            )
+
+        prefix = " ".join([*parents, list_word])
+        absolute = written(Format.SET, False)
+        expected = "".join(
+            line.replace(f"set {prefix} ", "set ", 1) + "\n" for line in absolute.splitlines()
+        )
+        assert written(Format.SET, True) == expected
+        relative = written(Format.STRUCTURED, True)
+        assert relative and "[" not in relative
+        entries = "".join(
+            f"{list_word} {line}\n" if line and not line.startswith((" ", "}")) else line + "\n"
+            for line in relative.splitlines()
+        )
+        for word in reversed(parents):
+            entries = (
+                f"{word} {{\n" + "".join(f"    {line}\n" for line in entries.splitlines()) + "}\n"
+            )
+        assert read_ir(entries, Format.STRUCTURED) == read_ir(
+            written(Format.STRUCTURED, False), Format.STRUCTURED
+        )
+
+    @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
+    @pytest.mark.parametrize("path", ["system.@", "system.@host-name"])
+    def test_an_annotation_selection_keeps_its_booleans(self, to_format: Format, path: str) -> None:
+        """An annotation's `true` is a boolean, not a presence flag: selected, it
+        is written as the absolute output holds it (PO-1 (d))."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "@": {"inactive": True},
+                        "host-name": "r1",
+                        "@host-name": {"inactive": True},
+                    }
+                }
+            }
+        )
+        relative, absolute = _relative_and_absolute(source, to_format, path)
+        assert relative == absolute == {"inactive": True}
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):

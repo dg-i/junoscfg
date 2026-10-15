@@ -233,3 +233,89 @@ class TestJuniperCarriesItsLicence:
                 assert (DEVICE_DATA / "jvd" / "sources" / f"{capture.name}.conf.gz").is_file()
                 assert manifest["jvd"]["paths"][capture.name]
         assert len(manifest["jvd"]["commit"]) == 40
+
+
+def _selectable_paths(node: Any, prefix: tuple[str, ...], depth: int) -> list[tuple[str, ...]]:
+    """Every path of mapping keys to *depth*: mappings, lists, leaves, flags and
+    annotation keys alike, as `--path` addresses them."""
+    if not isinstance(node, dict) or depth == 0:
+        return []
+    found: list[tuple[str, ...]] = []
+    for key, value in node.items():
+        found.append((*prefix, key))
+        found.extend(_selectable_paths(value, (*prefix, key), depth - 1))
+    return found
+
+
+def _value_at(document: Any, path: tuple[str, ...]) -> Any:
+    """The value at *path* of an absolute document; `groups` holds its entries
+    directly in the Junos JSON object, so a `group` step after it stays put."""
+    node = document["configuration"]
+    for step, key in enumerate(path):
+        if key == "group" and step and path[step - 1] == "groups" and isinstance(node, list):
+            continue
+        node = node[key]
+    return node
+
+
+def _one_prefix(absolute: list[str], relative: list[str]) -> bool:
+    """Whether every absolute line is its relative line with one common run of
+    words inserted after the command."""
+    if len(absolute) != len(relative):
+        return False
+    prefixes = set()
+    for whole, part in zip(absolute, relative, strict=True):
+        command, _, rest = part.partition(" ")
+        if not whole.startswith(command + " "):
+            return False
+        words = whole[len(command) + 1 :]
+        if rest:
+            if not words.endswith(" " + rest):
+                return False
+            words = words[: -len(rest) - 1]
+        prefixes.add(words)
+    return len(prefixes) <= 1
+
+
+class TestRelativeSelections:
+    """`--path --relative` writes what absolute output writes at the path, without
+    the path (spec conversion/path-filtering), for every path of mapping keys
+    to depth 3 of every device JSON capture: json, yaml-new and yaml give the
+    absolute document's value there, set the absolute lines less one common run
+    of path words, and structured never a Python repr."""
+
+    @pytest.mark.parametrize(
+        "capture", [pytest.param(capture, id=capture.key) for capture in captures()]
+    )
+    def test_a_relative_selection_is_the_absolute_one_without_its_path(self, capture) -> None:
+        source = capture.rendering("json")
+        loaded = json.loads(source)
+        paths = _selectable_paths(loaded.get("configuration", loaded), (), 3)
+        assert paths
+
+        def written(to_format: Format, path: tuple[str, ...], relative: bool) -> str:
+            return convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=to_format,
+                path=".".join(path),
+                relative=relative,
+                validate=False,
+            )
+
+        problems = []
+        for path in paths:
+            for to_format, load in (
+                (Format.JSON, json.loads),
+                (Format.YAML_NEW, yaml.safe_load),
+                (Format.YAML, yaml.safe_load),
+            ):
+                relative = load(written(to_format, path, True))
+                if relative != _value_at(load(written(to_format, path, False)), path):
+                    problems.append(f"{to_format.value} {'.'.join(path)}")
+            absolute_set = written(Format.SET, path, False).splitlines()
+            if not _one_prefix(absolute_set, written(Format.SET, path, True).splitlines()):
+                problems.append(f"set {'.'.join(path)}")
+            if "[{" in written(Format.STRUCTURED, path, True):
+                problems.append(f"structured {'.'.join(path)}")
+        assert not problems, "\n".join(problems[:40])

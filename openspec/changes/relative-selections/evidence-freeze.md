@@ -21,7 +21,7 @@ rule; one rule for every writer (C2); dotted keys resolved against the keys pres
   (private_test_data/makeover-work/relative-selections/probe.py): `system.login` relative
   json and yaml-new keep `class: [super-user]` (absolute: scalar); `system.login.user` and
   `system.syslog.host` relative set print `set "[{'name': ...}]"`, structured writes nothing;
-  a YAML `ssh:` (null) writes nothing in every writer, absolute too; `system.@` relative json
+  a YAML `ssh:` (null) writes nothing relative in every writer (absolute writes it); `system.@` relative json
   and yaml-new write `inactive: [null]` (absolute `true`); relative structured of
   `system.host-name` writes nothing (set `set r1`).
 - Device corpus (probe_all.py, probe-base.json): of 2,875 selections (every mapping-key path
@@ -38,7 +38,7 @@ rule; one rule for every writer (C2); dotted keys resolved against the keys pres
 
 ## Non-goals
 
-`from_dict(wrap=False)`; display's text filters; absolute output except a selected `null`;
+`from_dict(wrap=False)`; display's text filters; absolute output;
 device claims.
 
 ## Acceptance criteria
