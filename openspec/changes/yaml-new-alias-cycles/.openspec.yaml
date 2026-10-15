@@ -4,3 +4,28 @@ assurance: economy
 type: feature
 zone: kernel
 domains: [conversion, validation]
+removes: >-
+  none, because the change loosens accepted input; it removes only the interim refusal of a
+  mapping or list reached again through an alias (SC-1), replaced by the cycle and bound rule
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config, convert_config_result and validate_config
+      with yaml-new accept a document that shares a mapping or list through an
+      alias, which they refused; every document they accepted before reads,
+      writes and validates as before. Refusals keep their exception type
+      (ValueError) and invalid-result shape; their wording changes (a cycle is
+      kind cycle, no longer alias; the trailing hint is dropped), and a cyclic
+      IR handed to the yaml-new writer raises ValueError instead of
+      RecursionError. junoscfg.input gains NonJsonValue, the type
+      find_non_json_value returns (a tuple of kind, path, reason). Loosening
+      accepted input is additive: patch, as AGENTS.md rules.
+    migration: >-
+      None required. A caller matching refusal text matches the kind and path,
+      which are kept; a file that wrote a shared block out may now use an alias.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: convert -i yaml-new,
+      audit -i yaml-new and convert -v -i yaml-new accept shared blocks; exit
+      codes are unchanged (refusal 2, invalid 1).
+    migration: None required.
