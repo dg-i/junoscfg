@@ -11,7 +11,7 @@ from __future__ import annotations
 from click.testing import CliRunner
 
 from junoscfg.cli import main
-from tests.support.aliases import alias_bomb_yaml, alias_chain_yaml
+from tests.support.aliases import alias_chain_yaml, nested_yaml
 
 
 class TestCliValidation:
@@ -52,27 +52,20 @@ class TestCliValidation:
         assert result.exit_code == 1, result.output
         assert "cycle has no JSON spelling" in result.output
 
-    def test_a_yaml_new_alias_bomb_exits_one(self, artifacts_dir: str) -> None:
-        """A billion-laughs document is an invalid result naming its alias,
-        refused before anything expands it (owner ruling on PO-2)."""
-        result = CliRunner().invoke(
-            main,
-            ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir],
-            input=alias_bomb_yaml(),
-        )
-        assert result.exit_code == 1, result.output
-        assert "alias expands the document past twice its size" in result.output
-
-    def test_a_yaml_new_deep_alias_chain_exits_one(self, artifacts_dir: str) -> None:
-        """An alias chain nesting past the recursion limit is an invalid result,
-        not a RecursionError traceback (Test/Challenge finding 3)."""
-        result = CliRunner().invoke(
-            main,
-            ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir],
-            input=alias_chain_yaml(),
-        )
-        assert result.exit_code == 1, result.output
-        assert "alias nests the document deeper than it is written" in result.output
+    def test_a_yaml_new_value_past_64_levels_exits_one(self, artifacts_dir: str) -> None:
+        """A value past 64 levels, written in the text or reached through an
+        alias chain, is an invalid result naming its path, not a RecursionError
+        traceback (owner ruling on SC-A)."""
+        for source, path in (
+            (nested_yaml(62), "configuration.system.x" + ".0" * 62),
+            (alias_chain_yaml(), "s3" + ".0" * 64),
+        ):
+            result = CliRunner().invoke(
+                main, ["-v", "-i", "yaml-new", "--artifacts", artifacts_dir], input=source
+            )
+            assert result.exit_code == 1, result.output
+            assert "value is nested deeper than 64 levels" in result.output
+            assert path in result.output
 
     def test_an_invalid_document_exits_one_with_its_errors(self, artifacts_dir: str) -> None:
         runner = CliRunner()

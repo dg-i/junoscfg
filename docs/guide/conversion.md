@@ -258,18 +258,24 @@ it is written in JSON or in `yaml-new`, and both validate against the JSON schem
   set, an ordered map. Quote such a value (`'2026-10-15'`);
 - a block shared through an anchor and an alias (`contents: &c ...`, then
   `contents: *c`) is read as if written out at each place, as JSON would hold
-  it. A block that contains itself is refused as a `cycle`. So that a few lines
-  of aliases cannot stand for an enormous document, an alias is refused when,
-  written out, the document would hold more than twice the values it holds as
-  written, or nest deeper than its deepest written value: write such a block
-  out instead. An alias of a single value is read as that value.
+  it, however often and wherever it is reused. A block that contains itself is
+  refused as a `cycle`, and a value nested more than 64 levels below the
+  document's root (no Junos configuration comes near it) is refused with its
+  path. An alias of a single value is read as that value. junoscfg assumes its
+  YAML input is not hostile: a file of nested aliases ("billion laughs") is
+  expanded at the cost of time and memory, and text nested past about 490
+  levels fails inside PyYAML's own loader, so bound untrusted YAML before
+  handing it to junoscfg.
 
 YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,
 `yes` and `no` are booleans, `010` is the number 8 and `1:30` the number 90.
 Quote such words in hand-written files (`location: 'on'`); junoscfg's own output
 quotes them. `.inf` and `.nan` are read as JSON input reads `Infinity` and `NaN`.
 
-YAML that is detected rather than named with `-i` is read as `yaml`.
+YAML that is detected rather than named with `-i` is read as `yaml`. The `yaml`
+reader refuses a cycle and a value nested more than 64 levels deep the same way,
+with the same message (its IR is the JSON dictionary, hence "has no JSON
+spelling"), except inside the `_ansible_*` and `_meta_*` keys it drops unread.
 
 ### Moving a YAML file to yaml-new
 

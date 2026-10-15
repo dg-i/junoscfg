@@ -9,11 +9,13 @@ import pytest
 
 from junoscfg.validate import JsonYamlValidator, SchemaLoadError
 from tests.support.aliases import (
+    ANCHORED_BESIDE,
+    ANCHORED_BESIDE_WRITTEN_OUT,
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
-    alias_bomb_yaml,
     alias_chain_yaml,
-    within,
+    hosts_sharing_contents,
+    nested_yaml,
 )
 from tests.support.artifacts import make_artifacts_dir
 
@@ -138,18 +140,30 @@ class TestYamlAsJsonValidation:
         assert shared == validator.validate_yaml_as_json(SHARED_BLOCK_WRITTEN_OUT)
         assert not any("JSON spelling" in e.message for e in shared.errors)
 
-    def test_an_alias_bomb_is_invalid(self, validator):
-        """A bomb is an invalid result naming its alias, never an expansion."""
-        with within(10):
-            result = validator.validate_yaml_as_json(alias_bomb_yaml())
-            deep = validator.validate_yaml_as_json(alias_chain_yaml())
-        assert result.valid is False
-        assert [(e.message, e.path) for e in result.errors] == [
-            ("YAML alias expands the document past twice its size", "lol1.2")
-        ]
-        assert [(e.message, e.path) for e in deep.errors] == [
-            ("YAML alias nests the document deeper than it is written", "s1" + ".0" * 300)
-        ]
+    def test_a_value_past_64_levels_is_invalid(self, validator):
+        """A value past 64 levels is an invalid result naming its path, never an
+        exception; reuse of a block the old bounds refused is judged written out
+        (owner rulings on SC-2 and SC-A)."""
+        for source, path in (
+            (nested_yaml(62), "configuration.system.x" + ".0" * 62),
+            (nested_yaml(400), "configuration.system.x" + ".0" * 62),
+            (alias_chain_yaml(), "s3" + ".0" * 64),
+        ):
+            result = validator.validate_yaml_as_json(source)
+            assert result.valid is False
+            assert [(e.message, e.path) for e in result.errors] == [
+                ("YAML value is nested deeper than 64 levels", path)
+            ]
+        reused = validator.validate_yaml_as_json(ANCHORED_BESIDE)
+        assert reused == validator.validate_yaml_as_json(ANCHORED_BESIDE_WRITTEN_OUT)
+        eleven = hosts_sharing_contents(11)
+        written_out = eleven.replace("contents: &c\n", "contents:\n").replace(
+            "        contents: *c\n",
+            "        contents:\n        - name: any\n          any: [null]\n",
+        )
+        assert validator.validate_yaml_as_json(eleven) == validator.validate_yaml_as_json(
+            written_out
+        )
 
     def test_an_empty_document_is_judged_as_json_null(self, validator):
         assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors

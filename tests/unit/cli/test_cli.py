@@ -39,8 +39,8 @@ from tests.support.aliases import (
     CYCLE,
     SHARED_BLOCK,
     SHARED_BLOCK_WRITTEN_OUT,
-    alias_bomb_yaml,
     alias_chain_yaml,
+    nested_yaml,
 )
 from tests.support.paths import PROJECT_ROOT
 from tests.support.shapes import SHAPES, WRITERS
@@ -202,31 +202,40 @@ class TestConvertReadsAndWrites:
         as_json = library(legacy.read_text(), Format.YAML, Format.JSON)
         assert library(result.stdout, Format.YAML_NEW, Format.JSON) == as_json
 
+    @pytest.mark.parametrize("reader", ["yaml-new", "yaml"])
     @pytest.mark.parametrize(
         ("source", "said"),
         [
+            (CYCLE, "a YAML cycle at configuration.system.x has no JSON spelling"),
             (
-                CYCLE,
-                "a YAML cycle at configuration.system.x has no JSON spelling",
-            ),
-            (
-                alias_bomb_yaml(),
-                "a YAML alias at lol1.2 expands the document past twice its size",
+                nested_yaml(62),
+                "a YAML value at configuration.system.x"
+                + ".0" * 62
+                + " is nested deeper than 64 levels",
             ),
             (
                 alias_chain_yaml(),
-                "a YAML alias at s1" + ".0" * 300 + " nests the document deeper than it is written",
+                "a YAML value at s3" + ".0" * 64 + " is nested deeper than 64 levels",
             ),
         ],
-        ids=["a-cycle", "billion-laughs", "a-deep-chain"],
+        ids=["a-cycle", "sixty-five-deep", "an-alias-chain"],
     )
-    def test_a_yaml_new_alias_bomb_exits_two(self, source: str, said: str) -> None:
-        """A cycle or a bomb is refused with its path, exit 2, never a traceback
-        (owner ruling on PO-2; Test/Challenge findings 3, 10)."""
-        result = run(["convert", "-i", "yaml-new", "-e", "json"], source)
+    def test_a_cycle_or_a_value_past_64_levels_exits_two(
+        self, source: str, said: str, reader: str
+    ) -> None:
+        """A cycle or a value past 64 levels is refused with its path, exit 2,
+        never a traceback, by both YAML readers (owner rulings on SC-A and C5)."""
+        result = run(["convert", "-i", reader, "-e", "json"], source)
         assert result.exit_code == 2, result.output
         assert said in result.stderr
         assert result.stdout == ""
+
+    def test_detected_yaml_refuses_a_cycle(self) -> None:
+        """YAML the CLI detects reads as `yaml`, which refuses a cycle with its
+        path, exit 2 (owner ruling on C5)."""
+        result = run(["convert", "-e", "json"], CYCLE)
+        assert result.exit_code == 2, result.output
+        assert "a YAML cycle at configuration.system.x has no JSON spelling" in result.stderr
 
     def test_a_yaml_new_shared_block_converts_as_written_out(self) -> None:
         shared = run(["convert", "-i", "yaml-new", "-e", "set"], SHARED_BLOCK)

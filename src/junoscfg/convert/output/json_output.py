@@ -77,18 +77,23 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
 
     Raises:
         ValueError: If the IR holds a value no JSON document can hold (a date
-            a ``yaml`` file gave unquoted, say), a cycle, or a shared object
-            whose copies pass the bounds of `find_non_json_value`, named by
-            kind and path, never by its value; checked before the object stage
-            walks the IR. yaml-new holds what JSON holds, and its reader would
-            refuse it.
+            a ``yaml`` file gave unquoted, say), a cycle, or a value nested
+            deeper than 64 levels in the document as written
+            (`find_non_json_value`), named by kind and path, never by its
+            value. The IR is checked before the object stage walks it, and the
+            object after, since a flag's ``[null]`` sits one step deeper than
+            its ``true``: yaml-new holds what JSON holds, and its reader would
+            refuse anything else.
     """
     found = find_non_json_value(wrap_configuration(config) if wrap else config)
+    document = None
+    if found is None:
+        document = junos_json_object(config, wrap=wrap)
+        found = find_non_json_value(document)
     if found is not None:
-        where = f"at {found.path}" if found.path else "at the top level"
-        raise ValueError(f"Cannot write yaml-new: the {found.kind} {where} {found.reason}")
+        raise ValueError(f"Cannot write yaml-new: the {found.kind} {found.where} {found.reason}")
     return yaml.dump(
-        junos_json_object(config, wrap=wrap),
+        document,
         Dumper=_JunosYamlDumper,
         default_flow_style=False,
         allow_unicode=True,

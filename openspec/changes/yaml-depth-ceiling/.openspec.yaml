@@ -1,0 +1,81 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: feature
+zone: kernel
+domains: [conversion, validation]
+removes: >-
+  the yaml-new size bound (twice the parsed values, SC-2) and its counting pass, and the
+  parsed-depth bound (SC-A), replaced by one fixed 64-level ceiling; the alias refusal kind
+  `alias` and the reasons `expands the document past twice its size` and `nests the
+  document deeper than it is written` go with them
+declared-break:
+  consumer:
+    why: >-
+      Not a break. What the named surfaces promise is the conversion and validation of Junos
+      configurations, and no configuration comes near 64 levels: the schema's deepest path
+      is 25 steps below configuration (no schema node recurses), about 30 with the
+      configuration wrapper, a flag's [null], an annotation and an rpc-reply wrapper; the
+      device corpus reaches 17 and the shape catalogue 15. convert_config,
+      convert_config_result and validate_config with yaml-new accept everything they did
+      that nests no deeper than 64 levels, and now also what the two bounds refused (heavy
+      reuse of a block, a block anchored beside configuration). Newly refused, all data no
+      configuration holds: with yaml-new input, or with yaml-new output from any reader, a
+      value nested 65 to about 490 levels deep anywhere in the document (deeper text
+      already failed inside PyYAML's loader at base, and still does), including keys beside
+      configuration; with yaml input, a cycle (it raised RecursionError) and such a value
+      outside the _ansible_* and _meta_* keys, whose content the reader drops unwalked, so
+      the Ansible collection's meta keys are left as they were. Refusals raise ValueError,
+      or an invalid result in validation; an anonymizing conversion re-raises a refusal as
+      RuntimeError with nothing quoted, as for every refusal at base. Refusal wording
+      changes (kind value, "is nested deeper than 64 levels"; kind alias is gone). Patch, as
+      AGENTS.md rules for everything that is not a break on a named surface; the owner may
+      overrule this to a minor.
+    migration: >-
+      None for a configuration. A caller that relied on junoscfg to stop an alias bomb bounds
+      untrusted YAML before calling junoscfg; a caller keeping non-configuration data deeper
+      than 64 levels in a YAML document moves it under an _ansible_* or _meta_* key (yaml
+      input) or out of the document; a caller matching refusal text matches kind and path.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: convert, audit and convert -v with -i
+      yaml-new, convert and audit with -i yaml or detected YAML, and convert -e yaml-new
+      from any input keep their exit codes for refusals (2, or 1 for -v and for an
+      anonymizing run's withheld failure); a document they newly refuse holds data 65 to
+      about 490 levels deep, which no configuration does; a yaml cycle exits 2 with a
+      message where it crashed with a traceback.
+    migration: None for a configuration; as for consumer otherwise.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - ARCHITECTURE.md
+  - changelog.d/+yaml-depth-ceiling.feature.md
+  - docs/api/input.md
+  - docs/architecture/developer-guide.md
+  - docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md
+  - docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md
+  - docs/decisions/index.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/input/yaml_input.py
+  - src/junoscfg/convert/ir.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - tests/contract/test_every_message.py
+  - tests/support/aliases.py
+  - tests/unit/cli/test_audit_command.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  dependencies: [openspec/changes/archive/2026-10-15-yaml-new-alias-cycles]
+  changelog: changelog.d/+yaml-depth-ceiling.feature.md
+  generated-records: []

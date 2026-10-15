@@ -41,136 +41,107 @@ class InputError(ValueError):
 #: The Python types of a JSON document's scalars.
 _JSON_SCALARS = (str, int, float, bool, type(None))
 
+#: How deep a document may nest: path steps from its root to any value. The
+#: owner's figure (2026-10-15); no Junos configuration comes near it, and
+#: junoscfg's own recursive stages then never walk a YAML document deeper.
+_CEILING = 64
+
 #: Why a value, a key or a cycle is refused.
 _NO_SPELLING = "has no JSON spelling"
-#: Why an alias is refused whose copies pass the size bound.
-_TOO_LARGE = "expands the document past twice its size"
-#: Why an alias is refused whose copies nest deeper than the document is written.
-_TOO_DEEP = "nests the document deeper than it is written"
-_BOUNDS = (_TOO_LARGE, _TOO_DEEP)
+#: Why a value is refused that sits past the ceiling.
+_TOO_DEEP = f"is nested deeper than {_CEILING} levels"
 
 
 class NonJsonValue(NamedTuple):
-    """Where a loaded document stops being a JSON document, and why.
+    """Where a loaded document stops being a JSON document junoscfg can walk, and why.
 
     ``kind`` is a value's type (``date``, ``bytes``, ``set``, ``tuple``, ...),
     ``<type> key`` for a mapping key that is not a string (``null`` for
-    ``None``), ``cycle`` or ``alias``; ``path`` is dotted keys and list indexes
-    from the document root, ``""`` for the document itself; ``reason`` says why
-    in words every door prints. None of them holds a value or a key.
+    ``None``), ``cycle``, or ``value`` for a value nested too deep; ``path`` is
+    dotted keys and list indexes from the document root, ``""`` for the
+    document itself; ``reason`` says why in words every door prints. None of
+    them holds a value or a key.
     """
 
     kind: str
     path: str
     reason: str
 
+    @property
+    def where(self) -> str:
+        """``at <path>``, or ``at the top level`` for the document itself."""
+        return f"at {self.path}" if self.path else "at the top level"
 
-def find_non_json_value(data: Any) -> NonJsonValue | None:
-    """The first place a loaded document stops being a JSON document.
+    @property
+    def read_refusal(self) -> str:
+        """The message a reader refuses the document with."""
+        return f"Invalid input: a YAML {self.kind} {self.where} {self.reason}"
+
+
+def find_non_json_value(
+    data: Any, *, scalars: bool = True, unwalked: tuple[str, ...] = ()
+) -> NonJsonValue | None:
+    """The first place, in document order, a loaded document stops being a JSON
+    document junoscfg can walk.
 
     yaml-new is the Junos JSON object spelled in YAML (spec
     conversion/junos-json-yaml); its conversion, its writer and its validation
     all refuse a document that holds anything else. JSON has no aliases, so a
     mapping or list reached again, through a YAML alias or a caller sharing one
-    object, stands for a copy of itself and is checked at every place it is
-    reached. Refused, in document order:
+    object, stands for a copy of itself and is walked at every place it is
+    reached, however often. Refused:
 
-    - a value of a type JSON lacks, or a mapping key that is not a string;
     - a mapping or list reached inside itself, kind ``cycle``, at the path where
       it is reached again;
-    - an alias whose copies would make the document, written out, hold more
-      than twice the values it holds as parsed (mappings, lists and scalars,
-      each scalar per place; a mapping or list reached again counted once), or
-      nest deeper than the parsed document's deepest value (an alias a leaf,
-      as in the text), kind ``alias``, at the path of the outermost alias being
-      written out when a bound is passed.
+    - a value more than 64 path steps below *data*, kind ``value``, at its own
+      path: the walk never goes deeper, nor does any stage after it;
+    - with *scalars* true, a value of a type JSON lacks, or a mapping key that
+      is not a string.
 
-    Every document that reaches each value at most twice and nests no deeper
-    than written passes the bounds; one without aliases never reaches them.
-    The walk stops within twice the parsed size and the parsed depth, so it,
-    and every stage after it, stays linear in the loaded object (decision
-    2026-10-15-yaml-new-expands-aliases-within-a-bound; both bounds are
-    interim, pending the owner). Returns ``None`` for a JSON document.
+    The ``yaml`` reader passes *scalars* false, since its IR holds YAML's dates
+    and other scalars, and in *unwalked* the key prefixes whose values it drops
+    without walking them: there only what junoscfg's own recursion would walk
+    is refused. junoscfg assumes its YAML input is not hostile: an alias bomb is
+    walked written out, at the cost of its expansion, and a caller handling
+    untrusted YAML bounds it first (decision
+    2026-10-15-yaml-nests-at-most-64-levels). Returns ``None`` when nothing is
+    refused.
     """
-    size, depth = _as_parsed(data)
-    # The walk outside copies visits exactly *size* values, so the copies may
-    # visit *size* more: twice the parsed size written out.
-    return _Walk(size, depth).visit(data, 0, inside_copy=False)
+    return _visit(data, 0, set(), scalars, unwalked)
 
 
-def _as_parsed(data: Any) -> tuple[int, int]:
-    """The values *data* holds as parsed (each mapping and list once, with its
-    scalars) and its deepest nesting, where a mapping or list reached again is
-    a leaf, as an alias is in the text. Iterative: it never recurses."""
-    seen: set[int] = set()
-    count = deepest = 0
-    pending = [(data, 0)]
-    while pending:
-        value, depth = pending.pop()
-        deepest = max(deepest, depth)
-        if isinstance(value, (dict, list)):
-            if id(value) in seen:
-                continue
-            seen.add(id(value))
-            children = list(value.values() if isinstance(value, dict) else value)
-            # Reversed, so the walk meets each value in document order and an
-            # anchor before its aliases, as the text holds them.
-            pending.extend((child, depth + 1) for child in reversed(children))
-        count += 1
-    return count, deepest
-
-
-class _Walk:
-    """The written-out walk: the steps left to the copies, the parsed depth, and
-    the mappings and lists met so far and still open."""
-
-    def __init__(self, budget: int, deepest: int) -> None:
-        self.left = budget
-        self.deepest = deepest
-        self.seen: set[int] = set()
-        self.open: set[int] = set()
-
-    def visit(self, data: Any, depth: int, *, inside_copy: bool) -> NonJsonValue | None:
-        container = isinstance(data, (dict, list))
-        if container and id(data) in self.open:
-            return NonJsonValue("cycle", "", _NO_SPELLING)
-        again = container and id(data) in self.seen
-        if inside_copy or again:
-            # Only a copy is charged, so a refusal is always met inside one.
-            self.left -= 1
-            if self.left < 0:
-                return NonJsonValue("alias", "", _TOO_LARGE)
-            if depth > self.deepest:
-                return NonJsonValue("alias", "", _TOO_DEEP)
-        if not container:
-            if isinstance(data, _JSON_SCALARS):
-                return None
-            return NonJsonValue(_kind(data), "", _NO_SPELLING)
-        key = id(data)
-        self.seen.add(key)
-        self.open.add(key)
-        found = self._children(data, depth + 1, inside_copy=inside_copy or again)
-        self.open.discard(key)
-        if found is not None and found.reason in _BOUNDS and again and not inside_copy:
-            # This is the alias being written out: name its place.
-            return found._replace(path="")
-        return found
-
-    def _children(self, data: dict | list, depth: int, *, inside_copy: bool) -> NonJsonValue | None:
-        if isinstance(data, dict):
-            for step, value in data.items():
-                if not isinstance(step, str):
-                    return NonJsonValue(f"{_kind(step)} key", "", _NO_SPELLING)
-                found = self.visit(value, depth, inside_copy=inside_copy)
-                if found is not None:
-                    return found._replace(path=f"{step}.{found.path}" if found.path else step)
+def _visit(
+    data: Any, depth: int, open_: set[int], scalars: bool, unwalked: tuple[str, ...]
+) -> NonJsonValue | None:
+    container = isinstance(data, (dict, list))
+    if container and id(data) in open_:
+        return NonJsonValue("cycle", "", _NO_SPELLING)
+    if depth > _CEILING:
+        return NonJsonValue("value", "", _TOO_DEEP)
+    if not container:
+        if not scalars or isinstance(data, _JSON_SCALARS):
             return None
-        for index, item in enumerate(data):
-            found = self.visit(item, depth, inside_copy=inside_copy)
+        return NonJsonValue(_kind(data), "", _NO_SPELLING)
+    open_.add(id(data))
+    try:
+        steps = data.items() if isinstance(data, dict) else enumerate(data)
+        for step, value in steps:
+            if isinstance(data, dict):
+                if scalars and not isinstance(step, str):
+                    return NonJsonValue(f"{_kind(step)} key", "", _NO_SPELLING)
+                if unwalked and isinstance(step, str) and step.startswith(unwalked):
+                    continue
+            found = _visit(value, depth + 1, open_, scalars, unwalked)
             if found is not None:
-                place = str(index)
+                # A key that is not a string is named by its kind, never its value.
+                if isinstance(data, list) or isinstance(step, str):
+                    place = str(step)
+                else:
+                    place = f"<{_kind(step)} key>"
                 return found._replace(path=f"{place}.{found.path}" if found.path else place)
         return None
+    finally:
+        open_.discard(id(data))
 
 
 def _kind(value: Any) -> str:

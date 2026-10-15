@@ -1,0 +1,358 @@
+{
+  "change": "yaml-depth-ceiling",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "4976711c34826ac1eb2ef7a142ebfaa9df103df5a2fb55867ec1c40c0437e631",
+          "head": "4976711c34826ac1eb2ef7a142ebfaa9df103df5a2fb55867ec1c40c0437e631"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-yaml-depth-ceiling/openspec/changes/yaml-depth-ceiling/events.jsonl",
+        "sha256": "c00741a8676304f9f5868fcbd1c69d914d957a69fc3c8b51de5685e61e2f1a8f"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+        "carry": {},
+        "change": "yaml-depth-ceiling",
+        "checks": [
+          {
+            "checkpoint": "bbb061a76ed8f565e55e6ba2abef1f79b862d17b765e9f24bdb2868e9846adc2",
+            "duration_ms": 117.7236249204725,
+            "evidence": ".agent-ready/verification/5ba614280d054b8c88b866d58439cd1c.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "bbb061a76ed8f565e55e6ba2abef1f79b862d17b765e9f24bdb2868e9846adc2",
+            "duration_ms": 9848.407665966079,
+            "evidence": ".agent-ready/verification/3a64819b6c5f4aa1b16e6483cacab453.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "12d0ac6665a2338379bceb6ebf1082773becab275bdccfb64175e37a439174dc",
+            "duration_ms": 258766.89066702966,
+            "evidence": ".agent-ready/verification/b4a6ca8ad5034537b943e2a2f2dda50a.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "78300091b827841aa1d1f0149a6aeda72492bfd23181d99bb073aa62efa36a93",
+            "duration_ms": 49875.6583329523,
+            "evidence": ".agent-ready/verification/ad4fc2e7ed3a4f22bde95e9c63137a19.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "dc2f08a7c319778e84dfed7ecf969e4a23855ec9a582f85ad17c08f6250a81c6",
+            "duration_ms": 347343.0353340227,
+            "evidence": ".agent-ready/verification/4997bdc285e9482ab0a0cb10c1ea9efc.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "444e2aedf91bc9609a15c3087ef630f60837a08a487bd36448dc4c7bfaeca589",
+            "duration_ms": 73993.71616600547,
+            "evidence": ".agent-ready/verification/9822068017ef4a4582ddb510f4636928.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "de56dc6f6becbe998671cafc1bf37990a2a4110e19382aa3fc21bfbebb19dbdb",
+            "duration_ms": 50899.0872920258,
+            "evidence": ".agent-ready/verification/a861fdfa09a1488782dcf5e262211811.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "298c8ada7ee16a305678b5200f1beadec0241b581bf4a770d8b9af5ea8dbd949",
+            "duration_ms": 166431.3098329585,
+            "evidence": ".agent-ready/verification/afe5d585484744d7840d4d2d01c8e873.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+        "ledger_sha256": "c00741a8676304f9f5868fcbd1c69d914d957a69fc3c8b51de5685e61e2f1a8f",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "f9161f13d73a4028f9d035efabe13b787b73bf149af8a567348080b81e1b46f9",
+              "f3c6822e711c70e144d0f166d880c829d0c20ca15a41dffa7a1c5bed382ecc77",
+              "ec21854f4e5ed99b149a75958a9429fe0ad76404ce1eb6243111ddd9b42d8d51",
+              "f95cd9287923f40a642edd7a24e467270b44d18f61da287686168a7c7ba569ec"
+            ],
+            "value": 4
+          },
+          "full_runs": {
+            "events": [
+              "974648a19acabc30eef7e391835b21a6530b77a2b0e3da285fc44d6c6bc4a07a",
+              "319c1da2b782745dfa47e9e72bbc2fc7a6183cea629766929ca61732459599cd",
+              "8623f011c1d4a54b562ab220a24b270c2336cece98be5fe50418658d854e48d8",
+              "6923e360680f20817520183f571437979c6b501449ffed604ad4816ed847f042"
+            ],
+            "value": 4
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 5,
+            "total": 8
+          },
+          {
+            "completed": 6,
+            "total": 9
+          },
+          {
+            "completed": 6,
+            "total": 9
+          },
+          {
+            "completed": 6,
+            "total": 9
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            "ARCHITECTURE.md",
+            "changelog.d/+yaml-depth-ceiling.feature.md",
+            "docs/api/input.md",
+            "docs/architecture/developer-guide.md",
+            "docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md",
+            "docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md",
+            "docs/decisions/index.md",
+            "docs/guide/conversion.md",
+            "docs/guide/validation.md",
+            "openspec/specs/conversion/junos-json-yaml/spec.md",
+            "openspec/specs/validation/junos-json-yaml/spec.md",
+            "src/junoscfg/convert/CONTRACT.md",
+            "src/junoscfg/convert/input/json_input.py",
+            "src/junoscfg/convert/input/yaml_input.py",
+            "src/junoscfg/convert/ir.py",
+            "src/junoscfg/convert/output/json_output.py",
+            "src/junoscfg/input.CONTRACT.md",
+            "src/junoscfg/input.py",
+            "src/junoscfg/validate/json_yaml_validator.py",
+            "tests/contract/test_every_message.py",
+            "tests/support/aliases.py",
+            "tests/unit/cli/test_audit_command.py",
+            "tests/unit/cli/test_cli.py",
+            "tests/unit/cli/test_cli_validate.py",
+            "tests/unit/convert/test_convert_api.py",
+            "tests/unit/input/test_input.py",
+            "tests/unit/validate/test_json_yaml_validator.py"
+          ],
+          "since": "adb6fb7b5b624765a494b8a1d535972d08ac265b"
+        },
+        "selector": [
+          "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+          "5d4244ba3c5ea828f3a282cf71463e173b65c078"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 750,
+        "binary_files": 0,
+        "files": 28,
+        "removed": 468
+      }
+    },
+    "locked_packages": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "ec7887eea49a0159b5a26bba0ac59e61e241323b4639494f213b691c5d3d814d",
+          "head": "ec7887eea49a0159b5a26bba0ac59e61e241323b4639494f213b691c5d3d814d"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "adb6fb7b5b624765a494b8a1d535972d08ac265b",
+      "captured_at": "2026-10-15T14:05:10.852970Z",
+      "head_sha": "5d4244ba3c5ea828f3a282cf71463e173b65c078",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}

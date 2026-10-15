@@ -1,8 +1,9 @@
 ---
-status: accepted
+status: superseded
 scope: ["src/junoscfg/input.py", "src/junoscfg/convert/input/json_input.py", "src/junoscfg/convert/output/json_output.py", "src/junoscfg/validate/json_yaml_validator.py"]
 enforced-by: tests
 review-by: 2027-04-15
+superseded-by: 2026-10-15-yaml-nests-at-most-64-levels
 ---
 
 # yaml-new expands aliases within linear bounds

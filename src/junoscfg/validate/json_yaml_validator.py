@@ -92,8 +92,8 @@ class JsonYamlValidator:
         :meth:`validate_json` judges the same object; an empty document is
         the object ``null``. A mapping or list shared through an alias is
         judged written out; a value no JSON document can hold (a timestamp, a
-        key that is not a string, a cycle) or an alias whose copies pass the
-        bounds of `find_non_json_value` is an error naming its kind and path,
+        key that is not a string), a cycle, or a value nested deeper than 64
+        levels (`find_non_json_value`) is an error naming its kind and path,
         as conversion refuses it.
 
         Args:
