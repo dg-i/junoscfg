@@ -1,0 +1,65 @@
+schema: agent-ready
+created: 2026-10-16
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion, validation]
+removes: >-
+  the `yaml` reader's and validator's walk of a mapping key that is not a string (it crashed
+  in the meta-key cleanup or in jsonschema, so nothing it accepted is lost); with it
+  `find_non_json_value`'s naming of such a key by its kind inside a path, which no refusal
+  reaches once every key is a string; and JSON input's unbounded nesting, which crashed
+  with RecursionError past about 450 levels in junoscfg's own walks
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config, convert_config_result and validate_config change only
+      where they crashed or wrote a different configuration: a `yaml` document holding a
+      mapping key that is not a string raises ValueError (validation reports it invalid)
+      where it raised AttributeError or TypeError; JSON nested deeper than 64 levels raises
+      ValueError where it raised RecursionError from about 450 levels (no Junos
+      configuration nests past 26; the device corpus nests 17); and an absolute path= ending
+      at a leaf or a leaf-list keeps that statement's tags, as the parent selection writes
+      them, where it dropped them and wrote the statement active. No signature, name or
+      accepted configuration changes on the named surface. Patch, as AGENTS.md rules for
+      everything that is not a break.
+    migration: >-
+      None required. A caller relying on a key that is not a string in a `yaml` file quotes
+      it (`'64496':`), as junoscfg's own `yaml` writer always writes keys; a script comparing
+      the text of an absolute leaf selection updates its expected output, which now holds
+      the leaf's tags.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg convert exits 2 with an
+      "Invalid input" message where it printed a traceback, and --path keeps a selected
+      leaf's tags; options and exit codes are unchanged.
+    migration: None required; a script comparing the text updates its expected output.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - ARCHITECTURE.md
+  - changelog.d/+own-crash-fixes.bugfix.md
+  - docs/api/input.md
+  - docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/conversion/path-filtering/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
+  - src/junoscfg/input.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/input/yaml_input.py
+  - src/junoscfg/display/CONTRACT.md
+  - src/junoscfg/display/path_filter.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/display/test_display_filters.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  dependencies: [openspec/changes/archive/2026-10-15-relative-selections]
+  changelog: changelog.d/+own-crash-fixes.bugfix.md
+  generated-records: []

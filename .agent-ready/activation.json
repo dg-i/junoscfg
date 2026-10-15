@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
   "checkpoint": "1a79527025466ae0b2ad1c2d3972f0159878b110",
-  "actor": "Claude input-trust-rule finalizer",
-  "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
-  "captured_at": "2026-10-15T16:07:41.534924+00:00",
+  "actor": "Claude own-crash-fixes Builder",
+  "authority": "Owner request 2026-10-16 (first-hand, approved, relayed by the coordinator): admit change own-crash-fixes and its branch as ready; every other disposition preserved.",
+  "captured_at": "2026-10-15T23:45:17.638910+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -92,7 +92,9 @@
     "change/yaml-new-alias-cycles": "parked",
     "change/yaml-depth-ceiling": "parked",
     "change/relative-selections": "parked",
-    "change/input-trust-rule": "parked"
+    "change/input-trust-rule": "parked",
+    "change/own-crash-fixes": "ready",
+    "change/qfx-null-probes": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -178,6 +180,8 @@
     "yaml-new-alias-cycles": "parked",
     "yaml-depth-ceiling": "parked",
     "relative-selections": "parked",
-    "input-trust-rule": "parked"
+    "input-trust-rule": "parked",
+    "own-crash-fixes": "ready",
+    "qfx-null-probes": "ready"
   }
 }
