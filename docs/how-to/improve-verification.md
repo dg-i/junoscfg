@@ -58,10 +58,25 @@ For concurrency or selective expensive checks, use the
 [parallel verification qualification guide](parallel-verification.md). It defines
 complete execution controls, audited nonselection and admitted-workflow timing.
 
+## Routine cadence check
+
+Read only `Cadence state` in `docs/VERIFICATION.md`. Resolve its integration
+branch to a SHA without fetching. A pending invitation stays pending. Otherwise,
+verify the anchor occurs in `git rev-list --first-parent <head-sha>` and count
+`git rev-list --first-parent --count <anchor-sha>..<head-sha>`; at or above the
+recorded interval, read the next section and prepare the assessment. Missing
+state, shallow history, an absent anchor or Git failure is unknown, never zero:
+read the next section to resolve it. Below the interval, stop this optional
+cadence inspection. Do not load past outcomes or the rest of this guide unless
+verification changes. No response changes neither pending state nor decisions.
+
 ## Determine when a review is due
 
 At the first agent interaction, change completion, refresh completion and job end,
-read the cadence state in `docs/VERIFICATION.md`. Use the configured integration
+read only the `Cadence state` section of `docs/VERIFICATION.md`, stopping at
+the next heading. Its current integration branch, anchor, interval and pending
+status are sufficient; do not load historical outcomes. Load this guide only
+when counting is due/unknown, feedback is pending, or verification changes. Use the configured integration
 branch, not a feature branch's internal commits. Default interval: 10 commits.
 Resolve that branch to an immutable SHA. Verify that the cadence anchor is on
 its first-parent history, then use Git directly:

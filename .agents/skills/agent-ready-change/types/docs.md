@@ -37,7 +37,7 @@ Skip. Retype as `new-dependency` if the documentation toolchain changes.
 Put one verification task in `tasks.md` for every applicable `docs-plan.md`
 check, with the exact command or inspection and expected result. Run useful
 baseline probes and record failures; absence of new prose need not fail. Write
-no product documentation. The human approves the QA tasks.
+no product documentation. Resolve material QA decisions under the shared authorization rule.
 
 ## Phase 5 — Change and verify
 
@@ -53,21 +53,19 @@ expensive tiers when their paths match, rerunning when evidence is invalidated. 
 
 ## Phase 6 — Review
 
-Apply the shared risk policy. When it requires review, a genuinely fresh
-isolated Reviewer reads the freeze, `docs-plan.md`, its sources, the rendered
+A genuinely fresh isolated Reviewer reads the freeze, `docs-plan.md`, its sources, the rendered
 documents, and the diff, in that order. Report inaccurate claims, commands or
 examples that do not work, broken references, missing steps, terminology drift,
 wrong placement, duplicated facts, and failure of the reader's task. Re-run
 mechanical QA and independently sample claims against sources. Record what
-could not be checked. Edit no product document. When review is omitted, record
-the policy evidence. A record-only correction needs no confirmation; any other
+could not be checked. Edit no product document. A record-only correction needs no confirmation; any other
 fix returns to the same Reviewer after the fast set, with a full rerun only for
 changed runtime code, tests, or generated artifacts. Tick the review task and
 run `agent-ready fields` and `agent-ready caps` before committing its records.
 
 ## Phase 7 — Archive
 
-An economical Finalizer performs this phase. There is no delta or code-head
+The Builder can perform bounded finalization. There is no delta or code-head
 distinction. Capture metrics against the commit
 containing reviewed documents and QA evidence, review them, tick metrics, and
 run the lane gate. Ignore the type-blind codemap and specs status entries. Merge,

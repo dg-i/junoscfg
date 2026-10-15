@@ -85,7 +85,8 @@
     "codex/clarify-audit-unknown-values": "parked",
     "codex/refresh-workflow-economy": "parked",
     "codex/publish-workflow-overhead-review": "parked",
-    "codex/schema-qualification-scope": "parked"
+    "codex/schema-qualification-scope": "parked",
+    "codex/affected-test-scope": "ready"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -164,6 +165,7 @@
     "clarify-audit-unknown-values": "parked",
     "adopt-workflow-economy": "parked",
     "publish-workflow-overhead-review": "parked",
-    "schema-qualification-scope": "parked"
+    "schema-qualification-scope": "parked",
+    "affected-test-scope": "ready"
   }
 }

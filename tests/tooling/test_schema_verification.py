@@ -79,6 +79,8 @@ def commit_fixture(root):
     git(
         root,
         "-c",
+        "maintenance.auto=false",
+        "-c",
         "user.name=Schema Test",
         "-c",
         "user.email=test@example.invalid",
@@ -358,6 +360,17 @@ class TestCandidateIntegrity:
                 if path.is_file()
             ) == ["schema/runtime.json"]
             assert git(root, "status", "--porcelain") == ""
+
+    def test_fixture_commit_starts_no_background_maintenance(self, tmp_path, monkeypatch):
+        """A detached maintenance run races the byte snapshots taken of a fixture repository."""
+        root = tmp_path / "repo"
+        root.mkdir()
+        git(root, "init", "-q")
+        (root / "tracked").write_text("candidate")
+        trace = tmp_path / "trace"
+        monkeypatch.setenv("GIT_TRACE", str(trace))
+        commit_fixture(root)
+        assert "maintenance" not in trace.read_text()
 
     def test_inherited_hook_context_preserves_parent_repository(self, tmp_path, monkeypatch):
         parent = tmp_path / "parent"

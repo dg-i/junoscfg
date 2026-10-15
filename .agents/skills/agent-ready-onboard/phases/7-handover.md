@@ -39,7 +39,7 @@ acceptance plus fresh agent review: a second read, not a second human. Document
 author-owned hosting exceptions without claiming human independence. The human
 guide says phases may share a session until approval, while implementation and
 review never do; it copies the change skill's canonical full-check command.
-Repository changes use `agent-ready-change`; `openspec-*` skills explain OpenSpec.
+Repository changes use `agent-ready-change`. Do not install OpenSpec skills or OPSX commands; use its CLI for artifact operations.
 
 ## Ownership and retirement
 

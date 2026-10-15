@@ -144,6 +144,26 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Source and disposition:** same analysis, 2026-10-14. Its walk is ported
   under SIMPLIFY-001 either way.
 
+## SELECT-SCAN-001 — Package-wide source scanners miss package changes
+
+- **Status:** open; future work, not selected for implementation.
+- **Finding and impact:** a change under `src/junoscfg/<package>/` selects that
+  package's unit tests, its importers' and `tests/contract/`, but not tooling
+  tests that scan the whole package source, such as
+  `tests/tooling/test_entry_key_spellings.py` and
+  `tests/tooling/test_universal_statement_names.py`. Such a regression passes the
+  commit hook and fails only at the full checkpoint, which runs before review.
+- **Reproducer:** append `_probe = {'fe': 1}['fe']` to
+  `src/junoscfg/edityaml/rules.py`; the selection omits
+  `test_entry_key_spellings.py`, whose `test_no_module_keeps_its_own_key` fails.
+- **Proposed direction:** select modules that read `PACKAGE_SRC`, or another
+  named directory above a changed source file, without letting the selector's
+  and door check's own tree scans add their tooling consumers to every package
+  change.
+- **Source change:** independent challenge of `affected-test-scope`
+  (2026-10-14), finding 5; pre-existing behaviour outside that change's frozen
+  outcome.
+
 ## Consolidated issue inventory
 
 Reconciled on 2026-10-12 against `34bea12` (v0.28.7 plus admission records).

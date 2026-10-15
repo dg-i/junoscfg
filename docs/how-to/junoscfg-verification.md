@@ -87,3 +87,52 @@ match the original receipt hash. A changed relevant dependency, algorithm or
 engine cannot obtain a skip by rewriting instructions or refreshing metadata.
 The committed `consumer-boundary.json` is refreshed only after review of actual
 execution relationships, never by preparation or successful qualification alone.
+
+## Ordinary tests and commit cost
+
+`tools/affected_tests.py` reads staged paths for ordinary commits; without staged
+paths it uses the branch and working-tree diff. Source-package changes retain unit
+importers and contract tests. Tooling modules follow audited reverse dependencies
+through tools and all test modules. Root fixtures/shared support select the full
+suite; nested fixtures select their directory. A changed or deleted test module also
+selects the test modules importing its helpers or tests; any src/tests/tools Python
+change selects the selector's own tests. Tools that read `tests/` or `tools/` are
+selected too: a test edit adds about 4 s, a tool edit about 9 s (measured 2026-10-15). Root `conftest.py` and
+alternate pytest configuration select the full suite; untracked files beside the
+tested code refuse evidence reuse. Unknown loaders, malformed dependency
+sources, deleted or unmapped tools and configuration retain conservative coverage.
+Package data selects its package. A repository file a test or tool reads by an
+anchored constant path selects that module's tests, so the CI workflow selects its
+type-policy test and `examples/` (declared by shared support) the full suite; a
+module passing the bare root or a computed path outside tooling reads every such
+file. Other unclassified configuration also selects the tooling suite. Renames
+list both paths. Package-wide source scanners are not yet selected for package
+changes (backlog SELECT-SCAN-001); the full checkpoint covers them. The precise boundary is
+`tools/affected_tests.CONTRACT.md`. OpenSpec metrics and review bookkeeping do not
+add test targets to an otherwise identical selection.
+
+Under Strategy A, the ordinary runner uses the template's existing command evidence
+API. A later identical selected pytest command can reuse successful native proof
+only with matching source bytes, base, physical root, environment, executable and
+runtime identity. There is no application receipt cache and no import of raw logs.
+Unavailable identity runs the selected tests; a failed execution remains failure.
+Changing coverage flags or test selection changes the obligation. A focused or
+serial no-coverage run cannot satisfy the full suite with aggregate coverage.
+
+The canonical full checkpoint already excludes the affected-test hook through the
+shared runner and executes `tools.verification_tests` once with coverage. Ordinary
+commits still run all applicable hooks. Batch coherent edits before committing;
+resolve fields, caps, lane, readiness and strict OpenSpec validation before the full
+checkpoint, and keep its tested inputs fixed until completion. Review/metric records
+alone do not justify another full run; changed executing inputs do. Version, lock,
+shared fixtures and unknown configuration deliberately retain broad ordinary tests.
+That remaining release cost is policy, not an exemption inferred from bookkeeping.
+A template update moves the lock, so its commit runs the whole suite serially
+without coverage and the following full checkpoint runs it again in parallel with
+aggregate coverage: two distinct obligations, neither of which satisfies the other.
+
+Ordinary evidence reuse is unavailable when private capture/schema directories,
+pytest or Junoscfg environment overrides, alternate pytest configuration or unknown
+configured options may introduce unbound inputs. The runner executes tests directly
+in those contexts; their status and options are unchanged. This is distinct from
+schema qualification's explicit private-input manifests and native evidence.

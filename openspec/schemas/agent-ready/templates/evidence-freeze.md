@@ -34,9 +34,7 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 
 ## Execution and checkpoint
 
-- Assurance preference: <economy, balanced, or maximum-assurance>
-- Risk floor: <normal or high, with evidence>
-- Roles required: <Builder; optional independent Test/Challenge; optional fresh Reviewer; Finalizer>
+- Roles required: <reference the resolved roles and application policy in instruction-integrity.md>
 - Resume point: <next incomplete phase and last valid evidence>
 
 ## Delta log

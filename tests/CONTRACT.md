@@ -39,12 +39,26 @@ Where a test goes, which door it uses, and what it asserts.
 
 ## Which tests a change runs
 
-A change under `src/junoscfg/<package>/` runs its unit tests, the unit tests
-of its transitive importers, and `tests/contract/`. Tooling code/configuration,
-`tach.toml` and the pre-commit configuration run `tests/tooling/`. Shared
+A change under `src/junoscfg/<package>/`, code or package data, runs its unit
+tests, the unit tests of its transitive importers, and `tests/contract/`.
+Existing tooling modules run their transitive test consumers across tools and all
+tests, including imported test helpers. Consumers in shared support or root
+fixtures run the full suite; nested fixtures run their directory. Unknown loaders
+or malformed/unreadable dependency sources run the full suite. Deleted/unmapped
+tools, tooling configuration, `tach.toml` and the pre-commit configuration run
+`tests/tooling/`. Shared
 `tests/data/`, `tests/support/`, `tests/conftest.py`, the package root,
 shipped artifacts, `pyproject.toml` and the lock run the full default suite.
-A changed test selects itself; a conftest or deleted test selects its nearest
+A changed test selects itself, the tests importing it, the selector's own tests
+and readers of a directory above it, also when deleted; a conftest or deleted test selects its nearest
 existing containing test directory. Covered descendants are omitted from the
 selection. The hook always invokes the selector, including deletion-only
-commits; unrelated documents select no tests. The full set adds branch coverage.
+commits, and lists a moved file's old path. A test reads any other repository
+file through a constant path from `PROJECT_ROOT` (or a path constant from
+`tests/support/paths.py`), never a working-directory path: that file, or a
+directory named that way, then selects the module (only the module, when the read
+is inside a test function). A computed path or the bare root outside
+`tests/tooling/` makes the module a reader of every such file. Other configuration
+also runs `tests/tooling/`; documents and change records nobody reads select no
+tests. `tools/affected_tests.CONTRACT.md` has the exact rule. The full set adds
+branch coverage.

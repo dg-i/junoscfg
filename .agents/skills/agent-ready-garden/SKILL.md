@@ -1,6 +1,6 @@
 ---
 name: agent-ready-garden
-description: Audit shared documents, specs, contracts, code maps, and the observable agent-instruction surface; propose removing unread artefact types; review decisions due for renewal; and sweep for split answers. Run before each release or monthly, whichever is sooner.
+description: Audit application instructions, documentation, contracts and decisions; run monthly or before release.
 ---
 
 <!-- Maintained by the agent-ready template. Local edits can conflict with updates.
@@ -25,6 +25,9 @@ requires. Do not read the other jobs; they cost tokens you will not use.
 | Review | `jobs/3-review.md` | one PR per decision renewed or retired |
 | Sweep | `jobs/4-sweep.md` | one PR per split answer, pinned and dated |
 | Instructions | `jobs/5-instructions.md` | a coverage report, safe mechanical repairs, and owner-decided semantic findings |
+
+Instruction audits may read other jobs and skills as audit material; the selected
+job controls the procedure, not the evidence it may inspect.
 
 ## The rule that governs every job
 
@@ -64,7 +67,8 @@ the same way; nothing in this skill depends on a feature only one of them has.
 
 ## Verification feedback
 
-At entry and job completion, check `docs/VERIFICATION.md` following
-`docs/how-to/improve-verification.md`. This commit-based invitation is independent
+At entry and job completion, read only `Cadence state` in `docs/VERIFICATION.md` and the guide’s
+`Routine cadence check` section.
+Load `docs/how-to/improve-verification.md` when due, unknown, pending, or changing verification. This commit-based invitation is independent
 of the garden cadence. Use existing evidence, consolidate unattended invitations,
 and keep optional improvement proposals separate from authorised garden repairs.

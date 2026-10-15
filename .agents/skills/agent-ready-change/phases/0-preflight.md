@@ -38,11 +38,12 @@ does not start while one of those questions is open.
    and trust-boundary status. Copy it to `.openspec.yaml` as `assurance` and
    cite the table's `record` in `instruction-integrity.md`. Ask only when the
    standing record is absent or no rule matches. The preference can add
-   assurance but cannot waive the unchanged high-risk floor or an immutable gate.
+   assurance but cannot waive mandatory controls or application review policy. Record the required roles
+   under SKILL.md Roles and cite the application policy; assurance never waives it.
 7. Before committing changed records, run `agent-ready fields` and
    `agent-ready caps`; correct their diagnostics in the same working round.
-   Resolve the execution facts under the skill's **Execution economy** section
-   in this same pass. Commit the completed preflight before phase 1. The phase-1 fields gate reads
+   Resolve base/head, lane, roles, relevant contracts, command, evidence
+   validity and application integration/version order in this same record. Commit the completed preflight before phase 1. The phase-1 fields gate reads
    it together with the proposal; do not weaken that gate to make an unfinished
    proposal pass early.
 

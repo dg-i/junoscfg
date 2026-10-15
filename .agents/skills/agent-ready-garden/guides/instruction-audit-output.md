@@ -47,17 +47,12 @@ Every finding includes `Ownership`, `Remediation repository`, `Canonical
 path`, and `Application action`. `Application action` is `refresh after
 release` for an upstream template finding.
 
-## Display the scanned files
+## Report coverage proportionally
 
-In the final user-visible response, include a **Scanned repository files**
-section listing every repository path discovered in the surface, grouped by
-ownership class and marked `read` or `inaccessible`. Include a separate
-**External files** list for every disclosable path outside the repository. Do
-not replace paths with a count, summary, or link to a saved report. List
-protected non-file source classes and blind spots separately so they are not
-mistaken for files.
-
-A persistent report may repeat this inventory, but it does not replace the
-user-visible list. Do not create an untracked report merely to shorten the
-response; write one only when the owner requests it or the application
-repository declares a tracked report home.
+Summarize discovered/read/inaccessible counts by ownership and discovery method.
+Name exclusions, protected source classes and blind spots. List exact paths for
+findings and inaccessible sources; group identical generated mirrors under their
+canonical source and state how parity was checked. Do not dump every unchanged
+file into chat. When a tracked report home exists, keep the full coverage manifest
+there and link it; otherwise retain counts and reproducible discovery commands.
+Expand the path inventory only when the owner asks or a finding requires it.

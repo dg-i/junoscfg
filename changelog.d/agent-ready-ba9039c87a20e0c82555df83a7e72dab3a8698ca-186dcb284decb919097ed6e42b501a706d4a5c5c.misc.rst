@@ -1,0 +1,1 @@
+Refresh agent-ready template to ba9039c87a20e0c82555df83a7e72dab3a8698ca with checks 186dcb284decb919097ed6e42b501a706d4a5c5c.

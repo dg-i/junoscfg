@@ -1,0 +1,42 @@
+schema: agent-ready
+created: 2026-10-14
+type: bug
+zone: schema
+assurance: economy
+domains: [schema-pipeline]
+removes: directory-only affected-test over-selection
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - tools/affected_tests.py
+  - tools/affected_tests.CONTRACT.md
+  - tests/tooling/test_affected_tests.py
+  - tests/tooling/test_affected_execution.py
+  - tools/verification-costs.json
+  - tests/tooling/test_schema_verification.py
+  - tests/CONTRACT.md
+  - docs/how-to/junoscfg-verification.md
+  - docs/VERIFICATION.md
+  - openspec/specs/schema-pipeline/test-selection/spec.md
+  - changelog.d/+affected-test-scope.misc.md
+  - .agents/skills/openspec-apply-change/SKILL.md
+  - .agents/skills/openspec-archive-change/SKILL.md
+  - .agents/skills/openspec-bulk-archive-change/SKILL.md
+  - .agents/skills/openspec-continue-change/SKILL.md
+  - .agents/skills/openspec-explore/SKILL.md
+  - .agents/skills/openspec-ff-change/SKILL.md
+  - .agents/skills/openspec-new-change/SKILL.md
+  - .agents/skills/openspec-onboard/SKILL.md
+  - .agents/skills/openspec-propose/SKILL.md
+  - .agents/skills/openspec-sync-specs/SKILL.md
+  - .agents/skills/openspec-update-change/SKILL.md
+  - .agents/skills/openspec-verify-change/SKILL.md
+  - docs/BACKLOG.md
+  - .gitignore
+  - .pre-commit-config.yaml
+  - pyproject.toml
+  dependencies:
+  - openspec/changes/archive/2026-10-14-schema-qualification-scope
+  changelog: changelog.d/+affected-test-scope.misc.md
+  generated-records: []

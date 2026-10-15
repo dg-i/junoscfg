@@ -1,6 +1,6 @@
 ---
 name: agent-ready-onboard
-description: Bring a repository under this workflow, one approved phase at a time. Use for a new project or for retrofitting an existing one.
+description: Onboard a new or existing Python application into agent-ready.
 ---
 
 <!-- Maintained by the agent-ready template. Local edits can conflict with updates.
