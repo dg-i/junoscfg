@@ -45,9 +45,29 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
     return wrap_configuration(config) if wrap else config
 
 
-def dict_to_json(config: Any, *, wrap: bool = True) -> str:
-    """Render the IR as Junos JSON text: `junos_json_object` serialized as JSON."""
-    return json.dumps(junos_json_object(config, wrap=wrap), indent=4, ensure_ascii=False) + "\n"
+def _selected(document: dict[str, Any], below: list[str]) -> Any:
+    """The value at the path *below* of a wrapped Junos JSON object: a relative
+    selection as absolute output writes it. `groups` holds its entries
+    directly in the object, so a `group` step after it stays where it is."""
+    node: Any = document["configuration"]
+    for step, key in enumerate(below):
+        if key == "group" and step and below[step - 1] == "groups" and isinstance(node, list):
+            continue
+        node = node[key]
+    return node
+
+
+def dict_to_json(config: Any, *, wrap: bool = True, below: list[str] | None = None) -> str:
+    """Render the IR as Junos JSON text: `junos_json_object` serialized as JSON.
+
+    With *below*, *config* is the IR along that path and the value at the path
+    is written, as the absolute object holds it (a relative selection).
+    """
+    if below is None:
+        document = junos_json_object(config, wrap=wrap)
+    else:
+        document = _selected(junos_json_object(config), below)
+    return json.dumps(document, indent=4, ensure_ascii=False) + "\n"
 
 
 #: Line breaks YAML reads in a plain or single-quoted scalar but JSON keeps as
@@ -68,8 +88,9 @@ def _represent_str(dumper: yaml.SafeDumper, value: str) -> yaml.ScalarNode:
 _JunosYamlDumper.add_representer(str, _represent_str)
 
 
-def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
-    """Render the IR as yaml-new: `junos_json_object` serialized as YAML.
+def dict_to_junos_yaml(config: Any, *, wrap: bool = True, below: list[str] | None = None) -> str:
+    """Render the IR as yaml-new: `junos_json_object` serialized as YAML; with
+    *below*, the value at that path, as `dict_to_json` writes it.
 
     Block style, keys in the object's order, Unicode as written: the layout
     of the ``yaml`` writer, with no anchors or aliases (a shared object is
@@ -85,6 +106,7 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
             its ``true``: yaml-new holds what JSON holds, and its reader would
             refuse anything else.
     """
+    wrap = wrap or below is not None
     found = find_non_json_value(wrap_configuration(config) if wrap else config)
     document = None
     if found is None:
@@ -93,7 +115,7 @@ def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
     if found is not None:
         raise ValueError(f"Cannot write yaml-new: the {found.kind} {found.where} {found.reason}")
     return yaml.dump(
-        document,
+        document if below is None else _selected(document, below),
         Dumper=_JunosYamlDumper,
         default_flow_style=False,
         allow_unicode=True,

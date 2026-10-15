@@ -738,6 +738,27 @@ class TestPathFiltering:
             == expected
         )
 
+    def test_an_entry_named_like_a_hidden_list_keeps_its_name(self) -> None:
+        """The words a path is written as come from the schema, not from the
+        statements: an entry named `interface` under the hidden `interface`
+        list is written with its name."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "interfaces": {"interface": [{"name": "interface", "description": "x"}]}
+                }
+            }
+        )
+        written = convert_config(
+            source,
+            from_format=Format.JSON,
+            to_format=Format.SET,
+            path="interfaces.interface",
+            relative=True,
+            validate=False,
+        )
+        assert written == "set interface description x\n"
+
     @pytest.mark.parametrize("to_format", _OBJECT_WRITERS, ids=_OBJECT_WRITER_IDS)
     def test_a_selected_groups_is_the_list_of_groups(self, to_format: Format) -> None:
         """`groups` from set input is `{"group": [...]}` in the IR and the list

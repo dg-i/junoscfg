@@ -61,7 +61,10 @@ printing warnings to stderr. Use `--strict` to make validation errors fatal, or
 ### Path Filtering
 
 Use `--path` to select a dot-separated subtree such as `system.syslog`. Add
-`--relative` to omit that prefix from rendered output.
+`--relative` to write what the absolute output writes there, without the path:
+`--path interfaces --relative -e set` writes `set ge-0/0/0 ...`, and a selected list
+writes its entries' statements. A key holding a dot, such as
+`class-of-service.classifiers.ieee-802.1`, is matched as written.
 
 ### Examples — Conversion
 
