@@ -59,7 +59,11 @@ verification:
 ```
 
 Planned paths are exact relative filenames, including deletions and both sides of
-renames. Every changed path outside the selected change folder must be declared.
+renames. Every changed path outside the selected change folder must be declared,
+except updater-only paths credited by an exact updater checkpoint (see below)
+that match no `serialized-paths` pattern. Admitting this change still checks its
+credited paths against other ready plans; serialize a shared updater path to
+keep it exclusive in both directions.
 Dependencies name archived change folders; generated records name required files.
 Changelog names a fragment or `none:` with a concrete reason. Existing stage gates
 still decide whether a fragment is required. Finish product tasks before
@@ -67,9 +71,10 @@ still decide whether a fragment is required. Finish product tasks before
 
 `agent-ready readiness --base <base>` reports derived readiness without running
 verification tools. `agent-ready check --set full --base <base>` refuses unready
-work before codemap generation, hooks, or application tests. Focused native tests
-and `check --set fast` remain available while editing. Commit product inputs
-before the full checkpoint; an expensive checkpoint does not judge dirty work.
+work before codemap generation, hooks, or application tests. Use focused native
+tests while editing. Commit product inputs before `check --set fast` or the full
+checkpoint: lane admission can reject dirty governed work before later fast gates.
+An expensive checkpoint does not judge dirty work.
 
 ## Declare expensive work
 
@@ -115,6 +120,12 @@ Keep result manifests untracked and ignored so the command does not modify its
 input snapshot. The application adapter owns truthful execution reporting and sharding; the
 template checks its declared contract and does not implement domain schemas.
 
+`check --set expensive` first validates fields, specifications, instruction integrity
+and lane admission, then runs matching tiers. Full and fast checks run those same
+cheap gates before hooks; any failure blocks later work. Remaining gate failures
+block the application suite and expensive tiers, including when overlap is enabled.
+Fix the reported gate before retrying; never bypass it to start qualification.
+
 `check --set expensive` runs matching tiers. The full checkpoint includes them
 and the existing application test adapter, or pytest when no adapter is declared.
 Path selection includes renames and deletions. An invalidated checkpoint requires
@@ -134,7 +145,7 @@ An optional `affected-test-hook` names one duplicate affected-test hook. It requ
 `full-suite = true` and is suppressed only in a full invocation whose plan includes
 the complete application suite. Fast and docs-lane plans keep the hook. Full checks
 refuse inherited `SKIP`, so unrelated gates cannot silently disappear. Worker and
-gate failures propagate, every selected tier is attempted, and the shared capacity
+gate failures propagate; once tier execution begins, every selected tier is attempted, and the shared capacity
 lock and native checkpoint/lifecycle receipts remain in force. Install/sync runtimes
 before overlap and use existing Python environments in concurrent adapters.
 
@@ -143,6 +154,25 @@ Qualify adapter completeness, fixture isolation and selection boundaries using
 assertion, not native inspection of worker reports or a proof of test completeness.
 
 ## Evidence identity and recovery
+
+Application hook and test adapters can record their actual command through the
+existing Python API `agent_ready_checks.verification.execute(root, command,
+base, declaration, reuse=enabled)`. Pass the same resolved application root,
+explicit comparison-base commit, exact argument list and declaration at every
+caller. Declare ignored inputs and the executed runtime as for expensive tiers;
+required/result manifests enforce a reported test or shard obligation. Do not
+import historical logs or infer full-suite coverage from a focused pass.
+
+The API records execution even when reuse is false. A later identical ordinary
+obligation can reuse its valid successful receipt. Staging and committing the
+same tracked bytes leaves that identity unchanged when the explicit base,
+runtime, environment and declaration stay identical. New tracked files must be
+staged before recording. Changed selection, coverage arguments or external
+inputs require execution. Commit-hook Git environment variables and different
+driver environments also invalidate reuse; do not remove them merely to obtain
+a hit. An adapter inside the full runner uses its existing capacity scope;
+it must not reacquire the shared capacity lock. Reuse never replaces admission
+or authorizes suppressing an unrelated hook.
 
 Evidence lives under `.agent-ready/verification/`. Each command records full
 input identity, completion, exit status, timestamps, duration, provenance, output
@@ -168,10 +198,19 @@ Runtime import symlink targets and their code participate in identity; traversal
 detects directory cycles and refuses inaccessible targets. Do not include secret
 values in declarations; environment values are hashed, not copied into evidence.
 
+The ordinary application suite still executes at each required full checkpoint.
+An arbitrary adapter may launch a separate runtime or consume undeclared external
+inputs; a previous suite pass cannot establish safe reuse. Existing declared-tier
+and exact-content APIs provide the execution contracts for reusable obligations.
+Do not add a second cache or infer test selection from filenames in this template.
+
 Only fixed per-change `review.md`, `metrics.md`, `metrics.json`, `events.jsonl`
-and `lifecycle.json` records are excluded from tracked input identity. The
-activation inventory is evaluated separately on every admission. Other edits,
-including tasks, can conservatively invalidate reuse. Never use this exclusion
+and `lifecycle.json` records are excluded from tracked input identity. A live
+change's `tasks.md` participates with every checkbox read as open unless a
+declaration names it as an input: ticking one is bookkeeping, while adding,
+removing or rewording a task changes identity.
+The activation inventory is evaluated separately on every admission. Other edits
+can conservatively invalidate reuse. Never use these exclusions
 for executable inputs. Tool versions that cannot be observed require an explicit
 version file or no reuse; adapters must include every external input they read.
 
@@ -179,6 +218,33 @@ Commands that modify their own candidate inputs cannot yield reusable evidence.
 Generated artifacts must be current before the checkpoint. An integrity sentinel
 must itself bypass the application's cache; the wrapper disables only its own
 reuse. A stability second pass executes the actual command again.
+
+## Choose the obligation after a correction
+
+| Changed input | Required verification |
+|---|---|
+| Task ticks, review, metrics or lifecycle evidence only | Recheck affected record/integrity gates; command proof may remain valid |
+| Source, tests, task scope, configuration, lockfile, base or command | Whole-command proof invalidates; run the canonical full checkpoint |
+| Runtime, dependency bytes, environment or declared ignored inputs | Whole-command proof invalidates even with unchanged Git HEAD |
+| Content-worker input, worker, operation or engine | That content proof invalidates; other matching content receipts remain reusable |
+| Missing/corrupt output, result or receipt | No reuse; execute the affected obligation |
+
+A bookkeeping commit is not itself an invalidator or a new verification phase.
+Batch coherent implementation edits, run focused regressions during editing, then
+commit a stable candidate for the full pre-review checkpoint. Do not repeatedly
+run complete suites for review/metrics commits or rerun standalone checks already
+included in that checkpoint. Required commit hooks and independent review remain.
+Review corrections rerun their regression and affected gates; use the full checkpoint
+when its input contract changes, allowing its valid constituent proofs to compose.
+Do not omit an obligation merely because a previous run was green. Application
+policy can require additional checks and owns domain-specific selection.
+
+An exact updater checkpoint is an admission proof, never a test-success receipt.
+The existing historical updater proof validates each complete parent-to-commit diff,
+local attestation and metadata, and only credits composed updater-only path
+transitions. Manual edits remain governed by the application lane and readiness plan; a mixed
+commit cannot borrow updater provenance. Updater changes still invalidate verification
+identities wherever their input or execution bytes participate.
 
 ## Exact-content proof
 

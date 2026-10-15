@@ -11,7 +11,11 @@ specs` and `agent-ready reconcile` pass or carry a baseline with an expiry.
 The copy already configured OpenSpec: `openspec/config.yaml` names the
 template's schema, `agent-ready`, whose artefacts and templates sit under
 `openspec/schemas/`, and `openspec/specs/` and `openspec/changes/archive/`
-exist. There is no index file: `openspec list --specs` is the inventory, one
+exist. Do not run OpenSpec init/update or import OPSX commands: Copier supplies
+the schema and agent-ready supplies the governing workflow. Use
+`agent-ready budget --report` to detect local competitors; retire them intact
+with `agent-ready skills --retire-openspec <outside-discovery-directory>`.
+There is no index file: `openspec list --specs` is the inventory, one
 line per capability with its requirement count. OpenSpec's telemetry is off,
 `OPENSPEC_TELEMETRY=0` in the shell that runs it, as the shipped CI sets it.
 

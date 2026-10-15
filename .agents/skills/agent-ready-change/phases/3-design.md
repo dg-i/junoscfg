@@ -63,7 +63,7 @@ a candidate leaves goes into the delta as REMOVED, so spec, tests, and code
 lose it in one change. Beta accepts a candidate only when the gap shows through
 no named surface. Release closes the gap or rejects the candidate.
 
-## Questions you must ask
+## Resolve from evidence; ask only material unresolved questions
 
 1. Does the candidate's gap touch a named surface?
 2. Is this dependency load-bearing, or here for one call?

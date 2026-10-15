@@ -95,14 +95,12 @@ artifacts:
   # gate and the relevant phase or type body require them.
   - id: review
     generates: review.md
-    description: The risk-selected review verdict or recorded policy omission
+    description: The fresh isolated review verdict
     template: review.md
     instruction: |
-      Where risk requires it, a genuinely fresh isolated Reviewer records
-      ranked correctness and contract findings plus existing providers. Where
-      policy omits review, record that evidence without presenting Builder
-      self-review as independent. The Reviewer edits no code, specification,
-      or test.
+      A fresh isolated Reviewer records findings and a verdict under the role
+      policy in agent-ready-change. Review is required on every lane; application
+      policy may add controls. The Reviewer edits no product files.
     requires: [tasks]
 
   - id: metrics

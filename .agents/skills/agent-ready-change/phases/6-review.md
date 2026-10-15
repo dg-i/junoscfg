@@ -7,14 +7,12 @@ Type `docs` follows phase 6 in `types/docs.md` and stops before the code route b
 
 ## Outcome
 
-`review.md`: the risk-required fresh isolated verdict with ranked findings and duplicated providers, or the
-recorded policy reason review was not required.
+`review.md`: the fresh isolated verdict with ranked findings and duplicated providers.
 
 ## A fresh isolated Reviewer
 
-Use the freeze's risk floor and assurance preference. High risk always requires this Reviewer; balanced adds
-yellow zones; maximum assurance adds every standard or docs change; economy omits it below the floor. Record
-an omission without presenting Builder self-review as independent.
+Use the role decision recorded at preflight. Every change requires fresh review;
+application requirements can add controls.
 
 The Reviewer is fresh and isolated from Builder reasoning and write access. It reads the freeze, delta,
 contracts, challenge evidence, tests, and diff in order. It is at least as capable as the Builder.
@@ -25,10 +23,11 @@ Coherent tasks receive one review after implementation. Independent changes rece
 `review.md` each, even when acceptance is batched or one Reviewer handles a bounded window. Integration review
 only supplements.
 
-A correction touching only change records needs no confirmation round. Every other accepted correction runs
-its regression and `agent-ready check --set fast`, then returns to the same isolated Reviewer. Rerun the full
-set only if runtime code, tests, or generated artifacts changed; otherwise use the fast set. Rerun a declared
-expensive tier whenever a review-fix round invalidates its evidence.
+Apply the shared verification rules after corrections and the obligation table in
+`docs/how-to/verification-evidence.md`. Preserve valid constituent receipts;
+a correction never automatically restarts all seven phases. Required commit hooks
+and independent correction review still apply. Tick the review task only after
+findings are resolved; leave metrics open until capture.
 
 ## Findings
 
@@ -48,19 +47,6 @@ expensive tier whenever a review-fix round invalidates its evidence.
 - "I could not check X" records the evidence gap. If it concerns current-change
   acceptance, record a binding carry-forward under the lifecycle rules; an
   independent concern takes the authoritative backlog disposition path.
-
-## Specification challenges
-
-Record challenges in `openspec/changes/<slug>/review.md` with `Artifact`, `Counterexample`, `User impact`,
-`Proposed correction`, and `Decision`. The reviewer edits no code, spec, or test; agents cannot approve their
-own proposals. The owner decides, and only a safe reversible action may proceed while pending; preserve
-existing entries. Containing modules, direct callers and dependencies, contracts, and affected tests are
-normal review context. For a concrete counterexample, broader reads are allowed; record each
-cross-responsibility or cross-domain path as its own row in the existing Field/Value table in `metrics.md`: `|
-Context expansion: <path> | <reason> |`. The archive metrics writer preserves these rows. Apply phase 2's
-explicit slice-refresh triggers. When complete, tick the review lifecycle task in `tasks.md`; leave the
-metrics task open. Before committing changed records, run `agent-ready fields` and `agent-ready caps`; correct
-their diagnostics before the commit and phase hand-off.
 
 Before concluding, answer these prompts:
 
@@ -101,11 +87,3 @@ The human reads the report before the diff; surviving findings count at archive.
 
 For structured findings and one authoritative ruling, follow `docs/how-to/lifecycle-ledger.md`; agents cannot
 approve their own requirement changes. Check invalidated evidence and scoped carry-forward renewals.
-
-## Scope boundary
-
-Apply `docs/how-to/review-scope.md` to findings and specification challenges.
-The initial review covers the complete change; follow-ups verify accepted
-corrections and their consequences. Reopening needs material new evidence.
-Independent findings receive authoritative backlog dispositions; genuine
-dependencies and binding carry-forwards remain explicit completion obligations.

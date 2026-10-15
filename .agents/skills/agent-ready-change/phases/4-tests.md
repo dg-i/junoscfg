@@ -27,8 +27,9 @@ Test/Challenge evidence is separate from the Builder's tests.
 3. A requirement about a pair names one round-trip property as its test. Its
    Hypothesis strategy is derived from the value type and never from the
    table, so inputs the table does not cover reach a hand-written remainder
-   and fail it. Hypothesis is approved in the toolbox already, so the change
-   that writes the first pair adds it to the dev group without a design.
+   and fail it. Check the approved toolbox and dev dependencies before choosing Hypothesis.
+   Use existing tools when sufficient; a new dependency follows the design and
+   owner approval policy, never an assumed blanket approval.
 4. No implementation. A behavioural defect needs a test that fails before the
    repair; a new behaviour needs an acceptance test that the old code cannot
    satisfy. A refactor or other behaviour-preserving change may instead name
@@ -36,11 +37,8 @@ Test/Challenge evidence is separate from the Builder's tests.
    proves preservation. A scanning test asserts what it scanned, not only what
    it found, or an empty scan passes it; a test command that can skip everything
    needs a check that it did not.
-5. Apply the role policy from the freeze. High risk and maximum assurance use a
-   context-isolated Test/Challenge role; balanced uses it for behavioural
-   changes; economy omits it below the mandatory floor. The independent role
-   challenges criteria and proposes or writes adversarial tests but does not
-   implement the product. Record why it ran or why policy omitted it.
+5. Run the independent Test/Challenge work recorded at preflight. It challenges
+   criteria and tests without implementing product code.
 6. The human reviews the test files under the existing zone approval policy,
    not the whole diff. Consolidate any material questions. Approved tests are
    the baseline, subject to the formal challenge path; never silently change
@@ -48,20 +46,6 @@ Test/Challenge evidence is separate from the Builder's tests.
    progress automatically to implementation without an owner relay.
 7. Before committing changed records, run `agent-ready fields` and `agent-ready
    caps`; correct their diagnostics before the commit and phase hand-off.
-
-## Specification challenges
-
-A challenge goes in `openspec/changes/<slug>/review.md` with `Artifact`,
-`Counterexample`, `User impact`, `Proposed correction`, and `Decision`; the
-owner decides, and only a safe reversible action may proceed while pending.
-A concrete counterexample may justify broader reads beyond phase 2's normal
-affected context. Record each cross-responsibility or cross-domain path as its own row in the existing Field/Value table
-in `openspec/changes/<slug>/metrics.md`:
-`| Context expansion: <path> | <reason> |`. The archive metrics writer
-preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep
-`uv run --locked --group dev agent-ready codemap check`.
-Every new counterexample also receives the evidence-freeze delta consistency
-check before the affected acceptance criteria change.
 
 ## Stage
 
@@ -71,7 +55,7 @@ test for a kept requirement is a real failure. In release a failing existing
 test is presumptively a break: stop and report. A new skip marker is residue
 in alpha.
 
-## Questions you must ask
+## Resolve from evidence; ask only material unresolved questions
 
 1. Does any existing test contradict the delta? Which requirement wins?
 
@@ -79,11 +63,3 @@ in alpha.
 
 The human approves the test files as the zone policy requires. The Builder then
 records the checkpoint and continues without asking for a phase transition.
-
-## Scope boundary
-
-Apply `docs/how-to/review-scope.md` to findings and specification challenges.
-The initial review covers the complete change; follow-ups verify accepted
-corrections and their consequences. Reopening needs material new evidence.
-Independent findings receive authoritative backlog dispositions; genuine
-dependencies and binding carry-forwards remain explicit completion obligations.

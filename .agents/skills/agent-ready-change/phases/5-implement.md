@@ -33,17 +33,18 @@ implementation, and fixes.
    files; record command and test duration in workflow telemetry. Tick the test
    and implementation tasks, commit code, tests, and the
    live change folder, and require `git status --short` to be empty. At the
-   pre-review checkpoint run `uv run --locked --group dev --with griffe --with
-   tach --with towncrier --with vulture agent-ready check --set full` once.
+   pre-review checkpoint run `uv run --locked --group dev agent-ready check --set full` once.
    It reads the local change base and includes pre-commit, the application test
    adapter, every pull-request gate, the lane gate, and strict OpenSpec
    validation. Do not run standalone pre-commit or the full application suite
-   beside it on an unchanged tree. Record the command and checked `HEAD` in
-   `tasks.md`. The explicit default is one full check before review and none on
-   an unchanged tree. Run `agent-ready fields` and `agent-ready caps` before
-   committing that record. The checkpoint remains valid
-   across review, metrics, and evidence-only edits; runtime code, tests,
-   generated artifacts, or their configuration invalidate it.
+   beside it on an unchanged tree. Record the command and checked `HEAD`:
+   under `strategy-a/1` the checkpoint's verification event is that record;
+   otherwise add it to `tasks.md`. The explicit default is one full check before
+   review and none on an unchanged tree. Run `agent-ready fields` and `agent-ready
+   caps` before committing that record. Its command evidence remains valid across
+   task ticks, that record, review, metrics, and evidence-only edits; runtime code,
+   tests, added, removed or reworded tasks, generated artifacts, or their
+   configuration invalidate it. Record and lifecycle gates still rerun.
    For several coherent tasks, run targeted tests as each lands and take one
    full checkpoint after the last. Independent changes never share a checkpoint.
    A declared expensive tier runs once when the diff touches its paths, or once
@@ -52,7 +53,11 @@ implementation, and fixes.
    Reuse evidence only when its authority-specific input and execution identity
    matches validated successful proof. Relevant corpus, configuration, executable
    dependencies and policy participate; version or commit labels alone never
-   establish success or invalidation. A cache never replaces a gate.
+   establish success or invalidation. A cache never replaces a gate. Cheap
+   readiness, lane, specification and instruction-integrity checks precede hooks,
+   tests and qualification. Repair failed admission before launching expensive work.
+   Preserve valid declared-tier and content proof while rerunning affected gates;
+   bookkeeping commits alone do not call for another complete suite.
 5. Tick each test and implementation task as it lands. `npx --yes
    @fission-ai/openspec@1.13.0 status --change <slug>` shows the common artifact
    graph; `tasks.md` is the lifecycle authority.
@@ -66,29 +71,6 @@ implementation, and fixes.
    delta is a stall to diagnose and record, not a reason to loop. After every
    commit, update the resume point and last valid test/checkpoint evidence.
 
-## Classify failures
-
-Classify a failure before retrying. Execution/tooling failures such as a wrong invocation, collection error,
-or missing environment dependency permit one evidence-backed repair and rerun. If still blocked, report the
-cause and evidence; tooling failures are not semantic evidence against a spec. A semantic failure is an
-executed assertion contradicting required behavior: diagnose and fix once. If the same semantic failure
-repeats, challenge approved criteria only when evidence implicates them; otherwise report the implementation
-blocker. Do not repeat an unchanged attempt or weaken the oracle. Continue when new evidence narrows the cause
-or changes the hypothesis; stop when the same failure repeats without either. This is skill guidance, not a
-runtime-enforced retry counter. Record retries, regenerations, stalls, and durations; zero requires an
-observed event source.
-
-## Specification challenges
-
-A challenge goes in `openspec/changes/<slug>/review.md` with `Artifact`, `Counterexample`, `User impact`,
-`Proposed correction`, and `Decision`; the owner decides, and only a safe reversible action may proceed while
-pending. A concrete counterexample may justify broader reads beyond phase 2's normal affected context. Record
-each cross-responsibility or cross-domain path as its own row in the existing Field/Value table in
-`openspec/changes/<slug>/metrics.md`: `| Context expansion: <path> | <reason> |`. The archive metrics writer
-preserves these rows. Apply phase 2's explicit slice-refresh triggers and keep `uv run --locked --group dev
-agent-ready codemap check`. Run the evidence-freeze delta consistency check for every new instruction or
-counterexample before changing affected code, criteria, or tests.
-
 ## Stage
 
 Fail loudly in alpha: no fallback, because a fallback hides whether the concept works. Degradation only where
@@ -98,8 +80,7 @@ never without deprecation in release, where the patch is minimal and a rewrite i
 
 ## Approval
 
-None here. Risk decides whether phase 6 invokes a fresh isolated Reviewer or records its omission; the Builder
-progresses automatically.
+None here. Phase 6 receives a fresh isolated Reviewer; the Builder progresses automatically.
 
 Under `strategy-a/1`, run `agent-ready readiness` before the full checkpoint. Use
 `docs/how-to/verification-evidence.md`: one checkpoint is not a ceiling on required reruns, and generated

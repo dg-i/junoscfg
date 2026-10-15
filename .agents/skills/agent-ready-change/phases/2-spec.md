@@ -34,15 +34,6 @@ zone/layer/contract-placement change, or implementation outside the slice, and
 run `agent-ready codemap check`. New symbols, churn, and unrelated modules do
 not refresh this bounded spec-phase picture.
 
-## Specification challenges
-
-Record counterevidence in `openspec/changes/<slug>/review.md` with `Artifact`,
-`Counterexample`, `User impact`, `Proposed correction`, and `Decision`. The
-owner decides; pending challenges permit only a safe reversible action. Record
-each cross-responsibility or cross-domain read in the existing Field/Value table in `metrics.md` as
-`| Context expansion: <path> | <reason> |`; the archive metrics writer
-preserves it. Follow the shared protocol in the skill root.
-
 ## The delta
 
 1. Run `openspec instructions specs --change <slug>`; write one exact-path file
@@ -86,15 +77,15 @@ In alpha, question an add-only feature or an unrequested review addition;
 REMOVED is a pivot's normal shape. Beta/release removals follow an earlier
 deprecation, and a declared break names its migration.
 
-## Questions you must ask
+## Resolve from evidence; ask only material unresolved questions
 
 1. Which existing requirement does this change contradict, if any? Quote both.
 2. Which acceptance test pins each new requirement, and does it exist?
 
 ## Approval
 
-CODEOWNERS routes the delta to domain owners; without pull requests, approval
-is the owner's commit. Once the freeze is approved, the continuous Builder
+CODEOWNERS routes the delta to domain owners; without pull requests, record explicit owner acceptance. An agent-authored
+commit is not approval. Once the freeze is approved, the continuous Builder
 progresses automatically to design when required and otherwise to verification.
 
 ## Scope baseline

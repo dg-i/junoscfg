@@ -36,7 +36,7 @@ punctuation do not prevent it. An absent or invalid baseline also means `full`.
 ## Observable instruction surface
 
 Read `../guides/instruction-audit-output.md`. It defines source ownership,
-remediation destination, and the mandatory user-visible file inventory.
+remediation destination, and the proportional coverage report.
 
 Inventory every source that can instruct the agent, not merely `AGENTS.md`:
 
@@ -55,8 +55,8 @@ inaccessible source was checked.
 Before findings, report mode, baseline and target commits, runtime/provider,
 date, discovery methods, exclusions with reasons, and blind spots. Give counts
 for discovered, read, protected-but-semantically-considered, and inaccessible
-sources. List each source or protected class with effective scope, precedence,
-loading path, and status (`read`, `protected`, or `inaccessible`). `full` means
+sources. Give scope, precedence, loading path and status for findings and inaccessible
+sources; group checked sources with identical ownership and loading behavior. `full` means
 the full observable surface relative to those methods, never hidden content.
 
 ## Findings

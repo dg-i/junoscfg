@@ -21,6 +21,8 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 <!-- Also set the exact value as `assurance` in .openspec.yaml. -->
 - Standing preference: <economy, balanced, or maximum-assurance>
 - Standing record: <[tool.template.assurance] record citation and matched keys>
+- Required roles: <Builder, fresh Reviewer, independent Test/Challenge when required>
+- Application policy: <citation and any additional reviews or approvals>
 - Mandatory risk floor: <controls that the preference cannot waive>
 
 ## Owner decision batch

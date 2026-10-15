@@ -62,7 +62,7 @@ to a spike, never into the proposal as an abstraction. A feature that only
 adds is a question back to the human. In beta and release a removal needs the
 deprecation requirement first, and every break is declared here.
 
-## Questions you must ask
+## Resolve from evidence; ask only material unresolved questions
 
 1. What does this change remove? "Nothing" is an answer that needs a reason.
    A rejected alternative is not a non-goal: a road taken and abandoned goes
@@ -85,8 +85,8 @@ deprecation requirement first, and every break is declared here.
 
 ## Approval
 
-The human approves the proposal: the pull request review where the repository
-has them, the commit where it has none.
+Record the owner’s authorization of the proposal. A request that already fixes
+its scope needs no routine reconfirmation; material unresolved choices do.
 
 ## Scope and completion
 

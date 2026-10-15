@@ -1,6 +1,6 @@
 ---
 name: agent-ready-refresh
-description: Bring a repository up to the current template and check versions. Run agent-ready update, resolve what Copier could not merge, work the checks that fail afterwards, and ask about the rest. Run it on the update pull requests the scheduled workflow opens, or by hand.
+description: Update the agent-ready template and check package and resolve adoption changes.
 ---
 
 <!-- Maintained by the agent-ready template. Local edits can conflict with updates.
@@ -10,15 +10,34 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 
 The template and the check package move on after onboarding. `agent-ready
 update` is the one command that brings a repository to the newest template
-release: it runs `copier update` with the answers a new question needs, moves
-the check package to the tag that release names, refreshes the lockfile, and
-reports the conflict markers Copier left and the checks that fail under the
-new version. This skill works that report.
+release: it runs `copier update` with the answers a new question needs, keeps
+Copier out of Claude Code's `.claude/skills/` and links each template skill
+there to the `.agents/skills/` source Codex reads, moves the check package to
+the tag that release names, refreshes the lockfile, and reports the conflict
+markers Copier left and the checks that fail under the new version. This skill
+works that report. Never run `copier update` on its own: it cannot turn a
+copied mirror into the links and stops part-way.
 
 Invoke as `agent-ready-refresh`, on the update branch the scheduled workflow
 opened or on a clean branch of your own. The update refuses a branch with
 existing changes so its scoped recovery command cannot discard local edits.
-Read this file and `docs/how-to/improve-verification.md`.
+Read this file. Read only `Cadence state` in `docs/VERIFICATION.md` and the
+`Routine cadence check` section of `docs/how-to/improve-verification.md` at entry.
+Load `docs/how-to/improve-verification.md` if due, unknown, pending, or verification changes.
+
+Before running the updater, run `agent-ready budget --report`. If competing
+OpenSpec/OPSX entries remain, move them intact with `agent-ready skills
+--retire-openspec <outside-discovery-directory>` in a separate application
+change and commit it before updating; this preserves customizations for recovery.
+If the installed package lacks this command, use the target check release’s
+immutable Git commit with `uvx --from
+"git+<template-source>@<checks-commit>#subdirectory=checks" agent-ready
+skills --retire-openspec <outside-discovery-directory>`. Resolve the commit
+from the target template’s checks tag. For an update already attempted, use
+its scoped recovery first, make the separate retirement change, then retry
+from that clean base; do not fold retirement into the exact updater receipt.
+Do not run OpenSpec init/update to regenerate discovery entries. Preserve
+application review floors and accepted verification targets on refresh.
 
 ## Run the update
 

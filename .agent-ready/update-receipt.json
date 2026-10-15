@@ -1,158 +1,130 @@
 {
-  "base": "8e52218bb7a0ea691ec7bac78d03ebbfea7521cf",
+  "base": "4bc64ce5587dc9bb6a213f678661efb8eb6f34e9",
   "changes": {
     ".agent-ready/template.toml": {
-      "after": "301ce9faa42e840135ce6cb13dd5359edad9a0c05c31e6b402c6507e5d3879e8",
-      "before": "e11ac8de5829259926288ac15c8f03719945599bd04c1e706124ba8bcf4156c6"
+      "after": "c89f195814328ce50e45fb68d8c12a7da23403e12eff30c869efdb11f4de1a83",
+      "before": "301ce9faa42e840135ce6cb13dd5359edad9a0c05c31e6b402c6507e5d3879e8"
     },
-    ".claude/skills/agent-ready-change/SKILL.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/SKILL.md": {
+      "after": "9aa70a0462547d8dda6a0d3ca0ebb8ce9741b86b7d61483e8d0012b7d999e310",
       "before": "9e72e29ddcd16a6297e90db0ed295645d595a58af131f3ef6034a8d567f00885"
     },
-    ".claude/skills/agent-ready-change/batches.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/batches.md": {
+      "after": "5a64bffe321d12038b549d50a48a812a22e31fbc61451caa167bc8720e483a51",
       "before": "b66525494a28a647d5ee74d7865fac6823db1438e1af13ca492c5c166d4d564d"
     },
-    ".claude/skills/agent-ready-change/phases/0-preflight.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/0-preflight.md": {
+      "after": "83b7770381fa7b5cdfeae7dc4bea76026b155929b2a7a19f11f10d5663b8006b",
       "before": "0ff27d3493e77013be3f3bf1b38ae62bea772c158e348fca412352b8bfdddc40"
     },
-    ".claude/skills/agent-ready-change/phases/1-intent.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/1-intent.md": {
+      "after": "0dc56a00df3ed33a3fa4ebbc71eef21e25f23ff46cec1cc15312abcd1682f97d",
       "before": "25c901bf5c3c3b4a4f9e491496d27a937e0468b2a9aff2ea757c07ddeef60866"
     },
-    ".claude/skills/agent-ready-change/phases/2-spec.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/2-spec.md": {
+      "after": "6ceecbaadf5fbcd554e01c5edb01fd544cfcab154c6ec77d58f7278da8fb5ff1",
       "before": "7fd7d0b58b0cb4089fbe301fcca8da59906185f7af44bbeb573c97e65447ec71"
     },
-    ".claude/skills/agent-ready-change/phases/3-design.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/3-design.md": {
+      "after": "006584d0b39e143c7146d7409c7707e30c286c0cb1cb2843e528671349856191",
       "before": "1323583a7b70aa2436f165038a5e6dce5c25b3f9c49d00aced4453f57ae2268e"
     },
-    ".claude/skills/agent-ready-change/phases/4-tests.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/4-tests.md": {
+      "after": "df756af1fcb8d8d73c4c0477ba143b0e5aa9f905360a83a1b60270084acd4160",
       "before": "66681d989da5a39d14f5e1b321bdf01f1a369ec2a635e5cebe69e878124fff7e"
     },
-    ".claude/skills/agent-ready-change/phases/5-implement.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/5-implement.md": {
+      "after": "f96d32e4704568c38c514004ad86f37fcc8f4418d74dd76dcaf0990b3af2e05d",
       "before": "be09f52e83ac325f5facb510f83d2352dcb04db530045885e6623f8fa39960e6"
     },
-    ".claude/skills/agent-ready-change/phases/6-review.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/phases/6-review.md": {
+      "after": "3d72e6031486046b37272c1ab5ceb0b8766f042eccb07560a957c5caec7ee9c4",
       "before": "801cdb7689cb1521183879ad29e4cbbe08fb626d03d3b20c8d5364e2e6c27054"
     },
-    ".claude/skills/agent-ready-change/phases/7-archive.md": {
-      "after": null,
-      "before": "5e6d1a05b374327b84e47db1ccf7f5602acb9eec84906333c9b5111171f187b8"
+    ".agents/skills/agent-ready-change/short-lanes.md": {
+      "after": "717b6e52625361e410c914ebccd4ad745d72961c604610c8e7fe6b771f6c6d93",
+      "before": null
     },
-    ".claude/skills/agent-ready-change/types/docs.md": {
-      "after": null,
+    ".agents/skills/agent-ready-change/types/docs.md": {
+      "after": "87f8848b558c41984fbe90b9eb1de62ae793dc47af0932e4f589646d9c01b478",
       "before": "700b87afc5fa0e3bd090b87fac6ed60a6e5610fde4cdce836500e870f523d1ee"
     },
-    ".claude/skills/agent-ready-change/types/pivot.md": {
-      "after": null,
-      "before": "07777b736cbd58ff129410dd07ca2a3378a963d78c027fa9ae5ed6a263820645"
-    },
-    ".claude/skills/agent-ready-change/types/spike.md": {
-      "after": null,
-      "before": "9487e1f76de0511fbe13c7f9ddb4793c3fb905cf14710c03ff205bf3a2db51a6"
-    },
-    ".claude/skills/agent-ready-change/types/stage-up.md": {
-      "after": null,
-      "before": "b7c996844c91204436da35d838fe1a2e621a2e6467ed0c728e5877bb63be4b2b"
-    },
-    ".claude/skills/agent-ready-garden/SKILL.md": {
-      "after": null,
+    ".agents/skills/agent-ready-garden/SKILL.md": {
+      "after": "9f959126230baa7a7744728d04536b1b8ca567a282dc269eedb9729c919e2d25",
       "before": "bdc3924d6f38086327d8e2f014bce3ba5e9a0016b418ee8c756c4ac7f839bd3a"
     },
-    ".claude/skills/agent-ready-garden/guides/instruction-audit-output.md": {
-      "after": null,
+    ".agents/skills/agent-ready-garden/guides/instruction-audit-output.md": {
+      "after": "2bd04ebb3441635656e08f4a6950d1142d76b4f982c645946409d262d87ab04f",
       "before": "3745956c6f1ec068b72ce2d86a2f45ba65826b7cf13c9956dcda3f0707bb7b2c"
     },
-    ".claude/skills/agent-ready-garden/jobs/1-audit.md": {
-      "after": null,
-      "before": "c8be15c01da3b900e60f2838ef3bdac76c65936ba5d06dfc11a1f1742180db80"
-    },
-    ".claude/skills/agent-ready-garden/jobs/2-remove.md": {
-      "after": null,
-      "before": "23ec3ade50f03bae54d34e07822094e9f3817e9b3245e6e6daf4ed04351a4caa"
-    },
-    ".claude/skills/agent-ready-garden/jobs/3-review.md": {
-      "after": null,
-      "before": "6760354f300c7b3990aa390c1ec8adec1739cdca7c752203371463c31ed41040"
-    },
-    ".claude/skills/agent-ready-garden/jobs/4-sweep.md": {
-      "after": null,
-      "before": "c1309313717db2e6b9b6234f4d757fa0a2dde31ba74b08f1d8410bebe1a05d6c"
-    },
-    ".claude/skills/agent-ready-garden/jobs/5-instructions.md": {
-      "after": null,
+    ".agents/skills/agent-ready-garden/jobs/5-instructions.md": {
+      "after": "8d1c1ffab767eed681aa9f89a9ce4765e54dd3f57e4ea9ec6b0dff8bfd69be3f",
       "before": "269eed9bf7f73b114b5ee661aedc74d31a23c2fd3cf3d5adbd6e5b13276a1f0f"
     },
-    ".claude/skills/agent-ready-onboard/SKILL.md": {
-      "after": null,
+    ".agents/skills/agent-ready-onboard/SKILL.md": {
+      "after": "50bb82906448cd9bea1d600af3b52b28ca8490e6f635cd69696486e35d14961a",
       "before": "32f6ed5b3731be2a6b11e8c511353108ec2c0c48c8df6d72ac2a218e5662676d"
     },
-    ".claude/skills/agent-ready-onboard/phases/0-interview.md": {
-      "after": null,
-      "before": "2539e4e6c86d7dd605687ca2e364571b7202be4f038b037d737e9823be0c4995"
-    },
-    ".claude/skills/agent-ready-onboard/phases/1-architecture.md": {
-      "after": null,
-      "before": "0b391581bfbb0c26db3b1f8c32845281e3620bb3c03c2ead9e4357ad5718ec09"
-    },
-    ".claude/skills/agent-ready-onboard/phases/2-toolbox.md": {
-      "after": null,
-      "before": "bfa921f9f93edb9f591882c83dbf6633890d461a9bd3dabcc76c7412608d838d"
-    },
-    ".claude/skills/agent-ready-onboard/phases/3-pinning.md": {
-      "after": null,
-      "before": "3e3af345a71d90ff6f1765ba03d8f47ebca6e7ce90576f82db12c44e90daaebd"
-    },
-    ".claude/skills/agent-ready-onboard/phases/4-gates.md": {
-      "after": null,
+    ".agents/skills/agent-ready-onboard/phases/4-gates.md": {
+      "after": "9696042fa3b2fa3c0fc4fa62c278430708ea5794aaf695500c76b87e1fe9a420",
       "before": "9b4f8286900d1e9a054854b4fd175b03f91c1250cddf7368bc7ef710da5bd965"
     },
-    ".claude/skills/agent-ready-onboard/phases/5-contracts.md": {
-      "after": null,
-      "before": "b9323f3499217a8dcf33cd6665ddcfd2040ead586b3b7e12b4fcfa897774f4bd"
-    },
-    ".claude/skills/agent-ready-onboard/phases/6-specs.md": {
-      "after": null,
+    ".agents/skills/agent-ready-onboard/phases/6-specs.md": {
+      "after": "2dbcae3e48dd524dfffff57806f952f6544b87718343c4f22f26fbe53cbac35c",
       "before": "7dc9d53f10e535f11789a7c7840ac03cbd553407f317b3519c02f72807c605ad"
     },
-    ".claude/skills/agent-ready-onboard/phases/7-handover.md": {
-      "after": null,
+    ".agents/skills/agent-ready-onboard/phases/7-handover.md": {
+      "after": "6867e77de967fd7f8356ba5a5ab2cfbca73c48471cf761cda19defcf41704dfc",
       "before": "0b7542a39ec9eb07d1fdbb5e1551340b862c9c94c966d67c37569565dcd8ec98"
     },
-    ".claude/skills/agent-ready-refresh/SKILL.md": {
-      "after": null,
+    ".agents/skills/agent-ready-refresh/SKILL.md": {
+      "after": "5cc85f4b72d0344eca2fa84a7206cddd4fa5983c8337871509a7096812d3acbd",
       "before": "6dec2886756d39ab81fbde252ae098f5c0f5e229f8a3e08ae09a4b2517f51a24"
     },
     ".copier-answers.yml": {
-      "after": "11ecb90c8edabb12e5dfc882d77d625075f38b3015f4b5c4b41e8a2e34395ea8",
-      "before": "5b733179ee354225c9a49b8ec389df2630cde27498368532204b93e0f902aba7"
+      "after": "99c53cb628e7182ef01c78402d3e50ba84b42e13bb9f0d915c12196a99b1025b",
+      "before": "11ecb90c8edabb12e5dfc882d77d625075f38b3015f4b5c4b41e8a2e34395ea8"
     },
-    "changelog.d/agent-ready-3327b4747b2e83ce2c288141e37e0068e25f55e4-ad61faf7f37a350543e392d303dd99fc623f5cfa.misc.rst": {
-      "after": "a586118a7a06a497a74a2d0b66f5f7095cef86144a9cf26a28446ed50e273357",
+    "changelog.d/agent-ready-ba9039c87a20e0c82555df83a7e72dab3a8698ca-186dcb284decb919097ed6e42b501a706d4a5c5c.misc.rst": {
+      "after": "4229b2960cb589b0dcc7d1339fee0a6fedb4c23fef37f9599844158be2061e80",
       "before": null
     },
+    "docs/how-to/improve-verification.md": {
+      "after": "103a8566eda2bea4355a4492c3592995fb30f7427c3bc2b150201ef736c1e852",
+      "before": "68df643f108a169dae94cfdee39709eeab23b5d0feb1f7a6c8dd2070d5d83757"
+    },
     "docs/how-to/template-ownership.md": {
-      "after": "59af2178204429cddb5b8266aedcc740292085bbad445aa3e48299a812d706d5",
-      "before": "9c714156ea1a2f68e5271d1328805141954916d2e0994c1eff3ad2fa1cb35283"
+      "after": "3a5a5fc203786945cfa776f9b418c966262b22a0a6696f845a0a775e27d76a6b",
+      "before": "59af2178204429cddb5b8266aedcc740292085bbad445aa3e48299a812d706d5"
+    },
+    "docs/how-to/verification-evidence.md": {
+      "after": "1cacd6d8ae9b70865d2c9082e6f5db2ba0258bd3820567610665d3b3a3e5df8c",
+      "before": "dc2cbea02587c9b1ff7652e35ed9434128f584936fedf0c6272c758b90abb348"
+    },
+    "openspec/schemas/agent-ready/schema.yaml": {
+      "after": "e18bcb988f53253c2fd34b4ae6217cec18a3e20dd80c16c76a87bca19ac4843f",
+      "before": "dd70ad0c8c10b5dd93b4d91d94528dd31fcc56f3c9878ba261a8cf80d1f7bae1"
+    },
+    "openspec/schemas/agent-ready/templates/evidence-freeze.md": {
+      "after": "4d6ce4b6aabf745d364177ef3f5b996783f914b8902691cfbcf20484872453ba",
+      "before": "040d220099beee2ae4f6af5f88735866f7ab3e22d6dadacac1202368ce640a3d"
+    },
+    "openspec/schemas/agent-ready/templates/instruction-integrity.md": {
+      "after": "b345c5f48ef4e55cba8e7b2703f0261a06d3a45b502776124cbfda8c32195352",
+      "before": "f82f16a244e3d21647dffb70d9bae8fc6dad11342ce88666ea30005075dd3a16"
     },
     "pyproject.toml": {
-      "after": "b547eb4554a919ca13000302382bda1feccbcc43ec9e47500682b339013d6356",
-      "before": "fe142f08e9ed5cdf9ccdc395f148e6e0a50c3e3f805e8b1916a77122346faca9"
+      "after": "9dea64bd8d82f2c39ca75c498fc18903c9e98becc37ebd7193c705692903677d",
+      "before": "86443718e4f6101ece78951428b5229d34e609cfe9b4565d43806e874e3e000c"
     },
     "uv.lock": {
-      "after": "4257a9e7c8b5412ec4dc554fe8ce19bf6845dfaf943d4191b8b49793e28f6fee",
-      "before": "7dd4f783ca884065bcffaaeb4ff2b31652f7eea9b128561c81fb01cbcf9cdce5"
+      "after": "4f7287ca4b3794092d37a9d22bd8521ea5b806b7f85e231f0c16585a371af67a",
+      "before": "f36a528d734779e237a336ef25f4bf01020acb9b34405c50fb91d469463897ba"
     }
   },
-  "checks": "ad61faf7f37a350543e392d303dd99fc623f5cfa",
+  "checks": "186dcb284decb919097ed6e42b501a706d4a5c5c",
   "schema": "template-update/1",
   "source": "/Users/manon-dev/src/agent-ready-python",
-  "template": "3327b4747b2e83ce2c288141e37e0068e25f55e4",
-  "template-ref": "v0.13.4"
+  "template": "ba9039c87a20e0c82555df83a7e72dab3a8698ca",
+  "template-ref": "v0.14.4"
 }

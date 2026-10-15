@@ -74,7 +74,7 @@ worktree. A later green branch never stands in for this change's evidence.
 ## Review and approval
 
 One coherent standard or docs change receives the review its risk floor and assurance preference require after
-all tasks are implemented. Independent changes never borrow another change's verdict or omission rationale. A
+all tasks are implemented. Independent changes never borrow another change's verdict. A
 required Reviewer may inspect a small related window, but writes a separate report in each change folder and
 receives every accepted correction it found.
 
