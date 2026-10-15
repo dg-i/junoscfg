@@ -1,0 +1,24 @@
+schema: agent-ready
+created: 2026-10-15
+assurance: economy
+type: docs
+# ARCHITECTURE.md, docs/ and two module contracts; no zone owns these paths.
+zone: surface
+domains: []
+removes: "none, because the change adds a documented rule and removes no behaviour or document"
+skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+  - ARCHITECTURE.md
+  - changelog.d/+input-trust-rule.doc.md
+  - docs/api/input.md
+  - docs/decisions/2026-10-15-configuration-input-is-trusted.md
+  - docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md
+  - docs/decisions/index.md
+  - docs/guide/conversion.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/input.CONTRACT.md
+  dependencies: [openspec/changes/archive/2026-10-15-yaml-depth-ceiling]
+  changelog: changelog.d/+input-trust-rule.doc.md
+  generated-records: [docs/decisions/index.md]

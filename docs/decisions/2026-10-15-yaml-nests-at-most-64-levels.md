@@ -35,7 +35,8 @@ PyYAML while loading (SC-B), left as they are and not backlogged.
 
 ## Consequences
 
-junoscfg assumes its YAML input is not hostile. An alias bomb is expanded at every door and
+junoscfg assumes its YAML input is not hostile, a case of the project-wide rule
+2026-10-15-configuration-input-is-trusted. An alias bomb is expanded at every door and
 can exhaust time and memory, so a caller handling untrusted YAML bounds it before calling
 junoscfg. Any reuse of a block reads and writes. No junoscfg stage meets nesting deeper than
 65 levels from a YAML door, so a cycle or deep alias chain is refused rather than crashing;

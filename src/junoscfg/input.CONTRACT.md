@@ -10,7 +10,8 @@ Not format detection or parsing; `convert.input` chooses the parser.
   `tests/unit/input/test_input.py::TestRemoveComments::test_preserves_inline_content`.
 - `find_non_json_value` never walks deeper than 64 levels, so a cycle or a deep
   alias chain is refused, never a `RecursionError`; an alias bomb is expanded
-  (YAML input is assumed not hostile) — enforced by
+  (configuration input is trusted, decision
+  2026-10-15-configuration-input-is-trusted) — enforced by
   `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_past_64_levels_is_refused_at_its_path`.
 - Unsupported raw set commands are refused before normalization or IR construction
   with value-free physical-line diagnostics — enforced by

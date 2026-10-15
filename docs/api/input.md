@@ -19,8 +19,9 @@ Shared lexical checks and normalization for configuration readers.
   (a timestamp, a non-string key, binary data, a set). Values under a mapping
   key starting with a prefix in `unwalked` are not walked. A mapping or list
   shared through an alias is walked at every place, however often, as JSON
-  would write it out; junoscfg assumes its YAML input is not hostile, so an
-  alias bomb costs its expansion. `NonJsonValue.where` is `at <path>` or `at
+  would write it out; configuration input is trusted (decision
+  2026-10-15-configuration-input-is-trusted), so an alias bomb costs its
+  expansion. `NonJsonValue.where` is `at <path>` or `at
   the top level`, and `read_refusal` the message both readers raise; a key
   that is not a string is named in a path by its kind (`<date key>`). The yaml-new reader, writer and validation share it, and the
   `yaml` reader with `scalars=False` and its meta-key prefixes; the path never

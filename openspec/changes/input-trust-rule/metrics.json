@@ -1,0 +1,300 @@
+{
+  "change": "input-trust-rule",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "0837edb9126236d096a901b3f4980ef984683701d1678b5a3777ae1da986571b",
+          "head": "0837edb9126236d096a901b3f4980ef984683701d1678b5a3777ae1da986571b"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-input-trust-rule/openspec/changes/input-trust-rule/events.jsonl",
+        "sha256": "fc247104d16f9b61932b84a88d7e70f726bf37fc042b7adf1b53bb0ad4c7b9fd"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+        "carry": {},
+        "change": "input-trust-rule",
+        "checks": [
+          {
+            "checkpoint": "b982472212c085b3037deecfa7cd7896c1efb5e07b594557360b2eb65ad3c4b1",
+            "duration_ms": 215.38670791778713,
+            "evidence": ".agent-ready/verification/e932e37392234fdab3d3908bc11b8760.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "b982472212c085b3037deecfa7cd7896c1efb5e07b594557360b2eb65ad3c4b1",
+            "duration_ms": 11823.623874923214,
+            "evidence": ".agent-ready/verification/6fc2297d945e481caa761b85e0246ef9.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "4488de8c2e3f1876a0dd33e05012f4535752f528f362ef4e1e63d4233fc2f291",
+            "duration_ms": 246849.42275006324,
+            "evidence": ".agent-ready/verification/3e04f332e9f84c39a59d4505cae2ec95.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "a4d3e5f27c426054f3aefa44efa5b217e636b851f02c696d6e214e44dcb746f2",
+            "duration_ms": 50987.670750007965,
+            "evidence": ".agent-ready/verification/85feb8aa1938468d9efcd7425564af47.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "b982472212c085b3037deecfa7cd7896c1efb5e07b594557360b2eb65ad3c4b1",
+            "duration_ms": 331704.1376250563,
+            "evidence": ".agent-ready/verification/9a290cd429d840cc881cf39a4f471539.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+        "ledger_sha256": "fc247104d16f9b61932b84a88d7e70f726bf37fc042b7adf1b53bb0ad4c7b9fd",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "9263b23275380c290caa6b153756c1b3fe6a65b8aed2b106c8b89506d9214192",
+              "fb496490054ab3bd58a65183b2ebbcd9b1818eb7722246de300c6564aac8845c"
+            ],
+            "value": 2
+          },
+          "full_runs": {
+            "events": [
+              "02f53259a5deb4c9ac511d66d7ed0ad80f58b81641174847a334cc0af46a8c96",
+              "40b0925feb9e50f63a963965ff992cd487d945c2a744b87a7d8b455c8291cfc1",
+              "15decccb1c030ada5e2ecef38525378c5c0d42407b21cc3bedd5c7216737fcf1"
+            ],
+            "value": 3
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 9,
+            "total": 12
+          },
+          {
+            "completed": 9,
+            "total": 12
+          },
+          {
+            "completed": 9,
+            "total": 12
+          },
+          {
+            "completed": 9,
+            "total": 12
+          },
+          {
+            "completed": 9,
+            "total": 12
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            "ARCHITECTURE.md",
+            "changelog.d/+input-trust-rule.doc.md",
+            "docs/api/input.md",
+            "docs/decisions/2026-10-15-configuration-input-is-trusted.md",
+            "docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md",
+            "docs/decisions/index.md",
+            "docs/guide/conversion.md",
+            "src/junoscfg/convert/CONTRACT.md",
+            "src/junoscfg/input.CONTRACT.md"
+          ],
+          "since": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e"
+        },
+        "selector": [
+          "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+          "433bf4d8de2c2eb89c452b9884b51b69038cde0d"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 66,
+        "binary_files": 0,
+        "files": 9,
+        "removed": 13
+      }
+    },
+    "locked_packages": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "96aa74fc97ae8816326d0662891fd54c2c4939f176aab044c96eb292f549a11e",
+          "head": "96aa74fc97ae8816326d0662891fd54c2c4939f176aab044c96eb292f549a11e"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records; manifest outside the change's files, both ends read at head"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "1afcd29d1efb1c51bdecf74d0055cd12c9fc798e",
+      "captured_at": "2026-10-15T16:07:10.905457Z",
+      "head_sha": "433bf4d8de2c2eb89c452b9884b51b69038cde0d",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
