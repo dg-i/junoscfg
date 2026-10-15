@@ -1,6 +1,6 @@
 # Conversion Guide
 
-Junoscfg converts Junos configurations between five formats:
+Junoscfg converts Junos configurations between six formats:
 
 | Format | Description |
 |--------|-------------|
@@ -8,7 +8,11 @@ Junoscfg converts Junos configurations between five formats:
 | **Structured** | Curly-brace hierarchical format |
 | **XML** | Junos native XML |
 | **JSON** | Junos native JSON |
-| **YAML** | Standard YAML (1:1 mapping of Junos JSON) |
+| **YAML** (`yaml`) | junoscfg's IR written as YAML; to be renamed `yaml-old` |
+| **yaml-new** (`yaml-new`) | Junos native JSON written as YAML; to become `yaml` |
+
+The two YAML formats, and how to move from one to the other, are described in
+[Two YAML formats](#two-yaml-formats-yaml-and-yaml-new).
 
 ## Raw set command boundary
 
@@ -31,19 +35,20 @@ before conversion; there is no silent-ignore option.
 
 ## Conversion Matrix
 
-All 20 format pairs are supported (including identity conversions on the diagonal).
+All 30 format pairs are supported (including identity conversions on the diagonal).
 All conversions go through the unified `convert_config()` API:
 
-| From \ To | Set | Structured | JSON | YAML |
-|-----------|-----|------------|------|------|
-| **Set commands** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
-| **Structured** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
-| **JSON** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
-| **YAML** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
-| **XML** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| From \ To | Set | Structured | JSON | YAML | yaml-new |
+|-----------|-----|------------|------|------|----------|
+| **Set commands** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| **Structured** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| **JSON** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| **YAML** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| **yaml-new** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
+| **XML** | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` | `convert_config()` |
 
 !!! note
-    XML output is not yet supported. All other 20 format pairs (including identity
+    XML output is not yet supported. All other 30 format pairs (including identity
     conversions) are fully supported through the unified conversion pipeline with
     field-level validation.
 
@@ -89,7 +94,8 @@ result = convert_config(
 )
 ```
 
-The `Format` enum has these members: `SET`, `STRUCTURED`, `JSON`, `YAML`, `XML`.
+The `Format` enum has these members: `SET`, `STRUCTURED`, `JSON`, `YAML`, `YAML_NEW`
+(`"yaml-new"`), `XML`.
 
 `convert_config()` includes field-level validation by default. Use `validate=False` to
 disable it or `strict=True` to make validation errors fatal:
@@ -227,3 +233,60 @@ result = convert_config(json_with_attrs, from_format=Format.JSON, to_format=Form
 See [Operational Attributes (`@` Annotations)](annotations.md) for the full
 syntax (container vs. leaf annotations), the supported attribute table,
 per-format behavior, and read-only `junos:*` metadata.
+
+## Two YAML formats: `yaml` and `yaml-new`
+
+`yaml` writes junoscfg's IR as YAML and reads YAML with two conveniences: it drops
+`_ansible_*` and `_meta_*` keys, and it turns a single value of a leaf-list into a
+one-element list. Its output is not quite the device's JSON: it can keep `groups`
+in a `group` wrapper, presence flags as `true` or `{}`, and one-element lists for
+single leaves.
+
+`yaml-new` is exactly the object `-e json` writes, spelled in YAML, and it reads
+YAML exactly as JSON input is read. A file means the same configuration whether
+it is written in JSON or in `yaml-new`, and both validate against the JSON schema:
+
+- presence flags and empty containers are `[null]` (a `- null` list), single
+  leaves are scalars, `groups` is the list of groups, and a `junoscfg:unplaced`
+  record is written as JSON writes it;
+- `_ansible_*` and `_meta_*` keys are kept, as JSON keeps them, so field and
+  schema validation report them;
+- a scalar given for a leaf-list stays a scalar, as in JSON;
+- a value JSON cannot hold is refused with its path: an unquoted date or time
+  (`2026-10-15`), a key that is not a string (`1: x`, `on: x`), binary data, a
+  set or an ordered map. Quote such a value (`'2026-10-15'`).
+
+YAML is read with PyYAML's YAML 1.1 rules, as for `yaml`: unquoted `on`, `off`,
+`yes` and `no` are booleans, `010` is the number 8 and `1:30` the number 90.
+Quote such words in hand-written files (`location: 'on'`); junoscfg's own output
+quotes them. `.inf` and `.nan` are read as JSON input reads `Infinity` and `NaN`.
+
+YAML that is detected rather than named with `-i` is read as `yaml`.
+
+### Moving a YAML file to yaml-new
+
+Convert it once; the conveniences of the `yaml` reader are applied on the way:
+
+```bash
+junoscfg convert -i yaml -e yaml-new old.yaml > new.yaml
+```
+
+```python
+from junoscfg import Format, convert_config
+
+new_text = convert_config(old_text, from_format=Format.YAML, to_format=Format.YAML_NEW)
+```
+
+The result reads as `yaml-new` to the same configuration the old file read as
+`yaml`. Remove `_ansible_*` and `_meta_*` keys that your own tooling adds before
+feeding a file to `yaml-new`.
+
+### Planned rename
+
+`yaml-new` will be renamed `yaml`, and today's `yaml` will become `yaml-old`, in a
+later release, once `yaml-new` has been tested in use and its users have had time
+to migrate ([decision record](../decisions/2026-10-15-yaml-new-before-renaming-yaml.md)).
+That release declares the change of meaning of `yaml` and raises the minor
+version. Following the beta deprecation policy, `yaml-new` then stays accepted as
+a deprecated alias, and `yaml-old` is deprecated before it is removed, each for at
+least one minor release. Nothing is deprecated yet.

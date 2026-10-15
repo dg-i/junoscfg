@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 import yaml
+from click.testing import CliRunner
 
 from junoscfg import (
     FieldValidationError,
@@ -24,10 +25,11 @@ from junoscfg import (
     convert_config_result,
     validate_config,
 )
+from junoscfg.cli import main
 from junoscfg.convert import FORMAT_IMPLEMENTATIONS, from_dict, pipeline, to_dict
 from junoscfg.display import artifacts_dir as artifacts_in
 from tests.support.artifacts import write_minimal_tree
-from tests.support.shapes import read_ir
+from tests.support.shapes import SHAPES, in_order, read_ir
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,6 +74,26 @@ class TestFormatEnum:
         assert FORMAT_IMPLEMENTATIONS["yaml"] == "ir-yaml"
         assert FORMAT_IMPLEMENTATIONS["yaml-new"] == "junos-yaml"
         assert FORMAT_IMPLEMENTATIONS["json"] == "junos-json"
+
+    def test_the_rename_is_a_change_to_the_table(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Rehearse the planned rename: with the two YAML rows swapped, every
+        door follows the table, so the later change edits the table and
+        `Format` only (Test/Challenge B5)."""
+        monkeypatch.setitem(FORMAT_IMPLEMENTATIONS, "yaml", "junos-yaml")
+        monkeypatch.setitem(FORMAT_IMPLEMENTATIONS, "yaml-new", "ir-yaml")
+        source = "configuration:\n  system:\n    host-name: r1\n    _meta_x: y\n"
+        assert to_dict(source, "yaml")["system"]["_meta_x"] == "y"
+        assert "_meta_x" not in to_dict(source, "yaml-new")["system"]
+        flag = {"system": {"services": {"ssh": True}}}
+        assert "- null" in from_dict(flag, "yaml")
+        assert "ssh: true" in from_dict(flag, "yaml-new")
+        assert "- null" in convert_config(
+            "set system services ssh\n", from_format=Format.SET, to_format=Format.YAML
+        )
+        assert validate_config(source, format=Format.YAML).valid is False
+        assert validate_config(source, format=Format.YAML_NEW).valid is True
+        cli = CliRunner().invoke(main, ["convert", "-i", "yaml", "-e", "json"], input=source)
+        assert '"_meta_x": "y"' in cli.stdout
 
     @pytest.mark.parametrize("name", ["yaml-old", "YAML", "toml"])
     def test_an_unknown_name_is_refused(self, name: str) -> None:
@@ -272,11 +294,33 @@ class TestPathFiltering:
         )
         assert result == ""
 
-    @pytest.mark.parametrize("path", ["system", "system.services", "system.services.ssh"])
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "system",
+            "system.services",
+            "system.services.ssh",
+            "system.services.netconf",
+            "system.services.netconf.ssh",
+            "system.syslog",
+            "system.syslog.host",
+        ],
+    )
     def test_a_relative_selection_is_the_bare_subtree(self, path: str) -> None:
-        """Relative yaml-new output is the JSON writer's bare object, a selected
-        presence flag included (spec conversion/junos-json-yaml)."""
-        source = '{"configuration": {"system": {"services": {"ssh": true}}}}'
+        """Relative yaml-new output is the JSON writer's bare object: a selected
+        presence flag, an empty container (`{}`) and a selected list, which the
+        JSON writer leaves as given, included (spec conversion/junos-json-yaml;
+        Test/Challenge B7)."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "services": {"ssh": True, "netconf": {"ssh": {}}},
+                        "syslog": {"host": [{"name": "198.51.100.9", "any": {}}]},
+                    }
+                }
+            }
+        )
 
         def selected(fmt: Format) -> str:
             return convert_config(
@@ -321,6 +365,20 @@ class TestValidateConfig:
         source = '{"configuration": {"system": {"host-name": "r1"}}}'
         result = validate_config(source, format=Format.JSON, artifacts_dir=artifacts_dir)
         assert result.valid is True
+
+    def test_junos_yaml_is_judged_by_the_json_schema(self, artifacts_dir: str) -> None:
+        """An Ansible meta key: the YAML schema allows it, JSON's does not, and
+        yaml-new is the JSON object (spec validation/junos-json-yaml)."""
+        source = "configuration:\n  system:\n    host-name: r1\n    _ansible_host: x\n"
+        as_json = json.dumps(yaml.safe_load(source))
+        result = validate_config(source, format=Format.YAML_NEW, artifacts_dir=artifacts_dir)
+        assert result.valid is False
+        assert (
+            result.errors
+            == validate_config(as_json, format="json", artifacts_dir=artifacts_dir).errors
+        )
+        assert validate_config(source, format="yaml-new", artifacts_dir=artifacts_dir) == result
+        assert validate_config(source, format="yaml", artifacts_dir=artifacts_dir).valid is True
 
     def test_validate_auto_detect_set(self, artifacts_dir: str) -> None:
         source = "set system host-name r1"
@@ -782,7 +840,27 @@ class TestUnplacedContentKeepsItsKeywords:
             convert_config(self._SOURCE, from_format=Format.JSON, to_format=Format.SET, strict=True)
 
 
-class TestYamlNewReader:
+class TestTheYamlWriterDumpsTheIr:
+    """`yaml` stays what it was: the IR as read, dumped as YAML, key order
+    included (owner instruction 2026-10-15: `yaml` unchanged; Test/Challenge B6).
+    The format matrix reads output back through the JSON writer, which would
+    hide a `yaml` writer that normalized as JSON does."""
+
+    @pytest.mark.parametrize(
+        ("source", "reader"),
+        [
+            pytest.param(text, reader, id=f"{shape.name}-{reader.value}")
+            for shape in SHAPES
+            for reader, text in shape.sources.items()
+        ],
+    )
+    def test_the_output_is_the_ir_as_read(self, source: str, reader: Format) -> None:
+        written = convert_config(source, from_format=reader, to_format=Format.YAML)
+        expected = {"configuration": to_dict(source, reader.value)}
+        assert in_order(yaml.safe_load(written)) == in_order(expected)
+
+
+class TestJunosYamlReader:
     """yaml-new input is read as the JSON reader reads the same object
     (spec conversion/junos-json-yaml; owner default 2026-10-15: the identical
     object to Junos JSON, so none of the yaml reader's conveniences)."""
@@ -813,27 +891,57 @@ class TestYamlNewReader:
                 "datetime",
                 "system.x",
             ),
-            ("configuration:\n  system:\n    1: x\n", "int key", "system"),
-            ("configuration:\n  system:\n    x: !!binary aGk=\n", "bytes", "system.x"),
-            ("configuration:\n  system:\n    x: !!set {a}\n", "set", "system.x"),
+            ("configuration:\n  system:\n    64496: x\n", "int key", "configuration.system"),
+            ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
+            ("configuration:\n  system:\n    ~: x\n", "null key", "configuration.system"),
+            ("configuration:\n  system:\n    1.5: x\n", "float key", "configuration.system"),
+            ("configuration:\n  system:\n    2026-10-15: x\n", "date key", "configuration.system"),
+            ("configuration:\n  system:\n    x: !!binary YWNtZQ==\n", "bytes", "system.x"),
+            ("configuration:\n  system:\n    x: !!set {acme}\n", "set", "system.x"),
+            ("configuration:\n  system:\n    x: !!omap [{acme: 1}]\n", "tuple", "system.x.0"),
+            ("configuration:\n  system:\n    x: !!pairs [{acme: 1}]\n", "tuple", "system.x.0"),
             (
                 "configuration:\n  interfaces:\n    interface:\n    - name: ge-0/0/0\n"
                 "      description: 2026-01-01\n",
                 "date",
                 "interfaces.interface.0.description",
             ),
+            (
+                "version: 2026-10-15\nconfiguration:\n  system:\n    host-name: r1\n",
+                "date",
+                "at version",
+            ),
+            ("2026-10-15\n", "date", "at the top level"),
         ],
-        ids=["date", "datetime", "int-key", "binary", "set", "in-a-list"],
+        ids=[
+            "date",
+            "datetime",
+            "int-key",
+            "bool-key",
+            "null-key",
+            "float-key",
+            "date-key",
+            "binary",
+            "set",
+            "omap",
+            "pairs",
+            "in-a-list",
+            "beside-the-configuration",
+            "the-document",
+        ],
     )
     def test_a_value_json_cannot_hold_is_refused(self, source: str, kind: str, where: str) -> None:
         """A YAML-only value has no JSON spelling; it is refused by its kind and
-        path, never quoted, instead of failing later in a writer."""
+        path, never quoted, instead of failing later in a writer. The whole
+        document is checked, wrappers and siblings of `configuration` too
+        (Test/Challenge B3, A5)."""
         with pytest.raises(ValueError, match="no JSON spelling") as raised:
             to_dict(source, "yaml-new")
         message = str(raised.value)
-        assert kind in message
+        assert f"YAML {kind} " in message
         assert where in message
-        assert "2026" not in message and "aGk" not in message
+        for value in ("2026", "acme", "64496", "1.5", "on:"):
+            assert value not in message
 
     def test_an_empty_document_is_refused(self) -> None:
         with pytest.raises(ValueError, match="No 'configuration' key found in YAML input"):
@@ -843,9 +951,35 @@ class TestYamlNewReader:
         with pytest.raises(yaml.YAMLError):
             to_dict("configuration:\n  system: [r1\n", "yaml-new")
 
+    @pytest.mark.parametrize(
+        ("spelled", "loaded"),
+        [("on", True), ("no", False), ("010", 8), ("1:30", 90), ("'on'", "on"), ("'010'", "010")],
+    )
+    def test_unquoted_words_are_read_as_pyyaml_reads_them(
+        self, spelled: str, loaded: object
+    ) -> None:
+        """PyYAML's YAML 1.1 implicit types, as `yaml` reads them: an unquoted
+        `on` is a boolean, `010` the number 8 (Test/Challenge A2; documented in
+        the conversion guide). The writer quotes such strings."""
+        ir = to_dict(f"configuration:\n  system:\n    location: {spelled}\n", "yaml-new")
+        assert ir["system"]["location"] == loaded
 
-#: Words YAML reads as something else unless quoted, and words JSON and YAML share.
+
+#: Words YAML reads as something else unless quoted, words JSON and YAML share,
+#: Ansible meta keys and a schema leaf-list (Test/Challenge A3, A6).
 _TRICKY = [
+    "010",
+    "1:30",
+    ".inf",
+    ".nan",
+    "1_000",
+    "+.5",
+    "<<",
+    "Yes",
+    "On",
+    "_meta_x",
+    "_ansible_y",
+    "apply-groups",
     "yes",
     "no",
     "on",
@@ -886,7 +1020,7 @@ def _value(rng: random.Random, depth: int) -> object:
     """A JSON value: a string, number, flag, list or object, keys from `_TRICKY`."""
     roll = rng.random()
     if depth > 3 or roll < 0.45:
-        return rng.choice([*_TRICKY, 7, 2.5, True, None])
+        return rng.choice([*_TRICKY, 7, 2.5, float("inf"), True, None])
     if roll < 0.6:
         return [None]
     if roll < 0.75:
@@ -895,20 +1029,40 @@ def _value(rng: random.Random, depth: int) -> object:
     return {k: _value(rng, depth + 1) for k in keys}
 
 
-class TestYamlNewWriter:
+class TestJunosYamlWriter:
     """yaml-new output is the JSON writer's object in YAML (spec conversion/junos-json-yaml)."""
 
-    def test_a_shared_object_is_written_out_each_time(self) -> None:
-        """An IR built with one object in two places is written as two copies:
-        no YAML anchor or alias, which JSON has no spelling for."""
+    @pytest.mark.parametrize("wrap", [True, False], ids=["wrapped", "bare"])
+    def test_a_shared_object_is_written_out_each_time(self, wrap: bool) -> None:
+        """A selection holding one object in two places is written as two copies:
+        no YAML anchor or alias, which JSON has no spelling for. A bare list is
+        written as given, so only the dumper can keep the alias out
+        (Test/Challenge B8)."""
         shared = {"host-name": "r1"}
-        ir = {"system": shared, "groups": [{"name": "G", "system": shared}]}
-        written = from_dict(copy.deepcopy(ir), "yaml-new")
+        ir = [shared, {"name": "h2", "x": shared}]
+        written = from_dict(ir, "yaml-new", wrap=wrap)
         assert "&" not in written and "*" not in written
-        assert yaml.safe_load(written) == json.loads(from_dict(ir, "json"))
+        assert yaml.safe_load(written) == json.loads(from_dict(ir, "json", wrap=wrap))
+
+    def test_the_device_spellings_are_written_as_json_writes_them(self) -> None:
+        """`groups` in its set-reader wrapper is the list of groups, a single
+        leaf given as a one-element list is the scalar, a flag `[null]`."""
+        ir = {
+            "groups": {"group": [{"name": "G", "system": {"host-name": "r1"}}]},
+            "system": {
+                "login": {"user": [{"name": "admin", "class": ["super-user"]}]},
+                "services": {"ssh": {}},
+            },
+        }
+        written = yaml.safe_load(from_dict(copy.deepcopy(ir), "yaml-new"))
+        assert written == json.loads(from_dict(ir, "json"))
+        config = written["configuration"]
+        assert config["groups"] == [{"name": "G", "system": {"host-name": "r1"}}]
+        assert config["system"]["login"]["user"][0]["class"] == "super-user"
+        assert config["system"]["services"]["ssh"] == [None]
 
     @pytest.mark.parametrize("seed", range(40))
-    def test_any_json_object_survives_yaml_new(self, seed: int) -> None:
+    def test_any_json_object_survives_junos_yaml(self, seed: int) -> None:
         """The round-trip property: json -> yaml-new -> json is json -> json, for
         values derived from the JSON value type (no Hypothesis in the toolbox;
         a seeded generator), with YAML's quoting hazards as keys and values."""

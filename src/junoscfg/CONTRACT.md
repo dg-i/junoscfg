@@ -24,4 +24,5 @@ collection cannot reach except through one function signature.
 ## Precedent
 
 - `junoscfg.convert_config` — the one entry point; a new format pair is a member
-  of `_SUPPORTED_CONVERSIONS`, never a new public function.
+  of `_SUPPORTED_CONVERSIONS`, never a new public function. A new format is a
+  `Format` member and a row of `junoscfg.convert.FORMAT_IMPLEMENTATIONS`.

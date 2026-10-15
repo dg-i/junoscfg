@@ -119,7 +119,7 @@ class TestEveryDoorReadsTheDevicesUniversalStatements:
         assert len(flags) >= 2, flags
 
 
-class TestYamlNewIsTheDevicesJsonInYaml:
+class TestJunosYamlIsTheDevicesJson:
     """yaml-new is the Junos JSON object in YAML, over every device capture.
 
     Spec conversion/junos-json-yaml. The QFX5120 capture on 25.2R2-S1.5 spells

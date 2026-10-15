@@ -117,7 +117,10 @@ class TestHelp:
     def test_convert_help_describes_every_format(self, fmt: str) -> None:
         """The Formats list names each one, yaml-new and the planned rename included."""
         result = run(["convert", "--help"])
-        assert re.search(rf"^ +{re.escape(fmt)} +\S", result.stdout, re.MULTILINE), fmt
+        line = re.search(rf"^ +{re.escape(fmt)} +(\S.*)$", result.stdout, re.MULTILINE)
+        assert line, fmt
+        planned = {"yaml": "to be renamed yaml-old", "yaml-new": "to become yaml"}
+        assert planned.get(fmt, "") in line.group(1)
 
     @pytest.mark.parametrize("command", ["junoscfg", *_commands(main)])
     def test_fullhelp_has_a_section_per_command(self, command: str) -> None:
@@ -176,7 +179,7 @@ class TestConvertReadsAndWrites:
         assert result.exit_code == 0
         assert result.stdout == library(A_LEAF[reader], reader, writer)
 
-    def test_a_yaml_file_converts_to_yaml_new(self, tmp_path: Path) -> None:
+    def test_an_ir_yaml_file_migrates_to_junos_yaml(self, tmp_path: Path) -> None:
         """The documented migration: `-i yaml -e yaml-new` drops the yaml reader's
         meta keys and writes the Junos JSON object (docs/guide/conversion.md)."""
         legacy = tmp_path / "old.yaml"

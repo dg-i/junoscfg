@@ -104,6 +104,23 @@ class JunosValidator:
         self._ensure_json_yaml_validator()
         return self._json_yaml_validator.validate_yaml(source)  # type: ignore[union-attr]
 
+    def validate_yaml_as_json(self, source: str) -> ValidationResult:
+        """Validate YAML that spells the Junos JSON object (the format ``yaml-new``).
+
+        The document is judged by the JSON schema, as the same object in JSON
+        is: no ``_ansible_*`` or ``_meta_*`` allowance.
+
+        Args:
+            source: YAML configuration as a string.
+
+        Returns:
+            ValidationResult with errors if invalid.
+        """
+        self._ensure_json_yaml_validator()
+        validator = self._json_yaml_validator
+        result: ValidationResult = validator.validate_yaml_as_json(source)  # type: ignore[attr-defined]
+        return result
+
     def validate_set(self, source: str) -> ValidationResult:
         """Validate set commands.
 

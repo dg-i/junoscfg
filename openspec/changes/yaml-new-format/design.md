@@ -22,16 +22,19 @@ and promotes leaf-lists; JSON does neither and loads no schema.
    is the reader's object stage; `json_to_dict` and the new `junos_yaml_to_dict` parse into it.
    Both YAML functions live beside their JSON twins: one module per direction owns Junos JSON.
 2. `junos_yaml_to_dict` loads with `yaml.safe_load` (the parser `yaml` uses), refuses values
-   with no JSON spelling (timestamp, non-string key, bytes, set) by kind and path, then hands
-   the object to the shared stage. No meta-key strip, no leaf-list promotion: JSON's shapes.
-3. `convert/formats.py` holds `FORMAT_IMPLEMENTATIONS` (name to implementation id) and
-   `implementation(fmt, direction)`; `to_dict`, `from_dict` and `validate_config` dispatch on the id.
+   with no JSON spelling by kind and path through `junoscfg.input.find_non_json_value`, which
+   validation shares (kernel layer, as `find_unsupported_set_brackets`), then hands the object
+   to the shared stage. No meta-key strip, no leaf-list promotion: JSON's shapes.
+3. `convert/formats.py` holds `FORMAT_IMPLEMENTATIONS` (name to implementation id), a dict read
+   at each call so a test rehearses the rename by patching it, and `implementation(fmt,
+   direction)`; `to_dict`, `from_dict` and `validate_config` dispatch on the id.
    `pipeline_result` passes `wrap=not relative` (set and structured ignore `wrap`), dropping its
    format list. `junoscfg.convert` exports the table; tach exposes it (C7).
 4. `Format.YAML_NEW = "yaml-new"` after `YAML`; `_SUPPORTED_CONVERSIONS` becomes every pair
    but XML output, which is what its twenty rows already listed.
 5. Validation: `JsonYamlValidator.validate_yaml_as_json` (YAML parse errors as `validate_yaml`
-   reports them, then the JSON schema); `JunosValidator.validate_yaml_as_json` delegates.
+   reports them, a non-JSON value as an error, then the JSON schema); `JunosValidator` delegates.
+   `validate_yaml`'s parse-error result moves into a shared helper, unchanged.
 6. CLI choices derive from `Format`; help text names yaml-new and the planned rename. Detection
    keeps returning `yaml` (YAML-new and YAML text cannot be told apart).
 7. `yaml` reader and writer modules are not edited, so their bytes cannot change.

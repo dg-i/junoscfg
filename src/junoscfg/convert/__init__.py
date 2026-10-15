@@ -37,6 +37,7 @@ from junoscfg.convert.field_validator import (
     FieldValidationError,
     FieldValidationResult,
 )
+from junoscfg.convert.formats import FORMAT_IMPLEMENTATIONS
 from junoscfg.convert.input import to_dict
 from junoscfg.convert.input.structured_input import StructuredSetLines, structured_set_lines
 from junoscfg.convert.ir import find_configuration
@@ -89,8 +90,9 @@ def pipeline_result(
 
     Args:
         source: Configuration text.
-        from_format: Input format name (``"json"``, ``"yaml"``, ``"xml"``,
-                     ``"set"``, ``"structured"``).
+        from_format: Input format name, a key of
+                     :data:`FORMAT_IMPLEMENTATIONS` (``"json"``, ``"yaml"``,
+                     ``"yaml-new"``, ``"xml"``, ``"set"``, ``"structured"``).
         to_format: Output format name (same choices).
         validate: If True (default), run field-level validation. Non-fatal
                   findings are returned as diagnostics.
@@ -247,25 +249,16 @@ def _convert(
             return ConversionResult(output="", diagnostics=tuple(diagnostics))
         ir = filtered
 
-    if relative and to_format in {"json", "yaml"}:
-        output = from_dict(
-            ir,
-            to_format,
-            wrap=False,
-            withhold_values=anonymizing,
-            diagnostic_sink=lambda message: diagnostics.append(
-                Diagnostic(source="structured-output", message=message, severity="note")
-            ),
-        )
-    else:
-        output = from_dict(
-            ir,
-            to_format,
-            withhold_values=anonymizing,
-            diagnostic_sink=lambda message: diagnostics.append(
-                Diagnostic(source="structured-output", message=message, severity="note")
-            ),
-        )
+    # Relative output is the bare subtree; only the JSON and YAML writers wrap.
+    output = from_dict(
+        ir,
+        to_format,
+        wrap=not relative,
+        withhold_values=anonymizing,
+        diagnostic_sink=lambda message: diagnostics.append(
+            Diagnostic(source="structured-output", message=message, severity="note")
+        ),
+    )
     return ConversionResult(output=output, diagnostics=tuple(diagnostics))
 
 
@@ -380,6 +373,7 @@ def _withheld_failure(error: Exception) -> RuntimeError:
 
 
 __all__ = [
+    "FORMAT_IMPLEMENTATIONS",
     "UNPLACED",
     "ConversionResult",
     "Diagnostic",

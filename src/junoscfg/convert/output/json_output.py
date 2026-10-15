@@ -1,4 +1,10 @@
-"""Convert JSON dict IR to JSON string output."""
+"""Write the IR as the Junos JSON object, in JSON text or in YAML text.
+
+`junos_json_object` is the writer's object stage: the native Junos JSON
+spellings applied to its own copy of the IR. The format ``json`` serializes the
+object as JSON (`dict_to_json`), ``yaml-new`` as YAML (`dict_to_junos_yaml`);
+neither reparses the other's text (spec conversion/junos-json-yaml).
+"""
 
 from __future__ import annotations
 
@@ -6,12 +12,14 @@ import copy
 import json
 from typing import Any
 
+import yaml
+
 from junoscfg.convert.ir import wrap_configuration
 from junoscfg.display import load_schema_tree, schema_child
 
 
-def dict_to_json(config: Any, *, wrap: bool = True) -> str:
-    """Render the IR dict as a Junos JSON string.
+def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
+    """The Junos JSON object for the IR *config*.
 
     When *wrap* is true, wraps the config in ``{"configuration": ...}``.
     Dict input receives native-format normalization so the output can be
@@ -29,8 +37,38 @@ def dict_to_json(config: Any, *, wrap: bool = True) -> str:
         # A selected presence flag is rendered the same way it was when the
         # parent dict was normalized before the old output-text filter ran.
         config = [None]
-    output = wrap_configuration(config) if wrap else config
-    return json.dumps(output, indent=4, ensure_ascii=False) + "\n"
+    return wrap_configuration(config) if wrap else config
+
+
+def dict_to_json(config: Any, *, wrap: bool = True) -> str:
+    """Render the IR as Junos JSON text: `junos_json_object` serialized as JSON."""
+    return json.dumps(junos_json_object(config, wrap=wrap), indent=4, ensure_ascii=False) + "\n"
+
+
+class _NoAliasDumper(yaml.SafeDumper):
+    """A YAML dumper that writes a repeated object out each time.
+
+    JSON has no anchors or aliases, so the YAML spelling of a JSON object
+    holds none either, even where a hand-built IR shares one object twice.
+    """
+
+    def ignore_aliases(self, data: Any) -> bool:  # noqa: ARG002 -- PyYAML's hook signature
+        return True
+
+
+def dict_to_junos_yaml(config: Any, *, wrap: bool = True) -> str:
+    """Render the IR as yaml-new: `junos_json_object` serialized as YAML.
+
+    Block style, keys in the object's order, Unicode as written: the layout
+    of the ``yaml`` writer, with no anchors or aliases.
+    """
+    return yaml.dump(
+        junos_json_object(config, wrap=wrap),
+        Dumper=_NoAliasDumper,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    )
 
 
 def _coerce_scalar_leaves(

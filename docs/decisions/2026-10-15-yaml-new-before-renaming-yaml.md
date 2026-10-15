@@ -37,4 +37,6 @@ The rename is two table rows, the enum and the docs; dispatch code does not chan
 then two YAML formats coexist, and YAML detected without `-i` reads as `yaml`. A `yaml-new`
 reader keeps `_ansible_*` and `_meta_*` keys and scalar leaf-lists as JSON does, so before
 the rename the consumer's pipelines (`edityaml ansibilize` output fed back as `yaml`) must
-be measured; the rename change owns that measurement.
+be measured; the rename change owns that measurement. It also re-points tests that use
+`Format.YAML` as the IR-dump oracle to `yaml-old`; `test_the_rename_is_a_change_to_the_table`
+rehearses the swap today.

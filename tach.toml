@@ -76,8 +76,8 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.input"]
 expose = [
-    "InputError", "find_unsupported_set_brackets", "find_unsupported_set_commands",
-    "iter_visible_set_lines", "normalize",
+    "InputError", "find_non_json_value", "find_unsupported_set_brackets",
+    "find_unsupported_set_commands", "iter_visible_set_lines", "normalize",
 ]
 
 [[interfaces]]
@@ -103,7 +103,7 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.convert"]
 expose = [
-    "ConversionResult", "Diagnostic", "FieldError", "FieldValidationError", "FieldValidationResult",
-    "StructuredSetLines", "UNPLACED", "find_configuration", "from_dict", "pipeline",
+    "ConversionResult", "Diagnostic", "FORMAT_IMPLEMENTATIONS", "FieldError", "FieldValidationError",
+    "FieldValidationResult", "StructuredSetLines", "UNPLACED", "find_configuration", "from_dict", "pipeline",
     "pipeline_result", "structured_set_lines", "to_dict", "validate_ir",
 ]

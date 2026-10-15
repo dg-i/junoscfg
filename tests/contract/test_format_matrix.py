@@ -151,7 +151,7 @@ def _with(fmt: Format) -> list[object]:
     return [pytest.param(shape, id=shape.name) for shape in SHAPES if fmt in shape.sources]
 
 
-class TestYamlNewSpellsTheJsonObject:
+class TestJunosYamlIsTheJsonObject:
     """yaml-new is the object the JSON writer builds and the JSON reader takes.
 
     The owner's default for yaml-new (2026-10-15, change yaml-new-format):
@@ -179,7 +179,7 @@ class TestYamlNewSpellsTheJsonObject:
             ) == convert_config(source, from_format=Format.JSON, to_format=writer), writer.value
 
 
-class TestYamlMigratesToYamlNew:
+class TestIrYamlMigratesToJunosYaml:
     """`yaml` -> `yaml-new` is the migration path the planned rename relies on
     (docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md)."""
 

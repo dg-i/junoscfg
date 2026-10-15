@@ -52,6 +52,19 @@ from junoscfg import validate_yaml
 result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 ```
 
+### yaml-new
+
+`yaml-new` is the Junos JSON object in YAML, so it is validated by the JSON
+schema: `_ansible_*` and `_meta_*` keys are errors, as they are in JSON.
+
+```python
+from junoscfg import validate_config
+
+result = validate_config(
+    "configuration:\n  system:\n    host-name: router1\n", format="yaml-new"
+)
+```
+
 ### Set Commands
 
 !!! warning "Structural only, and it rejects some valid configuration"

@@ -32,8 +32,8 @@ junoscfg convert [OPTIONS] [FILE]
 
 | Option | Value | Default | Required | Description |
 |---|---|---|---|---|
-| `-i`<br>`--import-format` | `[set\|structured\|json\|yaml\|xml\|conf]` | — | no | Input format (auto-detected if omitted). |
-| `-e`<br>`--export-format` | `[set\|structured\|json\|yaml\|xml\|conf]` | — | no | Output format. |
+| `-i`<br>`--import-format` | `[set\|structured\|json\|yaml\|yaml-new\|xml\|conf]` | — | no | Input format (auto-detected if omitted). |
+| `-e`<br>`--export-format` | `[set\|structured\|json\|yaml\|yaml-new\|xml\|conf]` | — | no | Output format. |
 | `-v`<br>`--validate` | flag | — | no | Validate configuration. |
 | `--artifacts` | `DIRECTORY` | — | no | Path to validation artifacts directory. |
 | `--path` | `TEXT` | — | no | Show only config under this path (dot-separated, e.g. 'system.syslog'). |
@@ -232,7 +232,7 @@ junoscfg audit unused [OPTIONS] [FILE]
 
 | Option | Value | Default | Required | Description |
 |---|---|---|---|---|
-| `-i`<br>`--import-format` | `[set\|structured\|json\|yaml\|xml\|conf]` | — | no | Input format (default: auto-detect). |
+| `-i`<br>`--import-format` | `[set\|structured\|json\|yaml\|yaml-new\|xml\|conf]` | — | no | Input format (default: auto-detect). |
 | `--types` | `TEXT` | `all` | no | Comma-separated registry types to audit, or 'all'. |
 | `--match` | `TEXT` | — | no | Only check definitions whose name matches this regex (re.search). |
 | `-o`<br>`--output` | `[pathname\|pathname-verbose\|delete-script\|delete-script-verbose\|show-script\|show-script-verbose\|show-configuration-script\|show-configuration-script-verbose\|deactivate-script\|deactivate-script-verbose]` | `pathname` | no | Output style. |

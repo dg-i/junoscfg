@@ -391,10 +391,11 @@ DOORS: dict[str, Door] = {
     "cli-read-yaml-new-date": Door(
         _cli(_YAML_DATE, ["-i", "yaml-new", "-e", "json"]), _READ, "system.x-acme"
     ),
+    # A meta key: the JSON schema yaml-new is judged by rejects it, the YAML one would not.
     "cli-validate-only-yaml-new": Door(
-        _cli("configuration:\n  system:\n    bogus-acme: x\n", ["-i", "yaml-new", "-v"]),
+        _cli("configuration:\n  system:\n    _meta_acme: x\n", ["-i", "yaml-new", "-v"]),
         ("Validation: FAILED (1 error(s))",),
-        "bogus-acme",
+        "_meta_acme",
     ),
     "cli-read-xml": Door(
         _cli(_BROKEN_XML, ["-i", "xml", "-e", "set"]), (*_READ, "(line 1)"), "sys-acme"

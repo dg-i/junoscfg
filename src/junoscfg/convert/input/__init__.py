@@ -17,7 +17,9 @@ def to_dict(
 
     Args:
         source: Configuration text.
-        fmt: Format name (``"json"``, ``"yaml"``, ``"xml"``, ``"set"``,
+        fmt: Format name, a key of
+             :data:`~junoscfg.convert.formats.FORMAT_IMPLEMENTATIONS`
+             (``"json"``, ``"yaml"``, ``"yaml-new"``, ``"xml"``, ``"set"``,
              ``"structured"``).
         diagnostic_sink: Receives each reader warning as the path it concerns
             and its message: what structured text holds that yields no
@@ -29,30 +31,35 @@ def to_dict(
         Documented variant annotation spellings are normalized to the
         canonical forms (see :func:`_normalize_annotation`).
     """
-    if fmt == "json":
+    from junoscfg.convert.formats import implementation
+
+    implemented = implementation(fmt, "input")
+    if implemented == "junos-json":
         from junoscfg.convert.input.json_input import json_to_dict
 
         ir = json_to_dict(source)
-    elif fmt == "yaml":
+    elif implemented == "junos-yaml":
+        from junoscfg.convert.input.json_input import junos_yaml_to_dict
+
+        ir = junos_yaml_to_dict(source)
+    elif implemented == "ir-yaml":
         from junoscfg.convert.input.yaml_input import yaml_to_dict
 
         ir = yaml_to_dict(source)
-    elif fmt == "xml":
+    elif implemented == "xml":
         from junoscfg.convert.input.xml_input import xml_to_dict
 
         ir = xml_to_dict(source)
-    elif fmt == "set":
+    elif implemented == "set":
         from junoscfg.convert.input.set_input import set_to_dict
 
         ir = set_to_dict(source)
-    elif fmt == "structured":
+    else:
         from junoscfg.convert.input.structured_input import structured_to_dict
 
         ir = structured_to_dict(source, diagnostic_sink)
-    else:
-        raise ValueError(f"Unknown input format: {fmt}")
 
-    if fmt in {"yaml", "xml"}:
+    if implemented in {"ir-yaml", "xml"}:
         from junoscfg.convert.input.normalization import normalize_leaf_lists
 
         normalize_leaf_lists(ir)

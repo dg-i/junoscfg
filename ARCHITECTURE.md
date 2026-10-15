@@ -8,8 +8,8 @@ carries one line saying so and a pointer.
 
 junoscfg converts, validates, anonymizes and audits Junos device
 configurations between five representations — display set, structured
-(curly-brace), XML, JSON and YAML — and turns them into Ansible variable
-files. It is a library first and a CLI second: every capability a downstream
+(curly-brace), XML, JSON and YAML, the last in two spellings, `yaml` and
+`yaml-new` — and turns them into Ansible variable files. It is a library first and a CLI second: every capability a downstream
 consumer would otherwise reimplement lives in the public API, and `cli.py`
 only parses arguments and formats output.
 
@@ -137,6 +137,19 @@ share the display kernel's `xml_to_dict()` walker; conversion input normalizes
 its result directly without a serialization round trip. One configuration has
 one IR whatever format it arrived in: leaf values are strings, leaf-lists are
 arrays, and `KEY_ALIASES` is applied on every input path.
+
+**Format names select implementations in one table.** `FORMAT_IMPLEMENTATIONS`
+in `src/junoscfg/convert/formats.py` maps each name to its implementation;
+`to_dict`, `from_dict` and `validate_config` dispatch on the implementation, and
+`Format`'s values are the table's names. The Junos JSON object has one reader
+stage and one writer stage, `ir_from_junos_json_object` in
+`src/junoscfg/convert/input/json_input.py` and `junos_json_object` in
+`src/junoscfg/convert/output/json_output.py`; `json` and `yaml-new` are two text
+spellings of them, so `yaml-new` means what `json` means and no text is
+re-parsed. `yaml` is a second implementation: the IR dumped as YAML, read with
+`_ansible_*`/`_meta_*` cleanup and leaf-list promotion. A planned change renames
+`yaml` to `yaml-old` and `yaml-new` to `yaml` by editing the table and `Format`
+(`docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`).
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in

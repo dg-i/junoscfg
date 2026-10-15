@@ -30,6 +30,19 @@ class TestJunosValidator:
         result = v.validate_yaml(yaml_str)
         assert result.valid is True
 
+    def test_validate_yaml_as_json_uses_the_json_schema(self, artifacts_dir):
+        """The yaml-new door: an Ansible meta key the YAML schema allows is an
+        error, as in JSON (Test/Challenge B1)."""
+        v = JunosValidator(artifacts_dir=artifacts_dir)
+        yaml_str = "configuration:\n  system:\n    host-name: r1\n    _ansible_host: x\n"
+        as_json = json.dumps(
+            {"configuration": {"system": {"host-name": "r1", "_ansible_host": "x"}}}
+        )
+        result = v.validate_yaml_as_json(yaml_str)
+        assert result.valid is False
+        assert result.errors == v.validate_json(as_json).errors
+        assert v.validate_yaml(yaml_str).valid is True
+
     def test_validate_set(self, artifacts_dir):
         v = JunosValidator(artifacts_dir=artifacts_dir)
         result = v.validate_set("set system host-name r1")

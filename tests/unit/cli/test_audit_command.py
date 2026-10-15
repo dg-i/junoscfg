@@ -54,11 +54,21 @@ class TestInputFormats:
         assert "policy-options policy-statement dead-pol" in output
         assert "live-pol" not in output
 
-    def test_yaml_new_is_audited_as_json(self) -> None:
+    def test_junos_yaml_is_audited_as_json(self) -> None:
         """yaml-new is the JSON object in YAML: the audit reads it as JSON
         (spec conversion/junos-json-yaml)."""
         as_json = run_cli(["audit", "unused", "-i", "json"], to_format("json"))
         assert run_cli(["audit", "unused", "-i", "yaml-new"], to_format("yaml-new")) == as_json
+
+    def test_a_value_json_cannot_hold_is_refused(self) -> None:
+        """`-i yaml-new` reads with the yaml-new reader, not the yaml one: an
+        unquoted date is refused, where `-i yaml` reads it (Test/Challenge B4)."""
+        source = to_format("yaml-new").replace("description: half-pol", "description: 2026-10-15")
+        assert "2026-10-15" in source
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", "yaml-new"], source)
+        assert exit_code == 2
+        assert "no JSON spelling" in stderr
+        assert run_cli(["audit", "unused", "-i", "yaml"], source)[0] == 0
 
     def test_autodetect_set(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused"], SET_CONFIG)

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 __all__ = [
     "InputError",
+    "find_non_json_value",
     "find_unsupported_set_brackets",
     "find_unsupported_set_commands",
     "iter_visible_set_lines",
@@ -15,7 +16,7 @@ __all__ = [
 ]
 
 import re
-from typing import TYPE_CHECKING, TextIO
+from typing import TYPE_CHECKING, Any, TextIO
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -34,6 +35,46 @@ class InputError(ValueError):
         """Build the refusal from its *message* and the *lineno* it names."""
         super().__init__(message)
         self.lineno = lineno
+
+
+#: The Python types of a JSON document's scalars.
+_JSON_SCALARS = (str, int, float, bool, type(None))
+
+
+def find_non_json_value(data: Any) -> tuple[str, str] | None:
+    """The first value of a loaded document that no JSON document can hold.
+
+    yaml-new is the Junos JSON object spelled in YAML (spec
+    conversion/junos-json-yaml); its conversion and its validation both refuse
+    a document that holds anything else. Returns ``(kind, path)``: the kind is
+    the value's type (``date``, ``bytes``, ``set``, ``tuple``, ...) or
+    ``<type> key`` for a mapping key that is not a string, ``null`` for
+    ``None``; the path is dotted keys and list indexes from the document root,
+    ``""`` for the document itself, and never holds the offending value or key.
+    Returns ``None`` when every value is a mapping with string keys, a list, a
+    string, a number, a boolean or null.
+    """
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if not isinstance(key, str):
+                return f"{_kind(key)} key", ""
+            found = find_non_json_value(value)
+            if found is not None:
+                kind, below = found
+                return kind, f"{key}.{below}" if below else key
+    elif isinstance(data, list):
+        for index, item in enumerate(data):
+            found = find_non_json_value(item)
+            if found is not None:
+                kind, below = found
+                return kind, f"{index}.{below}" if below else str(index)
+    elif not isinstance(data, _JSON_SCALARS):
+        return _kind(data), ""
+    return None
+
+
+def _kind(value: Any) -> str:
+    return "null" if value is None else type(value).__name__
 
 
 def find_unsupported_set_brackets(source: str) -> tuple[tuple[int, str], ...]:

@@ -101,6 +101,28 @@ class TestYamlAsJsonValidation:
         assert "YAML parse error" in result.errors[0].message
         assert result.errors[0].line == 3
 
+    @pytest.mark.parametrize(
+        ("document", "kind", "path"),
+        [
+            (
+                "configuration:\n  system:\n    host-name: 2026-10-15\n",
+                "date",
+                "configuration.system.host-name",
+            ),
+            ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
+            ("configuration:\n  system:\n    64496: x\n", "int key", "configuration.system"),
+        ],
+        ids=["date", "bool-key", "int-key"],
+    )
+    def test_a_value_json_cannot_hold_is_invalid(self, validator, document, kind, path):
+        """Never an exception and never valid: the verdict conversion's refusal
+        gives (Test/Challenge B2)."""
+        result = validator.validate_yaml_as_json(document)
+        assert result.valid is False
+        assert [(e.message, e.path) for e in result.errors] == [
+            (f"YAML {kind} has no JSON spelling; quote it", path)
+        ]
+
     def test_an_empty_document_is_judged_as_json_null(self, validator):
         assert validator.validate_yaml_as_json("").errors == validator.validate_json("null").errors
         assert validator.validate_yaml_as_json("").valid is False

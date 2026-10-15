@@ -12,6 +12,7 @@ import jsonschema
 import yaml
 
 from junoscfg.display import build_from_artifact
+from junoscfg.input import find_non_json_value
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
 
@@ -77,18 +78,60 @@ class JsonYamlValidator:
         try:
             data = yaml.safe_load(source)
         except yaml.YAMLError as e:
-            line = None
-            if hasattr(e, "problem_mark") and e.problem_mark is not None:
-                line = e.problem_mark.line + 1
-            return ValidationResult(
-                valid=False,
-                errors=(ValidationError(message=f"YAML parse error: {e}", line=line),),
-            )
+            return _yaml_parse_error(e)
 
         if data is None:
             return ValidationResult(valid=True)
 
         return _validate_data(data, self._yaml_validator)
+
+    def validate_yaml_as_json(self, source: str) -> ValidationResult:
+        """Validate YAML that spells the Junos JSON object (the format ``yaml-new``).
+
+        The loaded object is judged by the JSON schema, exactly as
+        :meth:`validate_json` judges the same object; an empty document is
+        the object ``null``. A value no JSON document can hold (a timestamp,
+        a key that is not a string) is an error naming its kind and path, as
+        conversion refuses it.
+
+        Args:
+            source: YAML configuration as a string.
+
+        Returns:
+            ValidationResult with errors if invalid.
+        """
+        if self._json_validator is None:
+            raise SchemaLoadError("JSON schema not loaded")
+
+        try:
+            data = yaml.safe_load(source)
+        except yaml.YAMLError as e:
+            return _yaml_parse_error(e)
+
+        found = find_non_json_value(data)
+        if found is not None:
+            kind, path = found
+            return ValidationResult(
+                valid=False,
+                errors=(
+                    ValidationError(
+                        message=f"YAML {kind} has no JSON spelling; quote it",
+                        path=path or None,
+                    ),
+                ),
+            )
+        return _validate_data(data, self._json_validator)
+
+
+def _yaml_parse_error(error: yaml.YAMLError) -> ValidationResult:
+    """The invalid result for a document PyYAML could not parse, with its line."""
+    line = None
+    if hasattr(error, "problem_mark") and error.problem_mark is not None:
+        line = error.problem_mark.line + 1
+    return ValidationResult(
+        valid=False,
+        errors=(ValidationError(message=f"YAML parse error: {error}", line=line),),
+    )
 
 
 def _load_validator(schema_path: str | Path, label: str) -> jsonschema.Draft7Validator:
