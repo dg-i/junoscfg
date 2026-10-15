@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db",
-  "actor": "Claude yaml-new-format finalizer",
+  "checkpoint": "19e13c588441d07646217097f5279daa66820831",
+  "actor": "Claude relative-null-flags finalizer",
   "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
-  "captured_at": "2026-10-15T04:37:52.925213+00:00",
+  "captured_at": "2026-10-15T10:15:34.887999+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -88,7 +88,7 @@
     "codex/schema-qualification-scope": "parked",
     "codex/affected-test-scope": "parked",
     "change/yaml-new-format": "parked",
-    "change/relative-null-flags": "ready"
+    "change/relative-null-flags": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -170,6 +170,6 @@
     "schema-qualification-scope": "parked",
     "affected-test-scope": "parked",
     "yaml-new-format": "parked",
-    "relative-null-flags": "ready"
+    "relative-null-flags": "parked"
   }
 }

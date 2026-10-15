@@ -13,4 +13,4 @@
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it. Fresh Reviewer (Opus): Changes required on `a48d3d7` (R1 to R5, records only), Merge on `f9c0abd`; review.md.
 - [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.

@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db (post-merge, pre-archive assessment).
+- Observed integration head: 19e13c588441d07646217097f5279daa66820831 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db.
-- Invitation status: pending; 71 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 19e13c588441d07646217097f5279daa66820831.
+- Invitation status: pending; 73 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -251,3 +251,10 @@ without changing verification. The final full checkpoint at `a55c960` passed in 
 within the unchanged 400s cold / 200s warm targets; the fast set passed at `95b6820`.
 No tests, coverage, hooks or review requirements were removed. The pending cadence
 invitation is retained; no owner feedback is inferred.
+
+Job completion (relative-null-flags): local merge `19e13c5` makes relative JSON output
+spell presence flags as absolute output does, without changing verification. The full
+checkpoint at `10a53b2` passed in 352s cold (schema-25.2 tiers selected by
+`src/junoscfg/convert/output/__init__.py`), within the unchanged 400s cold target; the
+fast set passed at `d9deb10`. No tests, coverage, hooks or review requirements were
+removed. The pending cadence invitation is retained; no owner feedback is inferred.
