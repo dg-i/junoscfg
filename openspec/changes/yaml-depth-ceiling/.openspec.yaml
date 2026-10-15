@@ -1,2 +1,69 @@
 schema: agent-ready
 created: 2026-10-15
+assurance: economy
+type: feature
+zone: kernel
+domains: [conversion, validation]
+removes: >-
+  the yaml-new size bound (twice the parsed values, SC-2) and its counting pass, and the
+  parsed-depth bound (SC-A), replaced by one fixed 64-level ceiling; the alias refusal kind
+  `alias` and the reasons `expands the document past twice its size` and `nests the
+  document deeper than it is written` go with them
+declared-break:
+  consumer:
+    why: >-
+      Not a break. convert_config, convert_config_result and validate_config with yaml-new
+      accept every document they accepted that nests no deeper than 64 levels, and now also
+      the documents the two bounds refused (heavy reuse of a block, a block aliased deeper
+      than anything written). They refuse, newly, a document nesting deeper than 64 levels
+      (the refusal keeps ValueError, or an invalid result); with yaml input, convert_config
+      refuses a cycle with ValueError where it raised RecursionError, and a document deeper
+      than 64 levels it converted. No Junos configuration nests that deep: the schema's
+      deepest path is 25 steps below configuration (groups.group.logical-systems...),
+      the device corpus reaches 17 levels and the shape catalogue 15, so every refused
+      document is one no device holds, and AGENTS.md promises equivalent configurations,
+      not acceptance of arbitrary nesting. Text past about 490 levels already failed inside
+      PyYAML's loader, before junoscfg, and still does. Refusal wording changes (kind
+      `value`, reason "is nested deeper than 64 levels"; kind `alias` is gone). Patch, as
+      AGENTS.md rules for everything that is not a break on a named surface.
+    migration: >-
+      None required. A caller that relied on junoscfg to stop an alias bomb bounds untrusted
+      YAML before calling junoscfg; a caller matching refusal text matches the kind and path.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: convert, audit and convert -v with -i
+      yaml-new, and convert and audit with -i yaml, keep their exit codes (refusal 2,
+      invalid 1); a yaml cycle exits 2 with a message where it crashed with a traceback.
+    migration: None required.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - ARCHITECTURE.md
+  - changelog.d/+yaml-depth-ceiling.feature.md
+  - docs/api/input.md
+  - docs/architecture/developer-guide.md
+  - docs/decisions/2026-10-15-yaml-new-expands-aliases-within-a-bound.md
+  - docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md
+  - docs/decisions/index.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/input/yaml_input.py
+  - src/junoscfg/convert/ir.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - tests/contract/test_every_message.py
+  - tests/support/aliases.py
+  - tests/unit/cli/test_audit_command.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  dependencies: [openspec/changes/archive/2026-10-15-yaml-new-alias-cycles]
+  changelog: changelog.d/+yaml-depth-ceiling.feature.md
+  generated-records: []
