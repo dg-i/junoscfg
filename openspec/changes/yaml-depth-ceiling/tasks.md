@@ -8,7 +8,6 @@
 - [x] 2.1 Kernel: `find_non_json_value(data, *, scalars=True, unwalked=())` walks written out with no size bound, refuses a cycle and the first value past 64 path steps; `NonJsonValue.where`. Doors: yaml-new reader, writer, validator messages; `yaml` reader checks with `scalars=False` and its meta-key prefixes before the cleanup; `unshared` docstring.
 - [x] 2.2 Records: both spec deltas, conversion and validation guides, API page, input and convert contracts, developer guide, ARCHITECTURE.md, decision record 2026-10-15-yaml-nests-at-most-64-levels superseding 2026-10-15-yaml-new-expands-aliases-within-a-bound, changelog fragment.
 - [x] 2.3 Evidence (private_test_data/makeover-work/yaml-depth-ceiling/): device corpus 0 of 96 conversions differ (tools/compare_device_outputs.py); catalogue 0 of 2,435 (every shape x reader x writer, yaml and yaml-new writers included); device yaml and yaml-new round trip 0 of 240; door probe doors-base.txt vs doors-head.txt.
-- [ ] 2.4 Canonical full checkpoint.
 
 ## 3. Review and evidence
 
