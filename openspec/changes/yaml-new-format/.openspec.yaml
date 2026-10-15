@@ -44,6 +44,8 @@ verification:
   - docs/guide/conversion.md
   - docs/guide/validation.md
   - docs/index.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
   - src/junoscfg/CONTRACT.md
   - src/junoscfg/__init__.py
   - src/junoscfg/cli.py
