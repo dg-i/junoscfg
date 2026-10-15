@@ -13,7 +13,7 @@ import datetime
 import json
 import random
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import yaml
@@ -337,6 +337,51 @@ class TestPathFiltering:
             )
 
         assert yaml.safe_load(selected(Format.YAML_NEW)) == json.loads(selected(Format.JSON))
+
+    @pytest.mark.parametrize("to_format", [Format.JSON, Format.YAML_NEW], ids=["json", "yaml-new"])
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "system",
+            "system.syslog",
+            "system.syslog.host",
+            "system.services.ssh",
+            "system.services.netconf.ssh",
+        ],
+        ids=["a-mapping", "a-mapping-holding-a-list", "a-list", "true", "empty"],
+    )
+    def test_a_relative_selection_is_spelled_as_absolute_output_spells_it(
+        self, path: str, to_format: Format
+    ) -> None:
+        """Relative output is the value absolute output holds at the path: `{}` and
+        `true` flags are `[null]` and `name` leads a list entry, in a selected list
+        and as the selection itself (spec conversion/path-filtering; owner ruling
+        on PO-1, yaml-new-format review B7)."""
+        host = [
+            {"explicit-priority": {}, "name": "198.51.100.9"},
+            {"name": "198.51.100.10", "contents": [{"any": True, "name": "any"}]},
+        ]
+        services = {"ssh": True, "netconf": {"ssh": {}}}
+        source = json.dumps(
+            {"configuration": {"system": {"services": services, "syslog": {"host": host}}}}
+        )
+        load = json.loads if to_format is Format.JSON else yaml.safe_load
+
+        def written(relative: bool) -> Any:
+            return load(
+                convert_config(
+                    source,
+                    from_format=Format.JSON,
+                    to_format=to_format,
+                    path=path,
+                    relative=relative,
+                )
+            )
+
+        absolute = written(relative=False)["configuration"]
+        for token in path.split("."):
+            absolute = absolute[token]
+        assert json.dumps(written(relative=True)) == json.dumps(absolute)
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
