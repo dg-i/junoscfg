@@ -195,3 +195,16 @@ lock change selects the whole suite; documented double run). `lane` credits 31
 updater-only paths and `readiness` reports ready.
 
 Checkpoint: next is 3.1, the cheap gates then one canonical full checkpoint.
+
+## Final evidence (2026-10-15)
+
+Full checkpoints (canonical command): 35b26ef failed in 74 s (two variants of a
+schema metadata test raced git 2.56 detached maintenance; the schema runtime was not
+prepared); 5adc8ae passed in 360 s (10696 passed, schema-25.2 qualified); 07ec0fc
+passed in 176 s; final pre-merge snapshot e20ed29 passed in 175 s (10719 passed,
+20 xfailed, 37 skipped; pytest 62.3 s on 10 workers). Equivalent workloads at
+5adc8ae: CLI docstring commit 8.67 s + 0.33 s setup (baseline 173.37 s + 0.47 s);
+bookkeeping-only 1.70 s; ci.yml 5.34 s selecting test_type_policy. Fresh review at
+5adc8ae: do not merge (F1–F6); owner ruled all fixed in change; follow-up fresh
+review at 07ec0fc: merge, N1–N6 non-binding, all corrected at 533dd6f under the
+same ruling. Metrics captured for base 6498ec9 and code head 533dd6f. Next: 3.5.

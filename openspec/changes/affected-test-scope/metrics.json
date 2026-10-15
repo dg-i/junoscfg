@@ -1,0 +1,528 @@
+{
+  "change": "affected-test-scope",
+  "metrics": {
+    "declared_runtime_dependencies": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "86443718e4f6101ece78951428b5229d34e609cfe9b4565d43806e874e3e000c",
+          "head": "242a508c69aca0551731dc1286ac8993bec88b08794adbcc58bc13a8ce72a0c9"
+        },
+        "kind": "git_manifest",
+        "path": "pyproject.toml",
+        "selector": "root project.dependencies",
+        "semantics": "two committed root manifests; optional and development groups excluded"
+      },
+      "status": "measured",
+      "value": {
+        "base": 6,
+        "delta": 0,
+        "head": 6
+      }
+    },
+    "files_read": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "human_effort": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no human-effort record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator report required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "lifecycle": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": null,
+      "source": {
+        "kind": "lifecycle/1",
+        "path": "/private/tmp/junoscfg-affected-test-scope/openspec/changes/affected-test-scope/events.jsonl",
+        "sha256": "f7b95216c6ea38fb33c37661f8a352f566321dec2863e8b87c8c36396445ab36"
+      },
+      "status": "reported",
+      "value": {
+        "archived": false,
+        "base": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+        "carry": {},
+        "change": "affected-test-scope",
+        "checks": [
+          {
+            "checkpoint": "12ac26c9048f41a7b23d8fdee43120a8dcf46a35526265b315e0574884f168b7",
+            "duration_ms": 6958.089874999132,
+            "evidence": ".agent-ready/verification/39886181d1c24cc4985d994d499ca716.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "3ec24cfb794821abb849efb136a906f5f7320dbae24a00b7eeefd39b33738131",
+            "duration_ms": 2100.4199589951895,
+            "evidence": ".agent-ready/verification/c8b9558e453e46fd87a4e08dedd19be6.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "8aae6571401aff7595dc66a9aec0594b1dea3102d54a1fa9f3885205ebc4911f",
+            "duration_ms": 2165.368582995143,
+            "evidence": ".agent-ready/verification/bb43b41a441d4cbd86d827518fe18a54.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "abb44fe750f262776d712a065c90d4359b95d510720ada7e43c078492e6e3f2b",
+            "duration_ms": 2126.4395830221474,
+            "evidence": ".agent-ready/verification/c5c34bb079d9462cbe7ce33b610efd57.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "abb44fe750f262776d712a065c90d4359b95d510720ada7e43c078492e6e3f2b",
+            "duration_ms": 2126.4395830221474,
+            "evidence": ".agent-ready/verification/e80a5426c207482081bc73004ee9c517.json",
+            "exit_status": 0,
+            "reused": true,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "c85d5121c1ddc828f89bffb50dfcf8a1dfd796758b60df394060aca619801367",
+            "duration_ms": 5086.4417079719715,
+            "evidence": ".agent-ready/verification/1bb2ece6477040f0b26d0480f0be32c8.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "acfb550a3e6d6f0a146c9b98884c4cb2e44b4f5d0e8e441fa816da6791d1edec",
+            "duration_ms": 68798.84941695491,
+            "evidence": ".agent-ready/verification/c4d1d56f0ac14e55a050f754d8687bce.json",
+            "exit_status": 1,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "104fa705eab0c3170744809b909999c93b0b1c592474dcad01a37bc61569f59a",
+            "duration_ms": 4406.442417006474,
+            "evidence": ".agent-ready/verification/b735e58a2f714e37915a6757977df2dd.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "84bd5b8da253ddf2eab123018cbea6df1e8a3e1eb40b95a46a21e5355a3ce9ff",
+            "duration_ms": 251184.7347500152,
+            "evidence": ".agent-ready/verification/f591ad57020f4417a611763167a6365b.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "c21467f02ec89e30afb2bf04b0696c9e38798a9809a978364d83b0f6cb1a216e",
+            "duration_ms": 48372.07091698656,
+            "evidence": ".agent-ready/verification/34ca55fa80114dcbbb41f0e695e59073.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "f356e9cd077975787f686356dcebbb5d94e843feaadaebefd84277e9806f6a88",
+            "duration_ms": 353236.2814999651,
+            "evidence": ".agent-ready/verification/5c5f308ea56e4fb6bca549d9e2e931d0.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "a7e057e10c4fc3c1df7ca2a5cb7b9bcdfae610048f0ef2febfcfe0a2250f8aa9",
+            "duration_ms": 4799.096874950919,
+            "evidence": ".agent-ready/verification/0c86938b64ee447f933ca0b73d1bf1ea.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "b2208a49c3881b2beebe3669fcc52ebcfa3e78af931f7926420ad99733dfa136",
+            "duration_ms": 61555.75775000034,
+            "evidence": ".agent-ready/verification/93eef5792c5945fcbde2313de24c90c0.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "d2513f21505d64ecf29725f21bf6f9c270a3ae687bf6d1b6c6a09264930340ea",
+            "duration_ms": 50008.11983295716,
+            "evidence": ".agent-ready/verification/60bc521ff72e40339e04effddf65fc3d.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "5a126e02a05ecb1e9888c370e3903a98606929feff7a39c58745448f14d4371a",
+            "duration_ms": 169459.8303330131,
+            "evidence": ".agent-ready/verification/bcf11954602b4f41926d492641489b5b.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          },
+          {
+            "checkpoint": "52f9eb65f8269fc18de193bb336724b5aa9dbd0453181b680bf4a3c65aaea4bf",
+            "duration_ms": 4013.1273330189288,
+            "evidence": ".agent-ready/verification/d2caf54082f746d8b786d77357f5af88.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "5d6c8144e1399893679fd827625938fcd863649511a7ec28b7204550563c6520",
+            "duration_ms": 62986.31374997785,
+            "evidence": ".agent-ready/verification/dd40b3d7a0864f3eadb751f5cb0a3c93.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "a8ee9a93255319545e810bd1eb3dc755d2b021abbf9f4687d7e25cca0423937a",
+            "duration_ms": 48199.926875007804,
+            "evidence": ".agent-ready/verification/5d9dc6e20e98482e8d7c33cc7483ede2.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "expensive"
+          },
+          {
+            "checkpoint": "667dda5264d6ca5f2382634ba9ff3e4b601bbba7129db2bf74c848faf6643f62",
+            "duration_ms": 168178.26575000072,
+            "evidence": ".agent-ready/verification/bcff13794e2a49da8509a42db1a41610.json",
+            "exit_status": 0,
+            "reused": false,
+            "tier": "full"
+          }
+        ],
+        "head": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+        "ledger_sha256": "f7b95216c6ea38fb33c37661f8a352f566321dec2863e8b87c8c36396445ab36",
+        "observations": {
+          "active_agent_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "cache_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "escaped_regressions": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "expensive_runs": {
+            "events": [
+              "de3a7c56a89b0d73b762395ff9c9801cb3cbb3341c4b1890bdaeb79ab57e438a",
+              "068c0601def18df39b4457c53b5981996f9ea9cb01fbace6d0f2be357c242128",
+              "c4a2166904c38a4b6bb998f8d3ea35755207a7b7e6cbf774a05254c731d623af",
+              "38d40d4b4d20e528af4ad489beac0fd0b112fc25be41deee78b6979d3b192493",
+              "3dc6c7870284f36b907bf76e38c73c202786e2684b37475b74245d877c34ab88",
+              "2e27ae69c8c28a43f9cf48868fe71c9cb626c98dce0b272f006d7c18ea864246",
+              "b47e8fbe7c9850eec9c061aadc47680fb9a1c3bdc5ab6c2a3600e08049a4dae7",
+              "f20ef1335f6dc27932c35e31841c99ad38841fc224bea7a442a7c67144de9e3d",
+              "18b69b61b5d34e79bd6e7cf283457310a9606da9241554f71befb019a07d3aef",
+              "38d613623dad586582ff36d187b1373d15a4be102193b0889d1d37855b064662",
+              "0b4e414ed4cfbc51d8de688cab18c3c511ba401df7e3c58b4633dc24419f40e5",
+              "4ffd59f2cd1ee36badeb6de52027d854fe111d97576d729b2ecfbd473ec89135",
+              "a82de215a305f6fa600ce1e8b011831b8641badfe624471c81fafcf5b28619c2",
+              "70d38ad534faf65cd6eacf233f585f5af044379023c9820938c2f9a53d53dd27"
+            ],
+            "value": 14
+          },
+          "full_runs": {
+            "events": [
+              "b5a107d1b6a3e8b3352a54e90f804befb29d2d2cbb8f44afcc5930e49031a388",
+              "2d54eb33862c9cab6a23f1c257715e0d1099369327e8b5eb34d096764fd5828a",
+              "8f485552b79c21b0c1e4a624406ea4c61eddc80652217d464f739039c28453c2",
+              "6e4220dbb261956915c31bc6d813cd797d6beca6e71ac7a6ac2c517d07341f5c"
+            ],
+            "value": 4
+          },
+          "intent_to_archive_minutes": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "output_tokens": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "post_review_code_churn": {
+            "reason": "UNMEASURED",
+            "value": null
+          },
+          "review_findings": {
+            "reason": "UNMEASURED",
+            "value": null
+          }
+        },
+        "progress": [
+          {
+            "completed": 0,
+            "total": 8
+          },
+          {
+            "completed": 0,
+            "total": 8
+          },
+          {
+            "completed": 0,
+            "total": 8
+          },
+          {
+            "completed": 0,
+            "total": 8
+          },
+          {
+            "completed": 0,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          },
+          {
+            "completed": 3,
+            "total": 8
+          }
+        ],
+        "roles": [],
+        "schema": "lifecycle-summary/1"
+      }
+    },
+    "lines_added_removed": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": null,
+      "source": {
+        "kind": "git_diff",
+        "scope": {
+          "paths": [
+            ".agent-ready/activation.json",
+            ".agent-ready/template.toml",
+            ".agent-ready/update-receipt.json",
+            ".agents/skills/agent-ready-change/SKILL.md",
+            ".agents/skills/agent-ready-change/batches.md",
+            ".agents/skills/agent-ready-change/phases/0-preflight.md",
+            ".agents/skills/agent-ready-change/phases/1-intent.md",
+            ".agents/skills/agent-ready-change/phases/2-spec.md",
+            ".agents/skills/agent-ready-change/phases/3-design.md",
+            ".agents/skills/agent-ready-change/phases/4-tests.md",
+            ".agents/skills/agent-ready-change/phases/5-implement.md",
+            ".agents/skills/agent-ready-change/phases/6-review.md",
+            ".agents/skills/agent-ready-change/short-lanes.md",
+            ".agents/skills/agent-ready-change/types/docs.md",
+            ".agents/skills/agent-ready-garden/SKILL.md",
+            ".agents/skills/agent-ready-garden/guides/instruction-audit-output.md",
+            ".agents/skills/agent-ready-garden/jobs/5-instructions.md",
+            ".agents/skills/agent-ready-onboard/SKILL.md",
+            ".agents/skills/agent-ready-onboard/phases/4-gates.md",
+            ".agents/skills/agent-ready-onboard/phases/6-specs.md",
+            ".agents/skills/agent-ready-onboard/phases/7-handover.md",
+            ".agents/skills/agent-ready-refresh/SKILL.md",
+            ".agents/skills/openspec-apply-change/SKILL.md",
+            ".agents/skills/openspec-archive-change/SKILL.md",
+            ".agents/skills/openspec-bulk-archive-change/SKILL.md",
+            ".agents/skills/openspec-continue-change/SKILL.md",
+            ".agents/skills/openspec-explore/SKILL.md",
+            ".agents/skills/openspec-ff-change/SKILL.md",
+            ".agents/skills/openspec-new-change/SKILL.md",
+            ".agents/skills/openspec-onboard/SKILL.md",
+            ".agents/skills/openspec-propose/SKILL.md",
+            ".agents/skills/openspec-sync-specs/SKILL.md",
+            ".agents/skills/openspec-update-change/SKILL.md",
+            ".agents/skills/openspec-verify-change/SKILL.md",
+            ".copier-answers.yml",
+            ".gitignore",
+            ".pre-commit-config.yaml",
+            "changelog.d/+affected-test-scope.misc.md",
+            "changelog.d/agent-ready-ba9039c87a20e0c82555df83a7e72dab3a8698ca-186dcb284decb919097ed6e42b501a706d4a5c5c.misc.rst",
+            "docs/BACKLOG.md",
+            "docs/how-to/improve-verification.md",
+            "docs/how-to/junoscfg-verification.md",
+            "docs/how-to/template-ownership.md",
+            "docs/how-to/verification-evidence.md",
+            "openspec/schemas/agent-ready/schema.yaml",
+            "openspec/schemas/agent-ready/templates/evidence-freeze.md",
+            "openspec/schemas/agent-ready/templates/instruction-integrity.md",
+            "pyproject.toml",
+            "tests/CONTRACT.md",
+            "tests/tooling/test_affected_execution.py",
+            "tests/tooling/test_affected_tests.py",
+            "tests/tooling/test_schema_verification.py",
+            "tools/affected_tests.CONTRACT.md",
+            "tools/affected_tests.py",
+            "tools/verification-costs.json",
+            "uv.lock"
+          ],
+          "since": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313"
+        },
+        "selector": [
+          "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+          "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d"
+        ],
+        "semantics": "two-tree --numstat -z over the change's own files; binary files counted separately"
+      },
+      "status": "measured",
+      "value": {
+        "added": 1950,
+        "binary_files": 0,
+        "files": 56,
+        "removed": 3208
+      }
+    },
+    "locked_packages": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": null,
+      "source": {
+        "content_sha256": {
+          "base": "f36a528d734779e237a336ef25f4bf01020acb9b34405c50fb91d469463897ba",
+          "head": "4f7287ca4b3794092d37a9d22bd8521ea5b806b7f85e231f0c16585a371af67a"
+        },
+        "kind": "git_manifest",
+        "path": "uv.lock",
+        "selector": "root uv.lock [[package]]",
+        "semantics": "all root lock package records"
+      },
+      "status": "measured",
+      "value": {
+        "base": 63,
+        "delta": 0,
+        "head": 63
+      }
+    },
+    "phase_span": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "retries": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "runtime_tokens": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no bound session log supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "native runtime event evidence required"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "wall_clock_intent_to_merge": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "intent and merge timestamps were not supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "Git commit span is not intent-to-merge time"
+      },
+      "status": "unmeasured",
+      "value": null
+    },
+    "workflow_telemetry": {
+      "base_sha": "6498ec9c1fbfc29f3100cafa13e3fc0d7f0b5313",
+      "captured_at": "2026-10-15T02:52:00.921125Z",
+      "head_sha": "533dd6fc0bae4d87a05f0459ea176f84bcf91b0d",
+      "reason": "no workflow telemetry record supplied",
+      "source": {
+        "kind": "not_provided",
+        "semantics": "operator-bound workflow events required"
+      },
+      "status": "unmeasured",
+      "value": null
+    }
+  },
+  "schema_version": 1
+}
