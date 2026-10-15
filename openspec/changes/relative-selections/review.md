@@ -55,6 +55,16 @@ commits (tests first, `test: pin relative yaml-new depth, ...`):
 The Reviewer's out-of-scope note (absolute `--path system.host-name` drops the leaf's
 `@host-name` tag, base and head alike) is reported as a pending owner decision.
 
+Correction review on `a5dbd8d` (same Reviewer, read-only; code `f677934`): R1 to R7 resolved
+(the alias-not-resolved mutant is equivalent: aliased keys sit inside lists no path reaches).
+Reruns: focused tests 8,260 passed; probe_all identical; 2,955 absolute outputs identical to
+`ab46c51`; device 0 of 96. Verdict: **Merge**. Its advisories, fixed in the commit after this:
+
+19. N1: a cyclic selection under `below=` lost its refusal under one mutant. Fixed:
+    `TestJunosYamlWriter::test_a_cycle_below_a_relative_path_is_refused_on_write`.
+20. N2: tasks.md 2.1 still described the removed exemptions. Fixed.
+21. N3: no anonymized row selected an annotation key. Fixed: row `an-annotation-key`.
+
 ## Evidence
 
 - Follow-up canonical full checkpoint at `f677934` (after R1 to R7): every check passed, 166 s;
@@ -64,7 +74,7 @@ The Reviewer's out-of-scope note (absolute `--path system.host-name` drops the l
   37 skipped; coverage 93.11 %; schema-25.2 tiers exit 0.
 - Absolute output unchanged: device corpus 0 of 96, catalogue 0 of 2,435 (base: the
   yaml-depth-ceiling head records, same runtime as `d3ed627`).
-- Corpus law at depth 5: every capture passes (law5-head.txt). Sixteen mutations each fail the
+- Corpus law at depth 5: every capture passes (law5-head.txt). Seventeen mutations each fail the
   tests (mutations.txt).
 
 ## Specification challenges

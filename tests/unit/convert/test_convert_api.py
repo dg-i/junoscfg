@@ -494,8 +494,14 @@ class TestPathFiltering:
                 "system",
                 Format.JSON,
             ),
+            (
+                '{"configuration": {"system": {"@": {"inactive": true}, "host-name": "r1",'
+                ' "name-server": [{"name": "203.0.114.53"}]}}}',
+                "system.@",
+                Format.JSON,
+            ),
         ],
-        ids=["flags", "coercion", "annotation"],
+        ids=["flags", "coercion", "annotation", "an-annotation-key"],
     )
     def test_an_anonymized_selection_is_spelled_alike(
         self, to_format: Format, source: str, path: str, from_format: Format
@@ -2015,6 +2021,14 @@ class TestJunosYamlWriter:
                 anon_config=AnonymizeConfig(ips=True, salt="s"),
             )
         assert "system" not in str(withheld.value)
+
+    def test_a_cycle_below_a_relative_path_is_refused_on_write(self) -> None:
+        """A relative selection is checked as written: a caller's cyclic
+        selection is refused, never a RecursionError (relative-selections N1)."""
+        loop: dict = {}
+        loop["x"] = loop
+        with pytest.raises(ValueError, match="cycle at x has no JSON spelling"):
+            from_dict({"system": {"a": loop}}, "yaml-new", below=["system", "a"])
 
     def test_an_ir_64_levels_deep_and_any_reuse_is_written(self) -> None:
         """The deepest accepted IR, wrapped, and a block shared at several depths
