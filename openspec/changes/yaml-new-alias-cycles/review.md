@@ -88,6 +88,9 @@ Resolutions in the follow-up commit:
 
 ## Evidence
 
+- Follow-up canonical full checkpoint at `b30dcd2` (after R1 to R6): every check passed,
+  167 s; 13,382 passed, 22 xfailed, 37 skipped; coverage 93.15 %; schema-25.2 tiers exit 0.
+
 - Canonical full checkpoint at `8fecbdd` (code head `4d30eec`): every check passed, 349 s;
   13,380 passed, 22 xfailed, 37 skipped; coverage 93.15 %; schema-25.2 tiers exit 0.
 - Device corpus base `87e14cd` vs head: 0 of 96 conversions differ. The tool writes set,
