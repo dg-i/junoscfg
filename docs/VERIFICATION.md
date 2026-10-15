@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: f639ae2341a46c91812701f6b33021258dd67cee (post-merge, pre-archive assessment).
+- Observed integration head: 5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: f639ae2341a46c91812701f6b33021258dd67cee.
-- Invitation status: pending; 69 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db.
+- Invitation status: pending; 71 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -244,3 +244,10 @@ full checkpoint at `e20ed29` passed in 175s (schema evidence reused; 360s cold a
 `5adc8ae`), within the unchanged 400s cold / 200s warm targets. No tests, coverage,
 hooks or review requirements were removed. The pending cadence invitation is
 retained; no owner feedback is inferred.
+
+Job completion (yaml-new format): local merge `5ec3682` adds the `yaml-new` format
+without changing verification. The final full checkpoint at `a55c960` passed in 170s
+(schema-25.2 tiers selected by `src/junoscfg/__init__.py`; 360s cold at `c95e67f`),
+within the unchanged 400s cold / 200s warm targets; the fast set passed at `95b6820`.
+No tests, coverage, hooks or review requirements were removed. The pending cadence
+invitation is retained; no owner feedback is inferred.

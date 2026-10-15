@@ -1,9 +1,9 @@
 {
   "policy": "strategy-a/1",
-  "checkpoint": "f639ae2341a46c91812701f6b33021258dd67cee",
-  "actor": "Claude affected-test-scope finalizer",
+  "checkpoint": "5ec368257b6b2e9a7cbbd7642e55a9a7a0cb94db",
+  "actor": "Claude yaml-new-format finalizer",
   "authority": "Owner-authorized local integration completed; park this completed change and branch while preserving all unrelated dispositions.",
-  "captured_at": "2026-10-15T02:57:46.102789+00:00",
+  "captured_at": "2026-10-15T04:37:52.925213+00:00",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -87,7 +87,7 @@
     "codex/publish-workflow-overhead-review": "parked",
     "codex/schema-qualification-scope": "parked",
     "codex/affected-test-scope": "parked",
-    "change/yaml-new-format": "ready"
+    "change/yaml-new-format": "parked"
   },
   "changes": {
     "restore-python-310-floor": "parked",
@@ -168,6 +168,6 @@
     "publish-workflow-overhead-review": "parked",
     "schema-qualification-scope": "parked",
     "affected-test-scope": "parked",
-    "yaml-new-format": "ready"
+    "yaml-new-format": "parked"
   }
 }
