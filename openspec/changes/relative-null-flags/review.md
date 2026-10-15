@@ -64,6 +64,10 @@ and M3 caught, M2 survived as finding R4 notes). Resolutions in the records comm
 18. R5 advisory, pre-existing: keys holding a dot (`ieee-802.1`) cannot be selected by a
     path. Resolved: named in the delta's exclusions; pending owner decision below.
 
+Correction review on `f9c0abd` (same Reviewer, read-only; records only, no product or test
+change since `c929c31`): R1 to R5 resolved. Verdict: **Merge**. Its non-blocking wording note
+(the annotation clause precedes the exclusion that qualifies it) is accepted as is.
+
 ## Evidence
 
 - Canonical full checkpoint at `10a53b2` (code head `c929c31`): every check passed, 352 s;
