@@ -24,7 +24,8 @@ declared-break:
       and yaml-new validation take a renamed element under the device's element name
       and, as a deprecated alias, under the CLI keyword junoscfg 0.28.23 and earlier
       wrote in JSON ("802.3ad", "to", the snmp name, the ethernet speeds, community
-      =/+/-), only where the node records an element name; the JSON reader reads both.
+      =/+/-), and IS-IS "hello-padding", which junoscfg never wrote, only where the node
+      records an element name; the JSON reader reads both.
       Messages: JSON-schema messages name the path and keys instead of reprinting the
       instance; set messages quote the whole line. Output: JSON and yaml-new write a
       renamed statement read from set, structured, XML or yaml as the device spells it

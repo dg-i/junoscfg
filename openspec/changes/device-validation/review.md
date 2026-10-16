@@ -114,7 +114,27 @@ Advisory:
 - A7 (recorded only): SC1 is invisible on the consumer surface: `to_dict` is not in
   `junoscfg/__init__.py`, and every `convert_config` path loaded the tree already.
 
+## Fresh review (phase 6, round 2)
+
+Verdict: **Merge**, on `297e9fe...9a0684d`, no binding findings (coordinator scratchpad
+`review-dv/verdict-round2.md`). B1, B2 and B3 resolved, each executed: base-written JSON and
+yaml-new with the keyword spellings validate and convert alike again; of 33 verb probes only
+the two lines stopping inside a route filter's key changed, both now rejected; restoring
+base's `set_validator.py` fails `TestEveryCaptureValidatesAsSet` on three captures' `protect`
+lines. Advisory:
+
+- R2-A1 (recorded): the alias rule also accepts `hello-padding` in JSON, a spelling junoscfg
+  never wrote (base could not place the statement) and base JSON validation rejected; it
+  follows from the one rule; added to the changelog's and the record's alias list.
+- R2-A2 (recorded under the trust rule): JSON holding both spellings (`"802.3ad"` and
+  `"ieee-802.3ad"`) validates, while conversion keeps the second as an unplaced statement;
+  input junoscfg never writes, and a caller with untrusted input bounds it first
+  (decision 2026-10-15-configuration-input-is-trusted).
+- R2-A3 (pending owner decision): the deprecation lives only in the changelog and record; no
+  diagnostic tells a user that a file holds the deprecated spelling. Interim: none; the
+  owner decides on a field or validation note before retiring the alias.
+
 ## Owner decisions pending (nothing is backlogged without the owner)
 
-SC1, SC2 (alias retirement and D3), SC3 with D2, P1 to P4, D1 to D5 and the backlog
-candidates B1 to B3 above, each with its interim as recorded.
+SC1, SC2 (alias retirement and D3), SC3 with D2, R2-A3, P1 to P4, D1 to D5 and the
+backlog candidates B1 to B3 above, each with its interim as recorded.
