@@ -7,3 +7,11 @@ zone: surface
 domains: []
 removes: "none, because the change adds backlog entries and removes no behaviour or document"
 skip_specs: true
+verification:
+  state: ready
+  planned-paths:
+  - changelog.d/+backlog-open-findings.doc.md
+  - docs/BACKLOG.md
+  dependencies: [openspec/changes/archive/2026-10-16-own-crash-fixes, openspec/changes/archive/2026-10-16-device-validation]
+  changelog: changelog.d/+backlog-open-findings.doc.md
+  generated-records: []

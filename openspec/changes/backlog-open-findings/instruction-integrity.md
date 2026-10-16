@@ -40,3 +40,4 @@ None, because the owner's ruling is the approved intent and the brief settles ev
 ## Delta log
 
 - Preflight, 2026-10-16: docs lane; C1 to C6 resolved. Base 716a9d1. Resume point: phase 1.
+- Phases 1 to 5, 2026-10-16: no new instruction; resume point phase 6 (review by a fresh Reviewer the coordinator dispatches).
