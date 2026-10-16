@@ -624,6 +624,59 @@ VERBS = (
         set="show system host-name",
         messages=("Unsupported command in set input on line 1",),
     ),
+    # The QFX5120 25.2R2-S1.5 refuses a verb before a list's name ("syntax error,
+    # expecting <identifier>", probe D5) and on one value of a leaf-list ("syntax
+    # error, expecting ';', [Enter], or '|'", probe A2); the set reader refuses a
+    # leaf's value. `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`.
+    Row(
+        "protect-a-list-without-its-entry",
+        False,
+        set="set policy-options policy-statement JUNOSCFG-PROBE term t1 then accept\n"
+        "protect policy-options policy-statement",
+        messages=("Invalid syntax: protect policy-options policy-statement",),
+    ),
+    Row(
+        "deactivate-one-value-of-a-leaf-list",
+        False,
+        set="set routing-options static route 198.51.100.0/24 community 64496:1\n"
+        "set routing-options static route 198.51.100.0/24 community 64496:2\n"
+        "deactivate routing-options static route 198.51.100.0/24 community 64496:2",
+        messages=(
+            "Invalid syntax: deactivate routing-options static route 198.51.100.0/24 "
+            "community 64496:2",
+        ),
+    ),
+    Row(
+        "deactivate-a-leaf-with-its-value",
+        False,
+        set="set system host-name router1\ndeactivate system host-name router1",
+        messages=("Invalid syntax: deactivate system host-name router1",),
+    ),
+    Row(
+        "deactivate-a-route-and-a-leaf-of-it",
+        True,
+        set="set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE\n"
+        "deactivate routing-options static route 198.51.100.0/24\n"
+        "protect routing-options static route 198.51.100.0/24 description",
+    ),
+    Row(
+        "deactivate-a-keyed-entry-after-its-whole-key",
+        True,
+        set=f"{VIRTUAL_LINK} neighbor-id 10.255.255.1 transit-area 0.0.0.2\n"
+        "deactivate protocols ospf area 0.0.0.0 virtual-link neighbor-id 10.255.255.1 "
+        "transit-area 0.0.0.2",
+    ),
+    Row(
+        "deactivate-before-a-key-value",
+        False,
+        set=f"{VIRTUAL_LINK} neighbor-id 10.255.255.1 transit-area 0.0.0.2\n"
+        "deactivate protocols ospf area 0.0.0.0 virtual-link neighbor-id 10.255.255.1 "
+        "transit-area",
+        messages=(
+            "Invalid syntax: deactivate protocols ospf area 0.0.0.0 virtual-link "
+            "neighbor-id 10.255.255.1 transit-area",
+        ),
+    ),
 )
 
 
@@ -634,7 +687,9 @@ class TestEveryVerbNamesAStatementPath:
     `delete`; each names a statement path, and only `set` gives a leaf its
     value. The device prints `protect groups GR-PROTECTED` and `deactivate ...
     max-hello-size` (`tests/data/device/synthetic/*/junoscfg-oracle.set.gz`);
-    every door called the first no set command (change device-validation).
+    every door called the first no set command (change device-validation). A
+    verb line names a container, a list entry after its whole key, or a leaf
+    before its value, and nothing else (change device-probe-fixes).
     """
 
     @pytest.mark.parametrize(("row", "door"), cases(VERBS))

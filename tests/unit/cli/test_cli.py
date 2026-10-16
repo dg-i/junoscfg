@@ -525,6 +525,28 @@ class TestPathOptions:
         assert result.exit_code == 0, result.output
         assert result.stdout == "set system host-name r1\ndeactivate system host-name\n"
 
+    def test_path_keeps_an_ancestors_tag(self) -> None:
+        """A leaf under `deactivate system` is written inside the deactivated
+        statement, as the QFX5120 25.2R2-S1.5 prints a leaf under a deactivated
+        route (probe C3), where it was written active (change device-probe-fixes)."""
+        source = "set system host-name r1\nset system domain-name example.net\ndeactivate system\n"
+        result = run(["convert", "-i", "set", "-e", "set", "--path", "system.host-name"], source)
+        assert result.exit_code == 0, result.output
+        assert result.stdout == "set system host-name r1\ndeactivate system\n"
+
+    def test_a_relative_path_notes_a_dropped_tag(self) -> None:
+        """Relative output of a deactivated container writes what lies below it
+        and notes the tag on stderr; the bare `deactivate` it wrote is a line the
+        device refuses (probe SC1; owner ruling 2026-10-17, change
+        device-probe-fixes)."""
+        source = "set system syslog file f any any\ndeactivate system syslog\n"
+        result = run(
+            ["convert", "-i", "set", "-e", "set", "--path", "system.syslog", "--relative"], source
+        )
+        assert result.exit_code == 0, result.output
+        assert result.stdout == "set file f any any\n"
+        assert "1 tag(s) at or above the selected path dropped" in result.stderr
+
 
 #: An IP-typed leaf, a name server.
 NAME_SERVER = '{"configuration": {"system": {"name-server": [{"name": "8.8.8.8"}]}}}'

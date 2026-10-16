@@ -225,6 +225,17 @@ _TAGGED_READERS = [
 ]
 
 
+def _dropped_tags(result: Any) -> int:
+    """The tags one relative selection's note says were dropped, 0 without one."""
+    notes = [
+        d.message
+        for d in result.diagnostics
+        if "tag(s) at or above the selected path dropped" in d.message
+    ]
+    assert len(notes) <= 1, notes
+    return int(notes[0].removeprefix("note: ").split()[0]) if notes else 0
+
+
 def _tagged_leaves(reader: Format) -> str:
     """`_TAGGED_LEAVES` in *reader*'s format."""
     if reader is Format.XML:
@@ -924,8 +935,9 @@ class TestPathFiltering:
 
     def test_an_annotation_selection_in_set_and_structured(self) -> None:
         """The tag on the selected statement itself has no statement left to
-        carry it: set writes the bare command (put back under the path it is
-        `deactivate system`), structured writes nothing and says so in a note."""
+        carry it: set and structured drop it and say so in a note, and set
+        writes no bare `deactivate`, which the device refuses (probe SC1;
+        owner ruling 2026-10-17, change device-probe-fixes)."""
         source = "set system host-name r1\ndeactivate system\n"
 
         def written(to_format: Format) -> Any:
@@ -933,12 +945,11 @@ class TestPathFiltering:
                 source, from_format=Format.SET, to_format=to_format, path="system.@", relative=True
             )
 
-        assert written(Format.SET).output == "set\ndeactivate\n"
+        assert written(Format.SET).output == "set\n"
         structured = written(Format.STRUCTURED)
         assert structured.output == ""
-        assert any(
-            "tag(s) of the selected statement itself" in d.message for d in structured.diagnostics
-        )
+        for result in (written(Format.SET), structured):
+            assert _dropped_tags(result) == 1
 
     def test_a_relative_yaml_new_selection_is_measured_as_written(self) -> None:
         """The 64-level ceiling counts the document written: a relative selection
@@ -1111,16 +1122,14 @@ class TestPathFiltering:
 
     @pytest.mark.parametrize("path", sorted(_TAGGED_ALONE))
     @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
-    def test_a_relative_leaf_selection_writes_its_tags_as_a_container_does(
-        self, to_format: Format, path: str
-    ) -> None:
-        """Handed its tags, a leaf, leaf-list or flag selected relative follows
-        the relative rule for a tag on the selected statement itself, as a
-        selected container does: bare commands in set output, which put back
-        under the path read as the statement alone with its tags; dropped with a
-        note in structured output; the value alone in json, yaml and yaml-new
-        (base dropped the tags silently; specification challenge SC1, change
-        own-crash-fixes; Test/Challenge TC4)."""
+    def test_a_relative_leaf_selection_notes_its_tags(self, to_format: Format, path: str) -> None:
+        """Handed its tags, a leaf, leaf-list or flag selected relative has no
+        statement left to carry them: every writer writes the value alone and
+        notes each tag it drops. Set wrote bare `deactivate` and `protect`
+        lines, which the QFX5120 25.2R2-S1.5 refuses at an edit level ("syntax
+        error, expecting <statement>, ...", probe SC1), and json, yaml and
+        yaml-new dropped them silently (Reviewer A1, change own-crash-fixes;
+        owner ruling 2026-10-17, change device-probe-fixes)."""
 
         def written(relative: bool) -> Any:
             return convert_config_result(
@@ -1132,21 +1141,91 @@ class TestPathFiltering:
             )
 
         result = written(True)
-        noted = any(
-            "tag(s) of the selected statement itself" in d.message for d in result.diagnostics
-        )
-        assert noted == (to_format is Format.STRUCTURED)
-        words = path.replace(".", " ")
+        tags = _TAGGED_ALONE[path].count("\ndeactivate ") + _TAGGED_ALONE[path].count("\nprotect ")
+        assert _dropped_tags(result) == tags
         if to_format is Format.SET:
+            assert all(len(line.split()) > 1 for line in result.output.splitlines())
+            words = path.replace(".", " ")
             put_back = "".join(
-                f"{line.split()[0]} {words} {' '.join(line.split()[1:])}".rstrip() + "\n"
+                f"set {words} {line.removeprefix('set').strip()}".rstrip() + "\n"
                 for line in result.output.splitlines()
             )
-            assert read_ir(put_back, Format.SET) == read_ir(_TAGGED_ALONE[path], Format.SET)
+            alone = "".join(
+                line + "\n" for line in _TAGGED_ALONE[path].splitlines() if line.startswith("set ")
+            )
+            assert read_ir(put_back, Format.SET) == read_ir(alone, Format.SET)
         elif to_format is not Format.STRUCTURED:
             load = json.loads if to_format is Format.JSON else yaml.safe_load
             absolute = load(written(False).output)["configuration"]["system"]
             assert load(result.output) == absolute[path.split(".")[-1]]
+
+    #: Each case: a configuration, a path, and the tags relative output of it
+    #: cannot write, per writer (set and structured, then json, yaml and yaml-new).
+    _RELATIVE_TAGS = {
+        "the-leafs-own": (
+            "set system host-name r1\ndeactivate system host-name\nprotect system host-name\n",
+            "system.host-name",
+            2,
+            2,
+        ),
+        "a-selected-containers-own": (
+            "set system syslog file f any any\ndeactivate system syslog\n",
+            "system.syslog",
+            1,
+            0,
+        ),
+        "an-ancestors": ("set system host-name r1\ndeactivate system\n", "system.host-name", 1, 1),
+        "an-ancestors-and-the-containers": (
+            "set system syslog file f any any\ndeactivate system syslog\nprotect system\n",
+            "system.syslog",
+            2,
+            1,
+        ),
+    }
+
+    @pytest.mark.parametrize("case", sorted(_RELATIVE_TAGS))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_relative_selection_notes_every_tag_it_drops(
+        self, to_format: Format, case: str
+    ) -> None:
+        """A tag at or above the path that relative output cannot write is
+        dropped with one note, in every writer, never written as a bare verb:
+        the device refuses one (probe SC1). A selected container's own tag is
+        part of the value json, yaml and yaml-new write (owner ruling 2
+        2026-10-17, change device-probe-fixes)."""
+        source, path, in_text, in_objects = self._RELATIVE_TAGS[case]
+        result = convert_config_result(
+            source, from_format=Format.SET, to_format=to_format, path=path, relative=True
+        )
+        objects = to_format in (Format.JSON, Format.YAML, Format.YAML_NEW)
+        assert _dropped_tags(result) == (in_objects if objects else in_text)
+        if to_format is Format.SET:
+            assert all(len(line.split()) > 1 for line in result.output.splitlines())
+        if objects and case.startswith("a-selected"):
+            load = json.loads if to_format is Format.JSON else yaml.safe_load
+            assert load(result.output)["@"] == {"inactive": True}
+
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_an_absolute_selection_keeps_its_ancestors_tags(self, to_format: Format) -> None:
+        """A statement inside a deactivated or protected container is written
+        inside it, as the QFX5120 25.2R2-S1.5 prints a route's leaf with the
+        deactivated route and with `deactivate routing-options static` (probe
+        C3): the output reads as the configuration holding the selected
+        statement and the tags along its path. It was written active
+        (ANCESTOR-TAGS-001, change device-probe-fixes)."""
+        source = (
+            "set system host-name r1\nset system domain-name example.net\n"
+            "set system syslog file f any any\ndeactivate system\nprotect system syslog\n"
+        )
+        expected = {
+            "system.host-name": "set system host-name r1\ndeactivate system\n",
+            "system.syslog.file": (
+                "set system syslog file f any any\ndeactivate system\nprotect system syslog\n"
+            ),
+        }
+        for path, alone in expected.items():
+            written = convert_config(source, from_format=Format.SET, to_format=to_format, path=path)
+            assert read_ir(written, to_format) == read_ir(alone, Format.SET), path
 
     @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
     def test_a_dotted_flag_keeps_its_tags(self, to_format: Format) -> None:

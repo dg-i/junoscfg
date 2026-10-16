@@ -1,0 +1,967 @@
+{
+  "about": "A device probe: the owner's run of the probe's own synthetic statements on one device, in `configure private`, never committed, every section ended with `rollback 0` and an empty `show | compare` at the end. Sanitized for this repository (docs/how-to/settle-a-schema-question.md, rule 5): no host name, user name, prompt or timestamp; the change-time attributes, the XML reply and CLI wrappers and the CLI banner are left out. `lines` are statements typed at the top level with the device's response: `accepted` is the load, `commit_check` the result of `commit check` where it ran. `edit_level` lines were typed at an edit level, which set input has no form for. `loads` are files loaded with `load`. `renderings` are `show` outputs, each with the configuration in the candidate when it was printed (`state`, as set lines) and what was asked (`show`). The questions and the backlog entries they settle are named by `id`. The raw session stays in private_test_data/device-probe-2026-10-16/.",
+  "device": {
+    "family": "QFX5120",
+    "release": "25.2R2-S1.5",
+    "date": "2026-10-16",
+    "mode": "configure private; never committed"
+  },
+  "questions": {
+    "D1": "HOLD-TIME-001: does `hold-time down 0` alone pass `commit check`?",
+    "C3": "ANCESTOR-TAGS-001: how is a statement under a tagged ancestor printed?",
+    "SC1": "RELATIVE-TAGS-001: does a bare `deactivate` or `protect` work at an edit level?",
+    "A2": "LEAF-LIST-VALUE-TAGS-001: can one value of a leaf-list be tagged?",
+    "D2": "RENAME-EVIDENCE-001: does the device load junoscfg's JSON names, and which does it print?",
+    "D3": "JSON-KEYWORD-ALIAS-001: does the device load the CLI keyword in JSON?",
+    "D4": "UNDOCUMENTED-001: undocumented siblings of modelled statements",
+    "P4": "UNDOCUMENTED-001: `chassis dump-on-panic`",
+    "D5": "VERB-PREFIX-001: a verb that stops before a list's name"
+  },
+  "lines": [
+    {
+      "id": "D1",
+      "line": "set interfaces ge-0/0/1 hold-time down 0",
+      "accepted": true,
+      "commit_check": "[edit interfaces ge-0/0/1] 'hold-time' Missing mandatory statement: 'up'; error: configuration check-out failed: (missing mandatory statements)"
+    },
+    {
+      "id": "D1",
+      "line": "set interfaces ge-0/0/1 hold-time up 0",
+      "accepted": true,
+      "commit_check": "[edit interfaces ge-0/0/1] 'hold-time' Missing mandatory statement: 'down'; error: configuration check-out failed: (missing mandatory statements)"
+    },
+    {
+      "id": "D1",
+      "line": "set interfaces ge-0/0/1 hold-time up 0 down 0",
+      "accepted": true,
+      "commit_check": "configuration check succeeds"
+    },
+    {
+      "id": "C3",
+      "line": "set routing-options static route 198.51.100.0/24 discard",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "set routing-options static route 198.51.100.0/24 community [ 64496:1 64496:2 ]",
+      "accepted": true,
+      "out_of_scope": "bracket lists in set input; junoscfg refuses them by design"
+    },
+    {
+      "id": "C3",
+      "line": "deactivate routing-options static route 198.51.100.0/24",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "activate routing-options static route 198.51.100.0/24",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "deactivate routing-options static",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "activate routing-options static",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "deactivate routing-options static route 198.51.100.0/24 description",
+      "accepted": true
+    },
+    {
+      "id": "C3",
+      "line": "protect routing-options static route 198.51.100.0/24 description",
+      "accepted": true
+    },
+    {
+      "id": "A2",
+      "line": "deactivate routing-options static route 198.51.100.0/24 community 64496:2",
+      "accepted": false,
+      "response": "syntax error, expecting ';', [Enter], or '|'."
+    },
+    {
+      "id": "D2",
+      "line": "set snmp name JUNOSCFG-PROBE",
+      "accepted": true
+    },
+    {
+      "id": "D2",
+      "line": "set interfaces interface-range JUNOSCFG-D2 member ge-0/0/42",
+      "accepted": true
+    },
+    {
+      "id": "D2",
+      "line": "set interfaces interface-range JUNOSCFG-D2 ether-options speed 1g",
+      "accepted": false,
+      "response": "syntax error: speed",
+      "out_of_scope": "the QFX5120 does not support the speed the XSD lists; its JSON load takes it marked unsupported"
+    },
+    {
+      "id": "D2",
+      "line": "set policy-options community JUNOSCFG-C1 members 64496:1",
+      "accepted": true
+    },
+    {
+      "id": "D2",
+      "line": "set policy-options policy-statement JUNOSCFG-PROBE term t1 then community = JUNOSCFG-C1",
+      "accepted": true
+    },
+    {
+      "id": "D2",
+      "line": "set policy-options policy-statement JUNOSCFG-PROBE term t2 then community + JUNOSCFG-C1",
+      "accepted": true
+    },
+    {
+      "id": "D2",
+      "line": "set policy-options policy-statement JUNOSCFG-PROBE term t3 then community - JUNOSCFG-C1",
+      "accepted": true
+    },
+    {
+      "id": "D4",
+      "line": "set system services extension-service request-response grpc clear-text address 127.0.0.1",
+      "accepted": true
+    },
+    {
+      "id": "D4",
+      "line": "set system services extension-service request-response grpc clear-text port 32767",
+      "accepted": true
+    },
+    {
+      "id": "D4",
+      "line": "set system dump-on-panic",
+      "accepted": true
+    },
+    {
+      "id": "D4",
+      "line": "set system debugger-on-break",
+      "accepted": true
+    },
+    {
+      "id": "D4",
+      "line": "set system debugger-on-panic",
+      "accepted": true
+    },
+    {
+      "id": "P4",
+      "line": "set chassis dump-on-panic",
+      "accepted": true
+    },
+    {
+      "id": "D5",
+      "line": "set policy-options policy-statement JUNOSCFG-PROBE term t1 then accept",
+      "accepted": true
+    },
+    {
+      "id": "D5",
+      "line": "protect policy-options policy-statement",
+      "accepted": false,
+      "response": "syntax error, expecting <identifier>."
+    },
+    {
+      "id": "D5",
+      "line": "deactivate policy-options policy-statement",
+      "accepted": false,
+      "response": "syntax error, expecting <identifier>."
+    }
+  ],
+  "edit_level": [
+    {
+      "id": "SC1",
+      "edit": "routing-options static route 198.51.100.0/24",
+      "line": "deactivate",
+      "accepted": false,
+      "response": "syntax error, expecting <statement>, <attribute-name>, <flag-value>, or <identifier>."
+    },
+    {
+      "id": "SC1",
+      "edit": "routing-options static route 198.51.100.0/24",
+      "line": "protect",
+      "accepted": false,
+      "response": "syntax error, expecting <statement>, <attribute-name>, <flag-value>, or <identifier>."
+    },
+    {
+      "id": "SC1",
+      "edit": "",
+      "line": "edit routing-options static route 198.51.100.0/24 description",
+      "accepted": false,
+      "response": "syntax error."
+    }
+  ],
+  "loads": [
+    {
+      "id": "D2",
+      "command": "load merge json d2-junoscfg.json",
+      "response": "load complete",
+      "source": {
+        "configuration": {
+          "snmp": {
+            "system-name": "JUNOSCFG-PROBE"
+          },
+          "interfaces": {
+            "interface-range": [
+              {
+                "name": "JUNOSCFG-D2",
+                "member": [
+                  {
+                    "name": "ge-0/0/42"
+                  }
+                ],
+                "ether-options": {
+                  "speed": {
+                    "ethernet-1g": [
+                      null
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "policy-options": {
+            "community": [
+              {
+                "name": "JUNOSCFG-C1",
+                "members": [
+                  "64496:1"
+                ]
+              }
+            ],
+            "policy-statement": [
+              {
+                "name": "JUNOSCFG-PROBE",
+                "term": [
+                  {
+                    "name": "t1",
+                    "then": {
+                      "community": [
+                        {
+                          "equal-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t2",
+                    "then": {
+                      "community": [
+                        {
+                          "plus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t3",
+                    "then": {
+                      "community": [
+                        {
+                          "minus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "command": "load set d2.set",
+      "response": "d2.set:3:(57) syntax error: speed; load complete",
+      "note": "every line but the speed loaded; a rendering's `state` lists the lines that did"
+    },
+    {
+      "id": "D3",
+      "command": "load merge json d3-keyword.json",
+      "response": "load complete",
+      "source": {
+        "configuration": {
+          "interfaces": {
+            "interface-range": [
+              {
+                "name": "JUNOSCFG-D3",
+                "member-range": [
+                  {
+                    "name": "ge-0/0/40",
+                    "to": "ge-0/0/41"
+                  }
+                ],
+                "ether-options": {
+                  "802.3ad": {
+                    "bundle": "ae0"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D3",
+      "command": "load merge json d3-element.json",
+      "response": "load complete",
+      "source": {
+        "configuration": {
+          "interfaces": {
+            "interface-range": [
+              {
+                "name": "JUNOSCFG-D3",
+                "member-range": [
+                  {
+                    "name": "ge-0/0/40",
+                    "end-range": "ge-0/0/41"
+                  }
+                ],
+                "ether-options": {
+                  "ieee-802.3ad": {
+                    "bundle": "ae0"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "renderings": [
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "set",
+      "text": [
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "deactivate routing-options static route 198.51.100.0/24"
+      ]
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "routing-options": {
+            "static": {
+              "route": [
+                {
+                  "name": "198.51.100.0/24",
+                  "@": {
+                    "inactive": true
+                  },
+                  "description": "JUNOSCFG-PROBE"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "xml",
+      "text": "<configuration>\n<routing-options>\n    <static>\n        <route inactive=\"inactive\">\n            <name>198.51.100.0/24</name>\n            <description>JUNOSCFG-PROBE</description>\n        </route>\n    </static>\n</routing-options>\n</configuration>\n"
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "curly",
+      "text": "##\n## inactive: routing-options static route 198.51.100.0/24\n##\ndescription JUNOSCFG-PROBE;\n"
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "set",
+      "text": [
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static",
+        "deactivate routing-options static"
+      ]
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static"
+      ],
+      "show": "routing-options static route 198.51.100.0/24",
+      "format": "set",
+      "text": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "set routing-options static",
+        "deactivate routing-options static"
+      ]
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "set",
+      "text": [
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description"
+      ]
+    },
+    {
+      "id": "C3",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description"
+      ],
+      "show": "routing-options static route 198.51.100.0/24 description",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "routing-options": {
+            "static": {
+              "route": [
+                {
+                  "name": "198.51.100.0/24",
+                  "description": "JUNOSCFG-PROBE",
+                  "@description": {
+                    "inactive": true,
+                    "protect": true
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description"
+      ],
+      "show": "routing-options static route 198.51.100.0/24",
+      "format": "set",
+      "text": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2"
+      ]
+    },
+    {
+      "id": "A2",
+      "state": [
+        "set routing-options static route 198.51.100.0/24 discard",
+        "set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE",
+        "set routing-options static route 198.51.100.0/24 community 64496:1",
+        "set routing-options static route 198.51.100.0/24 community 64496:2",
+        "deactivate routing-options static route 198.51.100.0/24 description",
+        "protect routing-options static route 198.51.100.0/24 description"
+      ],
+      "show": "routing-options static route 198.51.100.0/24",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "routing-options": {
+            "static": {
+              "route": [
+                {
+                  "name": "198.51.100.0/24",
+                  "discard": [
+                    null
+                  ],
+                  "description": "JUNOSCFG-PROBE",
+                  "@description": {
+                    "inactive": true,
+                    "protect": true
+                  },
+                  "community": [
+                    "64496:1",
+                    "64496:2"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "snmp name",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "snmp": {
+            "system-name": "JUNOSCFG-PROBE"
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "snmp name",
+      "format": "xml",
+      "text": "<configuration>\n<snmp>\n    <system-name>JUNOSCFG-PROBE</system-name>\n</snmp>\n</configuration>\n"
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "interfaces interface-range JUNOSCFG-D2",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "interfaces": {
+            "interface-range": [
+              {
+                "name": "JUNOSCFG-D2",
+                "member": [
+                  {
+                    "name": "ge-0/0/42"
+                  }
+                ],
+                "ether-options": {
+                  "speed": {
+                    "ethernet-1g": [
+                      null
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "interfaces interface-range JUNOSCFG-D2",
+      "format": "xml",
+      "text": "<configuration>\n<interfaces>\n    <interface-range>\n        <name>JUNOSCFG-D2</name>\n        <member>\n            <name>ge-0/0/42</name>\n        </member>\n        <ether-options>\n            <speed unsupported=\"unsupported\">\n                <ethernet-1g/>\n            </speed>\n        </ether-options>\n    </interface-range>\n</interfaces>\n</configuration>\n"
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "interfaces interface-range JUNOSCFG-D2",
+      "format": "set",
+      "text": [
+        "set interfaces interface-range JUNOSCFG-D2 member ge-0/0/42",
+        "set interfaces interface-range JUNOSCFG-D2 ether-options speed 1g"
+      ]
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "policy-options policy-statement JUNOSCFG-PROBE",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "policy-options": {
+            "policy-statement": [
+              {
+                "name": "JUNOSCFG-PROBE",
+                "term": [
+                  {
+                    "name": "t1",
+                    "then": {
+                      "community": [
+                        {
+                          "equal-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t2",
+                    "then": {
+                      "community": [
+                        {
+                          "plus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t3",
+                    "then": {
+                      "community": [
+                        {
+                          "minus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "policy-options policy-statement JUNOSCFG-PROBE",
+      "format": "xml",
+      "text": "<configuration>\n<policy-options>\n    <policy-statement>\n        <name>JUNOSCFG-PROBE</name>\n        <term>\n            <name>t1</name>\n            <then>\n                <community>\n                    <equal-literal/>\n                    <community-name>JUNOSCFG-C1</community-name>\n                </community>\n            </then>\n        </term>\n        <term>\n            <name>t2</name>\n            <then>\n                <community>\n                    <plus-literal/>\n                    <community-name>JUNOSCFG-C1</community-name>\n                </community>\n            </then>\n        </term>\n        <term>\n            <name>t3</name>\n            <then>\n                <community>\n                    <minus-literal/>\n                    <community-name>JUNOSCFG-C1</community-name>\n                </community>\n            </then>\n        </term>\n    </policy-statement>\n</policy-options>\n</configuration>\n"
+    },
+    {
+      "id": "D2",
+      "state": "load merge json d2-junoscfg.json",
+      "show": "policy-options policy-statement JUNOSCFG-PROBE",
+      "format": "set",
+      "text": [
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then community = JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t2 then community + JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t3 then community - JUNOSCFG-C1"
+      ]
+    },
+    {
+      "id": "D2",
+      "state": [
+        "set snmp name JUNOSCFG-PROBE",
+        "set interfaces interface-range JUNOSCFG-D2 member ge-0/0/42",
+        "set policy-options community JUNOSCFG-C1 members 64496:1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then community = JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t2 then community + JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t3 then community - JUNOSCFG-C1"
+      ],
+      "show": "snmp name",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "snmp": {
+            "system-name": "JUNOSCFG-PROBE"
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": [
+        "set snmp name JUNOSCFG-PROBE",
+        "set interfaces interface-range JUNOSCFG-D2 member ge-0/0/42",
+        "set policy-options community JUNOSCFG-C1 members 64496:1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then community = JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t2 then community + JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t3 then community - JUNOSCFG-C1"
+      ],
+      "show": "interfaces interface-range JUNOSCFG-D2",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "interfaces": {
+            "interface-range": [
+              {
+                "name": "JUNOSCFG-D2",
+                "member": [
+                  {
+                    "name": "ge-0/0/42"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D2",
+      "state": [
+        "set snmp name JUNOSCFG-PROBE",
+        "set interfaces interface-range JUNOSCFG-D2 member ge-0/0/42",
+        "set policy-options community JUNOSCFG-C1 members 64496:1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then community = JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t2 then community + JUNOSCFG-C1",
+        "set policy-options policy-statement JUNOSCFG-PROBE term t3 then community - JUNOSCFG-C1"
+      ],
+      "show": "policy-options policy-statement JUNOSCFG-PROBE",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "policy-options": {
+            "policy-statement": [
+              {
+                "name": "JUNOSCFG-PROBE",
+                "term": [
+                  {
+                    "name": "t1",
+                    "then": {
+                      "community": [
+                        {
+                          "equal-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t2",
+                    "then": {
+                      "community": [
+                        {
+                          "plus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "t3",
+                    "then": {
+                      "community": [
+                        {
+                          "minus-literal": [
+                            null
+                          ],
+                          "community-name": "JUNOSCFG-C1"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D3",
+      "state": "load merge json d3-keyword.json",
+      "show": "interfaces interface-range JUNOSCFG-D3",
+      "format": "set",
+      "text": [
+        "set interfaces interface-range JUNOSCFG-D3 member-range ge-0/0/40 to ge-0/0/41",
+        "set interfaces interface-range JUNOSCFG-D3 ether-options 802.3ad ae0"
+      ]
+    },
+    {
+      "id": "D3",
+      "state": "load merge json d3-element.json",
+      "show": "interfaces interface-range JUNOSCFG-D3",
+      "format": "set",
+      "text": [
+        "set interfaces interface-range JUNOSCFG-D3 member-range ge-0/0/40 to ge-0/0/41",
+        "set interfaces interface-range JUNOSCFG-D3 ether-options 802.3ad ae0"
+      ]
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system services extension-service request-response grpc clear-text address 127.0.0.1",
+        "set system services extension-service request-response grpc clear-text port 32767"
+      ],
+      "show": "system services extension-service request-response grpc clear-text",
+      "format": "set",
+      "text": [
+        "set system services extension-service request-response grpc clear-text address 127.0.0.1",
+        "set system services extension-service request-response grpc clear-text port 32767"
+      ]
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system services extension-service request-response grpc clear-text address 127.0.0.1",
+        "set system services extension-service request-response grpc clear-text port 32767"
+      ],
+      "show": "system services extension-service request-response grpc clear-text",
+      "format": "xml",
+      "text": "<configuration>\n<system>\n    <services>\n        <extension-service>\n            <request-response>\n                <grpc>\n                    <undocumented><clear-text>\n                        <address>127.0.0.1</address>\n                        <port>32767</port>\n                    </clear-text></undocumented>\n                </grpc>\n            </request-response>\n        </extension-service>\n    </services>\n</system>\n</configuration>\n"
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system services extension-service request-response grpc clear-text address 127.0.0.1",
+        "set system services extension-service request-response grpc clear-text port 32767"
+      ],
+      "show": "system services extension-service request-response grpc clear-text",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "system": {
+            "services": {
+              "extension-service": {
+                "request-response": {
+                  "grpc": {
+                    "clear-text": {
+                      "address": "127.0.0.1",
+                      "port": 32767
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system dump-on-panic"
+      ],
+      "show": "system dump-on-panic",
+      "format": "xml",
+      "text": "<configuration>\n<system>\n    <undocumented><dump-on-panic>\n    </dump-on-panic></undocumented>\n</system>\n</configuration>\n"
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system debugger-on-break"
+      ],
+      "show": "system debugger-on-break",
+      "format": "xml",
+      "text": "<configuration>\n<system>\n    <undocumented><debugger-on-break/></undocumented>\n</system>\n</configuration>\n"
+    },
+    {
+      "id": "D4",
+      "state": [
+        "set system debugger-on-panic"
+      ],
+      "show": "system debugger-on-panic",
+      "format": "xml",
+      "text": "<configuration>\n<system>\n    <undocumented><debugger-on-panic/></undocumented>\n</system>\n</configuration>\n"
+    },
+    {
+      "id": "P4",
+      "state": [
+        "set chassis dump-on-panic"
+      ],
+      "show": "chassis dump-on-panic",
+      "format": "set",
+      "text": [
+        "set chassis dump-on-panic"
+      ]
+    },
+    {
+      "id": "P4",
+      "state": [
+        "set chassis dump-on-panic"
+      ],
+      "show": "chassis dump-on-panic",
+      "format": "xml",
+      "text": "<configuration>\n<chassis>\n    <undocumented><dump-on-panic/></undocumented>\n</chassis>\n</configuration>\n"
+    },
+    {
+      "id": "P4",
+      "state": [
+        "set chassis dump-on-panic"
+      ],
+      "show": "chassis dump-on-panic",
+      "format": "json",
+      "text": {
+        "configuration": {
+          "chassis": {
+            "dump-on-panic": [
+              null
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "D5",
+      "state": [
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then accept"
+      ],
+      "show": "policy-options | match \"^(protect|deactivate) policy-options policy-statement$|JUNOSCFG-PROBE\"",
+      "format": "set",
+      "text": [
+        "set policy-options policy-statement JUNOSCFG-PROBE term t1 then accept"
+      ]
+    }
+  ]
+}

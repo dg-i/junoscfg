@@ -624,7 +624,7 @@ class TestTheJsonSchemaNamesElementsAsTheDeviceWrites:
         )
 
     def test_json_takes_the_element_name_yaml_the_keyword(self) -> None:
-        """JSON keeps the keyword as a deprecated alias (review B1); YAML holds the IR."""
+        """JSON keeps the keyword as an alias (review B1; probe D3); YAML holds the IR."""
         entry = {"name": "ge-0/0/2", "end-range": "ge-0/0/5"}
         keyword = {"name": "ge-0/0/2", "to": "ge-0/0/5"}
         unknown = {"name": "ge-0/0/2", "until": "ge-0/0/5"}

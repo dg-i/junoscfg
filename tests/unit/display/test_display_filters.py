@@ -303,6 +303,54 @@ class TestFilterDictByPath:
         }
         assert filter_dict_by_path(data, ["system", "host-name"], relative=True) == "r1"
 
+    def test_a_selection_keeps_its_ancestors_annotations(self) -> None:
+        """Rebuilt absolute, the selection keeps the annotations along its path:
+        each ancestor container's own `@` and each step's `@<key>`, so a leaf
+        inside a deactivated container stays inside it, as the QFX5120
+        25.2R2-S1.5 prints it (probe C3). The configuration's own `@` and the
+        siblings stay out; relative, the value alone is returned, as before
+        (ANCESTOR-TAGS-001, change device-probe-fixes)."""
+        data = {
+            "configuration": {
+                "@": {"junos:changed-seconds": "0"},
+                "system": {
+                    "@": {"inactive": True},
+                    "syslog": {
+                        "@": {"protect": "protect"},
+                        "file": [{"name": "f", "any": [None]}],
+                        "@file": {"comment": "/* files */"},
+                        "time-format": {"year": [None]},
+                    },
+                    "@syslog": {"active": "active"},
+                    "host-name": "r1",
+                },
+                "@system": {"operation": "replace"},
+            }
+        }
+        assert filter_dict_by_path(data, ["system", "syslog", "file"]) == {
+            "configuration": {
+                "system": {
+                    "@": {"inactive": True},
+                    "syslog": {
+                        "@": {"protect": "protect"},
+                        "file": [{"name": "f", "any": [None]}],
+                        "@file": {"comment": "/* files */"},
+                    },
+                    "@syslog": {"active": "active"},
+                },
+                "@system": {"operation": "replace"},
+            }
+        }
+        assert filter_dict_by_path(data, ["system", "@"]) == {
+            "configuration": {
+                "system": {"@": {"inactive": True}},
+                "@system": {"operation": "replace"},
+            }
+        }
+        assert filter_dict_by_path(data, ["system", "syslog", "file"], relative=True) == [
+            {"name": "f", "any": [None]}
+        ]
+
     def test_the_text_filters_keep_a_selected_leafs_annotation(self) -> None:
         """`filter_json_by_path` and `filter_yaml_by_path` rebuild through the same
         helper and keep the leaf's tags too (Test/Challenge TC8)."""

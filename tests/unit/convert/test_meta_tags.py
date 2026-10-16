@@ -326,3 +326,52 @@ class TestATagOnOneValueOfALeafListIsRefused:
         )
         assert result.exit_code == 2
         assert "members" in result.output
+
+
+#: One value of a leaf-list tagged, as JSON or YAML input may give it.
+PER_VALUE_TAG = json.dumps(
+    {
+        "configuration": {
+            "system": {
+                "domain-search": ["a.example", "b.example"],
+                "@domain-search": [None, {"inactive": True}],
+            }
+        }
+    }
+)
+_VALUE_NOTE = "tag(s) on single values of a leaf-list dropped"
+
+
+class TestAPerValueLeafListTagIsNoted:
+    """Junos tags a leaf-list only as a whole: the QFX5120 25.2R2-S1.5 refuses
+    `deactivate ... community 64496:2` ("syntax error, expecting ';', [Enter],
+    or '|'") and prints `"community": ["64496:1", "64496:2"]` with no per-value
+    annotation (probe A2). Set and structured text have no form for such a tag,
+    so they write every value and note the tag they drop, where they dropped it
+    silently; json, yaml and yaml-new keep it (LEAF-LIST-VALUE-TAGS-001, change
+    device-probe-fixes)."""
+
+    @pytest.mark.parametrize(
+        "to_format", [Format.SET, Format.STRUCTURED], ids=["set", "structured"]
+    )
+    @pytest.mark.parametrize("path", [None, "system", "system.domain-search"])
+    def test_set_and_structured_note_it(self, to_format: Format, path: str | None) -> None:
+        result = convert_config_result(
+            PER_VALUE_TAG, from_format=Format.JSON, to_format=to_format, path=path
+        )
+        assert "a.example" in result.output and "b.example" in result.output
+        assert "deactivate" not in result.output and "inactive" not in result.output
+        notes = [d.message for d in result.diagnostics if _VALUE_NOTE in d.message]
+        assert notes == [f"note: 1 {_VALUE_NOTE}: Junos tags a leaf-list only as a whole"]
+
+    @pytest.mark.parametrize(
+        "to_format", [Format.JSON, Format.YAML, Format.YAML_NEW], ids=["json", "yaml", "yaml-new"]
+    )
+    def test_json_yaml_and_yaml_new_keep_it(self, to_format: Format) -> None:
+        result = convert_config_result(PER_VALUE_TAG, from_format=Format.JSON, to_format=to_format)
+        assert not [d for d in result.diagnostics if _VALUE_NOTE in d.message]
+        written = convert_config(result.output, from_format=to_format, to_format=Format.JSON)
+        assert json.loads(written)["configuration"]["system"]["@domain-search"] == [
+            None,
+            {"inactive": True},
+        ]

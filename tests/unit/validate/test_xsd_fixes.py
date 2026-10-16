@@ -668,11 +668,18 @@ class TestARenameKeepsTheDevicesName:
 #: `tests/data/device/jvd/vmx-23.2R2-S7.5/bng1_mx304.xml.gz`.
 UNDOCUMENTED = [
     (("system", "login", "user"), "shell", "l"),
+    # The QFX5120 25.2R2-S1.5 takes `clear-text address` beside `port`, and the
+    # flags below, inside `<undocumented>` (probe D4, P4; change device-probe-fixes).
     (
         ("system", "services", "extension-service", "request-response", "grpc"),
         "clear-text",
-        {"port": "l"},
+        {"address": "l", "port": "l"},
     ),
+    (("system",), "dump-on-panic", "p"),
+    (("system",), "debugger-on-break", "p"),
+    (("system",), "debugger-on-panic", "p"),
+    (("chassis",), "dump-on-panic", "p"),
+    (("groups", "group", "chassis"), "dump-on-panic", "p"),
     (
         ("system", "services", "extension-service", "request-response", "grpc"),
         "skip-authentication",

@@ -66,8 +66,9 @@ tag; comments in relative output; the NAT rename.
 
 ## Acceptance criteria
 
-Every `Tests:` id in the six deltas exists and passes; each new or changed one fails on base
-(red run recorded in `review.md`). Every verb line of every committed capture validates
+Every `Tests:` id in the six deltas exists and passes; each test of a changed behaviour fails
+on base (red run recorded in `review.md`); the probe tests of behaviour base already has
+(the renames, the keyword JSON, the probe renderings of tagged routes) pass on base as evidence. Every verb line of every committed capture validates
 (`tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet`). The before/after
 comparison over the 96 conversions shows no change, or only changes each naming the ID it
 closes. `grammar-corpus.json` records no rejection of `set chassis dump-on-panic`;
@@ -89,12 +90,18 @@ None, because the rulings settle every material choice; C4 and C5 are open to ch
 
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer (coordinator), as
   `instruction-integrity.md` records.
-- Resume point: phase 4, acceptance tests, then STOP-T.
+- Resume point: STOP-T (independent Test/Challenge of the phase-4 tests), then phase 5.
 
 ## Delta log
 
-- Freeze established: proposal and preflight at `560cccd`; deltas and this freeze in the next
-  commit.
+- Freeze established: proposal and preflight at `560cccd`; deltas and this freeze at `ae34f5a`.
+- Phase 4 (acceptance tests): the probe tests found two more false rejections of lines the
+  device took, outside the brief: `set interfaces ge-0/0/1 hold-time up 0 down 0` (the grammar
+  takes one `hold-time` leaf a line) and `then community = | + | - JUNOSCFG-C1` (the grammar
+  generator writes the key keyword `=` as `eq_literal`, `src/junoscfg/validate/grammar_generator.py`
+  lines 193 and 627). Interim, a safe reversible action: strict xfail rows naming
+  SET-COMPACT-LEAVES-001 and SET-LITERAL-KEYWORDS-001, recorded for the backlog; scope ruling
+  asked at STOP-T. No completed work is invalidated.
 
 ## Scope and completion
 

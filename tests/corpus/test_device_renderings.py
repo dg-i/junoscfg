@@ -406,14 +406,42 @@ def _put_back(relative: str, words: list[str], entries: str | None) -> str:
     return text
 
 
+def _holds_a_tag(annotation: Any) -> bool:
+    """Whether an annotation holds a Junos tag, not only a comment."""
+    return isinstance(annotation, dict) and any(
+        tag in annotation for tag in ("inactive", "protect", "operation", "active")
+    )
+
+
+def _a_bare_verb(line: str | None) -> bool:
+    """A meta command with no path left: a tag at or above a relative path."""
+    return line is not None and " " not in line and line != "set"
+
+
+def _without_the_tags_along(ir: Any, path: tuple[str, ...]) -> Any:
+    """*ir* without the annotations along *path* that relative output drops: each
+    ancestor container's own `@` and each step's `@<key>` beside it."""
+    ir = json.loads(json.dumps(ir))
+    node = ir
+    for depth, key in enumerate(path):
+        if not isinstance(node, dict):
+            break
+        node.pop(f"@{key}", None)
+        if depth:
+            node.pop("@", None)
+        node = node.get(key)
+    return ir
+
+
 class TestRelativeSelections:
     """`--path --relative` writes what absolute output writes at the path, without
     the path (spec conversion/path-filtering), for every path of mapping keys
     to depth 4 of every device JSON capture: json, yaml-new and yaml give the
     absolute document's value there; every relative set line is its absolute
-    line without the path's words; relative structured text, put back under
-    those words, reads as the absolute text (a tag on the selected statement
-    itself, which structured output notes and cannot write, aside)."""
+    line without the path's words, but a tag at or above the path, which
+    relative output notes and never writes as a bare verb (probe SC1, change
+    device-probe-fixes); relative structured text, put back under those words,
+    reads as the absolute text without those tags."""
 
     @pytest.mark.parametrize(
         "capture", [pytest.param(capture, id=capture.key) for capture in captures()]
@@ -447,7 +475,8 @@ class TestRelativeSelections:
                     problems.append(f"{to_format.value} {'.'.join(path)}")
             absolute_set = written(Format.SET, path, False).splitlines()
             relative_set = written(Format.SET, path, True).splitlines()
-            if relative_set != [_below_the_path(line, path) for line in absolute_set]:
+            below = [_below_the_path(line, path) for line in absolute_set]
+            if relative_set != [line for line in below if not _a_bare_verb(line)]:
                 problems.append(f"set {'.'.join(path)}")
             parent = configuration
             for key in path[:-1]:
@@ -468,9 +497,8 @@ class TestRelativeSelections:
             if not relative_text:
                 continue
             put = _put_back(relative_text, named[:-1] if entries else named, entries)
-            if read_ir(put, Format.STRUCTURED) != read_ir(
-                written(Format.STRUCTURED, path, False), Format.STRUCTURED
-            ):
+            absolute_ir = read_ir(written(Format.STRUCTURED, path, False), Format.STRUCTURED)
+            if read_ir(put, Format.STRUCTURED) != _without_the_tags_along(absolute_ir, path):
                 problems.append(f"structured {'.'.join(path)}")
         assert not problems, "\n".join(problems[:40])
 
@@ -508,7 +536,65 @@ class TestAnAbsoluteSelectionKeepsItsTags:
                 wanted, got = written(source, path[:-1]), written(source, path)
                 for key in path[:-1]:
                     wanted, got = wanted[key], got[key]
-                if got != {k: wanted[k] for k in (path[-1], f"@{path[-1]}")}:
+                kept = [path[-1], f"@{path[-1]}"] + (["@"] if len(path) > 1 else [])
+                if got != {k: wanted[k] for k in kept if k in wanted}:
                     problems.append(tagged[-1])
         assert tagged
         assert not problems, "\n".join(problems)
+
+    def test_a_selection_keeps_every_annotation_along_its_path(self) -> None:
+        """Below a tagged container, a selection is the whole configuration's
+        branch along its path: each ancestor container's own `@` and each step's
+        `@<key>`, beside the selected statement, as the QFX5120 25.2R2-S1.5
+        prints a statement under a deactivated route or `routing-options static`
+        (probe C3), for every path of mapping keys to depth 5 of every device
+        JSON capture (ANCESTOR-TAGS-001, change device-probe-fixes)."""
+
+        def written(source: str, path: tuple[str, ...]) -> Any:
+            text = convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=Format.JSON,
+                path=".".join(path) or None,
+                validate=False,
+            )
+            return json.loads(text)["configuration"]
+
+        def branch(whole: Any, path: tuple[str, ...]) -> Any:
+            if not path:
+                return whole
+            key, rest = path[0], path[1:]
+            level = {key: branch(whole[key], rest)}
+            if f"@{key}" in whole:
+                level[f"@{key}"] = whole[f"@{key}"]
+            return level
+
+        def with_own_tags(whole: Any, path: tuple[str, ...], top: bool = True) -> Any:
+            if not path:
+                return whole
+            key = path[0]
+            level = branch(whole, path[:1])
+            level[key] = with_own_tags(whole[key], path[1:], top=False)
+            if not top and "@" in whole and key != "@":
+                level = {"@": whole["@"], **level}
+            return level
+
+        below_a_tag, problems = [], []
+        for capture in captures():
+            source = capture.rendering("json")
+            whole = written(source, ())
+            for path in _selectable_paths(whole, (), 5):
+                if any(key.startswith("@") for key in path):
+                    continue
+                node, tagged = whole, False
+                for key in path[:-1]:
+                    tagged = tagged or _holds_a_tag(node.get(f"@{key}"))
+                    node = node[key]
+                    tagged = tagged or (isinstance(node, dict) and _holds_a_tag(node.get("@")))
+                if not tagged:
+                    continue
+                below_a_tag.append(f"{capture.key} {'.'.join(path)}")
+                if written(source, path) != with_own_tags(whole, path):
+                    problems.append(below_a_tag[-1])
+        assert below_a_tag
+        assert not problems, "\n".join(problems[:40])

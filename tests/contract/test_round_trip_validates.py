@@ -153,9 +153,9 @@ class TestTheSchemaStillRejects:
                 {"configuration": {"interfaces": [{"name": "ge-0/0/0", "mtu": 1500}]}},
             ),
             (
-                # The keyword is a deprecated alias only where the node records
-                # an element name; elsewhere a renamed element's names are as
-                # unknown as any other (change device-validation, review B1).
+                # The keyword is an alias only where the node records an element
+                # name; elsewhere a renamed element's names are as unknown as any
+                # other (change device-validation, review B1).
                 "an element name where nothing was renamed",
                 {"configuration": {"system": {"end-range": "x", "ieee-802.3ad": {}}}},
             ),
@@ -205,11 +205,13 @@ class TestTheSchemaStillRejects:
         assert not bundled_validator.validate_json(json.dumps(doc)).errors
 
 
-class TestTheKeywordOfARenameIsADeprecatedAlias:
+class TestTheKeywordOfARenameIsAnAlias:
     """junoscfg 0.28.23 and earlier wrote a renamed statement's CLI keyword in JSON
-    (`"802.3ad"`, `"to"`), which the JSON reader still reads. The JSON schema takes
-    it beside the device's element name until the owner retires it (beta: a
-    removal is deprecated first; change device-validation, review B1, D3)."""
+    (`"802.3ad"`, `"to"`), which the JSON reader reads. The JSON schema takes it
+    beside the device's element name for good: the QFX5120 25.2R2-S1.5 loads the
+    keyword JSON as it loads the element names (probe D3; owner ruling
+    2026-10-17, change device-probe-fixes; first change device-validation,
+    review B1)."""
 
     @pytest.mark.parametrize("spelling", ["ieee-802.3ad", "802.3ad"])
     def test_both_spellings_validate(self, spelling: str, bundled_validator: Any) -> None:

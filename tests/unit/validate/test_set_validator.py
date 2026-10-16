@@ -1,20 +1,23 @@
 """`SetValidator`: a verdict per line of display-set input, against one grammar file.
 
 Everything here runs on the minimal grammar of `tests/support/artifacts.py`,
-so it tests the class, not a grammar. What the shipped grammar accepts and
-rejects is evidence, in `tests/corpus/test_shipped_artifacts.py`; that every
-validation door agrees on it is `tests/contract/test_every_door.py`.
+with the structure tree that knows what it knows, or on the small grammar with
+a list and a leaf-list below, so it tests the class, not a grammar. What the
+shipped grammar accepts and rejects is evidence, in
+`tests/corpus/test_shipped_artifacts.py`; that every validation door agrees on
+it is `tests/contract/test_every_door.py`.
 """
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import pytest
 
 from junoscfg import Format, validate_config, validate_set
 from junoscfg.validate import SchemaLoadError, SetValidator, ValidationError
-from tests.support.artifacts import make_artifacts_dir
+from tests.support.artifacts import make_artifacts_dir, write_minimal_tree
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -29,7 +32,61 @@ def minimal(tmp_path: Path) -> MinimalArtifacts:
 
 @pytest.fixture
 def validator(minimal: MinimalArtifacts) -> SetValidator:
+    write_minimal_tree(minimal.directory)
     return SetValidator(minimal.grammar)
+
+
+#: A grammar and its structure tree with a list keyed by name, a list inside
+#: it, a leaf-list and a leaf: what a verb line may and may not name.
+_LISTS_GRAMMAR = """\
+start: SET configuration
+configuration: "system" system? | "policy-options" policy_options?
+system: "host-name" VALUE | "domain-search" VALUE | "services" services?
+services: "ssh"
+policy_options: "policy-statement" policy_statement__list
+policy_statement__list: VALUE ("term" term__list)?
+term__list: VALUE ("then" then?)?
+then: "accept"
+
+SET: "set"
+VALUE: /\\S+/
+
+%import common.WS
+%ignore WS
+"""
+_NAME = {"l": True, "nk": True}
+_LISTS_TREE = {
+    "c": {
+        "system": {
+            "c": {
+                "host-name": {"l": True},
+                "domain-search": {"l": True, "ll": True},
+                "services": {"c": {"ssh": {"p": True}}},
+            }
+        },
+        "policy-options": {
+            "c": {
+                "policy-statement": {
+                    "L": True,
+                    "c": {
+                        "name": _NAME,
+                        "term": {
+                            "L": True,
+                            "c": {"name": _NAME, "then": {"c": {"accept": {"p": True}}}},
+                        },
+                    },
+                }
+            }
+        },
+    }
+}
+
+
+@pytest.fixture
+def lists(tmp_path: Path) -> SetValidator:
+    (tmp_path / "junos-set.lark").write_text(_LISTS_GRAMMAR, encoding="utf-8")
+    (tmp_path / "junos-structure-tree.json").write_text(json.dumps(_LISTS_TREE), encoding="utf-8")
+    return SetValidator(tmp_path / "junos-set.lark")
 
 
 class TestSetValidator:
@@ -49,9 +106,7 @@ class TestSetValidator:
         assert result.errors[0].line == 1
 
     def test_deactivate_line(self, validator: SetValidator) -> None:
-        result = validator.validate(
-            "set system host-name router1\ndeactivate system host-name router1"
-        )
+        result = validator.validate("set system host-name router1\ndeactivate system host-name")
         assert result.valid is True
 
     def test_comment_lines_skipped(self, validator: SetValidator) -> None:
@@ -93,10 +148,7 @@ class TestEveryVerbIsValidated:
     @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
     def test_a_verb_line_is_validated_as_its_path(self, validator: SetValidator, verb: str) -> None:
         source = (
-            "set system host-name router1\n"
-            f"{verb} system host-name\n"
-            f"{verb} system services ssh\n"
-            f"{verb} system host-name router1\n"
+            f"set system host-name router1\n{verb} system host-name\n{verb} system services ssh\n"
         )
         assert validator.validate(source).valid
 
@@ -108,6 +160,54 @@ class TestEveryVerbIsValidated:
             result = validator.validate(line)
             assert not result.valid, line
             assert result.errors[0].message == f"Invalid syntax: {line}"
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    @pytest.mark.parametrize(
+        "path",
+        ["system host-name router1", "system domain-search a.example"],
+        ids=["a-leaf-value", "a-leaf-list-value"],
+    )
+    def test_a_verb_line_names_no_value(self, lists: SetValidator, verb: str, path: str) -> None:
+        """A leaf's value, single or one of a leaf-list, is no statement: the
+        QFX5120 25.2R2-S1.5 refuses `deactivate ... community 64496:2`
+        ("syntax error, expecting ';', [Enter], or '|'"), and the set reader
+        refuses both (probe A2, change device-probe-fixes)."""
+        result = lists.validate(f"{verb} {path}")
+        assert [e.message for e in result.errors] == [f"Invalid syntax: {verb} {path}"]
+        assert lists.validate(f"set {path}").valid
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    def test_a_verb_line_names_no_list_without_its_entry(
+        self, lists: SetValidator, verb: str
+    ) -> None:
+        """A list's keyword without its entry's name is refused ("syntax error,
+        expecting <identifier>", probe D5); the entry with its name, a list
+        inside it with its own, a container and a leaf before its value are
+        statements."""
+        for path in ("policy-options policy-statement", "policy-options policy-statement P1 term"):
+            result = lists.validate(f"{verb} {path}")
+            assert [e.message for e in result.errors] == [f"Invalid syntax: {verb} {path}"]
+        for path in (
+            "policy-options policy-statement P1",
+            "policy-options policy-statement P1 term T1",
+            "policy-options policy-statement P1 term T1 then",
+            "policy-options policy-statement P1 term T1 then accept",
+            "policy-options",
+            "system domain-search",
+            "system host-name",
+        ):
+            assert lists.validate(f"{verb} {path}").valid, path
+
+    def test_a_verb_line_without_a_structure_tree_is_a_load_error(
+        self, minimal: MinimalArtifacts
+    ) -> None:
+        """What a verb line names is read from the structure tree beside the
+        grammar; without one the validator cannot judge it, so it says which
+        artifact is missing instead of a verdict. A `set` line needs no tree."""
+        validator = SetValidator(minimal.grammar)
+        assert validator.validate("set system host-name router1").valid
+        with pytest.raises(SchemaLoadError, match="junos-structure-tree"):
+            validator.validate("deactivate system host-name")
 
     def test_set_gives_a_leaf_its_value(self, validator: SetValidator) -> None:
         """Only the other verbs may stop before the value."""

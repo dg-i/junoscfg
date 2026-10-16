@@ -5,30 +5,30 @@
       "definition": "a statement the XSD marks mandatory is absent; the device loads the configuration and warns about it too (`## Warning: missing mandatory statement(s)` in its curly rendering), so the finding is the configuration's own",
       "severity": "warning"
     },
-    "mandatory-open": {
-      "definition": "a statement the XSD marks mandatory is absent and the device printed no warning for it; whether `commit check` passes is an open device question (hold-time with only `down`)",
+    "mandatory-commit-refuses": {
+      "definition": "a statement the XSD marks mandatory is absent; the device loads the configuration without a warning and refuses it at `commit check` (hold-time with only `down`: \"Missing mandatory statement: 'up'\", QFX5120 25.2R2-S1.5, tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json, D1), so the finding is the configuration's own",
       "severity": "warning"
     }
   },
   "findings": {
     "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.conf": {
       "field": {
-        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-commit-refuses"
       }
     },
     "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json": {
       "field": {
-        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-commit-refuses"
       }
     },
     "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.set": {
       "field": {
-        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-commit-refuses"
       }
     },
     "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.xml": {
       "field": {
-        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-commit-refuses"
       }
     },
     "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf": {
