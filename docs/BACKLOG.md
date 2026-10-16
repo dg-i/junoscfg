@@ -207,6 +207,356 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Source change:** `yaml-new-format` review, Reviewer A2
   ([review](../openspec/changes/archive/2026-10-15-yaml-new-format/review.md)),
   pending owner decision PO-4; recorded by change `yaml-new-alias-cycles`.
+- **Keys too (own-crash-fixes/TC7):** Owner ruling 2026-10-16: backlog. The writer
+  quotes a key the same way. `from_dict({"system": {"a\x85b": "x"}}, "yaml")`, loaded
+  with `yaml.safe_load`, gives the key `a b`. The review says a key holding LS or PS
+  reads back with a space too. At 716a9d1, PyYAML read both back unchanged in five
+  key positions (inner, leading, trailing, doubled, space-padded), as it does for
+  values. NEL changed the key in four of them (`"a b"`, `" ab"`, `"ab "`, `"a\nb"`). Interim behaviour, kept: the `yaml` writer
+  stays as it was (owner instruction 2026-10-15), and such keys are outside the
+  round-trip law of
+  `tests/unit/convert/test_convert_api.py::TestTheYamlWriterDumpsTheIr::test_every_key_it_writes_reads_back`.
+  Source: [own-crash-fixes review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md),
+  finding 7 and the pending owner decisions.
+
+## RELATIVE-TAGS-001 — Tags of a leaf selected relative
+
+- **IDs:** own-crash-fixes/SC1, own-crash-fixes/A1;
+  section B5 of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: a relative selection of a leaf, a
+  leaf-list or a flag writes the selected statement's own tags as a relative
+  container selection does. Set output writes a bare command (`deactivate`,
+  `protect`). Structured output drops the tags with a note. Pinned by
+  `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_writes_its_tags_as_a_container_does`.
+- **Finding and impact:** SC1: v0.28.23 changed relative set output of a tagged
+  leaf. Before, it was the value alone. Now bare `deactivate` and `protect` lines
+  follow it. Loaded under `edit system host-name`, the leaf is now deactivated, as
+  the configuration says. A script that compares the relative text sees new lines.
+  No device output shows that a bare `deactivate` works at a leaf's edit level, nor
+  at a container's. A1: relative json, yaml and yaml-new output of a tagged leaf is
+  the value alone, and drops the tags without a note. That output loads the leaf
+  active. Relative structured output notes a dropped `inactive` or `protect` tag,
+  but not an `active` tag or a comment. A1 predates v0.28.23; the approved
+  requirement says "value alone".
+- **Reproducer:** a set file with `set system host-name r1`, `deactivate system
+  host-name` and `protect system host-name`. `junoscfg convert -i set -e set --path
+  system.host-name --relative FILE` writes `set r1`, `deactivate` and `protect`.
+  `-e structured` writes `r1;` and the note "2 tag(s) of the selected statement
+  itself dropped". `-e json` writes `"r1"`, and `-e yaml` and `-e yaml-new` write
+  `r1`; none of the three gives a note. For a comment, the JSON input
+  `{"configuration": {"system": {"host-name": "r1", "@host-name": {"comment": "/*
+  note */"}}}}` with `-i json -e structured --path system.host-name --relative`
+  writes `r1;` and no note. Reproduced at 716a9d1 (v0.28.24).
+- **Evidence pending:** probe section B5 asks whether a bare `deactivate` and a bare
+  `protect` work at an edit level. The probe is synthetic, and its path is local
+  provenance.
+- **Proposed direction:** let the B5 answer decide. If the device takes a bare verb
+  at a leaf's edit level, keep the interim, and note every tag that json, yaml,
+  yaml-new and structured output drop. If it does not, write the value alone for a
+  relative leaf again, with a note in every format. SC1 sizes that option at about
+  three lines in `junoscfg.convert.pipeline`.
+- **Source change:** own-crash-fixes review, specification challenge SC1 and
+  Reviewer A1 ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)),
+  pending owner decisions.
+
+## LEAF-LIST-VALUE-TAGS-001 — Set and structured output drop one value's tag
+
+- **IDs:** own-crash-fixes/A2;
+  section B4 of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: the set and structured writers write
+  every value of a leaf-list and drop a tag on one value without a note. The json,
+  yaml and yaml-new writers keep it. The set reader refuses such a tag (change
+  `reject-leaf-list-meta-values`).
+- **Finding and impact:** JSON or YAML input can tag one value of a leaf-list, as in
+  `"@domain-search": [null, {"inactive": true}]`. The set and structured writers drop
+  that tag, so their output loads the value active. This predates v0.28.23.
+  MAKEOVER-14 does not cover it: MAKEOVER-14 owns tags on absent targets.
+- **Reproducer:** the JSON input `{"configuration": {"system": {"domain-search":
+  ["a.example", "b.example"], "@domain-search": [null, {"inactive": true}]}}}`.
+  `junoscfg convert -i json -e set --path system FILE` writes `set system
+  domain-search a.example` and `set system domain-search b.example`, and no
+  `deactivate` line. `-e structured` writes `system domain-search [ a.example
+  b.example ];`. `-e json` keeps `"@domain-search"`. Reproduced at 716a9d1.
+- **Evidence pending:** probe section B4 asks how the device shows one deactivated
+  value of a leaf-list, in set and in JSON.
+- **Proposed direction:** after B4, write the device's form of a per-value tag in set
+  and structured output. If the device has no such form, note the drop. Coordinate
+  with MAKEOVER-14 and SIMPLIFY-001.
+- **Source change:** own-crash-fixes review, Reviewer A2
+  ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)),
+  pending owner decisions.
+
+## ANCESTOR-TAGS-001 — An absolute selection drops an ancestor's tag
+
+- **IDs:** own-crash-fixes/C3;
+  sections B1 and B2 of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: an absolute selection writes the
+  tags of the selected statement and of everything below it, and no tag of an
+  ancestor. The selected statement's own tags are pinned by
+  `tests/corpus/test_device_renderings.py::TestAnAbsoluteSelectionKeepsItsTags`.
+- **Finding and impact:** with `deactivate system`, the selection `--path
+  system.host-name` writes the host name with no tag. The configuration holds the
+  host name inside a deactivated statement, but the output loads it active.
+- **Reproducer:** a set file with `set system host-name r1` and `deactivate system`.
+  `junoscfg convert -i set -e set --path system.host-name FILE` writes only `set
+  system host-name r1`. `-e structured` writes `system host-name r1;`. Reproduced at
+  716a9d1.
+- **Evidence pending:** probe section B1 (the parent deactivated) and B2 (the
+  grandparent deactivated) ask which lines and annotations the device prints with
+  the leaf, in set, JSON, XML and curly.
+- **Proposed direction:** write what the device prints for the selected path, in
+  every format, by one rule in the path filter.
+- **Source change:** own-crash-fixes review, preflight item C3
+  ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)),
+  pending owner decisions.
+
+## SCHEMA-LEAF-VALUES-001 — JSON and YAML validation accept any leaf value
+
+- **IDs:** own-crash-fixes/A3, own-crash-fixes/SC3.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: the JSON and YAML validation schemas
+  accept any value at a leaf (the schema generator gives a leaf `{}`). Since
+  v0.28.23, `validate_json` reports a value nested deeper than 64 levels, as yaml
+  and yaml-new validation do, and `junoscfg convert -v -i json` exits 1 for it. That
+  depth check is a Builder ruling (SC3); the owner has yet to confirm it.
+- **Finding and impact:** a leaf holding an object, a list or nested lists
+  validates. So JSON validation says OK for a document that no device holds. Before
+  v0.28.23, `convert -v -i json` printed "Validation: OK" for a leaf holding 1,600
+  nested lists, then crashed; SC3 is the guard for that case alone.
+- **Reproducer:** `junoscfg convert -v -i json FILE` with `{"configuration":
+  {"system": {"host-name": {"1": "x"}}}}` prints "Validation: OK" and exits 0.
+  `junoscfg.validate_json` judges `host-name` inside 30 nested lists valid. Inside
+  70 lists it reports "JSON value is nested deeper than 64 levels". Reproduced at
+  716a9d1. Tests: `tests/unit/validate/test_json_yaml_validator.py::TestJsonValidationDepth`,
+  `tests/unit/cli/test_cli_validate.py::TestCliValidation::test_json_past_64_levels_exits_one`.
+- **Proposed direction:** give a leaf the shapes Junos JSON gives it, and leave value
+  types to field validation (SIMPLIFY-003). First measure that every device capture
+  still validates. The owner then confirms or reverses SC3; with leaf values
+  constrained, the depth check may become redundant.
+- **Source change:** own-crash-fixes review, Reviewer A3 and specification challenge
+  SC3, finding 12 ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)),
+  pending owner decisions.
+
+## VALIDATE-MESSAGES-001 — Some schema failures do not name the constraint
+
+- **IDs:** device-validation/A3.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: a failure other than an unknown key
+  or a wrong type says only "fails the schema's 'X' constraint here", where X is the
+  JSON Schema keyword. No message reprints a value; that is pinned by
+  `tests/unit/validate/test_json_yaml_validator.py::TestAMessageNamesThePathAndTheKeys`.
+- **Finding and impact:** `_message` in `src/junoscfg/validate/json_yaml_validator.py`
+  names the unknown keys of an `additionalProperties` failure and the expected type
+  of a `type` failure. Any other keyword, such as `required`, `enum` or `pattern`,
+  gets the generic text. The user learns which keyword failed, but not which key,
+  value set or pattern the schema wanted. The schema's own key, values or pattern
+  could be named without quoting the user's value.
+- **Evidence:** code reading at 716a9d1. The shipped
+  `src/junoscfg/validate/data/junos-json-schema.json.gz` and
+  `junos-yaml-schema.json.gz` hold no `required`, `enum` or `pattern` keyword
+  (counted at 716a9d1; every `"pattern"` there is a statement's name). No probed
+  input reached the generic text with the shipped schemas: a failing `oneOf` or
+  `anyOf` is reported by its type error (`_cause` in the same module). So today the
+  text shows only with an artifacts directory whose schema has such keywords.
+- **Proposed direction:** before selecting this item, find an input that reaches the
+  generic text with the shipped schemas, or close the item if none exists. Otherwise
+  name the schema's key for `required`, its values for `enum` and its pattern for
+  `pattern`, and never the input's value.
+- **Source change:** device-validation review, round 1 advisory A3, recorded only
+  ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## JSON-KEYWORD-ALIAS-001 — When to retire the keyword alias in JSON
+
+- **IDs:** device-validation/SC2, device-validation/R2-A1, device-validation/R2-A3,
+  device question D3;
+  section D of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept (coordinator ruling on review B1,
+  option (ii)): where the structure tree records an element name for a renamed
+  statement, the JSON and yaml-new schemas accept the CLI keyword as a deprecated
+  alias beside it (`_property_names` in `src/junoscfg/validate/schema_generator.py`).
+  The JSON reader reads the keyword, and the JSON writer writes the element name.
+  The aliases are `802.3ad` (element `ieee-802.3ad`), `to` (`end-range`) and
+  `hello-padding` (`hello-padding-type`).
+- **Finding and impact:** JSON that junoscfg 0.28.23 or earlier wrote holds
+  `802.3ad` and `to`. Two decisions are open. First (SC2, D3): when may the alias go?
+  That depends on whether a device loads `"802.3ad"` or `"to"` in JSON; no XML
+  element can bear the name `802.3ad`. Second (R2-A3): the deprecation lives only in
+  the changelog and the decision record. No diagnostic tells a user that a file uses
+  the deprecated spelling, so the user does not know to re-write it before the
+  alias goes. `hello-padding` differs (R2-A1): junoscfg never wrote it, and JSON
+  validation before v0.28.24 rejected it. So no file depends on it, and retiring it
+  needs no deprecation period.
+- **Reproducer:** the JSON input `{"configuration": {"interfaces": {"interface":
+  [{"name": "ge-0/0/0", "ether-options": {"802.3ad": {"bundle": "ae0"}}}]}}}`.
+  `junoscfg convert -v -i json FILE` prints "Validation: OK" and no note.
+  `-i json -e json` writes `"ieee-802.3ad"`. Reproduced at 716a9d1. Tests:
+  `tests/contract/test_round_trip_validates.py::TestTheKeywordOfARenameIsADeprecatedAlias`.
+- **Evidence pending:** probe section D loads the keyword JSON and the element JSON
+  on the QFX5120; section H repeats it on the vMX.
+- **Proposed direction:** first add a note that names a deprecated spelling (R2-A3).
+  If section D shows the device refuses the keyword, retire the alias after that
+  note has shipped, as a declared break of the `consumer` and `cli` surfaces. If the
+  device loads it, keep the alias.
+- **Source change:** device-validation review, specification challenge SC2, round 2
+  advisories R2-A1 and R2-A3 and device question D3
+  ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## RENAME-EVIDENCE-001 — Six renames reach JSON from the XSD alone
+
+- **IDs:** device-validation/SC3, device question D2;
+  section C of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: JSON output and JSON validation use
+  the XSD's element name for every rename, by one rule.
+- **Finding and impact:** three renames are proven by device JSON: `end-range`,
+  `ieee-802.3ad` and `hello-padding-type`. Six come from the XSD alone: SNMP `name`
+  (element `system-name`), the NAT rule `match` (`dest-nat-rule-match`,
+  `src-nat-rule-match`, `static-nat-rule-match`), an ether-options speed such as
+  `1g` (`ethernet-1g`), and a policy's community `=`, `+` and `-`
+  (`equal-literal`, `plus-literal`, `minus-literal`). If a device's JSON used the
+  keyword for any of them, junoscfg's JSON output would not load, and JSON
+  validation would reject the device's own JSON.
+- **Reproducer:** a set file with `set snmp name sw1`, `set interfaces
+  interface-range r1 member ge-0/0/2`, `set interfaces interface-range r1
+  ether-options speed 1g`, `set policy-options policy-statement p1 term t1 then
+  community + c1` and `set policy-options community c1 members 64496:1`.
+  `junoscfg convert -i set -e json FILE` writes `"system-name"`, `"ethernet-1g"` and
+  `"plus-literal"`. Reproduced at 716a9d1.
+- **Evidence pending:** probe section C loads junoscfg's JSON for `snmp name`, `speed
+  1g` and `community = + -` and records the names the device prints. The NAT rename
+  has no node in the shipped schema: `nat-rule-match` occurs in none of the
+  artifacts under `src/junoscfg/validate/data/`. So the probe does not cover it; it
+  needs a platform whose schema has NAT rules.
+- **Proposed direction:** where the device prints the keyword, fix the name at the
+  owning layer, the XSD fix that renames it. Where it prints the element name, record
+  the evidence.
+- **Source change:** device-validation review, specification challenge SC3
+  (Test/Challenge TC4) and device question D2
+  ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## READER-TREE-001 — The JSON and yaml-new readers need the structure tree
+
+- **IDs:** device-validation/SC1, device-validation/A7.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept (coordinator ruling RC2a): the JSON
+  and yaml-new readers read names off the structure tree, as every reader does, so
+  they load `junos-structure-tree.json`. Restoring a static name table in the
+  reader would reverse it.
+- **Finding and impact:** device JSON writes `"ieee-802.3ad"` and `"end-range"`.
+  The IR read from set, curly or XML holds `802.3ad` and `to`. One IR for every
+  reader needs the tree in the JSON and yaml-new readers too. So
+  `junoscfg.convert.to_dict` now raises `ValueError` for JSON or yaml-new text when
+  the artifacts directory lacks the tree; before v0.28.24 it read. Every conversion
+  past the reader already needed the tree, and `junoscfg` does not export `to_dict`,
+  so the consumer surface does not see the change (A7).
+- **Reproducer:** `with junoscfg.display.artifacts_dir(EMPTY_DIR):
+  junoscfg.convert.to_dict('{"configuration": {"system": {"host-name": "r1"}}}',
+  "json")` raises `ValueError` ("No junos-structure-tree.json in artifacts
+  directory"). yaml-new text does the same. Reproduced at 716a9d1. Tests:
+  `tests/unit/convert/test_convert_api.py::TestLeafListPromotion::test_json_scalar_leaf_list_stays_scalar`,
+  `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_scalar_leaf_list_stays_scalar`.
+- **Proposed direction:** the owner confirms the requirement as the main spec now
+  states it, or chooses the static name table. No device evidence is needed.
+- **Source change:** device-validation review, specification challenge SC1 and
+  advisory A7 ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## UNDOCUMENTED-001 — Undocumented statements no committed capture shows
+
+- **IDs:** device-validation/D4, device-validation/P4;
+  section E of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: junoscfg models only the
+  undocumented statements a committed capture shows, one row each in `_UNDOCUMENTED`
+  in `src/junoscfg/validate/xsd_fixes.py`. Their unseen siblings and `set chassis
+  dump-on-panic` stay rejected. `set chassis dump-on-panic` is the one recorded
+  rejection in `tests/data/device/grammar-corpus.json`.
+- **Finding and impact:** D4: a device may take siblings of the modelled statements
+  that no capture shows: grpc `clear-text address`, `system dump-on-panic`, `system
+  debugger-on-break` and `system debugger-on-panic`. P4: `chassis dump-on-panic` is
+  device output, a presence flag inside `<chassis><undocumented>` in the private
+  renderings of the JVD configuration `ap1_mx304` on three devices. No committed
+  capture and no XSD dump holds it. A user whose configuration holds one of these
+  statements gets a validation error for a configuration the device may accept.
+- **Reproducer:** `junoscfg convert -v -i set FILE` reports "Invalid syntax" for each
+  of `set system services extension-service request-response grpc clear-text address
+  127.0.0.1`, `set system dump-on-panic` and `set chassis dump-on-panic`. It accepts
+  `set system services extension-service request-response grpc clear-text port
+  32767`. Reproduced at 716a9d1.
+- **Evidence pending:** probe section E sets each statement and records the response
+  and the device's set, XML and JSON. Section H repeats it on the vMX.
+- **Proposed direction:** each statement the device takes joins `_UNDOCUMENTED` as
+  one row, shaped as the device's XML shows it. For `chassis dump-on-panic`, the
+  owner either commits an `ap1_mx304` capture or admits the private evidence.
+- **Source change:** device-validation review, device question D4 and pending
+  decision P4 ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## HOLD-TIME-001 — `hold-time` with only `down`
+
+- **IDs:** device-validation/D1;
+  section A of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: field validation reports the absent
+  `up` as a warning of class `mandatory-open` ("Missing mandatory field 'up': may be
+  required at commit; the configuration loads without it"). Conversion keeps the
+  statement.
+- **Finding and impact:** the XSD marks `hold-time up` mandatory. A JVD configuration
+  holds `hold-time down 0` alone in group `GR-EDGE-INTF-MH`, and the device printed
+  no warning for it. Whether `commit check` passes with only `down` is open. If it
+  fails, junoscfg's warning is too weak. If it passes, the XSD's mandatory mark is
+  wrong for this statement, and the warning is noise.
+- **Reproducer:** `set interfaces ge-0/0/1 hold-time down 0`. `junoscfg convert -i set
+  -e json FILE` writes the statement and the warning above. `-v` prints
+  "Validation: OK". Capture: `tests/data/device/jvd/vmx-23.2R2-S7.5/mdr1_acx7509.set.gz`
+  (vMX, 23.2R2-S7.5), with its findings recorded in
+  `tests/data/device/expected-findings.json`.
+- **Evidence pending:** probe section A runs `commit check` with `down 0` alone, `up
+  0` alone, and both.
+- **Proposed direction:** if `down` alone fails `commit check`, make the finding as
+  strong as the device's refusal. If it passes, record an XSD fix that drops the
+  mandatory mark, and remove the `mandatory-open` rows. Related: MAKEOVER-17
+  (SET-HOLD-TIME-VALUE) owns `hold-time down` with no value.
+- **Source change:** device-validation review, device question D1
+  ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
+
+## VERB-PREFIX-001 — A verb that stops before a list entry's name
+
+- **IDs:** device-validation/D5;
+  section F of the device probe
+  `private_test_data/device-probe-2026-10-16/README.md`.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-16: backlog. Interim behaviour, kept: the set validator accepts a non-`set`
+  line, such as `deactivate` or `protect`, that stops where the grammar takes one
+  value more (`SetValidator._takes_one_value` in
+  `src/junoscfg/validate/set_validator.py`). So `protect policy-options
+  policy-statement`, which stops before the policy's name, validates. A line that
+  stops inside an entry's key is rejected; see the row
+  `deactivate-inside-an-entry-key` in `tests/contract/test_every_door.py`.
+- **Finding and impact:** no device output shows whether a device takes a verb that
+  stops at a list or keyword before its name. If the device refuses it, junoscfg
+  accepts lines the device rejects.
+- **Reproducer:** a set file with `set policy-options policy-statement p1 term t1
+  then accept` and `protect policy-options policy-statement`. `junoscfg convert -v -i
+  set FILE` prints "Validation: OK". Reproduced at 716a9d1. The device's own verb
+  lines are checked by
+  `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet`.
+- **Evidence pending:** probe section F runs `protect` and `deactivate` on
+  `policy-options policy-statement` and records both responses.
+- **Proposed direction:** if the device refuses, accept a verb line only at a
+  complete statement path, an entry's name included. If it accepts, record the
+  evidence and keep the interim.
+- **Source change:** device-validation review, device question D5
+  ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
 
 ## Consolidated issue inventory
 
@@ -347,6 +697,18 @@ published here. No new device execution or configuration capture was performed.
 - **Disposition:** audit real mutations and repeated application with meaningful
   controls. Historical counts are not current measurements; the SRX feature
   expansion previously declared out of scope is not reopened.
+- **device-validation/B2:** Owner ruling 2026-10-16: backlog. Eight registered
+  fixes change nothing in the shipped schema: `route-filter-arg`,
+  `source-address-filter-arg`, `classifiers-default`, `teardown-forms`,
+  `single-hop`, `enable-interface`, `name-freeform`, and `wildcard-star`, which
+  matches no element. The shipped `src/junoscfg/validate/data/junos-schema-meta.json.gz`
+  records `fixes_applied` 41 of `fixes_registered` 44, so the counter alone does not
+  show which fixes changed nothing. B2 is an instance of this entry's first defect,
+  "a fix can report success without mutation": `apply_all_fixes` in
+  `src/junoscfg/validate/xsd_fixes.py` counts each fix that reports success, and
+  checks no change. To check one fix, apply it alone to the parsed tree and compare
+  the tree before and after. Interim behaviour, kept: the eight stay registered.
+  Source: [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B2.
 
 ### DEVICE-EVIDENCE — Remaining narrow probes and hidden names
 
@@ -361,6 +723,15 @@ published here. No new device execution or configuration capture was performed.
   The remaining `xml-element-name-leak` and `trigger-after-one-line` classes
   must not be dismissed as formatting. Other classes marked equivalent/device
   quirk are not automatically product defects.
+- **device-validation/B1:** Owner ruling 2026-10-16: backlog. The rest of
+  `xml-element-name-leak`: from XML or JSON, an element the CLI hides appears in the
+  set path (`rf_list`, `server-group server-group`, `other-variables`,
+  `bridge-domains domain`, `dynamic-tunnels dynamic-tunnel`; the class definition in
+  `tools/device_differences.py`). These are hidden list names, not renames, so
+  device-validation's rename rule does not cover them. They show only in private
+  captures: no line of `tests/data/device/known-differences.json` holds the class at
+  716a9d1. Interim behaviour, kept: the tool keeps the class as a `defect`. Source:
+  [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B1.
 - **Disposition:** request only the named set/JSON/XML subtrees and needed load
   results; retain platform qualifications and private probe provenance.
 
@@ -438,6 +809,13 @@ published here. No new device execution or configuration capture was performed.
 - **Disposition:** retain existing tests; record each actual defect with exact
   bounded input/result/evidence. Passing isolated controls or historical repairs
   do not qualify the complete surface.
+- **device-validation/B3:** Owner ruling 2026-10-16: backlog. `-v` on XML input
+  needs a cleaned XSD, and none ships. `junoscfg convert -v -i xml FILE` on
+  `<configuration><system><host-name>r1</host-name></system></configuration>` exits
+  3 with "XSD not found in …/src/junoscfg/validate/data. XML validation requires a
+  cleaned XSD artifact." Interim behaviour, kept: that error, as
+  [the validation guide](guide/validation.md#xml) warns. Source:
+  [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B3.
 
 ### MAKEOVER-23 / OPEN-17 — XML output
 
