@@ -42,3 +42,74 @@ declared-break:
     migration: >-
       None required; write a refused verb line as the device takes it, and update a script
       that compares the text.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - .agent-ready/vulture-whitelist.py
+  - changelog.d/+device-probe-fixes.bugfix.md
+  - changelog.d/+device-validation.bugfix.md
+  - docs/BACKLOG.md
+  - docs/api/input.md
+  - docs/architecture/developer-guide.md
+  - docs/architecture/schema-internals.md
+  - docs/guide/cli.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - openspec/specs/conversion/path-filtering/spec.md
+  - openspec/specs/conversion/selection-tags/spec.md
+  - openspec/specs/conversion/writers/spec.md
+  - openspec/specs/schema-pipeline/conversion-hints/spec.md
+  - openspec/specs/validation/device-captures/spec.md
+  - openspec/specs/validation/set-command-validation/spec.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/__init__.py
+  - src/junoscfg/convert/input/set_input.py
+  - src/junoscfg/convert/output/__init__.py
+  - src/junoscfg/convert/output/dict_walker.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/convert/output/set_output.py
+  - src/junoscfg/convert/output/structured_output.py
+  - src/junoscfg/convert/output/yaml_output.py
+  - src/junoscfg/display/CONTRACT.md
+  - src/junoscfg/display/__init__.py
+  - src/junoscfg/display/meta_path.py
+  - src/junoscfg/display/path_filter.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/CONTRACT.md
+  - src/junoscfg/validate/data/junos-json-schema.json.gz
+  - src/junoscfg/validate/data/junos-schema-meta.json.gz
+  - src/junoscfg/validate/data/junos-set.lark.gz
+  - src/junoscfg/validate/data/junos-structure-tree.json.gz
+  - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+  - src/junoscfg/validate/schema_generator.py
+  - src/junoscfg/validate/set_validator.py
+  - src/junoscfg/validate/xsd_fixes.py
+  - tach.toml
+  - tests/contract/test_every_door.py
+  - tests/contract/test_round_trip_validates.py
+  - tests/corpus/test_device_probes.py
+  - tests/corpus/test_device_renderings.py
+  - tests/data/device/README.md
+  - tests/data/device/expected-findings.json
+  - tests/data/device/grammar-corpus.json
+  - tests/data/device/known-differences.json
+  - tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json
+  - tests/unit/cli/test_cli.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_meta_tags.py
+  - tests/unit/display/test_display_filters.py
+  - tests/unit/display/test_meta_path.py
+  - tests/unit/validate/test_schema_generator.py
+  - tests/unit/validate/test_set_validator.py
+  - tests/unit/validate/test_xsd_fixes.py
+  dependencies: []
+  changelog: changelog.d/+device-probe-fixes.bugfix.md
+  generated-records:
+  - src/junoscfg/validate/data/junos-json-schema.json.gz
+  - src/junoscfg/validate/data/junos-schema-meta.json.gz
+  - src/junoscfg/validate/data/junos-set.lark.gz
+  - src/junoscfg/validate/data/junos-structure-tree.json.gz
+  - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+  - tests/data/device/grammar-corpus.json

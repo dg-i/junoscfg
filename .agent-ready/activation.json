@@ -1,6 +1,6 @@
 {
-  "actor": "Claude backlog-open-findings finalizer",
-  "authority": "Owner-authorized local integration completed (2026-10-16); park this completed change and branch while preserving all unrelated dispositions.",
+  "actor": "Claude device-probe-fixes builder",
+  "authority": "Owner rulings 2026-10-17, relayed by the coordinator: standard-lane change device-probe-fixes; assess its branch and change as ready; every other disposition preserved.",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -14,6 +14,7 @@
     "change/batch-process-rules": "parked",
     "change/ci-python-matrix": "parked",
     "change/device-oracle": "parked",
+    "change/device-probe-fixes": "ready",
     "change/device-validation": "parked",
     "change/diagnostics-load-vs-commit": "parked",
     "change/docs-corrections": "parked",
@@ -95,7 +96,7 @@
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
     "master": "ready"
   },
-  "captured_at": "2026-10-16T10:36:35.798019+00:00",
+  "captured_at": "2026-10-16T22:59:50.408975+00:00",
   "changes": {
     "adopt-refresh-verification": "parked",
     "adopt-workflow-economy": "parked",
@@ -115,6 +116,7 @@
     "compare-device-outputs-tool": "parked",
     "define-openspec-readership-observation": "parked",
     "device-oracle": "parked",
+    "device-probe-fixes": "ready",
     "device-validation": "parked",
     "diagnostics-load-vs-commit": "parked",
     "entry-keys-from-the-tree": "parked",
