@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 25938594a7386a739ca080792e605e9666a976f3 (post-merge, pre-archive assessment).
+- Observed integration head: cc7204d9170c02b7cecf8f631b9040e931f4d8a4 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 25938594a7386a739ca080792e605e9666a976f3.
-- Invitation status: pending; 88 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: cc7204d9170c02b7cecf8f631b9040e931f4d8a4.
+- Invitation status: pending; 90 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -329,3 +329,13 @@ where it measured 26 s serial, and one shard carried 83 s; repriced, the slowest
 carries 56.5 s. A no-schema run is not reachable for this change's diff (it changes schema
 inputs); its ordinary work is the warm run's. No tests, coverage, hooks or review
 requirements were removed.
+
+Job completion (device-validation): local merge `cc7204d` makes the validators take what the
+devices printed and adds the device-capture validation law to the default tier
+(`TestTheValidatorsTakeWhatTheDevicePrinted`, `TestEveryCaptureValidatesAsSet`). The full
+checkpoint at `73b317b` passed in 318.7 s cold and at `a130c96` in 83.3 s warm (schema-25.2
+tiers selected by the schema inputs), within the unchanged 400 s cold / 200 s warm targets;
+review round 2 changed records only. `tools/verification-costs.json` reprices
+`test_device_renderings.py` (1.08 to 26.0 s). No tests, coverage, hooks or review
+requirements were removed. The pending cadence invitation is retained; no owner feedback is
+inferred.
