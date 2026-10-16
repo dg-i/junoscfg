@@ -35,7 +35,7 @@ declared-break:
       leaf's tags; options and exit codes are unchanged.
     migration: None required; a script comparing the text updates its expected output.
 verification:
-  state: ready
+  state: parked
   planned-paths:
   - .agent-ready/activation.json
   - ARCHITECTURE.md
