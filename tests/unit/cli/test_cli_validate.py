@@ -8,10 +8,12 @@ are `test_schema_command.py`, and conversion through `-i` and `-e` is
 
 from __future__ import annotations
 
+import json
+
 from click.testing import CliRunner
 
 from junoscfg.cli import main
-from tests.support.aliases import alias_chain_yaml, nested_yaml
+from tests.support.aliases import alias_chain_yaml, nested_ir, nested_yaml
 
 
 class TestCliValidation:
@@ -80,6 +82,19 @@ class TestCliValidation:
         assert "Validation: FAILED (1 error(s))" in result.output
         assert "int key has no JSON spelling" in result.output
         assert "Traceback" not in result.output and "64496" not in result.output
+
+    def test_json_past_64_levels_exits_one(self, artifacts_dir: str) -> None:
+        """`-v -i json` reports a value past 64 levels with its path, where it
+        printed "Validation: OK" and the conversion crashed (Test/Challenge SC3,
+        change own-crash-fixes)."""
+        result = CliRunner().invoke(
+            main,
+            ["-v", "-i", "json", "--artifacts", artifacts_dir],
+            input=json.dumps({"configuration": {"system": {"host-name": nested_ir(1600)}}}),
+        )
+        assert result.exit_code == 1, result.output
+        assert "JSON value is nested deeper than 64 levels" in result.output
+        assert "Validation: OK" not in result.output and "Traceback" not in result.output
 
     def test_an_invalid_document_exits_one_with_its_errors(self, artifacts_dir: str) -> None:
         runner = CliRunner()

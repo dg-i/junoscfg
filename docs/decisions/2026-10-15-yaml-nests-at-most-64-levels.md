@@ -29,9 +29,10 @@ included, with no size bound. It refuses a mapping or list reached inside itself
 reader, writer (on the IR and on the object it writes) and validation call it; the `yaml`
 reader and, since change own-crash-fixes, its validation call it with `scalars=False`, so
 they refuse only a cycle, depth and a mapping key that is not a string, outside the
-`_ansible*`/`_meta_*` keys left unwalked (`META_KEY_PREFIXES`). The `json` reader calls it
-too since that change (owner request 2026-10-16): JSON nested past about 450 levels crashed
-junoscfg's own walks with `RecursionError`. 64 is the owner's figure. Measured at base `adb6fb7`: the
+`_ansible*`/`_meta_*` keys left unwalked (`META_KEY_PREFIXES`). The `json` and `xml` readers
+and JSON validation call it too since that change (owner request 2026-10-16): JSON past about
+450 levels, and XML whose repeated elements double its depth, crashed junoscfg's own walks or
+the PyYAML dump they feed with `RecursionError`. 64 is the owner's figure. Measured at base `adb6fb7`: the
 device corpus nests 17 levels, the shape catalogue 15, and the schema's deepest path 26
 counting `configuration` and list indexes. Scalar aliases and merge keys are expanded by
 PyYAML while loading (SC-B), left as they are and not backlogged.
@@ -45,6 +46,6 @@ junoscfg. Any reuse of a block reads and writes. No junoscfg stage meets nesting
 65 levels from a YAML door, so a cycle or deep alias chain is refused rather than crashing;
 text nested past about 490 levels still fails inside PyYAML's loader first (left by the rule). A document
 nesting deeper than 64 levels is refused, although no Junos configuration does. Raising the
-ceiling is additive. JSON input shares the ceiling since change own-crash-fixes, which closes C6 of change
-yaml-depth-ceiling; text `json.loads` cannot parse (past about 20,000 levels) fails in the
-parser, left by the rule.
+ceiling is additive. JSON and XML input share the ceiling since change own-crash-fixes, which closes C6 of change
+yaml-depth-ceiling; text `json.loads` (past about 20,000 levels) or lxml (past 256) cannot
+parse fails in the parser, left by the rule.

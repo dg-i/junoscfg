@@ -44,6 +44,9 @@ from junoscfg import validate_json
 result = validate_json('{"configuration":{"system":{"host-name":"router1"}}}')
 ```
 
+A value nested more than 64 levels deep, which conversion refuses, is an error
+naming its path.
+
 ### YAML
 
 ```python

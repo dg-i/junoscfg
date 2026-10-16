@@ -53,8 +53,8 @@ Base `2d4904b`, probes in the session scratchpad and
 
 ## Non-goals
 
-Relative selections; ancestor tags on the path; XML below lxml's 256 levels; parser limits
-(PyYAML ~490, `json.loads` ~20,000); `from_dict` handed a deep IR directly; JSON validation.
+Relative selections (SC1 records the leaf case); ancestor tags on the path; parser limits
+(PyYAML ~490, `json.loads` ~20,000, lxml 256); `from_dict` handed a deep IR directly.
 
 ## Acceptance criteria
 
@@ -108,6 +108,13 @@ None blocking. C3 (ancestor tags) is reported to the owner as a pending decision
   depth past 64 in every writer, every other row unchanged (`depth-base.txt`,
   `depth-head.txt`). JSON reader on the largest capture (220 KB): `to_dict` 2.8 to 4.2 ms,
   json to set 9.3 to 10.5 ms (`perf.txt`).
+- Test/Challenge delta (review.md 1 to 13): criteria widened within the outcome, not beyond
+  it. SC2 (measured RecursionError from XML, owner instruction "fix them under the same rule
+  if so") brings the XML reader under the 64-level rule, and SC3 brings JSON validation in
+  line with yaml and yaml-new validation; the non-goals "XML depth below lxml's 256" and
+  "JSON validation" are withdrawn. The selected-statement requirement names flags and a
+  list's own comment (device corpus). Invalidated: the implementation commit's evidence and
+  the probes; reruns: tests (red against base `red-run-2.txt`), probes, full check.
 
 ## Scope and completion
 

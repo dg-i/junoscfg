@@ -8,17 +8,18 @@ removes: >-
   the `yaml` reader's and validator's walk of a mapping key that is not a string (it crashed
   in the meta-key cleanup or in jsonschema, so nothing it accepted is lost); with it
   `find_non_json_value`'s naming of such a key by its kind inside a path, which no refusal
-  reaches once every key is a string; and JSON input's unbounded nesting, which crashed
-  with RecursionError past about 450 levels in junoscfg's own walks
+  reaches once every key is a string; and JSON and XML input's unbounded nesting, which
+  crashed junoscfg's own walks (or the PyYAML dump they feed) with RecursionError
 declared-break:
   consumer:
     why: >-
       Not a break. convert_config, convert_config_result and validate_config change only
       where they crashed or wrote a different configuration: a `yaml` document holding a
       mapping key that is not a string raises ValueError (validation reports it invalid)
-      where it raised AttributeError or TypeError; JSON nested deeper than 64 levels raises
-      ValueError where it raised RecursionError from about 450 levels (no Junos
-      configuration nests past 26; the device corpus nests 17); and an absolute path= ending
+      where it raised AttributeError or TypeError; JSON or XML nested deeper than 64 levels
+      raises ValueError where junoscfg raised RecursionError (JSON from about 450 levels, a
+      repeated XML element from about 164) and JSON validation reports it invalid where it
+      judged it valid (no Junos configuration nests past 26; the device corpus nests 17); and an absolute path= ending
       at a leaf or a leaf-list keeps that statement's tags, as the parent selection writes
       them, where it dropped them and wrote the statement active. No signature, name or
       accepted configuration changes on the named surface. Patch, as AGENTS.md rules for
@@ -51,11 +52,13 @@ verification:
   - src/junoscfg/input.CONTRACT.md
   - src/junoscfg/convert/CONTRACT.md
   - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/input/xml_input.py
   - src/junoscfg/convert/input/yaml_input.py
   - tach.toml
   - src/junoscfg/display/path_filter.py
   - src/junoscfg/validate/json_yaml_validator.py
   - tests/contract/test_every_message.py
+  - tests/corpus/test_device_renderings.py
   - tests/unit/cli/test_audit_command.py
   - tests/unit/cli/test_cli.py
   - tests/unit/cli/test_cli_validate.py

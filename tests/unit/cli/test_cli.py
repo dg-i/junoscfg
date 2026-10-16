@@ -244,11 +244,14 @@ class TestConvertReadsAndWrites:
         assert "Traceback" not in result.output and "64496" not in result.output
         assert result.stdout == ""
 
-    def test_json_past_64_levels_exits_two(self) -> None:
+    @pytest.mark.parametrize("reader", ["json", None], ids=["json", "detected"])
+    def test_json_past_64_levels_exits_two(self, reader: str | None) -> None:
         """JSON nested 1,600 levels deep crashed with RecursionError (owner
-        request 2026-10-16, change own-crash-fixes); it is refused with its path."""
+        request 2026-10-16, change own-crash-fixes); it is refused with its path,
+        named or detected (Test/Challenge TC8)."""
         source = json.dumps({"configuration": nested_ir(1600)})
-        result = run(["convert", "-i", "json", "-e", "set"], source)
+        flags = ["-i", reader] if reader else []
+        result = run(["convert", *flags, "-e", "set"], source)
         assert result.exit_code == 2, result.output
         assert (
             "a JSON value at configuration" + ".a" * 64 + " is nested deeper than 64 levels"

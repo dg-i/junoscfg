@@ -44,6 +44,9 @@ class JsonYamlValidator:
     def validate_json(self, source: str) -> ValidationResult:
         """Validate a JSON configuration.
 
+        A value nested deeper than 64 levels, which the ``json`` reader refuses,
+        is an error naming its path (`find_non_json_value`).
+
         Args:
             source: JSON configuration as a string.
 
@@ -61,6 +64,9 @@ class JsonYamlValidator:
                 errors=(ValidationError(message=f"JSON parse error: {e}", line=e.lineno),),
             )
 
+        found = find_non_json_value(data)
+        if found is not None:
+            return _refused(found, "JSON")
         return _validate_data(data, self._json_validator)
 
     def validate_yaml(self, source: str) -> ValidationResult:
@@ -90,7 +96,7 @@ class JsonYamlValidator:
 
         found = find_non_json_value(data, scalars=False, unwalked=META_KEY_PREFIXES)
         if found is not None:
-            return _refused(found)
+            return _refused(found, "YAML")
         return _validate_data(data, self._yaml_validator)
 
     def validate_yaml_as_json(self, source: str) -> ValidationResult:
@@ -120,16 +126,18 @@ class JsonYamlValidator:
 
         found = find_non_json_value(data)
         if found is not None:
-            return _refused(found)
+            return _refused(found, "YAML")
         return _validate_data(data, self._json_validator)
 
 
-def _refused(found: NonJsonValue) -> ValidationResult:
-    """The invalid result for what a YAML reader refuses, by its kind and path."""
+def _refused(found: NonJsonValue, label: str) -> ValidationResult:
+    """The invalid result for what the *label* reader refuses, by its kind and path."""
     return ValidationResult(
         valid=False,
         errors=(
-            ValidationError(message=f"YAML {found.kind} {found.reason}", path=found.path or None),
+            ValidationError(
+                message=f"{label} {found.kind} {found.reason}", path=found.path or None
+            ),
         ),
     )
 

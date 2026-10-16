@@ -1,16 +1,15 @@
 ## 1. Verification
 
-- [ ] 1.1 Regression tests written before implementation and observed failing at base for the defect each pins (red run: `private_test_data/makeover-work/own-crash-fixes/red-run.txt`); guards of unchanged behaviour (relative leaf output, tagged entry and container, keys under a meta key) pass at base and head.
-- [ ] 1.2 Independent Test/Challenge (high risk floor); findings recorded in review.md and resolved.
+- [x] 1.1 Regression tests written before implementation and observed failing at base for the defect each pins (`tc/red-full.txt` from `5c513a9`; final tests against base `red-run-2.txt`: 183 failed for their defects); guards (tagged entry and container, keys under a meta key, YAML scalar values, the `yaml` writer's keys) pass at base and head.
+- [x] 1.2 Independent Test/Challenge (high risk floor); findings TC1 to TC10 and SC1 to SC4 recorded in review.md and resolved (SC1 pending owner decision with its interim action).
 
 ## 2. Change
 
 - [x] 2.1 Key rule: `find_non_json_value` refuses a key that is not a string whatever `scalars`; the `yaml` reader and `yaml` validation refuse it with yaml-new's wording.
-- [x] 2.2 JSON depth: the JSON reader refuses a value past 64 levels through `find_non_json_value`, labelled JSON.
+- [x] 2.2 Depth: the JSON and XML readers and JSON validation refuse a value past 64 levels through `find_non_json_value`, labelled JSON or XML.
 - [x] 2.3 Leaf tags: `display.filter_dict_by_path` keeps the selected key's sibling annotation in an absolute selection.
 - [x] 2.4 Records: contracts, decision 2026-10-15-yaml-nests-at-most-64-levels, ARCHITECTURE.md, guides, API page, changelog fragment.
-- [ ] 2.5 Evidence: depth matrix and selection probe at head against base; performance of the JSON reader on the largest capture.
-- [ ] 2.6 Canonical full checkpoint on a committed snapshot.
+- [x] 2.5 Evidence (`private_test_data/makeover-work/own-crash-fixes/`): `probe_selections.py` at head against base, 5,750 outputs: 25 absolute outputs differ, each adding exactly the last key's sibling annotation (21 object outputs verified by `verify_tag_only.py`), 2 relative set outputs (SC1); depth matrix (`depth-base.txt`, `depth-head2.txt`): JSON and XML refused with ValueError past 64 levels in every writer, no RecursionError; repeated XML refused (`xml-list-depth-head.txt`); reader cost on the largest capture (`perf.txt`): JSON `to_dict` 2.8 to 4.2 ms, XML 16 to 18 ms.
 
 ## 3. Review and evidence
 

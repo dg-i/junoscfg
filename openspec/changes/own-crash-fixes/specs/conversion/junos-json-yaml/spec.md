@@ -2,17 +2,14 @@
 
 ### Requirement: A `yaml` key that is not a string is refused
 
-WHEN a document read as `yaml` (`convert_config`, `junoscfg.convert.to_dict`, `junoscfg convert
--i yaml`, `junoscfg audit unused -i yaml`) holds a mapping key that is not a string (a number,
-a date, a boolean such as an unquoted `on`, null) anywhere but in the value of an `_ansible*`
-or `_meta_*` key the reader drops unwalked THEN the system SHALL refuse the first such key, in
-document order, as yaml-new refuses it: `ValueError` "Invalid input: a YAML <kind> key at
-<path of its mapping> has no JSON spelling" before any later stage walks the document, an
-anonymizing conversion withholding it, CLI exit 2; never the key's value, never a traceback.
-A key is not read as its string: an unquoted `on` loads as `True`, and the schema names a
-statement `on`. A key junoscfg's `yaml` writer writes is always a quoted string where YAML
-would read it otherwise, so every `yaml` file junoscfg writes still reads.
-Tests: `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_that_is_not_a_string_is_named_by_its_kind`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_reads_as_yaml_new_reads_it`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_under_a_meta_key_is_not_walked`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_without_scalars_a_key_that_is_not_a_string_is_refused`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_key_that_is_not_a_string_exits_two`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_yaml_key_that_is_not_a_string_is_refused`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
+WHEN a document read as `yaml` (`convert_config`, `to_dict`, `junoscfg convert -i yaml`,
+`audit unused -i yaml`) holds a mapping key that is not a string (a number, a date, null, a
+boolean such as an unquoted `on`, a statement name in the schema) outside the `_ansible*` and
+`_meta_*` values the reader drops unwalked THEN the system SHALL refuse the first, in document
+order, as yaml-new does: `ValueError` "Invalid input: a YAML <kind> key at <its mapping's path>
+has no JSON spelling" before any later stage walks the document, withheld when anonymizing, CLI
+exit 2, never the key and never a traceback. The `yaml` writer quotes every such key it writes.
+Tests: `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_that_is_not_a_string_is_named_by_its_kind`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_both_yaml_readers_refuse_a_key_alike`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_under_a_meta_key_is_not_walked`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_without_scalars_a_key_that_is_not_a_string_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_key_under_an_unwalked_prefix_is_not_refused`, `tests/unit/convert/test_convert_api.py::TestTheYamlWriterDumpsTheIr::test_every_key_it_writes_reads_back`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_key_that_is_not_a_string_exits_two`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_yaml_key_that_is_not_a_string_is_refused`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
 
 #### Scenario: A number as a key beside the system
 
@@ -24,24 +21,26 @@ Tests: `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_tha
 - **WHEN** `configuration: {system: {on: x}}` is read as `yaml`
 - **THEN** `ValueError` says a YAML bool key at `configuration.system` has no JSON spelling
 
-### Requirement: JSON input nests at most 64 levels
+### Requirement: JSON and XML input nest at most 64 levels
 
-WHEN a document read as `json` (`convert_config`, `junoscfg.convert.to_dict`, `junoscfg
-convert -i json`, `junoscfg audit unused -i json`) holds a value more than 64 path steps
-below its root THEN the system SHALL refuse the first such value, in document order, as kind
-`value` at its own path before any later stage walks the document, as the YAML readers do
-(decision 2026-10-15-yaml-nests-at-most-64-levels): `ValueError` "Invalid input: a JSON value
-at <path> is nested deeper than 64 levels", an anonymizing conversion withholding it, CLI
-exit 2; never a `RecursionError` from junoscfg's own walks. A document 64 levels deep reads as
-before; no Junos configuration nests past 26 levels. Text `json.loads` itself cannot parse
-(past about 20,000 levels) fails in the parser, left by the trusted-input rule. JSON
-validation is unchanged: it judges the parsed document without walking it in junoscfg.
-Tests: `tests/unit/convert/test_convert_api.py::TestJsonReader::test_a_value_past_64_levels_is_refused_at_its_path`, `tests/unit/convert/test_convert_api.py::TestJsonReader::test_a_document_64_levels_deep_reads`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_json_input_past_64_levels_is_refused_as_yaml_new`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_json_past_64_levels_exits_two`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_json_past_64_levels_is_refused`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
+WHEN a document read as `json` or `xml` (`convert_config`, `to_dict`, `junoscfg convert`, named
+or detected, `audit unused`) holds a value more than 64 path steps below its root (a repeated XML
+element is a list and its entry, two steps) THEN the system SHALL refuse the first, in document
+order, as kind `value` at its path before any later stage walks it, as the YAML readers do:
+`ValueError` "Invalid input: a JSON value at <path> is nested deeper than 64 levels" ("an XML
+value" for XML), withheld when anonymizing, CLI exit 2, never a `RecursionError`. 64 levels read
+as before. What `json.loads` (past ~20,000) or lxml (past 256) cannot parse fails in the parser.
+Tests: `tests/unit/convert/test_convert_api.py::TestJsonReader::test_a_value_past_64_levels_is_refused_at_its_path`, `tests/unit/convert/test_convert_api.py::TestJsonReader::test_a_document_64_levels_deep_reads`, `tests/unit/convert/test_convert_api.py::TestXmlReader::test_a_value_past_64_levels_is_refused_at_its_path`, `tests/unit/convert/test_convert_api.py::TestXmlReader::test_a_document_64_levels_deep_reads`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_json_input_past_64_levels_is_refused_as_yaml_new`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_yaml_new_selection_is_measured_as_written`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_json_past_64_levels_exits_two`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_json_past_64_levels_is_refused`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
 
 #### Scenario: A document 1,600 levels deep
 
 - **WHEN** a JSON document nests `a` 1,600 times below `configuration` and is converted to any format
 - **THEN** `ValueError` says a JSON value at `configuration` and 64 `.a` steps is nested deeper than 64 levels, where junoscfg raised `RecursionError`
+
+#### Scenario: A repeated XML element 200 levels deep
+
+- **WHEN** XML repeats its element at each of 200 levels and is converted to `yaml`
+- **THEN** `ValueError` says an XML value at its path is nested deeper than 64 levels, where the `yaml` writer raised `RecursionError`
 
 ## MODIFIED Requirements
 
@@ -81,7 +80,7 @@ reason, never a value or key: `ValueError` from readers and writer (an anonymizi
 conversion withholds it), an invalid result from validation. junoscfg assumes its YAML input
 is not hostile: alias bombs, scalar aliases and merge keys are expanded, and text PyYAML
 cannot load (past about 490 levels) fails in PyYAML as at base; bound untrusted YAML first.
-Tests: `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_shared_block_is_walked_where_it_is_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_in_a_shared_block_is_found_where_first_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_is_refused_where_it_is_reached_again`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_block_reused_any_number_of_times_is_walked_written_out`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_document_64_levels_deep_passes`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_past_64_levels_is_refused_at_its_path`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_without_scalars_only_a_cycle_or_depth_is_refused`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_converts_as_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_the_ir_of_a_shared_block_shares_nothing`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_block_the_old_bounds_refused_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_cycle_or_a_value_past_64_levels_is_refused`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_cycle_or_a_value_past_64_levels_is_refused`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_shared_block_and_a_date_read_as_before`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_meta_key_subtree_is_not_walked`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_deep_sibling_of_the_configuration_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_closing_at_step_65_is_a_cycle`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_detected_yaml_refuses_a_cycle`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_cycle_or_a_value_past_64_levels_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_an_ir_64_levels_deep_and_any_reuse_is_written`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_json_input_past_64_levels_is_refused_as_yaml_new`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_flag_at_step_64_is_refused_where_its_null_would_sit`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_that_is_not_a_string_is_named_by_its_kind`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_xml_input_past_64_levels_is_refused_as_yaml_new`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_cycle_or_a_value_past_64_levels_exits_two`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_new_shared_block_converts_as_written_out`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_shared_block_cycle_and_deep_document`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
+Tests: `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_shared_block_is_walked_where_it_is_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_in_a_shared_block_is_found_where_first_reached`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_is_refused_where_it_is_reached_again`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_block_reused_any_number_of_times_is_walked_written_out`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_document_64_levels_deep_passes`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_value_past_64_levels_is_refused_at_its_path`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_without_scalars_only_a_cycle_or_depth_is_refused`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_shared_block_converts_as_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_the_ir_of_a_shared_block_shares_nothing`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_block_the_old_bounds_refused_is_read_written_out`, `tests/unit/convert/test_convert_api.py::TestJunosYamlReader::test_a_cycle_or_a_value_past_64_levels_is_refused`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_cycle_or_a_value_past_64_levels_is_refused`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_shared_block_and_a_date_read_as_before`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_meta_key_subtree_is_not_walked`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_deep_sibling_of_the_configuration_is_refused`, `tests/unit/input/test_input.py::TestFindNonJsonValue::test_a_cycle_closing_at_step_65_is_a_cycle`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_detected_yaml_refuses_a_cycle`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_cycle_or_a_value_past_64_levels_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_an_ir_64_levels_deep_and_any_reuse_is_written`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_json_input_past_64_levels_is_refused_as_yaml_new`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_flag_at_step_64_is_refused_where_its_null_would_sit`, `tests/unit/convert/test_convert_api.py::TestIrYamlReader::test_a_key_that_is_not_a_string_is_named_by_its_kind`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_shared_object_is_written_out_each_time`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_cycle_or_a_value_past_64_levels_exits_two`, `tests/unit/cli/test_cli.py::TestConvertReadsAndWrites::test_a_yaml_new_shared_block_converts_as_written_out`, `tests/unit/cli/test_audit_command.py::TestInputFormats::test_a_shared_block_cycle_and_deep_document`, `tests/contract/test_every_message.py::TestAnAnonymizedRunQuotesNothingOfTheConfiguration::test_no_message_holds_a_word_of_it`
 
 #### Scenario: A block anchored beside the configuration
 

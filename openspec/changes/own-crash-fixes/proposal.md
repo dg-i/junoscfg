@@ -16,11 +16,12 @@ comment), so the output loads the statement active: a silent change of meaning.
   reading the key as its string would be wrong for YAML 1.1 words: the schema has a statement
   named `on`, which unquoted loads as `True`. The `yaml` reader and the `yaml` validator both
   refuse it with yaml-new's wording (`a YAML int key at configuration has no JSON spelling`).
-- JSON input takes the same 64-level ceiling (decision 2026-10-15-yaml-nests-at-most-64-levels):
-  the JSON reader calls `find_non_json_value`, `a JSON value at ... is nested deeper than 64
-  levels`. Measured at base: XML stops in lxml at 256 levels with a clean `InputError` and
-  converts below it; set and structured are bounded by the schema; legacy `yaml` already had the
-  ceiling; past ~490 (PyYAML) and ~20,000 (`json.loads`) the parsers fail first, left by the rule.
+- JSON and XML input take the same 64-level ceiling (decision
+  2026-10-15-yaml-nests-at-most-64-levels): both readers call `find_non_json_value`, `a JSON
+  value at ... is nested deeper than 64 levels`, and JSON validation reports it. Measured: a
+  repeated XML element doubles its depth in the IR, so XML below lxml's 256 levels crashed the
+  `yaml` writer (Test/Challenge SC2); set and structured are bounded by the schema; legacy `yaml`
+  had the ceiling; past ~490 (PyYAML) and ~20,000 (`json.loads`) the parsers fail first.
 - `display.filter_dict_by_path`, rebuilding an absolute selection, keeps the selected key's
   sibling annotation (`@<key>`), so a leaf or leaf-list keeps its tags in every writer.
   Containers and list entries already carry theirs inside the selected value.
@@ -34,15 +35,15 @@ None, because each behaviour has a spec.
 
 ### Modified Capabilities
 
-- `conversion/junos-json-yaml`: the `yaml` reader refuses a non-string key; JSON input shares the ceiling.
+- `conversion/junos-json-yaml`: the `yaml` reader refuses a non-string key; JSON and XML input share the ceiling.
 - `conversion/path-filtering`: an absolute selection keeps the selected statement's tags.
-- `validation/junos-json-yaml`: `yaml` validation refuses a non-string key.
+- `validation/junos-json-yaml`: `yaml` validation refuses a non-string key; JSON validation the depth.
 
 ## Non-goals
 
 Relative selections (archived relative-selections drops a tag on the selected statement on
-purpose); tags of an ancestor on the path (reported as an owner question); XML depth below lxml's
-256; parser limits; `from_dict` handed a deep IR directly; JSON validation (it does not crash).
+purpose; SC1 records the leaf case); tags of an ancestor on the path (reported as an owner
+question); parser limits; `from_dict` handed a deep IR directly.
 
 ## Completion
 

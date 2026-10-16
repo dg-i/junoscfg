@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
 import yaml
 
 from junoscfg.display import (
     filter_dict_by_path,
+    filter_json_by_path,
     filter_set_by_path,
     filter_structured_by_path,
     filter_yaml_by_path,
@@ -299,6 +302,16 @@ class TestFilterDictByPath:
             "configuration": {"system": {"domain-name": "example.net"}}
         }
         assert filter_dict_by_path(data, ["system", "host-name"], relative=True) == "r1"
+
+    def test_the_text_filters_keep_a_selected_leafs_annotation(self) -> None:
+        """`filter_json_by_path` and `filter_yaml_by_path` rebuild through the same
+        helper and keep the leaf's tags too (Test/Challenge TC8)."""
+        data = {"configuration": {"system": {"host-name": "r1", "@host-name": {"inactive": True}}}}
+        assert json.loads(filter_json_by_path(json.dumps(data), ["system", "host-name"])) == data
+        assert (
+            yaml.safe_load(filter_yaml_by_path(yaml.safe_dump(data), ["system", "host-name"]))
+            == data
+        )
 
     def test_relative_strips_prefix(self) -> None:
         data = {"configuration": {"system": {"syslog": {"file": "messages"}}}}

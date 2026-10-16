@@ -11,9 +11,25 @@ validation reports it ("YAML int key has no JSON spelling"), never an exception 
 key's value; CLI exit 1. Every other document gets the verdict the YAML schema gives, as
 before; a value under an `_ansible*` or `_meta_*` key is not walked, as the schema admits it
 unread.
-Tests: `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_key_that_is_not_a_string_is_invalid`, `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_cycle_or_a_value_past_64_levels_is_invalid`, `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_meta_key_value_is_not_walked`, `tests/unit/cli/test_cli_validate.py::TestCliValidation::test_a_yaml_key_that_is_not_a_string_exits_one`
+Tests: `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_key_that_is_not_a_string_is_invalid`, `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_cycle_or_a_value_past_64_levels_is_invalid`, `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_meta_key_value_is_not_walked`, `tests/unit/validate/test_json_yaml_validator.py::TestYamlValidation::test_a_yaml_scalar_value_keeps_its_verdict`, `tests/unit/cli/test_cli_validate.py::TestCliValidation::test_a_yaml_key_that_is_not_a_string_exits_one`
 
 #### Scenario: A number as a key
 
 - **WHEN** `configuration: {system: {host-name: r1}, 64496: x}` is validated as `yaml`
 - **THEN** the result is invalid with "YAML int key has no JSON spelling" at `configuration`, where validation raised `TypeError` inside jsonschema
+
+### Requirement: JSON validation refuses what the json reader refuses
+
+WHEN a document is validated as `json` through `validate_config(format="json")`,
+`JunosValidator.validate_json` or `junoscfg convert -v -i json` and holds a value nested
+deeper than 64 levels THEN the system SHALL give an invalid result "JSON value is nested
+deeper than 64 levels" at that value's path, never valid and never an exception; CLI exit 1.
+Measured at base: a leaf holding 1,600 nested lists was judged valid, and `convert -v`
+printed "Validation: OK" before the conversion crashed. Every other document gets the
+verdict the JSON schema gives, as before.
+Tests: `tests/unit/validate/test_json_yaml_validator.py::TestJsonValidationDepth::test_a_value_past_64_levels_is_invalid`, `tests/unit/cli/test_cli_validate.py::TestCliValidation::test_json_past_64_levels_exits_one`
+
+#### Scenario: A leaf nested 1,600 levels deep
+
+- **WHEN** `host-name` holds 1,600 nested mappings and the document is validated as `json`
+- **THEN** the result is invalid with "JSON value is nested deeper than 64 levels"

@@ -78,8 +78,9 @@ class NonJsonValue(NamedTuple):
         return f"at {self.path}" if self.path else "at the top level"
 
     def read_refusal(self, label: str) -> str:
-        """The message a reader of *label* text (``YAML``, ``JSON``) refuses the document with."""
-        return f"Invalid input: a {label} {self.kind} {self.where} {self.reason}"
+        """The message a reader of *label* text (``YAML``, ``JSON``, ``XML``) refuses it with."""
+        article = "an" if label == "XML" else "a"
+        return f"Invalid input: {article} {label} {self.kind} {self.where} {self.reason}"
 
 
 def find_non_json_value(

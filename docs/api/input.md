@@ -23,8 +23,9 @@ Shared lexical checks and normalization for configuration readers.
   would write it out; configuration input is trusted (decision
   2026-10-15-configuration-input-is-trusted), so an alias bomb costs its
   expansion. `NonJsonValue.where` is `at <path>` or `at the top level`, and
-  `read_refusal(label)` the message a reader of `YAML` or `JSON` text raises.
-  The yaml-new reader, writer and validation share it, the `json` reader, and
+  `read_refusal(label)` the message a reader of `YAML`, `JSON` or `XML` raises.
+  The yaml-new reader, writer and validation share it, the `json` and `xml`
+  readers and JSON validation, and
   the `yaml` reader and validation with `scalars=False` and `META_KEY_PREFIXES`;
   the path never holds the offending value or key.
 - `META_KEY_PREFIXES` are the key prefixes of the Ansible inventory artefacts

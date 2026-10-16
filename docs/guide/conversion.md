@@ -300,9 +300,10 @@ not a string (`64496: x`, an unquoted `on: x`) the same way, with the same messa
 `_ansible_*` and `_meta_*` keys it drops unread; quote such a key (`'64496': x`), as
 junoscfg's own `yaml` output does. `-v -i yaml` reports them as errors.
 
-JSON input nested more than 64 levels deep is refused with its path in the same
-way ("a JSON value at ... is nested deeper than 64 levels"); no Junos configuration
-nests deeper than about 26 levels.
+JSON and XML input nested more than 64 levels deep are refused with their path in
+the same way ("a JSON value at ... is nested deeper than 64 levels"; a repeated XML
+element counts as a list and its entry); no Junos configuration nests deeper than
+about 26 levels.
 
 ### Moving a YAML file to yaml-new
 
