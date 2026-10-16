@@ -116,6 +116,7 @@ verification:
   - tools/check_test_doors.py
   - tools/device_differences.py
   - tools/device_grammar_corpus.py
+  - tools/verification-costs.json
   dependencies: []
   changelog: changelog.d/+device-validation.bugfix.md
   generated-records:
