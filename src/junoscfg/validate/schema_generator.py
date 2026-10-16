@@ -19,7 +19,7 @@ from junoscfg.display import (
     statement_name_spellings,
     universal_statements,
 )
-from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
+from junoscfg.validate.schema_node import SchemaNode, xml_name
 
 # Maximum recursion depth for schema generation.
 # Beyond this, containers accept any object structure.
@@ -59,7 +59,8 @@ class _DefinitionContext:
     Shapes containing cycle markers are not memoized under another ancestor.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, variant: str) -> None:
+        self.variant = variant
         self.shapes: dict[tuple[Any, ...], int] = {}
         self.memo: dict[tuple[int, int], int] = {}
         self.definitions: dict[tuple[str, int], str] = {}
@@ -105,12 +106,14 @@ class _DefinitionContext:
                 else:
                     child_shape, child_cyclic = self._shape(child, depth + 1, active)
                     cyclic |= child_cyclic
-                properties[name] = child_shape
+                for spelled in _property_names(name, child, self.variant):
+                    properties[spelled] = child_shape
                 for spelling in _switch_spellings(name, child):
                     properties.setdefault(spelling, self._intern(("any",)))
             if node.is_list:
                 for name in sorted(entry_key_names(node)):
-                    properties.setdefault(name, self._intern(("any",)))
+                    for spelled in _key_properties(node, name, self.variant):
+                        properties.setdefault(spelled, self._intern(("any",)))
             transparent = next(
                 (flag.split(":", 1)[1] for flag in node.flags if flag.startswith("transparent:")),
                 None,
@@ -164,7 +167,7 @@ def generate_json_schema(
     """
     universal = _universal_properties(root)
     defs: dict[str, Any] = {}
-    context = _DefinitionContext()
+    context = _DefinitionContext(variant)
 
     schema: dict[str, Any] = {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -185,9 +188,9 @@ def generate_json_schema(
                 "type": ["object", "array", "null"],
             }
         else:
-            schema["properties"][child_name] = _node_to_schema(
-                child_node, variant, 1, defs, context, universal
-            )
+            child_schema = _node_to_schema(child_node, variant, 1, defs, context, universal)
+            for spelled in _property_names(child_name, child_node, variant):
+                schema["properties"][spelled] = child_schema
 
     if defs:
         schema["$defs"] = defs
@@ -280,6 +283,25 @@ def _container_or_list_schema(
     return {}
 
 
+def _property_names(name: str, node: SchemaNode, variant: str) -> tuple[str, ...]:
+    """The keys *node* takes in a document of *variant*.
+
+    JSON is the device's own spelling, so a node a fix renamed to its CLI
+    keyword is named as the device writes it (`end-range`, `ieee-802.3ad`).
+    Its keyword, which junoscfg 0.28.23 and earlier wrote in JSON and the JSON
+    reader still reads, stays a deprecated alias there. YAML is junoscfg's
+    IR, which holds the keyword (spec schema-pipeline/conversion-hints).
+    """
+    element = xml_name(node) if variant == "json" else None
+    return (element, name) if element else (name,)
+
+
+def _key_properties(node: SchemaNode, key: str, variant: str) -> tuple[str, ...]:
+    """The keys a list entry's key field *key* takes in a document of *variant*."""
+    child = node.children.get(key)
+    return (key,) if child is None else _property_names(key, child, variant)
+
+
 def _switch_spellings(name: str, node: SchemaNode) -> tuple[str, ...]:
     """The statement spellings *node* writes, if it is a folded on/off switch."""
     if not node.is_leaf or "nokeyword" not in node.flags or "freeform-nk" in node.flags:
@@ -303,9 +325,9 @@ def _container_schema(
         if child_name == "groups" and depth > 0:
             properties[child_name] = {"type": ["object", "array", "null"]}
         else:
-            properties[child_name] = _node_to_schema(
-                child_node, variant, depth + 1, defs, context, universal
-            )
+            child_schema = _node_to_schema(child_node, variant, depth + 1, defs, context, universal)
+            for spelled in _property_names(child_name, child_node, variant):
+                properties[spelled] = child_schema
         # A folded on/off switch is written under its spelling, not under the
         # node name: the set reader emits `"disable": [null]`, so a container
         # that names only `enable-disable` rejects junoscfg's own output.
@@ -318,7 +340,8 @@ def _container_schema(
     # built, such as `groups`' `group` -- is keyed `name` all the same.
     if node.is_list and node.children:
         for key in sorted(entry_key_names(node)):
-            properties.setdefault(key, {})
+            for spelled in _key_properties(node, key, variant):
+                properties.setdefault(spelled, {})
 
     # A container is also a statement: `set system services netconf ssh` and
     # `... interface lo0.0 passive` write the keyword alone, which every

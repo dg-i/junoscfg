@@ -88,7 +88,7 @@ For each bug, apply fixes in this order:
 
 3. **No name tables** — Every reader and writer, the XML reader in `to_yaml.py` included, reads the flags from the tree node; a flag helper given no node answers no flag. A statement valid at every level (`apply-groups`, `apply-groups-except`, `apply-flags`, `apply-macro`) is declared on the root only, and `junoscfg.display.schema_child(node, key, root)` resolves it below the root; never compare a key with its name.
 
-4. **Key aliases** — If JSON input uses an original XML name, add to `KEY_ALIASES` in `constants.py`. The set input parser also resolves `KEY_ALIASES` during schema lookup so that aliased keywords (e.g., `802.3ad` → `ieee-802.3ad`) match the correct schema node.
+4. **Element names** — Where the CLI keyword differs from the XML and JSON element name, rename the element in a Group E fix with `_rename_element`: the node keeps the element name (`x`), every reader keys the IR by the keyword and the JSON writer and schema use the element name. No table outside the schema model names them.
 
 5. **Regression test** — Add a row to `tests/support/shapes.py`: the configuration in every format it can be written in and the IR they read as; `tests/contract/test_format_matrix.py` then checks it through every reader and writer. A writer-specific case goes in `tests/unit/convert/` or `tests/unit/display/`. Placement and naming: `tests/CONTRACT.md`.
 

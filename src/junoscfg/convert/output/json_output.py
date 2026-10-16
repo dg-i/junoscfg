@@ -14,7 +14,7 @@ from typing import Any
 import yaml
 
 from junoscfg.convert.ir import unshared, wrap_configuration
-from junoscfg.display import load_schema_tree, schema_child
+from junoscfg.display import element_name, load_schema_tree, schema_child
 from junoscfg.input import find_non_json_value
 
 
@@ -50,12 +50,18 @@ def junos_json_object(config: Any, *, wrap: bool = True) -> Any:
 def _selected(document: dict[str, Any], below: list[str]) -> Any:
     """The value at the path *below* of a wrapped Junos JSON object: a relative
     selection as absolute output writes it. `groups` holds its entries
-    directly in the object, so a `group` step after it stays where it is."""
+    directly in the object, so a `group` step after it stays where it is; a
+    step the object spells by its element name (`system-name` for `snmp name`)
+    is followed under that name."""
+    tree = load_schema_tree()
+    schema: Any = tree
     node: Any = document["configuration"]
     for step, key in enumerate(below):
+        child = schema_child(schema, key, tree)
+        schema = child
         if key == "group" and step and below[step - 1] == "groups" and isinstance(node, list):
             continue
-        node = node[key]
+        node = node[element_name(child, key)]
     return node
 
 
@@ -145,13 +151,19 @@ def _coerce_scalar_leaves(
 
     Named-list arrays (``L``) and presence-flag arrays (``[null]``) are not
     coerced but are recursed into. ``@``-prefixed operational keys are skipped.
+
+    A statement a fix renamed to its CLI keyword is written under the element
+    name the device writes in JSON (`802.3ad` as `ieee-802.3ad`), its ``@``
+    annotation with it (spec schema-pipeline/conversion-hints).
     """
     if not isinstance(obj, dict):
         return
+    children = {key: schema_child(schema_node, key, root) for key in obj if not key.startswith("@")}
+    _spell_as_the_device(obj, children)
     for key, value in obj.items():
         if key.startswith("@"):
             continue
-        child = schema_child(schema_node, key, root)
+        child = children.get(key)
         if isinstance(value, list):
             is_leaf = child and child.get("l") and not child.get("ll")
             if is_leaf and len(value) == 1 and value[0] is not None:
@@ -167,6 +179,27 @@ def _coerce_scalar_leaves(
                         _coerce_scalar_leaves(item, item_schema, root)
         elif isinstance(value, dict):
             _coerce_scalar_leaves(value, child, root)
+
+
+def _spell_as_the_device(obj: dict[str, Any], children: dict[str, Any]) -> None:
+    """Rename *obj*'s keys to their JSON element names in place, keeping key order;
+    *children* maps each key to its tree node. The nodes are re-keyed too."""
+    renamed = {
+        key: name
+        for key, node in children.items()
+        if (name := element_name(node, key)) != key and name not in obj
+    }
+    if not renamed:
+        return
+    items = list(obj.items())
+    obj.clear()
+    for key, value in items:
+        if key in renamed:
+            children[renamed[key]] = children[key]
+            key = renamed[key]
+        elif key.startswith("@") and key[1:] in renamed:
+            key = "@" + renamed[key[1:]]
+        obj[key] = value
 
 
 def _ensure_name_first(obj: Any) -> Any:

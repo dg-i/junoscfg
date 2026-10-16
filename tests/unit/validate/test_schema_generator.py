@@ -600,3 +600,39 @@ class TestNamedDefinitionContexts:
         validator = Draft7Validator(schema)
         assert validator.is_valid({"configuration": {"earlier": accepted}})
         assert not validator.is_valid({"configuration": {"later": rejected}})
+
+
+class TestTheJsonSchemaNamesElementsAsTheDeviceWrites:
+    """A renamed element carries the name the device writes in JSON
+    (`xml-name:`): the JSON schema names it so and the YAML schema, which judges
+    the IR, by its keyword (spec schema-pipeline/conversion-hints; the device's
+    `"end-range"` and `"ieee-802.3ad"` were rejected, change device-validation)."""
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        to = SchemaNode(name="to", is_leaf=True, flags={"xml-name:end-range"})
+        member_range = SchemaNode(
+            name="member-range",
+            is_list=True,
+            children={"name": SchemaNode(name="name", is_leaf=True, is_key=True), "to": to},
+        )
+        return SchemaNode(
+            name="configuration",
+            children={
+                "interfaces": SchemaNode(name="interfaces", children={"member-range": member_range})
+            },
+        )
+
+    def test_json_takes_the_element_name_yaml_the_keyword(self) -> None:
+        """JSON keeps the keyword as a deprecated alias (review B1); YAML holds the IR."""
+        entry = {"name": "ge-0/0/2", "end-range": "ge-0/0/5"}
+        keyword = {"name": "ge-0/0/2", "to": "ge-0/0/5"}
+        unknown = {"name": "ge-0/0/2", "until": "ge-0/0/5"}
+
+        def valid(variant: str, item: dict) -> bool:
+            schema = generate_json_schema(self._tree(), variant)
+            doc = {"configuration": {"interfaces": {"member-range": [item]}}}
+            return Draft7Validator(schema).is_valid(doc)
+
+        assert valid("json", entry) and valid("json", keyword) and not valid("json", unknown)
+        assert valid("yaml", keyword) and not valid("yaml", entry)

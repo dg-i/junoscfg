@@ -17,7 +17,7 @@ import pytest
 
 from junoscfg import Format, convert_config, convert_config_result
 from junoscfg.anonymize import AnonymizeConfig, anonymize, apply_revert, build_config_from_cli
-from tests.support.devices import example, placed_only
+from tests.support.devices import example
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -677,10 +677,10 @@ class TestKeyedEntriesSurvive:
         configuration differs from the original only by those replacements,
         so the mapping restores its IR.
 
-        The input is the example, re-pinned when it became the device's,
-        without the statements junoscfg cannot place
-        (`tests/support/devices.py` `UNPLACED_IN_THE_EXAMPLE`): anonymization
-        names each by its schema path. Until change group-wildcards-pass the
+        The input is the example, re-pinned when it became the device's. It
+        left out the statements junoscfg could not place until change
+        device-validation placed them (`UNPLACED_IN_THE_EXAMPLE`); none carries
+        a value a rule replaces, and the hash held. Until change group-wildcards-pass the
         pin left out the wildcard `<*>` the group rule replaced; it now reaches
         no rule, and the hash is the same. The IR is restored through JSON
         output here; through set output it is
@@ -701,7 +701,7 @@ class TestKeyedEntriesSurvive:
         removes only that IP pair. Existing IR round-trip assertions below
         remain the meaning check; this pin verifies deterministic mapping.
         """
-        source = json.dumps(placed_only(json.loads(json_config)))
+        source = json_config
         self._anonymized(source, Format.SET, tmp_path / "map.json")
         mapping = json.loads((tmp_path / "map.json").read_text(encoding="utf-8"))
         assert (
@@ -720,7 +720,7 @@ class TestKeyedEntriesSurvive:
         quotes bare, so it read back as another value; the set writer escapes
         `"` now (spec conversion/value-quoting).
         """
-        source = json.dumps(placed_only(json.loads(json_config)))
+        source = json_config
         out = self._anonymized(source, Format.SET, tmp_path / "map.json")
         plain = convert_config(
             source, from_format=Format.JSON, to_format=Format.SET, validate=False

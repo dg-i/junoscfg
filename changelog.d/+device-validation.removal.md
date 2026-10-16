@@ -1,0 +1,1 @@
+`junoscfg.display.KEY_ALIASES` and `resolve_key_alias`, a hand-kept copy of the schema's renames, are removed: `junoscfg.display.statement_key` and `element_name` read a renamed statement's keyword and XML/JSON name off the structure tree. `XsdFix.applies_to`, identical on every fix and read by nothing, is removed.

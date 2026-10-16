@@ -54,11 +54,11 @@ def _re(pattern: str) -> Callable[[str], bool]:
 
 _LEAKS = _re(
     r" rf_list | server-group server-group | other-variables | bridge-domains domain "
-    r"| dynamic-tunnels dynamic-tunnel | hello-padding-type "
+    r"| dynamic-tunnels dynamic-tunnel "
 )
 _LEAK_TARGETS = _re(
     r"\b(route-filter-list|server-group|predefined-variable-defaults|bridge-domains"
-    r"|dynamic-tunnels|hello-padding)\b"
+    r"|dynamic-tunnels)\b"
 )
 
 
@@ -100,8 +100,7 @@ CLASSES = (
         "defect",
         "from XML or JSON, an element the CLI hides appears in the set path (rf_list, "
         "server-group server-group, other-variables, bridge-domains domain, dynamic-tunnels "
-        "dynamic-tunnel, hello-padding-type); the same statements curly input reports as "
-        "not placed in the schema",
+        "dynamic-tunnel); the same statements curly input reports as not placed in the schema",
         lambda line, side, suffix, c: (
             suffix in ("xml", "json")
             and (_LEAKS(line) or (side == "missing" and _LEAK_TARGETS(line)))
@@ -173,8 +172,14 @@ def main() -> int:
         print("\n".join(unclaimed))
         print(f"\n{len(unclaimed)} line(s) no class claims; classify them first", file=sys.stderr)
         return 1
+    # A class whose lines a fix removed leaves the record with them.
+    used = {
+        name for entry in differences.values() for side in entry.values() for name in side.values()
+    }
     record = {
-        "classes": {k.name: {"kind": k.kind, "definition": k.definition} for k in CLASSES},
+        "classes": {
+            k.name: {"kind": k.kind, "definition": k.definition} for k in CLASSES if k.name in used
+        },
         "differences": differences,
     }
     KNOWN_DIFFERENCES.write_text(

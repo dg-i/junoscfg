@@ -136,7 +136,7 @@ do the same thing" that section 1 calls a defect. XML input and XML-to-YAML
 share the display kernel's `xml_to_dict()` walker; conversion input normalizes
 its result directly without a serialization round trip. One configuration has
 one IR whatever format it arrived in: leaf values are strings, leaf-lists are
-arrays, and `KEY_ALIASES` is applied on every input path.
+arrays, and every reader keys it by the structure tree (`ieee-802.3ad` is `802.3ad`).
 
 **Format names select implementations in one table.** `FORMAT_IMPLEMENTATIONS`
 in `src/junoscfg/convert/formats.py` maps each name to its implementation;

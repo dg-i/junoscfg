@@ -19,10 +19,6 @@
   "trigger-after-split": {
    "definition": "the device's display set prints `within N trigger after 1` as two lines, `... trigger after` and `... trigger 1`; curly, XML and JSON hold one statement",
    "kind": "device-quirk"
-  },
-  "xml-element-name-leak": {
-   "definition": "from XML or JSON, an element the CLI hides appears in the set path (rf_list, server-group server-group, other-variables, bridge-domains domain, dynamic-tunnels dynamic-tunnel, hello-padding-type); the same statements curly input reports as not placed in the schema",
-   "kind": "defect"
   }
  },
  "differences": {
@@ -151,13 +147,11 @@
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json": {
    "extra": {
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.set": {
@@ -171,13 +165,11 @@
   },
   "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.xml": {
    "extra": {
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf": {
@@ -196,14 +188,12 @@
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json": {
    "extra": {
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.set": {
@@ -220,14 +210,12 @@
   "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.xml": {
    "extra": {
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source \"$junos-subscriber-ip-address\"": "junos-variable-quoted",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding-type strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after 1": "trigger-after-one-line"
    },
    "missing": {
     "set dynamic-profiles DP-PROBE interfaces demux0 unit \"$junos-interface-unit\" family inet demux-source $junos-subscriber-ip-address": "junos-variable-quoted",
     "set event-options policy EV-PING-FAILS within 1800 trigger 1": "trigger-after-split",
-    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split",
-    "set groups GR-ISIS-TPL protocols isis interface <ge-*> hello-padding strict": "xml-element-name-leak"
+    "set event-options policy EV-PING-FAILS within 1800 trigger after": "trigger-after-split"
    }
   },
   "synthetic/vmx-23.2R2-S7.5/synthetic-probes.conf": {

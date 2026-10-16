@@ -143,6 +143,8 @@ class TestArtifactBuilder:
 # arrives without one.
 _VALUE_FLAG_SAMPLES = {
     "t": "interface",
+    # A renamed element's name in XML and JSON (spec schema-pipeline/conversion-hints).
+    "x": "end-range",
 }
 
 
@@ -443,6 +445,10 @@ class TestTheOneLineFlag:
         Keyed singleton correction: only root/group SRGB paths add `o`;
         the 1,286 key-only carriers stay unchanged. Independent whole-tree
         comparison binds the exact 3,554 non-key-carrier paths below.
+
+        Change device-validation extends the correction to the routing-instance,
+        logical-system and tenant copies of the same elements: their eight SRGB
+        lists add `o` (3,562), the 1,286 key-only carriers unchanged.
         """
         tree = artifact_json(build_artifacts(KEYED_XSD, tmp_path), "junos-structure-tree.json")
         term = ("policy-options", "policy-statement", "term")
@@ -474,9 +480,9 @@ class TestTheOneLineFlag:
                         keys_only += 1
                 stack.append((here, child))
         with_others.sort()
-        assert (len(with_others), keys_only) == (3554, 1286)
+        assert (len(with_others), keys_only) == (3562, 1286)
         digest = hashlib.sha256("\n".join(with_others).encode()).hexdigest()
-        assert digest == "b4c53cfcd0df5ab5237263a0aa18db90e7dde41ac76a378dd9607f3cfb397163"
+        assert digest == "b92e677bace7bd87acd4f1e22f3fd6e6ac036ea1e8f46321d253af5af7db861c"
 
 
 # Deliberately synthetic: this exercises composition, not device correctness.

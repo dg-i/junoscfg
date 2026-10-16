@@ -23,25 +23,36 @@ if TYPE_CHECKING:
 
 _T = TypeVar("_T")
 
-# ── Key aliases ──────────────────────────────────────────────────────
+# ── Element names ────────────────────────────────────────────────────
 
-# JSON/XML element names that differ from set command keywords.
-# These correspond to renames applied in xsd_fixes.py.
-KEY_ALIASES: dict[str, str] = {
-    "ieee-802.3ad": "802.3ad",
-    "end-range": "to",
-    "dest-nat-rule-match": "match",
-    "src-nat-rule-match": "match",
-    "static-nat-rule-match": "match",
-    "equal-literal": "=",
-    "plus-literal": "+",
-    "minus-literal": "-",
-}
+# A fix that renames an element to its CLI keyword (`end-range` is `to`) leaves
+# the element name the device writes in XML and JSON on the node, as `x`. The
+# tree is keyed by the keyword, and so is the IR, whichever reader gave it.
 
 
-def resolve_key_alias(key: str) -> str:
-    """Resolve a conf/JSON element name to its schema key for lookup."""
-    return KEY_ALIASES.get(key, key)
+def statement_key(children: Mapping[str, Any], name: str) -> str:
+    """The key under which *children* hold the statement *name*.
+
+    *name* itself, or the key of the child whose XML and JSON element name it
+    is (`ieee-802.3ad` is `802.3ad`); otherwise *name* unchanged. Readers of XML,
+    JSON and YAML key the IR so, and the set reader takes either spelling.
+    """
+    if name in children:
+        return name
+    for key, child in children.items():
+        if isinstance(child, dict) and child.get("x") == name:
+            return key
+    return name
+
+
+def element_name(schema_node: Mapping[str, Any] | None, key: str) -> str:
+    """The name the device writes the statement *key* under in XML and JSON.
+
+    *schema_node* is the statement's own tree node; without one, or where it
+    records no element name, the key is the name.
+    """
+    name: str = (schema_node or {}).get("x") or key
+    return name
 
 
 # ── Schema flag helpers ──────────────────────────────────────────────

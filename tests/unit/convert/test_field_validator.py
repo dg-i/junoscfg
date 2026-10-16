@@ -33,7 +33,6 @@ from junoscfg.convert import (
 )
 from junoscfg.display import artifacts_dir
 from tests.support.artifacts import using_tree
-from tests.support.devices import placed_only
 from tests.support.keyed_entries import TERM, set_ir, structure_tree
 
 if TYPE_CHECKING:
@@ -387,6 +386,48 @@ class TestEnumValidation:
 
 
 # ── Pattern validation ───────────────────────────────────────────────
+
+
+class TestAJunosVariableIsNotAValue:
+    """`$junos-interface-ifd-name` in a dynamic profile is a variable the device
+    fills in at subscriber login, not a value: the vMX 23.2R2-S7.5 loaded
+    `bng1_mx304`, whose interface-set names one, and field validation held it
+    against the interface-name pattern (change device-validation)."""
+
+    def test_a_junos_variable_passes_a_pattern(self, validate: Validate) -> None:
+        schema = _make_schema(
+            enums=[["fast", "slow"]],
+            patterns=[r"^((ge-)|(xe-))"],
+            tree=_container(
+                configuration=_container(
+                    system=_container(
+                        name=_leaf(r=0),
+                        speed=_leaf(e=0),
+                        count=_leaf(tr="unsignedInt"),
+                    )
+                )
+            ),
+        )
+        config = {
+            "system": {
+                "name": "$junos-interface-ifd-name",
+                "speed": "$junos-speed",
+                "count": "$junos-count",
+            }
+        }
+        result = validate(schema, config)
+        assert result.errors == []
+        assert validate(schema, {"system": {"name": "lo0", "speed": "x"}}).errors
+        # Only Junos's own variables: another `$` word is a value like any other.
+        assert validate(schema, {"system": {"name": "$foo-ifd-name"}}).errors
+
+    def test_the_device_line_validates(self) -> None:
+        source = (
+            "set dynamic-profiles DP interfaces interface-set $junos-interface-set-name "
+            "interface $junos-interface-ifd-name\n"
+        )
+        result = convert_config_result(source, from_format=Format.SET, to_format=Format.JSON)
+        assert not [d for d in result.diagnostics if d.source == "field-validate"]
 
 
 class TestPatternValidation:
@@ -977,19 +1018,9 @@ class TestTheExampleConfigurationValidates:
     )
 
     def test_every_statement_the_schema_places_validates(self, json_config: str) -> None:
-        """Clean, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
-        result = validate_ir(to_dict(json.dumps(placed_only(json.loads(json_config))), "json"))
-        assert result.errors == []
-        assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]
-
-    @pytest.mark.xfail(
-        strict=True,
-        reason="PRODUCT DEFECT: no known-differences class (set renderings keep them): the "
-        "shipped 25.2R0 schema cannot place five statements both devices loaded, and the "
-        "JSON reader keeps `ieee-802.3ad` and `end-range`; tests/support/devices.py "
-        "UNPLACED_IN_THE_EXAMPLE",
-    )
-    def test_the_example_validates_clean(self, json_config: str) -> None:
+        """Every statement of the example: change device-validation placed the five
+        `UNPLACED_IN_THE_EXAMPLE` recorded and read the device's `end-range` and
+        `ieee-802.3ad`, which made the clean run a strict xfail beside this one."""
         result = validate_ir(to_dict(json_config, "json"))
         assert result.errors == []
         assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]

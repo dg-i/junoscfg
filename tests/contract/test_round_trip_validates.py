@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from junoscfg import Format, convert_config
-from tests.support.devices import example, placed_only
+from tests.support.devices import example
 from tests.support.shapes import BY_NAME, SHAPES, Shape
 
 VALID = [shape for shape in SHAPES if shape.valid]
@@ -85,48 +85,19 @@ class TestTheConverterOutputValidates:
         assert not bundled_validator.validate_json(rendered).errors
 
 
-_SCHEMA_GAPS = (
-    "PRODUCT DEFECT: no known-differences class (set renderings keep them): the shipped "
-    "schema cannot place five statements both devices loaded; tests/support/devices.py "
-    "UNPLACED_IN_THE_EXAMPLE"
-)
-_JSON_SHAPES = (
-    "PRODUCT DEFECT: no known-differences class: besides UNPLACED_IN_THE_EXAMPLE, the device "
-    "JSON's interface-range `member-range ... end-range` (both releases print it; the schema "
-    "and the XML reader say `to`), its one-entry arrays for `srgb-label-range` and an inactive "
-    "port-mirroring `routing-instance`, which the schema takes as scalars"
-)
-
-
 class TestTheExampleRendersValid:
     """The example a vMX printed, read and written by junoscfg, is one junoscfg accepts.
 
     `examples/junoscfg-oracle.*` (`tests/data/device/README.md`): the device
-    loaded every statement, so each schema error is junoscfg's. The XML
-    rendering is read, the one junoscfg reads closest to the schema.
+    loaded every statement, so each schema error is junoscfg's. Until change
+    device-validation five of its statements had no node in the schema model
+    (`UNPLACED_IN_THE_EXAMPLE`) and its JSON names `end-range` and
+    `ieee-802.3ad` were the model's `to` and `802.3ad`; both renderings were
+    strict xfails.
     """
 
     @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
-    def test_every_statement_the_schema_places_renders_valid(
-        self, fmt: Format, bundled_validator: Any
-    ) -> None:
-        """Valid, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
-        read = convert_config(
-            example().rendering("xml"), from_format=Format.XML, to_format=Format.JSON
-        )
-        placed = json.dumps(placed_only(json.loads(read)))
-        rendered = convert_config(placed, from_format=Format.JSON, to_format=fmt)
-        errors = _errors(bundled_validator, rendered, fmt)
-        assert not errors, errors[:2]
-
-    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
-    @pytest.mark.parametrize(
-        "suffix",
-        [
-            pytest.param("xml", marks=pytest.mark.xfail(strict=True, reason=_SCHEMA_GAPS)),
-            pytest.param("json", marks=pytest.mark.xfail(strict=True, reason=_JSON_SHAPES)),
-        ],
-    )
+    @pytest.mark.parametrize("suffix", ["xml", "json"])
     def test_the_example_renders_valid(
         self, suffix: str, fmt: Format, bundled_validator: Any
     ) -> None:
@@ -181,6 +152,41 @@ class TestTheSchemaStillRejects:
                 "a set-transparent container given as its child's list",
                 {"configuration": {"interfaces": [{"name": "ge-0/0/0", "mtu": 1500}]}},
             ),
+            (
+                # The keyword is a deprecated alias only where the node records
+                # an element name; elsewhere a renamed element's names are as
+                # unknown as any other (change device-validation, review B1).
+                "an element name where nothing was renamed",
+                {"configuration": {"system": {"end-range": "x", "ieee-802.3ad": {}}}},
+            ),
+            (
+                "an unknown statement under an undocumented one",
+                {
+                    "configuration": {
+                        "system": {
+                            "ddos-protection": {
+                                "protocols": {"autoconf": {"aggregate": {"bogus": "1"}}}
+                            }
+                        }
+                    }
+                },
+            ),
+            (
+                "an unknown statement beside grpc clear-text's port",
+                {
+                    "configuration": {
+                        "system": {
+                            "services": {
+                                "extension-service": {
+                                    "request-response": {
+                                        "grpc": {"clear-text": {"port": "32767", "bogus": "1"}}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            ),
         ],
     )
     def test_the_bundled_schema_rejects(self, label: str, doc: Any, bundled_validator: Any) -> None:
@@ -197,6 +203,30 @@ class TestTheSchemaStillRejects:
         `field_validator` skips the prefix, so the schema has to name it."""
         doc = {"configuration": {"@": {"junos:commit-seconds": "1"}, "system": {"host-name": "r1"}}}
         assert not bundled_validator.validate_json(json.dumps(doc)).errors
+
+
+class TestTheKeywordOfARenameIsADeprecatedAlias:
+    """junoscfg 0.28.23 and earlier wrote a renamed statement's CLI keyword in JSON
+    (`"802.3ad"`, `"to"`), which the JSON reader still reads. The JSON schema takes
+    it beside the device's element name until the owner retires it (beta: a
+    removal is deprecated first; change device-validation, review B1, D3)."""
+
+    @pytest.mark.parametrize("spelling", ["ieee-802.3ad", "802.3ad"])
+    def test_both_spellings_validate(self, spelling: str, bundled_validator: Any) -> None:
+        doc = {
+            "configuration": {
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/0", "ether-options": {spelling: {"bundle": "ae0"}}}
+                    ],
+                    "interface-range": [
+                        {"name": "IR-A", "member-range": [{"name": "ge-0/0/2", "to": "ge-0/0/5"}]}
+                    ],
+                }
+            }
+        }
+        assert not bundled_validator.validate_json(json.dumps(doc)).errors
+        assert not bundled_validator.validate_yaml_as_json(json.dumps(doc)).errors
 
 
 class TestFragmentsWithoutMandatoryFieldsStayValid:

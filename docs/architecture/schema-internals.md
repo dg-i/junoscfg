@@ -216,6 +216,7 @@ The `junos-structure-tree.json` uses single-letter keys for compactness:
 | `nk` | `true` | Nokeyword | Group F fixes |
 | `o` | `true` | Oneliner: an entry's key and children on one line | xsd_parser (`oneliner`), Group H fix |
 | `t` | `"child"` | Transparent container | Group H fix |
+| `x` | `"name"` | The element name XML and JSON write where the key is the CLI keyword a fix renamed it to (`"end-range"` on `to`): the JSON schema, the JSON writer and the XML, JSON and YAML readers use it | Group C and E fixes |
 | `tk` | `true` | Transparent list key | Group H fix |
 | `pk` | `true` | Positional key (nesting) | Group H fix |
 | `pkf` | `true` | Flat positional leaf; requires `nk` without `frnk` | Group H fix |
@@ -283,8 +284,8 @@ after parsing. Fixes are organized into groups:
 | A | Variable placeholders (`$junos-*`) | — (handled in parser) |
 | B | Complete structure replacement (`groups`) | 1 |
 | C | Literal symbol names (`=`, `+`, `-`) | 3 |
-| D | Missing elements | 14 |
-| E | Wrong element names | 5 |
+| D | Missing elements | 15 |
+| E | Wrong element names | 6 |
 | F | Nokeyword / generic name fixes | 4 |
 | G | Structure/combinator fixes | 7 |
 | H | Conversion hints (transparent, oneliner, etc.) | 8 |

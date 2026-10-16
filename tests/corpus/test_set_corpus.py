@@ -19,7 +19,8 @@ from typing import Any
 
 import pytest
 
-from tests.support.devices import DEVICE_DATA, captures
+from junoscfg.convert import structured_set_lines
+from tests.support.devices import DEVICE_DATA, captures, expected_findings
 from tests.support.paths import PRIVATE_DATA
 
 GRAMMAR_CORPUS = json.loads((DEVICE_DATA / "grammar-corpus.json").read_text(encoding="utf-8"))
@@ -108,15 +109,63 @@ class TestTheGrammarRefusesWhatIsNotJunos:
         assert not validator.validate(line).valid, OVER_REJECTED[line]
 
 
+_CAPTURES = [pytest.param(capture, id=capture.key) for capture in captures()]
+
+
+class TestEveryCaptureValidatesAsSet:
+    """Set and curly `-v` over every capture, cheaply (spec validation/device-captures).
+
+    The covering lines above stand for the device's `set` lines. A line with
+    another verb uses no rule of its own, so the cover never picks one, and
+    `protect` lines were exactly what `-v` rejected (owner's log, 2026-10-16;
+    fresh review B3): every one is validated here. Curly `-v` judges the lines
+    the conversion walk reads; those the device's set holds are the cover's,
+    the rest are validated here (Test/Challenge TC5).
+    """
+
+    @pytest.mark.parametrize("capture", _CAPTURES)
+    def test_every_verb_line_of_the_capture_validates(self, capture, validator: Any) -> None:
+        lines = [line for line in capture.device_set() if not line.startswith("set ")]
+        rejected = [line for line in lines if not validator.validate(line).valid]
+        assert not rejected, "\n".join(rejected)
+
+    def test_the_captures_hold_verb_lines(self) -> None:
+        """The check above means something only where there is something to check."""
+        verbs = {
+            line.split(" ", 1)[0]
+            for capture in captures()
+            for line in capture.device_set()
+            if not line.startswith("set ")
+        }
+        assert {"deactivate", "protect"} <= verbs
+
+    @pytest.mark.parametrize("capture", _CAPTURES)
+    def test_the_curly_rendering_validates_as_its_set_lines(self, capture, validator: Any) -> None:
+        read = structured_set_lines(capture.rendering("conf"))
+        device = set(capture.device_set())
+        own = [line for line in read.lines if line not in device]
+        found = {error.message for line in own for error in validator.validate(line).errors} | {
+            f"Invalid syntax: {line}: the statement has no value" for line in read.incomplete
+        }
+        record = expected_findings()["findings"].get(f"{capture.key}.conf", {})
+        assert found == set(record.get("curly-v", {}))
+        assert read.lines and len(own) < len(read.lines)
+
+
+#: Every verb a device's display set prints, each validated as its statement path.
+_VERBS = ("set ", "deactivate ", "protect ", "activate ", "delete ")
+
+
 def _every_device_line() -> list[str]:
+    """Every line of the private captures where they exist, and of the committed ones."""
     lines = {
         line
         for folder in PRIVATE_DATA.glob("jvd_derived_data*")
         for path in folder.glob("*.set")
         if ".device." not in path.name
         for line in path.read_text(encoding="utf-8").splitlines()
-        if line.startswith("set ")
-    } or {line for c in captures() for line in c.device_set() if line.startswith("set ")}
+        if line.startswith(_VERBS)
+    } | {line for c in captures() for line in c.device_set()}
     return sorted(lines)
 
 

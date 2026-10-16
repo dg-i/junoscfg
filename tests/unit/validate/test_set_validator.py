@@ -79,6 +79,53 @@ class TestSetValidator:
             SetValidator("/nonexistent/grammar.lark")
 
 
+class TestEveryVerbIsValidated:
+    """Every verb the set reader reads names a statement path the grammar judges.
+
+    The device's display set prints `protect groups GR-PROTECTED` and, for a
+    leaf, the path without its value: `deactivate groups GR-ISIS-TPL protocols
+    isis interface <ge-*> max-hello-size` (vMX 23.2R2-S7.5 and QFX5120
+    25.2R2-S1.5, `junoscfg-oracle.set.gz`). The validator took `set` and
+    `deactivate` only and called every `protect` line no set command (change
+    device-validation). Every door: `tests/contract/test_every_door.py`.
+    """
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    def test_a_verb_line_is_validated_as_its_path(self, validator: SetValidator, verb: str) -> None:
+        source = (
+            "set system host-name router1\n"
+            f"{verb} system host-name\n"
+            f"{verb} system services ssh\n"
+            f"{verb} system host-name router1\n"
+        )
+        assert validator.validate(source).valid
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    def test_an_invalid_path_after_a_verb_is_reported(
+        self, validator: SetValidator, verb: str
+    ) -> None:
+        for line in (f"{verb} bogus nonexistent", f"{verb} system host-name a b"):
+            result = validator.validate(line)
+            assert not result.valid, line
+            assert result.errors[0].message == f"Invalid syntax: {line}"
+
+    def test_set_gives_a_leaf_its_value(self, validator: SetValidator) -> None:
+        """Only the other verbs may stop before the value."""
+        result = validator.validate("set system host-name")
+        assert [e.message for e in result.errors] == ["Invalid syntax: set system host-name"]
+
+    def test_another_verb_is_no_command(self, validator: SetValidator) -> None:
+        result = validator.validate("show system host-name")
+        assert [e.message for e in result.errors] == ["Unsupported command in set input on line 1"]
+
+    def test_a_long_line_is_reported_whole(self, validator: SetValidator) -> None:
+        """The owner's log showed `port 3276` for `port 32767`: the line was cut at 80."""
+        line = "set interfaces description " + "x" * 70 + " trailing-word 32767"
+        result = validator.validate(line)
+        assert not result.valid
+        assert result.errors[0].message == f"Invalid syntax: {line}"
+
+
 def _bracket_error(line: str, lineno: int = 1) -> ValidationError:
     return ValidationError(
         message=f"Unsupported bracket syntax in set input on line {lineno}:\n{line}",

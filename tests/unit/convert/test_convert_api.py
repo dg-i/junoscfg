@@ -1380,25 +1380,27 @@ class TestUserClassSingle:
 class TestLeafListPromotion:
     """Scalar leaf-list values are promoted only for adapters that require it."""
 
-    def test_json_scalar_leaf_list_stays_scalar_without_loading_schema(
-        self, tmp_path: Path
-    ) -> None:
-        """JSON retains its supplied shape and has no schema-artifact dependency.
+    def test_json_scalar_leaf_list_stays_scalar(self, tmp_path: Path) -> None:
+        """JSON retains its supplied shape; YAML, read beside it, is promoted.
 
-        Read with the artifacts pointed at an empty directory: any schema load
-        there raises, as the YAML read beside it shows.
+        JSON reading loads the structure tree since change device-validation:
+        the tree keys the IR (`ieee-802.3ad` is `802.3ad`), so with the
+        artifacts pointed at an empty directory both readers raise.
         """
         source = '{"configuration":{"protocols":{"evpn":{"extended-vni-list":"3001000-3001100"}}}}'
         yaml_source = (
             "configuration:\n  protocols:\n    evpn:\n      extended-vni-list: 3001000-3001100\n"
         )
-
+        assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
+            "3001000-3001100"
+        )
+        assert to_dict(yaml_source, "yaml")["protocols"]["evpn"]["extended-vni-list"] == [
+            "3001000-3001100"
+        ]
         with artifacts_in(tmp_path):
-            assert to_dict(source, "json")["protocols"]["evpn"]["extended-vni-list"] == (
-                "3001000-3001100"
-            )
-            with pytest.raises(ValueError, match="No junos-structure-tree"):
-                to_dict(yaml_source, "yaml")
+            for text, fmt in ((source, "json"), (yaml_source, "yaml")):
+                with pytest.raises(ValueError, match="No junos-structure-tree"):
+                    to_dict(text, fmt)
 
     def test_yaml_scalar_leaf_list_promoted_to_array(self) -> None:
         """YAML scalar extended-vni-list must become a single-element JSON array."""
@@ -2001,14 +2003,12 @@ class TestJunosYamlReader:
         assert to_dict(source, "yaml-new")["system"]["_meta_x"] == "y"
         assert "_meta_x" not in to_dict(source, "yaml")["system"]
 
-    def test_a_scalar_leaf_list_stays_scalar_without_loading_schema(self, tmp_path: Path) -> None:
-        """Read with the artifacts pointed at an empty directory, as
-        `TestLeafListPromotion` reads JSON: any schema load there raises."""
+    def test_a_scalar_leaf_list_stays_scalar(self) -> None:
+        """As JSON keeps it: the tree keys the IR, it promotes no leaf-list."""
         source = (
             "configuration:\n  protocols:\n    evpn:\n      extended-vni-list: 3001000-3001100\n"
         )
-        with artifacts_in(tmp_path):
-            ir = to_dict(source, "yaml-new")
+        ir = to_dict(source, "yaml-new")
         assert ir["protocols"]["evpn"]["extended-vni-list"] == "3001000-3001100"
 
     @pytest.mark.parametrize(

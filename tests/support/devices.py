@@ -10,11 +10,9 @@ set rendering of any of the four must equal, less the differences
 
 from __future__ import annotations
 
-import copy
 import json
 from dataclasses import dataclass
 from functools import cache
-from typing import Any
 
 from junoscfg import Format, convert_config
 from junoscfg.display import read_artifact_text
@@ -22,6 +20,7 @@ from tests.support.paths import TEST_DATA
 
 DEVICE_DATA = TEST_DATA / "device"
 KNOWN_DIFFERENCES = DEVICE_DATA / "known-differences.json"
+EXPECTED_FINDINGS = DEVICE_DATA / "expected-findings.json"
 #: Rendering suffix -> the format junoscfg reads it as.
 FORMATS = {"conf": Format.STRUCTURED, "json": Format.JSON, "set": Format.SET, "xml": Format.XML}
 _STATEMENT = ("set ", "deactivate ", "protect ", "activate ")
@@ -88,6 +87,12 @@ def known_differences() -> dict:
     return json.loads(KNOWN_DIFFERENCES.read_text(encoding="utf-8"))
 
 
+@cache
+def expected_findings() -> dict:
+    """What the validators report on each capture, with each finding's class."""
+    return json.loads(EXPECTED_FINDINGS.read_text(encoding="utf-8"))
+
+
 def recorded(capture: Capture, suffix: str) -> dict[str, list[str]]:
     """The recorded difference for one rendering, in the shape `Capture.difference` gives."""
     entry = known_differences()["differences"].get(f"{capture.key}.{suffix}", {})
@@ -103,77 +108,3 @@ def recorded_lines(capture: Capture, suffix: str) -> set[str]:
 def example() -> Capture:
     """The capture `examples/` holds: the vMX's renderings of junoscfg-oracle."""
     return next(capture for capture in captures() if capture.key == EXAMPLE)
-
-
-#: Statements of the example the vMX (23.2R2) and the QFX5120 (25.2R2) both
-#: loaded that junoscfg cannot place in the shipped schema, by their path in
-#: the IR, with the reason. PRODUCT DEFECT, and none of them a class of
-#: `known-differences.json`: the set rendering keeps them as written, so the
-#: device law sees nothing, but field validation reports each and the JSON
-#: schemas reject them; an anonymized run names each by its schema path.
-#: Found when the example became the device's (openspec/changes/device-oracle).
-UNPLACED_IN_THE_EXAMPLE: tuple[tuple[tuple[str, ...], str], ...] = (
-    (("system", "login", "user", "shell"), "the 25.2R0 schema model has no `shell`"),
-    (
-        ("system", "services", "extension-service", "request-response", "grpc", "clear-text"),
-        "the 25.2R0 schema model has no grpc `clear-text`",
-    ),
-    (
-        (
-            "system",
-            "services",
-            "extension-service",
-            "request-response",
-            "grpc",
-            "skip-authentication",
-        ),
-        "the 25.2R0 schema model has no grpc `skip-authentication`",
-    ),
-    (
-        ("system", "ddos-protection", "protocols", "autoconf"),
-        "the 25.2R0 schema model has no ddos-protection `autoconf`",
-    ),
-    (
-        ("protocols", "bgp", "group", "family", "inet6", "labeled-unicast", "per-prefix-label"),
-        "the 25.2R0 schema model has no inet6 labeled-unicast `per-prefix-label`",
-    ),
-    (
-        ("interfaces", "interface-range", "member-range"),
-        "the JSON reader keeps the element name `end-range`, so `member-range` lacks its "
-        "mandatory `to`; the set reader and the schema say `to` (ARCH-C09, change 13). Unseen "
-        "until change anonymize-every-placed-value walked the children of `interfaces` "
-        "beside `interface`",
-    ),
-    (
-        ("interfaces", "interface", "ether-options", "ieee-802.3ad"),
-        "the JSON reader keeps the element name `ieee-802.3ad`; the XML reader and the "
-        "schema say `802.3ad`",
-    ),
-)
-
-
-def placed_only(ir: dict[str, Any]) -> dict[str, Any]:
-    """*ir* without the statements of `UNPLACED_IN_THE_EXAMPLE`, as a copy.
-
-    A path descends through every entry of a list it meets; the statement's
-    own tags (``@<name>``) go with it.
-    """
-    trimmed = copy.deepcopy(ir)
-    root = trimmed.get("configuration", trimmed)
-    for path, _ in UNPLACED_IN_THE_EXAMPLE:
-        _drop(root, path)
-    return trimmed
-
-
-def _drop(node: Any, path: tuple[str, ...]) -> None:
-    if isinstance(node, list):
-        for item in node:
-            _drop(item, path)
-    elif isinstance(node, dict):
-        head, rest = path[0], path[1:]
-        if rest:
-            if head in node:
-                _drop(node[head], rest)
-        else:
-            node.pop(head, None)
-            node.pop(f"@{head}", None)

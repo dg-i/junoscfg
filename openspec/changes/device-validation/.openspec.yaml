@@ -1,0 +1,134 @@
+schema: agent-ready
+created: 2026-10-16
+assurance: economy
+type: bug
+zone: schema
+domains: [schema-pipeline, validation, conversion]
+removes: >-
+  KEY_ALIASES and resolve_key_alias in junoscfg.display (a hand-kept copy of the Group E
+  renames, replaced by the name each renamed tree node records); XsdFix.applies_to (identical
+  on every fix and read by nothing); UNPLACED_IN_THE_EXAMPLE and placed_only in
+  tests/support/devices.py with the strict xfails they fed (replaced by the recorded
+  expected findings of the device-capture law); the set validator's line truncation at 80
+  characters
+declared-break:
+  consumer:
+    why: >-
+      Not a break: the device's spelling is added and the old keyword spelling is
+      deprecated, still accepted. validate_config and convert_config(_result) keep their
+      signatures and names, and accept every input they accepted. Validation results
+      change only where they were wrong: statements a device printed are no longer
+      reported (undocumented statements; the device's JSON names end-range, ieee-802.3ad
+      and hello-padding-type; protect, activate, delete and deactivate lines, a non-set
+      line stopping before one value; $junos- variables; keyed singleton entries). JSON
+      and yaml-new validation take a renamed element under the device's element name
+      and, as a deprecated alias, under the CLI keyword junoscfg 0.28.23 and earlier
+      wrote in JSON ("802.3ad", "to", the snmp name, the ethernet speeds, community
+      =/+/-), and IS-IS "hello-padding", which junoscfg never wrote, only where the node
+      records an element name; the JSON reader reads both.
+      Messages: JSON-schema messages name the path and keys instead of reprinting the
+      instance; set messages quote the whole line. Output: JSON and yaml-new write a
+      renamed statement read from set, structured, XML or yaml as the device spells it
+      (ieee-802.3ad, end-range, hello-padding-type) and the isis-instance attribute-group
+      as an array; legacy yaml of JSON input holds the keyword as every other reader
+      gives it. Set output moves only where statements are newly placed: 30 outputs
+      over the captures and corpus reorder newly placed autoconf and hello-padding lines,
+      18 write hello-padding where they wrote hello-padding-type (from XML and JSON
+      input, as the device prints it); structured output writes those statements as
+      blocks where it kept them as one-liners; every output reads back as the same
+      statements and no line is lost. ValidationError.message is free text. Patch, as
+      AGENTS.md rules for everything that is not a break; removing the alias later is a
+      break and stays an owner decision (review.md).
+    migration: >-
+      None required. JSON or yaml-new holding a renamed statement in its CLI spelling
+      (written by junoscfg 0.28.23 or earlier, or by hand) still validates and converts;
+      to move it to the device's spelling before the alias is retired, re-write it once
+      with `junoscfg convert -i json -e json`. A script comparing JSON, yaml-new, set or
+      structured output or validation messages byte for byte updates its expected text.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg -v, field validation and
+      -e json keep their options, exit codes and the input they accept; the keyword
+      spelling of a renamed statement in JSON is deprecated, still accepted. Errors the
+      device's own output caused disappear, messages name paths and keys and quote whole
+      lines, and output moves to the device's spelling and placement as listed for
+      consumer.
+    migration: >-
+      None required; to adopt the device's spelling, re-write a JSON file once with
+      `junoscfg convert -i json -e json`. A script comparing the text updates its
+      expected output.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - .agent-ready/vulture-whitelist.py
+  - ARCHITECTURE.md
+  - changelog.d/+device-validation.bugfix.md
+  - changelog.d/+device-validation.removal.md
+  - docs/BACKLOG.md
+  - docs/VERIFICATION.md
+  - docs/architecture/conversion-bugfix-guide.md
+  - docs/architecture/developer-guide.md
+  - docs/architecture/schema-internals.md
+  - docs/how-to/run-a-batch-of-changes.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/schema-pipeline/conversion-hints/spec.md
+  - openspec/specs/validation/device-captures/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
+  - openspec/specs/validation/set-command-validation/spec.md
+  - src/junoscfg/audit/walker.py
+  - src/junoscfg/convert/field_validator.py
+  - src/junoscfg/convert/input/__init__.py
+  - src/junoscfg/convert/input/normalization.py
+  - src/junoscfg/convert/input/set_input.py
+  - src/junoscfg/convert/output/dict_walker.py
+  - src/junoscfg/convert/output/json_output.py
+  - src/junoscfg/display/__init__.py
+  - src/junoscfg/display/constants.py
+  - src/junoscfg/display/to_yaml.py
+  - src/junoscfg/input.py
+  - src/junoscfg/validate/CONTRACT.md
+  - src/junoscfg/validate/artifact_builder.py
+  - src/junoscfg/validate/data/junos-json-schema.json.gz
+  - src/junoscfg/validate/data/junos-schema-meta.json.gz
+  - src/junoscfg/validate/data/junos-set.lark.gz
+  - src/junoscfg/validate/data/junos-structure-tree.json.gz
+  - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+  - src/junoscfg/validate/json_yaml_validator.py
+  - src/junoscfg/validate/schema_generator.py
+  - src/junoscfg/validate/schema_node.py
+  - src/junoscfg/validate/set_validator.py
+  - src/junoscfg/validate/xsd_fixes.py
+  - tach.toml
+  - tests/contract/test_every_door.py
+  - tests/contract/test_round_trip_validates.py
+  - tests/corpus/test_device_renderings.py
+  - tests/corpus/test_set_corpus.py
+  - tests/data/device/expected-findings.json
+  - tests/data/device/grammar-corpus.json
+  - tests/data/device/known-differences.json
+  - tests/support/devices.py
+  - tests/support/shapes.py
+  - tests/unit/anonymize/test_integration.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/convert/test_field_validator.py
+  - tests/unit/convert/test_set_input.py
+  - tests/unit/validate/test_artifact_builder.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  - tests/unit/validate/test_schema_generator.py
+  - tests/unit/validate/test_set_validator.py
+  - tests/unit/validate/test_xsd_fixes.py
+  - tools/check_test_doors.py
+  - tools/device_differences.py
+  - tools/device_grammar_corpus.py
+  - tools/verification-costs.json
+  dependencies: []
+  changelog: changelog.d/+device-validation.bugfix.md
+  generated-records:
+  - src/junoscfg/validate/data/junos-json-schema.json.gz
+  - src/junoscfg/validate/data/junos-schema-meta.json.gz
+  - src/junoscfg/validate/data/junos-set.lark.gz
+  - src/junoscfg/validate/data/junos-structure-tree.json.gz
+  - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+  - tests/data/device/grammar-corpus.json
+  - tests/data/device/known-differences.json

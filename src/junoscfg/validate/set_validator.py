@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from lark import Lark
-from lark.exceptions import UnexpectedInput
+from lark.exceptions import UnexpectedEOF, UnexpectedInput
 
 from junoscfg.display import build_from_artifact
 from junoscfg.input import (
@@ -59,7 +59,6 @@ class SetValidator:
             ValidationResult with per-line errors.
         """
         errors: list[ValidationError] = []
-        set_lines: list[str] = []
         bracket_errors = dict(find_unsupported_set_brackets(source))
         command_errors = dict(find_unsupported_set_commands(source))
 
@@ -72,43 +71,53 @@ class SetValidator:
                 errors.append(ValidationError(message=message, line=lineno))
                 continue
 
+            # Every verb the set reader reads (`find_unsupported_set_commands`
+            # reported any other line above) names a statement path, judged as
+            # `set` judges it: `protect groups GR-PROTECTED`. Only `set` gives a
+            # leaf its value; the others may stop before it, as the device
+            # prints `deactivate ... max-hello-size` (synthetic captures).
             line = visible_line.strip()
-            if line.startswith("deactivate "):
-                # Check that corresponding set path exists
-                set_path = "set " + line[len("deactivate ") :]
-                # Just check syntax - deactivate is valid if the path is valid
-                err = self._validate_line(set_path, lineno)
-                if err:
-                    errors.append(err)
-                continue
-
-            if line.startswith("set "):
-                set_lines.append(line)
-                err = self._validate_line(line, lineno)
-                if err:
-                    errors.append(err)
-            else:
-                errors.append(
-                    ValidationError(
-                        message=f"Line does not start with 'set' or 'deactivate': {line[:80]}",
-                        line=lineno,
-                    )
-                )
+            verb, _, path = line.partition(" ")
+            err = self._validate_line(f"set {path}", line, lineno, partial=verb != "set")
+            if err:
+                errors.append(err)
 
         if errors:
             return ValidationResult(valid=False, errors=tuple(errors))
         return ValidationResult(valid=True)
 
-    def _validate_line(self, line: str, lineno: int) -> ValidationError | None:
-        """Validate a single set command line."""
+    def _validate_line(
+        self, command: str, line: str, lineno: int, *, partial: bool = False
+    ) -> ValidationError | None:
+        """Validate one statement as the `set` *command*; an error quotes the whole *line*.
+
+        With *partial*, a command may stop where one value would follow -- a
+        leaf's value: `deactivate ... max-hello-size`. It is valid when the
+        grammar takes it with one value more, and so never when it stops
+        inside an entry's key, before a keyword the key still needs
+        (`route-filter 10.0.0.0/8` without its match type).
+        """
         try:
-            self._parser.parse(line)
+            self._parser.parse(command)
             return None
+        except UnexpectedEOF:
+            if partial and self._takes_one_value(command):
+                return None
         except UnexpectedInput:
-            return ValidationError(
-                message=f"Invalid syntax: {line[:80]}",
-                line=lineno,
-            )
+            pass
+        return ValidationError(message=f"Invalid syntax: {line}", line=lineno)
+
+    def _takes_one_value(self, command: str) -> bool:
+        try:
+            self._parser.parse(f"{command} {_ANY_VALUE}")
+        except UnexpectedInput:
+            return False
+        return True
+
+
+#: A value no keyword of the grammar spells: what a leaf takes where a verb's
+#: path stops before the value.
+_ANY_VALUE = "junoscfg-any-value"
 
 
 def _compile(grammar_text: str) -> Lark:

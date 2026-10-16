@@ -42,7 +42,6 @@ class TestFixRegistry:
             assert fix.id, "Fix missing id"
             assert fix.category, f"Fix {fix.id} missing category"
             assert fix.description, f"Fix {fix.id} missing description"
-            assert fix.applies_to, f"Fix {fix.id} missing applies_to"
 
     def test_apply_all_fixes_returns_count(self):
         root = _make_root()
@@ -503,7 +502,28 @@ class TestKeyedSingletonLists:
         ("forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"),
         ("protocols", "mpls", "label-range", "srgb-label-range"),
         ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+        (
+            "protocols",
+            "isis-instance",
+            "interface",
+            "level",
+            "application-specific",
+            "attribute-group",
+        ),
     )
+    #: The copies of the same elements: root and groups, each bare, in a
+    #: routing instance, a logical system and a tenant (change device-validation).
+    PREFIXES = [
+        (*group, *instance)
+        for group in ((), ("groups", "group"))
+        for instance in (
+            (),
+            ("routing-instances", "instance"),
+            ("logical-systems",),
+            ("logical-systems", "routing-instances", "instance"),
+            ("tenants", "routing-instances", "instance"),
+        )
+    ]
 
     @staticmethod
     def entry(**overrides) -> SchemaNode:
@@ -528,7 +548,7 @@ class TestKeyedSingletonLists:
         node.children[path[-1]] = entry
 
     @pytest.mark.parametrize("path", PATHS)
-    @pytest.mark.parametrize("prefix", [(), ("groups", "group")])
+    @pytest.mark.parametrize("prefix", PREFIXES)
     def test_a_declared_positional_identifier_makes_the_named_entry_a_list(self, path, prefix):
         root = _make_root()
         entry = self.entry()
@@ -597,3 +617,155 @@ class TestKeyedSingletonLists:
             self.at_path(root, prefix + self.PATHS[0], entry)
         assert registered("keyed-singleton-lists").apply(root)
         assert entry.is_list
+
+
+class TestARenameKeepsTheDevicesName:
+    """A Group E fix renames an element to its CLI keyword; the device writes the
+    element's own name in XML and JSON (`"ieee-802.3ad"`, `"end-range"` in every
+    `junoscfg-oracle.json.gz`), so the node records it (`xml-name:`) for the JSON
+    schema, the JSON writer and the readers (change device-validation)."""
+
+    CASES = [
+        ("end-range-to", ("member-range",), "end-range", "to"),
+        ("ieee-802.3ad", ("ether-options",), "ieee-802.3ad", "802.3ad"),
+        ("nat-rule-match", ("rule",), "src-nat-rule-match", "match"),
+        ("system-name", ("snmp",), "system-name", "name"),
+        ("ethernet-speed-prefix", ("speed",), "ethernet-1g", "1g"),
+        ("literal-equal", ("community",), "equal-literal", "="),
+        ("literal-plus", ("community",), "plus-literal", "+"),
+        ("literal-minus", ("community",), "minus-literal", "-"),
+        ("hello-padding", ("isis", "interface"), "hello-padding-type", "hello-padding"),
+    ]
+
+    @pytest.mark.parametrize(("fix_id", "parents", "element", "keyword"), CASES)
+    def test_every_rename_records_the_element_name(self, fix_id, parents, element, keyword):
+        node = SchemaNode(name=element, is_leaf=True)
+        parent = SchemaNode(name=parents[-1], children={element: node})
+        for name in reversed(parents[:-1]):
+            parent = SchemaNode(name=name, children={parent.name: parent})
+        root = _make_root((parent.name, parent))
+
+        assert registered(fix_id).apply(root)
+
+        holder = root
+        for name in parents:
+            holder = holder.children[name]
+        assert list(holder.children) == [keyword]
+        assert holder.children[keyword] is node
+        assert node.name == keyword
+        assert f"xml-name:{element}" in node.flags
+
+    def test_every_wrong_name_fix_is_a_case(self):
+        assert {f.id for f in ALL_FIXES if f.category == "wrong-name"} == {
+            fix_id for fix_id, *_ in self.CASES
+        }
+
+
+#: The statements a committed capture holds inside the device's `<undocumented>`,
+#: each at a path of the shipped tree where its parent's XSD type occurs, with the
+#: shape the capture's XML gives it: `l` a leaf, `p` a presence flag, a dict its
+#: children. Evidence: `tests/data/device/synthetic/*/junoscfg-oracle.xml.gz` and
+#: `tests/data/device/jvd/vmx-23.2R2-S7.5/bng1_mx304.xml.gz`.
+UNDOCUMENTED = [
+    (("system", "login", "user"), "shell", "l"),
+    (
+        ("system", "services", "extension-service", "request-response", "grpc"),
+        "clear-text",
+        {"port": "l"},
+    ),
+    (
+        ("system", "services", "extension-service", "request-response", "grpc"),
+        "skip-authentication",
+        "p",
+    ),
+    (
+        ("system", "ddos-protection", "protocols"),
+        "autoconf",
+        {"aggregate": {"bandwidth": "l", "burst": "l"}},
+    ),
+    (("protocols", "bgp", "group", "family", "inet6", "labeled-unicast"), "per-prefix-label", "p"),
+    (
+        ("protocols", "bgp", "group", "neighbor", "family", "inet6", "labeled-unicast"),
+        "per-prefix-label",
+        "p",
+    ),
+    (
+        (
+            "routing-instances",
+            "instance",
+            "protocols",
+            "bgp",
+            "group",
+            "family",
+            "inet6",
+            "labeled-unicast",
+        ),
+        "per-prefix-label",
+        "p",
+    ),
+    (("system", "services", "dhcp-local-server"), "stale-timer", "l"),
+    (("system", "services", "dhcp-local-server"), "no-stale-timer-refresh", "p"),
+    (
+        ("routing-instances", "instance", "system", "services", "dhcp-local-server"),
+        "stale-timer",
+        "l",
+    ),
+    (
+        ("routing-instances", "instance", "system", "services", "dhcp-local-server"),
+        "no-stale-timer-refresh",
+        "p",
+    ),
+    (("groups", "group", "system", "login", "user"), "shell", "l"),
+]
+
+
+def _shape(node: dict) -> object:
+    if node.get("l"):
+        return "l"
+    if node.get("p"):
+        return "p"
+    return {name: _shape(child) for name, child in node.get("c", {}).items()}
+
+
+class TestUndocumentedStatementsAreModelled:
+    """Juniper's XSD omits what the device's own XML wraps in `<undocumented>`; a
+    device loaded and printed each of these, so the schema model declares them
+    as the capture shapes them, wherever the parent's XSD type occurs (change
+    device-validation)."""
+
+    @pytest.mark.parametrize(
+        ("path", "statement", "shape"),
+        UNDOCUMENTED,
+        ids=[f"{'/'.join(path)}/{statement}" for path, statement, _ in UNDOCUMENTED],
+    )
+    def test_the_statement_is_declared_where_its_parent_type_occurs(
+        self, bundled_tree, path, statement, shape
+    ):
+        node = bundled_tree["c"]
+        for name in path:
+            node = node[name]["c"]
+        assert statement in node
+        assert _shape(node[statement]) == shape
+
+
+class TestKeyedSingletonListsOfTheDevicesArrays:
+    """The vMX 23.2R2-S7.5 prints `protocols isis-instance ... application-specific
+    attribute-group` as an array (`jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json.gz`), as it
+    does under `protocols isis`; the JSON schema rejected it (change
+    device-validation)."""
+
+    PATH = (
+        "protocols",
+        "isis-instance",
+        "interface",
+        "level",
+        "application-specific",
+        "attribute-group",
+    )
+
+    @pytest.mark.parametrize("prefix", [(), ("groups", "group")])
+    def test_the_isis_instance_attribute_group_is_a_list(self, bundled_tree, prefix):
+        node = bundled_tree["c"]
+        for name in (*prefix, *self.PATH[:-1]):
+            node = node[name]["c"]
+        assert node[self.PATH[-1]].get("L")
