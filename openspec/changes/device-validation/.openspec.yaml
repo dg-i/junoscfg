@@ -55,6 +55,7 @@ verification:
   - docs/architecture/developer-guide.md
   - docs/architecture/schema-internals.md
   - docs/how-to/run-a-batch-of-changes.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
   - src/junoscfg/audit/walker.py
   - src/junoscfg/convert/field_validator.py
   - src/junoscfg/convert/input/__init__.py
