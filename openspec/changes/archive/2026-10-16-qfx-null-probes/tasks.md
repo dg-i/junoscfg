@@ -28,4 +28,6 @@
   capacity above max-builders, and a planned-path conflict on `.agent-ready/activation.json`
   (each branch must carry the shared copy); the parallel session parked both for this run.
   One run before the schema runtime was prepared passed the suite and failed the tiers.
-- [ ] 3.4 Validate strictly, archive, bump the patch version, merge locally and tag without pushing.
+- [x] 3.4 Validate strictly, archive, bump the patch version, merge locally and tag without pushing.
+  Evidence: `validate qfx-null-probes --strict` valid at 9fb7858; merged as e6a8389; archived
+  with `--skip-specs`, 0.28.22, tag v0.28.22 on the archive commit; not pushed.

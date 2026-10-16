@@ -1,6 +1,6 @@
 {
-  "actor": "Claude own-crash-fixes Builder",
-  "authority": "Coordinator request 2026-10-16 (owner-authorized batch): park own-crash-fixes and its branch while qfx-null-probes merges first; device-validation recorded parked as the shared assessment holds it; every other disposition preserved.",
+  "actor": "Claude qfx-null-probes finalizer",
+  "authority": "Owner-authorized local integration completed (2026-10-16); park this completed change and branch while preserving all unrelated dispositions.",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -28,7 +28,7 @@
     "change/kept-whole-statements": "parked",
     "change/own-crash-fixes": "parked",
     "change/posix-bracket-escape": "parked",
-    "change/qfx-null-probes": "ready",
+    "change/qfx-null-probes": "parked",
     "change/relative-null-flags": "parked",
     "change/relative-selections": "parked",
     "change/rename-root-ordering": "parked",
@@ -94,7 +94,7 @@
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
     "master": "ready"
   },
-  "captured_at": "2026-10-16T00:19:10.036831+00:00",
+  "captured_at": "2026-10-16T00:28:33.247884+00:00",
   "changes": {
     "adopt-refresh-verification": "parked",
     "adopt-workflow-economy": "parked",
@@ -138,7 +138,7 @@
     "prepare-public-github-push": "parked",
     "production-verification-performance": "parked",
     "publish-workflow-overhead-review": "parked",
-    "qfx-null-probes": "ready",
+    "qfx-null-probes": "parked",
     "reduce-schema-qualification-triggers": "parked",
     "refresh-architecture-measurements": "parked",
     "reject-deprecated-tagged-statements": "parked",
@@ -184,6 +184,6 @@
     "yaml-new-alias-cycles": "parked",
     "yaml-new-format": "parked"
   },
-  "checkpoint": "1a79527025466ae0b2ad1c2d3972f0159878b110",
+  "checkpoint": "e6a8389da9e28f611f0bf3262f56ace166524065",
   "policy": "strategy-a/1"
 }
