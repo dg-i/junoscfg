@@ -1,0 +1,9 @@
+schema: agent-ready
+created: 2026-10-16
+assurance: economy
+type: docs
+# docs/BACKLOG.md and a changelog fragment; no zone owns these paths.
+zone: surface
+domains: []
+removes: "none, because the change adds backlog entries and removes no behaviour or document"
+skip_specs: true
