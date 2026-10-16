@@ -23,6 +23,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 
+#: The verbs a display-set line may start with, each followed by a statement
+#: path: the set reader reads them all, and set validation judges the path.
+_SET_COMMAND_VERBS = ("set", "deactivate", "protect", "delete", "activate")
+
+
 class InputError(ValueError):
     """A refusal to read configuration text, with the line it happened on.
 
@@ -176,7 +181,7 @@ def find_unsupported_set_commands(source: str) -> tuple[tuple[int, str], ...]:
     space separator. Leading comments are ignored through the same physical
     line view used by bracket detection and validation.
     """
-    prefixes = ("set ", "deactivate ", "protect ", "delete ", "activate ")
+    prefixes = tuple(f"{verb} " for verb in _SET_COMMAND_VERBS)
     findings: list[tuple[int, str]] = []
     for lineno, _original_line, visible_line in iter_visible_set_lines(source):
         line = visible_line.strip()

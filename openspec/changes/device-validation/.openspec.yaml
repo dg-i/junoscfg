@@ -14,13 +14,19 @@ removes: >-
 declared-break:
   consumer:
     why: >-
-      Not a break. validate_config and convert_config(_result) keep their signatures,
-      names and accepted input. Results change only where they were wrong: statements a
+      Not a break. validate_config and convert_config(_result) keep their signatures and
+      names, and conversion keeps the input it accepted. Results change only where they
+      were wrong: statements a
       device printed are no longer reported (undocumented statements, the device's JSON
       names end-range, ieee-802.3ad and the other renames, protect/activate/delete lines,
       $junos- variables, keyed singleton entries); JSON-schema messages name the path and
       the offending keys instead of reprinting the instance; set messages carry the whole
-      line. JSON and yaml-new output of a renamed statement read from set, structured, XML
+      line; deactivate, protect, activate and delete lines are judged as statement paths.
+      JSON and yaml-new validation now reject the CLI keyword of a renamed element
+      ("802.3ad", "to"), which base junoscfg wrote in its own JSON and validate_config
+      accepted: no device element bears that name (`<802.3ad>` is no XML name), the
+      device's JSON writes ieee-802.3ad and end-range, and the JSON reader still reads
+      the keyword. JSON and yaml-new output of a renamed statement read from set, structured, XML
       or yaml input now uses the element name the device writes (ieee-802.3ad, end-range,
       hello-padding-type, ...), where it wrote the CLI keyword the device does not load in
       JSON; legacy yaml output of JSON input now holds the IR's name as every other

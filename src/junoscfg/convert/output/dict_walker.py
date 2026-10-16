@@ -24,7 +24,6 @@ from junoscfg.display import (
     key_is_positional,
     load_schema_tree,
     passes_tag_to_child,
-    resolve_key_alias,
     schema_child,
     unplaced_record_problem,
 )
@@ -95,11 +94,10 @@ def path_words(path: list[str]) -> list[str]:
     node: dict[str, Any] | None = root
     words: list[str] = []
     for key in path:
-        set_key = resolve_key_alias(key)
-        child = schema_child(node, set_key, root)
+        child = schema_child(node, key, root)
         hidden = get_transparent_child(node) == key or is_transparent_list_key(child)
         if not hidden:
-            words.append(set_key)
+            words.append(key)
         node = child
     return words
 
@@ -326,14 +324,13 @@ class DictWalker:
             if key.startswith("@") or key == UNPLACED_STATEMENTS:
                 continue
 
-            set_key = resolve_key_alias(key)
-            child_schema = schema_child(schema_node, set_key, self._root)
+            child_schema = schema_child(schema_node, key, self._root)
 
             if isinstance(value, dict):
                 if (
                     is_flat_dict(child_schema)
                     and UNPLACED_STATEMENTS not in value
-                    and self._emit_flat_dict(value, path, set_key, child_schema)
+                    and self._emit_flat_dict(value, path, key, child_schema)
                 ):
                     continue
 
@@ -353,7 +350,7 @@ class DictWalker:
                     if siblings:
                         self._walk(
                             siblings,
-                            path + [set_key],
+                            path + [key],
                             schema_node=child_schema,
                         )
 
@@ -361,7 +358,7 @@ class DictWalker:
                         for entry in child_value:
                             if isinstance(entry, dict):
                                 self._process_hash(
-                                    set_key,
+                                    key,
                                     entry,
                                     path,
                                     split_key_name=True,
@@ -369,7 +366,7 @@ class DictWalker:
                                 )
                     elif isinstance(child_value, dict):
                         self._process_hash(
-                            set_key,
+                            key,
                             child_value,
                             path,
                             split_key_name=True,
@@ -377,7 +374,7 @@ class DictWalker:
                         )
                 else:
                     self._process_hash(
-                        set_key,
+                        key,
                         value,
                         path,
                         schema_node=child_schema,
@@ -393,11 +390,11 @@ class DictWalker:
                     and all(isinstance(v, (str, int, float)) for v in value)
                 ):
                     items = " ".join(format_value(v, child_schema) for v in value)
-                    output.emit(path + [f"{set_key} [ {items} ]"])
+                    output.emit(path + [f"{key} [ {items} ]"])
                     # `inactive: members [ … ];`, as the device writes it.
                     attr = obj.get(f"@{key}")
                     if isinstance(attr, dict):
-                        self._emit_attrs(path + [set_key], self._read_leaf_attrs(attr))
+                        self._emit_attrs(path + [key], self._read_leaf_attrs(attr))
                     continue
 
                 # A flat-dict list's own list of pairs -- `apply-macro M1 { k1
@@ -437,10 +434,10 @@ class DictWalker:
                         # be lost or read as the parent's.
                         attrs = self._read_leaf_attrs(obj.get(f"@{key}") or {})
                         if (schema_node and schema_node.get("L")) or attrs:
-                            output.emit(path + [set_key])
+                            output.emit(path + [key])
                         else:
-                            output.emit_positional(path, set_key)
-                        self._emit_attrs(path + [set_key], attrs)
+                            output.emit_positional(path, key)
+                        self._emit_attrs(path + [key], attrs)
                         continue
 
                 list_schema = child_schema
@@ -462,12 +459,12 @@ class DictWalker:
                     and any(isinstance(entry, dict) for entry in value)
                 )
                 if wrapped:
-                    output.keep_block(path + [set_key])
+                    output.keep_block(path + [key])
                 for entry in value:
                     if isinstance(entry, dict):
                         if is_transparent_list_key(child_schema):
                             self._process_hash(
-                                set_key,
+                                key,
                                 entry,
                                 path,
                                 skip_key=True,
@@ -475,7 +472,7 @@ class DictWalker:
                             )
                         else:
                             self._process_hash(
-                                set_key,
+                                key,
                                 entry,
                                 path,
                                 split_key_name=is_tc or wrapped,
@@ -487,18 +484,18 @@ class DictWalker:
                         else:
                             output.emit(path)
                     elif entry is None:
-                        output.emit(path + [set_key])
+                        output.emit(path + [key])
                     else:
-                        output.emit(path + [f"{set_key} {format_value(entry, child_schema)}"])
+                        output.emit(path + [f"{key} {format_value(entry, child_schema)}"])
 
                 attr = obj.get(f"@{key}")
                 if isinstance(attr, dict):
                     attrs = self._read_leaf_attrs(attr)
                     if attrs:
-                        self._emit_attrs(path + [set_key], attrs)
+                        self._emit_attrs(path + [key], attrs)
 
             elif isinstance(value, bool):
-                output.emit(path + [set_key])
+                output.emit(path + [key])
 
             elif isinstance(value, (str, int, float)):
                 is_nk = (
@@ -516,17 +513,17 @@ class DictWalker:
                     else:
                         output.emit_positional(path, formatted)
                 else:
-                    output.emit(path + [f"{set_key} {formatted}"])
+                    output.emit(path + [f"{key} {formatted}"])
 
                 attr_key = f"@{key}"
                 attr = obj.get(attr_key)
                 if isinstance(attr, dict):
                     leaf_attrs = self._read_leaf_attrs(attr)
                     if leaf_attrs:
-                        self._emit_attrs(path + [set_key], leaf_attrs)
+                        self._emit_attrs(path + [key], leaf_attrs)
 
             elif value is None:
-                output.emit(path + [set_key])
+                output.emit(path + [key])
 
         # A meta command on a value or a whole list the level holds has no
         # data key of its own to trigger the branches above; emit that
@@ -546,7 +543,7 @@ class DictWalker:
                 continue
             attrs = self._read_leaf_attrs(attr)
             if attrs:
-                self._emit_attrs(path + [resolve_key_alias(key)], attrs)
+                self._emit_attrs(path + [key], attrs)
 
         if UNPLACED_STATEMENTS in obj:
             self._emit_unplaced(obj[UNPLACED_STATEMENTS], path)
@@ -683,14 +680,14 @@ class DictWalker:
         written: set[str] = set()
         for field in fields:
             if isinstance(field, tuple):
-                chosen = next((k for k in hash_ if resolve_key_alias(k) in field), None)
+                chosen = next((k for k in hash_ if k in field), None)
                 if chosen is None:
                     return None
                 written.add(chosen)
-                parts.append(resolve_key_alias(chosen))
+                parts.append(chosen)
                 value = hash_[chosen]
                 if not (value is None or value is True or value == [None]):
-                    leaf = (schema_node or {}).get("c", {}).get(resolve_key_alias(chosen))
+                    leaf = (schema_node or {}).get("c", {}).get(chosen)
                     parts.append(format_value(value[0] if isinstance(value, list) else value, leaf))
                 continue
             if field not in hash_:

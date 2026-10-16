@@ -268,7 +268,7 @@ The `display/` package provides shared utility modules used by the `convert/` pi
 
 | Module | Purpose | Consumer |
 |--------|---------|----------|
-| `constants.py` | Schema flag helpers, `schema_child` and `universal_statements` (the statements valid at every level, and the floor for a tree built before 0.8.0), `KEY_ALIASES` (XML↔set name mapping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py`, `convert/input/set_input.py` |
+| `constants.py` | Schema flag helpers, `schema_child` and `universal_statements` (the statements valid at every level, and the floor for a tree built before 0.8.0), `statement_key` and `element_name` (a renamed statement's CLI keyword and XML and JSON name, read off the tree) | `convert/output/dict_walker.py`, `convert/output/structured_output.py`, `convert/input/`, `convert/output/json_output.py` |
 | `config_store.py` | Ordered tree for building structured output; supports operational prefixes | `convert/output/structured_output.py`, CLI filter |
 | `value_format.py` | Value formatting (quoting, escaping) | `convert/output/dict_walker.py`, `convert/output/structured_output.py` |
 | `set_converter.py` | The curly token lexer: `statements()` and `notes()` for conversion; schema-free `to_set()`, deprecated | `convert/input/structured_input.py`, `validate/structured_validator.py` (deprecated) |
@@ -395,7 +395,7 @@ artifacts at build time. These artifacts are bundled in the package for runtime 
 flowchart TD
     XSD["NETCONF XSD dump\n(output.xml)"] --> EXT["xsd_extractor.py\nextract &lt;xsd:schema&gt;"]
     EXT --> PARSE["xsd_parser.py\nparse → SchemaNode tree"]
-    PARSE --> FIX["xsd_fixes.py\napply 42 fixes (Groups A-H)"]
+    PARSE --> FIX["xsd_fixes.py\napply 44 fixes (Groups A-H)"]
     FIX --> BUILD["artifact_builder.py"]
     FIX --> SGEN["schema_generator.py"]
     FIX --> GGEN["grammar_generator.py"]
@@ -432,8 +432,8 @@ parsing. Fixes are organized into eight groups:
 | **A** | Variable placeholders | `$junos-*` freeform elements (handled in parser) | — |
 | **B** | Structure replacement | Replace `groups` with proper container→named-list pattern | 1 |
 | **C** | Literal symbol names | Rename `equal-literal` → `=`, `plus-literal` → `+`, `minus-literal` → `-` | 3 |
-| **D** | Missing elements | Add missing alternatives, arguments, and elements | 14 |
-| **E** | Wrong element names | Rename elements whose XSD names differ from CLI names | 5 |
+| **D** | Missing elements | Add missing alternatives, arguments, and elements, and the statements a device printed inside `<undocumented>` | 15 |
+| **E** | Wrong element names | Rename elements whose XSD names differ from CLI names; the node keeps the XML and JSON name (`x`) | 6 |
 | **F** | Nokeyword/generic names | Mark elements as freeform or positional | 4 |
 | **G** | Structure/combinator | Fix element combinators, presence flags and evidenced singleton entry lists | 7 |
 | **H** | Conversion hints | Encode runtime behavior into schema flags (transparent, oneliner, positional-key) | 8 |
@@ -526,10 +526,15 @@ with a numeric type (e.g., `destination-port` accepts `ssh` or `179`). Because t
 schema artifact only captures the enum portion, the field validator accepts numeric
 values and ranges (`[0-9]+(-[0-9]+)?`) as a fallback when the enum check fails.
 
-**KEY_ALIASES resolution.** The `KEY_ALIASES` dict in `constants.py` maps XML/JSON
-element names to their set command keywords when they differ (e.g., `ieee-802.3ad` →
-`802.3ad`). These aliases are resolved during both dict-to-set output and set input
-parsing so that schema lookups succeed regardless of which name variant is used.
+**Element names.** A Group C or E fix renames an element to its CLI keyword
+(`ieee-802.3ad` → `802.3ad`) and records the element name the device writes in XML
+and JSON on the node (`x` in the structure tree). The tree and the IR are keyed by
+the keyword whichever reader gave the configuration: the XML, JSON, yaml-new and
+yaml readers map a recorded name to its keyword through
+`junoscfg.display.statement_key`, which the set reader also uses to take either
+spelling. The set grammar takes the keyword; the JSON schema and the JSON and
+yaml-new writers (`junoscfg.display.element_name`) write the element name. No
+table outside the schema model repeats the renames.
 
 ---
 

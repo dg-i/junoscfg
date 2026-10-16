@@ -33,7 +33,6 @@ from junoscfg.convert import (
 )
 from junoscfg.display import artifacts_dir
 from tests.support.artifacts import using_tree
-from tests.support.devices import placed_only
 from tests.support.keyed_entries import TERM, set_ir, structure_tree
 
 if TYPE_CHECKING:
@@ -419,6 +418,8 @@ class TestAJunosVariableIsNotAValue:
         result = validate(schema, config)
         assert result.errors == []
         assert validate(schema, {"system": {"name": "lo0", "speed": "x"}}).errors
+        # Only Junos's own variables: another `$` word is a value like any other.
+        assert validate(schema, {"system": {"name": "$foo-ifd-name"}}).errors
 
     def test_the_device_line_validates(self) -> None:
         source = (
@@ -1015,12 +1016,6 @@ class TestTheExampleConfigurationValidates:
         "Missing mandatory field 'secret': may be required at commit; "
         "the configuration loads without it",
     )
-
-    def test_every_statement_the_schema_places_validates(self, json_config: str) -> None:
-        """Clean, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
-        result = validate_ir(to_dict(json.dumps(placed_only(json.loads(json_config))), "json"))
-        assert result.errors == []
-        assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]
 
     def test_the_example_validates_clean(self, json_config: str) -> None:
         result = validate_ir(to_dict(json_config, "json"))

@@ -173,6 +173,9 @@ def _has_enum_placeholder(allowed: list[str]) -> bool:
     return False
 
 
+#: The prefix of a Junos dynamic-profile variable (`$junos-interface-ifd-name`).
+_JUNOS_VARIABLE = "$junos-"
+
 #: The ``expected`` of an error for a statement the schema could not place;
 #: the pipeline filters on it, since anonymization cannot see such a statement.
 UNPLACED = "a statement the schema places"
@@ -606,6 +609,10 @@ class FieldValidator:
             return
 
         str_value = str(value)
+        if str_value.startswith(_JUNOS_VARIABLE):
+            # A dynamic-profile variable the device fills in at subscriber
+            # login: no value to check (vMX 23.2R2-S7.5, `bng1_mx304`).
+            return
         quoted = self._quoted(str_value)
         dot_path = ".".join(path)
 

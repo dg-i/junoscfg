@@ -73,6 +73,11 @@ EXCEPTIONS: dict[tuple[str, str], str] = {
     ("corpus/test_schema_data.py", "junoscfg.display"): _STAGES,
     ("corpus/test_schema_data.py", "junoscfg.validate.xsd_parser"): _SEQUENCES,
     ("corpus/test_schema_data.py", "xsd_parser._key_fields"): _SEQUENCES,
+    ("corpus/test_device_renderings.py", "junoscfg.convert"): (
+        "curly `-v` judges the set lines the conversion walk reads (`structured_set_lines`); "
+        "the law validates only those the device's own set lacks, the rest being the grammar "
+        "corpus's, which keeps it seconds where the whole capture takes minutes"
+    ),
     ("unit/display/test_artifact_resolution.py", "junoscfg.display.constants._BUNDLED_DIR"): (
         "only the bundled directory answers None instead of raising, and it is fixed at "
         "install time; pointing it at a missing directory is the one way to reach the branch"

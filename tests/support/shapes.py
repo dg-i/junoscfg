@@ -254,6 +254,9 @@ _add(
             }
         },
         set_output="set interfaces ge-0/0/2 ether-options 802.3ad ae0\n",
+        # One IR whatever the reader: the yaml writer dumps it (Test/Challenge TC3).
+        never_written={YAML: ("ieee-802.3ad",), JSON: ('"802.3ad"',), YAML_NEW: (" 802.3ad:",)},
+        written={JSON: ('"ieee-802.3ad"',), YAML: (" 802.3ad:",)},
         why="The CLI's `802.3ad` is the element `ieee-802.3ad` in XML and JSON, as every "
         "device capture's JSON writes it. `KEY_ALIASES` was once consulted by the set reader "
         "only (xml-ir-parity); the JSON reader kept the element name and the JSON writer "
@@ -293,6 +296,8 @@ _add(
             }
         },
         set_output="set interfaces interface-range IR-ACCESS member-range ge-0/0/2 to ge-0/0/5\n",
+        never_written={YAML: ("end-range",), JSON: ('"to"',), YAML_NEW: (" to:",)},
+        written={JSON: ('"end-range"',), YAML: (" to:",)},
         why="vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 print `member-range ge-0/0/2 to "
         'ge-0/0/5` in set and `"end-range"` in JSON (`junoscfg-oracle.*`); JSON input '
         "kept `end-range` and field validation reported the mandatory `to` missing "
@@ -325,6 +330,8 @@ _add(
             }
         },
         set_output="set protocols isis interface ge-0/0/0 hello-padding strict\n",
+        never_written={YAML: ("hello-padding-type",), JSON: ('"hello-padding"',)},
+        written={JSON: ('"hello-padding-type"',), YAML: (" hello-padding:",)},
         why="The CLI's `hello-padding` is `hello-padding-type` in XML and JSON (vMX 23.2R2-S7.5 "
         "and QFX5120 25.2R2-S1.5, `junoscfg-oracle.*`): set input was rejected and JSON input "
         "written back as `hello-padding-type` (known-differences class "
@@ -2720,9 +2727,10 @@ for _name, _set, _curly, _ir, _why in (
         "a-known-container-with-a-keyworded-name",
         "set snmp name sw1\nset snmp location lab",
         "snmp { name sw1; location lab; }",
-        {"snmp": {"name": "sw1", "location": "lab"}},
+        {"snmp": {"system-name": "sw1", "location": "lab"}},
         "NEW-B1 corrected-schema preservation control; no device validity claim. "
-        "Keyworded name is a leaf, not an entry identifier.",
+        "Keyworded name is a leaf, not an entry identifier. The CLI's `name` is the XSD's "
+        "`system-name`, which XML and JSON write (change device-validation).",
     ),
 ):
     _add(

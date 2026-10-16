@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 from junoscfg.display import open_artifact_write, read_artifact_text
 from junoscfg.validate.grammar_generator import write_lark_grammar
 from junoscfg.validate.schema_generator import write_json_schema
-from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
+from junoscfg.validate.schema_node import XML_NAME, SchemaNode
 from junoscfg.validate.xsd_extractor import extract_xsd
 from junoscfg.validate.xsd_fixes import apply_all_fixes, get_fix_count
 from junoscfg.validate.xsd_parser import parse_xsd
@@ -250,6 +250,9 @@ class _ValueFlag(NamedTuple):
 _VALUE_FLAG_KEYS: dict[str, _ValueFlag] = {
     # `transparent:interface` -> "t": "interface"
     "t": _ValueFlag("transparent:", str, str),
+    # `xml-name:end-range` -> "x": "end-range": the element name the device
+    # writes in XML and JSON for a node a fix renamed to its CLI keyword.
+    "x": _ValueFlag(XML_NAME, str, str),
 }
 
 
@@ -298,6 +301,7 @@ def _serialize_node(node: SchemaNode, state: _SerializeState) -> dict[str, Any]:
         nk: true if nokeyword flag
         o: true if flat/oneliner entry (name + children on single line)
         t: transparent container child name (e.g. "interface")
+        x: the element name in XML and JSON where the key is the CLI keyword
         tk: true if transparent list key
         pk: true if positional key (nesting)
         pkf: true if positional key (flat/non-nesting)

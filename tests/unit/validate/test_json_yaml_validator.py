@@ -6,6 +6,7 @@ import json
 from typing import TYPE_CHECKING
 
 import pytest
+import yaml
 
 from junoscfg import Format, convert_config_result
 from junoscfg.validate import JsonYamlValidator, SchemaLoadError
@@ -234,12 +235,30 @@ class TestAMessageNamesThePathAndTheKeys:
         ],
         ids=["array-wrapped", "transparent-as-list", "a-string", "deep-in-a-list"],
     )
-    def test_no_message_reprints_a_value(self, bundled_validator, doc) -> None:
-        result = bundled_validator.validate_json(json.dumps(doc))
+    @pytest.mark.parametrize("door", ["validate_json", "validate_yaml_as_json", "validate_yaml"])
+    def test_no_message_reprints_a_value(self, bundled_validator, doc, door) -> None:
+        text = json.dumps(doc) if door == "validate_json" else yaml.safe_dump(doc)
+        result = getattr(bundled_validator, door)(text)
         assert result.errors
         for error in result.errors:
             assert _VALUE not in error.message, error.message
             assert "{" not in error.message and "[" not in error.message, error.message
+
+    def test_a_failure_deep_in_a_list_is_named_where_it_is(self, bundled_validator) -> None:
+        doc = {
+            "configuration": {
+                "protocols": {
+                    "bgp": {"group": [{"name": _VALUE, "family": {"bogus": {"a": _VALUE}}}]}
+                }
+            }
+        }
+        result = bundled_validator.validate_json(json.dumps(doc))
+        assert [(e.path, e.message) for e in result.errors] == [
+            (
+                "configuration.protocols.bgp.group.0.family",
+                "'bogus' is not a statement the schema places here",
+            )
+        ]
 
 
 class TestPresenceInBothDeviceSpellings:

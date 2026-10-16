@@ -61,10 +61,10 @@ def to_dict(
     else:
         raise ValueError(f"Unknown implementation {implemented!r} for input format {fmt}")
 
-    if implemented in {"ir-yaml", "xml"}:
-        from junoscfg.convert.input.normalization import normalize_leaf_lists
+    if implemented in {"junos-json", "junos-yaml", "ir-yaml", "xml"}:
+        from junoscfg.convert.input.normalization import normalize_names
 
-        normalize_leaf_lists(ir)
+        normalize_names(ir, leaf_lists=implemented in {"ir-yaml", "xml"})
     _normalize_annotations(ir)
     _refuse_malformed_records(ir)
     return ir

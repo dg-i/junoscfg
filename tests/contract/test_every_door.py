@@ -583,6 +583,53 @@ class TestBracketShorthandIsRejected:
         _check(row, door, validators)
 
 
+# ── Every verb names a statement path ─────────────────────────────────
+
+VERBS = (
+    Row(
+        "protect-a-group",
+        True,
+        set="set groups GR-PROTECTED system host-name router1\nprotect groups GR-PROTECTED",
+        structured="protect: groups {\n    GR-PROTECTED {\n        system {\n"
+        "            host-name router1;\n        }\n    }\n}\n",
+    ),
+    Row(
+        "deactivate-a-leaf-without-its-value",
+        True,
+        set="set system host-name router1\ndeactivate system host-name",
+    ),
+    Row("delete-a-leaf", True, set="delete system host-name"),
+    Row("activate-a-container", True, set="activate system services ssh"),
+    Row(
+        "protect-an-unknown-path",
+        False,
+        set="protect system no-such-statement",
+        messages=("Invalid syntax: protect system no-such-statement",),
+    ),
+    Row(
+        "another-verb",
+        False,
+        set="show system host-name",
+        messages=("Unsupported command in set input on line 1",),
+    ),
+)
+
+
+class TestEveryVerbNamesAStatementPath:
+    """Spec: validation/set-command-validation.
+
+    The set reader reads `set`, `deactivate`, `protect`, `activate` and
+    `delete`; each names a statement path, and only `set` gives a leaf its
+    value. The device prints `protect groups GR-PROTECTED` and `deactivate ...
+    max-hello-size` (`tests/data/device/synthetic/*/junoscfg-oracle.set.gz`);
+    every door called the first no set command (change device-validation).
+    """
+
+    @pytest.mark.parametrize(("row", "door"), cases(VERBS))
+    def test_every_door_agrees(self, row: Row, door: Door, validators: Any) -> None:
+        _check(row, door, validators)
+
+
 # ── Structured text validates as conversion reads it ─────────────────
 
 _SCHEMA_FREE = (

@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from junoscfg import Format, convert_config
-from tests.support.devices import example, placed_only
+from tests.support.devices import example
 from tests.support.shapes import BY_NAME, SHAPES, Shape
 
 VALID = [shape for shape in SHAPES if shape.valid]
@@ -89,22 +89,12 @@ class TestTheExampleRendersValid:
     """The example a vMX printed, read and written by junoscfg, is one junoscfg accepts.
 
     `examples/junoscfg-oracle.*` (`tests/data/device/README.md`): the device
-    loaded every statement, so each schema error is junoscfg's. The XML
-    rendering is read, the one junoscfg reads closest to the schema.
+    loaded every statement, so each schema error is junoscfg's. Until change
+    device-validation five of its statements had no node in the schema model
+    (`UNPLACED_IN_THE_EXAMPLE`) and its JSON names `end-range` and
+    `ieee-802.3ad` were the model's `to` and `802.3ad`; both renderings were
+    strict xfails.
     """
-
-    @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
-    def test_every_statement_the_schema_places_renders_valid(
-        self, fmt: Format, bundled_validator: Any
-    ) -> None:
-        """Valid, but for the statements `UNPLACED_IN_THE_EXAMPLE` records as a defect."""
-        read = convert_config(
-            example().rendering("xml"), from_format=Format.XML, to_format=Format.JSON
-        )
-        placed = json.dumps(placed_only(json.loads(read)))
-        rendered = convert_config(placed, from_format=Format.JSON, to_format=fmt)
-        errors = _errors(bundled_validator, rendered, fmt)
-        assert not errors, errors[:2]
 
     @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
     @pytest.mark.parametrize("suffix", ["xml", "json"])
@@ -161,6 +151,52 @@ class TestTheSchemaStillRejects:
             (
                 "a set-transparent container given as its child's list",
                 {"configuration": {"interfaces": [{"name": "ge-0/0/0", "mtu": 1500}]}},
+            ),
+            (
+                # The CLI keyword where JSON writes the element: `<802.3ad>` is no
+                # XML element, and the device's JSON writes `ieee-802.3ad`
+                # (change device-validation, Test/Challenge TC7).
+                "the CLI keyword of a renamed element",
+                {
+                    "configuration": {
+                        "interfaces": {
+                            "interface": [
+                                {
+                                    "name": "ge-0/0/0",
+                                    "ether-options": {"802.3ad": {"bundle": "ae0"}},
+                                }
+                            ]
+                        }
+                    }
+                },
+            ),
+            (
+                "an unknown statement under an undocumented one",
+                {
+                    "configuration": {
+                        "system": {
+                            "ddos-protection": {
+                                "protocols": {"autoconf": {"aggregate": {"bogus": "1"}}}
+                            }
+                        }
+                    }
+                },
+            ),
+            (
+                "an unknown statement beside grpc clear-text's port",
+                {
+                    "configuration": {
+                        "system": {
+                            "services": {
+                                "extension-service": {
+                                    "request-response": {
+                                        "grpc": {"clear-text": {"port": "32767", "bogus": "1"}}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
             ),
         ],
     )

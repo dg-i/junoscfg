@@ -97,7 +97,7 @@ def _walk_dict(
     A key resolves through `junoscfg.display.schema_child`, so a universal
     statement below the root is walked against the root's node (*root*).
     """
-    from junoscfg.display import resolve_key_alias, schema_child
+    from junoscfg.display import schema_child
 
     for key, value in obj.items():
         if key.startswith("@") or key in skip_keys:
@@ -119,7 +119,7 @@ def _walk_dict(
             _walk_unknown(value, match_path + (key,), cli_path + (key,), collector)
             continue
 
-        child_schema = schema_child(schema_node, resolve_key_alias(key), root)
+        child_schema = schema_child(schema_node, key, root)
         if child_schema is None:
             _walk_unknown(value, match_path + (key,), cli_path + (key,), collector)
             continue

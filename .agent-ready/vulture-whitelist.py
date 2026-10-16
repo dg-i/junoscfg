@@ -6,7 +6,7 @@
 # - The twenty `_convert_*_to_*` functions in __init__.py are reached through
 #   the _CONVERTERS dict by name, never by a literal call. Vulture reads calls.
 # - `fullhelp` is a click command registered by its decorator.
-# - `types_audited`, `category`, `description` and `applies_to` are dataclass
+# - `types_audited`, `category` and `description` are dataclass
 #   fields read by the test suite, which vulture does not scan.
 # - `json_to_yaml`, `build_from_xsd` and `read_structure_tree` are public API
 #   exercised by tests only. `read_structure_tree` is also the documented way to
@@ -59,5 +59,4 @@ _.build_from_xsd  # unused method (src/junoscfg/validate/artifact_builder.py:84)
 read_structure_tree  # unused function (src/junoscfg/validate/artifact_builder.py:371)
 category  # unused variable (src/junoscfg/validate/xsd_fixes.py:24)
 description  # unused variable (src/junoscfg/validate/xsd_fixes.py:25)
-applies_to  # unused variable (src/junoscfg/validate/xsd_fixes.py:26)
 lexical  # unused method (src/junoscfg/anonymize/rules/__init__.py)

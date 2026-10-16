@@ -10,7 +10,6 @@ import dataclasses
 from typing import Any
 
 from junoscfg.display import (
-    KEY_ALIASES,
     UNPLACED_STATEMENTS,
     entry_keys,
     is_algebra_token,
@@ -21,6 +20,7 @@ from junoscfg.display import (
     passes_tag_to_child,
     schema_child,
     statement_children,
+    statement_key,
     statement_name_spellings,
     unplaced_record_problem,
 )
@@ -325,10 +325,10 @@ def _read_key(
 
     def read_choices(j: int) -> int | None:
         for field in choices:
-            if j >= len(tokens) or KEY_ALIASES.get(tokens[j], tokens[j]) not in field:
+            if j >= len(tokens) or statement_key(children, tokens[j]) not in field:
                 return None
-            token = tokens[j]
-            if children.get(KEY_ALIASES.get(token, token), {}).get("l"):
+            token = statement_key(children, tokens[j])
+            if children.get(token, {}).get("l"):
                 if j + 1 >= len(tokens):
                     return None
                 found[field] = (token, _parse_value(tokens[j + 1]))
@@ -338,7 +338,7 @@ def _read_key(
                 j += 1
         return j
 
-    leads = j < len(tokens) and any(KEY_ALIASES.get(tokens[j], tokens[j]) in c for c in choices)
+    leads = j < len(tokens) and any(statement_key(children, tokens[j]) in c for c in choices)
     if leads and (j := read_choices(j)) is None:
         return None
     for field in positional:
@@ -550,8 +550,9 @@ def _merge_tokens(
                 entry.setdefault("data", []).append(pair)
             return
 
-        # Resolve key alias for schema lookup (e.g., ieee-802.3ad → 802.3ad)
-        schema_key = KEY_ALIASES.get(token, token)
+        # The tree's key for the token: an XML and JSON element name is read as
+        # the keyword it was renamed to (e.g., ieee-802.3ad → 802.3ad).
+        schema_key = statement_key(children, token)
 
         if schema_key not in children:
             # Check transparent container
@@ -579,7 +580,7 @@ def _merge_tokens(
                 if isinstance(cnode, dict) and cnode.get("nk") and cnode.get("l"):
                     if i + 1 < len(tokens):
                         after = tokens[i + 1]
-                        if after not in children and KEY_ALIASES.get(after, after) not in children:
+                        if statement_key(children, after) not in children:
                             break
                     if _is_statement_name(cname, cnode, token):
                         current[token] = [None]
@@ -640,7 +641,6 @@ def _merge_tokens(
             tc_matched = False
             if i + 1 < len(tokens):
                 next_token = tokens[i + 1]
-                next_key = KEY_ALIASES.get(next_token, next_token)
                 for parent_key, parent_node in children.items():
                     if not isinstance(parent_node, dict):
                         continue
@@ -650,7 +650,8 @@ def _merge_tokens(
                     tc_node = parent_node.get("c", {}).get(tc_name)
                     if not tc_node or not tc_node.get("L"):
                         continue
-                    if next_key in statement_children(tc_node):
+                    tc_children = statement_children(tc_node)
+                    if statement_key(tc_children, next_token) in tc_children:
                         # Match — descend into parent → transparent list → entry
                         name = _parse_value(token)
                         parent = current.setdefault(parent_key, {})
@@ -755,10 +756,7 @@ def _merge_tokens(
             is_leaf_list = child.get("ll")
             # Check if token after the value is a schema sibling
             next_idx = i + 2
-            if next_idx < len(tokens) and (
-                tokens[next_idx] in children
-                or KEY_ALIASES.get(tokens[next_idx], tokens[next_idx]) in children
-            ):
+            if next_idx < len(tokens) and statement_key(children, tokens[next_idx]) in children:
                 # Sibling follows — take only one token as value
                 val = _leaf_value(tokens[i + 1], child)
                 current[token] = [val] if is_leaf_list else val
@@ -835,8 +833,9 @@ def _apply_meta(
         token = tokens[i]
         children = statement_children(current_schema)
 
-        # Resolve key alias for schema lookup (e.g., ieee-802.3ad → 802.3ad)
-        schema_key = KEY_ALIASES.get(token, token)
+        # The tree's key for the token: an XML and JSON element name is read as
+        # the keyword it was renamed to (e.g., ieee-802.3ad → 802.3ad).
+        schema_key = statement_key(children, token)
         if schema_key not in children:
             found = schema_child(current_schema, schema_key, schema)
             if found is not None and found.get("u"):
@@ -885,7 +884,6 @@ def _apply_meta(
             tc_matched = False
             if i + 1 < len(tokens):
                 next_token = tokens[i + 1]
-                next_key = KEY_ALIASES.get(next_token, next_token)
                 for parent_key, parent_node in children.items():
                     if not isinstance(parent_node, dict):
                         continue
@@ -895,7 +893,8 @@ def _apply_meta(
                     tc_node = parent_node.get("c", {}).get(tc_name)
                     if not tc_node or not tc_node.get("L"):
                         continue
-                    if next_key in statement_children(tc_node):
+                    tc_children = statement_children(tc_node)
+                    if statement_key(tc_children, next_token) in tc_children:
                         name = _parse_value(token)
                         parent = current.setdefault(parent_key, {})
                         lst = parent.setdefault(tc_name, [])

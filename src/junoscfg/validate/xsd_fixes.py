@@ -2,7 +2,16 @@
 
 Ports fixes from Ruby ruler.rb that correct genuine XSD errors (Groups A-G),
 plus conversion-hint flags that encode runtime behavior into the schema tree
-(Group H). All fixes are applied to the SchemaNode tree after parsing.
+(Group H). All fixes are applied to the one SchemaNode tree after parsing, and
+every artifact is built from it.
+
+One rule decides what a fix means per format. A Group E fix renames an element
+to the keyword the CLI writes (`end-range` is `to`); the device keeps the
+element's own name in XML and JSON, so the renamed node records it as the
+`xml-name:` flag (`XML_NAME`). The set grammar and set/curly I/O take the
+keyword; the JSON schema, the JSON writer and the XML, JSON and YAML readers
+take the recorded name. Every other fix changes structure, cardinality or
+leniency, which every format shares.
 """
 
 from __future__ import annotations
@@ -11,7 +20,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from junoscfg.validate.schema_node import Combinator, SchemaNode, find_all, navigate
+from junoscfg.validate.schema_node import XML_NAME, Combinator, SchemaNode, find_all, navigate
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -24,7 +33,6 @@ class XsdFix:
     id: str
     category: str
     description: str
-    applies_to: list[str]
     apply: Callable[[SchemaNode], bool]
 
 
@@ -42,33 +50,44 @@ def _find_names(root: SchemaNode, names: set[str]) -> Iterator[SchemaNode]:
 
 
 def _rename_element(root: SchemaNode, old_name: str, new_name: str) -> bool:
-    """Rename all occurrences of an element in the tree. Returns True if any renamed."""
+    """Rename every occurrence of an element to its CLI keyword. True if any was renamed.
+
+    The node keeps the element name the device writes in XML and JSON
+    (`XML_NAME`). A parent that already holds *new_name* keeps both: the element
+    is not renamed there.
+    """
     renamed = False
-    nodes = find_all(root, old_name)
-    for node in nodes:
-        node.name = new_name
-    if nodes:
-        renamed = True
-    # Also fix parent children dicts
-    _fix_parent_keys(root, old_name, new_name)
+    seen: set[int] = set()
+    queue = deque([root])
+    while queue:
+        node = queue.popleft()
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+        if old_name in node.children and new_name not in node.children:
+            _rename_child(node, old_name, new_name)
+            renamed = True
+        queue.extend(node.children.values())
     return renamed
 
 
-def _fix_parent_keys(node: SchemaNode, old_key: str, new_key: str) -> None:
-    """Walk tree and update children dict keys where old_key is found."""
-    if old_key in node.children:
-        child = node.children.pop(old_key)
-        node.children[new_key] = child
-        # The key fields name children, so a renamed child is renamed there
-        # too: `then community`'s action choice holds `equal-literal`.
-        node.key_fields = tuple(
-            tuple(new_key if n == old_key else n for n in f)
-            if isinstance(f, tuple)
-            else (new_key if f == old_key else f)
-            for f in node.key_fields
-        )
-    for child in list(node.children.values()):
-        _fix_parent_keys(child, old_key, new_key)
+def _rename_child(parent: SchemaNode, old_key: str, new_key: str) -> None:
+    """Rename *parent*'s child *old_key* to *new_key*, keeping its element name,
+    and the key fields that name it. The child moves to the end of its parent's
+    children, as it always has: the artifacts' order is unchanged."""
+    child = parent.children.pop(old_key)
+    if not any(flag.startswith(XML_NAME) for flag in child.flags):
+        child.flags.add(XML_NAME + old_key)
+    child.name = new_key
+    parent.children[new_key] = child
+    # The key fields name children, so a renamed child is renamed there
+    # too: `then community`'s action choice holds `equal-literal`.
+    parent.key_fields = tuple(
+        tuple(new_key if n == old_key else n for n in f)
+        if isinstance(f, tuple)
+        else (new_key if f == old_key else f)
+        for f in parent.key_fields
+    )
 
 
 def _add_sibling_impl(
@@ -448,6 +467,62 @@ def _fix_regexp_commands(root: SchemaNode) -> bool:
     return True
 
 
+# Statements Junos accepts and its NETCONF XSD omits: the device's own XML wraps
+# each in `<undocumented>`, and junoscfg's XML reader unwraps it. Only what a
+# committed device capture holds, shaped as that capture's XML writes it:
+# `tests/data/device/synthetic/*/junoscfg-oracle.xml.gz` (login `shell`, grpc,
+# `autoconf`, `per-prefix-label`) and
+# `tests/data/device/jvd/vmx-23.2R2-S7.5/bng1_mx304.xml.gz` (`autoconf ... burst`,
+# the dhcp-local-server timers). None of these names an element in the 21.4R0,
+# 23.2R2 or 25.2R2 dumps under these parents. The parent is named by its XSD
+# type where the XSD gives one, so every place the type occurs (groups,
+# routing instances, BGP groups and neighbours) takes the statement; otherwise
+# by its own and its parent's name.
+_UNDOCUMENTED: tuple[tuple[str | tuple[str, str], str, object], ...] = (
+    ("login-user-object", "shell", "leaf"),
+    (("request-response", "grpc"), "clear-text", {"port": "leaf"}),
+    (("request-response", "grpc"), "skip-authentication", "presence"),
+    (
+        ("ddos-protection", "protocols"),
+        "autoconf",
+        {"aggregate": {"bandwidth": "leaf", "burst": "leaf"}},
+    ),
+    ("bgp-afi-inet6-labeled", "per-prefix-label", "presence"),
+    ("jdhcp-local-server-type", "stale-timer", "leaf"),
+    ("jdhcp-local-server-type", "no-stale-timer-refresh", "presence"),
+)
+
+
+def _statement(name: str, shape: object) -> SchemaNode:
+    """A node shaped as *shape*: ``"leaf"``, ``"presence"``, or a dict of children."""
+    if shape == "leaf":
+        return SchemaNode(name=name, is_leaf=True)
+    if shape == "presence":
+        return SchemaNode(name=name, is_presence=True)
+    assert isinstance(shape, dict)
+    return SchemaNode(
+        name=name, children={child: _statement(child, sub) for child, sub in shape.items()}
+    )
+
+
+def _fix_undocumented_statements(root: SchemaNode) -> bool:
+    """Declare the statements a device printed undocumented (`_UNDOCUMENTED`)."""
+    added = False
+    seen: set[int] = set()
+    queue: deque[tuple[str, SchemaNode]] = deque([("", root)])
+    while queue:
+        parent_name, node = queue.popleft()
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+        for anchor, name, shape in _UNDOCUMENTED:
+            if anchor in (node.type_ref, (parent_name, node.name)) and name not in node.children:
+                node.children[name] = _statement(name, shape)
+                added = True
+        queue.extend((node.name, child) for child in node.children.values())
+    return added
+
+
 # ── Fix Group E: Wrong Element Names ─────────────────────────────────
 
 
@@ -473,10 +548,8 @@ def _fix_nat_rule_match(root: SchemaNode) -> bool:
 def _fix_system_name(root: SchemaNode) -> bool:
     """Rename 'system-name' to 'name' in SNMP context (ruler.rb line 279)."""
     snmp = navigate(root, "snmp")
-    if snmp and "system-name" in snmp.children:
-        child = snmp.children.pop("system-name")
-        child.name = "name"
-        snmp.children["name"] = child
+    if snmp and "system-name" in snmp.children and "name" not in snmp.children:
+        _rename_child(snmp, "system-name", "name")
         return True
     return False
 
@@ -486,22 +559,27 @@ def _fix_ethernet_speed_prefix(root: SchemaNode) -> bool:
 
     def _walk_rename(node: SchemaNode) -> bool:
         found = False
-        renames = {}
         for name in list(node.children.keys()):
             if name.startswith("ethernet-") and len(name) > 9 and name[9:10].isdigit():
-                new_name = name[len("ethernet-") :]
-                renames[name] = new_name
+                _rename_child(node, name, name[len("ethernet-") :])
                 found = True
-        for old, new in renames.items():
-            child = node.children.pop(old)
-            child.name = new
-            node.children[new] = child
         for child in node.children.values():
             if _walk_rename(child):
                 found = True
         return found
 
     return _walk_rename(root)
+
+
+def _fix_hello_padding(root: SchemaNode) -> bool:
+    """Rename IS-IS `hello-padding-type` to `hello-padding`, as the CLI writes it.
+
+    vMX 23.2R2-S7.5 and QFX5120 25.2R2-S1.5 print `interface <ge-*> hello-padding
+    strict` in set and curly and `hello-padding-type` in XML and JSON
+    (`tests/data/device/synthetic/*/junoscfg-oracle.*`). The OpenConfig
+    `hello-padding` elements are other parents' and keep their name.
+    """
+    return _rename_element(root, "hello-padding-type", "hello-padding")
 
 
 # ── Fix Group F: Nokeyword / Generic Name Fixes ─────────────────────
@@ -674,20 +752,40 @@ def _fix_ephemeral_instance(root: SchemaNode) -> bool:
 
 
 def _fix_keyed_singleton_lists(root: SchemaNode) -> bool:
-    """Correct the three device-backed singleton entry paths, not all name children.
+    """Correct the device-backed singleton entry paths, not all name children.
 
     The shipped XSD marks each name as a positional identifier despite
     maxOccurs=1; device JSON holds an entry array. Groups reuse root schema
-    nodes. A positional value, leaf-list or unkeyed homogeneous container is
-    not an entry, and no second-entry cardinality promise follows.
+    nodes; routing instances and logical systems hold their own copies of the
+    same elements, which the device writes the same way. A positional value,
+    leaf-list or unkeyed homogeneous container is not an entry, and no
+    second-entry cardinality promise follows.
     """
     paths = (
         ("forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"),
         ("protocols", "mpls", "label-range", "srgb-label-range"),
         ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+        # vMX 23.2R2-S7.5 prints it as an array too (`jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json.gz`).
+        (
+            "protocols",
+            "isis-instance",
+            "interface",
+            "level",
+            "application-specific",
+            "attribute-group",
+        ),
     )
+    instances = (
+        (),
+        ("routing-instances", "instance"),
+        ("logical-systems",),
+        ("logical-systems", "routing-instances", "instance"),
+        ("tenants", "routing-instances", "instance"),
+    )
+    groups = ((), ("groups", "group"))
+    prefixes = [(*group, *instance) for group in groups for instance in instances]
     changed = False
-    for prefix in ((), ("groups", "group")):
+    for prefix in prefixes:
         for path in paths:
             node = navigate(root, *prefix, *path)
             if node is None or node.is_list or node.is_leaf or node.is_presence:
@@ -773,36 +871,30 @@ def _fix_freeform_nk_keys(root: SchemaNode) -> bool:
 
 # ── Fix Registry ─────────────────────────────────────────────────────
 
-_ALL_TARGETS = ["json-schema", "lark", "xsd"]
-
 ALL_FIXES: list[XsdFix] = [
     # Group B: Structure replacement
     XsdFix(
         "groups-structure",
         "structure-replacement",
         "Replace groups with proper hierarchical structure",
-        _ALL_TARGETS,
         _fix_groups,
     ),
     XsdFix(
         "literal-equal",
         "wrong-name",
         'Rename "equal-literal" to "="',
-        _ALL_TARGETS,
         _fix_literal_equal,
     ),
     XsdFix(
         "literal-plus",
         "wrong-name",
         'Rename "plus-literal" to "+"',
-        _ALL_TARGETS,
         _fix_literal_plus,
     ),
     XsdFix(
         "literal-minus",
         "wrong-name",
         'Rename "minus-literal" to "-"',
-        _ALL_TARGETS,
         _fix_literal_minus,
     ),
     # Group D: Missing elements
@@ -810,159 +902,147 @@ ALL_FIXES: list[XsdFix] = [
         "missing-dhcp",
         "missing-element",
         "Add dhcp as alternative to dhcp-service",
-        _ALL_TARGETS,
         _fix_dhcp_alternative,
     ),
     XsdFix(
         "missing-icmpv6",
         "missing-element",
         "Add icmpv6 as alternative to icmp6",
-        _ALL_TARGETS,
         _fix_icmpv6_alternative,
     ),
     XsdFix(
         "route-filter-arg",
         "missing-element",
         "Add missing address arg to route-filter",
-        _ALL_TARGETS,
         _fix_route_filter_arg,
     ),
     XsdFix(
         "source-address-filter-arg",
         "missing-element",
         "Add missing address arg to source-address-filter",
-        _ALL_TARGETS,
         _fix_source_address_filter_arg,
     ),
     XsdFix(
         "classifiers-default",
         "missing-element",
         "Add freeform arg alongside default in classifiers",
-        _ALL_TARGETS,
         _fix_classifiers_default,
     ),
     XsdFix(
         "wildcard-star",
         "missing-element",
         "Replace * element with freeform arg",
-        _ALL_TARGETS,
         _fix_wildcard_star,
     ),
     XsdFix(
         "security-policy-zones",
         "missing-element",
         "Add from-zone/to-zone to security policy",
-        _ALL_TARGETS,
         _fix_security_policy_zones,
     ),
     XsdFix(
         "apply-statements",
         "missing-element",
         "Model apply-groups/-except/apply-flags/apply-macro as universal statements",
-        _ALL_TARGETS,
         _fix_apply_statements,
     ),
     XsdFix(
         "members-bracket",
         "missing-element",
         "Make members accept bracket expressions",
-        _ALL_TARGETS,
         _fix_members_bracket,
     ),
     XsdFix(
         "teardown-forms",
         "missing-element",
         "Add teardown percentage and bare forms",
-        _ALL_TARGETS,
         _fix_teardown,
     ),
     XsdFix(
         "800g-speed",
         "missing-element",
         "Add 800g/800G to interface speed enums",
-        _ALL_TARGETS,
         _fix_800g_speed,
     ),
     XsdFix(
         "single-hop",
         "missing-element",
         "Add single-hop to liveness-detection",
-        _ALL_TARGETS,
         _fix_single_hop,
     ),
     XsdFix(
         "enable-interface",
         "missing-element",
         "Add enable to interfaces type",
-        _ALL_TARGETS,
         _fix_enable_interface,
     ),
     XsdFix(
         "regexp-commands",
         "missing-element",
         "Use regular_expression for allow/deny regexps",
-        _ALL_TARGETS,
         _fix_regexp_commands,
     ),
-    # Group E: Wrong element names
     XsdFix(
-        "end-range-to", "wrong-name", 'Rename "end-range" to "to"', _ALL_TARGETS, _fix_end_range
+        "undocumented-statements",
+        "missing-element",
+        "Declare the statements a device printed inside <undocumented>",
+        _fix_undocumented_statements,
     ),
+    # Group E: Wrong element names
+    XsdFix("end-range-to", "wrong-name", 'Rename "end-range" to "to"', _fix_end_range),
     XsdFix(
         "ieee-802.3ad",
         "wrong-name",
         'Rename "ieee-802.3ad" to "802.3ad"',
-        _ALL_TARGETS,
         _fix_ieee_802_3ad,
     ),
     XsdFix(
         "nat-rule-match",
         "wrong-name",
         'Rename *-nat-rule-match to "match"',
-        _ALL_TARGETS,
         _fix_nat_rule_match,
     ),
     XsdFix(
         "system-name",
         "wrong-name",
         'Rename SNMP "system-name" to "name"',
-        _ALL_TARGETS,
         _fix_system_name,
     ),
     XsdFix(
         "ethernet-speed-prefix",
         "wrong-name",
         'Rename "ethernet-1*" speeds to "1*"',
-        _ALL_TARGETS,
         _fix_ethernet_speed_prefix,
+    ),
+    XsdFix(
+        "hello-padding",
+        "wrong-name",
+        'Rename IS-IS "hello-padding-type" to "hello-padding"',
+        _fix_hello_padding,
     ),
     # Group F: Nokeyword / Generic name fixes
     XsdFix(
         "name-freeform",
         "nokeyword",
         "Mark name as freeform in choice contexts",
-        _ALL_TARGETS,
         _fix_name_as_freeform,
     ),
     XsdFix(
         "vlan-name-freeform",
         "nokeyword",
         "Mark vlan-name as freeform",
-        _ALL_TARGETS,
         _fix_vlan_name_freeform,
     ),
     XsdFix(
         "vlan-id-freeform",
         "nokeyword",
         "Mark vlan-id as freeform",
-        _ALL_TARGETS,
         _fix_vlan_id_freeform,
     ),
     XsdFix(
         "filename-positional",
         "nokeyword",
         "Mark filename as positional (no keyword)",
-        _ALL_TARGETS,
         _fix_filename_positional,
     ),
     # Group G: Structure/Combinator fixes
@@ -970,49 +1050,42 @@ ALL_FIXES: list[XsdFix] = [
         "archive-seqchoice",
         "combinator",
         "Change archive from choice to sequential-choice",
-        _ALL_TARGETS,
         _fix_archive_object,
     ),
     XsdFix(
         "term-seqchoice",
         "combinator",
         "Change term_object from choice to sequential-choice",
-        _ALL_TARGETS,
         _fix_term_object,
     ),
     XsdFix(
         "exact-longer-presence",
         "combinator",
         "Remove arg from exact/longer/orlonger",
-        _ALL_TARGETS,
         _fix_exact_longer_orlonger,
     ),
     XsdFix(
         "poe-interface-seqchoice",
         "combinator",
         "Change poe interface to sequential-choice",
-        _ALL_TARGETS,
         _fix_poe_interface,
     ),
     XsdFix(
         "login-user-seqchoice",
         "combinator",
         "Change login_user_object to sequential-choice",
-        _ALL_TARGETS,
         _fix_login_user_object,
     ),
     XsdFix(
         "user-class-single",
         "combinator",
         "Fix login user class: single-value leaf, not a leaf-list",
-        _ALL_TARGETS,
         _fix_user_class_single,
     ),
     XsdFix(
         "keyed-singleton-lists",
         "combinator",
         "Model device-backed port-mirroring, SRGB and IS-IS singleton entries as lists",
-        _ALL_TARGETS,
         _fix_keyed_singleton_lists,
     ),
     # Group H: Conversion hints (schema flags replacing runtime constants)
@@ -1020,56 +1093,48 @@ ALL_FIXES: list[XsdFix] = [
         "ephemeral-instance-list",
         "conversion-hint",
         "Fix ephemeral instance from presence to named list",
-        _ALL_TARGETS,
         _fix_ephemeral_instance,
     ),
     XsdFix(
         "transparent-containers",
         "conversion-hint",
         "Set transparent container flags on wrapper elements",
-        _ALL_TARGETS,
         _fix_transparent_containers,
     ),
     XsdFix(
         "ufd-group-transparent",
         "conversion-hint",
         "Make uplink-failure-detection group transparent to its list",
-        _ALL_TARGETS,
         _fix_ufd_group_transparent,
     ),
     XsdFix(
         "transparent-list-keys",
         "conversion-hint",
         "Set transparent-list-key flag on array wrapper keys",
-        _ALL_TARGETS,
         _fix_transparent_list_keys,
     ),
     XsdFix(
         "flat-dict-elements",
         "conversion-hint",
         "Set flat-dict flag on container dicts flattened to single line",
-        _ALL_TARGETS,
         _fix_flat_dict_elements,
     ),
     XsdFix(
         "flat-entry-keys",
         "conversion-hint",
         "Set oneliner flag on the filter lists rendered as oneliners",
-        _ALL_TARGETS,
         _fix_flat_entry_keys,
     ),
     XsdFix(
         "positional-keys",
         "conversion-hint",
         "Set positional-key flags on elements with positional arguments",
-        _ALL_TARGETS,
         _fix_positional_keys,
     ),
     XsdFix(
         "freeform-nk-keys",
         "conversion-hint",
         "Set freeform-nk flag on nk keys that are not keyword-suppressed",
-        _ALL_TARGETS,
         _fix_freeform_nk_keys,
     ),
 ]

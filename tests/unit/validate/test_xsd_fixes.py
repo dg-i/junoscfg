@@ -42,7 +42,6 @@ class TestFixRegistry:
             assert fix.id, "Fix missing id"
             assert fix.category, f"Fix {fix.id} missing category"
             assert fix.description, f"Fix {fix.id} missing description"
-            assert fix.applies_to, f"Fix {fix.id} missing applies_to"
 
     def test_apply_all_fixes_returns_count(self):
         root = _make_root()
@@ -503,7 +502,28 @@ class TestKeyedSingletonLists:
         ("forwarding-options", "port-mirroring", "family", "inet", "output", "routing-instance"),
         ("protocols", "mpls", "label-range", "srgb-label-range"),
         ("protocols", "isis", "interface", "level", "application-specific", "attribute-group"),
+        (
+            "protocols",
+            "isis-instance",
+            "interface",
+            "level",
+            "application-specific",
+            "attribute-group",
+        ),
     )
+    #: The copies of the same elements: root and groups, each bare, in a
+    #: routing instance, a logical system and a tenant (change device-validation).
+    PREFIXES = [
+        (*group, *instance)
+        for group in ((), ("groups", "group"))
+        for instance in (
+            (),
+            ("routing-instances", "instance"),
+            ("logical-systems",),
+            ("logical-systems", "routing-instances", "instance"),
+            ("tenants", "routing-instances", "instance"),
+        )
+    ]
 
     @staticmethod
     def entry(**overrides) -> SchemaNode:
@@ -528,7 +548,7 @@ class TestKeyedSingletonLists:
         node.children[path[-1]] = entry
 
     @pytest.mark.parametrize("path", PATHS)
-    @pytest.mark.parametrize("prefix", [(), ("groups", "group")])
+    @pytest.mark.parametrize("prefix", PREFIXES)
     def test_a_declared_positional_identifier_makes_the_named_entry_a_list(self, path, prefix):
         root = _make_root()
         entry = self.entry()

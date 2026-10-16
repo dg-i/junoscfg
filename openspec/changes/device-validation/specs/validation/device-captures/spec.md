@@ -15,10 +15,12 @@ and WHEN junoscfg's JSON output of each rendering is validated the same way THEN
 SHALL report exactly the findings `tests/data/device/expected-findings.json` records for that
 rendering and door, each with a reason (a mandatory statement the device itself warns about,
 an open device question); strict mode SHALL raise exactly when a recorded finding is an error;
-a finding not recorded SHALL fail, and so SHALL a recorded one that no longer appears. Set and
-curly `-v` of device lines is the grammar corpus's (`tests/corpus/test_set_corpus.py`); every
-line of every capture, every verb included, runs under `--device-grammar`.
-Tests: `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_strict_mode_raises_only_on_a_recorded_error`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_every_recorded_finding_has_a_reason`, `tests/corpus/test_set_corpus.py::TestEveryDeviceLine::test_only_the_recorded_lines_are_rejected`
+a finding not recorded SHALL fail, and so SHALL a recorded one that no longer appears. Set
+`-v` of device lines is the grammar corpus's (`tests/corpus/test_set_corpus.py`); curly `-v`
+checks the set lines the conversion walk reads, those the device's own set holds through the
+grammar corpus and the rest directly; every line of every capture, every verb included, runs
+under `--device-grammar`.
+Tests: `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_strict_mode_raises_only_on_a_recorded_error`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_the_curly_rendering_validates_as_its_set_lines`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_every_recorded_finding_has_a_reason`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_set_corpus.py::TestEveryDeviceLine::test_only_the_recorded_lines_are_rejected`
 
 #### Scenario: The QFX5120 capture
 
@@ -41,7 +43,7 @@ request-response grpc clear-text port <n>` and `grpc skip-authentication`, `syst
 ddos-protection protocols autoconf aggregate bandwidth|burst <n>`, `family inet6
 labeled-unicast per-prefix-label` under BGP, and `dhcp-local-server stale-timer <n>` and
 `no-stale-timer-refresh`.
-Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`
+Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`
 
 #### Scenario: A login shell
 
@@ -53,7 +55,7 @@ Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreMode
 
 WHEN field validation meets a leaf whose value is a `$junos-` dynamic-profile variable THEN it
 SHALL check neither enum, pattern nor type: the device substitutes the value at login.
-Tests: `tests/unit/convert/test_field_validator.py::TestAJunosVariableIsNotAValue::test_a_junos_variable_passes_a_pattern`
+Tests: `tests/unit/convert/test_field_validator.py::TestAJunosVariableIsNotAValue::test_a_junos_variable_passes_a_pattern`, `tests/unit/convert/test_field_validator.py::TestAJunosVariableIsNotAValue::test_the_device_line_validates`
 
 #### Scenario: An interface variable
 

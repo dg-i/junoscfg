@@ -72,6 +72,20 @@ class SchemaNode:
         return "".join(parts)
 
 
+#: The flag prefix of the element name the device writes in XML and JSON for a
+#: node a fix renamed to its CLI keyword (`xml-name:end-range` on `to`).
+XML_NAME = "xml-name:"
+
+
+def xml_name(node: SchemaNode) -> str | None:
+    """The element name the device writes in XML and JSON for *node*, where a
+    fix renamed it to the CLI keyword; None where the two are one name."""
+    for flag in node.flags:
+        if flag.startswith(XML_NAME):
+            return flag[len(XML_NAME) :]
+    return None
+
+
 def navigate(root: SchemaNode, *path: str) -> SchemaNode | None:
     """Navigate to a descendant node by path components.
 

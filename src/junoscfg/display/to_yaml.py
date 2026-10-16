@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, TextIO
 
 import yaml
 
-from junoscfg.display.constants import load_schema_tree, schema_child
+from junoscfg.display.constants import load_schema_tree, schema_child, statement_key
 
 if TYPE_CHECKING:
     from lxml import etree
@@ -74,21 +74,10 @@ def _ensure_xml_imports() -> None:
         return
     from lxml import etree as _etree
 
-    from junoscfg.display.constants import resolve_key_alias
     from junoscfg.display.xml_helpers import filtered_children, local_name
 
-    def _aliased_local_name(element: object) -> str:
-        """The element's IR name.
-
-        XML carries the schema's original names, so `<ieee-802.3ad>` must
-        become the `802.3ad` the rest of the package uses. `set_input.py`
-        resolved these aliases and this path did not, so the same
-        configuration produced two different IRs depending on input format.
-        """
-        return resolve_key_alias(local_name(element))
-
     _etree_mod = _etree
-    _local_name = _aliased_local_name
+    _local_name = local_name
     _filtered_children = filtered_children
 
 
@@ -129,19 +118,22 @@ def _xml_element_to_dict(
 
 
 def _schema_of(
-    element: etree._Element, schema: dict[str, Any] | None, root: dict[str, Any] | None
+    element: etree._Element, key: str, schema: dict[str, Any] | None, root: dict[str, Any] | None
 ) -> dict[str, Any] | None:
-    """The structure-tree node for *element* under *schema*; None outside the tree.
+    """The structure-tree node for *element*, read as *key*, under *schema*; None
+    outside the tree.
 
     A transparent container the XML writes without its wrapper -- `groups`,
-    whose `<groups>` elements are the `group` entries themselves -- is read
-    as that wrapper's entries.
+    whose `<groups>` elements are the `group` entries themselves, each with its
+    `<name>` -- is read as that wrapper's entries. One that holds neither the
+    wrapper nor a name is the container itself: `<interfaces>` holding only
+    `<interface-range>` (change device-validation).
     """
-    node: dict[str, Any] | None = schema_child(schema, _local_name(element), root)
+    node: dict[str, Any] | None = schema_child(schema, key, root)
     wrapper = node.get("t") if node else None
     if node is not None and wrapper:
         held = {_local_name(c) for c in _filtered_children(element)}
-        if wrapper not in held:
+        if wrapper not in held and "name" in held:
             return node.get("c", {}).get(wrapper)
     return node
 
@@ -279,14 +271,19 @@ def _xml_children_to_dict(
             order.append(name)
         groups[name].append(child)
 
+    # XML carries the element names the device writes; the IR holds the tree's
+    # key, which is the CLI keyword where a fix renamed the element
+    # (`<ieee-802.3ad>` is `802.3ad`): one IR whatever the reader.
+    children_of = (schema or {}).get("c") or {}
     result: dict[str, Any] = {}
-    for name in order:
-        elements = groups[name]
-        node = _schema_of(elements[0], schema, root)
+    for element_name in order:
+        elements = groups[element_name]
+        name = statement_key(children_of, element_name)
+        node = _schema_of(elements[0], name, schema, root)
         if not any(_filtered_children(el) for el in elements) and (
             len(elements) > 1 or _holds_a_value(elements[0], node)
         ):
-            result[name], attrs = _xml_leaf(name, elements, node)
+            result[name], attrs = _xml_leaf(element_name, elements, node)
             if attrs:
                 result[f"@{name}"] = attrs
         elif len(elements) == 1:

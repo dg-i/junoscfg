@@ -289,14 +289,16 @@ published here. No new device execution or configuration capture was performed.
 
 ### MAKEOVER-18 — Residual schema/model gaps
 
-- **IDs:** OPEN-14 remainder, OPEN-15, UNPLACED_IN_THE_EXAMPLE, NEW-R6;
-  makeover #18; historical `control-as-list-type` report.
-- **Defect/impact:** device-loaded statements can be unplaced or rejected by the
-  model. Untyped empty values can pass silently. Native JSON `end-range`,
-  `ieee-802.3ad` and singleton model shapes need owning-layer reconciliation.
+- **IDs:** OPEN-14 remainder, OPEN-15, NEW-R6; makeover #18; historical
+  `control-as-list-type` report.
+- **Defect/impact:** untyped empty values can pass silently. The
+  device-loaded statements `UNPLACED_IN_THE_EXAMPLE` recorded, native JSON
+  `end-range` and `ieee-802.3ad` and the isis-instance singleton were
+  reconciled by change device-validation; the device-capture law
+  (`tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted`)
+  now fails on a new one.
 - **Evidence:** [field validation regression](../tests/unit/convert/test_field_validator.py),
-  [round-trip validation gaps](../tests/contract/test_round_trip_validates.py),
-  [device evidence catalogue](../tests/support/devices.py).
+  [recorded capture findings](../tests/data/device/expected-findings.json).
 - **Source/disposition:** [hidden-list exclusions](../openspec/changes/archive/2026-10-12-hidden-list-names/proposal.md)
   and [XML refactor's separate defect](../openspec/changes/archive/2026-10-09-xml-direct-to-ir/review.md).
   Reproduce historical cases against later keyed-list repairs; a schema validation

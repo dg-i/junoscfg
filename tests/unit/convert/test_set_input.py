@@ -747,12 +747,14 @@ class TestAKeyAliasIsTheSchemaKeyword:
         assert write_set(config) == source, f"IR was: {config}"
 
     def test_the_json_spelling_is_written_as_the_schema_keyword(self) -> None:
-        config = {
-            "interfaces": {
-                "interface": [
-                    {"name": "ge-0/0/0", "ether-options": {"ieee-802.3ad": {"bundle": "ae22"}}}
-                ]
-            }
+        """The JSON reader keys the IR by the keyword (change device-validation)."""
+        config = to_dict(
+            '{"configuration": {"interfaces": {"interface": [{"name": "ge-0/0/0", '
+            '"ether-options": {"ieee-802.3ad": {"bundle": "ae22"}}}]}}}',
+            "json",
+        )
+        assert config["interfaces"]["interface"][0]["ether-options"] == {
+            "802.3ad": {"bundle": "ae22"}
         }
         result = write_set(config)
         assert "802.3ad ae22" in result
