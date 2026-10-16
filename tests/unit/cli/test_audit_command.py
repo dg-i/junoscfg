@@ -8,6 +8,7 @@ and render, and how it exits. The classification is tested in
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 import pytest
@@ -17,7 +18,13 @@ from junoscfg import Format, convert_config
 from junoscfg.audit import STYLE_CHOICES, find_unused, render
 from junoscfg.cli import main
 from junoscfg.convert import to_dict
-from tests.support.aliases import CYCLE, SHARED_BLOCK, SHARED_BLOCK_WRITTEN_OUT, nested_yaml
+from tests.support.aliases import (
+    CYCLE,
+    SHARED_BLOCK,
+    SHARED_BLOCK_WRITTEN_OUT,
+    nested_ir,
+    nested_yaml,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -85,6 +92,24 @@ class TestInputFormats:
         exit_code, _, stderr = run_cli(["audit", "unused", "-i", reader], nested_yaml(62))
         assert exit_code == 2
         assert "value at configuration.system.x" + ".0" * 62 + " is nested deeper" in stderr
+
+    def test_a_yaml_key_that_is_not_a_string_is_refused(self) -> None:
+        """`audit -i yaml` refuses a number as a key with its path, exit 2, where
+        the meta-key cleanup crashed (owner request 2026-10-16, change
+        own-crash-fixes)."""
+        source = "configuration:\n  system:\n    host-name: r1\n  64496: x\n"
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", "yaml"], source)
+        assert exit_code == 2
+        assert "int key at configuration has no JSON spelling" in stderr
+
+    def test_json_past_64_levels_is_refused(self) -> None:
+        """`audit -i json` refuses JSON nested 1,600 levels deep with its path,
+        exit 2, where it crashed with RecursionError (owner request 2026-10-16,
+        change own-crash-fixes)."""
+        source = json.dumps({"configuration": nested_ir(1600)})
+        exit_code, _, stderr = run_cli(["audit", "unused", "-i", "json"], source)
+        assert exit_code == 2
+        assert "JSON value at configuration" + ".a" * 64 + " is nested deeper" in stderr
 
     def test_autodetect_set(self) -> None:
         exit_code, output, _ = run_cli(["audit", "unused"], SET_CONFIG)

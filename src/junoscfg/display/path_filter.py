@@ -18,7 +18,10 @@ def filter_dict_by_path(
 
     Returns:
         Filtered subtree value, or ``None`` if the path is not found. A
-        relative path may select a scalar or list as well as a dict.
+        relative path may select a scalar or list as well as a dict. Rebuilt,
+        the selection keeps the annotation its last key has beside it
+        (``@<key>``: a leaf's or leaf-list's tags); a container or list entry
+        holds its own inside the selected value.
     """
     # Navigate through "configuration" wrapper if present
     if "configuration" in data:
@@ -29,17 +32,21 @@ def filter_dict_by_path(
         has_config_wrapper = False
 
     # Walk to the target path
+    parent: Any = None
     for token in path_tokens:
         if not isinstance(node, dict) or token not in node:
             return None
-        node = node[token]
+        parent, node = node, node[token]
 
     if relative:
         return node  # type: ignore[no-any-return]
 
-    # Rebuild the path hierarchy around the subtree
+    # Rebuild the path hierarchy around the subtree, the last key's tags beside it
     result: Any = node
-    for token in reversed(path_tokens):
+    if path_tokens:
+        last, tags = path_tokens[-1], f"@{path_tokens[-1]}"
+        result = {last: node, tags: parent[tags]} if tags in parent else {last: node}
+    for token in reversed(path_tokens[:-1]):
         result = {token: result}
     if has_config_wrapper:
         result = {"configuration": result}

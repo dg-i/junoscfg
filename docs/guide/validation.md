@@ -44,6 +44,9 @@ from junoscfg import validate_json
 result = validate_json('{"configuration":{"system":{"host-name":"router1"}}}')
 ```
 
+A value nested more than 64 levels deep, which conversion refuses, is an error
+naming its path.
+
 ### YAML
 
 ```python
@@ -51,6 +54,11 @@ from junoscfg import validate_yaml
 
 result = validate_yaml("configuration:\n  system:\n    host-name: router1\n")
 ```
+
+What the `yaml` reader refuses is an error naming its kind and path: a key that is
+not a string (`64496: x`, an unquoted `on: x`), a cycle, or a value nested more than
+64 levels deep; values under `_ansible_*` and `_meta_*` keys are not walked, as the
+schema admits them unread.
 
 ### yaml-new
 

@@ -76,7 +76,7 @@ expose = [
 [[interfaces]]
 from = ["junoscfg.input"]
 expose = [
-    "InputError", "NonJsonValue", "find_non_json_value", "find_unsupported_set_brackets",
+    "META_KEY_PREFIXES", "InputError", "NonJsonValue", "find_non_json_value", "find_unsupported_set_brackets",
     "find_unsupported_set_commands", "iter_visible_set_lines", "normalize",
 ]
 

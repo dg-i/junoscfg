@@ -7,6 +7,7 @@ multi-line bracket unification.
 from __future__ import annotations
 
 __all__ = [
+    "META_KEY_PREFIXES",
     "InputError",
     "NonJsonValue",
     "find_non_json_value",
@@ -37,6 +38,10 @@ class InputError(ValueError):
         super().__init__(message)
         self.lineno = lineno
 
+
+#: The key prefixes of the Ansible inventory artefacts the ``yaml`` format leaves
+#: unread: its reader drops them unwalked, and its schema admits them unread.
+META_KEY_PREFIXES = ("_ansible", "_meta_")
 
 #: The Python types of a JSON document's scalars.
 _JSON_SCALARS = (str, int, float, bool, type(None))
@@ -72,10 +77,10 @@ class NonJsonValue(NamedTuple):
         """``at <path>``, or ``at the top level`` for the document itself."""
         return f"at {self.path}" if self.path else "at the top level"
 
-    @property
-    def read_refusal(self) -> str:
-        """The message a reader refuses the document with."""
-        return f"Invalid input: a YAML {self.kind} {self.where} {self.reason}"
+    def read_refusal(self, label: str) -> str:
+        """The message a reader of *label* text (``YAML``, ``JSON``, ``XML``) refuses it with."""
+        article = "an" if label == "XML" else "a"
+        return f"Invalid input: {article} {label} {self.kind} {self.where} {self.reason}"
 
 
 def find_non_json_value(
@@ -95,13 +100,15 @@ def find_non_json_value(
       it is reached again;
     - a value more than 64 path steps below *data*, kind ``value``, at its own
       path: the walk never goes deeper, nor does any stage after it;
-    - with *scalars* true, a value of a type JSON lacks, or a mapping key that
-      is not a string.
+    - a mapping key that is not a string, kind ``<type> key``, at its mapping's
+      path, before what it holds is walked: every stage after a reader takes a
+      key as a statement name;
+    - with *scalars* true, a value of a type JSON lacks.
 
-    The ``yaml`` reader passes *scalars* false, since its IR holds YAML's dates
-    and other scalars, and in *unwalked* the key prefixes whose values it drops
-    without walking them: there only what junoscfg's own recursion would walk
-    is refused. junoscfg assumes its YAML input is not hostile: an alias bomb is
+    The ``yaml`` reader and its validation pass *scalars* false, since its IR
+    holds YAML's dates and other scalars, and in *unwalked* the key prefixes
+    whose values they leave unread: there only what junoscfg's own walks would
+    take is refused. junoscfg assumes its input is not hostile: an alias bomb is
     walked written out, at the cost of its expansion, and a caller handling
     untrusted YAML bounds it first (decision
     2026-10-15-yaml-nests-at-most-64-levels). Returns ``None`` when nothing is
@@ -127,18 +134,13 @@ def _visit(
         steps = data.items() if isinstance(data, dict) else enumerate(data)
         for step, value in steps:
             if isinstance(data, dict):
-                if scalars and not isinstance(step, str):
+                if not isinstance(step, str):
                     return NonJsonValue(f"{_kind(step)} key", "", _NO_SPELLING)
-                if unwalked and isinstance(step, str) and step.startswith(unwalked):
+                if unwalked and step.startswith(unwalked):
                     continue
             found = _visit(value, depth + 1, open_, scalars, unwalked)
             if found is not None:
-                # A key that is not a string is named by its kind, never its value.
-                if isinstance(data, list) or isinstance(step, str):
-                    place = str(step)
-                else:
-                    place = f"<{_kind(step)} key>"
-                return found._replace(path=f"{place}.{found.path}" if found.path else place)
+                return found._replace(path=f"{step}.{found.path}" if found.path else str(step))
         return None
     finally:
         open_.discard(id(data))

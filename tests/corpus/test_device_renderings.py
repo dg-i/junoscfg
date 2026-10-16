@@ -361,3 +361,42 @@ class TestRelativeSelections:
             ):
                 problems.append(f"structured {'.'.join(path)}")
         assert not problems, "\n".join(problems[:40])
+
+
+class TestAnAbsoluteSelectionKeepsItsTags:
+    """A path ending at a statement whose tags the device writes beside it (a
+    deactivated flag, a commented leaf or list: `"@<key>"`) keeps them when
+    selected absolute, as the selection of its parent writes them, for every
+    path of mapping keys to depth 5 of every device JSON capture (owner request
+    2026-10-16, change own-crash-fixes; Test/Challenge TC5)."""
+
+    def test_every_tagged_statement_keeps_its_tags(self) -> None:
+        def written(source: str, path: tuple[str, ...]) -> Any:
+            text = convert_config(
+                source,
+                from_format=Format.JSON,
+                to_format=Format.JSON,
+                path=".".join(path) or None,
+                validate=False,
+            )
+            return json.loads(text)["configuration"]
+
+        tagged, problems = [], []
+        for capture in captures():
+            source = capture.rendering("json")
+            loaded = json.loads(source)
+            configuration = loaded.get("configuration", loaded)
+            for path in _selectable_paths(configuration, (), 5):
+                parent = configuration
+                for key in path[:-1]:
+                    parent = parent[key]
+                if path[-1].startswith("@") or f"@{path[-1]}" not in parent:
+                    continue
+                tagged.append(f"{capture.key} {'.'.join(path)}")
+                wanted, got = written(source, path[:-1]), written(source, path)
+                for key in path[:-1]:
+                    wanted, got = wanted[key], got[key]
+                if got != {k: wanted[k] for k in (path[-1], f"@{path[-1]}")}:
+                    problems.append(tagged[-1])
+        assert tagged
+        assert not problems, "\n".join(problems)

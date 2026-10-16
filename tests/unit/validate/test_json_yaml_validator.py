@@ -15,6 +15,7 @@ from tests.support.aliases import (
     SHARED_BLOCK_WRITTEN_OUT,
     alias_chain_yaml,
     hosts_sharing_contents,
+    nested_ir,
     nested_yaml,
 )
 from tests.support.artifacts import make_artifacts_dir
@@ -56,6 +57,28 @@ class TestJsonValidation:
         assert result.valid is True
 
 
+class TestJsonValidationDepth:
+    """JSON validation reports what the `json` reader refuses: a value nested
+    deeper than 64 levels was judged valid under a leaf, and `convert -v`
+    printed "Validation: OK" before the conversion failed (Test/Challenge SC3,
+    change own-crash-fixes)."""
+
+    def test_a_value_past_64_levels_is_invalid(self, validator):
+        for depth, path in ((63, "configuration.system.host-name" + ".a" * 62), (1600, None)):
+            document = {"configuration": {"system": {"host-name": nested_ir(depth)}}}
+            result = validator.validate_json(json.dumps(document))
+            assert result.valid is False
+            assert [e.message for e in result.errors] == [
+                "JSON value is nested deeper than 64 levels"
+            ]
+            if path:
+                assert result.errors[0].path == path
+        shallow = {"configuration": {"system": {"host-name": nested_ir(61)}}}
+        assert "nested" not in json.dumps(
+            [e.message for e in validator.validate_json(json.dumps(shallow)).errors]
+        )
+
+
 class TestYamlValidation:
     def test_valid_yaml(self, validator):
         yaml_str = "configuration:\n  system:\n    host-name: router1\n"
@@ -84,6 +107,66 @@ class TestYamlValidation:
     def test_empty_yaml(self, validator):
         result = validator.validate_yaml("")
         assert result.valid is True
+
+    @pytest.mark.parametrize(
+        ("document", "kind", "path"),
+        [
+            (
+                "configuration:\n  system:\n    host-name: r1\n  64496: x\n",
+                "int key",
+                "configuration",
+            ),
+            ("configuration:\n  system:\n    on: x\n", "bool key", "configuration.system"),
+            ("configuration:\n  system:\n    2026-10-15: x\n", "date key", "configuration.system"),
+        ],
+        ids=["int-key", "bool-key", "date-key"],
+    )
+    def test_a_key_that_is_not_a_string_is_invalid(self, validator, document, kind, path):
+        """A key that is not a string is an invalid result naming its kind and
+        path, as yaml-new validation gives, never a TypeError from jsonschema
+        (owner request 2026-10-16, change own-crash-fixes)."""
+        result = validator.validate_yaml(document)
+        assert result.valid is False
+        assert [(e.message, e.path) for e in result.errors] == [
+            (f"YAML {kind} has no JSON spelling", path)
+        ]
+
+    def test_a_cycle_or_a_value_past_64_levels_is_invalid(self, validator):
+        """The `yaml` reader refuses a cycle and a value past 64 levels;
+        validation reports them the same way (owner request 2026-10-16)."""
+        for source, message, path in (
+            (
+                "configuration: &a\n  system:\n    x: *a\n",
+                "YAML cycle has no JSON spelling",
+                "configuration.system.x",
+            ),
+            (
+                nested_yaml(62),
+                "YAML value is nested deeper than 64 levels",
+                "configuration.system.x" + ".0" * 62,
+            ),
+        ):
+            result = validator.validate_yaml(source)
+            assert result.valid is False
+            assert [(e.message, e.path) for e in result.errors] == [(message, path)]
+
+    @pytest.mark.parametrize(
+        "value", ["2026-10-15", "on", "010"], ids=["a-date", "an-unquoted-on", "an-octal"]
+    )
+    def test_a_yaml_scalar_value_keeps_its_verdict(self, validator, value):
+        """Only keys, cycles and depth are refused: a value YAML reads as a date,
+        a boolean or a number is judged by the schema as before (Test/Challenge
+        TC3: a walk that refused scalar values would pass every other test)."""
+        result = validator.validate_yaml(f"configuration:\n  system:\n    host-name: {value}\n")
+        assert result.valid is True
+
+    def test_a_meta_key_value_is_not_walked(self, validator):
+        """What an `_ansible*` or `_meta_*` key holds is admitted unread by the
+        schema and dropped unwalked by the reader: a key that is not a string
+        or deep nesting there stays valid."""
+        for held in ("{64496: x}", "[" * 70 + "x" + "]" * 70):
+            source = f"configuration:\n  system:\n    host-name: r1\n    _meta_acme: {held}\n"
+            assert validator.validate_yaml(source).valid is True
 
 
 class TestYamlAsJsonValidation:
