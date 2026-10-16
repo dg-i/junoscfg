@@ -607,6 +607,18 @@ VERBS = (
         messages=("Invalid syntax: protect system no-such-statement",),
     ),
     Row(
+        # Stopped inside the entry's key, before its match type: the set reader
+        # cannot place it (fresh review B2; change device-validation).
+        "deactivate-inside-an-entry-key",
+        False,
+        set="set policy-options policy-statement P term T from route-filter 10.0.0.0/8 exact\n"
+        "deactivate policy-options policy-statement P term T from route-filter 10.0.0.0/8",
+        messages=(
+            "Invalid syntax: deactivate policy-options policy-statement P term T from "
+            "route-filter 10.0.0.0/8",
+        ),
+    ),
+    Row(
         "another-verb",
         False,
         set="show system host-name",

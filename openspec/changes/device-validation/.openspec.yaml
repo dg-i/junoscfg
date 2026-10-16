@@ -14,33 +14,48 @@ removes: >-
 declared-break:
   consumer:
     why: >-
-      Not a break. validate_config and convert_config(_result) keep their signatures and
-      names, and conversion keeps the input it accepted. Results change only where they
-      were wrong: statements a
-      device printed are no longer reported (undocumented statements, the device's JSON
-      names end-range, ieee-802.3ad and the other renames, protect/activate/delete lines,
-      $junos- variables, keyed singleton entries); JSON-schema messages name the path and
-      the offending keys instead of reprinting the instance; set messages carry the whole
-      line; deactivate, protect, activate and delete lines are judged as statement paths.
-      JSON and yaml-new validation now reject the CLI keyword of a renamed element
-      ("802.3ad", "to"), which base junoscfg wrote in its own JSON and validate_config
-      accepted: no device element bears that name (`<802.3ad>` is no XML name), the
-      device's JSON writes ieee-802.3ad and end-range, and the JSON reader still reads
-      the keyword. JSON and yaml-new output of a renamed statement read from set, structured, XML
-      or yaml input now uses the element name the device writes (ieee-802.3ad, end-range,
-      hello-padding-type, ...), where it wrote the CLI keyword the device does not load in
-      JSON; legacy yaml output of JSON input now holds the IR's name as every other
-      reader gives it. ValidationError.message is free text. Patch, as AGENTS.md rules for
-      everything that is not a break.
+      Not a break: the device's spelling is added and the old keyword spelling is
+      deprecated, still accepted. validate_config and convert_config(_result) keep their
+      signatures and names, and accept every input they accepted. Validation results
+      change only where they were wrong: statements a device printed are no longer
+      reported (undocumented statements; the device's JSON names end-range, ieee-802.3ad
+      and hello-padding-type; protect, activate, delete and deactivate lines, a non-set
+      line stopping before one value; $junos- variables; keyed singleton entries). JSON
+      and yaml-new validation take a renamed element under the device's element name
+      and, as a deprecated alias, under the CLI keyword junoscfg 0.28.23 and earlier
+      wrote in JSON ("802.3ad", "to", the snmp name, the ethernet speeds, community
+      =/+/-), only where the node records an element name; the JSON reader reads both.
+      Messages: JSON-schema messages name the path and keys instead of reprinting the
+      instance; set messages quote the whole line. Output: JSON and yaml-new write a
+      renamed statement read from set, structured, XML or yaml as the device spells it
+      (ieee-802.3ad, end-range, hello-padding-type) and the isis-instance attribute-group
+      as an array; legacy yaml of JSON input holds the keyword as every other reader
+      gives it. Set output moves only where statements are newly placed: 30 outputs
+      over the captures and corpus reorder newly placed autoconf and hello-padding lines,
+      18 write hello-padding where they wrote hello-padding-type (from XML and JSON
+      input, as the device prints it); structured output writes those statements as
+      blocks where it kept them as one-liners; every output reads back as the same
+      statements and no line is lost. ValidationError.message is free text. Patch, as
+      AGENTS.md rules for everything that is not a break; removing the alias later is a
+      break and stays an owner decision (review.md).
     migration: >-
-      None required. A script comparing JSON or yaml-new output or validation messages
-      byte for byte updates its expected text.
+      None required. JSON or yaml-new holding a renamed statement in its CLI spelling
+      (written by junoscfg 0.28.23 or earlier, or by hand) still validates and converts;
+      to move it to the device's spelling before the alias is retired, re-write it once
+      with `junoscfg convert -i json -e json`. A script comparing JSON, yaml-new, set or
+      structured output or validation messages byte for byte updates its expected text.
   cli:
     why: >-
       Not a break, for the reasons given for consumer: junoscfg -v, field validation and
-      -e json keep their options and exit codes; only false errors disappear and output
-      that the device would not load moves to the device's spelling.
-    migration: None required; a script comparing the text updates its expected output.
+      -e json keep their options, exit codes and the input they accept; the keyword
+      spelling of a renamed statement in JSON is deprecated, still accepted. Errors the
+      device's own output caused disappear, messages name paths and keys and quote whole
+      lines, and output moves to the device's spelling and placement as listed for
+      consumer.
+    migration: >-
+      None required; to adopt the device's spelling, re-write a JSON file once with
+      `junoscfg convert -i json -e json`. A script comparing the text updates its
+      expected output.
 verification:
   state: ready
   planned-paths:

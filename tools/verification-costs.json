@@ -6,7 +6,7 @@
     "tests/contract/test_format_matrix.py": 5.92871419119183,
     "tests/contract/test_round_trip_validates.py": 0.5204723827191629,
     "tests/corpus/test_device_anonymization.py": 7.091934580472298,
-    "tests/corpus/test_device_renderings.py": 1.0766712471377105,
+    "tests/corpus/test_device_renderings.py": 26.0,
     "tests/corpus/test_device_rule_values.py": 4.020271123968996,
     "tests/corpus/test_device_truth.py": 0.023192876717075706,
     "tests/corpus/test_schema_data.py": 0.0034802129375748336,

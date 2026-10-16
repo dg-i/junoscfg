@@ -153,22 +153,11 @@ class TestTheSchemaStillRejects:
                 {"configuration": {"interfaces": [{"name": "ge-0/0/0", "mtu": 1500}]}},
             ),
             (
-                # The CLI keyword where JSON writes the element: `<802.3ad>` is no
-                # XML element, and the device's JSON writes `ieee-802.3ad`
-                # (change device-validation, Test/Challenge TC7).
-                "the CLI keyword of a renamed element",
-                {
-                    "configuration": {
-                        "interfaces": {
-                            "interface": [
-                                {
-                                    "name": "ge-0/0/0",
-                                    "ether-options": {"802.3ad": {"bundle": "ae0"}},
-                                }
-                            ]
-                        }
-                    }
-                },
+                # The keyword is a deprecated alias only where the node records
+                # an element name; elsewhere a renamed element's names are as
+                # unknown as any other (change device-validation, review B1).
+                "an element name where nothing was renamed",
+                {"configuration": {"system": {"end-range": "x", "ieee-802.3ad": {}}}},
             ),
             (
                 "an unknown statement under an undocumented one",
@@ -214,6 +203,30 @@ class TestTheSchemaStillRejects:
         `field_validator` skips the prefix, so the schema has to name it."""
         doc = {"configuration": {"@": {"junos:commit-seconds": "1"}, "system": {"host-name": "r1"}}}
         assert not bundled_validator.validate_json(json.dumps(doc)).errors
+
+
+class TestTheKeywordOfARenameIsADeprecatedAlias:
+    """junoscfg 0.28.23 and earlier wrote a renamed statement's CLI keyword in JSON
+    (`"802.3ad"`, `"to"`), which the JSON reader still reads. The JSON schema takes
+    it beside the device's element name until the owner retires it (beta: a
+    removal is deprecated first; change device-validation, review B1, D3)."""
+
+    @pytest.mark.parametrize("spelling", ["ieee-802.3ad", "802.3ad"])
+    def test_both_spellings_validate(self, spelling: str, bundled_validator: Any) -> None:
+        doc = {
+            "configuration": {
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/0", "ether-options": {spelling: {"bundle": "ae0"}}}
+                    ],
+                    "interface-range": [
+                        {"name": "IR-A", "member-range": [{"name": "ge-0/0/2", "to": "ge-0/0/5"}]}
+                    ],
+                }
+            }
+        }
+        assert not bundled_validator.validate_json(json.dumps(doc)).errors
+        assert not bundled_validator.validate_yaml_as_json(json.dumps(doc)).errors
 
 
 class TestFragmentsWithoutMandatoryFieldsStayValid:

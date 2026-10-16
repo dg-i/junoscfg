@@ -16,11 +16,12 @@ SHALL report exactly the findings `tests/data/device/expected-findings.json` rec
 rendering and door, each with a reason (a mandatory statement the device itself warns about,
 an open device question); strict mode SHALL raise exactly when a recorded finding is an error;
 a finding not recorded SHALL fail, and so SHALL a recorded one that no longer appears. Set
-`-v` of device lines is the grammar corpus's (`tests/corpus/test_set_corpus.py`); curly `-v`
-checks the set lines the conversion walk reads, those the device's own set holds through the
-grammar corpus and the rest directly; every line of every capture, every verb included, runs
-under `--device-grammar`.
-Tests: `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_strict_mode_raises_only_on_a_recorded_error`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_the_curly_rendering_validates_as_its_set_lines`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_every_recorded_finding_has_a_reason`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_set_corpus.py::TestEveryDeviceLine::test_only_the_recorded_lines_are_rejected`
+`-v` of device lines runs where the grammar is compiled (`tests/corpus/test_set_corpus.py`):
+the covering `set` lines of the grammar corpus and every line of every capture with another
+verb; curly `-v` checks the set lines the conversion walk reads, those the device's own set
+holds through those and the rest directly; every line of every capture runs under
+`--device-grammar`.
+Tests: `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_strict_mode_raises_only_on_a_recorded_error`, `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet::test_the_curly_rendering_validates_as_its_set_lines`, `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet::test_every_verb_line_of_the_capture_validates`, `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet::test_the_captures_hold_verb_lines`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_every_recorded_finding_has_a_reason`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_set_corpus.py::TestEveryDeviceLine::test_only_the_recorded_lines_are_rejected`
 
 #### Scenario: The QFX5120 capture
 

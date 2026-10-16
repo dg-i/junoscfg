@@ -477,7 +477,10 @@ def _fix_regexp_commands(root: SchemaNode) -> bool:
 # 23.2R2 or 25.2R2 dumps under these parents. The parent is named by its XSD
 # type where the XSD gives one, so every place the type occurs (groups,
 # routing instances, BGP groups and neighbours) takes the statement; otherwise
-# by its own and its parent's name.
+# by its own and its parent's name. The leaves take any value: their nearest
+# XSD analogues (grpc `ssl port`, a ddos protocol's `aggregate bandwidth` and
+# `burst`) carry no type the structure tree keeps, dhcp-local-server has no
+# timer to copy, and the captures show one `shell`, `csh`, not its choices.
 _UNDOCUMENTED: tuple[tuple[str | tuple[str, str], str, object], ...] = (
     ("login-user-object", "shell", "leaf"),
     (("request-response", "grpc"), "clear-text", {"port": "leaf"}),

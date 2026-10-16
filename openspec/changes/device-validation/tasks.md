@@ -35,6 +35,11 @@
 - [x] 2.6 Reconcile: the main spec `conversion/junos-json-yaml` names the renamed reader test
   now (its Tests id only; the MODIFIED text lands at phase 7); the example's clean field
   validation keeps the id `conversion/diagnostics` cites.
+- [x] 2.7 Review round 1 (Merge after fixes; coordinator rulings): the keyword of a rename
+  is a deprecated JSON/yaml-new alias where the node records an element name (B1, (P));
+  a non-`set` line may stop where one value would follow, never inside an entry's key (B2);
+  every device verb line and the curly check validated in `test_set_corpus.py` (B3, A1);
+  module cost refreshed; A2 recorded; A4 in the records; A6 pinned; artifacts regenerated.
 
 ## 3. Review and evidence
 

@@ -624,13 +624,15 @@ class TestTheJsonSchemaNamesElementsAsTheDeviceWrites:
         )
 
     def test_json_takes_the_element_name_yaml_the_keyword(self) -> None:
+        """JSON keeps the keyword as a deprecated alias (review B1); YAML holds the IR."""
         entry = {"name": "ge-0/0/2", "end-range": "ge-0/0/5"}
         keyword = {"name": "ge-0/0/2", "to": "ge-0/0/5"}
+        unknown = {"name": "ge-0/0/2", "until": "ge-0/0/5"}
 
         def valid(variant: str, item: dict) -> bool:
             schema = generate_json_schema(self._tree(), variant)
             doc = {"configuration": {"interfaces": {"member-range": [item]}}}
             return Draft7Validator(schema).is_valid(doc)
 
-        assert valid("json", entry) and not valid("json", keyword)
+        assert valid("json", entry) and valid("json", keyword) and not valid("json", unknown)
         assert valid("yaml", keyword) and not valid("yaml", entry)

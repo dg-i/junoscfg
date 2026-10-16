@@ -330,7 +330,11 @@ _add(
             }
         },
         set_output="set protocols isis interface ge-0/0/0 hello-padding strict\n",
-        never_written={YAML: ("hello-padding-type",), JSON: ('"hello-padding"',)},
+        never_written={
+            YAML: ("hello-padding-type",),
+            JSON: ('"hello-padding"',),
+            YAML_NEW: (" hello-padding:",),
+        },
         written={JSON: ('"hello-padding-type"',), YAML: (" hello-padding:",)},
         why="The CLI's `hello-padding` is `hello-padding-type` in XML and JSON (vMX 23.2R2-S7.5 "
         "and QFX5120 25.2R2-S1.5, `junoscfg-oracle.*`): set input was rejected and JSON input "

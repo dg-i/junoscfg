@@ -27,7 +27,6 @@ from junoscfg import (
     convert_config_result,
     validate_config,
 )
-from junoscfg.convert import structured_set_lines
 from tests.support.devices import (
     DEVICE_DATA,
     FORMATS,
@@ -205,9 +204,11 @@ class TestTheValidatorsTakeWhatTheDevicePrinted:
     captures, none of them the device's (change device-validation): undocumented
     statements Juniper's XSD omits, the device's JSON names `end-range` and
     `ieee-802.3ad`, `$junos-` variables, an `isis-instance` list, `hello-padding`.
-    Set and curly `-v` of device lines is the grammar corpus's
-    (`tests/corpus/test_set_corpus.py`): through the Earley grammar every line of
-    every capture takes about 85 s, so it runs with `--device-grammar`.
+    Set and curly `-v` live where the grammar is compiled,
+    `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet`: the covering
+    device lines, every verb line, and the curly rendering's own lines; every line
+    of every capture through the Earley grammar takes about 85 s, so the rest runs
+    with `--device-grammar`.
     """
 
     @pytest.mark.parametrize(("capture", "suffix"), CASES)
@@ -243,28 +244,6 @@ class TestTheValidatorsTakeWhatTheDevicePrinted:
                 convert_config(source, from_format=reader, to_format=Format.SET, strict=True)
         else:
             assert convert_config(source, from_format=reader, to_format=Format.SET, strict=True)
-
-    @pytest.mark.parametrize(
-        "capture", [pytest.param(capture, id=capture.key) for capture in captures()]
-    )
-    def test_the_curly_rendering_validates_as_its_set_lines(
-        self, capture, bundled_set_validator: Any
-    ) -> None:
-        """Curly `-v` checks the set lines the conversion walk reads
-        (`validate_structured`); those the device's own set holds are the
-        grammar corpus's, and the rest, a few per capture, are checked here,
-        with any statement read without its value (Test/Challenge TC5)."""
-        read = structured_set_lines(capture.rendering("conf"))
-        device = set(capture.device_set())
-        own = [line for line in read.lines if line not in device]
-        found = {
-            f"{error.message}"
-            for line in own
-            for error in bundled_set_validator.validate(line).errors
-        } | {f"Invalid syntax: {line}: the statement has no value" for line in read.incomplete}
-        expected = set(_expected(capture, "conf").get("curly-v", {}))
-        assert found == expected
-        assert read.lines and len(own) < len(read.lines)
 
     def test_every_recorded_finding_has_a_reason(self) -> None:
         record = expected_findings()

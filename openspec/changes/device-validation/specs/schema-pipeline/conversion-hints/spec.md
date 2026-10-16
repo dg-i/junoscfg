@@ -9,10 +9,11 @@ the element name the device writes in XML and JSON, the structure tree SHALL car
 the set grammar SHALL take the keyword, and the JSON schema SHALL name the element as the
 device writes it; the IR SHALL hold the tree's key whichever reader gave it (set, curly, XML,
 JSON, yaml-new, yaml), so one configuration has one IR; set and curly output SHALL write the
-keyword, and JSON and yaml-new output the device's element name; JSON validation SHALL
-reject the CLI keyword where JSON writes the element name. No table outside the schema model
-SHALL repeat the renames.
-Tests: `tests/unit/validate/test_xsd_fixes.py::TestARenameKeepsTheDevicesName::test_every_rename_records_the_element_name`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_every_flag_the_tables_name_survives`, `tests/unit/validate/test_schema_generator.py::TestTheJsonSchemaNamesElementsAsTheDeviceWrites::test_json_takes_the_element_name_yaml_the_keyword`, `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_round_trip_validates.py::TestTheConverterOutputValidates::test_the_rendering_validates`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`
+keyword, and JSON and yaml-new output the device's element name. JSON and yaml-new
+validation SHALL take the element name, and the keyword as a deprecated alias (what junoscfg
+0.28.23 and earlier wrote, and what the JSON reader still reads) only where the node records
+an element name. No table outside the schema model SHALL repeat the renames.
+Tests: `tests/unit/validate/test_xsd_fixes.py::TestARenameKeepsTheDevicesName::test_every_rename_records_the_element_name`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_every_flag_the_tables_name_survives`, `tests/unit/validate/test_schema_generator.py::TestTheJsonSchemaNamesElementsAsTheDeviceWrites::test_json_takes_the_element_name_yaml_the_keyword`, `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_round_trip_validates.py::TestTheConverterOutputValidates::test_the_rendering_validates`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/contract/test_round_trip_validates.py::TestTheKeywordOfARenameIsADeprecatedAlias::test_both_spellings_validate`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`
 
 #### Scenario: A LAG member from JSON
 

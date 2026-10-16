@@ -91,18 +91,33 @@ class SetValidator:
     ) -> ValidationError | None:
         """Validate one statement as the `set` *command*; an error quotes the whole *line*.
 
-        With *partial*, a command that ends where the grammar wants more -- a
-        leaf's value -- is a statement path, and valid.
+        With *partial*, a command may stop where one value would follow -- a
+        leaf's value: `deactivate ... max-hello-size`. It is valid when the
+        grammar takes it with one value more, and so never when it stops
+        inside an entry's key, before a keyword the key still needs
+        (`route-filter 10.0.0.0/8` without its match type).
         """
         try:
             self._parser.parse(command)
             return None
         except UnexpectedEOF:
-            if partial:
+            if partial and self._takes_one_value(command):
                 return None
         except UnexpectedInput:
             pass
         return ValidationError(message=f"Invalid syntax: {line}", line=lineno)
+
+    def _takes_one_value(self, command: str) -> bool:
+        try:
+            self._parser.parse(f"{command} {_ANY_VALUE}")
+        except UnexpectedInput:
+            return False
+        return True
+
+
+#: A value no keyword of the grammar spells: what a leaf takes where a verb's
+#: path stops before the value.
+_ANY_VALUE = "junoscfg-any-value"
 
 
 def _compile(grammar_text: str) -> Lark:

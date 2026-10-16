@@ -4,8 +4,10 @@
 
 WHEN set input carries a `protect`, `activate`, `delete` or `deactivate` line THEN set
 validation SHALL validate the statement path after the verb as `set` validates it, except
-that the path may stop where a leaf's value would follow (the device prints `deactivate ...
-max-hello-size`), through `SetValidator.validate`, `JunosValidator.validate_set`,
+that the path may stop where one value would follow (the device prints `deactivate ...
+max-hello-size`): such a line is valid when the grammar takes it with one value more, so a
+path that stops inside an entry's key, before a keyword the key still needs, is invalid
+(`deactivate ... route-filter 10.0.0.0/8` without its match type), through `SetValidator.validate`, `JunosValidator.validate_set`,
 `validate_set`, `validate_config`, `validate_structured` and CLI `-v -i set|structured`; a
 `set` line SHALL still give a leaf its value, and a line starting with any other word SHALL
 be rejected; an error message SHALL carry the whole line, never a cut one.
@@ -20,6 +22,12 @@ Tests: `tests/unit/validate/test_set_validator.py::TestEveryVerbIsValidated::tes
 
 - **WHEN** `deactivate system host-name` follows `set system host-name router1`
 - **THEN** the input is valid, while `set system host-name` alone is not
+
+#### Scenario: A line that stops inside an entry's key
+
+- **WHEN** `deactivate policy-options policy-statement P term T from route-filter 10.0.0.0/8`
+  follows the route filter's `set` line with its match type `exact`
+- **THEN** the line is invalid through every door, as the set reader cannot place it
 
 #### Scenario: A long invalid line
 

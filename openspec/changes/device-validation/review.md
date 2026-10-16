@@ -14,7 +14,7 @@
 - Counterexample: executed. Base wrote `"802.3ad": {"bundle": "ae0"}` for `set interfaces ge-0/0/0 ether-options 802.3ad ae0` and base `validate_config` accepted it; the change writes `"ieee-802.3ad"` and rejects `"802.3ad"` (`TestTheSchemaStillRejects`, row "the CLI keyword of a renamed element"). The JSON reader still reads the keyword.
 - User impact: JSON a pre-change junoscfg wrote for a renamed statement fails `-v`; converting it still works. The production Ansible collection renders through `convert_config` at run time, which writes the device's spelling.
 - Proposed correction: none to the rule (owner design: JSON validation follows the XSD's names); declared-break text corrected to say so. Device question D3 would settle whether a device loads `"802.3ad"` in JSON (no XML element can bear that name).
-- Decision: Pending owner decision. Interim: reject, as the owner-approved design says; reversible by naming both spellings in the JSON schema.
+- Decision: Pending owner decision (when to retire the alias; D3). Interim, coordinator ruling on review B1, option (ii): the JSON and yaml-new schema take the keyword as a deprecated alias beside the element name, where the node records one (one rule from `x`); a patch, reversible. Superseded interim: reject.
 
 ### SC3: Six renames reach JSON without device evidence (Test/Challenge TC4)
 
@@ -72,3 +72,49 @@ as open. Dispositions:
 - TC14 (NICE): `$foo-...` stays checked.
 - TC17 (NICE): the presence wording corrected in the delta.
 - TC18 (NICE): ARCHITECTURE.md §8, the guides, BACKLOG and `tach.toml` updated.
+
+## Fresh review (phase 6, round 1)
+
+Verdict: **Merge after fixes**, on `8c53843...297e9fe` (full check `77b313a`); the full text
+and probes are in the coordinator's scratchpad (`review-dv/verdict.md`). Binding:
+
+- B1: the declared-break record called a tightening of `validate_config` and `-v` "not a
+  break" (JSON junoscfg ≤ 0.28.23 wrote with `"802.3ad"`/`"to"` failed). Resolution
+  (coordinator ruling, option (ii), pending owner (P)): the keyword is a deprecated alias in
+  the JSON and yaml-new schema where the node records an element name
+  (`schema_generator._property_names`); `TestTheKeywordOfARenameIsADeprecatedAlias`; the
+  negative row now pins that an element name is unknown where nothing was renamed; the
+  record and changelog say "deprecated, still accepted" with the re-write migration.
+- B2: any prefix of a non-`set` path was valid; the line stopping inside the route
+  filter's key passed. Resolution: such a line is valid only when the grammar takes it with
+  one value more (`SetValidator._takes_one_value`); the reviewer's counterexample is the door
+  row `deactivate-inside-an-entry-key`. D5 stays pending.
+- B3: no default-tier test validated the device's own verb lines. Resolution:
+  `tests/corpus/test_set_corpus.py::TestEveryCaptureValidatesAsSet` validates every non-`set`
+  line of every capture (28 lines; base rejected 5) with the session grammar.
+
+Advisory:
+
+- A1: the curly and verb checks moved to `test_set_corpus.py`, which already compiles the
+  grammar; `test_device_renderings.py` no longer compiles it; its cost in
+  `tools/verification-costs.json` refreshed by measurement (1.08 → 26.0 s serial: no tool
+  writes the file; the full check's shards measured it at 44.6 s with the compile).
+- A2: the undocumented leaves stay untyped: their XSD analogues carry no type the tree keeps
+  (grpc `ssl port`, a ddos protocol's `aggregate bandwidth`/`burst` are `{"l": true}`),
+  dhcp-local-server holds no timer to copy; recorded in the `_UNDOCUMENTED` comment.
+- A3 (recorded only): `required`, `enum` and `pattern` failures say only "fails the
+  schema's 'X' constraint here"; the schema's own key, enum or pattern could be named.
+- A4: the set and structured output changes are in the declared-break record and the
+  changelog (30 equivalent reorders, 18 `hello-padding-type` → `hello-padding`, blocks for
+  kept one-liners, no line lost).
+- A5 (recorded only): the regenerated grammar corpus dropped 56 covering lines
+  keyed-single-entry-lists had kept; the 421-rule cover holds; those lines are guarded by
+  `--device-grammar` and the keyed-singleton unit rows.
+- A6: `a-renamed-leaf` pins the yaml-new spelling too.
+- A7 (recorded only): SC1 is invisible on the consumer surface: `to_dict` is not in
+  `junoscfg/__init__.py`, and every `convert_config` path loaded the tree already.
+
+## Owner decisions pending (nothing is backlogged without the owner)
+
+SC1, SC2 (alias retirement and D3), SC3 with D2, P1 to P4, D1 to D5 and the backlog
+candidates B1 to B3 above, each with its interim as recorded.
