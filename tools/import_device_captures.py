@@ -5,11 +5,13 @@ A capture is one configuration loaded on a real device (``configure private``,
 renderings: curly (``.conf``), XML, JSON and display set. The device is the
 oracle: what it printed is what Junos means, whatever junoscfg makes of it.
 
-Only the renderings and the sources are copied. The capture logs name the lab
-devices and are never committed. Files are gzipped with mtime 0, so a re-import
-of the same captures is byte-identical. The manifest records each device, each
-capture and, for Juniper's JVD configurations, the repository, commit and path
-they came from; their licence and notice sit beside them in jvd/.
+A synthetic source is curly text or, for a probe of junoscfg's JSON, JSON
+loaded with ``load override json``. Only the renderings and the sources are
+copied. The capture logs name the lab devices and are never committed. Files
+are gzipped with mtime 0, so a re-import of the same captures is
+byte-identical. The manifest records each device, each capture and, for
+Juniper's JVD configurations, the repository, commit and path they came from;
+their licence and notice sit beside them in jvd/.
 
 Run after a recapture: ``uv run python tools/import_device_captures.py [SKIP...]``,
 where SKIP is a capture name, or ``<device>/<name>`` for one device's capture,
@@ -74,6 +76,11 @@ SELECTION = {
             "oracle_qfx",
             "the switching (ELS) section, on the release the shipped artifacts come from",
         ),
+        "json-null-probes": (
+            "qfx-null-probe",
+            "junoscfg's JSON `[null]` for statements the QFX writes `{}`, and its spelling of "
+            "an inactive leaf",
+        ),
     },
 }
 
@@ -88,11 +95,17 @@ JVD_PATHS = {
         "data_center/adc/5stage_evpn_vxlan/configuration/conf/services-leaf1_qfx5130-48c.conf"
     ),
 }
-SYNTHETIC = ("junoscfg-oracle", "synthetic-probes")
+#: Each synthetic configuration and the format its source is written in.
+SYNTHETIC = {"junoscfg-oracle": "conf", "synthetic-probes": "conf", "json-null-probes": "json"}
 #: Captures a device folder holds that are not that device's: synthetic-ex in the vmx
 #: folder was captured on the ex4600 and is identical to the ex4600 folder's copy.
 NOT_THIS_DEVICE = {("vmx-23.2R2-S7.5", "synthetic-ex")}
-
+#: When a capture was taken, where it was not 2026-10-10. None: its source is
+#: committed and the device has not rendered it yet; the import keeps the source,
+#: skips the capture and stops once the renderings exist, until the date is set here.
+CAPTURED: dict[tuple[str, str], str | None] = {
+    ("qfx5120-25.2R2-S1.5", "json-null-probes"): None,
+}
 
 #: What a device refused when the source was loaded: its renderings lack these,
 #: and the source keeps them as the question asked.
@@ -131,12 +144,21 @@ def main(skip: set[str]) -> int:
         for folder in (TARGET / kind).glob("*/"):
             shutil.rmtree(folder)
     captures = []
+    awaiting = set()
     for device, chosen in SELECTION.items():
         for name, (where, why) in chosen.items():
             folder = PRIVATE / (where or DEVICES[device]["folder"])
             if name in skip or f"{device}/{name}" in skip:
                 continue
             present = [ext for ext in FORMATS if (folder / f"{name}.{ext}").is_file()]
+            captured = CAPTURED.get((device, name), "2026-10-10")
+            if captured is None:
+                if present:
+                    print(f"{device}/{name}: captured; set its date in CAPTURED", file=sys.stderr)
+                    return 1
+                print(f"{device}/{name}: awaiting capture, skipped", file=sys.stderr)
+                awaiting.add(name)
+                continue
             if present != list(FORMATS):
                 print(
                     f"{device}/{name}: missing {sorted(set(FORMATS) - set(present))}",
@@ -151,16 +173,16 @@ def main(skip: set[str]) -> int:
                     "name": name,
                     "source": kind,
                     "device": device,
-                    "captured": "2026-10-10",
+                    "captured": captured,
                     "note": why,
                     "refused": REFUSED.get((device, name), []),
                 }
             )
     imported = {c["name"] for c in captures}
-    for name in SYNTHETIC:
-        if name in imported:
+    for name, ext in SYNTHETIC.items():
+        if name in imported | awaiting:
             _write_gz(
-                PRIVATE / f"{name}.conf", TARGET / "synthetic" / "sources" / f"{name}.conf.gz"
+                PRIVATE / f"{name}.{ext}", TARGET / "synthetic" / "sources" / f"{name}.{ext}.gz"
             )
     for name, path in JVD_PATHS.items():
         if name in imported:
