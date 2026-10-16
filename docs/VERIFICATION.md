@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: cc7204d9170c02b7cecf8f631b9040e931f4d8a4 (post-merge, pre-archive assessment).
+- Observed integration head: c3912da21bb46ae3857ebc65a105316cedf482fc (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: cc7204d9170c02b7cecf8f631b9040e931f4d8a4.
-- Invitation status: pending; 90 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: c3912da21bb46ae3857ebc65a105316cedf482fc.
+- Invitation status: pending; 93 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -339,3 +339,10 @@ review round 2 changed records only. `tools/verification-costs.json` reprices
 `test_device_renderings.py` (1.08 to 26.0 s). No tests, coverage, hooks or review
 requirements were removed. The pending cadence invitation is retained; no owner feedback is
 inferred.
+
+Job completion (backlog-open-findings): local merge `c3912da` changes documents only
+(`docs/BACKLOG.md` and a changelog fragment). The canonical full checkpoint at `284dafc`
+passed in 165 s (schema-25.2 tiers selected in the fresh worktree, "audited execution
+boundary missing or changed", and passed). No verification path changed; no tests,
+coverage, hooks or review requirements were removed. The pending cadence invitation is
+retained; no owner feedback is inferred.

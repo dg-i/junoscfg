@@ -18,7 +18,7 @@ from junoscfg.convert import (  # noqa: TC001
 )
 from junoscfg.validate import ValidationResult  # noqa: TC001
 
-__version__ = "0.28.24"
+__version__ = "0.28.25"
 
 __all__ = [
     "Format",
