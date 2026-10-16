@@ -12,10 +12,14 @@ review recorded as in force.
   "Consolidated issue inventory": RELATIVE-TAGS-001, LEAF-LIST-VALUE-TAGS-001,
   ANCESTOR-TAGS-001, SCHEMA-LEAF-VALUES-001, VALIDATE-MESSAGES-001, JSON-KEYWORD-ALIAS-001,
   RENAME-EVIDENCE-001, READER-TREE-001, UNDOCUMENTED-001, HOLD-TIME-001 and VERB-PREFIX-001.
-  Each keeps its review IDs qualified by change slug, a reproducer or the device question, and
-  the probe section of `private_test_data/device-probe-2026-10-16/README.md` that settles it.
+  Each keeps its review IDs qualified by change slug, the interim behaviour kept, and a
+  reproducer or the evidence. Eight name the section of
+  `private_test_data/device-probe-2026-10-16/README.md` that would settle them;
+  SCHEMA-LEAF-VALUES-001, VALIDATE-MESSAGES-001 and READER-TREE-001 name none.
 - Four existing entries extended: YAML-BREAKS-001 (own-crash-fixes TC7, keys), DEVICE-EVIDENCE
   (device-validation B1), MAKEOVER-19 (device-validation B2), XML-INPUT (device-validation B3).
+  Each extension states the ruling and the interim; TC7 and B3 give a reproducer, B1 and B2
+  give evidence; none names a probe section.
 - A changelog fragment `changelog.d/+backlog-open-findings.doc.md`.
 
 Reader: a contributor or the owner who selects a backlog item, or answers a device probe, and

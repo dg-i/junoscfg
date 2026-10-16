@@ -210,8 +210,9 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Keys too (own-crash-fixes/TC7):** Owner ruling 2026-10-16: backlog. The writer
   quotes a key the same way. `from_dict({"system": {"a\x85b": "x"}}, "yaml")`, loaded
   with `yaml.safe_load`, gives the key `a b`. The review says a key holding LS or PS
-  reads back with a space too. At 716a9d1, PyYAML read both back unchanged in the
-  position probed, as it does for values. Interim behaviour, kept: the `yaml` writer
+  reads back with a space too. At 716a9d1, PyYAML read both back unchanged in five
+  key positions (inner, leading, trailing, doubled, space-padded), as it does for
+  values. NEL changed the key in four of them (`"a b"`, `" ab"`, `"ab "`, `"a\nb"`). Interim behaviour, kept: the `yaml` writer
   stays as it was (owner instruction 2026-10-15), and such keys are outside the
   round-trip law of
   `tests/unit/convert/test_convert_api.py::TestTheYamlWriterDumpsTheIr::test_every_key_it_writes_reads_back`.
@@ -359,9 +360,10 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Evidence:** code reading at 716a9d1. The shipped
   `src/junoscfg/validate/data/junos-json-schema.json.gz` and
   `junos-yaml-schema.json.gz` hold no `required`, `enum` or `pattern` keyword
-  (counted at 716a9d1). No probed input reached the generic text with them: a failing
-  `oneOf` is reported by its type error. So today the text shows only with an
-  artifacts directory whose schema has such keywords.
+  (counted at 716a9d1; every `"pattern"` there is a statement's name). No probed
+  input reached the generic text with the shipped schemas: a failing `oneOf` or
+  `anyOf` is reported by its type error (`_cause` in the same module). So today the
+  text shows only with an artifacts directory whose schema has such keywords.
 - **Proposed direction:** before selecting this item, find an input that reaches the
   generic text with the shipped schemas, or close the item if none exists. Otherwise
   name the schema's key for `required`, its values for `enum` and its pattern for
@@ -389,7 +391,9 @@ Create an OpenSpec change only when an item is selected for implementation.
   element can bear the name `802.3ad`. Second (R2-A3): the deprecation lives only in
   the changelog and the decision record. No diagnostic tells a user that a file uses
   the deprecated spelling, so the user does not know to re-write it before the
-  alias goes.
+  alias goes. `hello-padding` differs (R2-A1): junoscfg never wrote it, and JSON
+  validation before v0.28.24 rejected it. So no file depends on it, and retiring it
+  needs no deprecation period.
 - **Reproducer:** the JSON input `{"configuration": {"interfaces": {"interface":
   [{"name": "ge-0/0/0", "ether-options": {"802.3ad": {"bundle": "ae0"}}}]}}}`.
   `junoscfg convert -v -i json FILE` prints "Validation: OK" and no note.
@@ -699,9 +703,12 @@ published here. No new device execution or configuration capture was performed.
   `single-hop`, `enable-interface`, `name-freeform`, and `wildcard-star`, which
   matches no element. The shipped `src/junoscfg/validate/data/junos-schema-meta.json.gz`
   records `fixes_applied` 41 of `fixes_registered` 44, so the counter alone does not
-  show which fixes changed nothing. Interim behaviour, kept: the eight stay
-  registered. This is the first defect of this entry, so it extends it rather than
-  opening a new one. Source: [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B2.
+  show which fixes changed nothing. B2 is an instance of this entry's first defect,
+  "a fix can report success without mutation": `apply_all_fixes` in
+  `src/junoscfg/validate/xsd_fixes.py` counts each fix that reports success, and
+  checks no change. To check one fix, apply it alone to the parsed tree and compare
+  the tree before and after. Interim behaviour, kept: the eight stay registered.
+  Source: [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B2.
 
 ### DEVICE-EVIDENCE — Remaining narrow probes and hidden names
 
