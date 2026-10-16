@@ -1,6 +1,6 @@
 {
-  "actor": "Claude own-crash-fixes finalizer",
-  "authority": "Owner-authorized local integration completed (2026-10-16); park this completed change and branch while preserving all unrelated dispositions.",
+  "actor": "Claude backlog-open-findings builder",
+  "authority": "Owner-authorized (2026-10-16, relayed by the coordinator) docs change backlog-open-findings: assess its branch and change as ready; every other disposition preserved.",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -9,6 +9,7 @@
     "change/anonymize-salt": "parked",
     "change/anonymized-run-messages": "parked",
     "change/audit-key-keywords": "parked",
+    "change/backlog-open-findings": "ready",
     "change/batch-process-config": "parked",
     "change/batch-process-rules": "parked",
     "change/ci-python-matrix": "parked",
@@ -94,7 +95,7 @@
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
     "master": "ready"
   },
-  "captured_at": "2026-10-16T01:24:33.494337+00:00",
+  "captured_at": "2026-10-16T10:14:26.105518+00:00",
   "changes": {
     "adopt-refresh-verification": "parked",
     "adopt-workflow-economy": "parked",
@@ -106,6 +107,7 @@
     "anonymize-salt-not-copied": "parked",
     "anonymized-run-messages": "parked",
     "audit-entry-key-from-kernel": "parked",
+    "backlog-open-findings": "ready",
     "centralize-format-detection": "parked",
     "ci-python-matrix": "parked",
     "clarify-audit-unknown-values": "parked",
