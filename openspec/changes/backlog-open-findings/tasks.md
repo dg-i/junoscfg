@@ -17,7 +17,7 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Fresh isolated review recorded in `review.md`
-- [ ] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
+- [x] 3.2 One full checkpoint passes: `uv run --locked --group dev --with griffe --with tach --with towncrier --with vulture agent-ready check --set full`
 - [ ] 3.3 Capture `metrics.md` and `metrics.json` for the immutable base and head
 - [ ] 3.4 Archive, patch bump, merge and tag without pushing
 
@@ -34,3 +34,4 @@
 - 1.7 at 30368ba: markdownlint passed on both files (pre-commit, also in the commit hook).
 - Pre-review full checkpoint at 7d95e00: canonical command, "every check passed". The schema-25.2 tiers were selected ("audited execution boundary missing or changed" in a fresh worktree) and passed after `tools.schema_verification prepare` with the three dumps as physical files (hard links) in the worktree's `private_test_data/schemas/`. Earlier attempts stopped at the expensive tiers: runtime unprepared, then the symlinked dumps refused ("path escapes application"). Console: `private_test_data/makeover-work/backlog-open-findings/full-check-3.console.txt`. Task 3.2 stays open for the canonical run before merge.
 - 3.1: Reviewer verdict Merge after fixes on `3ec85f0...d97390d` (`review.md`); B1 and A1 to A4 fixed in the review-fix commit; A5 recorded as a pending owner decision. After the fixes: markdownlint passes, the strict MkDocs warnings are unchanged (63, same kind), the five-position key probe repeats A2's result.
+- 3.2 at 284dafc: canonical command, "every check passed", 2 min 45 s (schema-25.2 tiers selected and passed). Console: `private_test_data/makeover-work/backlog-open-findings/full-check-4.txt`.
