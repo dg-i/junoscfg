@@ -1,2 +1,39 @@
 schema: agent-ready
 created: 2026-10-16
+assurance: economy
+type: bug
+zone: schema
+domains: [schema-pipeline, validation, conversion]
+removes: >-
+  KEY_ALIASES and resolve_key_alias in junoscfg.display (a hand-kept copy of the Group E
+  renames, replaced by the name each renamed tree node records); XsdFix.applies_to (identical
+  on every fix and read by nothing); UNPLACED_IN_THE_EXAMPLE and placed_only in
+  tests/support/devices.py with the strict xfails they fed (replaced by the recorded
+  expected findings of the device-capture law); the set validator's line truncation at 80
+  characters
+declared-break:
+  consumer:
+    why: >-
+      Not a break. validate_config and convert_config(_result) keep their signatures,
+      names and accepted input. Results change only where they were wrong: statements a
+      device printed are no longer reported (undocumented statements, the device's JSON
+      names end-range, ieee-802.3ad and the other renames, protect/activate/delete lines,
+      $junos- variables, keyed singleton entries); JSON-schema messages name the path and
+      the offending keys instead of reprinting the instance; set messages carry the whole
+      line. JSON and yaml-new output of a renamed statement read from set, structured, XML
+      or yaml input now uses the element name the device writes (ieee-802.3ad, end-range,
+      hello-padding-type, ...), where it wrote the CLI keyword the device does not load in
+      JSON; legacy yaml output of JSON input now holds the IR's name as every other
+      reader gives it. ValidationError.message is free text. Patch, as AGENTS.md rules for
+      everything that is not a break.
+    migration: >-
+      None required. A script comparing JSON or yaml-new output or validation messages
+      byte for byte updates its expected text.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg -v, field validation and
+      -e json keep their options and exit codes; only false errors disappear and output
+      that the device would not load moves to the device's spelling.
+    migration: None required; a script comparing the text updates its expected output.
+verification:
+  state: planned
