@@ -63,5 +63,12 @@ None.
 
 1. Accepted: README and instruction-integrity now read 15 statements, 14 as `[null]`
    and the inactive `l3vpn`.
-2. Accepted as ordering: the lane route (SKILL.md, step 5) runs the canonical full
-   check after the review is recorded; it runs on the corrected head and 3.3 records it.
+2. Accepted. AGENTS.md (Verification) runs full before review; the skill's fix
+   route, step 5, runs it after the review is recorded. Deviation from AGENTS.md: the
+   full check ran once, after the review, on the corrected head (3.3 records it).
+
+## Confirmation
+
+The Reviewer re-read `a1b75ba..219e5ff`: finding 1 resolved; finding 2 resolved in
+effect, with the reason above corrected; two reworded lines over 100 characters were
+then reflowed (README, instruction-integrity).

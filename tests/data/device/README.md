@@ -29,12 +29,13 @@ they, and the JVD configurations whose classes others already show, stay in
 
 `json-null-probes` asks the QFX5120 about junoscfg's own JSON rather than a
 configuration: 15 statements the device prints as `{}`, 14 written as
-junoscfg's `[null]` and the inactive leaf `l3vpn` written `{"@": {"inactive":
-true}}`, where the device prints `"l3vpn": {}` beside `"@l3vpn"`. Its source
-is JSON, loaded with `load override json`. A `load merge json` of it (2026-10-16) loaded without error,
-and every statement was then in the candidate, the leaf inactive. The capture
-of its renderings awaits the device; until then the import keeps the source
-and skips the capture (`CAPTURED` in the tool).
+junoscfg's `[null]` and the inactive leaf `l3vpn` written
+`{"@": {"inactive": true}}`, where the device prints `"l3vpn": {}` beside
+`"@l3vpn"`. Its source is JSON, loaded with `load override json`. A
+`load merge json` of it (2026-10-16) loaded without error, and every
+statement was then in the candidate, the leaf inactive. The capture of its
+renderings awaits the device; until then the import keeps the source and
+skips the capture (`CAPTURED` in the tool).
 
 | Directory | Holds | Licence |
 |---|---|---|
