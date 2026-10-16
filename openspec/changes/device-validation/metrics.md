@@ -1,10 +1,3 @@
-<!-- Use this as the structure for your output file. Fill in the sections. -->
-<!-- This schema template is maintained by agent-ready; local edits can conflict with updates.
-Completed change artefacts belong to the application.
-See docs/how-to/template-ownership.md before editing; review every update diff. -->
-
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -12,17 +5,18 @@ See docs/how-to/template-ownership.md before editing; review every update diff. 
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 1766, "binary_files": 5, "files": 62, "removed": 570} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | {"archived": false, "base": "8c5384386fd6b883009dacb8bfc7aef13687e0cb", "carry": {}, "change": "device-validation", "checks": [{"checkpoint": "abe12180aff0c52ec1747a69d121fbbd48575ca69bd781a017d8392e28e31c25", "duration_ms": 10996.51524994988, "evidence": ".agent-ready/verification/597adf726d3d452187585984324d5d73.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "a8a9d763342b64fd5c1c05f729fe69add3d97c21a01a9808cfa4c3bdaa25e6f1", "duration_ms": 262809.28724992555, "evidence": ".agent-ready/verification/89402f66d9264fa3ae1ced62c155c846.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "a7ac1e610ea747c2a8644892eca3ff5779f1cca6c2e69ef5e943ee3465413176", "duration_ms": 48406.27604199108, "evidence": ".agent-ready/verification/8626fb3205454564ac14d0b76f6a68a4.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "fdf909e81e37d0a0dee3aa5eac57920545039cd57b47207c8d6985c6922e21c4", "duration_ms": 343033.11766590923, "evidence": ".agent-ready/verification/ea7205bac88849bfa85a5542dec9a537.json", "exit_status": 0, "reused": false, "tier": "full"}, {"checkpoint": "30f1834404062846ef0894bd051ee3f43077c166465e908305273572365a4e63", "duration_ms": 240279.47033301461, "evidence": ".agent-ready/verification/34b5c16f1a8842ccb229e2cb6f71afa2.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "ea6b0af6bf1bc583359f7ac17b1615e16d845c89949af0c349e8704a110af51c", "duration_ms": 46239.11045794375, "evidence": ".agent-ready/verification/fb9db49987954da7a3bb8e19913b97a1.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "e84efd673dcd705c412c2003dbc9ee8028b65788cced086e95ac1b336c11bc19", "duration_ms": 314045.53408396896, "evidence": ".agent-ready/verification/f2deb3df6c6040549cfa98886987ecc2.json", "exit_status": 0, "reused": false, "tier": "full"}, {"checkpoint": "30f1834404062846ef0894bd051ee3f43077c166465e908305273572365a4e63", "duration_ms": 240279.47033301461, "evidence": ".agent-ready/verification/1f0f8b9e5c97471982cf2c96791d507a.json", "exit_status": 0, "reused": true, "tier": "expensive"}, {"checkpoint": "ea6b0af6bf1bc583359f7ac17b1615e16d845c89949af0c349e8704a110af51c", "duration_ms": 46239.11045794375, "evidence": ".agent-ready/verification/535561f4993f40db903e8a97db51629d.json", "exit_status": 0, "reused": true, "tier": "expensive"}, {"checkpoint": "e84efd673dcd705c412c2003dbc9ee8028b65788cced086e95ac1b336c11bc19", "duration_ms": 78564.15679201018, "evidence": ".agent-ready/verification/09512d54cba64adf8305e0c4d03a3355.json", "exit_status": 0, "reused": false, "tier": "full"}], "head": "cc44188ae59c346552804632ae836e70eb3445b4", "ledger_sha256": "1e745f1d5fcc2b1afb56980b5934c060d496e62d958a9a0c0d991b934d59ea82", "observations": {"active_agent_minutes": {"reason": "UNMEASURED", "value": null}, "cache_tokens": {"reason": "UNMEASURED", "value": null}, "escaped_regressions": {"reason": "UNMEASURED", "value": null}, "expensive_runs": {"events": ["46cf7791585c9dc1cca3af95b51be0347b46084d2e5abfb743c1282c50f0eff9", "77f486e5890c28ebf5d093f89df561fac69ac7153a37987943bb5ad192aea649", "8516eb616c9479f7eed8504a635a8b85164a398cd496279f3fda0c60faf3dd80", "125f80a6d3d452b05a703341b0de5bb9934837e33beeeb2a7518088af8a5670a"], "value": 4}, "full_runs": {"events": ["0d3148659abf244c01c6e7dd200c28669b82b43a0af496eb66a78c400ecc8896", "74dd7e50c836be0731c7c99ee6bd692d79c31296c2db44b3a7feab21784ed9cb", "8df802f51d745204339d07587562d77e3f6568efdf8f46701b7845b7e530e41c", "5120f12c17fbc901b56c53c2721613cabbb3b91056155170d1f79e7c98f0c03c"], "value": 4}, "intent_to_archive_minutes": {"reason": "UNMEASURED", "value": null}, "output_tokens": {"reason": "UNMEASURED", "value": null}, "post_review_code_churn": {"reason": "UNMEASURED", "value": null}, "review_findings": {"reason": "UNMEASURED", "value": null}}, "progress": [{"completed": 7, "total": 10}, {"completed": 8, "total": 11}, {"completed": 8, "total": 11}, {"completed": 8, "total": 11}, {"completed": 9, "total": 12}, {"completed": 9, "total": 12}, {"completed": 9, "total": 12}, {"completed": 9, "total": 12}, {"completed": 9, "total": 12}, {"completed": 9, "total": 12}], "roles": [], "schema": "lifecycle-summary/1"} |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
