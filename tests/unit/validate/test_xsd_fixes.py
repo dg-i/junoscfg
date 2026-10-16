@@ -675,11 +675,23 @@ UNDOCUMENTED = [
         "clear-text",
         {"address": "l", "port": "l"},
     ),
-    (("system",), "dump-on-panic", "p"),
-    (("system",), "debugger-on-break", "p"),
-    (("system",), "debugger-on-panic", "p"),
-    (("chassis",), "dump-on-panic", "p"),
-    (("groups", "group", "chassis"), "dump-on-panic", "p"),
+    # `system dump-on-panic` prints as an open and close tag, a container's
+    # shape (`<dump-on-panic>\n</dump-on-panic>`); the others print as `<x/>`.
+    *(
+        row
+        for prefix in ((), ("groups", "group"))
+        for row in (
+            ((*prefix, "system"), "dump-on-panic", {}),
+            ((*prefix, "system"), "debugger-on-break", "p"),
+            ((*prefix, "system"), "debugger-on-panic", "p"),
+            ((*prefix, "chassis"), "dump-on-panic", "p"),
+            (
+                (*prefix, "system", "services", "extension-service", "request-response", "grpc"),
+                "clear-text",
+                {"address": "l", "port": "l"},
+            ),
+        )
+    ),
     (
         ("system", "services", "extension-service", "request-response", "grpc"),
         "skip-authentication",
@@ -730,6 +742,7 @@ def _shape(node: dict) -> object:
     if node.get("l"):
         return "l"
     if node.get("p"):
+        assert not node.get("c"), "a flag holds no statement"
         return "p"
     return {name: _shape(child) for name, child in node.get("c", {}).items()}
 

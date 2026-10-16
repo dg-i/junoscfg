@@ -364,6 +364,26 @@ class TestAPerValueLeafListTagIsNoted:
         notes = [d.message for d in result.diagnostics if _VALUE_NOTE in d.message]
         assert notes == [f"note: 1 {_VALUE_NOTE}: Junos tags a leaf-list only as a whole"]
 
+    def test_one_note_counts_every_tag_of_every_value(self) -> None:
+        """One note for the whole output, counting each tag of each value; a
+        comment on a value is no tag (Test/Challenge N7)."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "domain-search": ["a.example", "b.example"],
+                        "@domain-search": [{"inactive": True, "protect": "protect"}, None],
+                        "authentication-order": ["password", "radius"],
+                        "@authentication-order": [{"comment": "/* first */"}, {"inactive": True}],
+                    }
+                }
+            }
+        )
+        for to_format in (Format.SET, Format.STRUCTURED):
+            result = convert_config_result(source, from_format=Format.JSON, to_format=to_format)
+            notes = [d.message for d in result.diagnostics if _VALUE_NOTE in d.message]
+            assert notes == [f"note: 3 {_VALUE_NOTE}: Junos tags a leaf-list only as a whole"]
+
     @pytest.mark.parametrize(
         "to_format", [Format.JSON, Format.YAML, Format.YAML_NEW], ids=["json", "yaml", "yaml-new"]
     )

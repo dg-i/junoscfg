@@ -1025,3 +1025,119 @@ class TestKeyedEntryTakesExactlyItsKeys:
         # The generator ends with a blank line; the file keeps one newline,
         # as the end-of-file hook wants, so the comparison adds the other.
         assert grammar == pinned.read_text(encoding="utf-8") + "\n"
+
+
+class TestASymbolKeywordIsWrittenAsItself:
+    """`=`, `+` and `-` are keywords as the device writes them: it takes and
+    prints `then community = JUNOSCFG-C1` (QFX5120 25.2R2-S1.5, probe D2). The
+    generator wrote the escape it uses for a rule name, `eq_literal`, as the
+    keyword, so `-v` refused the device's line and took a word no Junos knows
+    (SET-LITERAL-KEYWORDS-001, change device-probe-fixes)."""
+
+    @staticmethod
+    def _tree() -> SchemaNode:
+        name = SchemaNode(name="community-name", is_leaf=True)
+        name.flags.add("nokeyword")
+        community = SchemaNode(
+            name="community",
+            is_list=True,
+            children={
+                "=": SchemaNode(name="=", is_presence=True),
+                "+": SchemaNode(name="+", is_presence=True),
+                "add": SchemaNode(name="add", is_presence=True),
+                "community-name": name,
+            },
+            key_fields=(("=", "+", "add"), "community-name"),
+        )
+        flags = SchemaNode(name="flags", children={"-": SchemaNode(name="-", is_presence=True)})
+        return SchemaNode(
+            name="configuration",
+            children={
+                "then": SchemaNode(name="then", children={"community": community}),
+                "flags": flags,
+            },
+        )
+
+    @pytest.mark.parametrize("symbol", ["=", "+", "add"])
+    def test_a_key_choice_takes_the_symbol(self, symbol: str) -> None:
+        assert _parses(self._tree(), f"set then community {symbol} C1")
+
+    def test_a_child_takes_the_symbol(self) -> None:
+        assert _parses(self._tree(), "set flags -")
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set then community eq_literal C1",
+            "set then community plus_literal C1",
+            "set flags minus_literal",
+        ],
+    )
+    def test_the_rule_name_escape_is_no_keyword(self, line: str) -> None:
+        assert not _parses(self._tree(), line)
+
+
+class TestAOnelinerContainerTakesItsLeavesOnOneLine:
+    """A container the XSD marks `oneliner` takes its leaves and flags on one
+    line, in any order, as the device takes `set interfaces ge-0/0/1 hold-time
+    up 0 down 0` (QFX5120 25.2R2-S1.5, probe D1); a container it does not mark,
+    and a same-named one elsewhere, still take one a line, and an unknown word
+    stays refused (SET-COMPACT-LEAVES-001, change device-probe-fixes)."""
+
+    @staticmethod
+    def _hold_time(*, oneliner: bool) -> SchemaNode:
+        node = SchemaNode(
+            name="hold-time",
+            children={
+                "up": SchemaNode(name="up", is_leaf=True),
+                "down": SchemaNode(name="down", is_leaf=True),
+                "now": SchemaNode(name="now", is_presence=True),
+                "detail": SchemaNode(
+                    name="detail", children={"x": SchemaNode(name="x", is_leaf=True)}
+                ),
+            },
+        )
+        if oneliner:
+            node.flags.add("oneliner")
+        return node
+
+    def _tree(self) -> SchemaNode:
+        return SchemaNode(
+            name="configuration",
+            children={
+                "a": SchemaNode(name="a", children={"hold-time": self._hold_time(oneliner=True)}),
+                "b": SchemaNode(name="b", children={"hold-time": self._hold_time(oneliner=False)}),
+            },
+        )
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set a hold-time up 0 down 0",
+            "set a hold-time down 0 up 0",
+            "set a hold-time up 0 now",
+            "set a hold-time up 0",
+            "set a hold-time detail x 1",
+            "set a hold-time",
+        ],
+    )
+    def test_the_marked_container(self, line: str) -> None:
+        assert _parses(self._tree(), line)
+
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "set b hold-time up 0 down 0",
+            "set a hold-time up 0 bogus 1",
+            "set a hold-time up 0 down",
+            "set a hold-time up 0 detail x 1",
+        ],
+        ids=[
+            "an-unmarked-same-named-container",
+            "an-unknown-word",
+            "a-leaf-without-its-value",
+            "a-container-is-not-repeated",
+        ],
+    )
+    def test_what_stays_refused(self, line: str) -> None:
+        assert not _parses(self._tree(), line)

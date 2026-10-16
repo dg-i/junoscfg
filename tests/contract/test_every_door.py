@@ -633,6 +633,8 @@ VERBS = (
         False,
         set="set policy-options policy-statement JUNOSCFG-PROBE term t1 then accept\n"
         "protect policy-options policy-statement",
+        structured="policy-options {\n    protect: policy-statement {\n        JUNOSCFG-PROBE {\n"
+        "            term t1 {\n                then accept;\n            }\n        }\n    }\n}\n",
         messages=("Invalid syntax: protect policy-options policy-statement",),
     ),
     Row(
@@ -651,6 +653,13 @@ VERBS = (
         False,
         set="set system host-name router1\ndeactivate system host-name router1",
         messages=("Invalid syntax: deactivate system host-name router1",),
+    ),
+    Row(
+        "deactivate-a-container-holding-a-hidden-list",
+        True,
+        set="set interfaces ge-0/0/0 description uplink\ndeactivate interfaces",
+        structured="inactive: interfaces {\n    ge-0/0/0 {\n        description uplink;\n"
+        "    }\n}\n",
     ),
     Row(
         "deactivate-a-route-and-a-leaf-of-it",

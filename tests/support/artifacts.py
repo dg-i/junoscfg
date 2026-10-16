@@ -6,7 +6,10 @@ from an unknown one, and nothing else: a JSON and a YAML schema that know
 ssh` and `interfaces description`, and an XSD that knows `system host-name`.
 The set carries no structure tree, so conversion against it is refused;
 `write_minimal_tree` adds one that knows what the grammar knows, for
-structured validation, which splits curly text with the conversion walk. A
+structured validation, which splits curly text with the conversion walk, and
+for a verb line, which the set validator judges by the tree.
+`make_lists_artifacts` writes a grammar and tree with lists and a leaf-list,
+for what a verb line may name. A
 test that needs the shipped artifacts uses the session fixtures in
 ``tests/conftest.py``, or `shipped` and `shipped_text` here for the files
 themselves.
@@ -108,6 +111,52 @@ MINIMAL_TREE = {
     }
 }
 
+#: A grammar and its structure tree with a list keyed by name, a list inside
+#: it, a leaf-list and a leaf: what a verb line may and may not name.
+LISTS_GRAMMAR = """\
+start: SET configuration
+configuration: "system" system? | "policy-options" policy_options?
+system: "host-name" VALUE | "domain-search" VALUE | "services" services?
+services: "ssh"
+policy_options: "policy-statement" policy_statement__list
+policy_statement__list: VALUE ("term" term__list)?
+term__list: VALUE ("then" then?)?
+then: "accept"
+
+SET: "set"
+VALUE: /\\S+/
+
+%import common.WS
+%ignore WS
+"""
+_NAME = {"l": True, "nk": True}
+LISTS_TREE = {
+    "c": {
+        "system": {
+            "c": {
+                "host-name": {"l": True},
+                "domain-search": {"l": True, "ll": True},
+                "services": {"c": {"ssh": {"p": True}}},
+            }
+        },
+        "policy-options": {
+            "c": {
+                "policy-statement": {
+                    "L": True,
+                    "c": {
+                        "name": _NAME,
+                        "term": {
+                            "L": True,
+                            "c": {"name": _NAME, "then": {"c": {"accept": {"p": True}}}},
+                        },
+                    },
+                }
+            }
+        },
+    }
+}
+
+
 MINIMAL_META = {
     "junos_version": "21.4R0",
     "generated_at": "2026-01-01T00:00:00Z",
@@ -147,6 +196,14 @@ def write_minimal_tree(directory: str | Path) -> Path:
     tree = Path(directory) / "junos-structure-tree.json"
     tree.write_text(json.dumps(MINIMAL_TREE), encoding="utf-8")
     return tree
+
+
+def make_lists_artifacts(path: Path) -> Path:
+    """Write `LISTS_GRAMMAR` and `LISTS_TREE` into *path*; the grammar's path."""
+    (path / "junos-structure-tree.json").write_text(json.dumps(LISTS_TREE), encoding="utf-8")
+    grammar = path / "junos-set.lark"
+    grammar.write_text(LISTS_GRAMMAR, encoding="utf-8")
+    return grammar
 
 
 def shipped(name: str) -> Path:

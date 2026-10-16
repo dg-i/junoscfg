@@ -70,8 +70,20 @@ class TestTheShippedGrammarIsTheGeneratorsOutput:
         assert rebuilt.strip() == shipped_text("junos-set.lark").strip()
 
 
+#: The probe's policy term (QFX5120 25.2R2-S1.5, D2): the device takes `then
+#: community = | + | -` and prints it so; the grammar took the rule-name escapes
+#: instead (SET-LITERAL-KEYWORDS-001, change device-probe-fixes).
+_THEN = "set policy-options policy-statement JUNOSCFG-PROBE term t1 then"
+_ESCAPES = ("eq_literal", "plus_literal", "minus_literal")
+
+
 class TestTheShippedGrammarKeepsRejecting:
-    """A value slot takes one value, and an unknown element is no element."""
+    """A value slot takes one value, and an unknown element is no element. A
+    container the XSD marks `oneliner` takes its leaves and flags on one line,
+    as the device takes `hold-time up 0 down 0` (probe D1,
+    SET-COMPACT-LEAVES-001); a container it does not mark takes one a line.
+    Neither the chassis flags no device showed nor the rule-name escapes are
+    statements."""
 
     @pytest.mark.parametrize(
         "line",
@@ -82,6 +94,10 @@ class TestTheShippedGrammarKeepsRejecting:
             'set interfaces ge-0/0/0 description "uplink to sw1 \\"core\\""',
             'set system host-name "abc\\"',
             'set interfaces ge-0/0/0 description "a b\\"',
+            *(f"{_THEN} community {symbol} JUNOSCFG-C1" for symbol in "=+-"),
+            "set interfaces ge-0/0/1 hold-time up 0 down 0",
+            "set interfaces ge-0/0/1 hold-time down 0 up 0",
+            "set protocols ospf traceoptions file ospf.log size 10m files 3",
         ],
         ids=[
             "a-hostname-takes-a-plain-value",
@@ -89,6 +105,12 @@ class TestTheShippedGrammarKeepsRejecting:
             "an-escaped-quote-is-part-of-its-value",
             "a-word-ending-in-a-backslash",
             "a-quoted-value-ending-in-a-backslash",
+            "community-equals",
+            "community-plus",
+            "community-minus",
+            "a-oneliner-container-on-one-line",
+            "a-oneliner-container-in-either-order",
+            "a-oneliner-file-list-as-before",
         ],
     )
     def test_accepted(self, bundled_set_validator: Any, line: str) -> None:
@@ -104,6 +126,12 @@ class TestTheShippedGrammarKeepsRejecting:
             "set system host-name foo bar baz",
             'set interfaces ge-0/0/0 description "uplink to sw1 "core""',
             'set system host-name "a\\\\" b"',
+            *(f"{_THEN} community {escape} JUNOSCFG-C1" for escape in _ESCAPES),
+            "set chassis debugger-on-panic",
+            "set chassis debugger-on-break",
+            "set system host-name router1 domain-name example.net",
+            "set interfaces ge-0/0/1 hold-time up 0 bogus 1",
+            "set interfaces ge-0/0/1 hold-time up 0 down",
         ],
         ids=[
             "a-hostname-is-not-a-policy-expression",
@@ -113,6 +141,12 @@ class TestTheShippedGrammarKeepsRejecting:
             "a-leaf-with-three-values",
             "bare-inner-quotes-end-the-value",
             "an-escaped-backslash-ends-before-the-quote",
+            *(f"community-{escape}" for escape in _ESCAPES),
+            "a-chassis-flag-no-device-showed",
+            "another-chassis-flag-no-device-showed",
+            "two-leaves-of-a-container-the-xsd-does-not-mark-oneliner",
+            "an-unknown-sibling-in-a-oneliner-container",
+            "a-oneliner-sibling-without-its-value",
         ],
     )
     def test_rejected(self, bundled_set_validator: Any, line: str) -> None:

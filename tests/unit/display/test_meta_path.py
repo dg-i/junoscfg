@@ -46,6 +46,16 @@ ROWS = [
     (f"{VIRTUAL_LINK} transit-area", "partial-key"),
     (VIRTUAL_LINK, "partial-key"),
     ("system no-such-statement", "unplaced"),
+    # Test/Challenge S4: a container holding a hidden list, a flag spelled like
+    # a value, and a value inside a group (as the set reader places them).
+    ("interfaces", "container"),
+    ("vlans", "container"),
+    ("routing-instances", "container"),
+    ("groups", "container"),
+    ("system syslog file f any any", "leaf"),
+    ("interfaces ge-0/0/0 ether-options speed 1g", "leaf"),
+    ("groups G system host-name r1", "value"),
+    ("groups G system host-name", "leaf"),
 ]
 
 

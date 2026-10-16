@@ -1204,6 +1204,64 @@ class TestPathFiltering:
         if objects and case.startswith("a-selected"):
             load = json.loads if to_format is Format.JSON else yaml.safe_load
             assert load(result.output)["@"] == {"inactive": True}
+        if not objects:
+            # Set and structured write what the untagged configuration writes
+            # there: a tag is neither pushed down nor written as another line
+            # (Test/Challenge S1).
+            untagged = "".join(
+                line + "\n" for line in source.splitlines() if line.startswith("set ")
+            )
+            assert result.output == convert_config(
+                untagged, from_format=Format.SET, to_format=to_format, path=path, relative=True
+            )
+
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_relative_leaf_list_selection_notes_a_value_tag(self, to_format: Format) -> None:
+        """A per-value tag of a selected leaf-list is dropped with one note in
+        every writer: the relative note in json, yaml and yaml-new, the
+        per-value note in set and structured, which have no form for it
+        (Test/Challenge S2)."""
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "domain-search": ["a.example", "b.example"],
+                        "@domain-search": [None, {"inactive": True}],
+                    }
+                }
+            }
+        )
+        result = convert_config_result(
+            source,
+            from_format=Format.JSON,
+            to_format=to_format,
+            path="system.domain-search",
+            relative=True,
+        )
+        notes = [d.message for d in result.diagnostics if d.severity == "note"]
+        assert len(notes) == 1, notes
+        if to_format in (Format.SET, Format.STRUCTURED):
+            assert "single values of a leaf-list" in notes[0]
+        else:
+            assert _dropped_tags(result) == 1
+
+    def test_an_anonymized_relative_note_quotes_nothing(self) -> None:
+        """The note counts: it names no path or value, so an anonymized
+        conversion quotes nothing of the configuration (Test/Challenge S2)."""
+        result = convert_config_result(
+            "set system ntp server 203.0.114.5\ndeactivate system ntp\n",
+            from_format=Format.SET,
+            to_format=Format.SET,
+            path="system.ntp",
+            relative=True,
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        notes = [d.message for d in result.diagnostics if d.severity == "note"]
+        assert notes == [
+            "note: 1 tag(s) at or above the selected path dropped: "
+            "relative output writes what lies below the path"
+        ]
+        assert "203.0.114.5" not in result.output
 
     @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
     def test_an_absolute_selection_keeps_its_ancestors_tags(self, to_format: Format) -> None:
@@ -1226,6 +1284,11 @@ class TestPathFiltering:
         for path, alone in expected.items():
             written = convert_config(source, from_format=Format.SET, to_format=to_format, path=path)
             assert read_ir(written, to_format) == read_ir(alone, Format.SET), path
+            if to_format is Format.SET:
+                # Each tag after the statements below it, as the device prints
+                # `deactivate routing-options static` after the routes (C3):
+                # loaded first, it would name a statement not there yet.
+                assert written == alone, path
 
     @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
     def test_a_dotted_flag_keeps_its_tags(self, to_format: Format) -> None:
