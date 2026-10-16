@@ -1,0 +1,44 @@
+schema: agent-ready
+created: 2026-10-17
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion, validation, schema-pipeline]
+removes: >-
+  relative set output's bare verb lines (`deactivate`, `protect`, `activate`, `delete` with no
+  path), which the device refuses (probe SC1); structured output's own count of a relative
+  selection's dropped tags, replaced by the one rule every writer shares; the set reader's
+  private copy of the meta-command walk, which moves read-only into junoscfg.display so the
+  set validator decides what a verb line names by the same walk
+declared-break:
+  consumer:
+    why: >-
+      Not a break. validate_config and convert_config(_result) keep their signatures and
+      names. (a) Set validation of a non-set verb line now refuses a line that stops at a
+      list's keyword without its name, names a leaf's value or one value of a leaf-list, or
+      stops inside an entry's key. The QFX5120 refuses the first two (probe D5 and A2:
+      "syntax error, expecting <identifier>" and "expecting ';'"), the set reader refuses a
+      leaf's value ("Metadata commands cannot target scalar-leaf values"), and a stop inside
+      a key is kept unplaced; every verb line of the committed device captures stays valid.
+      (b) An absolute path= selection keeps the annotations of its ancestors, so a statement
+      inside a deactivated container is written inside it, as the device prints it (probe
+      C3), where junoscfg wrote it active. (c) A relative path= selection drops a tag at or
+      above its path with one note in every format, where set output wrote a bare verb the
+      device refuses (probe SC1) and json, yaml and yaml-new dropped it silently. (d) Set and
+      structured output note a per-value leaf-list tag they drop. (e) Five statements the
+      device takes undocumented now validate. Output changes only where it loaded with
+      another meaning or did not load; no accepted Junos configuration converts to output
+      with another meaning. Patch, as AGENTS.md rules for everything that is not a break.
+    migration: >-
+      None for a Junos configuration. A verb line that names a value or a list keyword is
+      written as the device takes it: the statement path alone (`deactivate system
+      host-name`) or the list entry with its name. A script comparing --path output or
+      diagnostics text updates its expected text.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg -v, --path and --relative
+      keep their options and exit codes; -v exits 1 only for verb lines the device or the
+      set reader refuses, and conversion prints a note where it drops a tag.
+    migration: >-
+      None required; write a refused verb line as the device takes it, and update a script
+      that compares the text.
