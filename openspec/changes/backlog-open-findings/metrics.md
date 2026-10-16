@@ -1,5 +1,3 @@
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -7,17 +5,18 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 379, "binary_files": 0, "files": 2, "removed": 0} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | {"archived": false, "base": "3ec85f0a115548e20a85700dab4aec61b86b3397", "carry": {}, "change": "backlog-open-findings", "checks": [{"checkpoint": "e9a399008f658e6d590297634b17214fba14457500b5d9c098d3ee295406d58d", "duration_ms": 12275.069374940358, "evidence": ".agent-ready/verification/a8805e25a0504dc19d020c1dba66a1ee.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "e9a399008f658e6d590297634b17214fba14457500b5d9c098d3ee295406d58d", "duration_ms": 11971.708749886602, "evidence": ".agent-ready/verification/5a3ea2bad8a3402c9d1792ce8694ed4f.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "10d55b6438a3c3468e8ed09ce2a9977bfc5d71f77a8e9652fa54c640aed88d4d", "duration_ms": 245324.40074998885, "evidence": ".agent-ready/verification/e4668826d60f4081bd1adcda38a99a7e.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "9e5c6e13744cfe1229ef1a751ab162656e2986fd13ae95b09a7092bdb99d1d70", "duration_ms": 53995.1822910225, "evidence": ".agent-ready/verification/0ea53093daff4768a0beba7e1c6e2aba.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "e9a399008f658e6d590297634b17214fba14457500b5d9c098d3ee295406d58d", "duration_ms": 338856.7993749166, "evidence": ".agent-ready/verification/623e3de17e8a4b13a5a506899c5f1c50.json", "exit_status": 0, "reused": false, "tier": "full"}, {"checkpoint": "447e2deb52a5283b2bc436360d5df511eaf8cc7b9fe2dc7c2b1816b6f4bd4fa7", "duration_ms": 64464.224624913186, "evidence": ".agent-ready/verification/bcc178f216ff4fcfba0bb8c6ed15cbc4.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "634da801f4e029035a9165d939b6c980806802ad7738791287415c16d4d5acc6", "duration_ms": 53830.081249936484, "evidence": ".agent-ready/verification/b6fa268f27e34765841cb8689b64ce12.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "5d6d7fe727dc85a0349e509a3f2c8d9ee4d61793412bd7f003936e10d6d50f85", "duration_ms": 159361.90408305265, "evidence": ".agent-ready/verification/5b531edd900849ebb0ebddb31f5bb974.json", "exit_status": 0, "reused": false, "tier": "full"}], "head": "284dafc9b4f63320dafcf0a1fe8d53dd28ed99ca", "ledger_sha256": "a4978f9161cc259a6338ef808dff187d198d65c70e31efd5cb135af2175fa115", "observations": {"active_agent_minutes": {"reason": "UNMEASURED", "value": null}, "cache_tokens": {"reason": "UNMEASURED", "value": null}, "escaped_regressions": {"reason": "UNMEASURED", "value": null}, "expensive_runs": {"events": ["a035c126f8b95a515adec918a9b6d7bf870b134524bab7100845694df4904a51", "0523842234d3d779c14eba036d1b200dfe199e74a632424ce77e8391f3946adc", "79e91ca08cf3f7097d3498756c9bc10930a7a077315aa3c3853b8920b28a9f33", "4513a35f88a2713d02df35b74fd3405c8272d3dfec499c5b08e801e35f69afc7"], "value": 4}, "full_runs": {"events": ["4b369449216078f4532774daae3fd004da7d9562c3fbe7b535697e63c550fdfc", "68a03759b900036537aae62f1ab9a9de46b93759d51ab757881dc7f15c8d009d", "a2a3ca7659aec771b021477d823c2e77f800aa020b11bd6be0eb6cba1f915542", "823fa4c1997b83b9d1d98b27698a0d9863de0fc1d16a12ced68157f082eed809"], "value": 4}, "intent_to_archive_minutes": {"reason": "UNMEASURED", "value": null}, "output_tokens": {"reason": "UNMEASURED", "value": null}, "post_review_code_churn": {"reason": "UNMEASURED", "value": null}, "review_findings": {"reason": "UNMEASURED", "value": null}}, "progress": [{"completed": 10, "total": 14}, {"completed": 10, "total": 14}, {"completed": 10, "total": 14}, {"completed": 10, "total": 14}, {"completed": 10, "total": 14}, {"completed": 11, "total": 14}, {"completed": 11, "total": 14}, {"completed": 11, "total": 14}], "roles": [], "schema": "lifecycle-summary/1"} |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).
