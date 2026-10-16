@@ -32,7 +32,8 @@
 - D1: hold-time: does `commit check` pass with only `interfaces ge-0/0/1 hold-time down 0` (mdr1, group `GR-EDGE-INTF-MH`)? Recorded as `mandatory-open`.
 - D2: device JSON and XML for `snmp name`, a NAT rule `match`, `ether-options speed 1g` and `then community = X` (SC3).
 - D3: does a device load `"802.3ad"`/`"to"` in JSON (SC2)?
-- D4: siblings of the undocumented statements no capture shows (grpc `clear-text address`, `system dump-on-panic`, `debugger-on-break`, `debugger-on-panic`); `chassis dump-on-panic` stays a recorded grammar rejection (no committed capture).
+- D4: siblings of the undocumented statements no capture shows (grpc `clear-text address`, `system dump-on-panic`, `debugger-on-break`, `debugger-on-panic`).
+- P4: `set chassis dump-on-panic` stays the one recorded grammar rejection (`grammar-corpus.json`). Re-checked: it is device output, a presence flag inside `<chassis><undocumented>` in the private renderings of JVD `ap1_mx304` on three devices, and in no committed capture; no XSD dump names it. Interim: not modelled, as the coordinator ruled (committed device evidence only). Owner: commit an `ap1_mx304` capture or admit the private evidence, and it joins `_UNDOCUMENTED` as one row.
 - D5: whether a non-`set` verb may stop at a list or keyword before its name (`protect policy-options policy-statement`): the validator now accepts any path the grammar could continue.
 - B1 (backlog candidate): the rest of `xml-element-name-leak` (rf_list, server-group, other-variables, bridge-domains domain, dynamic-tunnels) seen only in private captures: hidden list names, not renames; outside the one rule.
 - B2 (backlog candidate): the no-op fixes (`route-filter-arg`, `source-address-filter-arg`, `classifiers-default`, `teardown-forms`, `single-hop`, `enable-interface`, `name-freeform`, and `wildcard-star`, which matches no element).
