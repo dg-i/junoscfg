@@ -1,0 +1,1 @@
+Device data gains `json-null-probes`, a JSON source asking the QFX5120 whether junoscfg's `[null]` and inactive-leaf spellings load as its own; the capture importer keeps a source whose capture awaits the device.
