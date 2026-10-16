@@ -246,6 +246,14 @@ _YAML_CYCLE = "configuration: &a\n  system:\n    x-acme: *a\n"
 _YAML_DEEP = nested_yaml(62).replace("    x: ", "    x-acme: ")
 _YAML_KEY = "configuration:\n  system:\n    x-acme:\n      64496: y\n"
 _JSON_DEEP = json.dumps({"configuration": {"system": {"x-acme": nested_ir(63)}}})
+_XML_DEEP = (
+    "<configuration><system><x-acme>"
+    + "<a>" * 62
+    + "v"
+    + "</a>" * 62
+    + "</x-acme></system></configuration>"
+)
+_VALIDATION_FAILED = ("Validation: FAILED (1 error(s))",)
 _FAILED = ("Validation: FAILED (1 error(s))", "line 1")
 
 
@@ -316,6 +324,7 @@ DOORS: dict[str, Door] = {
     "read-yaml-deep": Door(_library(_YAML_DEEP, Format.YAML), _READ, "system.x-acme"),
     "read-yaml-key": Door(_library(_YAML_KEY, Format.YAML), _READ, "system.x-acme"),
     "read-json-deep": Door(_library(_JSON_DEEP, Format.JSON), _READ, "system.x-acme"),
+    "read-xml-deep": Door(_library(_XML_DEEP, Format.XML), _READ, "system.x-acme"),
     "read-xml": Door(_library(_BROKEN_XML, Format.XML), (*_READ, "(line 1)"), "sys-acme"),
     "read-json": Door(_library(_BROKEN_JSON, Format.JSON), (*_READ, "(line 1)"), "Expecting"),
     "read-note": Door(_library(_EMPTY_BLOCK, Format.STRUCTURED), ("empty block",), "R-ACME"),
@@ -421,6 +430,14 @@ DOORS: dict[str, Door] = {
     "cli-read-yaml-key": Door(_cli(_YAML_KEY, ["-i", "yaml", "-e", "set"]), _READ, "system.x-acme"),
     "cli-read-json-deep": Door(
         _cli(_JSON_DEEP, ["-i", "json", "-e", "set"]), _READ, "system.x-acme"
+    ),
+    "cli-read-xml-deep": Door(_cli(_XML_DEEP, ["-i", "xml", "-e", "set"]), _READ, "system.x-acme"),
+    # Validation reports what the json and yaml readers refuse (change own-crash-fixes).
+    "cli-validate-only-json-deep": Door(
+        _cli(_JSON_DEEP, ["-i", "json", "-v"]), _VALIDATION_FAILED, "system.x-acme"
+    ),
+    "cli-validate-only-yaml-key": Door(
+        _cli(_YAML_KEY, ["-i", "yaml", "-v"]), _VALIDATION_FAILED, "system.x-acme"
     ),
     # A meta key: the JSON schema yaml-new is judged by rejects it, the YAML one would not.
     "cli-validate-only-yaml-new": Door(

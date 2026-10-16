@@ -48,5 +48,9 @@ question); parser limits; `from_dict` handed a deep IR directly.
 ## Completion
 
 No traceback for the three inputs at `convert` and `convert -v`; `--path system.host-name` writes
-the leaf's tags as `--path system` does in set, structured, json, yaml and yaml-new, from every
-input format; relative output and absolute output of containers and entries unchanged.
+the leaf's tags as `--path system` does in every format, from every input format; absolute output
+of containers and entries unchanged. Also changed (declared in `.openspec.yaml`, none a Junos
+configuration): `yaml` validation reports a cycle, depth past 64 and a non-string key where base
+judged some valid; JSON and XML past 64 levels are refused where base still converted below its
+crash range, anywhere in a JSON document, and `-v -i json` exits 1; a relative leaf, leaf-list or
+flag selection writes its tags as the approved relative requirement says (SC1).

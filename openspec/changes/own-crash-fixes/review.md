@@ -50,7 +50,34 @@ against base: `red-run-2.txt`, 183 failed for their defects; guards pass at base
 13. SC4 (Test/Challenge): a `yaml` date value drops its statement in set and structured output
     and crashes `-e json`. Already in `docs/BACKLOG.md` as YAML-DATE-001; outside this change.
 
-Fresh isolated Reviewer: pending, dispatched by the coordinator after the full check.
+Fresh isolated Reviewer (separate agent dispatched by the coordinator, no Builder reasoning)
+on `git diff 4dc114e...8846937` (code head `ec1de93`), probes p1 to p8 against archive
+snapshots of base and head (kept beside the verdict in the coordinator's scratchpad,
+`review-ocf/`). Verdict: **Merge after fixes**. The code is sound: each defect is fixed at
+the owning layer with one rule, no wrong answer or regression found, 175 of 316 selected head
+tests fail at base for their defect and all pass at head. Resolutions in the commit after
+`8846937` (records and one test file; no runtime file changed, so the full check stands):
+
+14. B1 binding (records): the declared-break record understated the surface changes. Fixed:
+    `.openspec.yaml` `removes` and consumer/cli `why`/`migration`, the proposal's Completion
+    and the changelog fragment now state (a) `yaml` validation reports a cycle, depth past 64
+    and a non-string key, including where base judged the document valid (a cycle,
+    `host-name` holding 70 or 300 nested lists, `host-name: {1: x}`); (b) JSON and XML past
+    64 levels are refused including the range base still converted (JSON 65 to about 448
+    levels, plain XML to 250, repeated-element XML to 163); (c) JSON is refused wherever a
+    value passes 64 levels, outside `configuration` too, and `-v -i json` goes from OK and
+    exit 0 to exit 1; (d) a relative leaf, leaf-list or flag selection writes bare commands in
+    set and the note in structured. Justification for each: no Junos configuration nests past
+    about 28 levels counting groups or holds such keys or cycles; (d) is the approved
+    path-filtering requirement. Not a break, patch.
+15. A4 advisory: message-door rows added to `tests/contract/test_every_message.py`:
+    `read-xml-deep`, `cli-read-xml-deep`, `cli-validate-only-json-deep`,
+    `cli-validate-only-yaml-key` (withheld under `--anonymize-ips`, kind and path otherwise).
+16. A5 advisory: the main spec's "a key that is not a string named by its kind" is replaced
+    when the MODIFIED delta is applied at finalization.
+17. A6 advisory: `NonJsonValue.read_refusal` became a method; `junoscfg.input` is not the
+    `consumer` surface; callers and `docs/api/input.md` updated. No action.
+18. A1, A2, A3: pending owner decisions, below.
 
 ## Specification challenges
 
@@ -84,6 +111,37 @@ Fresh isolated Reviewer: pending, dispatched by the coordinator after the full c
   pipeline strips the selected key's annotation for a relative selection (about three lines
   in `junoscfg.convert.pipeline`), keeping an output the approved relative requirement calls
   wrong.
-- Decision: Pending owner decision. Interim action, fixed by the approved relative
-  requirement and needing no code of its own: the fix applies to relative selections too;
-  pinned by `TestPathFiltering::test_a_relative_leaf_selection_writes_its_tags_as_a_container_does`.
+- Decision: Pending owner decision. The fresh Reviewer judged that the new behaviour fulfils
+  the approved requirement: the archived relative-selections record states the invariant
+  ("relative set and structured, put back under the path's words, read as the absolute
+  output; set writes a bare command, structured notes the drop"), and keeping base output
+  would break it once absolute output carries the tags. Interim action, kept: the fix applies
+  to relative selections too; pinned by
+  `TestPathFiltering::test_a_relative_leaf_selection_writes_its_tags_as_a_container_does`.
+  Note for the owner: a bare `deactivate` at a leaf's edit level is not device-evidenced
+  (nor for a container; the approved relative design).
+
+## Pending owner decisions
+
+Recorded, not backlogged (no backlog entry without the owner):
+
+- SC1 (above): relative leaf, leaf-list and flag tags; interim the new behaviour.
+- A1 (Reviewer, executed): relative json, yaml and yaml-new selections of a tagged leaf write
+  the value alone and drop the tags without a note; relative structured does not note an
+  `active` tag or a comment. Pre-existing at base, as the approved requirement says ("value
+  alone"); the output loads the leaf active. Raise with SC1.
+- A2 (Reviewer, executed): per-value leaf-list tags (`"@domain-search": [null, {"inactive":
+  true}]`, JSON input) are dropped by the set and structured writers, for `--path system` and
+  at base too; json, yaml and yaml-new keep them. Not covered by `docs/BACKLOG.md`
+  MAKEOVER-14, which owns metadata on absent targets (NTP, hostname, securid-server) and
+  states the scalar/leaf-list target widening fixed; the set reader refuses per-value tags
+  (change reject-leaf-list-meta-values), the writers' drop of them from JSON or YAML is not
+  listed anywhere.
+- A3 (Reviewer, executed): leaf values are unconstrained in the JSON and YAML validation
+  schemas (`host-name: {1: x}` or 1,600 nested lists validate); why SC3 and B1 (a) exist.
+- C3 (preflight): an ancestor's tag on an absolute path (`deactivate system`, `--path
+  system.host-name`) is dropped; needs a device artefact.
+- SC3 (Test/Challenge): JSON validation now reports depth; Builder ruling, owner to confirm.
+- TC7 observation: the `yaml` writer writes a key holding NEL, LINE or PARAGRAPH SEPARATOR so
+  that it reads back with a space (the writer stays as it was, owner instruction 2026-10-15).
+- SC4 (Test/Challenge): a `yaml` date value; already `docs/BACKLOG.md` YAML-DATE-001.

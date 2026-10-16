@@ -5,36 +5,57 @@ type: bug
 zone: conversion
 domains: [conversion, validation]
 removes: >-
-  the `yaml` reader's and validator's walk of a mapping key that is not a string (it crashed
-  in the meta-key cleanup or in jsonschema, so nothing it accepted is lost); with it
-  `find_non_json_value`'s naming of such a key by its kind inside a path, which no refusal
-  reaches once every key is a string; and JSON and XML input's unbounded nesting, which
-  crashed junoscfg's own walks (or the PyYAML dump they feed) with RecursionError
+  the `yaml` reader's and validator's walk of a mapping key that is not a string (the reader
+  crashed on one; validation crashed in jsonschema, or judged it valid where the schema leaves
+  a leaf's value unconstrained, e.g. `host-name: {1: x}`); with it `find_non_json_value`'s
+  naming of such a key by its kind inside a path; `yaml` validation's acceptance of a cycle
+  or a value past 64 levels where the schema left them unread (e.g. `host-name` holding 70
+  nested lists); JSON and XML input's unbounded nesting, which converted up to a point (JSON
+  to about 448 levels, plain XML to 250, repeated-element XML to 163) and then crashed
+  junoscfg's walks or the PyYAML dump they feed, and JSON validation's "valid" for such a
+  document; and a relative leaf, leaf-list or flag selection's silent loss of its own tags in
+  set and structured output. None of these inputs is a Junos configuration: none nests past
+  about 28 levels counting groups, and none holds a cycle or a key that is not a string
 declared-break:
   consumer:
     why: >-
-      Not a break. convert_config, convert_config_result and validate_config change only
-      where they crashed or wrote a different configuration: a `yaml` document holding a
-      mapping key that is not a string raises ValueError (validation reports it invalid)
-      where it raised AttributeError or TypeError; JSON or XML nested deeper than 64 levels
-      raises ValueError where junoscfg raised RecursionError (JSON from about 450 levels, a
-      repeated XML element from about 164) and JSON validation reports it invalid where it
-      judged it valid (no Junos configuration nests past 26; the device corpus nests 17); and an absolute path= ending
-      at a leaf or a leaf-list keeps that statement's tags, as the parent selection writes
-      them, where it dropped them and wrote the statement active. No signature, name or
-      accepted configuration changes on the named surface. Patch, as AGENTS.md rules for
-      everything that is not a break.
+      Not a break. Every input whose result changes is one no Junos configuration can be: no
+      configuration nests past about 28 levels counting groups, and none holds a cycle or a
+      mapping key that is not a string. (a) `yaml` input or validation holding a key that is
+      not a string, a cycle, or a value past 64 levels: conversion raises ValueError where it
+      raised AttributeError, and validate_config(format="yaml") reports it invalid, including
+      where base judged it valid (a cycle; `host-name` holding 70 or 300 nested lists;
+      `host-name: {1: x}`, whose value the schema leaves unconstrained). (b) JSON or XML past
+      64 levels raises ValueError, including the range base still converted (JSON from 65 to
+      about 448 levels of nesting, plain XML to 250, an XML element repeated at each level to
+      163) before junoscfg's walks crashed with RecursionError. (c) JSON is refused wherever a
+      value passes 64 levels, outside `configuration` too, and validate_config(format="json")
+      reports it invalid where it judged it valid. (d) An absolute path= ending at a leaf,
+      leaf-list or flag keeps that statement's tags, as the parent selection writes them,
+      where it dropped them and wrote the statement active; a relative selection of one
+      writes its tags as the approved path-filtering requirement says for a tag on the
+      selected statement itself, as a selected container already did: bare `deactivate`,
+      `protect`, `activate` or `delete` commands in set output, the "N tag(s) of the selected
+      statement itself dropped" note in structured output (set put back under the path reads
+      as the absolute output). No signature, name or Junos configuration's result changes.
+      Patch, as AGENTS.md rules for everything that is not a break.
     migration: >-
-      None required. A caller relying on a key that is not a string in a `yaml` file quotes
-      it (`'64496':`), as junoscfg's own `yaml` writer always writes keys; a script comparing
-      the text of an absolute leaf selection updates its expected output, which now holds
-      the leaf's tags.
+      None for a Junos configuration. A `yaml` file with a key that is not a string quotes it
+      (`'64496':`), as junoscfg's own `yaml` writer always writes keys. A document nested past
+      64 levels, a cycle in YAML, or a value nested under a leaf is not a configuration; fix
+      the document. A script comparing the text of a leaf selection, absolute or relative,
+      updates its expected output, which now holds the leaf's tags or the structured note.
   cli:
     why: >-
-      Not a break, for the reasons given for consumer: junoscfg convert exits 2 with an
-      "Invalid input" message where it printed a traceback, and --path keeps a selected
-      leaf's tags; options and exit codes are unchanged.
-    migration: None required; a script comparing the text updates its expected output.
+      Not a break, for the reasons given for consumer: junoscfg convert and audit exit 2 with
+      an "Invalid input" message for (a) to (c) where they printed a traceback or, below the
+      crash range, converted; convert -v exits 1 with the error where it printed
+      "Validation: OK" and exit 0 (a cycle, depth or a non-string key in yaml; depth in JSON);
+      --path keeps a selected leaf's tags, and --path --relative writes them as (d) says;
+      options are unchanged.
+    migration: >-
+      None for a Junos configuration; quote a non-string `yaml` key, and update a script
+      comparing a leaf selection's text.
 verification:
   state: ready
   planned-paths:
