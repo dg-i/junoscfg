@@ -113,6 +113,7 @@ _VERBS = ("set ", "deactivate ", "protect ", "activate ", "delete ")
 
 
 def _every_device_line() -> list[str]:
+    """Every line of the private captures where they exist, and of the committed ones."""
     lines = {
         line
         for folder in PRIVATE_DATA.glob("jvd_derived_data*")
@@ -120,7 +121,7 @@ def _every_device_line() -> list[str]:
         if ".device." not in path.name
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.startswith(_VERBS)
-    } or {line for c in captures() for line in c.device_set()}
+    } | {line for c in captures() for line in c.device_set()}
     return sorted(lines)
 
 

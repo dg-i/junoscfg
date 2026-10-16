@@ -1,6 +1,8 @@
 """Choose the grammar corpus: few device set lines that exercise every rule the many do.
 
-Every `set` line a device printed in `tests/data/device/` is valid Junos. All of
+Every line a device printed in `tests/data/device/` is valid Junos: `set` and the
+verbs `deactivate`, `protect`, `activate` and `delete`, each a statement path
+the validator judges as `set` does, stopping before a value if it likes. All of
 them through the shipped Earley grammar take minutes, too long for the suite,
 so this tool parses each once, collects the grammar rules each line's parse
 uses, and picks lines greedily until every rule any device line uses is used
@@ -20,7 +22,7 @@ import sys
 from pathlib import Path
 
 from lark import Lark, Tree
-from lark.exceptions import UnexpectedInput
+from lark.exceptions import UnexpectedEOF, UnexpectedInput
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -32,29 +34,42 @@ from tests.support.paths import ARTIFACT_DIR, PRIVATE_DATA  # noqa: E402
 CORPUS = DEVICE_DATA / "grammar-corpus.json"
 
 
+#: Every verb a device's display set prints.
+VERBS = ("set ", "deactivate ", "protect ", "activate ", "delete ")
+
+
 def device_set_lines() -> dict[str, str]:
-    """Every distinct `set` line a device printed, with where it was first seen.
+    """Every distinct line a device printed, with where it was first seen.
 
     Drawn from every capture under private_test_data/ where it exists, the
     devices and configurations the repository does not carry included, so the
-    corpus covers what they exercise; from the committed captures otherwise.
+    corpus covers what they exercise, and from the committed captures.
     """
     found: dict[str, str] = {}
-    folders = sorted(PRIVATE_DATA.glob("jvd_derived_data*"))
-    if folders:
-        for folder in folders:
-            for path in sorted(folder.glob("*.set")):
-                if ".device." in path.name:
-                    continue
-                for line in path.read_text(encoding="utf-8").splitlines():
-                    if line.startswith("set "):
-                        found.setdefault(line, f"{folder.name}/{path.stem}")
-    else:
-        for capture in captures():
-            for line in capture.device_set():
-                if line.startswith("set "):
-                    found.setdefault(line, capture.key)
+    for folder in sorted(PRIVATE_DATA.glob("jvd_derived_data*")):
+        for path in sorted(folder.glob("*.set")):
+            if ".device." in path.name:
+                continue
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.startswith(VERBS):
+                    found.setdefault(line, f"{folder.name}/{path.stem}")
+    for capture in captures():
+        for line in capture.device_set():
+            if line.startswith(VERBS):
+                found.setdefault(line, capture.key)
     return dict(sorted(found.items()))
+
+
+def _parse(parser: Lark, line: str) -> Tree | None:
+    """The parse of *line* as the validator judges it; None for a statement path
+    a verb other than `set` stops before its value, which uses no rule of its own."""
+    verb, _, path = line.partition(" ")
+    try:
+        return parser.parse(f"set {path}")
+    except UnexpectedEOF:
+        if verb != "set":
+            return None
+        raise
 
 
 def _rules(tree: Tree) -> frozenset[str]:
@@ -70,9 +85,12 @@ def main() -> int:
     rejected = []
     for n, line in enumerate(sorted(lines), 1):
         try:
-            used[line] = _rules(parser.parse(line))
+            tree = _parse(parser, line)
         except UnexpectedInput:
             rejected.append(line)
+            continue
+        if tree is not None:
+            used[line] = _rules(tree)
         if n % 1000 == 0:
             print(f"{n}/{len(lines)}", file=sys.stderr)
     needed = frozenset().union(*used.values())
