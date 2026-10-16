@@ -1017,7 +1017,10 @@ class TestTheExampleConfigurationValidates:
         "the configuration loads without it",
     )
 
-    def test_the_example_validates_clean(self, json_config: str) -> None:
+    def test_every_statement_the_schema_places_validates(self, json_config: str) -> None:
+        """Every statement of the example: change device-validation placed the five
+        `UNPLACED_IN_THE_EXAMPLE` recorded and read the device's `end-range` and
+        `ieee-802.3ad`, which made the clean run a strict xfail beside this one."""
         result = validate_ir(to_dict(json_config, "json"))
         assert result.errors == []
         assert [(w.path, w.message) for w in result.warnings] == [self.RADIUS_SECRET]

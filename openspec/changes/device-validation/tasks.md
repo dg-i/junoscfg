@@ -32,6 +32,9 @@
   measurement): set changes only for newly placed statements (order) and
   `hello-padding-type` → `hello-padding`; structured writes newly placed statements as
   blocks; JSON/yaml-new move to the device's names and lists; no diagnostic added, 617 → 233.
+- [x] 2.6 Reconcile: the main spec `conversion/junos-json-yaml` names the renamed reader test
+  now (its Tests id only; the MODIFIED text lands at phase 7); the example's clean field
+  validation keeps the id `conversion/diagnostics` cites.
 
 ## 3. Review and evidence
 
