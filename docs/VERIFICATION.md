@@ -316,3 +316,16 @@ repeated, as no runtime file changed. Tests were added, none weakened; no covera
 review requirement changed. The activation-copy gap recorded for qfx-null-probes recurred:
 the two changes were admitted one after the other. The pending cadence invitation is
 retained; no owner feedback is inferred.
+
+Measurement (device-validation, before review round 2): the default-tier device-capture
+law (`tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted`,
+about 4 s of calls) and the verb and curly checks in `tests/corpus/test_set_corpus.py`
+(which already compiles the grammar) need no budget change. The full checkpoint passed in
+318.7 s cold at `73b317b` (schema-25.2 tiers selected; ordinary suite 68.4 s, 14,062 passed)
+and in 83.3 s warm at `a130c96` (both qualification proofs reused; suite 65.8 s), within
+the 400 s cold and 200 s warm targets. The first cold run at `77b313a` took 348 s with a
+98.4 s suite: `tools/verification-costs.json` priced `test_device_renderings.py` at 1.08 s
+where it measured 26 s serial, and one shard carried 83 s; repriced, the slowest shard
+carries 56.5 s. A no-schema run is not reachable for this change's diff (it changes schema
+inputs); its ordinary work is the warm run's. No tests, coverage, hooks or review
+requirements were removed.
