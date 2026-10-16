@@ -152,9 +152,9 @@ re-parsed. `yaml` is a second implementation: the IR dumped as YAML, read with
 what else it touches is listed in
 `docs/decisions/2026-10-15-yaml-new-before-renaming-yaml.md`. Input being trusted
 (below), `junoscfg.input.find_non_json_value` writes a shared block out however
-often it is reused and refuses only what junoscfg's own recursion cannot walk, a
-cycle and a value nested deeper than 64 levels, at every yaml-new door and in the
-`yaml` reader (`docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md`).
+often it is reused and refuses only what junoscfg's walks cannot take, a cycle, a value
+nested past 64 levels and a non-string key, at every yaml-new door, in the `yaml` reader
+and validation, and in the `json` and `xml` readers (`docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md`).
 
 **Generated artifacts are never hand-edited.** Everything under
 `validate/data/` comes from the XSD pipeline. A correction goes in

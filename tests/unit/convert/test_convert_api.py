@@ -180,6 +180,60 @@ _WRITERS = [Format.SET, Format.STRUCTURED, Format.JSON, Format.YAML, Format.YAML
 _WRITER_IDS = [writer.value for writer in _WRITERS]
 
 
+#: A deactivated and protected leaf, a deactivated leaf-list, a deactivated
+#: flag and an untagged sibling (owner request 2026-10-16, change
+#: own-crash-fixes; the flag Test/Challenge TC6).
+_TAGGED_LEAVES = (
+    "set system host-name r1\n"
+    "deactivate system host-name\n"
+    "protect system host-name\n"
+    "set system domain-name example.net\n"
+    "set system domain-search example.net\n"
+    "set system domain-search example.org\n"
+    "deactivate system domain-search\n"
+    "set system no-redirects\n"
+    "deactivate system no-redirects\n"
+)
+#: `_TAGGED_LEAVES` as Junos XML, written by hand.
+_TAGGED_LEAVES_XML = (
+    "<configuration><system>"
+    '<host-name inactive="inactive" protect="protect">r1</host-name>'
+    "<domain-name>example.net</domain-name>"
+    '<domain-search inactive="inactive">example.net</domain-search>'
+    '<domain-search inactive="inactive">example.org</domain-search>'
+    '<no-redirects inactive="inactive"/>'
+    "</system></configuration>"
+)
+#: Each selected statement of `_TAGGED_LEAVES` alone, with its tags.
+_TAGGED_ALONE = {
+    "system.host-name": (
+        "set system host-name r1\ndeactivate system host-name\nprotect system host-name\n"
+    ),
+    "system.domain-search": (
+        "set system domain-search example.net\nset system domain-search example.org\n"
+        "deactivate system domain-search\n"
+    ),
+    "system.no-redirects": "set system no-redirects\ndeactivate system no-redirects\n",
+}
+_TAGGED_READERS = [
+    Format.SET,
+    Format.STRUCTURED,
+    Format.JSON,
+    Format.YAML,
+    Format.YAML_NEW,
+    Format.XML,
+]
+
+
+def _tagged_leaves(reader: Format) -> str:
+    """`_TAGGED_LEAVES` in *reader*'s format."""
+    if reader is Format.XML:
+        return _TAGGED_LEAVES_XML
+    if reader is Format.SET:
+        return _TAGGED_LEAVES
+    return convert_config(_TAGGED_LEAVES, from_format=Format.SET, to_format=reader)
+
+
 def _put_back(output: str, fmt: Format, path: str) -> object:
     """The IR of relative *output* once it is put back under *path*."""
     tokens = path.split(".")
@@ -888,18 +942,13 @@ class TestPathFiltering:
 
     def test_a_relative_yaml_new_selection_is_measured_as_written(self) -> None:
         """The 64-level ceiling counts the document written: a relative selection
-        from its own root, as before this change (relative-selections R1)."""
-        source = json.dumps({"configuration": {"system": {"a": {"b": nested_ir(63)}}}})
+        from its own root, as before this change (relative-selections R1). No
+        reader gives an IR this deep since change own-crash-fixes, so the IR is
+        handed to the writer as the pipeline hands it, with the path."""
+        ir = {"system": {"a": {"b": nested_ir(63)}}}
 
         def written(path: str) -> str:
-            return convert_config(
-                source,
-                from_format=Format.JSON,
-                to_format=Format.YAML_NEW,
-                path=path,
-                relative=True,
-                validate=False,
-            )
+            return from_dict(ir, "yaml-new", below=path.split("."))
 
         assert yaml.safe_load(written("system.a.b")) == nested_ir(63)
         with pytest.raises(ValueError, match="is nested deeper than 64 levels"):
@@ -958,6 +1007,170 @@ class TestPathFiltering:
             + "    }\n}\n"
         )
         assert read_ir(put_back, Format.STRUCTURED) == read_ir(absolute, Format.STRUCTURED)
+
+    @pytest.mark.parametrize("path", sorted(_TAGGED_ALONE))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    @pytest.mark.parametrize("reader", _TAGGED_READERS, ids=[r.value for r in _TAGGED_READERS])
+    def test_an_absolute_leaf_selection_keeps_its_tags(
+        self, reader: Format, to_format: Format, path: str
+    ) -> None:
+        """A selected leaf or leaf-list keeps its own tags, as the selection of
+        its parent writes them, from every reader to every writer: they were
+        dropped, so the output loaded the statement active (owner request
+        2026-10-16, change own-crash-fixes)."""
+        source = _tagged_leaves(reader)
+        key = path.split(".")[-1]
+
+        def written(selected: str) -> Any:
+            return read_ir(
+                convert_config(source, from_format=reader, to_format=to_format, path=selected),
+                to_format,
+            )
+
+        parent = written("system")["system"]
+        assert "@" + key in parent
+        assert written(path) == {"system": {key: parent[key], "@" + key: parent["@" + key]}}
+
+    @pytest.mark.parametrize("path", sorted(_TAGGED_ALONE))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_leaf_selection_reads_as_its_statement_alone(
+        self, to_format: Format, path: str
+    ) -> None:
+        """Written absolute, a selected leaf reads back as the configuration that
+        holds only it and its tags, so it loads with the same meaning; in set
+        output its lines are the parent selection's lines for it."""
+        alone = convert_config(_TAGGED_ALONE[path], from_format=Format.SET, to_format=to_format)
+        selected = convert_config(
+            _TAGGED_LEAVES, from_format=Format.SET, to_format=to_format, path=path
+        )
+        assert read_ir(selected, to_format) == read_ir(alone, to_format)
+        if to_format is Format.SET:
+            words = " " + path.replace(".", " ") + " "
+            parent = convert_config(
+                _TAGGED_LEAVES, from_format=Format.SET, to_format=Format.SET, path="system"
+            )
+            mine = [line for line in parent.splitlines() if words in line + " "]
+            assert selected.splitlines() == mine
+
+    @pytest.mark.parametrize(
+        "to_format", [Format.JSON, Format.YAML, Format.YAML_NEW], ids=["json", "yaml", "yaml-new"]
+    )
+    def test_a_leaf_selection_keeps_every_meta_key(self, to_format: Format) -> None:
+        """Every key of the leaf's annotation is kept, a comment and an
+        operation as much as `inactive` and `protect`."""
+        annotation = {"inactive": True, "comment": "/* uplink */", "operation": "replace"}
+        source = json.dumps(
+            {
+                "configuration": {
+                    "system": {
+                        "host-name": "r1",
+                        "@host-name": annotation,
+                        "domain-name": "example.net",
+                    }
+                }
+            }
+        )
+        written = convert_config(
+            source, from_format=Format.JSON, to_format=to_format, path="system.host-name"
+        )
+        load = json.loads if to_format is Format.JSON else yaml.safe_load
+        assert load(written)["configuration"]["system"] == {
+            "host-name": "r1",
+            "@host-name": annotation,
+        }
+
+    @pytest.mark.parametrize(
+        ("path", "tagged"),
+        [
+            (
+                "interfaces.interface",
+                "set interfaces ge-0/0/0 description uplink\n"
+                "deactivate interfaces ge-0/0/0\nset interfaces ge-0/0/1 description down\n",
+            ),
+            (
+                "system.syslog",
+                "set system syslog file messages any any\n"
+                "deactivate system syslog\nset system host-name r1\n",
+            ),
+        ],
+        ids=["a-list-entry", "a-container"],
+    )
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_tagged_entry_or_container_at_the_path_end_keeps_its_tags(
+        self, to_format: Format, path: str, tagged: str
+    ) -> None:
+        """A list entry and a container hold their tags inside the selected value
+        and keep them, as before this change."""
+        selected = convert_config(tagged, from_format=Format.SET, to_format=to_format, path=path)
+        whole = read_ir(
+            convert_config(tagged, from_format=Format.SET, to_format=to_format), to_format
+        )
+        top, key = path.split(".")
+        assert read_ir(selected, to_format) == {top: {key: whole[top][key]}}
+        assert "inactive" in json.dumps(read_ir(selected, to_format))
+
+    @pytest.mark.parametrize("path", sorted(_TAGGED_ALONE))
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_relative_leaf_selection_writes_its_tags_as_a_container_does(
+        self, to_format: Format, path: str
+    ) -> None:
+        """Handed its tags, a leaf, leaf-list or flag selected relative follows
+        the relative rule for a tag on the selected statement itself, as a
+        selected container does: bare commands in set output, which put back
+        under the path read as the statement alone with its tags; dropped with a
+        note in structured output; the value alone in json, yaml and yaml-new
+        (base dropped the tags silently; specification challenge SC1, change
+        own-crash-fixes; Test/Challenge TC4)."""
+
+        def written(relative: bool) -> Any:
+            return convert_config_result(
+                _TAGGED_LEAVES,
+                from_format=Format.SET,
+                to_format=to_format,
+                path=path,
+                relative=relative,
+            )
+
+        result = written(True)
+        noted = any(
+            "tag(s) of the selected statement itself" in d.message for d in result.diagnostics
+        )
+        assert noted == (to_format is Format.STRUCTURED)
+        words = path.replace(".", " ")
+        if to_format is Format.SET:
+            put_back = "".join(
+                f"{line.split()[0]} {words} {' '.join(line.split()[1:])}".rstrip() + "\n"
+                for line in result.output.splitlines()
+            )
+            assert read_ir(put_back, Format.SET) == read_ir(_TAGGED_ALONE[path], Format.SET)
+        elif to_format is not Format.STRUCTURED:
+            load = json.loads if to_format is Format.JSON else yaml.safe_load
+            absolute = load(written(False).output)["configuration"]["system"]
+            assert load(result.output) == absolute[path.split(".")[-1]]
+
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_dotted_flag_keeps_its_tags(self, to_format: Format) -> None:
+        """The tags are found beside the key the path resolved, a key holding a
+        dot included, not beside its last dotted word (Test/Challenge TC6)."""
+        source = (
+            "set system services netconf ssh\nset system services netconf version-1.1\n"
+            "deactivate system services netconf version-1.1\n"
+        )
+        path = "system.services.netconf.version-1.1"
+        selected = convert_config(source, from_format=Format.SET, to_format=to_format, path=path)
+        netconf = read_ir(selected, to_format)["system"]["services"]["netconf"]
+        assert netconf == {"version-1.1": [None], "@version-1.1": {"inactive": True}}
+
+    def test_an_anonymized_leaf_selection_keeps_its_tags(self) -> None:
+        """An anonymizing conversion selects as any other (Test/Challenge TC8)."""
+        written = convert_config(
+            _TAGGED_LEAVES,
+            from_format=Format.SET,
+            to_format=Format.SET,
+            path="system.host-name",
+            anon_config=AnonymizeConfig(ips=True, salt="s"),
+        )
+        assert written == _TAGGED_ALONE["system.host-name"]
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):
@@ -1499,6 +1712,23 @@ class TestTheYamlWriterDumpsTheIr:
     The format matrix reads output back through the JSON writer, which would
     hide a `yaml` writer that normalized as JSON does."""
 
+    def test_every_key_it_writes_reads_back(self) -> None:
+        """The `yaml` reader refuses a key that is not a string, so the writer's
+        quoting carries every file junoscfg writes: a key YAML would read as a
+        number, a date, a boolean or null is quoted and reads back as written
+        (Test/Challenge TC7, change own-crash-fixes)."""
+        # The line breaks only YAML reads as breaks are the `yaml` writer's own
+        # matter (it stays as it was); this law is about keys of other types.
+        keys = [
+            k
+            for k in _TRICKY
+            if not k.startswith(("@", "_", "apply-")) and not set(k) & {"\x85", "\u2028", "\u2029"}
+        ]
+        keys += ["64496", "2026-10-15", "Null", "NO"]
+        source = json.dumps({"configuration": {"system": {key: "x" for key in keys}}})
+        written = convert_config(source, from_format=Format.JSON, to_format=Format.YAML)
+        assert to_dict(written, "yaml") == to_dict(source, "json")
+
     @pytest.mark.parametrize(
         ("source", "reader"),
         [
@@ -1513,10 +1743,99 @@ class TestTheYamlWriterDumpsTheIr:
         assert in_order(yaml.safe_load(written)) == in_order(expected)
 
 
+class TestJsonReader:
+    """JSON input takes the YAML readers' 64-level ceiling before junoscfg's own
+    walks meet it: past about 450 levels they crashed with RecursionError (owner
+    request 2026-10-16, change own-crash-fixes; decision
+    2026-10-15-yaml-nests-at-most-64-levels; spec conversion/junos-json-yaml)."""
+
+    @pytest.mark.parametrize(
+        ("document", "path"),
+        [
+            ({"configuration": {"system": nested_ir(63)}}, "configuration.system" + ".a" * 63),
+            ({"configuration": nested_ir(1600)}, "configuration" + ".a" * 64),
+            (
+                {"configuration": {"system": {"host-name": "r1"}}, "x": [nested_ir(64)]},
+                "x.0" + ".a" * 63,
+            ),
+        ],
+        ids=["sixty-five-deep", "sixteen-hundred-deep", "beside-the-configuration"],
+    )
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_value_past_64_levels_is_refused_at_its_path(
+        self, document: dict, path: str, to_format: Format
+    ) -> None:
+        """The first value more than 64 path steps below the document's root is
+        refused at its own path, never with a value, whatever the writer."""
+        with pytest.raises(ValueError) as raised:
+            convert_config(json.dumps(document), from_format=Format.JSON, to_format=to_format)
+        assert str(raised.value) == (
+            f"Invalid input: a JSON value at {path} is nested deeper than 64 levels"
+        )
+        assert "acme" not in str(raised.value)
+
+    def test_a_document_64_levels_deep_reads(self) -> None:
+        source = json.dumps({"configuration": {"system": nested_ir(62)}})
+        assert to_dict(source, "json")["system"] == nested_ir(62)
+        assert convert_config(source, from_format=Format.JSON, to_format=Format.YAML_NEW)
+        deeper = json.dumps({"configuration": {"system": nested_ir(63)}})
+        with pytest.raises(ValueError, match="a JSON value at configuration.system"):
+            to_dict(deeper, "json")
+
+
+def _repeated_xml(levels: int) -> str:
+    """XML whose every level repeats its element: a list and its entry, two IR
+    levels for one of XML (Test/Challenge SC2)."""
+    text = "acme"
+    for _ in range(levels):
+        text = f"<a>{text}</a><a>x</a>"
+    return f"<configuration><system>{text}</system></configuration>"
+
+
+class TestXmlReader:
+    """XML input takes the same 64-level ceiling: lxml reads 256 levels, and a
+    repeated element doubles them in the IR, past where junoscfg's `yaml` writer
+    crashed with RecursionError (Test/Challenge SC2; owner request 2026-10-16,
+    change own-crash-fixes: every input format under the same rule)."""
+
+    @pytest.mark.parametrize(
+        ("source", "path"),
+        [
+            (
+                "<configuration><system>"
+                + "<a>" * 63
+                + "acme"
+                + "</a>" * 63
+                + "</system></configuration>",
+                "configuration.system" + ".a" * 63,
+            ),
+            (_repeated_xml(200), "configuration.system" + ".a.0" * 31 + ".a"),
+        ],
+        ids=["sixty-five-deep", "a-repeated-element-200-deep"],
+    )
+    @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
+    def test_a_value_past_64_levels_is_refused_at_its_path(
+        self, source: str, path: str, to_format: Format
+    ) -> None:
+        with pytest.raises(ValueError) as raised:
+            convert_config(source, from_format=Format.XML, to_format=to_format)
+        assert str(raised.value) == (
+            f"Invalid input: an XML value at {path} is nested deeper than 64 levels"
+        )
+        assert "acme" not in str(raised.value)
+
+    def test_a_document_64_levels_deep_reads(self) -> None:
+        source = "<configuration><system>" + "<a>" * 62 + "acme" + "</a>" * 62
+        source += "</system></configuration>"
+        assert to_dict(source, "xml")["system"] == nested_ir(62)
+        assert convert_config(source, from_format=Format.XML, to_format=Format.YAML)
+
+
 class TestIrYamlReader:
-    """The `yaml` reader refuses what junoscfg's own recursion cannot walk, a
-    cycle and a value past 64 levels, and reads everything else as before
-    (owner ruling 2026-10-15 on C5; spec conversion/junos-json-yaml)."""
+    """The `yaml` reader refuses what junoscfg's own walks cannot take, a cycle,
+    a value past 64 levels and a key that is not a string, and reads everything
+    else as before (owner ruling 2026-10-15 on C5, owner request 2026-10-16;
+    spec conversion/junos-json-yaml)."""
 
     @pytest.mark.parametrize(
         ("source", "said"),
@@ -1593,25 +1912,72 @@ class TestIrYamlReader:
         ("source", "said"),
         [
             (
+                "configuration:\n  system:\n    host-name: r1\n  64496: x\n",
+                "a YAML int key at configuration has no JSON spelling",
+            ),
+            (
                 "configuration:\n  system: &s\n    2026-10-15: [*s]\n",
-                "a YAML cycle at configuration.system.<date key>.0 has no JSON spelling",
+                "a YAML date key at configuration.system has no JSON spelling",
             ),
             (
                 "configuration:\n  system:\n    64496: " + "[" * 62 + "x" + "]" * 62 + "\n",
-                "a YAML value at configuration.system.<int key>"
-                + ".0" * 62
-                + " is nested deeper than 64 levels",
+                "a YAML int key at configuration.system has no JSON spelling",
+            ),
+            (
+                "configuration:\n  system:\n    on: x\n",
+                "a YAML bool key at configuration.system has no JSON spelling",
+            ),
+            (
+                "configuration:\n  system:\n    ~: x\n",
+                "a YAML null key at configuration.system has no JSON spelling",
+            ),
+            (
+                "64496: x\nconfiguration:\n  system:\n    host-name: r1\n",
+                "a YAML int key at the top level has no JSON spelling",
             ),
         ],
-        ids=["a-date-key", "an-int-key"],
+        ids=[
+            "an-int-key",
+            "a-date-key",
+            "before-its-deep-value",
+            "an-unquoted-on",
+            "a-null-key",
+            "at-the-top",
+        ],
     )
     def test_a_key_that_is_not_a_string_is_named_by_its_kind(self, source: str, said: str) -> None:
-        """A refusal's path never holds a key's value: a key that is not a
-        string is named by its kind (Reviewer R3)."""
-        with pytest.raises(ValueError) as raised:
-            to_dict(source, "yaml")
-        assert str(raised.value) == "Invalid input: " + said
-        assert "2026" not in str(raised.value) and "64496" not in str(raised.value)
+        """Every stage after the reader takes a key as a statement name, and the
+        meta-key cleanup crashed on one that is not a string (`AttributeError`,
+        owner request 2026-10-16, change own-crash-fixes). It is refused at its
+        mapping's path, named by its kind and never by its value, before what it
+        holds is walked; it is not read as its string, which an unquoted `on`
+        (a statement the schema names) would turn into `True`."""
+        for read in (
+            lambda: to_dict(source, "yaml"),
+            lambda: convert_config(source, from_format=Format.YAML, to_format=Format.SET),
+        ):
+            with pytest.raises(ValueError) as raised:
+                read()
+            assert str(raised.value) == "Invalid input: " + said
+            assert "2026" not in str(raised.value) and "64496" not in str(raised.value)
+
+    def test_both_yaml_readers_refuse_a_key_alike(self) -> None:
+        """The two YAML readers refuse a key that is not a string with one message."""
+        source = "configuration:\n  system:\n    host-name: r1\n  64496: x\n"
+        said = []
+        for reader in ("yaml", "yaml-new"):
+            with pytest.raises(ValueError) as raised:
+                to_dict(source, reader)
+            said.append(str(raised.value))
+        assert said[0] == said[1]
+
+    def test_a_key_under_a_meta_key_is_not_walked(self) -> None:
+        """The cleanup drops `_ansible*` and `_meta_*` keys unwalked, so a key
+        that is not a string inside one is dropped with it, as before."""
+        source = "configuration:\n  system:\n    host-name: r1\n    _meta_acme: {64496: x}\n"
+        assert convert_config(source, from_format=Format.YAML, to_format=Format.SET) == (
+            "set system host-name r1\n"
+        )
 
     def test_a_shared_block_and_a_date_read_as_before(self) -> None:
         """Only cycles and depth are refused: a shared block reads written out,
@@ -2000,20 +2366,20 @@ class TestJunosYamlWriter:
         assert from_dict({"system": nested_ir(61, flag)}, "yaml-new")
 
     def test_json_input_past_64_levels_is_refused_as_yaml_new(self) -> None:
-        """Any reader's IR reaches the writer's ceiling: JSON input nesting past
-        64 levels converts to JSON as before and is refused as yaml-new with its
-        path; an anonymizing conversion withholds it, as for every writer
-        refusal (RuntimeError)."""
-        source = json.dumps({"configuration": {"system": nested_ir(65)}})
-        assert convert_config(source, from_format=Format.JSON, to_format=Format.JSON)
-        with pytest.raises(ValueError) as raised:
-            convert_config(source, from_format=Format.JSON, to_format=Format.YAML_NEW)
-        assert str(raised.value) == (
-            "Cannot write yaml-new: the value at configuration.system"
-            + ".a" * 63
-            + " is nested deeper than 64 levels"
-        )
-        with pytest.raises(RuntimeError) as withheld:
+        """JSON input nesting past 64 levels is refused by its reader, before any
+        writer, yaml-new included, walks it (owner request 2026-10-16, change
+        own-crash-fixes; it converted to JSON before); an anonymizing conversion
+        withholds the path, as for every refusal to read."""
+        source = json.dumps({"configuration": {"system": nested_ir(63)}})
+        for to_format in (Format.JSON, Format.YAML_NEW):
+            with pytest.raises(ValueError) as raised:
+                convert_config(source, from_format=Format.JSON, to_format=to_format)
+            assert str(raised.value) == (
+                "Invalid input: a JSON value at configuration.system"
+                + ".a" * 63
+                + " is nested deeper than 64 levels"
+            )
+        with pytest.raises(ValueError) as withheld:
             convert_config(
                 source,
                 from_format=Format.JSON,

@@ -14,7 +14,7 @@ import jsonschema
 import yaml
 
 from junoscfg.display import build_from_artifact
-from junoscfg.input import find_non_json_value
+from junoscfg.input import META_KEY_PREFIXES, NonJsonValue, find_non_json_value
 from junoscfg.validate import SchemaLoadError, ValidationError, ValidationResult
 
 
@@ -46,6 +46,9 @@ class JsonYamlValidator:
     def validate_json(self, source: str) -> ValidationResult:
         """Validate a JSON configuration.
 
+        A value nested deeper than 64 levels, which the ``json`` reader refuses,
+        is an error naming its path (`find_non_json_value`).
+
         Args:
             source: JSON configuration as a string.
 
@@ -63,10 +66,18 @@ class JsonYamlValidator:
                 errors=(ValidationError(message=f"JSON parse error: {e}", line=e.lineno),),
             )
 
+        found = find_non_json_value(data)
+        if found is not None:
+            return _refused(found, "JSON")
         return _validate_data(data, self._json_validator)
 
     def validate_yaml(self, source: str) -> ValidationResult:
-        """Validate a YAML configuration.
+        """Validate a YAML configuration (the format ``yaml``).
+
+        What the ``yaml`` reader refuses outside the ``_ansible*`` and
+        ``_meta_*`` keys, which the schema admits unread, is an error naming its
+        kind and path (`find_non_json_value`): a mapping key that is not a
+        string, a cycle, or a value nested deeper than 64 levels.
 
         Args:
             source: YAML configuration as a string.
@@ -85,6 +96,9 @@ class JsonYamlValidator:
         if data is None:
             return ValidationResult(valid=True)
 
+        found = find_non_json_value(data, scalars=False, unwalked=META_KEY_PREFIXES)
+        if found is not None:
+            return _refused(found, "YAML")
         return _validate_data(data, self._yaml_validator)
 
     def validate_yaml_as_json(self, source: str) -> ValidationResult:
@@ -114,16 +128,20 @@ class JsonYamlValidator:
 
         found = find_non_json_value(data)
         if found is not None:
-            return ValidationResult(
-                valid=False,
-                errors=(
-                    ValidationError(
-                        message=f"YAML {found.kind} {found.reason}",
-                        path=found.path or None,
-                    ),
-                ),
-            )
+            return _refused(found, "YAML")
         return _validate_data(data, self._json_validator)
+
+
+def _refused(found: NonJsonValue, label: str) -> ValidationResult:
+    """The invalid result for what the *label* reader refuses, by its kind and path."""
+    return ValidationResult(
+        valid=False,
+        errors=(
+            ValidationError(
+                message=f"{label} {found.kind} {found.reason}", path=found.path or None
+            ),
+        ),
+    )
 
 
 def _yaml_parse_error(error: yaml.YAMLError) -> ValidationResult:

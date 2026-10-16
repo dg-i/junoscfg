@@ -1,0 +1,92 @@
+schema: agent-ready
+created: 2026-10-16
+assurance: economy
+type: bug
+zone: conversion
+domains: [conversion, validation]
+removes: >-
+  the `yaml` reader's and validator's walk of a mapping key that is not a string (the reader
+  crashed on one; validation crashed in jsonschema, or judged it valid where the schema leaves
+  a leaf's value unconstrained, e.g. `host-name: {1: x}`); with it `find_non_json_value`'s
+  naming of such a key by its kind inside a path; `yaml` validation's acceptance of a cycle
+  or a value past 64 levels where the schema left them unread (e.g. `host-name` holding 70
+  nested lists); JSON and XML input's unbounded nesting, which converted up to a point (JSON
+  to about 448 levels, plain XML to 250, repeated-element XML to 163) and then crashed
+  junoscfg's walks or the PyYAML dump they feed, and JSON validation's "valid" for such a
+  document; and a relative leaf, leaf-list or flag selection's silent loss of its own tags in
+  set and structured output. None of these inputs is a Junos configuration: none nests past
+  about 28 levels counting groups, and none holds a cycle or a key that is not a string
+declared-break:
+  consumer:
+    why: >-
+      Not a break. Every input whose result changes is one no Junos configuration can be: no
+      configuration nests past about 28 levels counting groups, and none holds a cycle or a
+      mapping key that is not a string. (a) `yaml` input or validation holding a key that is
+      not a string, a cycle, or a value past 64 levels: conversion raises ValueError where it
+      raised AttributeError, and validate_config(format="yaml") reports it invalid, including
+      where base judged it valid (a cycle; `host-name` holding 70 or 300 nested lists;
+      `host-name: {1: x}`, whose value the schema leaves unconstrained). (b) JSON or XML past
+      64 levels raises ValueError, including the range base still converted (JSON from 65 to
+      about 448 levels of nesting, plain XML to 250, an XML element repeated at each level to
+      163) before junoscfg's walks crashed with RecursionError. (c) JSON is refused wherever a
+      value passes 64 levels, outside `configuration` too, and validate_config(format="json")
+      reports it invalid where it judged it valid. (d) An absolute path= ending at a leaf,
+      leaf-list or flag keeps that statement's tags, as the parent selection writes them,
+      where it dropped them and wrote the statement active; a relative selection of one
+      writes its tags as the approved path-filtering requirement says for a tag on the
+      selected statement itself, as a selected container already did: bare `deactivate`,
+      `protect`, `activate` or `delete` commands in set output, the "N tag(s) of the selected
+      statement itself dropped" note in structured output (set put back under the path reads
+      as the absolute output). No signature, name or Junos configuration's result changes.
+      Patch, as AGENTS.md rules for everything that is not a break.
+    migration: >-
+      None for a Junos configuration. A `yaml` file with a key that is not a string quotes it
+      (`'64496':`), as junoscfg's own `yaml` writer always writes keys. A document nested past
+      64 levels, a cycle in YAML, or a value nested under a leaf is not a configuration; fix
+      the document. A script comparing the text of a leaf selection, absolute or relative,
+      updates its expected output, which now holds the leaf's tags or the structured note.
+  cli:
+    why: >-
+      Not a break, for the reasons given for consumer: junoscfg convert and audit exit 2 with
+      an "Invalid input" message for (a) to (c) where they printed a traceback or, below the
+      crash range, converted; convert -v exits 1 with the error where it printed
+      "Validation: OK" and exit 0 (a cycle, depth or a non-string key in yaml; depth in JSON);
+      --path keeps a selected leaf's tags, and --path --relative writes them as (d) says;
+      options are unchanged.
+    migration: >-
+      None for a Junos configuration; quote a non-string `yaml` key, and update a script
+      comparing a leaf selection's text.
+verification:
+  state: ready
+  planned-paths:
+  - .agent-ready/activation.json
+  - ARCHITECTURE.md
+  - changelog.d/+own-crash-fixes.bugfix.md
+  - docs/api/input.md
+  - docs/decisions/2026-10-15-yaml-nests-at-most-64-levels.md
+  - docs/guide/conversion.md
+  - docs/guide/validation.md
+  - openspec/specs/conversion/junos-json-yaml/spec.md
+  - openspec/specs/conversion/path-filtering/spec.md
+  - openspec/specs/validation/junos-json-yaml/spec.md
+  - src/junoscfg/input.py
+  - src/junoscfg/input.CONTRACT.md
+  - src/junoscfg/convert/CONTRACT.md
+  - src/junoscfg/convert/input/json_input.py
+  - src/junoscfg/convert/input/xml_input.py
+  - src/junoscfg/convert/input/yaml_input.py
+  - tach.toml
+  - src/junoscfg/display/path_filter.py
+  - src/junoscfg/validate/json_yaml_validator.py
+  - tests/contract/test_every_message.py
+  - tests/corpus/test_device_renderings.py
+  - tests/unit/cli/test_audit_command.py
+  - tests/unit/cli/test_cli.py
+  - tests/unit/cli/test_cli_validate.py
+  - tests/unit/convert/test_convert_api.py
+  - tests/unit/display/test_display_filters.py
+  - tests/unit/input/test_input.py
+  - tests/unit/validate/test_json_yaml_validator.py
+  dependencies: [openspec/changes/archive/2026-10-15-relative-selections]
+  changelog: changelog.d/+own-crash-fixes.bugfix.md
+  generated-records: []

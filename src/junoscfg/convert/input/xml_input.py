@@ -12,12 +12,21 @@ def xml_to_dict(source: str) -> dict[str, Any]:
     ``{"configuration": ...}``).
 
     Raises:
-        ValueError: If the XML does not contain a configuration element.
+        ValueError: If the XML does not contain a configuration element, or if
+            its mapping holds a value nested deeper than 64 levels
+            (`find_non_json_value`), named by its path, never by its value,
+            before junoscfg's own walks meet it: a repeated element is a list
+            and its entry, two levels for one of XML.
     """
     from junoscfg.convert.ir import find_configuration
     from junoscfg.display import xml_to_dict as parse_xml
+    from junoscfg.input import find_non_json_value
 
-    config = find_configuration(parse_xml(source))
+    data = parse_xml(source)
+    found = find_non_json_value(data)
+    if found is not None:
+        raise ValueError(found.read_refusal("XML"))
+    config = find_configuration(data)
     if config is None:
         raise ValueError("No 'configuration' element found in XML input.")
     return config

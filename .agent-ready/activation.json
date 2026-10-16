@@ -1,5 +1,5 @@
 {
-  "actor": "Claude qfx-null-probes finalizer",
+  "actor": "Claude own-crash-fixes finalizer",
   "authority": "Owner-authorized local integration completed (2026-10-16); park this completed change and branch while preserving all unrelated dispositions.",
   "branches": {
     "agent-ready/onboarding": "parked",
@@ -94,7 +94,7 @@
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
     "master": "ready"
   },
-  "captured_at": "2026-10-16T00:28:33.247884+00:00",
+  "captured_at": "2026-10-16T01:24:33.494337+00:00",
   "changes": {
     "adopt-refresh-verification": "parked",
     "adopt-workflow-economy": "parked",

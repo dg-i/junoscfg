@@ -40,9 +40,16 @@ def json_to_dict(source: str) -> dict[str, Any]:
     ``{"configuration": ...}``).
 
     Raises:
-        ValueError: If the JSON does not contain a configuration dict.
+        ValueError: If the JSON holds a value nested deeper than 64 levels
+            (`find_non_json_value`), named by its path, never by its value,
+            before junoscfg's own walks meet it; or if it does not contain a
+            configuration dict.
     """
-    return ir_from_junos_json_object(json.loads(source), label="JSON")
+    data = json.loads(source)
+    found = find_non_json_value(data)
+    if found is not None:
+        raise ValueError(found.read_refusal("JSON"))
+    return ir_from_junos_json_object(data, label="JSON")
 
 
 def junos_yaml_to_dict(source: str) -> dict[str, Any]:
@@ -66,5 +73,5 @@ def junos_yaml_to_dict(source: str) -> dict[str, Any]:
     data = yaml.safe_load(source)
     found = find_non_json_value(data)
     if found is not None:
-        raise ValueError(found.read_refusal)
+        raise ValueError(found.read_refusal("YAML"))
     return ir_from_junos_json_object(unshared(data), label="YAML")

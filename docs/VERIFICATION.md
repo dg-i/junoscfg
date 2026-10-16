@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: e6a8389da9e28f611f0bf3262f56ace166524065 (post-merge, pre-archive assessment).
+- Observed integration head: 25938594a7386a739ca080792e605e9666a976f3 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: e6a8389da9e28f611f0bf3262f56ace166524065.
-- Invitation status: pending; 86 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: 25938594a7386a739ca080792e605e9666a976f3.
+- Invitation status: pending; 88 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -304,4 +304,15 @@ cold / 200s warm targets. No tests, coverage, hooks or review requirements chang
 observed, not repaired here: every worktree must commit the shared activation copy, so two
 ready changes always both plan `.agent-ready/activation.json` and readiness refuses one;
 the parallel session parked its changes for this run. The pending cadence invitation is
+retained; no owner feedback is inferred.
+
+Job completion (own-crash-fixes): local merge `2593859` fixes three defects in junoscfg's own
+conversion code (a non-string `yaml` key, JSON and XML past 64 levels, an absolute leaf
+selection's tags). The full checkpoint at `85df3e9` passed in 347s (13,703 passed;
+schema-25.2 tiers selected by `json_input.py`), within the unchanged 400s cold / 200s warm
+targets; after the review's record fixes and four message-door rows (`0cc3649`) the affected
+tests and `agent-ready check --set fast` passed (247s) and the full checkpoint was not
+repeated, as no runtime file changed. Tests were added, none weakened; no coverage, hook or
+review requirement changed. The activation-copy gap recorded for qfx-null-probes recurred:
+the two changes were admitted one after the other. The pending cadence invitation is
 retained; no owner feedback is inferred.
