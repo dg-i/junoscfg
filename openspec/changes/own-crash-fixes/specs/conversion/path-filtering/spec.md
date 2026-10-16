@@ -9,9 +9,13 @@ the writer that annotation beside the selected key, so every writer writes the s
 tags as the selection of its parent writes them, from every reader: the output reads back as
 the IR holding only the selected statement and its annotation, and loads with the same
 meaning. A container and a list entry hold their tags inside the selected value and keep
-them as before. A relative selection is written as the requirement above says, unchanged by
-this one. Tags of an ancestor on the path are outside this requirement.
-Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_absolute_leaf_selection_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_leaf_selection_reads_as_its_statement_alone`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_tagged_entry_or_container_at_the_path_end_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_is_written_as_before`, `tests/unit/display/test_display_filters.py::TestFilterDictByPath::test_a_selected_leaf_keeps_its_annotation`, `tests/unit/cli/test_cli.py::TestPathOptions::test_path_keeps_a_selected_leafs_tags`
+them as before. A relative selection hands the writer the same IR and the path: a selected
+leaf's tags are then a tag on the selected statement itself, written as the relative
+requirement above says and as a selected container's are (a bare command in set output,
+dropped with a note in structured output, the value alone in json, yaml and yaml-new), where
+base dropped them silently (specification challenge SC1, pending owner decision). Tags of
+an ancestor on the path are outside this requirement.
+Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_absolute_leaf_selection_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_leaf_selection_reads_as_its_statement_alone`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_tagged_entry_or_container_at_the_path_end_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_writes_its_tags_as_a_container_does`, `tests/unit/display/test_display_filters.py::TestFilterDictByPath::test_a_selected_leaf_keeps_its_annotation`, `tests/unit/cli/test_cli.py::TestPathOptions::test_path_keeps_a_selected_leafs_tags`
 
 #### Scenario: A deactivated host name
 
@@ -27,3 +31,8 @@ Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_absol
 
 - **WHEN** `interfaces.interface` holds a deactivated entry, or `system.syslog` is deactivated, and the path ends there
 - **THEN** the tag is written as before this change
+
+#### Scenario: A tagged leaf selected relative
+
+- **WHEN** the deactivated, protected `system.host-name` is selected relative and written as set
+- **THEN** the output is `set r1`, `deactivate`, `protect`, which put back under `system host-name` reads as the absolute output

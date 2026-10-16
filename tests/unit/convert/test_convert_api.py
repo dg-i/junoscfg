@@ -937,13 +937,16 @@ class TestPathFiltering:
 
     def test_a_relative_yaml_new_selection_is_measured_as_written(self) -> None:
         """The 64-level ceiling counts the document written: a relative selection
-        from its own root, as before this change (relative-selections R1)."""
-        source = json.dumps({"configuration": {"system": {"a": {"b": nested_ir(63)}}}})
+        from its own root, as before this change (relative-selections R1). The
+        IR comes from XML, whose reader admits it; JSON's refuses it since
+        change own-crash-fixes."""
+        source = "<configuration><system><a><b>" + "<a>" * 63 + "acme" + "</a>" * 63
+        source += "</b></a></system></configuration>"
 
         def written(path: str) -> str:
             return convert_config(
                 source,
-                from_format=Format.JSON,
+                from_format=Format.XML,
                 to_format=Format.YAML_NEW,
                 path=path,
                 relative=True,
@@ -1110,29 +1113,44 @@ class TestPathFiltering:
         assert "inactive" in json.dumps(read_ir(selected, to_format))
 
     @pytest.mark.parametrize(
-        ("to_format", "expected"),
+        ("to_format", "expected", "note"),
         [
-            (Format.JSON, '"r1"\n'),
-            (Format.YAML, "r1\n...\n"),
-            (Format.YAML_NEW, "r1\n...\n"),
-            (Format.SET, "set r1\n"),
-            (Format.STRUCTURED, "r1;\n"),
+            (Format.JSON, '"r1"\n', False),
+            (Format.YAML, "r1\n...\n", False),
+            (Format.YAML_NEW, "r1\n...\n", False),
+            (Format.SET, "set r1\ndeactivate\nprotect\n", False),
+            (Format.STRUCTURED, "r1;\n", True),
         ],
+        ids=["json", "yaml", "yaml-new", "set", "structured"],
     )
-    def test_a_relative_leaf_selection_is_written_as_before(
-        self, to_format: Format, expected: str
+    def test_a_relative_leaf_selection_writes_its_tags_as_a_container_does(
+        self, to_format: Format, expected: str, note: bool
     ) -> None:
-        """Relative selections are outside the change that keeps an absolute
-        leaf's tags (owner request 2026-10-16): a tagged leaf selected relative
-        is written as at base."""
-        result = convert_config(
+        """Handed its tags, a leaf selected relative follows the relative rule
+        for a tag on the selected statement itself, as a selected container
+        does: a bare command in set output, which put back under the path reads
+        as the absolute output; dropped with a note in structured output; the
+        value alone in json, yaml and yaml-new (base dropped the tags silently;
+        specification challenge SC1, change own-crash-fixes)."""
+        result = convert_config_result(
             _TAGGED_LEAVES,
             from_format=Format.SET,
             to_format=to_format,
             path="system.host-name",
             relative=True,
         )
-        assert result == expected
+        assert result.output == expected
+        assert note == any(
+            "tag(s) of the selected statement itself" in d.message for d in result.diagnostics
+        )
+        if to_format is Format.SET:
+            put_back = "".join(
+                f"{line.split()[0]} system host-name {' '.join(line.split()[1:])}".rstrip() + "\n"
+                for line in result.output.splitlines()
+            )
+            assert read_ir(put_back, Format.SET) == read_ir(
+                _TAGGED_ALONE["system.host-name"], Format.SET
+            )
 
     def test_relative_without_path_raises(self) -> None:
         with pytest.raises(ValueError, match="relative.*requires.*path"):

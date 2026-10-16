@@ -87,7 +87,27 @@ None blocking. C3 (ancestor tags) is reported to the owner as a pending decision
 
 ## Delta log
 
-- Freeze established: proposal `0d5dc84`, deltas and codemap in this commit.
+- Freeze established: proposal `0d5dc84`, deltas and codemap `291f427`.
+- Tests `5c513a9` (red run `red-run.txt`, every new test failing for its defect, guards
+  passing): two test ids kept rather than renamed so the main specs' `Tests:` lines still
+  resolve (`test_without_scalars_only_a_cycle_or_depth_is_refused` keeps only string keys,
+  keys move to `test_without_scalars_a_key_that_is_not_a_string_is_refused`;
+  `test_a_key_that_is_not_a_string_is_named_by_its_kind` now pins the refusal). No criterion
+  changes.
+- Implementation: the relative guard failed for set (`set r1` became `set r1`, `deactivate`,
+  `protect`): the acceptance criterion "every relative output identical" conflicts with the
+  approved relative requirement. Recorded as SC1 (review.md), pending owner decision; interim
+  action fixed by that requirement; the guard became
+  `test_a_relative_leaf_selection_writes_its_tags_as_a_container_does` and the delta says so.
+  `test_a_relative_yaml_new_selection_is_measured_as_written` reads its 67-level IR from XML,
+  since the JSON reader now refuses it (its assertion unchanged).
+- Probes at head: absolute outputs differ in 25 of 2,875 selections, each adding exactly the
+  last key's sibling annotation (21 object outputs verified structurally,
+  `verify_tag_only.py`; set and structured add the `deactivate` of the `l3vpn` flag);
+  relative outputs differ in 2 (SC1). Depth matrix: JSON refused with ValueError at every
+  depth past 64 in every writer, every other row unchanged (`depth-base.txt`,
+  `depth-head.txt`). JSON reader on the largest capture (220 KB): `to_dict` 2.8 to 4.2 ms,
+  json to set 9.3 to 10.5 ms (`perf.txt`).
 
 ## Scope and completion
 

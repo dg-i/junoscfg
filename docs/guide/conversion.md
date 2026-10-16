@@ -228,6 +228,12 @@ writes nothing. A key holding a dot (`ieee-802.1`, `inet.0`) is matched as writt
 the exact key first. Structured output notes a tag on the selected statement itself,
 which it cannot write without the path; set writes it as a bare command.
 
+An absolute selection (`--path` without `--relative`) keeps the tags of the statement
+it ends at: `--path system.host-name` of a deactivated host name writes
+`set system host-name r1` and `deactivate system host-name`, as `--path system`
+writes them, in every format. Selected relative, a leaf's tags are a tag on the
+selected statement itself, as above.
+
 ## Operational Attributes
 
 Junos configurations carry operational attributes — `inactive:`, `replace:`,
@@ -288,9 +294,15 @@ Quote such words in hand-written files (`location: 'on'`); junoscfg's own output
 quotes them. `.inf` and `.nan` are read as JSON input reads `Infinity` and `NaN`.
 
 YAML that is detected rather than named with `-i` is read as `yaml`. The `yaml`
-reader refuses a cycle and a value nested more than 64 levels deep the same way,
-with the same message (its IR is the JSON dictionary, hence "has no JSON
-spelling"), except inside the `_ansible_*` and `_meta_*` keys it drops unread.
+reader refuses a cycle, a value nested more than 64 levels deep and a key that is
+not a string (`64496: x`, an unquoted `on: x`) the same way, with the same message
+(its IR is the JSON dictionary, hence "has no JSON spelling"), except inside the
+`_ansible_*` and `_meta_*` keys it drops unread; quote such a key (`'64496': x`), as
+junoscfg's own `yaml` output does. `-v -i yaml` reports them as errors.
+
+JSON input nested more than 64 levels deep is refused with its path in the same
+way ("a JSON value at ... is nested deeper than 64 levels"); no Junos configuration
+nests deeper than about 26 levels.
 
 ### Moving a YAML file to yaml-new
 

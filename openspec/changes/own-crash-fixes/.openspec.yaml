@@ -52,7 +52,7 @@ verification:
   - src/junoscfg/convert/CONTRACT.md
   - src/junoscfg/convert/input/json_input.py
   - src/junoscfg/convert/input/yaml_input.py
-  - src/junoscfg/display/CONTRACT.md
+  - tach.toml
   - src/junoscfg/display/path_filter.py
   - src/junoscfg/validate/json_yaml_validator.py
   - tests/contract/test_every_message.py

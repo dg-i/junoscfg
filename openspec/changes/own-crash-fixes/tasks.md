@@ -5,10 +5,10 @@
 
 ## 2. Change
 
-- [ ] 2.1 Key rule: `find_non_json_value` refuses a key that is not a string whatever `scalars`; the `yaml` reader and `yaml` validation refuse it with yaml-new's wording.
-- [ ] 2.2 JSON depth: the JSON reader refuses a value past 64 levels through `find_non_json_value`, labelled JSON.
-- [ ] 2.3 Leaf tags: `display.filter_dict_by_path` keeps the selected key's sibling annotation in an absolute selection.
-- [ ] 2.4 Records: contracts, decision 2026-10-15-yaml-nests-at-most-64-levels, ARCHITECTURE.md, guides, API page, changelog fragment.
+- [x] 2.1 Key rule: `find_non_json_value` refuses a key that is not a string whatever `scalars`; the `yaml` reader and `yaml` validation refuse it with yaml-new's wording.
+- [x] 2.2 JSON depth: the JSON reader refuses a value past 64 levels through `find_non_json_value`, labelled JSON.
+- [x] 2.3 Leaf tags: `display.filter_dict_by_path` keeps the selected key's sibling annotation in an absolute selection.
+- [x] 2.4 Records: contracts, decision 2026-10-15-yaml-nests-at-most-64-levels, ARCHITECTURE.md, guides, API page, changelog fragment.
 - [ ] 2.5 Evidence: depth matrix and selection probe at head against base; performance of the JSON reader on the largest capture.
 - [ ] 2.6 Canonical full checkpoint on a committed snapshot.
 
