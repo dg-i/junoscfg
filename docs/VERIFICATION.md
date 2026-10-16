@@ -7,12 +7,12 @@ Measurements, owner decisions and agent judgments are distinguished below.
 
 - Integration branch: master.
 - Interval: 10 first-parent commits.
-- Observed integration head: 1a79527025466ae0b2ad1c2d3972f0159878b110 (post-merge, pre-archive assessment).
+- Observed integration head: e6a8389da9e28f611f0bf3262f56ace166524065 (post-merge, pre-archive assessment).
 - Cadence anchor SHA: 95585fbf1cd59fe4b9cb15be870f6a5020be49a3.
 - Last reviewed SHA: NONE (initial adoption, not a completed cadence review).
 - Last declined SHA: NONE.
-- Pending assessment head: 1a79527025466ae0b2ad1c2d3972f0159878b110.
-- Invitation status: pending; 84 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
+- Pending assessment head: e6a8389da9e28f611f0bf3262f56ace166524065.
+- Invitation status: pending; 86 first-parent commits at the post-merge assessment. The retained anchor and invitation survive adoption.
 
 ## Feedback stages
 
@@ -295,3 +295,13 @@ checkpoint at `433bf4d` passed in 337s (schema-25.2 tiers selected by the two co
 edits), within the unchanged 400s cold / 200s warm targets. No tests, coverage, hooks or
 review requirements changed. The pending cadence invitation is retained; no owner feedback
 is inferred.
+
+Job completion (qfx-null-probes): local merge `e6a8389` adds the `json-null-probes` device
+probe source and the importer's JSON-source and awaiting-capture support; repository
+tooling and test data only. The full checkpoint at `2d4d978` passed in 351s (schema-25.2
+tiers selected by the new `.json.gz` under `tests/data/device`), within the unchanged 400s
+cold / 200s warm targets. No tests, coverage, hooks or review requirements changed. Gap
+observed, not repaired here: every worktree must commit the shared activation copy, so two
+ready changes always both plan `.agent-ready/activation.json` and readiness refuses one;
+the parallel session parked its changes for this run. The pending cadence invitation is
+retained; no owner feedback is inferred.
