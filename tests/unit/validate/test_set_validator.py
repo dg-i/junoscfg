@@ -79,6 +79,38 @@ class TestSetValidator:
             SetValidator("/nonexistent/grammar.lark")
 
 
+class TestEveryVerbIsValidated:
+    """Every verb the set reader reads names a statement path the grammar judges.
+
+    The device's display set prints `protect groups GR-PROTECTED` (vMX 23.2R2-S7.5 and
+    QFX5120 25.2R2-S1.5, `junoscfg-oracle.set.gz`); the validator took `set` and
+    `deactivate` only and called every `protect` line no set command (change
+    device-validation).
+    """
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    def test_a_verb_line_is_validated_as_its_path(self, validator: SetValidator, verb: str) -> None:
+        source = f"set system host-name router1\n{verb} system host-name router1\n"
+        assert validator.validate(source).valid
+        assert validate_set(source).valid
+        assert validate_config(source, format=Format.SET).valid
+
+    @pytest.mark.parametrize("verb", ["deactivate", "protect", "activate", "delete"])
+    def test_an_invalid_path_after_a_verb_is_reported(
+        self, validator: SetValidator, verb: str
+    ) -> None:
+        result = validator.validate(f"{verb} bogus nonexistent")
+        assert not result.valid
+        assert result.errors[0].message == f"Invalid syntax: {verb} bogus nonexistent"
+
+    def test_a_long_line_is_reported_whole(self, validator: SetValidator) -> None:
+        """The owner's log showed `port 3276` for `port 32767`: the line was cut at 80."""
+        line = "set interfaces description " + "x" * 70 + " trailing-word 32767"
+        result = validator.validate(line)
+        assert not result.valid
+        assert result.errors[0].message == f"Invalid syntax: {line}"
+
+
 def _bracket_error(line: str, lineno: int = 1) -> ValidationError:
     return ValidationError(
         message=f"Unsupported bracket syntax in set input on line {lineno}:\n{line}",

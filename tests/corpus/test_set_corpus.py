@@ -108,6 +108,10 @@ class TestTheGrammarRefusesWhatIsNotJunos:
         assert not validator.validate(line).valid, OVER_REJECTED[line]
 
 
+#: Every verb a device's display set prints, each validated as its statement path.
+_VERBS = ("set ", "deactivate ", "protect ", "activate ", "delete ")
+
+
 def _every_device_line() -> list[str]:
     lines = {
         line
@@ -115,8 +119,8 @@ def _every_device_line() -> list[str]:
         for path in folder.glob("*.set")
         if ".device." not in path.name
         for line in path.read_text(encoding="utf-8").splitlines()
-        if line.startswith("set ")
-    } or {line for c in captures() for line in c.device_set() if line.startswith("set ")}
+        if line.startswith(_VERBS)
+    } or {line for c in captures() for line in c.device_set()}
     return sorted(lines)
 
 

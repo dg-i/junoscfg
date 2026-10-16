@@ -143,6 +143,8 @@ class TestArtifactBuilder:
 # arrives without one.
 _VALUE_FLAG_SAMPLES = {
     "t": "interface",
+    # A renamed element's name in XML and JSON (spec schema-pipeline/conversion-hints).
+    "x": "end-range",
 }
 
 

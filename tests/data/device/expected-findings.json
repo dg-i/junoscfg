@@ -1,0 +1,99 @@
+{
+  "about": "What junoscfg's validators report on each device capture (tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted). A device loaded every statement of a capture, so each finding is recorded with its class; a finding not recorded fails the law, and so does a recorded one that is gone. Doors: `field` is field validation of the rendering read by its own reader; `schema` is `validate_config` of the device's JSON rendering; `json-output` is `validate_config` of junoscfg's JSON output of the rendering. A key is `<path> :: <message>`.",
+  "classes": {
+    "mandatory-the-device-warns": {
+      "definition": "a statement the XSD marks mandatory is absent; the device loads the configuration and warns about it too (`## Warning: missing mandatory statement(s)` in its curly rendering), so the finding is the configuration's own",
+      "severity": "warning"
+    },
+    "mandatory-open": {
+      "definition": "a statement the XSD marks mandatory is absent and the device printed no warning for it; whether `commit check` passes is an open device question (hold-time with only `down`)",
+      "severity": "warning"
+    }
+  },
+  "findings": {
+    "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.conf": {
+      "field": {
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+      }
+    },
+    "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.json": {
+      "field": {
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+      }
+    },
+    "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.set": {
+      "field": {
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+      }
+    },
+    "jvd/vmx-23.2R2-S7.5/mdr1_acx7509.xml": {
+      "field": {
+        "groups.interfaces.hold-time.up :: Missing mandatory field 'up': may be required at commit; the configuration loads without it": "mandatory-open"
+      }
+    },
+    "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.conf": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.json": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.set": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/qfx5120-25.2R2-S1.5/junoscfg-oracle.xml": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.conf": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.json": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.set": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/junoscfg-oracle.xml": {
+      "field": {
+        "access.profile.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/synthetic-probes.conf": {
+      "field": {
+        "access.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns",
+        "event-options.policy.then :: Missing mandatory field 'then': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/synthetic-probes.json": {
+      "field": {
+        "access.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns",
+        "event-options.policy.then :: Missing mandatory field 'then': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/synthetic-probes.set": {
+      "field": {
+        "access.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns",
+        "event-options.policy.then :: Missing mandatory field 'then': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    },
+    "synthetic/vmx-23.2R2-S7.5/synthetic-probes.xml": {
+      "field": {
+        "access.radius-server.secret :: Missing mandatory field 'secret': may be required at commit; the configuration loads without it": "mandatory-the-device-warns",
+        "event-options.policy.then :: Missing mandatory field 'then': may be required at commit; the configuration loads without it": "mandatory-the-device-warns"
+      }
+    }
+  }
+}

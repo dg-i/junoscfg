@@ -85,19 +85,6 @@ class TestTheConverterOutputValidates:
         assert not bundled_validator.validate_json(rendered).errors
 
 
-_SCHEMA_GAPS = (
-    "PRODUCT DEFECT: no known-differences class (set renderings keep them): the shipped "
-    "schema cannot place five statements both devices loaded; tests/support/devices.py "
-    "UNPLACED_IN_THE_EXAMPLE"
-)
-_JSON_SHAPES = (
-    "PRODUCT DEFECT: no known-differences class: besides UNPLACED_IN_THE_EXAMPLE, the device "
-    "JSON's interface-range `member-range ... end-range` (both releases print it; the schema "
-    "and the XML reader say `to`), its one-entry arrays for `srgb-label-range` and an inactive "
-    "port-mirroring `routing-instance`, which the schema takes as scalars"
-)
-
-
 class TestTheExampleRendersValid:
     """The example a vMX printed, read and written by junoscfg, is one junoscfg accepts.
 
@@ -120,13 +107,7 @@ class TestTheExampleRendersValid:
         assert not errors, errors[:2]
 
     @pytest.mark.parametrize("fmt", _SCHEMA_FORMATS, ids=_SCHEMA_IDS)
-    @pytest.mark.parametrize(
-        "suffix",
-        [
-            pytest.param("xml", marks=pytest.mark.xfail(strict=True, reason=_SCHEMA_GAPS)),
-            pytest.param("json", marks=pytest.mark.xfail(strict=True, reason=_JSON_SHAPES)),
-        ],
-    )
+    @pytest.mark.parametrize("suffix", ["xml", "json"])
     def test_the_example_renders_valid(
         self, suffix: str, fmt: Format, bundled_validator: Any
     ) -> None:

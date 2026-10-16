@@ -22,6 +22,7 @@ from tests.support.paths import TEST_DATA
 
 DEVICE_DATA = TEST_DATA / "device"
 KNOWN_DIFFERENCES = DEVICE_DATA / "known-differences.json"
+EXPECTED_FINDINGS = DEVICE_DATA / "expected-findings.json"
 #: Rendering suffix -> the format junoscfg reads it as.
 FORMATS = {"conf": Format.STRUCTURED, "json": Format.JSON, "set": Format.SET, "xml": Format.XML}
 _STATEMENT = ("set ", "deactivate ", "protect ", "activate ")
@@ -86,6 +87,12 @@ def captures() -> tuple[Capture, ...]:
 def known_differences() -> dict:
     """The recorded differences and their classes."""
     return json.loads(KNOWN_DIFFERENCES.read_text(encoding="utf-8"))
+
+
+@cache
+def expected_findings() -> dict:
+    """What the validators report on each capture, with each finding's class."""
+    return json.loads(EXPECTED_FINDINGS.read_text(encoding="utf-8"))
 
 
 def recorded(capture: Capture, suffix: str) -> dict[str, list[str]]:

@@ -20,8 +20,21 @@ from typing import Any
 import pytest
 import yaml
 
-from junoscfg import Format, convert_config
-from tests.support.devices import DEVICE_DATA, FORMATS, captures, known_differences, recorded
+from junoscfg import (
+    FieldValidationError,
+    Format,
+    convert_config,
+    convert_config_result,
+    validate_config,
+)
+from tests.support.devices import (
+    DEVICE_DATA,
+    FORMATS,
+    captures,
+    expected_findings,
+    known_differences,
+    recorded,
+)
 from tests.support.shapes import in_order, read_ir
 
 CASES = [
@@ -152,6 +165,103 @@ class TestJunosYamlIsTheDevicesJson:
             assert convert_config(
                 spelled, from_format=Format.YAML_NEW, to_format=writer, validate=False
             ) == convert_config(source, from_format=Format.JSON, to_format=writer, validate=False)
+
+
+def _findings(capture: Any, suffix: str) -> dict[str, set[str]]:
+    """What each validation door reports on one rendering, as `<path> :: <message>`.
+
+    One conversion gives the field findings and junoscfg's JSON output; the
+    device's own JSON is also judged by the JSON schema.
+    """
+    source = capture.rendering(suffix)
+    result = convert_config_result(source, from_format=FORMATS[suffix], to_format=Format.JSON)
+    found = {
+        "field": {
+            f"{d.path} :: {d.message}" for d in result.diagnostics if d.source == "field-validate"
+        },
+        "json-output": _schema_findings(result.output),
+    }
+    if suffix == "json":
+        found["schema"] = _schema_findings(source)
+    return {door: lines for door, lines in found.items() if lines}
+
+
+def _schema_findings(text: str) -> set[str]:
+    return {f"{e.path} :: {e.message}" for e in validate_config(text, format=Format.JSON).errors}
+
+
+def _expected(capture: Any, suffix: str) -> dict[str, dict[str, str]]:
+    return expected_findings()["findings"].get(f"{capture.key}.{suffix}", {})
+
+
+class TestTheValidatorsTakeWhatTheDevicePrinted:
+    """Every statement of a capture is one a device loaded, so validation reports
+    nothing on it but the findings `expected-findings.json` records with their class
+    (spec validation/device-captures). A finding not recorded fails, and so does a
+    recorded one that is gone: a fix shrinks the record.
+
+    Base `2d4904b` reported 61 field findings and 13 JSON-schema errors over the
+    captures, none of them the device's (change device-validation): undocumented
+    statements Juniper's XSD omits, the device's JSON names `end-range` and
+    `ieee-802.3ad`, `$junos-` variables, an `isis-instance` list, `hello-padding`.
+    Set and curly `-v` of device lines is the grammar corpus's
+    (`tests/corpus/test_set_corpus.py`): through the Earley grammar every line of
+    every capture takes about 85 s, so it runs with `--device-grammar`.
+    """
+
+    @pytest.mark.parametrize(("capture", "suffix"), CASES)
+    def test_only_the_recorded_findings_are_reported(self, capture, suffix: str) -> None:
+        found = _findings(capture, suffix)
+        expected = {door: set(lines) for door, lines in _expected(capture, suffix).items()}
+        problems = [
+            f"{door} {why}: {line}"
+            for door in sorted(set(found) | set(expected))
+            for why, lines in (
+                ("not recorded", found.get(door, set()) - expected.get(door, set())),
+                (
+                    "recorded but gone (shrink the record)",
+                    expected.get(door, set()) - found.get(door, set()),
+                ),
+            )
+            for line in sorted(lines)
+        ]
+        assert not problems, "\n".join(problems)
+
+    @pytest.mark.parametrize(("capture", "suffix"), CASES)
+    def test_strict_mode_raises_only_on_a_recorded_error(self, capture, suffix: str) -> None:
+        classes = expected_findings()["classes"]
+        errors = [
+            line
+            for lines in _expected(capture, suffix).values()
+            for line, label in lines.items()
+            if classes[label]["severity"] == "error"
+        ]
+        source, reader = capture.rendering(suffix), FORMATS[suffix]
+        if errors:
+            with pytest.raises(FieldValidationError):
+                convert_config(source, from_format=reader, to_format=Format.SET, strict=True)
+        else:
+            assert convert_config(source, from_format=reader, to_format=Format.SET, strict=True)
+
+    def test_every_recorded_finding_has_a_reason(self) -> None:
+        record = expected_findings()
+        keys = {f"{c.key}.{suffix}" for c in captures() for suffix in FORMATS}
+        assert set(record["findings"]) <= keys
+        labels = {
+            label
+            for doors in record["findings"].values()
+            for lines in doors.values()
+            for label in lines.values()
+        }
+        assert labels == set(record["classes"])
+        for about in record["classes"].values():
+            assert about["definition"].strip()
+            assert about["severity"] in {"warning", "error"}
+        assert all(
+            door in {"field", "schema", "json-output"}
+            for doors in record["findings"].values()
+            for door in doors
+        )
 
 
 class TestTheRecordExplainsItself:

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from junoscfg import Format, convert_config_result
 from junoscfg.validate import JsonYamlValidator, SchemaLoadError
 from tests.support.aliases import (
     ANCHORED_BESIDE,
@@ -186,3 +187,84 @@ class TestSchemaLoadError:
         v = JsonYamlValidator(yaml_schema_path=minimal.yaml_schema)
         with pytest.raises(SchemaLoadError, match="JSON schema"):
             v.validate_yaml_as_json("configuration: {}")
+
+
+#: A value no message may quote: a message names a path and keys, never values.
+_VALUE = "uplink to sw1 private-words"
+
+
+class TestAMessageNamesThePathAndTheKeys:
+    """jsonschema's own message for a failing `anyOf` is the instance's repr: a list
+    of interfaces or BGP groups whole, `secret` values included (owner's log,
+    2026-10-16; change device-validation). A message names the deepest failing path
+    and the offending keys or the kind of failure, never a value."""
+
+    def test_a_failing_entry_is_named_by_its_path_and_key(self, bundled_validator) -> None:
+        doc = {
+            "configuration": {
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/0", "description": _VALUE},
+                        {"name": "ge-0/0/1", "description": _VALUE, "no-such-child": "y"},
+                    ]
+                }
+            }
+        }
+        result = bundled_validator.validate_json(json.dumps(doc))
+        assert [(e.path, e.message) for e in result.errors] == [
+            (
+                "configuration.interfaces.interface.1",
+                "'no-such-child' is not a statement the schema places here",
+            )
+        ]
+
+    @pytest.mark.parametrize(
+        "doc",
+        [
+            {"configuration": {"system": [{"host-name": _VALUE}, {"bogus": _VALUE}]}},
+            {"configuration": {"interfaces": [{"name": _VALUE, "mtu": 1500}]}},
+            {"configuration": "garbage " + _VALUE},
+            {
+                "configuration": {
+                    "protocols": {
+                        "bgp": {"group": [{"name": _VALUE, "family": {"bogus": {"a": _VALUE}}}]}
+                    }
+                }
+            },
+        ],
+        ids=["array-wrapped", "transparent-as-list", "a-string", "deep-in-a-list"],
+    )
+    def test_no_message_reprints_a_value(self, bundled_validator, doc) -> None:
+        result = bundled_validator.validate_json(json.dumps(doc))
+        assert result.errors
+        for error in result.errors:
+            assert _VALUE not in error.message, error.message
+            assert "{" not in error.message and "[" not in error.message, error.message
+
+
+class TestPresenceInBothDeviceSpellings:
+    """vMX 23.2R2-S7.5 writes an empty presence statement `[null]`, QFX5120
+    25.2R2-S1.5 `{}` (`junoscfg-oracle.json.gz` of each); both are the device's."""
+
+    @pytest.mark.parametrize("empty", [[None], {}], ids=["null-list", "empty-object"])
+    def test_both_spellings_validate(self, bundled_validator, empty) -> None:
+        doc = {
+            "configuration": {
+                "protocols": {
+                    "bgp": {
+                        "group": [
+                            {
+                                "name": "IBGP",
+                                "family": {"inet-vpn": {"unicast": empty}},
+                                "multipath": empty,
+                                "bgp-error-tolerance": empty,
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+        text = json.dumps(doc)
+        assert not bundled_validator.validate_json(text).errors
+        result = convert_config_result(text, from_format=Format.JSON, to_format=Format.SET)
+        assert not [d for d in result.diagnostics if d.source == "field-validate"]
