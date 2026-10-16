@@ -1,6 +1,6 @@
 {
   "actor": "Claude own-crash-fixes Builder",
-  "authority": "Owner request 2026-10-16 (first-hand, approved, relayed by the coordinator): admit change own-crash-fixes and its branch as ready; every other disposition preserved.",
+  "authority": "Coordinator request 2026-10-16 (owner-authorized batch): park own-crash-fixes and its branch while qfx-null-probes merges first; device-validation recorded parked as the shared assessment holds it; every other disposition preserved.",
   "branches": {
     "agent-ready/onboarding": "parked",
     "change/agent-guidance-gates-and-contracts": "parked",
@@ -13,6 +13,7 @@
     "change/batch-process-rules": "parked",
     "change/ci-python-matrix": "parked",
     "change/device-oracle": "parked",
+    "change/device-validation": "parked",
     "change/diagnostics-load-vs-commit": "parked",
     "change/docs-corrections": "parked",
     "change/enforce-interface-type-checking": "parked",
@@ -25,7 +26,7 @@
     "change/json-schema-from-the-written-tree": "parked",
     "change/json-writer-pure": "parked",
     "change/kept-whole-statements": "parked",
-    "change/own-crash-fixes": "ready",
+    "change/own-crash-fixes": "parked",
     "change/posix-bracket-escape": "parked",
     "change/qfx-null-probes": "ready",
     "change/relative-null-flags": "parked",
@@ -93,7 +94,7 @@
     "griffe-f0e35ff802fc6d4267ea82f5fdcd6e63fd8553ce": "parked",
     "master": "ready"
   },
-  "captured_at": "2026-10-15T23:45:17.638910+00:00",
+  "captured_at": "2026-10-16T00:19:10.036831+00:00",
   "changes": {
     "adopt-refresh-verification": "parked",
     "adopt-workflow-economy": "parked",
@@ -112,6 +113,7 @@
     "compare-device-outputs-tool": "parked",
     "define-openspec-readership-observation": "parked",
     "device-oracle": "parked",
+    "device-validation": "parked",
     "diagnostics-load-vs-commit": "parked",
     "entry-keys-from-the-tree": "parked",
     "field-validator-unions": "parked",
@@ -131,7 +133,7 @@
     "model-apply-statements": "parked",
     "one-artifact-resolver": "parked",
     "optimize-agent-test-workflow": "parked",
-    "own-crash-fixes": "ready",
+    "own-crash-fixes": "parked",
     "pattern-sweep-no-warning": "parked",
     "prepare-public-github-push": "parked",
     "production-verification-performance": "parked",
