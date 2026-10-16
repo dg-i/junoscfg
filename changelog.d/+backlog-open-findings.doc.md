@@ -1,0 +1,1 @@
+Backlog the open findings of v0.28.23 and v0.28.24 in `docs/BACKLOG.md`, on the owner's ruling of 2026-10-16: eleven new entries and four extended ones, each with its reproducer, the interim behaviour kept and the device probe section that settles it.
