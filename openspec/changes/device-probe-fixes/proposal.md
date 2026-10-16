@@ -15,11 +15,11 @@ A QFX5120 (25.2R2-S1.5) probe on 2026-10-16 settled eight open device questions.
 
 ## Capabilities
 
+### New Capabilities
+- `conversion/selection-tags`: a selection's tag rules, moved from `conversion/path-filtering` (modified) and widened.
 ### Modified Capabilities
-- `validation/set-command-validation`: what a verb line may name.
-- `conversion/path-filtering`: ancestors' tags kept; relative tags noted, never bare verbs.
-- `conversion/meta-tags`: a per-value leaf-list tag is noted where set and structured drop it.
-- `schema-pipeline/conversion-hints`: the keyword alias is permanent.
+- `validation/set-command-validation`: what a verb line may name; `conversion/writers`: a per-value leaf-list tag is noted.
+- `validation/device-captures`: probe statements modelled; `schema-pipeline/conversion-hints`: the alias is permanent.
 
 ## Non-goals
 
