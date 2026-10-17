@@ -108,7 +108,19 @@ structured writer's note mechanism and the `Below` wrapper; the before/after com
 ## Verdict
 
 Round 1: Merge after fixes (B1 to B3 binding, A1 to A8 advisory), all dispositioned above.
-Round 2 (B1 and A1 change runtime behaviour): pending.
+Round 2 on `16a1fe9...a2e63dd` (fixes in `7d7f547`): **Merge**. B1 to B3 resolved; the A1 fix
+behaves as ruled (191 newly invalid verb lines, all ending in `family`; none newly valid; the
+28 capture verb lines unchanged); A2 to A8 accurate; full check at `7d7f547` green with both
+tiers fresh. Advisories:
+
+- R2-A1: the `merged` kind also covers 16 `tunnel encapsulation` nodes, without device evidence,
+  and extends the interface `family` evidence to routing-instances, protocols, firewall and
+  access. Coordinator disposition: records only, the interim stays as built; the guide,
+  `.openspec.yaml`, the tag-acceptance delta, the walk's comment and VERB-PREFIX-001 now say so,
+  and BACKLOG DEVICE-EVIDENCE carries device question 12.
+- R2-A2: the JSON reader keeps a JSON number as an int where the set reader keeps text, a split
+  of the one-IR rule that predates the change, hidden in the probe test by `_values_as_text`.
+  Owner ruling 2026-10-17: backlog, JSON-NUMBER-IR-001; the helper's docstring is corrected.
 
 ## Scope dispositions and follow-up evidence
 
@@ -162,5 +174,8 @@ Paths only; each runs in `configure private`, never committed.
     "@community": [null, {"inactive": true}]` under the probe route: taken, and printed how?
 11. grpc `"clear-text": {"port": "32767"}` in JSON, the number quoted as junoscfg writes an
     untyped undocumented leaf: does `load merge json` take it? (The device prints it bare.)
+12. `deactivate interfaces ge-0/0/1 unit 0 tunnel encapsulation` with an encapsulation
+    defined, and `deactivate firewall family` with a filter defined: refused as `deactivate …
+    unit 0 family` is? (review R2-A1)
 
 The list is copied into BACKLOG DEVICE-EVIDENCE so it outlives the archive.

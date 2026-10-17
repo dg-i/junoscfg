@@ -27,8 +27,9 @@ declared-break:
       (probe D5 and A2). (b) The set reader refuses the first two with ValueError naming them
       ("Metadata commands cannot target a list without its entry's name"; a leaf's value was
       refused already), where it tagged the whole list and wrote back the line the device
-      refuses; a tag on `family` itself, which the device refuses ("missing argument"), is
-      invalid for `-v`, and set output drops it with the note structured output gives, where it
+      refuses; a tag on `family` itself, which the device refuses under `interfaces … unit`
+      ("missing argument"; elsewhere by extension, and the 16 `tunnel encapsulation` nodes of
+      the same rule without device evidence, device question 12), is invalid for `-v`, and set output drops it with the note structured output gives, where it
       wrote the line back. The homogeneous-list reading rests on the owner ruling of 2026-10-17
       on review S-6, with device questions 6 and 7 as its carried checkpoint. A verb line
       validated against an artifacts directory without a structure tree raises SchemaLoadError

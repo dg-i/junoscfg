@@ -35,8 +35,10 @@ from junoscfg.input import set_token_value
 #: `routing-instance`, which the device deactivates whole, deactivate6.txt).
 #: `list`: another list's keyword without its entry's name (the device refuses
 #: `protect policy-options policy-statement`, probe D5); `merged`: a container
-#: Junos writes merged with each child and never tags (`family`, which the
-#: device refuses, "missing argument"; `passes_tag_to_child`); `value`: a
+#: Junos writes merged with each child and never tags (`passes_tag_to_child`):
+#: `family`, which the device refuses under `interfaces ... unit` ("missing
+#: argument") and elsewhere by extension, and `tunnel encapsulation`, which no
+#: device output shows (BACKLOG DEVICE-EVIDENCE, question 12); `value`: a
 #: leaf's value; `partial-key`: inside an entry's key. `unplaced`: nowhere the
 #: tree places, from token `at` on, which the reader keeps whole.
 MetaKind = Literal[

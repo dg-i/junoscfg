@@ -44,8 +44,10 @@ policy-statement` (a list's keyword without its entry's name) and `deactivate
 routing-options static route 198.51.100.0/24 community 64496:2` (one value of a
 leaf-list); conversion refuses such a line with `ValueError` ("Metadata commands
 cannot target ..."), and `-v` reports it invalid. A tag on `family` itself, which
-the device refuses ("missing argument"), is reported by field validation, invalid
-for `-v`, and dropped with a note by set and structured output.
+the device refuses under `interfaces … unit` ("missing argument"), is reported by
+field validation, invalid for `-v`, and dropped with a note by set and structured
+output; the same rule covers `family` elsewhere and `tunnel encapsulation`, which no
+device output has shown yet.
 
 An unsupported command refuses conversion of the entire input with `ValueError` and
 its physical line number; CLI conversion exits 2 without partial output. Validation

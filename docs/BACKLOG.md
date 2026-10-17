@@ -427,8 +427,10 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Resolution:** one read-only walk, `junoscfg.display.meta_target`, decides what a
   verb line names, for the set reader and for `-v`: a container, a list entry after
   its whole key, a leaf before its value, or a homogeneous list whole. Another list's
-  bare keyword, a tag on `family` itself (which the device refuses, "missing argument";
-  set output drops it with a note) and a leaf's value are refused, a stop inside a key is
+  bare keyword, a tag on `family` itself (which the device refuses under `interfaces …
+  unit`, "missing argument"; set output drops it with a note; the same rule covers
+  `family` elsewhere by extension and `tunnel encapsulation` without device evidence,
+  device question 12) and a leaf's value are refused, a stop inside a key is
   invalid and kept unplaced. Owner ruling 2026-10-17 on review S-6: keep the
   `homogeneous` reading as built, inferred from two lists; binding carry-forward: device
   questions 6 and 7 in DEVICE-EVIDENCE are its checkpoint.
@@ -454,6 +456,23 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Proposed direction:** ask the device whether it ever prints such a tag; if not,
   readers report it and writers drop it with a note, as for per-value tags.
 - **Source change:** [device-probe-fixes](../openspec/changes/archive/2026-10-17-device-probe-fixes/), Test/Challenge report (S4, S7).
+
+## JSON-NUMBER-IR-001 — The JSON reader keeps a number the set reader keeps as text
+
+- **IDs:** device-probe-fixes Reviewer R2-A2.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-17: backlog.
+- **Finding and impact:** ARCHITECTURE.md section 8 says one configuration has one IR and
+  leaf values are strings. The JSON reader keeps a JSON number as an int, the set reader
+  keeps the same value as text, so the two IRs differ; set-to-JSON output writes
+  `"mtu": "9000"` where a device's JSON holds `9000`. This predates the change.
+- **Reproducer:** `junoscfg.convert.to_dict('{"configuration": {"interfaces": {"interface":
+  [{"name": "ge-0/0/0", "mtu": 9000}]}}}', "json")` gives `"mtu": 9000`;
+  `to_dict("set interfaces ge-0/0/0 mtu 9000", "set")` gives `"mtu": "9000"`. The probe test
+  `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet` compares the two
+  through `_values_as_text`. Device question 11 (DEVICE-EVIDENCE) asks whether the device
+  loads a quoted number.
+- **Source change:** [device-probe-fixes](../openspec/changes/archive/2026-10-17-device-probe-fixes/), review round 2, advisory R2-A2.
 
 ## Consolidated issue inventory
 
@@ -644,7 +663,11 @@ published here. No new device execution or configuration capture was performed.
   dump-on-panic | display json` after `set system dump-on-panic`; (10) `load merge json` of
   `"@community": [null, {"inactive": true}]` beside two community values under the probe
   route; (11) `load merge json` of grpc `"clear-text": {"port": "32767"}` with the number
-  quoted, as junoscfg writes it. Questions 6 and 7 are the checkpoint of the owner ruling
+  quoted, as junoscfg writes it; (12) `deactivate interfaces ge-0/0/1 unit 0 tunnel
+  encapsulation` with a tunnel encapsulation defined (no answer recorded for
+  `deactivate7.in`), and `deactivate firewall family` with a filter defined, a `family` outside
+  `interfaces`: refused as `deactivate … unit 0 family` is? `-v` refuses both today (review
+  R2-A1). Questions 6 and 7 are the checkpoint of the owner ruling
   on review S-6 (the `homogeneous` reading, VERB-PREFIX-001).
 - **Disposition:** request only the named set/JSON/XML subtrees and needed load
   results; retain platform qualifications and private probe provenance.

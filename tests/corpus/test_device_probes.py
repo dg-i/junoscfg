@@ -83,7 +83,9 @@ def _values(record: dict[str, Any]) -> list[str]:
 
 
 def _values_as_text(node: Any) -> Any:
-    """*node* with every number a string: the IR holds a leaf's value as text."""
+    """*node* with every number a string. The set reader keeps a leaf's value as
+    text, the JSON reader keeps a JSON number as one (BACKLOG JSON-NUMBER-IR-001);
+    this compares what they mean."""
     if isinstance(node, dict):
         return {key: _values_as_text(value) for key, value in node.items()}
     if isinstance(node, list):

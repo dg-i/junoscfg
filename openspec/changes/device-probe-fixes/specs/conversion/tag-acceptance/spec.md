@@ -10,7 +10,10 @@ diagnostic sink ("N tag(s) dropped from a container Junos never tags (...): it i
 merged with each child"), and set validation SHALL report a verb line naming it invalid
 (`junoscfg.display.meta_target` gives it the kind `merged`), because the device rejects it.
 Set output repeated it as written, a line the device refuses (Reviewer A1, owner ruling
-2026-10-17, change device-probe-fixes). Only a
+2026-10-17, change device-probe-fixes). The device evidence is `interfaces … unit … family`;
+`family` under routing-instances, protocols, firewall and access follows by extension, and the
+16 `tunnel encapsulation` nodes the same rule covers have no device evidence (BACKLOG
+DEVICE-EVIDENCE, question 12). Only a
 tag counts (`inactive`, `protect`, `operation`, `active`); metadata such as
 `junos:group` on the container is not one. The device rejects it
 (`missing argument`, `private_test_data/deactivate4.txt` and `deactivate6.txt`).
