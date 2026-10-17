@@ -90,7 +90,9 @@ None, because the rulings settle every material choice; C4 and C5 are open to ch
 
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer (coordinator), as
   `instruction-integrity.md` records.
-- Resume point: STOP-R (fresh review), after the full check.
+- Resume point: STOP-R (fresh review). Full check green at `e379d7a` (code head `3bac590`):
+  14,270 passed, 37 skipped, 18 xfailed; schema tiers 25.2 qualification and dependency guard
+  exit 0 (run at `3bac590`, reused at `e379d7a`).
 
 ## Delta log
 
