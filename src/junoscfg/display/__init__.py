@@ -49,7 +49,7 @@ from junoscfg.display.format_detection import (
     detect_format,
     is_display_set,
 )
-from junoscfg.display.meta_path import MetaKind, MetaStep, MetaTarget, meta_target, read_entry_key
+from junoscfg.display.meta_path import meta_target, read_entry_key
 from junoscfg.display.path_filter import filter_dict_by_path
 from junoscfg.display.set_converter import SetConverter
 from junoscfg.display.to_json import filter_json_by_path
@@ -61,9 +61,6 @@ __all__ = [
     "CONVERSION_FORMATS",
     "ConfigStore",
     "INTEGER_TYPES",
-    "MetaKind",
-    "MetaStep",
-    "MetaTarget",
     "SetConverter",
     "UNIVERSAL_STATEMENTS",
     "UNPLACED_STATEMENTS",
