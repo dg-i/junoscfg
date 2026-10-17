@@ -1,5 +1,3 @@
-<!-- Capture before merge/archive with explicit base and code-head SHAs. Evidence and per-field sources live in adjacent metrics.json. A field without evidence stays UNMEASURED. -->
-
 | Field | Value |
 |---|---|
 | tokens per phase, prefix and work | UNMEASURED |
@@ -7,17 +5,20 @@
 | agent-review findings by severity, and how many survived human review | UNMEASURED |
 | human artefacts read and human minutes per phase | UNMEASURED |
 | wall-clock from intent to merge | UNMEASURED |
-| lines added and removed | UNMEASURED |
+| lines added and removed | {"added": 3417, "binary_files": 5, "files": 61, "removed": 755} |
 | dependency count | UNMEASURED |
-| direct declared runtime dependencies | UNMEASURED |
-| total root-lock packages | UNMEASURED |
+| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
+| requirement-to-test reconcile result | UNMEASURED |
+| pre-commit wall-clock, total and per hook | UNMEASURED |
+| device before/after comparison | 0 of 96 capture conversions differ at base `ec62908` and at `7d7f547` (`tools/compare_device_outputs.py`) |
+| review findings | round 1: 3 binding (B1 to B3), 8 advisory (A1 to A8); round 2: 2 advisory (R2-A1, R2-A2); Test/Challenge: 2 MUST, 8 SHOULD, 10 NICE |
+| direct declared runtime dependencies | {"base": 6, "delta": 0, "head": 6} |
+| total root-lock packages | {"base": 63, "delta": 0, "head": 63} |
 | runtime tokens | UNMEASURED |
 | runtime files read | UNMEASURED |
 | runtime retries | UNMEASURED |
 | runtime phase span | UNMEASURED |
 | workflow telemetry by phase and model | UNMEASURED |
-| residue-arm firings, and additions a fixer made beyond the proposal | UNMEASURED |
-| requirement-to-test reconcile result | UNMEASURED |
-| pre-commit wall-clock, total and per hook | UNMEASURED |
+| generated lifecycle evidence | {"archived": false, "base": "ec62908ecdb5b9d624ed085392b9eafdb1338bdf", "carry": {}, "change": "device-probe-fixes", "checks": [{"checkpoint": "aaac95e647573b1fa95e652d130c908052dafc91157bae3bc3fa29ed9fd594f6", "duration_ms": 11911.242458969355, "evidence": ".agent-ready/verification/3a4414e0824f472cbde72b1431b8358c.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "9c37b340ab928bb63defad5f4d35908add7c9877f400eeb97e69f78907f06eed", "duration_ms": 251689.9788340088, "evidence": ".agent-ready/verification/c2a4969525704840a337716928c7e51f.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "54a5bdc8a442fd525f795b0d50f7debd192eede21b7bbc7c823dbaa7fbd42332", "duration_ms": 51494.40633296035, "evidence": ".agent-ready/verification/af26c60cdc164f649a6a83763e7c1392.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "eab2dfdfcd6f013003e0143aff76b28e23fd26bac8c7455fe3ccd5693a69ea5a", "duration_ms": 348838.79116608296, "evidence": ".agent-ready/verification/218b8ed537224b0eaddb380557aa7a0a.json", "exit_status": 1, "reused": false, "tier": "full"}, {"checkpoint": "9c37b340ab928bb63defad5f4d35908add7c9877f400eeb97e69f78907f06eed", "duration_ms": 251689.9788340088, "evidence": ".agent-ready/verification/52a7e2dcf43544edac73171a8d3a54e5.json", "exit_status": 0, "reused": true, "tier": "expensive"}, {"checkpoint": "54a5bdc8a442fd525f795b0d50f7debd192eede21b7bbc7c823dbaa7fbd42332", "duration_ms": 51494.40633296035, "evidence": ".agent-ready/verification/25ce0ff1349e4fd9b02fe7f3cf314770.json", "exit_status": 0, "reused": true, "tier": "expensive"}, {"checkpoint": "ed45e436e7e3d6355a9a720480873d9c85dabeba8ca75dae675dc778faaa89dc", "duration_ms": 86882.82070902642, "evidence": ".agent-ready/verification/ffa302b997b4407e8c1ef6c0188f358e.json", "exit_status": 0, "reused": false, "tier": "full"}, {"checkpoint": "02001069fefde7f5541d5cad0d9cf42f778bdc3d5bc752592b952ae4bb9c546d", "duration_ms": 242476.5798340086, "evidence": ".agent-ready/verification/d031053463ba4533a9049f32acee900b.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "1f059a541fc0c9f9d557ddfc0d942e84509578e6c07045d7a0810c795267b178", "duration_ms": 50789.455875055864, "evidence": ".agent-ready/verification/b180301f288b49aea449e3d7f2a39a36.json", "exit_status": 0, "reused": false, "tier": "expensive"}, {"checkpoint": "7599767fe19b8363837305c23f14b5759d9aba72e2adf0f3ba83e83c997db5f7", "duration_ms": 338532.3655420216, "evidence": ".agent-ready/verification/b6e280922acf4b83a326bb4798284cad.json", "exit_status": 0, "reused": false, "tier": "full"}], "head": "8cf02f963c4a39ac6ff1d4cee488c8df6d3bb9ba", "ledger_sha256": "6ed4f80415aff1f446a9fb7993d726142b8a2b3a7565939109db8266860057d2", "observations": {"active_agent_minutes": {"reason": "UNMEASURED", "value": null}, "cache_tokens": {"reason": "UNMEASURED", "value": null}, "escaped_regressions": {"reason": "UNMEASURED", "value": null}, "expensive_runs": {"events": ["d1ad303196654a956d0097682638a3e4d6a39b0eb9336eed604e64cf99a588af", "676780f995d3701e9d6f9c46f18892264384a3c9e4fd41cfb5bda87d940397a1", "cdfd9004765874306ba0d67296a8b066e61b67580eb73ed81af18d864dfa410b", "418702609275f00fb443c740fa0346bf28f54a0909309d407b4b02783b72fa82"], "value": 4}, "full_runs": {"events": ["ce9841b529ac4b419370783f69d72e1db2773ade0d7307a5be4aa5ce12fa9732", "073c357f750d9436b77543e83243be733598ef4f97ffc09e6d93adccf6332902", "b9f734089f74458601f7f1edff43f719b4e2b159961d69406a496a74885e9d94", "c2aff448f4af89855c0b95f8f97bbf6a368356a02772078c30b7432ca819eab2"], "value": 4}, "intent_to_archive_minutes": {"reason": "UNMEASURED", "value": null}, "output_tokens": {"reason": "UNMEASURED", "value": null}, "post_review_code_churn": {"reason": "UNMEASURED", "value": null}, "review_findings": {"reason": "UNMEASURED", "value": null}}, "progress": [{"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 7, "total": 10}, {"completed": 8, "total": 11}, {"completed": 8, "total": 11}, {"completed": 8, "total": 11}], "roles": [], "schema": "lifecycle-summary/1"} |
 
 Machine evidence and per-field provenance: [metrics.json](metrics.json).

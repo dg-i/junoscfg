@@ -47,5 +47,5 @@
 ## 3. Review and evidence
 
 - [x] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it. Fresh Reviewer (coordinator-dispatched): Merge after fixes on `16a1fe9` (B1 to B3, A1 to A8), Merge on `a2e63dd` (R2-A1 recorded, R2-A2 to BACKLOG JSON-NUMBER-IR-001); review.md.
-- [ ] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head.
-- [ ] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits.
+- [x] 3.2 Capture `metrics.md` and `metrics.json` for the immutable base and code head. Base `ec62908ecdb5b9d624ed085392b9eafdb1338bdf`, head `8cf02f963c4a39ac6ff1d4cee488c8df6d3bb9ba`.
+- [x] 3.3 Finalizer completes bounded spec application, evidence, and archive housekeeping without product edits. Main specs applied at `a385689` (validate --strict and --specs pass); merge, archive with v0.28.26 and the tag follow.
