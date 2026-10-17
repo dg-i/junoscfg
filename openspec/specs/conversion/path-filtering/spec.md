@@ -49,13 +49,13 @@ without the words the path is written as (a list name the schema hides has none;
 statement names, an annotation key or `junoscfg:unplaced`, is passed over), so a selected
 list writes its entries' statements and
 a selected leaf its value. A selection whose statement is its path alone (a flag, `null`)
-writes `set` in set output and nothing in structured output; a tag on the selected
-statement itself is a bare command in set output (`deactivate`) and, in structured output,
-dropped with a note. The writer leaves the IR it
-is given unchanged; `junoscfg.convert.from_dict(value, fmt, wrap=False)`, the secondary door
-for a bare value, keeps its meaning (presence flags and key order as under its last path
-key). A flag inside a list (`[true]`) follows absolute output (`[[null]]`), whose device
-spelling stays open (NEW-R2).
+writes `set` in set output and nothing in structured output. A tag at or above the path
+that the output cannot write follows `conversion/selection-tags`: it is dropped with a note,
+never written as a bare verb (owner ruling 2026-10-17). The writer leaves the IR it is given
+unchanged; `junoscfg.convert.from_dict(value, fmt, wrap=False)`, the secondary door for a bare
+value, keeps its meaning (presence flags and key order as under its last path key). A flag
+inside a list (`[true]`) follows absolute output (`[[null]]`), whose device spelling stays
+open (NEW-R2).
 Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_is_spelled_as_absolute_output_spells_it`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_annotation_in_a_selected_list_stays_boolean`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_the_scenarios_are_written_as_specified`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_selected_group_list_from_set_input`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_anonymized_selection_is_spelled_alike`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_keeps_its_schema_context`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_list_name_the_schema_hides_is_not_written`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_selected_groups_is_the_list_of_groups`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_entry_named_like_a_hidden_list_keeps_its_name`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_selected_list_writes_its_statements`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_annotation_selection_keeps_its_booleans`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_annotation_selection_in_set_and_structured`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_every_tag_below_a_selection_is_written_below_it`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_yaml_new_selection_is_measured_as_written`, `tests/unit/convert/test_convert_api.py::TestJunosYamlWriter::test_a_cycle_below_a_relative_path_is_refused_on_write`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_the_kept_statements_key_writes_its_statements`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_anonymized_list_selection_in_set`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_relative_leaf_preserves_output`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_relative_output_is_the_subtree_without_the_path`, `tests/corpus/test_device_renderings.py::TestRelativeSelections::test_a_relative_selection_is_the_absolute_one_without_its_path`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_bare_selection_is_left_unchanged`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_selection_below_its_path_is_left_unchanged`, `tests/unit/convert/test_convert_roundtrip.py::TestNoWriterChangesTheIrItIsGiven::test_a_bare_value_keeps_its_meaning`
 
 #### Scenario: A selected list holding an empty-container flag
@@ -92,46 +92,3 @@ Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relati
 
 - **WHEN** `system.@` holding `{"inactive": true}` is written as relative JSON
 - **THEN** the output is `{"inactive": true}`, as the absolute output holds it
-
-### Requirement: An absolute selection keeps the tags of the selected statement
-
-WHEN a path is selected with `relative=False` (CLI `--path` without `--relative`) and ends at
-a key whose annotation the IR holds beside it (`@<key>`: a leaf's, leaf-list's or flag's
-`inactive`, `protect`, `active`, `operation`, comment or any other meta key, or a list's own
-comment as the device writes it), a key holding a dot included, THEN the system SHALL hand
-the writer that annotation beside the selected key, so every writer writes the statement's
-tags as the selection of its parent writes them, from every reader: the output reads back as
-the IR holding only the selected statement and its annotation, and loads with the same
-meaning. A container and a list entry hold their tags inside the selected value and keep
-them as before. A relative selection hands the writer the same IR and the path: a selected
-leaf's tags are then a tag on the selected statement itself, written as the relative
-requirement above says and as a selected container's are (a bare command in set output,
-dropped with a note in structured output, the value alone in json, yaml and yaml-new), where
-base dropped them silently (specification challenge SC1, pending owner decision). Tags of
-an ancestor on the path are outside this requirement.
-Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_absolute_leaf_selection_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_leaf_selection_reads_as_its_statement_alone`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_tagged_entry_or_container_at_the_path_end_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_notes_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_leaf_selection_keeps_every_meta_key`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_dotted_flag_keeps_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_anonymized_leaf_selection_keeps_its_tags`, `tests/corpus/test_device_renderings.py::TestAnAbsoluteSelectionKeepsItsTags::test_every_tagged_statement_keeps_its_tags`, `tests/unit/display/test_display_filters.py::TestFilterDictByPath::test_a_selected_leaf_keeps_its_annotation`, `tests/unit/display/test_display_filters.py::TestFilterDictByPath::test_the_text_filters_keep_a_selected_leafs_annotation`, `tests/unit/cli/test_cli.py::TestPathOptions::test_path_keeps_a_selected_leafs_tags`
-
-#### Scenario: A deactivated host name
-
-- **WHEN** `set system host-name r1`, `deactivate system host-name` and `set system domain-name example.net` are converted with `--path system.host-name`
-- **THEN** set writes `set system host-name r1` and `deactivate system host-name`, structured writes the leaf `inactive:`, and json, yaml and yaml-new hold `"@host-name": {"inactive": true}`, as `--path system` writes them
-
-#### Scenario: A deactivated leaf-list
-
-- **WHEN** `deactivate system domain-search` tags a two-value leaf-list selected as `system.domain-search`
-- **THEN** every writer keeps the tag, as the parent selection writes it
-
-#### Scenario: A tagged list entry or container at the path end
-
-- **WHEN** `interfaces.interface` holds a deactivated entry, or `system.syslog` is deactivated, and the path ends there
-- **THEN** the tag is written as before this change
-
-#### Scenario: A device's commented list and deactivated flag
-
-- **WHEN** the device captures' `access.radius-server` (a list with its comment beside it) or `routing-options.forwarding-table.chained-composite-next-hop.ingress.l3vpn` (a deactivated flag) is selected absolute
-- **THEN** the output holds the comment or the tag, as the parent selection writes it
-
-#### Scenario: A tagged leaf selected relative
-
-- **WHEN** the deactivated, protected `system.host-name` is selected relative and written as set
-- **THEN** the output is `set r1`, `deactivate`, `protect`, which put back under `system host-name` reads as the absolute output
