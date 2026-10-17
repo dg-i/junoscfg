@@ -483,14 +483,15 @@ def _fix_regexp_commands(root: SchemaNode) -> bool:
 # timer to copy, and the captures show one `shell`, `csh`, not its choices.
 # The QFX5120 25.2R2-S1.5 took the rest inside `<undocumented>` (probe D4, P4,
 # `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`): grpc
-# `clear-text address` beside `port`, the flags `debugger-on-break`,
-# `debugger-on-panic` and chassis `dump-on-panic` (`<x/>`), and `system
-# dump-on-panic`, which it prints as an open and a close tag, a container's
-# shape, with nothing inside.
+# `clear-text address` beside `port` and the flags `debugger-on-break`,
+# `debugger-on-panic`, chassis `dump-on-panic` (`<x/>`) and `system
+# dump-on-panic`. The device prints the last as an open and a close tag with
+# nothing inside; every reader takes it as the flag `[null]`, so a flag it is,
+# one IR from set, curly, JSON and XML (its JSON rendering is a device question).
 _UNDOCUMENTED: tuple[tuple[str | tuple[str, str], str, object], ...] = (
     ("login-user-object", "shell", "leaf"),
     (("request-response", "grpc"), "clear-text", {"address": "leaf", "port": "leaf"}),
-    ("juniper-system", "dump-on-panic", {}),
+    ("juniper-system", "dump-on-panic", "presence"),
     ("juniper-system", "debugger-on-break", "presence"),
     ("juniper-system", "debugger-on-panic", "presence"),
     ("chassis-type", "dump-on-panic", "presence"),

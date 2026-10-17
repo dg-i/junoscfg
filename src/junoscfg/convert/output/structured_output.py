@@ -11,6 +11,7 @@ from junoscfg.convert.output.dict_walker import (
     Below,
     DictWalker,
     WalkOutput,
+    merged_tags_note,
     path_words,
     selection_tags_note,
     value_tags_note,
@@ -122,15 +123,7 @@ class StructuredWalkOutput(WalkOutput):
             elif op == "protect":
                 self.config.mark_protected(path_str)
         if dropped_tags and self._diagnostic_sink is not None:
-            where = (
-                "their paths are withheld: the conversion anonymizes"
-                if self._withhold
-                else "; ".join(dropped_tags)
-            )
-            self._diagnostic_sink(
-                f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
-                f"tags ({where}): it is written merged with each child"
-            )
+            self._diagnostic_sink(merged_tags_note(dropped_tags, withhold=self._withhold))
         if self._dropped_selected and self._diagnostic_sink is not None:
             self._diagnostic_sink(selection_tags_note(self._dropped_selected))
         if self._dropped_values and self._diagnostic_sink is not None:

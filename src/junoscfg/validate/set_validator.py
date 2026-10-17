@@ -130,14 +130,16 @@ class SetValidator:
         keyword of a list the XSD does not mark `homogeneous` without its
         entry's name (the QFX5120 25.2R2-S1.5 refuses `protect policy-options
         policy-statement`, probe D5; it deactivates a homogeneous one whole,
-        deactivate6.txt), a leaf's value (`deactivate ... community 64496:2`,
-        probe A2) and a stop inside an entry's key are none; a path the tree
+        deactivate6.txt), a container Junos writes merged with each child
+        (`deactivate ... family`, which the device refuses), a leaf's value
+        (`deactivate ... community 64496:2`, probe A2) and a stop inside an
+        entry's key are none; a path the tree
         does not place is left to the grammar, as the reader keeps it whole.
         """
         tree = self._structure_tree()
         assert tree is not None
         target = meta_target(set_tokens(path), tree)
-        return target.kind not in ("list", "value", "partial-key")
+        return target.kind not in ("list", "merged", "value", "partial-key")
 
     def _holds_several_statements(self, path: str) -> bool:
         """Whether a `set` line the grammar refuses gives a leaf its value and

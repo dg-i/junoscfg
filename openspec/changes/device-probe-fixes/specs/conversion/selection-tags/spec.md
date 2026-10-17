@@ -49,7 +49,7 @@ Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_an_absol
 #### Scenario: A host name under a deactivated system
 
 - **WHEN** `set system host-name r1` and `deactivate system` are converted with `--path system.host-name`
-- **THEN** set writes `set system host-name r1` and `deactivate system`, structured writes `inactive: system { host-name r1; }`, and json, yaml and yaml-new hold `"@": {"inactive": true}` inside `system`
+- **THEN** set writes `set system host-name r1` and `deactivate system`, structured writes `inactive: system host-name r1;` (which reads back as those two lines), and json, yaml and yaml-new hold `"@": {"inactive": true}` inside `system`
 
 #### Scenario: The probe's route under a deactivated static
 
@@ -68,8 +68,11 @@ SHALL write a bare verb (`deactivate`, `protect`, `activate`, `delete` with no p
 QFX5120 25.2R2-S1.5 refuses one at an edit level ("syntax error, expecting <statement>,
 <attribute-name>, <flag-value>, or <identifier>", probe SC1). This reverses the bare command
 the approved path-filtering requirement prescribed (owner ruling 2026-10-17), and the note
-counts only, so an anonymized conversion quotes nothing.
-Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_notes_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_notes_every_tag_it_drops`, `tests/unit/cli/test_cli.py::TestPathOptions::test_a_relative_path_notes_a_dropped_tag`, `tests/corpus/test_device_renderings.py::TestRelativeSelections::test_a_relative_selection_is_the_absolute_one_without_its_path`
+counts only, so an anonymized conversion quotes nothing. A comment beside a key of the path or
+on an ancestor, which json, yaml-new and yaml write absolute, is dropped with its own note, "N
+comment(s) at or above the selected path dropped: ..."; set and structured output write no
+comment in any selection.
+Tests: `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_notes_its_tags`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_selection_notes_every_tag_it_drops`, `tests/unit/cli/test_cli.py::TestPathOptions::test_a_relative_path_notes_a_dropped_tag`, `tests/unit/convert/test_convert_api.py::TestPathFiltering::test_a_relative_leaf_selection_notes_its_comment`, `tests/corpus/test_device_renderings.py::TestRelativeSelections::test_a_relative_selection_is_the_absolute_one_without_its_path`
 
 #### Scenario: A tagged leaf selected relative
 

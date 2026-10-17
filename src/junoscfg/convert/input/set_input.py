@@ -729,7 +729,9 @@ def _apply_meta(
         current.setdefault("@", {})[attr_key] = attr_value
     elif target.kind in ("leaf", "whole-list"):
         current.setdefault(f"@{target.key}", {})[attr_key] = attr_value
-    elif target.kind == "container":
+    elif target.kind in ("container", "merged"):
+        # A merged container's tag is read as written; the writers drop it with
+        # a note, as the device never tags one (`passes_tag_to_child`).
         current.setdefault(target.key, {}).setdefault("@", {})[attr_key] = attr_value
     elif target.kind == "list":
         raise ValueError("Metadata commands cannot target a list without its entry's name")

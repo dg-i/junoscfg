@@ -37,5 +37,7 @@ tests pin each refusal.
 junoscfg holds no edit state: no ordering, renaming or pattern replacement across lines. A
 user with an edit script applies it on a device and exports the result. Supporting a listed
 construct is a new decision that weighs the code it costs. A widened grammar for one-line
-statements was measured and not taken: it touched 12,416 containers the XSD marks `oneliner`
-and grew the shipped grammar by 27 % and its compile by 2.2 s, for a form no export holds.
+statements was measured and not taken: by the Builder's measurement, with a prototype that was
+not kept, it touched 12,416 containers the XSD marks `oneliner` (counted in the XSD tree before
+the structure tree drops `o` from containers) and grew the shipped grammar from 1.83 MB to
+2.32 MB and its compile from 9.5 s to 11.7 s, for a form no export holds.

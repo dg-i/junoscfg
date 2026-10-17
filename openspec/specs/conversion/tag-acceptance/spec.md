@@ -17,7 +17,7 @@ drop it and say so on the diagnostic sink, because the device rejects it. Only a
 tag counts (`inactive`, `protect`, `operation`, `active`); metadata such as
 `junos:group` on the container is not one. The device rejects it
 (`missing argument`, `private_test_data/deactivate4.txt` and `deactivate6.txt`).
-Tests: `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_every_input_reports_it`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_repeats_it`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_structured_output_drops_it_with_a_note`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_repeats_a_sibling_family_tag_from_json`, `tests/unit/convert/test_meta_tags.py::TestOnlyTagsCountAsTags::test_metadata_on_family_is_not_a_tag`, `tests/unit/convert/test_meta_tags.py::TestOnlyTagsCountAsTags::test_a_family_tag_written_twice_is_repeated_once`
+Tests: `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_every_input_reports_it`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_drops_it_with_a_note`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_structured_output_drops_it_with_a_note`, `tests/unit/convert/test_meta_tags.py::TestATagOnFamilyIsReported::test_set_output_drops_a_sibling_family_tag_from_json`, `tests/unit/convert/test_meta_tags.py::TestOnlyTagsCountAsTags::test_metadata_on_family_is_not_a_tag`, `tests/unit/convert/test_meta_tags.py::TestOnlyTagsCountAsTags::test_a_family_tag_written_twice_is_noted_once`
 
 #### Scenario: Every input
 

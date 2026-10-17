@@ -22,6 +22,7 @@ from junoscfg.display.constants import (
     entry_keys,
     is_transparent_list_key,
     key_is_positional,
+    passes_tag_to_child,
     schema_child,
     statement_children,
     statement_key,
@@ -33,11 +34,21 @@ from junoscfg.input import set_token_value
 #: value; a whole list is one the XSD marks `homogeneous`, as port-mirroring's
 #: `routing-instance`, which the device deactivates whole, deactivate6.txt).
 #: `list`: another list's keyword without its entry's name (the device refuses
-#: `protect policy-options policy-statement`, probe D5); `value`: a leaf's
-#: value; `partial-key`: inside an entry's key. `unplaced`: nowhere the tree
-#: places, from token `at` on, which the reader keeps whole.
+#: `protect policy-options policy-statement`, probe D5); `merged`: a container
+#: Junos writes merged with each child and never tags (`family`, which the
+#: device refuses, "missing argument"; `passes_tag_to_child`); `value`: a
+#: leaf's value; `partial-key`: inside an entry's key. `unplaced`: nowhere the
+#: tree places, from token `at` on, which the reader keeps whole.
 MetaKind = Literal[
-    "container", "entry", "leaf", "whole-list", "list", "value", "partial-key", "unplaced"
+    "container",
+    "entry",
+    "leaf",
+    "whole-list",
+    "list",
+    "merged",
+    "value",
+    "partial-key",
+    "unplaced",
 ]
 
 
@@ -200,6 +211,8 @@ def meta_target(tokens: list[str], root: dict[str, Any]) -> MetaTarget:
                 return ended("whole-list" if child.get("h") else "list", key=token, node=child)
             if child.get("l") or child.get("p"):
                 return ended("leaf", key=token, node=child)
+            if passes_tag_to_child(child):
+                return ended("merged", key=token, node=child)
             return ended("container", key=token, node=child)
 
         if child.get("L"):

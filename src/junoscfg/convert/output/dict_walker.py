@@ -79,7 +79,7 @@ class WalkOutput(ABC):
 
     def drop_value_tags(self, count: int) -> None:  # noqa: B027
         """Tags on single values of a leaf-list, which set and structured text
-        cannot write: Junos tags a leaf-list only as a whole (`value_tags_note`)."""
+        cannot write: set and structured text have no form for one (`value_tags_note`)."""
 
     def mark_merged(self, hierarchy: list[str]) -> None:  # noqa: B027
         """A container the schema says is written merged with each child.
@@ -96,30 +96,39 @@ class WalkOutput(ABC):
 _TAG_KEYS = ("inactive", "protect", "operation", "active")
 
 
-def tags_in(annotation: Any) -> int:
-    """How many tags an annotation holds: an ``@`` dict, or a leaf-list's
-    per-value list of them."""
+def tags_in(annotation: Any, keys: tuple[str, ...] = _TAG_KEYS) -> int:
+    """How many tags (or other annotation *keys*) an annotation holds: an
+    ``@`` dict, or a leaf-list's per-value list of them."""
     if isinstance(annotation, list):
-        return sum(tags_in(item) for item in annotation)
+        return sum(tags_in(item, keys) for item in annotation)
     if isinstance(annotation, dict):
-        return sum(key in annotation for key in _TAG_KEYS)
+        return sum(key in annotation for key in keys)
     return 0
 
 
-def tags_above(config: Any, below: list[str]) -> int:
-    """The tags a relative selection along *below* leaves out of the value it
-    writes: each step's `@<key>` beside it and each ancestor container's own
-    ``@`` (the configuration's aside). A selected container's own ``@`` is part
-    of the value."""
+def tags_above(config: Any, below: list[str], keys: tuple[str, ...] = _TAG_KEYS) -> int:
+    """The tags (or other annotation *keys*) a relative selection along *below*
+    leaves out of the value it writes: each step's `@<key>` beside it and each
+    ancestor container's own ``@`` (the configuration's aside). A selected
+    container's own ``@`` is part of the value."""
     count, node = 0, config
     for depth, key in enumerate(below):
         if not isinstance(node, dict):
             break
         if depth and key != "@":
-            count += tags_in(node.get("@"))
-        count += tags_in(node.get(f"@{key}"))
+            count += tags_in(node.get("@"), keys)
+        count += tags_in(node.get(f"@{key}"), keys)
         node = node.get(key)
     return count
+
+
+def selection_comments_note(count: int) -> str:
+    """The note json, yaml-new and yaml give for the comments a relative
+    selection drops (set and structured output write no comment at all)."""
+    return (
+        f"note: {count} comment(s) at or above the selected path dropped: "
+        "relative output writes what lies below the path"
+    )
 
 
 def selection_tags_note(count: int) -> str:
@@ -130,11 +139,25 @@ def selection_tags_note(count: int) -> str:
     )
 
 
+def merged_tags_note(dropped: list[str], *, withhold: bool) -> str:
+    """The note set and structured output give for tags on a container Junos
+    writes merged with each child and never tags (`family`): the device
+    refuses `deactivate ... family`. *withhold* names no path (an anonymized
+    conversion)."""
+    where = (
+        "their paths are withheld: the conversion anonymizes" if withhold else "; ".join(dropped)
+    )
+    return (
+        f"note: {len(dropped)} tag(s) dropped from a container Junos never "
+        f"tags ({where}): it is written merged with each child"
+    )
+
+
 def value_tags_note(count: int) -> str:
     """The one note set and structured output give for per-value leaf-list tags."""
     return (
         f"note: {count} tag(s) on single values of a leaf-list dropped: "
-        "Junos tags a leaf-list only as a whole"
+        "set and structured text have no form for one"
     )
 
 

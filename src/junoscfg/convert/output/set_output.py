@@ -8,6 +8,7 @@ from junoscfg.convert.output.dict_walker import (
     Below,
     DictWalker,
     WalkOutput,
+    merged_tags_note,
     path_words,
     selection_tags_note,
     value_tags_note,
@@ -30,6 +31,8 @@ class SetWalkOutput(WalkOutput):
         self.meta_lines: list[str] = []
         self.dropped_selected = 0
         self.dropped_values = 0
+        self.dropped_merged: list[str] = []
+        self._merged: set[str] = set()
 
     def emit(self, hierarchy: list[str]) -> None:
         """Emit a ``set`` command for *hierarchy*."""
@@ -39,9 +42,23 @@ class SetWalkOutput(WalkOutput):
         """Emit a ``set`` command for a positional-key leaf."""
         self.lines.append(" ".join(["set", *path, value]))
 
+    def _tag(self, verb: str, hierarchy: list[str]) -> None:
+        """Emit *verb* for *hierarchy*, but not on a container Junos writes
+        merged with each child: the device refuses `deactivate ... family`."""
+        path = " ".join(hierarchy)
+        if path in self._merged:
+            if f"{verb} {path}" not in self.dropped_merged:
+                self.dropped_merged.append(f"{verb} {path}")
+        else:
+            self.lines.append(f"{verb} {path}")
+
+    def mark_merged(self, hierarchy: list[str]) -> None:
+        """Remember a container Junos never tags."""
+        self._merged.add(" ".join(hierarchy))
+
     def emit_deactivate(self, hierarchy: list[str]) -> None:
         """Emit a ``deactivate`` command for *hierarchy*."""
-        self.lines.append(" ".join(["deactivate", *hierarchy]))
+        self._tag("deactivate", hierarchy)
 
     def emit_replace(self, hierarchy: list[str]) -> None:
         """Do nothing: set mode has no equivalent of ``replace:``."""
@@ -49,15 +66,15 @@ class SetWalkOutput(WalkOutput):
 
     def emit_protect(self, hierarchy: list[str]) -> None:
         """Emit a ``protect`` command for *hierarchy*."""
-        self.lines.append(" ".join(["protect", *hierarchy]))
+        self._tag("protect", hierarchy)
 
     def emit_activate(self, hierarchy: list[str]) -> None:
         """Emit an ``activate`` command for *hierarchy*."""
-        self.lines.append(" ".join(["activate", *hierarchy]))
+        self._tag("activate", hierarchy)
 
     def emit_delete(self, hierarchy: list[str]) -> None:
         """Emit a ``delete`` command for *hierarchy*."""
-        self.lines.append(" ".join(["delete", *hierarchy]))
+        self._tag("delete", hierarchy)
 
     def drop_selected_tag(self) -> None:
         """Count a tag at or above a relative selection's path."""
@@ -73,12 +90,14 @@ def dict_to_set(
     *,
     below: list[str] | None = None,
     diagnostic_sink: Callable[[str], None] | None = None,
+    withhold_values: bool = False,
 ) -> str:
     """Render the IR dict as display set commands; with *below*, *config* is
     the IR along that path and the statements are written without its words
     (a relative selection). A tag the output cannot write is noted to
     *diagnostic_sink*: one at or above a relative path, one on a single value
-    of a leaf-list."""
+    of a leaf-list, one on a container Junos never tags; with
+    *withhold_values* a note names no path."""
     if not isinstance(config, dict):
         if config is None or config is True:
             return "set\n"
@@ -92,6 +111,8 @@ def dict_to_set(
             diagnostic_sink(selection_tags_note(output.dropped_selected))
         if output.dropped_values:
             diagnostic_sink(value_tags_note(output.dropped_values))
+        if output.dropped_merged:
+            diagnostic_sink(merged_tags_note(output.dropped_merged, withhold=withhold_values))
 
     if not output.lines:
         return ""

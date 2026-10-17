@@ -1,6 +1,33 @@
 ## Findings
 
-Fresh Reviewer: pending (dispatched by the coordinator after STOP-R).
+Fresh Reviewer, round 1, on `ec62908...16a1fe9` (code head `3bac590`): Merge after fixes. Full
+text and probes: the coordinator's scratchpad `review-dpf/verdict.md`. Dispositions (owner
+rulings and coordinator dispositions of 2026-10-17):
+
+1. B1 (binding): `set system dump-on-panic` validated but the set and curly readers kept it
+   unplaced, while JSON and XML placed `[null]`. Fixed: the row is a flag, every reader gives one
+   IR; new law `tests/corpus/test_device_probes.py::TestEveryAcceptedLineReadsAsOneIrInEveryFormat`
+   and the rendering test compare each rendering's own reader with the set reader.
+2. B2 (binding): S-6 changed an approved requirement under a pending decision. Resolved by the
+   owner ruling on S-6 below; the break assessment cites it.
+3. B3 (binding): ARCHITECTURE.md and the changelog said conversion refuses several statements on
+   one line. Corrected to the behaviour the owner was offered: conversion reads it, `-v` names it
+   unsupported.
+4. A1: `deactivate … family`, which the device refuses, was valid for `-v` and written back by
+   set output. Fixed here (owner ruling): the walk names it `merged`, `-v` refuses it, set output
+   drops it with the structured writer's note; the tag-acceptance requirement is modified.
+5. A2: the selection-tags scenario's structured text corrected to `inactive: system host-name r1;`.
+6. A3: the decision record and this review say the one-line grammar prototype was not kept and
+   its figures are the Builder's measurement (the 12,416 containers counted in the XSD tree,
+   before the structure tree drops `o` from containers).
+7. A4: a relative selection's dropped comment gets a note in json, yaml and yaml-new
+   (RELATIVE-TAGS-001 closed); the device questions are in BACKLOG DEVICE-EVIDENCE; the archive
+   links match the archive date.
+8. A5: WHOLE-LIST-TAGS-001 carries the owner ruling; the verb requirement names the curly
+   exception (a strict xfail).
+9. A6: `.openspec.yaml` declares the `SchemaLoadError` for a verb line without a structure tree.
+10. A7: the per-value note says "set and structured text have no form for one".
+11. A8: the decision record's path is whole in ARCHITECTURE.md.
 
 ## Already provided
 
@@ -74,12 +101,14 @@ structured writer's note mechanism and the `Below` wrapper; the before/after com
   refuses another list's bare keyword (3,440 homogeneous of 21,507 lists). The rule rests on
   two lists; questions 6 and 7 test it. The entry-keys requirement is modified to match; the
   static-route and route-filter whole-list shapes went.
-- Decision: Pending owner decision. Interim: the safe reading above, which keeps every device
-  line known to junoscfg valid.
+- Decision: Owner ruling 2026-10-17: keep the `homogeneous` reading as built; probe more lists
+  of each kind in the next device run. Binding carry-forward: device questions 6 and 7 (BACKLOG
+  DEVICE-EVIDENCE, VERB-PREFIX-001) are its checkpoint.
 
 ## Verdict
 
-Pending the fresh Reviewer.
+Round 1: Merge after fixes (B1 to B3 binding, A1 to A8 advisory), all dispositioned above.
+Round 2 (B1 and A1 change runtime behaviour): pending.
 
 ## Scope dispositions and follow-up evidence
 
@@ -98,8 +127,8 @@ coordinator dispositions and owner rulings of 2026-10-17:
 | S6 / S-3 | reworded | `expected-findings.json` |
 | S7 | the set reader refuses a list's bare keyword by the shared walk (homogeneous lists aside, S-6); the remaining path, a whole-list tag from JSON or curly input written as a set line `-v` refuses, is outside a cohesive fix (a new writer rule with no device evidence) and is pinned by strict xfails and BACKLOG WHOLE-LIST-TAGS-001 | `test_scalar_meta_targets.py`, `test_every_door.py` |
 | S8 | resolved: F1 and F2 are not backlog items; the xfails and the IDs went | `test_device_probes.py` |
-| F2 | owner rule 2026-10-17: measured, not taken. The widened grammar touched 12,416 containers the XSD marks `oneliner` (447 names), grew the grammar from 1.83 MB to 2.32 MB and its compile from 9.5 s to 11.7 s, in about 25 lines of generator code; instead `-v` names several statements on one line unsupported (about 25 lines in the validator, no grammar change) and conversion reads them | `test_several_statements_on_one_line_are_named_unsupported`, decision record |
-| N3 | modelled as the record shows: `system dump-on-panic` is an empty container | `_UNDOCUMENTED` |
+| F2 | owner rule 2026-10-17: measured, not taken (Builder's measurement, prototype not kept). The widened grammar touched 12,416 containers the XSD marks `oneliner` (447 names), grew the grammar from 1.83 MB to 2.32 MB and its compile from 9.5 s to 11.7 s, in about 25 lines of generator code; instead `-v` names several statements on one line unsupported (about 25 lines in the validator, no grammar change) and conversion reads them | `test_several_statements_on_one_line_are_named_unsupported`, decision record |
+| N3 | first modelled as an empty container, the XML shape; review B1 showed the set and curly readers could not place it while JSON and XML gave `[null]`, so it is a flag, one IR from every reader (coordinator disposition) | `_UNDOCUMENTED`, `TestEveryAcceptedLineReadsAsOneIrInEveryFormat` |
 | N4 | fixed: the keyword JSON gives no diagnostic or warning | `test_the_keyword_json_reads_as_the_element_json` |
 | N5 | fixed: the set text of an ancestor selection is asserted whole, each tag after the statements below it | `test_an_absolute_selection_keeps_its_ancestors_tags` |
 | N6 | fixed: commit-check names give the field warning | `test_a_statement_commit_check_misses_is_a_field_warning` |
@@ -131,3 +160,7 @@ Paths only; each runs in `configure private`, never committed.
 9. `system dump-on-panic`: `show system dump-on-panic | display json`, `{}` or `[null]`?
 10. A per-value tag from JSON: `load merge json` of `"community": ["64496:1", "64496:2"],
     "@community": [null, {"inactive": true}]` under the probe route: taken, and printed how?
+11. grpc `"clear-text": {"port": "32767"}` in JSON, the number quoted as junoscfg writes an
+    untyped undocumented leaf: does `load merge json` take it? (The device prints it bare.)
+
+The list is copied into BACKLOG DEVICE-EVIDENCE so it outlives the archive.

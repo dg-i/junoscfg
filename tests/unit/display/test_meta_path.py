@@ -63,6 +63,9 @@ ROWS = [
     ("interfaces ge-0/0/0 ether-options speed 1g", "leaf"),
     ("groups G system host-name r1", "value"),
     ("groups G system host-name", "leaf"),
+    # Reviewer A1: `family` is written merged with each child and never tagged;
+    # the device refuses `deactivate … family` ("missing argument").
+    ("interfaces ge-0/0/1 unit 0 family", "merged"),
 ]
 
 

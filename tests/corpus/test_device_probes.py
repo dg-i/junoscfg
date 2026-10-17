@@ -82,6 +82,17 @@ def _values(record: dict[str, Any]) -> list[str]:
     return values
 
 
+def _values_as_text(node: Any) -> Any:
+    """*node* with every number a string: the IR holds a leaf's value as text."""
+    if isinstance(node, dict):
+        return {key: _values_as_text(value) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_values_as_text(value) for value in node]
+    if isinstance(node, int) and not isinstance(node, bool):
+        return str(node)
+    return node
+
+
 def _text(rendering: dict[str, Any]) -> str:
     text = rendering["text"]
     return json.dumps(text) if rendering["format"] == "json" else text
@@ -185,12 +196,45 @@ class TestEveryProbedRenderingReadsAsItsSet:
         result = convert_config_result(_text(rendering), from_format=reader, to_format=Format.SET)
         assert [d.message for d in result.diagnostics if d.source == "field-validate"] == []
         printed = "\n".join(_printed_set(rendering) or []) + "\n"
+        # The rendering's own reader and the set reader give one IR (review B1),
+        # a number the device's JSON writes bare (`"port": 32767`) as a value.
+        assert _values_as_text(read_ir(_text(rendering), reader)) == read_ir(printed, Format.SET)
         assert read_ir(result.output, Format.SET) == read_ir(printed, Format.SET)
         if reader is Format.JSON:
             assert validate_config(_text(rendering), format=Format.JSON).valid
 
     def test_the_renderings_cover_every_question_with_one(self) -> None:
         assert {r.values[0]["id"] for r in _RENDERINGS} >= {"C3", "A2", "D2", "D4", "P4"}
+
+
+_SET_LINES = [
+    pytest.param(entry["line"], id=f"{entry['id']}-{index}")
+    for index, entry in enumerate(_LINES)
+    if entry["accepted"] and entry["line"].startswith("set ")
+]
+
+
+class TestEveryAcceptedLineReadsAsOneIrInEveryFormat:
+    """Every `set` line the device took is placed by the set reader, and reads
+    to the same IR through the curly, JSON and yaml-new readers from
+    junoscfg's own output of it; the JSON it writes validates. `set system
+    dump-on-panic` validated but stayed unplaced in set and curly input while
+    JSON and XML placed it (review B1, change device-probe-fixes)."""
+
+    @pytest.mark.parametrize("line", _SET_LINES)
+    def test_the_line(self, line: str) -> None:
+        result = convert_config_result(line, from_format=Format.SET, to_format=Format.JSON)
+        # A missing mandatory statement is a warning the device confirms (D1).
+        assert [d.message for d in result.diagnostics if "could not be placed" in d.message] == []
+        assert "junoscfg:unplaced" not in result.output
+        assert validate_config(result.output, format=Format.JSON).valid
+        ir = read_ir(line, Format.SET)
+        for fmt in (Format.STRUCTURED, Format.JSON, Format.YAML_NEW):
+            written = convert_config(line, from_format=Format.SET, to_format=fmt)
+            assert read_ir(written, fmt) == ir, fmt
+
+    def test_the_lines_are_there(self) -> None:
+        assert len(_SET_LINES) > 10
 
 
 class TestJunoscfgWritesTheDevicesJsonNames:

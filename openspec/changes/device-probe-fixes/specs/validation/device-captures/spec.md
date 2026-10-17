@@ -47,11 +47,12 @@ accepts it: `system login user <u> shell <value>`, `system services extension-se
 request-response grpc clear-text address <a>` and `port <n>`, and `grpc skip-authentication`,
 `system ddos-protection protocols autoconf aggregate bandwidth|burst <n>`, `family inet6
 labeled-unicast per-prefix-label` under BGP, `dhcp-local-server stale-timer <n>` and
-`no-stale-timer-refresh`, the flags `system debugger-on-break`, `system debugger-on-panic`
-and `chassis dump-on-panic` (`<x/>`), and `system dump-on-panic`, an empty container (an open
-and a close tag; QFX5120 25.2R2-S1.5, probe D4 and P4). A sibling no device showed (`chassis
-debugger-on-panic`) stays refused.
-Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_probes.py::TestEveryProbedLineValidatesAsTheDeviceTookIt::test_the_line`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_shipped_artifacts.py::TestTheShippedGrammarKeepsRejecting::test_rejected`
+`no-stale-timer-refresh`, and the flags `system debugger-on-break`, `system debugger-on-panic`,
+`chassis dump-on-panic` (`<x/>`) and `system dump-on-panic` (an open and a close tag with
+nothing inside, which every reader takes as `[null]`; QFX5120 25.2R2-S1.5, probe D4 and P4).
+Every reader SHALL give each one IR (set, curly, JSON, yaml-new, XML). A sibling no device
+showed (`chassis debugger-on-panic`) stays refused.
+Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_probes.py::TestEveryProbedLineValidatesAsTheDeviceTookIt::test_the_line`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_shipped_artifacts.py::TestTheShippedGrammarKeepsRejecting::test_rejected`, `tests/corpus/test_device_probes.py::TestEveryAcceptedLineReadsAsOneIrInEveryFormat::test_the_line`
 
 #### Scenario: A login shell
 

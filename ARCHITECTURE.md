@@ -187,12 +187,12 @@ or loop in its code) are fixed, and a caller with untrusted input bounds it firs
 **Set input is what a device exports**: the file `show configuration | display
 set` writes, `set`, `deactivate` and `protect` lines, one statement a line. Edit
 commands that need a state machine (`insert`, `rename`, `copy`, `annotate`,
-`unprotect`, `edit`, `replace pattern`) and typed CLI forms an export never
-holds (bracket lists, several statements on one line) are out of scope, listed
-in `docs/guide/conversion.md` and refused by name. `delete` and `activate` stay:
-they record Junos's `operation` and `active` markers, and a `delete` never
-removes an earlier line (`docs/decisions/2026-10-17-set-input-is-a-device-
-export.md`).
+`unprotect`, `edit`, `replace pattern`) and bracket lists are out of scope,
+listed in `docs/guide/conversion.md` and refused by name; several statements on
+one line are read, and `-v` names them unsupported. `delete` and `activate`
+stay: they record Junos's `operation` and `active` markers, and a `delete` never
+removes an earlier line (decision record
+`docs/decisions/2026-10-17-set-input-is-a-device-export.md`).
 
 **Not applicable here.** No money, no wall-clock time, no user identity or
 authorization: junoscfg is a pure text-to-text transformation with no session

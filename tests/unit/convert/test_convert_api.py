@@ -1266,6 +1266,29 @@ class TestPathFiltering:
         ]
         assert "203.0.114.5" not in result.output
 
+    @pytest.mark.parametrize(
+        "to_format", [Format.JSON, Format.YAML, Format.YAML_NEW], ids=["json", "yaml", "yaml-new"]
+    )
+    def test_a_relative_leaf_selection_notes_its_comment(self, to_format: Format) -> None:
+        """A comment beside the selected leaf has no place in the value json,
+        yaml and yaml-new write relative: it is dropped with a note, never
+        silently (ruling 2; Reviewer A4, change device-probe-fixes). Set and
+        structured output write no comment in any selection."""
+        source = json.dumps(
+            {"configuration": {"system": {"host-name": "r1", "@host-name": {"comment": "/* a */"}}}}
+        )
+        result = convert_config_result(
+            source,
+            from_format=Format.JSON,
+            to_format=to_format,
+            path="system.host-name",
+            relative=True,
+        )
+        assert [d.message for d in result.diagnostics if d.severity == "note"] == [
+            "note: 1 comment(s) at or above the selected path dropped: "
+            "relative output writes what lies below the path"
+        ]
+
     @pytest.mark.parametrize("to_format", _WRITERS, ids=_WRITER_IDS)
     def test_an_absolute_selection_keeps_its_ancestors_tags(self, to_format: Format) -> None:
         """A statement inside a deactivated or protected container is written

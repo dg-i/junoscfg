@@ -669,6 +669,14 @@ VERBS = (
         "    }\n}\n",
     ),
     Row(
+        # The device refuses a tag on `family` itself ("missing argument"; Reviewer A1).
+        "deactivate-family-itself",
+        False,
+        set="set interfaces ge-0/0/1 unit 0 family inet address 198.51.100.1/24\n"
+        "deactivate interfaces ge-0/0/1 unit 0 family",
+        messages=("Invalid syntax: deactivate interfaces ge-0/0/1 unit 0 family",),
+    ),
+    Row(
         "deactivate-a-route-and-a-leaf-of-it",
         True,
         set="set routing-options static route 198.51.100.0/24 description JUNOSCFG-PROBE\n"

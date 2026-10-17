@@ -27,7 +27,8 @@ values remain values. The rule and its reasons:
 [Set input is what a device exports](../decisions/2026-10-17-set-input-is-a-device-export.md).
 
 Edit commands that need a state machine, and typed CLI forms an export never holds,
-are unsupported, each refused with an error naming it:
+are unsupported, each named in an error; conversion refuses all but several statements
+on one line, which it reads:
 
 | Construct | Example | Conversion | Validation (`-v`) |
 |---|---|---|---|
@@ -42,7 +43,9 @@ its whole key, a leaf, leaf-list or flag before its value, or a list the schema 
 policy-statement` (a list's keyword without its entry's name) and `deactivate
 routing-options static route 198.51.100.0/24 community 64496:2` (one value of a
 leaf-list); conversion refuses such a line with `ValueError` ("Metadata commands
-cannot target ..."), and `-v` reports it invalid.
+cannot target ..."), and `-v` reports it invalid. A tag on `family` itself, which
+the device refuses ("missing argument"), is reported by field validation, invalid
+for `-v`, and dropped with a note by set and structured output.
 
 An unsupported command refuses conversion of the entire input with `ValueError` and
 its physical line number; CLI conversion exits 2 without partial output. Validation
@@ -255,9 +258,11 @@ A relative selection cannot write a tag at or above its path: no statement is le
 carry it. Every format drops it and says so in one note, "N tag(s) at or above the
 selected path dropped: relative output writes what lies below the path"; set output
 never writes a bare `deactivate` or `protect`, which a device refuses. A selected
-container's own tag stays in the value JSON, `yaml-new` and `yaml` write. Set and
-structured output also note a tag on one value of a leaf-list, which Junos has no
-form for: "N tag(s) on single values of a leaf-list dropped"; JSON and YAML keep it.
+container's own tag stays in the value JSON, `yaml-new` and `yaml` write; a comment there
+is dropped with a note of its own. Set and structured output write no comment in any
+selection. Set and
+structured output also note a tag on one value of a leaf-list, which set and structured
+text have no form for: "N tag(s) on single values of a leaf-list dropped"; JSON and YAML keep it.
 
 ## Operational Attributes
 

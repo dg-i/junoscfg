@@ -232,7 +232,9 @@ Create an OpenSpec change only when an item is selected for implementation.
   note, "N tag(s) at or above the selected path dropped: relative output writes what
   lies below the path" (spec conversion/selection-tags). Set output writes no bare
   verb; json, yaml and yaml-new note a dropped `@<key>` and keep a selected
-  container's own `@`. A comment is no tag and stays outside the note.
+  container's own `@`. A dropped comment gets its own note in json, yaml and yaml-new
+  ("N comment(s) at or above the selected path dropped"); set and structured output
+  write no comment in any selection.
 - **Source change:** own-crash-fixes review, specification challenge SC1 and Reviewer
   A1 ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)).
 
@@ -240,16 +242,14 @@ Create an OpenSpec change only when an item is selected for implementation.
 
 - **IDs:** own-crash-fixes/A2; probe A2.
 - **Status:** open, narrowed. The silent drop is fixed by [device-probe-fixes](../openspec/changes/archive/2026-10-17-device-probe-fixes/): set and structured
-  output note it ("N tag(s) on single values of a leaf-list dropped: Junos tags a
-  leaf-list only as a whole"); json, yaml and yaml-new keep it. Open: whether a
+  output note it ("N tag(s) on single values of a leaf-list dropped: set and structured text have no form for one"); json, yaml and yaml-new keep it. Open: whether a
   device loads a per-value tag from JSON (`"@community": [null, {"inactive": true}]`).
 - **Evidence:** QFX5120 25.2R2-S1.5 probe of 2026-10-16, sanitized record `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`: `deactivate routing-options static route 198.51.100.0/24
   community 64496:2` is refused ("syntax error, expecting ';', [Enter], or '|'"),
   and the device's JSON is `"community": ["64496:1", "64496:2"]` with no per-value
   annotation, so set and curly text have no form for such a tag.
-- **Proposed direction:** probe `load merge json` of a per-value tag. If the device
-  refuses it, the JSON reader may report it; if it loads it, record how the device
-  prints it.
+- **Proposed direction:** device question 10 in DEVICE-EVIDENCE. If the device refuses
+  it, the JSON reader may report it; if it loads it, record how the device prints it.
 - **Source change:** own-crash-fixes review, Reviewer A2
   ([review](../openspec/changes/archive/2026-10-16-own-crash-fixes/review.md)).
 
@@ -393,7 +393,9 @@ Create an OpenSpec change only when an item is selected for implementation.
   debugger-on-break` and `debugger-on-panic` (`<undocumented><x/></undocumented>`),
   `chassis dump-on-panic` (`<chassis><undocumented><dump-on-panic/>`, JSON
   `"dump-on-panic": [null]`) and `system dump-on-panic`, which XML prints as an open
-  and a close tag, a container's shape.
+  and a close tag with nothing inside; every reader takes it as the flag `[null]`
+  (`tests/corpus/test_device_probes.py::TestEveryAcceptedLineReadsAsOneIrInEveryFormat`;
+  its JSON rendering is device question 9 in DEVICE-EVIDENCE).
 - **Resolution:** five `_UNDOCUMENTED` rows in `src/junoscfg/validate/xsd_fixes.py`
   (still 44 fixes), artifacts regenerated; `grammar-corpus.json` records no rejection.
 - **Source change:** device-validation review, device question D4 and pending
@@ -408,8 +410,8 @@ Create an OpenSpec change only when an item is selected for implementation.
   with `down` missing; `up 0 down 0` passes. The expected finding of
   `jvd/vmx-23.2R2-S7.5/mdr1_acx7509` is now class `mandatory-commit-refuses` in
   `tests/data/device/expected-findings.json`. The recorded case sits in a group no
-  `apply-groups` names; whether `commit check` refuses an unapplied group is a device
-  question (change review).
+  `apply-groups` names; whether `commit check` refuses an unapplied group is device
+  question 5 in DEVICE-EVIDENCE.
 - **Source change:** device-validation review, device question D1
   ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
 
@@ -425,16 +427,19 @@ Create an OpenSpec change only when an item is selected for implementation.
 - **Resolution:** one read-only walk, `junoscfg.display.meta_target`, decides what a
   verb line names, for the set reader and for `-v`: a container, a list entry after
   its whole key, a leaf before its value, or a homogeneous list whole. Another list's
-  bare keyword and a leaf's value are refused by both, a stop inside a key is invalid
-  and kept unplaced. Which lists the device tags whole is inferred from two lists
-  (one homogeneous, one not); the change review lists the device questions.
+  bare keyword, a tag on `family` itself (which the device refuses, "missing argument";
+  set output drops it with a note) and a leaf's value are refused, a stop inside a key is
+  invalid and kept unplaced. Owner ruling 2026-10-17 on review S-6: keep the
+  `homogeneous` reading as built, inferred from two lists; binding carry-forward: device
+  questions 6 and 7 in DEVICE-EVIDENCE are its checkpoint.
 - **Source change:** device-validation review, device question D5
   ([review](../openspec/changes/archive/2026-10-16-device-validation/review.md)).
 
 ## WHOLE-LIST-TAGS-001 — A whole-list tag on a list the device tags by entry
 
-- **IDs:** device-probe-fixes Test/Challenge S4, S7.
-- **Status:** open; future work, not selected for implementation.
+- **IDs:** device-probe-fixes Test/Challenge S4, S7; Reviewer A5.
+- **Status:** open; future work, not selected for implementation. Owner ruling
+  2026-10-17: keep it in the backlog with its strict xfails.
 - **Finding and impact:** set input refuses a verb on a list's bare keyword unless the
   XSD marks the list `homogeneous` (probe D5; [device-probe-fixes](../openspec/changes/archive/2026-10-17-device-probe-fixes/)). JSON (`"@policy-statement"`) and
   curly input (`protect: policy-statement {`) still carry such a tag, and the set
@@ -624,6 +629,23 @@ published here. No new device execution or configuration capture was performed.
   captures: no line of `tests/data/device/known-differences.json` holds the class at
   716a9d1. Interim behaviour, kept: the tool keeps the class as a `defect`. Source:
   [device-validation review](../openspec/changes/archive/2026-10-16-device-validation/review.md), backlog candidate B1.
+- **device-probe-fixes questions** ([device-probe-fixes](../openspec/changes/archive/2026-10-17-device-probe-fixes/), review): the next probe asks, paths only,
+  in `configure private`, never committed: (1) `delete policy-options community
+  JUNOSCFG-C1 members 64496:2` after two `members` lines; (2) `delete system apply-groups
+  JUNOSCFG-G` with the group defined; (3) `delete policy-options policy-statement` with one
+  policy defined; (4) `deactivate routing-options static route 198.51.100.0/24 description
+  JUNOSCFG-PROBE` (a scalar value after a verb); (5) `set groups JUNOSCFG-G interfaces <*>
+  hold-time down 0` with no `apply-groups`, then `commit check`; (6) `deactivate system
+  login user` and `deactivate routing-options static route` (lists not marked homogeneous)
+  with entries defined, and more lists of that kind; (7) `deactivate system name-server`,
+  `deactivate firewall family inet filter F term T from source-prefix-list` (homogeneous)
+  and more of that kind, with display set, JSON and XML; (8) `set interfaces ge-0/0/1
+  hold-time up 0 down 0`, then `show interfaces ge-0/0/1 | display set`; (9) `show system
+  dump-on-panic | display json` after `set system dump-on-panic`; (10) `load merge json` of
+  `"@community": [null, {"inactive": true}]` beside two community values under the probe
+  route; (11) `load merge json` of grpc `"clear-text": {"port": "32767"}` with the number
+  quoted, as junoscfg writes it. Questions 6 and 7 are the checkpoint of the owner ruling
+  on review S-6 (the `homogeneous` reading, VERB-PREFIX-001).
 - **Disposition:** request only the named set/JSON/XML subtrees and needed load
   results; retain platform qualifications and private probe provenance.
 

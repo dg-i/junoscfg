@@ -38,6 +38,12 @@
 - [x] 2.5 Evidence: `tools/compare_device_outputs.py` over the 96 capture conversions: 0 of 96
   differ (`base.json`, `head.json`); unit, contract, corpus and tooling suites green.
 
+- [x] 2.6 Review round 1 (Merge after fixes) fixes: B1 `system dump-on-panic` a flag, one IR
+  from every reader, with the every-reader probe law; B3 records say conversion reads one-line
+  statements; A1 `family` tags refused by `-v` and dropped with a note by set output; A2, A5 to
+  A8 record corrections; A3 measurement provenance; A4 the relative comment note, device
+  questions in BACKLOG DEVICE-EVIDENCE; S-6 owner ruling recorded; artifacts regenerated.
+
 ## 3. Review and evidence
 
 - [ ] 3.1 Complete the risk-required fresh isolated review, or record why the assurance policy does not require it.

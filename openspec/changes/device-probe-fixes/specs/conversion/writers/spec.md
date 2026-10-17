@@ -4,8 +4,9 @@
 
 WHEN the IR tags one value of a leaf-list (`"@domain-search": [null, {"inactive": true}]`, as
 JSON or YAML input may give it) THEN the set and structured writers SHALL write every value
-and SHALL give one note, "N tag(s) on single values of a leaf-list dropped: Junos tags a
-leaf-list only as a whole", instead of dropping the tag silently; the json, yaml-new and yaml
+and SHALL give one note, "N tag(s) on single values of a leaf-list dropped: set and
+structured text have no form for one", counting each tag of each value (a comment is none),
+instead of dropping the tag silently; the json, yaml-new and yaml
 writers SHALL keep the tag as before. The QFX5120 25.2R2-S1.5 refuses `deactivate
 routing-options static route 198.51.100.0/24 community 64496:2` ("syntax error, expecting
 ';', [Enter], or '|'") and prints `"community": ["64496:1", "64496:2"]` with no per-value

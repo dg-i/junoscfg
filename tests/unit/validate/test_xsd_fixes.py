@@ -675,13 +675,14 @@ UNDOCUMENTED = [
         "clear-text",
         {"address": "l", "port": "l"},
     ),
-    # `system dump-on-panic` prints as an open and close tag, a container's
-    # shape (`<dump-on-panic>\n</dump-on-panic>`); the others print as `<x/>`.
+    # `system dump-on-panic` prints as an open and close tag with nothing inside
+    # (`<dump-on-panic>\n</dump-on-panic>`), which every reader takes as the flag
+    # `[null]`; the others print as `<x/>` (review B1).
     *(
         row
         for prefix in ((), ("groups", "group"))
         for row in (
-            ((*prefix, "system"), "dump-on-panic", {}),
+            ((*prefix, "system"), "dump-on-panic", "p"),
             ((*prefix, "system"), "debugger-on-break", "p"),
             ((*prefix, "system"), "debugger-on-panic", "p"),
             ((*prefix, "chassis"), "dump-on-panic", "p"),

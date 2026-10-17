@@ -50,11 +50,18 @@ def from_dict(
     if below is not None and implemented in ("junos-json", "junos-yaml", "ir-yaml"):
         # The value at the path leaves out every tag at or above it; set and
         # structured output count theirs as they walk (`Below`).
-        from junoscfg.convert.output.dict_walker import selection_tags_note, tags_above
+        from junoscfg.convert.output.dict_walker import (
+            selection_comments_note,
+            selection_tags_note,
+            tags_above,
+        )
 
         dropped = tags_above(config, below)
+        comments = tags_above(config, below, ("comment",))
         if dropped and diagnostic_sink is not None:
             diagnostic_sink(selection_tags_note(dropped))
+        if comments and diagnostic_sink is not None:
+            diagnostic_sink(selection_comments_note(comments))
     if implemented == "junos-json":
         from junoscfg.convert.output.json_output import dict_to_json
 
@@ -72,7 +79,9 @@ def from_dict(
     if implemented == "set":
         from junoscfg.convert.output.set_output import dict_to_set
 
-        return dict_to_set(config, below=below, diagnostic_sink=diagnostic_sink)
+        return dict_to_set(
+            config, below=below, diagnostic_sink=diagnostic_sink, withhold_values=withhold_values
+        )
     if implemented == "structured":
         from junoscfg.convert.output.structured_output import dict_to_structured
 

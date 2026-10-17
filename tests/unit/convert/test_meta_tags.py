@@ -199,11 +199,19 @@ class TestATagOnFamilyIsReported:
         ]
         assert len(unplaced) == 1
 
-    def test_set_output_repeats_it(self) -> None:
-        out = convert_config(
+    def test_set_output_drops_it_with_a_note(self) -> None:
+        """Set output wrote `deactivate … family` back, a line the device refuses
+        ("missing argument") and `-v` now refuses too; it drops the tag with the
+        note structured output gives (Reviewer A1, change device-probe-fixes)."""
+        result = convert_config_result(
             FAMILY_TAGGED[Format.SET], from_format=Format.SET, to_format=Format.SET
         )
-        assert "deactivate interfaces xe-0/0/0 unit 0 family" in out.splitlines()
+        assert result.output == "set interfaces xe-0/0/0 unit 0 family inet address 10.0.0.1/24\n"
+        notes = [d.message for d in result.diagnostics if d.severity == "note"]
+        assert notes == [
+            "note: 1 tag(s) dropped from a container Junos never tags (deactivate interfaces "
+            "xe-0/0/0 unit 0 family): it is written merged with each child"
+        ]
 
     def test_structured_output_drops_it_with_a_note(self) -> None:
         result = convert_config_result(
@@ -227,7 +235,7 @@ class TestATagOnFamilyIsReported:
         ]
         assert len(unplaced) == 1
 
-    def test_set_output_repeats_a_sibling_family_tag_from_json(self) -> None:
+    def test_set_output_drops_a_sibling_family_tag_from_json(self) -> None:
         doc = {
             "configuration": {
                 "interfaces": {
@@ -246,8 +254,11 @@ class TestATagOnFamilyIsReported:
                 }
             }
         }
-        out = convert_config(json.dumps(doc), from_format=Format.JSON, to_format=Format.SET)
-        assert "deactivate interfaces xe-0/0/0 unit 0 family" in out.splitlines()
+        result = convert_config_result(
+            json.dumps(doc), from_format=Format.JSON, to_format=Format.SET
+        )
+        assert "deactivate interfaces xe-0/0/0 unit 0 family" not in result.output.splitlines()
+        assert any("never tags" in d.message for d in result.diagnostics)
 
 
 class TestOnlyTagsCountAsTags:
@@ -279,7 +290,7 @@ class TestOnlyTagsCountAsTags:
         with pytest.raises(ValueError, match="apply-groups"):
             _ir(curly, Format.STRUCTURED)
 
-    def test_a_family_tag_written_twice_is_repeated_once(self) -> None:
+    def test_a_family_tag_written_twice_is_noted_once(self) -> None:
         doc = json.loads(
             convert_config(
                 FAMILY_TAGGED[Format.JSON], from_format=Format.JSON, to_format=Format.JSON
@@ -287,8 +298,12 @@ class TestOnlyTagsCountAsTags:
         )
         unit = doc["configuration"]["interfaces"]["interface"][0]["unit"][0]
         unit["@family"] = {"inactive": True}
-        out = convert_config(json.dumps(doc), from_format=Format.JSON, to_format=Format.SET)
-        assert out.splitlines().count("deactivate interfaces xe-0/0/0 unit 0 family") == 1
+        result = convert_config_result(
+            json.dumps(doc), from_format=Format.JSON, to_format=Format.SET
+        )
+        assert "deactivate interfaces xe-0/0/0 unit 0 family" not in result.output.splitlines()
+        notes = [d.message for d in result.diagnostics if "never tags" in d.message]
+        assert len(notes) == 1 and notes[0].startswith("note: 1 tag(s)")
 
 
 class TestATagDoesNotGrowOverActiveConfiguration:
@@ -343,7 +358,7 @@ _VALUE_NOTE = "tag(s) on single values of a leaf-list dropped"
 
 
 class TestAPerValueLeafListTagIsNoted:
-    """Junos tags a leaf-list only as a whole: the QFX5120 25.2R2-S1.5 refuses
+    """set and structured text have no form for one: the QFX5120 25.2R2-S1.5 refuses
     `deactivate ... community 64496:2` ("syntax error, expecting ';', [Enter],
     or '|'") and prints `"community": ["64496:1", "64496:2"]` with no per-value
     annotation (probe A2). Set and structured text have no form for such a tag,
@@ -362,7 +377,7 @@ class TestAPerValueLeafListTagIsNoted:
         assert "a.example" in result.output and "b.example" in result.output
         assert "deactivate" not in result.output and "inactive" not in result.output
         notes = [d.message for d in result.diagnostics if _VALUE_NOTE in d.message]
-        assert notes == [f"note: 1 {_VALUE_NOTE}: Junos tags a leaf-list only as a whole"]
+        assert notes == [f"note: 1 {_VALUE_NOTE}: set and structured text have no form for one"]
 
     def test_one_note_counts_every_tag_of_every_value(self) -> None:
         """One note for the whole output, counting each tag of each value; a
@@ -382,7 +397,7 @@ class TestAPerValueLeafListTagIsNoted:
         for to_format in (Format.SET, Format.STRUCTURED):
             result = convert_config_result(source, from_format=Format.JSON, to_format=to_format)
             notes = [d.message for d in result.diagnostics if _VALUE_NOTE in d.message]
-            assert notes == [f"note: 3 {_VALUE_NOTE}: Junos tags a leaf-list only as a whole"]
+            assert notes == [f"note: 3 {_VALUE_NOTE}: set and structured text have no form for one"]
 
     @pytest.mark.parametrize(
         "to_format", [Format.JSON, Format.YAML, Format.YAML_NEW], ids=["json", "yaml", "yaml-new"]

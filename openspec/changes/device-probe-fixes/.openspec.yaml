@@ -27,14 +27,21 @@ declared-break:
       (probe D5 and A2). (b) The set reader refuses the first two with ValueError naming them
       ("Metadata commands cannot target a list without its entry's name"; a leaf's value was
       refused already), where it tagged the whole list and wrote back the line the device
-      refuses. (c) `-v` takes `then community = | + | -`, as the device writes it, and no
+      refuses; a tag on `family` itself, which the device refuses ("missing argument"), is
+      invalid for `-v`, and set output drops it with the note structured output gives, where it
+      wrote the line back. The homogeneous-list reading rests on the owner ruling of 2026-10-17
+      on review S-6, with device questions 6 and 7 as its carried checkpoint. A verb line
+      validated against an artifacts directory without a structure tree raises SchemaLoadError
+      ("a verb line is judged by the structure tree"); every artifact set junoscfg builds holds
+      the tree. (c) `-v` takes `then community = | + | -`, as the device writes it, and no
       longer the misspellings `eq_literal`, `plus_literal`, `minus_literal`; it reports a line
       holding several statements that each stand alone as "Unsupported in set input, one
       statement a line" where it said "Invalid syntax". (d) An absolute path= selection keeps
       the annotations along its path, so a statement inside a deactivated container is
       written inside it, as the device prints it (probe C3), where it was written active. (e)
       A relative path= selection drops a tag at or above its path with one note, in every
-      format, where set wrote a bare verb the device refuses (probe SC1). (f) Set and
+      format, where set wrote a bare verb the device refuses (probe SC1); json, yaml-new and
+      yaml note a comment they drop there. (f) Set and
       structured output note a per-value leaf-list tag; notes carry the writer's name as their
       source. (g) Five statements the device takes undocumented now validate. Output changes
       only where it loaded with another meaning or did not load. Patch, as AGENTS.md rules for
@@ -70,6 +77,7 @@ verification:
   - openspec/specs/conversion/entry-keys/spec.md
   - openspec/specs/conversion/path-filtering/spec.md
   - openspec/specs/conversion/selection-tags/spec.md
+  - openspec/specs/conversion/tag-acceptance/spec.md
   - openspec/specs/conversion/writers/spec.md
   - openspec/specs/schema-pipeline/conversion-hints/spec.md
   - openspec/specs/validation/device-captures/spec.md
