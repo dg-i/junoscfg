@@ -3,9 +3,10 @@ validator share.
 
 A `deactivate`, `protect`, `activate` or `delete` line names a statement by its
 path, and the reader places the tag where the walk ends. The device can tag a
-container, a list entry after its whole key, and a leaf, leaf-list or flag
-before its value; it refuses a list's keyword without its entry's name and a
-leaf's value (QFX5120 25.2R2-S1.5, probe D5 and A2,
+container, a list entry after its whole key, a leaf, leaf-list or flag before
+its value, and a homogeneous list whole (deactivate6.txt); it refuses another
+list's keyword without its entry's name and a leaf's value (QFX5120
+25.2R2-S1.5, probe D5 and A2,
 `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`). The rows run on
 the shipped tree; the lines are the probe's own and the device captures' verb
 lines (change device-probe-fixes).
@@ -41,6 +42,12 @@ ROWS = [
         "entry",
     ),
     ("policy-options policy-statement", "list"),
+    ("system login user", "list"),
+    ("routing-options static route", "list"),
+    # A homogeneous list is tagged whole: the device deactivates port-mirroring's
+    # `routing-instance` whole (deactivate6.txt); `name-server` is marked so too.
+    ("forwarding-options port-mirroring family inet output routing-instance", "whole-list"),
+    ("system name-server", "whole-list"),
     (f"{ROUTE} community 64496:2", "value"),
     ("system host-name r1", "value"),
     (f"{VIRTUAL_LINK} transit-area", "partial-key"),

@@ -90,7 +90,7 @@ None, because the rulings settle every material choice; C4 and C5 are open to ch
 
 - Roles required: Builder; independent Test/Challenge; fresh Reviewer (coordinator), as
   `instruction-integrity.md` records.
-- Resume point: STOP-T (independent Test/Challenge of the phase-4 tests), then phase 5.
+- Resume point: STOP-R (fresh review), after the full check.
 
 ## Delta log
 
@@ -102,6 +102,14 @@ None, because the rulings settle every material choice; C4 and C5 are open to ch
   lines 193 and 627). Interim, a safe reversible action: strict xfail rows naming
   SET-COMPACT-LEAVES-001 and SET-LITERAL-KEYWORDS-001, recorded for the backlog; scope ruling
   asked at STOP-T. No completed work is invalidated.
+
+- Delta 1 (Test/Challenge and owner rulings, 2026-10-17): F1 and F2 into this change; the
+  dispositions in `review.md`. New evidence: `private_test_data/deactivate6.txt` shows the
+  device tagging port-mirroring's homogeneous `routing-instance` list whole; the walk follows
+  it (review S-6). Phase-4 additions red at `94e28f6`.
+- Delta 2 (owner instruction 2026-10-17): set input is what a device exports. F2 measured and
+  handled as unsupported (`-v` names it, conversion reads it); acceptance criteria otherwise
+  unchanged. Before/after comparison at the implementation head: 0 of 96 conversions differ.
 
 ## Scope and completion
 

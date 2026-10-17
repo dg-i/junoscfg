@@ -67,7 +67,8 @@ expose = [
     "forget_loaded_artifacts", "detect_format", "format_value",
     "get_transparent_child", "holds_tag", "is_algebra_token", "is_display_set",
     "is_flat_dict", "is_freeform_nk", "is_policy_algebra", "is_positional_key", "key_is_positional",
-    "is_transparent_list_key", "load_schema_tree", "open_artifact_write", "passes_tag_to_child",
+    "is_transparent_list_key", "load_schema_tree", "meta_target", "open_artifact_write",
+    "passes_tag_to_child", "read_entry_key",
     "read_artifact_text", "resolve_artifacts_dir", "schema_child", "statement_children",
     "statement_key", "statement_name_spellings", "strip_type_prefix", "unplaced_record_problem",
     "universal_statements", "xml_to_dict",
@@ -78,7 +79,8 @@ expose = [
 from = ["junoscfg.input"]
 expose = [
     "META_KEY_PREFIXES", "InputError", "NonJsonValue", "find_non_json_value", "find_unsupported_set_brackets",
-    "find_unsupported_set_commands", "iter_visible_set_lines", "normalize",
+    "find_unsupported_set_commands", "iter_visible_set_lines", "normalize", "set_token_value",
+    "set_tokens",
 ]
 
 [[interfaces]]

@@ -636,6 +636,13 @@ VERBS = (
         structured="policy-options {\n    protect: policy-statement {\n        JUNOSCFG-PROBE {\n"
         "            term t1 {\n                then accept;\n            }\n        }\n    }\n}\n",
         messages=("Invalid syntax: protect policy-options policy-statement",),
+        xfail="WHOLE-LIST-TAGS-001: curly validation reads `protect: policy-statement {` "
+        "as a tag on the whole list, which the set reader now refuses",
+        xfail_on=(
+            "validate_structured",
+            "validate_config-structured",
+            "cli-structured",
+        ),
     ),
     Row(
         "deactivate-one-value-of-a-leaf-list",

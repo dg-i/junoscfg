@@ -108,6 +108,15 @@ result = validate_config(
     one `members v20` command. Structured curly-brace input still accepts
     bracket lists and structured-to-set conversion performs that expansion.
 
+    A `deactivate`, `protect`, `activate` or `delete` line is valid only where
+    it names a statement the device can tag, judged by the structure tree
+    beside the grammar: not a list's keyword without its entry's name, not a
+    leaf's value, not a stop inside an entry's key (see the
+    [raw set command boundary](conversion.md#raw-set-command-boundary)). A line
+    holding several statements that each stand alone, such as `hold-time up 0
+    down 0`, is reported "Unsupported in set input, one statement a line", as
+    a device exports one statement a line; conversion reads it.
+
     Flattened hierarchies marked by the schema accept both compact sibling
     runs and repeated paths. For example, one NTP server line may carry
     `version`, `prefer`, and `routing-instance`, while `maximum-prefixes` may

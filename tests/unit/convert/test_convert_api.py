@@ -1144,7 +1144,10 @@ class TestPathFiltering:
         tags = _TAGGED_ALONE[path].count("\ndeactivate ") + _TAGGED_ALONE[path].count("\nprotect ")
         assert _dropped_tags(result) == tags
         if to_format is Format.SET:
-            assert all(len(line.split()) > 1 for line in result.output.splitlines())
+            # A flag selected relative is its path alone, `set` (no verb).
+            assert all(
+                len(line.split()) > 1 or line == "set" for line in result.output.splitlines()
+            )
             words = path.replace(".", " ")
             put_back = "".join(
                 f"set {words} {line.removeprefix('set').strip()}".rstrip() + "\n"
@@ -1278,7 +1281,7 @@ class TestPathFiltering:
         expected = {
             "system.host-name": "set system host-name r1\ndeactivate system\n",
             "system.syslog.file": (
-                "set system syslog file f any any\ndeactivate system\nprotect system syslog\n"
+                "set system syslog file f any any\nprotect system syslog\ndeactivate system\n"
             ),
         }
         for path, alone in expected.items():

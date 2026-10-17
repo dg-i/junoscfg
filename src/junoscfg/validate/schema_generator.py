@@ -289,7 +289,7 @@ def _property_names(name: str, node: SchemaNode, variant: str) -> tuple[str, ...
     JSON is the device's own spelling, so a node a fix renamed to its CLI
     keyword is named as the device writes it (`end-range`, `ieee-802.3ad`).
     Its keyword, which junoscfg 0.28.23 and earlier wrote in JSON and the JSON
-    reader still reads, stays a deprecated alias there. YAML is junoscfg's
+    reader reads, stays an alias there for good: a device loads it (probe D3). YAML is junoscfg's
     IR, which holds the keyword (spec schema-pipeline/conversion-hints).
     """
     element = xml_name(node) if variant == "json" else None

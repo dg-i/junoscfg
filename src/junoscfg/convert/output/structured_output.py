@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from junoscfg.convert.output.dict_walker import Below, DictWalker, WalkOutput, path_words
+from junoscfg.convert.output.dict_walker import (
+    Below,
+    DictWalker,
+    WalkOutput,
+    path_words,
+    selection_tags_note,
+    value_tags_note,
+)
 from junoscfg.display import ConfigStore, format_value, load_schema_tree, universal_statements
 
 
@@ -28,6 +35,8 @@ class StructuredWalkOutput(WalkOutput):
         self._deferred: list[tuple[str, list[str]]] = []
         self._dropped_deletes: list[str] = []
         self._dropped_kept_tags = 0
+        self._dropped_selected = 0
+        self._dropped_values = 0
         self._merged: list[str] = []
         self._blocks: list[str] = []
         self._diagnostic_sink = diagnostic_sink
@@ -75,6 +84,14 @@ class StructuredWalkOutput(WalkOutput):
         """
         self._dropped_kept_tags += 1
 
+    def drop_selected_tag(self) -> None:
+        """Count a tag at or above a relative selection's path."""
+        self._dropped_selected += 1
+
+    def drop_value_tags(self, count: int) -> None:
+        """Count tags on single values of a leaf-list."""
+        self._dropped_values += count
+
     def keep_block(self, hierarchy: list[str]) -> None:
         """Defer writing *hierarchy* as a block until :meth:`finalize`."""
         self._blocks.append(" ".join(hierarchy))
@@ -91,12 +108,7 @@ class StructuredWalkOutput(WalkOutput):
         for path_str in self._blocks:
             self.config.keep_block(path_str)
         dropped_tags: list[str] = []
-        untagged = 0
         for op, hierarchy in self._deferred:
-            if not hierarchy:
-                # A relative selection's own tag: no statement left to carry it.
-                untagged += 1
-                continue
             path_str = " ".join(hierarchy)
             if path_str in merged:
                 # `family` takes no tag on the device, and `inactive: family
@@ -119,11 +131,10 @@ class StructuredWalkOutput(WalkOutput):
                 f"note: {len(dropped_tags)} tag(s) dropped from a container Junos never "
                 f"tags ({where}): it is written merged with each child"
             )
-        if untagged and self._diagnostic_sink is not None:
-            self._diagnostic_sink(
-                f"note: {untagged} tag(s) of the selected statement itself dropped: "
-                "relative structured output writes what lies below the path"
-            )
+        if self._dropped_selected and self._diagnostic_sink is not None:
+            self._diagnostic_sink(selection_tags_note(self._dropped_selected))
+        if self._dropped_values and self._diagnostic_sink is not None:
+            self._diagnostic_sink(value_tags_note(self._dropped_values))
         if self._dropped_kept_tags and self._diagnostic_sink is not None:
             self._diagnostic_sink(
                 f"note: {self._dropped_kept_tags} meta command(s) on a statement kept whole "

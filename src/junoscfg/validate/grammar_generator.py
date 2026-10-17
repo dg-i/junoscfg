@@ -37,7 +37,9 @@ from junoscfg.validate.schema_node import SchemaNode  # noqa: TC001
 # change-configuration commands "..."`. The former hard-coded list of 13 names
 # left every other such value unparseable.
 
-# Lark-safe name mapping for special characters
+# Lark-safe rule names for element names that are symbols. A rule name only:
+# a keyword is written as the device writes it, `then community = C1`
+# (QFX5120 25.2R2-S1.5, probe D2).
 _NAME_ESCAPES = {
     "=": "eq_literal",
     "+": "plus_literal",
@@ -190,7 +192,7 @@ def _key_sequence(node: SchemaNode) -> str:
             alternatives = []
             for name in field:
                 child = node.children.get(name)
-                keyword = f'"{_NAME_ESCAPES.get(name, name)}"'
+                keyword = f'"{name}"'
                 if child is not None and child.is_leaf:
                     keyword = f"{keyword} {_value_token(child)}"
                 alternatives.append(keyword)
@@ -624,13 +626,10 @@ def _child_reference(
     safe_name = (variant_names or {}).get(id(node), _rule_name_for(name, node))
 
     # Determine the keyword token
-    if name in _NAME_ESCAPES:
-        keyword = f'"{_NAME_ESCAPES[name]}"'
-    elif name.startswith("$"):
+    if name.startswith("$"):
         # Variable placeholder - accept any value
         return "VALUE"
-    else:
-        keyword = f'"{name}"'
+    keyword = f'"{name}"'
 
     # Flattened renderings. `flat-dict` marks a place where the schema's own
     # shape is not what a set command writes: `trigger {"after": [null],

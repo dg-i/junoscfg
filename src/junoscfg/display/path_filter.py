@@ -19,9 +19,11 @@ def filter_dict_by_path(
     Returns:
         Filtered subtree value, or ``None`` if the path is not found. A
         relative path may select a scalar or list as well as a dict. Rebuilt,
-        the selection keeps the annotation its last key has beside it
-        (``@<key>``: a leaf's or leaf-list's tags); a container or list entry
-        holds its own inside the selected value.
+        the selection keeps the annotations along its path: each step's
+        ``@<key>`` beside it (a leaf's or leaf-list's tags) and each ancestor
+        container's own ``@``, so a statement inside a deactivated container
+        stays inside it, as the device prints it (probe C3); a container or
+        list entry holds its own inside the selected value.
     """
     # Navigate through "configuration" wrapper if present
     if "configuration" in data:
@@ -31,23 +33,30 @@ def filter_dict_by_path(
         node = data
         has_config_wrapper = False
 
-    # Walk to the target path
-    parent: Any = None
+    # Walk to the target path, keeping each level that holds a step
+    holders: list[dict[str, Any]] = []
     for token in path_tokens:
         if not isinstance(node, dict) or token not in node:
             return None
-        parent, node = node, node[token]
+        holders.append(node)
+        node = node[token]
 
     if relative:
         return node  # type: ignore[no-any-return]
 
-    # Rebuild the path hierarchy around the subtree, the last key's tags beside it
+    # Rebuild the path hierarchy around the subtree with the annotations along
+    # it: each step's `@<key>` beside it and each ancestor container's own `@`
+    # (not the configuration's), as the whole configuration holds them.
     result: Any = node
-    if path_tokens:
-        last, tags = path_tokens[-1], f"@{path_tokens[-1]}"
-        result = {last: node, tags: parent[tags]} if tags in parent else {last: node}
-    for token in reversed(path_tokens[:-1]):
-        result = {token: result}
+    for depth in reversed(range(len(path_tokens))):
+        holder, token = holders[depth], path_tokens[depth]
+        level: dict[str, Any] = {}
+        if depth and token != "@" and "@" in holder:
+            level["@"] = holder["@"]
+        level[token] = result
+        if f"@{token}" in holder:
+            level[f"@{token}"] = holder[f"@{token}"]
+        result = level
     if has_config_wrapper:
         result = {"configuration": result}
     return result  # type: ignore[no-any-return]

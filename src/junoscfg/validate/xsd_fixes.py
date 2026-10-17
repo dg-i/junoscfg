@@ -481,9 +481,19 @@ def _fix_regexp_commands(root: SchemaNode) -> bool:
 # XSD analogues (grpc `ssl port`, a ddos protocol's `aggregate bandwidth` and
 # `burst`) carry no type the structure tree keeps, dhcp-local-server has no
 # timer to copy, and the captures show one `shell`, `csh`, not its choices.
+# The QFX5120 25.2R2-S1.5 took the rest inside `<undocumented>` (probe D4, P4,
+# `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`): grpc
+# `clear-text address` beside `port`, the flags `debugger-on-break`,
+# `debugger-on-panic` and chassis `dump-on-panic` (`<x/>`), and `system
+# dump-on-panic`, which it prints as an open and a close tag, a container's
+# shape, with nothing inside.
 _UNDOCUMENTED: tuple[tuple[str | tuple[str, str], str, object], ...] = (
     ("login-user-object", "shell", "leaf"),
-    (("request-response", "grpc"), "clear-text", {"port": "leaf"}),
+    (("request-response", "grpc"), "clear-text", {"address": "leaf", "port": "leaf"}),
+    ("juniper-system", "dump-on-panic", {}),
+    ("juniper-system", "debugger-on-break", "presence"),
+    ("juniper-system", "debugger-on-panic", "presence"),
+    ("chassis-type", "dump-on-panic", "presence"),
     (("request-response", "grpc"), "skip-authentication", "presence"),
     (
         ("ddos-protection", "protocols"),

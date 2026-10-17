@@ -8,69 +8,80 @@ removes: >-
   relative set output's bare verb lines (`deactivate`, `protect`, `activate`, `delete` with no
   path), which the device refuses (probe SC1); structured output's own count of a relative
   selection's dropped tags, replaced by the one rule every writer shares; the set reader's
-  private copy of the meta-command walk, which moves read-only into junoscfg.display so the
-  set validator decides what a verb line names by the same walk
+  private meta-command walk, tokenizer and key reader, moved read-only into the kernel
+  (`junoscfg.display.meta_target`, `junoscfg.input.set_tokens`) so set validation decides what
+  a verb line names by the same walk; the set reader's whole-list tag on a list the XSD does not
+  mark homogeneous (the device refuses it, probe D5) with the two catalogue shapes that pinned
+  it; the grammar's rule-name escapes `eq_literal`, `plus_literal` and `minus_literal` as
+  keywords
 declared-break:
   consumer:
     why: >-
       Not a break. validate_config and convert_config(_result) keep their signatures and
-      names. (a) Set validation of a non-set verb line now refuses a line that stops at a
-      list's keyword without its name, names a leaf's value or one value of a leaf-list, or
-      stops inside an entry's key. The QFX5120 refuses the first two (probe D5 and A2:
-      "syntax error, expecting <identifier>" and "expecting ';'"), the set reader refuses a
-      leaf's value ("Metadata commands cannot target scalar-leaf values"), and a stop inside
-      a key is kept unplaced; every verb line of the committed device captures stays valid.
-      (b) An absolute path= selection keeps the annotations of its ancestors, so a statement
-      inside a deactivated container is written inside it, as the device prints it (probe
-      C3), where junoscfg wrote it active. (c) A relative path= selection drops a tag at or
-      above its path with one note in every format, where set output wrote a bare verb the
-      device refuses (probe SC1) and json, yaml and yaml-new dropped it silently. (d) Set and
-      structured output note a per-value leaf-list tag they drop. (e) Five statements the
-      device takes undocumented now validate. Output changes only where it loaded with
-      another meaning or did not load; no accepted Junos configuration converts to output
-      with another meaning. Patch, as AGENTS.md rules for everything that is not a break.
+      names; set input is what a device exports (decision 2026-10-17-set-input-is-a-device-export)
+      and every line of the committed device captures converts and validates as before (the
+      before/after comparison: 0 of 96 conversions differ). (a) Set validation of a non-set verb
+      line refuses a line that stops at the keyword of a list the XSD does not mark
+      homogeneous without its entry's name, names a leaf's value or one value of a leaf-list, or
+      stops inside an entry's key, where it said valid: the QFX5120 refuses the first two
+      (probe D5 and A2). (b) The set reader refuses the first two with ValueError naming them
+      ("Metadata commands cannot target a list without its entry's name"; a leaf's value was
+      refused already), where it tagged the whole list and wrote back the line the device
+      refuses. (c) `-v` takes `then community = | + | -`, as the device writes it, and no
+      longer the misspellings `eq_literal`, `plus_literal`, `minus_literal`; it reports a line
+      holding several statements that each stand alone as "Unsupported in set input, one
+      statement a line" where it said "Invalid syntax". (d) An absolute path= selection keeps
+      the annotations along its path, so a statement inside a deactivated container is
+      written inside it, as the device prints it (probe C3), where it was written active. (e)
+      A relative path= selection drops a tag at or above its path with one note, in every
+      format, where set wrote a bare verb the device refuses (probe SC1). (f) Set and
+      structured output note a per-value leaf-list tag; notes carry the writer's name as their
+      source. (g) Five statements the device takes undocumented now validate. Output changes
+      only where it loaded with another meaning or did not load. Patch, as AGENTS.md rules for
+      everything that is not a break.
     migration: >-
-      None for a Junos configuration. A verb line that names a value or a list keyword is
-      written as the device takes it: the statement path alone (`deactivate system
-      host-name`) or the list entry with its name. A script comparing --path output or
-      diagnostics text updates its expected text.
+      None for a device export. A hand-written verb line that names a value or the keyword of
+      such a list is written as the device takes it: the statement path alone
+      (`deactivate system host-name`) or each entry with its name. A script comparing --path
+      output, validation messages or diagnostics updates its expected text.
   cli:
     why: >-
-      Not a break, for the reasons given for consumer: junoscfg -v, --path and --relative
-      keep their options and exit codes; -v exits 1 only for verb lines the device or the
-      set reader refuses, and conversion prints a note where it drops a tag.
+      Not a break, for the reasons given for consumer: junoscfg -v, --path and --relative keep
+      their options and exit codes; -v exits 1 only for lines the device refuses or no export
+      holds, conversion exits 2 for a verb on such a list's keyword as for a leaf's value, and
+      conversion prints a note where it drops a tag.
     migration: >-
-      None required; write a refused verb line as the device takes it, and update a script
-      that compares the text.
+      None for a device export; write a refused verb line as the device takes it, and update a
+      script that compares the text.
 verification:
   state: ready
   planned-paths:
   - .agent-ready/activation.json
-  - .agent-ready/vulture-whitelist.py
+  - ARCHITECTURE.md
   - changelog.d/+device-probe-fixes.bugfix.md
   - changelog.d/+device-validation.bugfix.md
   - docs/BACKLOG.md
   - docs/api/input.md
-  - docs/architecture/developer-guide.md
-  - docs/architecture/schema-internals.md
-  - docs/guide/cli.md
+  - docs/decisions/2026-10-17-set-input-is-a-device-export.md
+  - docs/decisions/index.md
   - docs/guide/conversion.md
   - docs/guide/validation.md
+  - docs/how-to/settle-a-schema-question.md
+  - openspec/specs/conversion/entry-keys/spec.md
   - openspec/specs/conversion/path-filtering/spec.md
   - openspec/specs/conversion/selection-tags/spec.md
   - openspec/specs/conversion/writers/spec.md
   - openspec/specs/schema-pipeline/conversion-hints/spec.md
   - openspec/specs/validation/device-captures/spec.md
+  - openspec/specs/validation/raw-set-input/spec.md
   - openspec/specs/validation/set-command-validation/spec.md
   - src/junoscfg/convert/CONTRACT.md
   - src/junoscfg/convert/__init__.py
   - src/junoscfg/convert/input/set_input.py
   - src/junoscfg/convert/output/__init__.py
   - src/junoscfg/convert/output/dict_walker.py
-  - src/junoscfg/convert/output/json_output.py
   - src/junoscfg/convert/output/set_output.py
   - src/junoscfg/convert/output/structured_output.py
-  - src/junoscfg/convert/output/yaml_output.py
   - src/junoscfg/display/CONTRACT.md
   - src/junoscfg/display/__init__.py
   - src/junoscfg/display/meta_path.py
@@ -83,6 +94,7 @@ verification:
   - src/junoscfg/validate/data/junos-set.lark.gz
   - src/junoscfg/validate/data/junos-structure-tree.json.gz
   - src/junoscfg/validate/data/junos-yaml-schema.json.gz
+  - src/junoscfg/validate/grammar_generator.py
   - src/junoscfg/validate/schema_generator.py
   - src/junoscfg/validate/set_validator.py
   - src/junoscfg/validate/xsd_fixes.py
@@ -91,16 +103,23 @@ verification:
   - tests/contract/test_round_trip_validates.py
   - tests/corpus/test_device_probes.py
   - tests/corpus/test_device_renderings.py
+  - tests/corpus/test_shipped_artifacts.py
   - tests/data/device/README.md
   - tests/data/device/expected-findings.json
   - tests/data/device/grammar-corpus.json
-  - tests/data/device/known-differences.json
   - tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json
+  - tests/support/artifacts.py
+  - tests/support/shapes.py
   - tests/unit/cli/test_cli.py
+  - tests/unit/convert/test_conversion_diagnostics.py
   - tests/unit/convert/test_convert_api.py
   - tests/unit/convert/test_meta_tags.py
+  - tests/unit/convert/test_scalar_meta_targets.py
+  - tests/unit/convert/test_set_input.py
   - tests/unit/display/test_display_filters.py
   - tests/unit/display/test_meta_path.py
+  - tests/unit/validate/test_artifact_builder.py
+  - tests/unit/validate/test_grammar_generator.py
   - tests/unit/validate/test_schema_generator.py
   - tests/unit/validate/test_set_validator.py
   - tests/unit/validate/test_xsd_fixes.py

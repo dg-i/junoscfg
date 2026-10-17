@@ -20,8 +20,8 @@ Not format detection or parsing; `convert.input` chooses the parser.
 ## Precedent
 
 - `normalize` is the raw set normalizer; structured text uses `display.SetConverter`.
-- `find_unsupported_set_brackets` and `find_unsupported_set_commands` are the
-  shared lexical boundaries consumed by raw set conversion and validation.
+- `find_unsupported_set_brackets`, `find_unsupported_set_commands` and `set_tokens`
+  are the shared lexical boundaries consumed by raw set conversion and validation.
 - `find_non_json_value` is the boundary yaml-new and JSON conversion and validation, the
   `xml` reader, and the `yaml` reader and validation (with `META_KEY_PREFIXES`) share
   (decision 2026-10-15-yaml-nests-at-most-64-levels).

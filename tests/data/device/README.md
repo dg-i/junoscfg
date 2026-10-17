@@ -43,10 +43,17 @@ skips the capture (`CAPTURED` in the tool).
 | `synthetic/<device>/` | each device's renderings of them | junoscfg's (MIT) |
 | `jvd/sources/` | three configurations from Juniper's Validated Designs, unmodified | Apache-2.0, `jvd/LICENSE`, `jvd/NOTICE` |
 | `jvd/<device>/` | each device's renderings of them: derived works, see `jvd/NOTICE` | Apache-2.0 |
+| `probes/<device>/<date>.json` | a device probe: the probe's own synthetic statements, the device's responses and renderings, sanitized (no host, user, prompt or time); not a capture | junoscfg's (MIT) |
 
 Secrets in both sets are public: the synthetic ones are invented, and the JVD
 ones are Juniper's published lab values. Each device re-encrypts them, so a
 `$9$` value differs between devices, never between one capture's renderings.
+
+A probe asks the device a few named questions instead of loading a whole
+configuration (`docs/how-to/settle-a-schema-question.md`, rule 5). Its record
+says what the device took and refused, with its response, and what it printed;
+`tests/corpus/test_device_probes.py` holds junoscfg to it and checks that every
+record is sanitized. The raw session stays in `private_test_data/`.
 
 ## What the tests read and ignore
 

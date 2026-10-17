@@ -199,7 +199,5 @@
   "set system tacplus-server 203.0.114.49 secret \"$9$8TCX7VaZjHkPs2PQz6u0EcylM8Nds2gJhSrvLXbwP5QF/CuORrlMQFclKMN-qmf\"": "jvd_derived_data/junoscfg-oracle",
   "set vlans V100 forwarding-options dhcp-security arp-inspection": "jvd_derived_data/junoscfg-oracle"
  },
- "rejected": {
-  "set chassis dump-on-panic": "jvd_derived_data/ap1_mx304"
- }
+ "rejected": {}
 }

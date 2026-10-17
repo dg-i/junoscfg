@@ -18,3 +18,4 @@ Generated from the front-matter of every record in this directory by `agent-read
 | [YAML nests at most 64 levels; aliases expand unbounded](2026-10-15-yaml-nests-at-most-64-levels.md) | accepted | tests | 2027-04-15 |
 | [Add yaml-new beside yaml before renaming it](2026-10-15-yaml-new-before-renaming-yaml.md) | accepted | tests | 2027-04-15 |
 | [yaml-new expands aliases within linear bounds](2026-10-15-yaml-new-expands-aliases-within-a-bound.md) | superseded | tests | 2027-04-15 |
+| [Set input is what a device exports](2026-10-17-set-input-is-a-device-export.md) | accepted | tests | 2027-04-17 |

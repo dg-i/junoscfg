@@ -8,9 +8,10 @@ strict mode, WHEN its JSON rendering is validated through `validate_config(forma
 and WHEN junoscfg's JSON output of each rendering is validated the same way THEN the system
 SHALL report exactly the findings `tests/data/device/expected-findings.json` records for that
 rendering and door, each with a reason (a mandatory statement the device itself warns about,
-or one the device loads without a warning and refuses at `commit check`: `hold-time` with only
-`down`, which the QFX5120 25.2R2-S1.5 refuses with "Missing mandatory statement: 'up'", probe
-D1); strict mode SHALL raise exactly when a recorded finding is an error;
+or one the device prints no warning for and refuses at `commit check` where it applies:
+`hold-time` with only `down` on an interface, which the QFX5120 25.2R2-S1.5 refuses with
+"Missing mandatory statement: 'up'", probe D1; the recorded one sits in an unapplied group);
+strict mode SHALL raise exactly when a recorded finding is an error;
 a finding not recorded SHALL fail, and so SHALL a recorded one that no longer appears. Set
 `-v` of device lines runs where the grammar is compiled (`tests/corpus/test_set_corpus.py`):
 the covering `set` lines of the grammar corpus and every line of every capture with another
@@ -34,7 +35,7 @@ Tests: `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevi
 
 - **WHEN** the JVD capture `mdr1_acx7509` is field-validated
 - **THEN** its `hold-time` without `up` is the one warning, recorded in the class of a
-  mandatory statement the device refuses at commit
+  mandatory statement the device refuses at commit where it applies
 
 ### Requirement: Statements the device prints undocumented are modelled
 
@@ -46,9 +47,11 @@ accepts it: `system login user <u> shell <value>`, `system services extension-se
 request-response grpc clear-text address <a>` and `port <n>`, and `grpc skip-authentication`,
 `system ddos-protection protocols autoconf aggregate bandwidth|burst <n>`, `family inet6
 labeled-unicast per-prefix-label` under BGP, `dhcp-local-server stale-timer <n>` and
-`no-stale-timer-refresh`, and the flags `system dump-on-panic`, `system debugger-on-break`,
-`system debugger-on-panic` and `chassis dump-on-panic` (QFX5120 25.2R2-S1.5, probe D4 and P4).
-Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_probes.py::TestEveryProbedLineValidatesAsTheDeviceTookIt::test_the_line`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`
+`no-stale-timer-refresh`, the flags `system debugger-on-break`, `system debugger-on-panic`
+and `chassis dump-on-panic` (`<x/>`), and `system dump-on-panic`, an empty container (an open
+and a close tag; QFX5120 25.2R2-S1.5, probe D4 and P4). A sibling no device showed (`chassis
+debugger-on-panic`) stays refused.
+Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreModelled::test_the_statement_is_declared_where_its_parent_type_occurs`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/corpus/test_device_renderings.py::TestTheValidatorsTakeWhatTheDevicePrinted::test_only_the_recorded_findings_are_reported`, `tests/corpus/test_device_probes.py::TestEveryProbedLineValidatesAsTheDeviceTookIt::test_the_line`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`, `tests/corpus/test_set_corpus.py::TestTheGrammarTakesWhatDevicesPrint::test_the_false_rejections_are_exactly_the_recorded_ones`, `tests/corpus/test_shipped_artifacts.py::TestTheShippedGrammarKeepsRejecting::test_rejected`
 
 #### Scenario: A login shell
 
@@ -74,11 +77,14 @@ Tests: `tests/unit/validate/test_xsd_fixes.py::TestUndocumentedStatementsAreMode
 WHEN the owner runs a device probe THEN its committed record under
 `tests/data/device/probes/<device>/` SHALL hold only the probe's own synthetic statements, the
 device's responses and its renderings, with the platform family and the release, and SHALL
-hold no host name, user name, prompt or timestamp (`junos:changed-*`); the raw session stays
-in `private_test_data/`. The corpus tests read the record as device evidence.
-Tests: `tests/corpus/test_device_probes.py::TestTheProbeRecordIsSanitized::test_no_prompt_or_timestamp`
+hold no host name, user name, prompt or timestamp (`junos:changed-*`), and every value SHALL
+be one of the synthetic values of `AGENTS.md`; the raw session stays in `private_test_data/`.
+The corpus tests read every record under `probes/` as device evidence.
+Tests: `tests/corpus/test_device_probes.py::TestTheProbeRecordIsSanitized::test_no_prompt_or_timestamp`, `tests/corpus/test_device_probes.py::TestTheProbeRecordIsSanitized::test_every_value_is_synthetic`, `tests/corpus/test_device_probes.py::TestTheProbeRecordIsSanitized::test_the_leak_shapes_catch_what_they_name`, `tests/corpus/test_device_probes.py::TestTheProbeRecordIsSanitized::test_the_raw_session_names_nothing_in_the_repository`
 
 #### Scenario: The 2026-10-16 QFX5120 probe
 
 - **WHEN** `tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json` is read
-- **THEN** it holds no `junos:changed-` attribute and no line shaped as a CLI prompt
+- **THEN** it holds no CLI prompt, banner, change or commit attribute, time of day or home
+  path, and every value is a synthetic one; where the raw session is on the machine, neither
+  name of its prompt occurs under `tests/data/`

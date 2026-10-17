@@ -164,7 +164,7 @@ class TestAFieldWarningNeedsNoError:
 
     def test_an_error_beside_it_changes_nothing(self) -> None:
         """An unplaced statement adds its error; the warning is the one reported alone."""
-        source = RADIUS_WITHOUT_SECRET[Format.SET] + "set chassis dump-on-panic\n"
+        source = RADIUS_WITHOUT_SECRET[Format.SET] + "set chassis no-such-statement\n"
         result = convert_config_result(source, from_format=Format.SET, to_format=Format.SET)
         findings = _field_findings(result.diagnostics)
         assert SECRET_WARNING in findings
@@ -172,7 +172,8 @@ class TestAFieldWarningNeedsNoError:
             (
                 "field-validate",
                 "chassis",
-                "'dump-on-panic' could not be placed in the schema: kept as written, not validated",
+                "'no-such-statement' could not be placed in the schema: kept as written, "
+                "not validated",
             )
         ]
 

@@ -10,6 +10,9 @@ Shared lexical checks and normalization for configuration readers.
   contain only the physical line number, without source values.
 - `iter_visible_set_lines(source)` yields physical line number, original line
   and visible content after leading comments.
+- `set_tokens(path)` splits a set command's path into tokens, a quoted string one
+  token with its quotes; `set_token_value(token)` is the value a token spells,
+  unquoted and unescaped. The set reader and set validation share both.
 - `normalize(source)` reads text or a text stream, removes ignored comments
   and blank lines, normalizes carriage returns and joins bracket continuations.
 - `find_non_json_value(data, *, scalars=True, unwalked=())` returns a

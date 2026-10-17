@@ -18,7 +18,9 @@ three renderings "must" agree on, because they do not:
 
 `set groups <name> chassis dump-on-panic` is the standing example: it sits
 inside `<undocumented>` in the device's XML and appears in no NETCONF XSD at
-any release, so no schema will ever model it. Only a capture shows it exists.
+any release, so no dump will ever model it. Only device output shows it
+exists; junoscfg models it in `xsd_fixes.py` from the 2026-10-16 probe
+(`tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json`).
 
 The four `apply-*` meta-statements are the other: `apply-groups`,
 `apply-groups-except`, `apply-flags` and `apply-macro` appear nowhere in the

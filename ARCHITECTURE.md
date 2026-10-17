@@ -29,33 +29,23 @@ When two of these conflict, the order is:
    the wheel.
 4. **Latency** — last; a multi-megabyte schema load on start-up is tolerated.
 
-The ranking is visible in the record. `tests/contract/test_format_matrix.py`
-asserts every reader gives one IR and every (reader, writer) pair preserves it.
-`docs/architecture/design-decisions.md` records rejecting both a prefix trie
-and a Lark grammar for set-to-structured conversion because each got
-context-dependent elements wrong, in favour of a slower schema tree walk. XML
-output raises `NotImplementedError` rather than emit something approximate.
-And `src/junoscfg/validate/data/` bundles the generated artifacts in compressed
-form rather than fetching or deriving them at run time.
+The ranking shows in `tests/contract/test_format_matrix.py` (one IR, kept by
+every reader and writer pair), in the slower schema tree walk chosen over a
+prefix trie and a Lark grammar (`docs/architecture/design-decisions.md`), in XML
+output raising `NotImplementedError`, and in the bundled compressed artifacts.
 
 ## 2. Constraints
 
 - **Offline.** The package opens no sockets and spawns no processes: no
   `socket`, `urllib`, `requests`, `httpx` or `subprocess` import exists under
-  `src/junoscfg/`. Retrieving an XSD dump from a router is the operator's own
-  `ssh ... netconf` pipeline, documented in README.md; junoscfg reads the
-  resulting file.
-- **Python 3.10 or later.** The suite is green on 3.10, 3.11, 3.12, 3.13 and
-  3.14. Onboarding briefly raised this floor to 3.13 to get past six failures
-  in `tests/unit/anonymize/test_password_rule.py`; the failures were a defect,
-  not a language requirement. `_make_crypt_hash()` called `crypt.crypt()`,
-  which macOS answers with a 13-character DES hash instead of the requested
-  `$1$`/`$5$`/`$6$` format, and which Python removed in 3.13. The branch is
-  gone: the body is derived deterministically and keeps the length it replaces,
-  so output is identical on every platform and interpreter.
-- **lxml is optional.** XML input, XSD extraction and XSD parsing need the
-  `xml` extra; `_ensure_xml_imports()` in `src/junoscfg/display/to_yaml.py`
-  imports it lazily so that every non-XML conversion path works without it.
+  `src/junoscfg/`. Retrieving an XSD dump is the operator's own `ssh ...
+  netconf` pipeline (README.md); junoscfg reads the resulting file.
+- **Python 3.10 or later.** The suite is green on 3.10 to 3.14. Onboarding's
+  raise of the floor to 3.13 answered a defect, not a language need:
+  `_make_crypt_hash()` called `crypt.crypt()`, gone in 3.13 and wrong on macOS;
+  the hash is now derived, identically on every platform and interpreter.
+- **lxml is optional.** XML input and the XSD pipeline need the `xml` extra;
+  `display/to_yaml.py` imports it lazily, so every other path works without it.
 - **The schema is pinned to one Junos release.** The bundled artifacts are
   currently Junos 25.2R2, from a dump kept in `private_test_data/schemas/` so
   they can be rebuilt. Structural corrections live in `validate/xsd_fixes.py`
@@ -193,6 +183,16 @@ alias bombs, nor works around a parser's limits on it (PyYAML's alias expansion
 or nesting failure); its own defects (wrong output, a dropped statement, a crash
 or loop in its code) are fixed, and a caller with untrusted input bounds it first
 (`docs/decisions/2026-10-15-configuration-input-is-trusted.md`).
+
+**Set input is what a device exports**: the file `show configuration | display
+set` writes, `set`, `deactivate` and `protect` lines, one statement a line. Edit
+commands that need a state machine (`insert`, `rename`, `copy`, `annotate`,
+`unprotect`, `edit`, `replace pattern`) and typed CLI forms an export never
+holds (bracket lists, several statements on one line) are out of scope, listed
+in `docs/guide/conversion.md` and refused by name. `delete` and `activate` stay:
+they record Junos's `operation` and `active` markers, and a `delete` never
+removes an earlier line (`docs/decisions/2026-10-17-set-input-is-a-device-
+export.md`).
 
 **Not applicable here.** No money, no wall-clock time, no user identity or
 authorization: junoscfg is a pure text-to-text transformation with no session

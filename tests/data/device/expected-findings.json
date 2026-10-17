@@ -6,7 +6,7 @@
       "severity": "warning"
     },
     "mandatory-commit-refuses": {
-      "definition": "a statement the XSD marks mandatory is absent; the device loads the configuration without a warning and refuses it at `commit check` (hold-time with only `down`: \"Missing mandatory statement: 'up'\", QFX5120 25.2R2-S1.5, tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json, D1), so the finding is the configuration's own",
+      "definition": "a statement the XSD marks mandatory is absent and the device printed no warning for it; where the statement applies, the device refuses it at `commit check`: `set interfaces ge-0/0/1 hold-time down 0` alone fails with \"Missing mandatory statement: 'up'\" (QFX5120 25.2R2-S1.5, tests/data/device/probes/qfx5120-25.2R2-S1.5/2026-10-16.json, D1). The recorded finding sits in a group no `apply-groups` names; whether `commit check` refuses an unapplied group is an open device question",
       "severity": "warning"
     }
   },

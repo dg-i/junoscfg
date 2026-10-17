@@ -15,9 +15,10 @@ from junoscfg.display import (
     is_algebra_token,
     is_policy_algebra,
     is_transparent_list_key,
-    key_is_positional,
     load_schema_tree,
+    meta_target,
     passes_tag_to_child,
+    read_entry_key,
     schema_child,
     statement_children,
     statement_key,
@@ -29,6 +30,8 @@ from junoscfg.input import (
     find_unsupported_set_brackets,
     find_unsupported_set_commands,
     normalize,
+    set_token_value,
+    set_tokens,
 )
 
 
@@ -85,23 +88,23 @@ def set_to_dict(source: str) -> dict[str, Any]:
 
     for line in lines:
         if line.startswith("set "):
-            tokens = _tokenize(line[4:])
+            tokens = set_tokens(line[4:])
             if tokens:
                 _merge_tokens(config, tokens, schema, index)
         elif line.startswith("deactivate "):
-            tokens = _tokenize(line[11:])
+            tokens = set_tokens(line[11:])
             if tokens:
                 _apply_meta(config, tokens, schema, "inactive", True, index)
         elif line.startswith("protect "):
-            tokens = _tokenize(line[8:])
+            tokens = set_tokens(line[8:])
             if tokens:
                 _apply_meta(config, tokens, schema, "protect", "protect", index)
         elif line.startswith("delete "):
-            tokens = _tokenize(line[7:])
+            tokens = set_tokens(line[7:])
             if tokens:
                 _apply_meta(config, tokens, schema, "operation", "delete", index)
         elif line.startswith("activate "):
-            tokens = _tokenize(line[9:])
+            tokens = set_tokens(line[9:])
             if tokens:
                 _apply_meta(config, tokens, schema, "active", "active", index)
 
@@ -140,7 +143,7 @@ def statements_to_dict(
         tokens: list[str] = []
         tags: dict[int, frozenset[str]] = {}
         for text, level_tags in levels:
-            level = _tokenize(text)
+            level = set_tokens(text)
             if level:
                 # Every level start is recorded, tagged or not: where a level
                 # starts says which node a tag belongs to.
@@ -198,60 +201,6 @@ def _tags_from(tags: dict[int, frozenset[str]], i: int) -> frozenset[str]:
     return found
 
 
-# ── Tokenizer ────────────────────────────────────────────────────────
-
-
-def _tokenize(line: str) -> list[str]:
-    """Tokenize a set command line, preserving quoted strings with quotes.
-
-    Splits on whitespace but keeps quoted strings (including their quotes)
-    as single tokens.
-    """
-    tokens: list[str] = []
-    i = 0
-    n = len(line)
-
-    while i < n:
-        while i < n and line[i] == " ":
-            i += 1
-        if i >= n:
-            break
-
-        if line[i] == '"':
-            j = i + 1
-            while j < n and line[j] != '"':
-                if line[j] == "\\" and j + 1 < n:
-                    j += 2
-                else:
-                    j += 1
-            if j < n:
-                j += 1
-            tokens.append(line[i:j])
-            i = j
-        else:
-            j = i
-            while j < n and line[j] != " ":
-                j += 1
-            tokens.append(line[i:j])
-            i = j
-
-    return tokens
-
-
-# ── Value parsing ────────────────────────────────────────────────────
-
-
-def _parse_value(token: str) -> str:
-    """Convert a tokenized value back to its dict representation.
-
-    Strips surrounding quotes and unescapes if needed.
-    """
-    if len(token) >= 2 and token[0] == '"' and token[-1] == '"':
-        inner = token[1:-1]
-        return inner.replace('\\"', '"').replace("\\\\", "\\")
-    return token
-
-
 def _leaf_value(text: str, leaf: dict[str, Any]) -> str:
     """The value of *leaf* that *text*, one token or the line's rest, spells.
 
@@ -263,7 +212,7 @@ def _leaf_value(text: str, leaf: dict[str, Any]) -> str:
     """
     if text.startswith('"') and is_policy_algebra(leaf) and is_algebra_token(text):
         return text
-    return _parse_value(text)
+    return set_token_value(text)
 
 
 # ── Dict entry helpers ───────────────────────────────────────────────
@@ -293,69 +242,6 @@ def _find_or_create_entry(
         lst.append(entry)
         entries[identity] = entry
     return entry
-
-
-def _read_key(
-    list_node: dict[str, Any], tokens: list[str], j: int
-) -> tuple[dict[str, Any], int] | None:
-    """The key of an entry of *list_node* read from ``tokens[j:]``, and where it ends.
-
-    One token per positional field, in declared order; a field whose leaf is
-    not `nokeyword` as `keyword value`, those fields in any order among
-    themselves after the positional ones; a choice of identifiers as one of
-    its keywords, with its value where the alternative is a leaf, before or
-    after all of them. The device accepts `then community SAMPLE-COMM add`,
-    `route-filter exact 198.51.100.0/24` and `virtual-link transit-area
-    0.0.0.3 neighbor-id 10.255.255.2`, and rejects a keyword field given
-    without its keyword or left out (device probe, vMX 23.2R2-S7.5). The key
-    comes back in declared order, the device's. None when the tokens run out
-    first, or a token is not the keyword a field needs: a statement the
-    device rejects.
-    """
-    children = list_node.get("c", {})
-    fields = list(entry_keys(list_node))
-    choices = [field for field in fields if isinstance(field, tuple)]
-    keyworded = [
-        field
-        for field in fields
-        if not isinstance(field, tuple) and not key_is_positional(children.get(field))
-    ]
-    positional = [f for f in fields if not isinstance(f, tuple) and f not in keyworded]
-    found: dict[str | tuple[str, ...], tuple[str, Any]] = {}
-
-    def read_choices(j: int) -> int | None:
-        for field in choices:
-            if j >= len(tokens) or statement_key(children, tokens[j]) not in field:
-                return None
-            token = statement_key(children, tokens[j])
-            if children.get(token, {}).get("l"):
-                if j + 1 >= len(tokens):
-                    return None
-                found[field] = (token, _parse_value(tokens[j + 1]))
-                j += 2
-            else:
-                found[field] = (token, [None])
-                j += 1
-        return j
-
-    leads = j < len(tokens) and any(statement_key(children, tokens[j]) in c for c in choices)
-    if leads and (j := read_choices(j)) is None:
-        return None
-    for field in positional:
-        if j >= len(tokens):
-            return None
-        found[field] = (field, _parse_value(tokens[j]))
-        j += 1
-    pending = list(keyworded)
-    while pending:
-        if j + 1 >= len(tokens) or tokens[j] not in pending:
-            return None
-        pending.remove(tokens[j])
-        found[tokens[j]] = (tokens[j], _parse_value(tokens[j + 1]))
-        j += 2
-    if not leads and (j := read_choices(j)) is None:
-        return None
-    return dict(found[field] for field in fields), j
 
 
 def _kept_record(current: dict[str, Any], tokens: list[str]) -> tuple[dict[str, Any], str]:
@@ -408,7 +294,7 @@ def _keep_meta_whole(
     suffix is kept in the level's record as ``@<statement>``, beside a kept
     statement it names or one below it, which stays the single report.
     """
-    value_text = " ".join(_parse_value(token) for token in tokens[i:])
+    value_text = " ".join(set_token_value(token) for token in tokens[i:])
     if " " not in value_text and any(
         existing == value_text
         or (isinstance(value, str | int | float) and str(value) == value_text)
@@ -508,7 +394,7 @@ def _merge_tokens(
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
                 return
-            val = _parse_value(tokens[i + 1])
+            val = set_token_value(tokens[i + 1])
             if curly and lst and current.get(f"@{token}", {}) != _tag_attrs(here):
                 # `apply-groups G1; inactive: apply-groups G2;`: as for a
                 # leaf, a tag on one value is not widened to the others.
@@ -541,11 +427,11 @@ def _merge_tokens(
                 _keep_whole(current, tokens, i, tags)
                 return
             current[token] = lst
-            entry = _find_or_create_entry(lst, {"name": _parse_value(tokens[i + 1])}, index)
+            entry = _find_or_create_entry(lst, {"name": set_token_value(tokens[i + 1])}, index)
             _mark(entry, here | tags.pop(i + 1, frozenset()))
             if i + 2 < len(tokens):
                 pair = dict(
-                    zip(("name", "value"), map(_parse_value, tokens[i + 2 :]), strict=False)
+                    zip(("name", "value"), map(set_token_value, tokens[i + 2 :]), strict=False)
                 )
                 entry.setdefault("data", []).append(pair)
             return
@@ -559,7 +445,7 @@ def _merge_tokens(
             transparent = current_schema.get("t")
             if transparent and transparent in children:
                 tc_child = children[transparent]
-                name = _parse_value(token)
+                name = set_token_value(token)
                 lst = current.setdefault(transparent, [])
                 entry = _find_or_create_entry(lst, {"name": name}, index)
                 _mark(entry, here)
@@ -585,7 +471,7 @@ def _merge_tokens(
                     if _is_statement_name(cname, cnode, token):
                         current[token] = [None]
                         _mark(current, here, token)
-                    elif current.get(cname, _parse_value(token)) != _parse_value(token):
+                    elif current.get(cname, set_token_value(token)) != set_token_value(token):
                         # A second, different value: this node is no list, so
                         # writing it would replace the first without a word --
                         # three forwarding classes read as one, while the
@@ -595,7 +481,7 @@ def _merge_tokens(
                         _keep_whole(owner, tokens, owner_i, tags)
                         return
                     else:
-                        current[cname] = _parse_value(token)
+                        current[cname] = set_token_value(token)
                         _mark(current, here, cname)
                     i += 1
                     nk_found = True
@@ -612,7 +498,7 @@ def _merge_tokens(
             for cname, cnode in children.items():
                 if not isinstance(cnode, dict) or not is_transparent_list_key(cnode):
                     continue
-                read = _read_key(cnode, tokens, i)
+                read = read_entry_key(cnode, tokens, i)
                 if read is None:
                     continue
                 key, after = read
@@ -653,7 +539,7 @@ def _merge_tokens(
                     tc_children = statement_children(tc_node)
                     if statement_key(tc_children, next_token) in tc_children:
                         # Match — descend into parent → transparent list → entry
-                        name = _parse_value(token)
+                        name = set_token_value(token)
                         parent = current.setdefault(parent_key, {})
                         lst = parent.setdefault(tc_name, [])
                         entry = _find_or_create_entry(lst, {"name": name}, index)
@@ -695,7 +581,7 @@ def _merge_tokens(
                     current[token] = [None]
                 _mark(current, here, token)
                 return
-            read = _read_key(child, tokens, i + 1)
+            read = read_entry_key(child, tokens, i + 1)
             if read is None:
                 tags[i] = here
                 _keep_whole(current, tokens, i, tags)
@@ -820,168 +706,66 @@ def _apply_meta(
     attr_value: Any,
     index: _EntryIndex,
 ) -> None:
-    """Apply a meta attribute to the target node in the config dict.
+    """Apply a meta attribute where the verb line's path ends.
 
-    Walks the token path to find the target, then sets the ``@`` or
-    ``@key`` attribute as appropriate.
+    `meta_target` walks the path read only, as set validation does; this
+    creates the containers and entries its steps name and sets the ``@`` or
+    ``@key`` attribute. A path the device cannot tag is refused with an error
+    naming it: the keyword of a list the XSD does not mark `homogeneous`
+    without its entry's name (QFX5120 25.2R2-S1.5: "syntax error, expecting
+    <identifier>", probe D5) and a leaf's value (probe A2). One the tree does
+    not place, or that stops inside an entry's key, is kept whole.
     """
+    target = meta_target(tokens, schema)
     current = config
-    current_schema = schema
-    i = 0
+    for step in target.steps:
+        holder = current.setdefault(step.under, {}) if step.under else current
+        if step.entry is None:
+            current = holder.setdefault(step.key, {})
+        else:
+            current = _find_or_create_entry(holder.setdefault(step.key, []), step.entry, index)
 
-    while i < len(tokens):
-        token = tokens[i]
-        children = statement_children(current_schema)
+    if target.kind == "entry":
+        current.setdefault("@", {})[attr_key] = attr_value
+    elif target.kind in ("leaf", "whole-list"):
+        current.setdefault(f"@{target.key}", {})[attr_key] = attr_value
+    elif target.kind == "container":
+        current.setdefault(target.key, {}).setdefault("@", {})[attr_key] = attr_value
+    elif target.kind == "list":
+        raise ValueError("Metadata commands cannot target a list without its entry's name")
+    elif target.kind == "value":
+        raise ValueError("Metadata commands cannot target scalar-leaf values")
+    elif not (
+        target.kind == "unplaced"
+        and target.at == len(tokens) - 1
+        and _tag_an_entry_held(current, target.node, tokens[-1], attr_key, attr_value)
+    ):
+        _keep_meta_whole(current, tokens, target.at, attr_key, attr_value)
 
-        # The tree's key for the token: an XML and JSON element name is read as
-        # the keyword it was renamed to (e.g., ieee-802.3ad → 802.3ad).
-        schema_key = statement_key(children, token)
-        if schema_key not in children:
-            found = schema_child(current_schema, schema_key, schema)
-            if found is not None and found.get("u"):
-                children = {**children, schema_key: found}
 
-        if schema_key not in children:
-            # Check transparent container
-            transparent = current_schema.get("t")
-            if transparent and transparent in children:
-                tc_child = children[transparent]
-                name = _parse_value(token)
-                lst = current.setdefault(transparent, [])
-                entry = _find_or_create_entry(lst, {"name": name}, index)
-                i += 1
-                if i >= len(tokens):
-                    entry.setdefault("@", {})[attr_key] = attr_value
-                    return
-                current = entry
-                current_schema = tc_child
-                continue
-
-            # Meta targets use the same complete hidden key as set input.
-            tk_matched = False
-            for cname, cnode in children.items():
-                if not isinstance(cnode, dict) or not is_transparent_list_key(cnode):
-                    continue
-                read = _read_key(cnode, tokens, i)
-                if read is None:
-                    continue
-                key, after = read
-                if after < len(tokens) and not statement_children(cnode):
-                    continue
-                entry = _find_or_create_entry(current.setdefault(cname, []), key, index)
-                i = after
-                if i >= len(tokens):
-                    entry.setdefault("@", {})[attr_key] = attr_value
-                    return
-                current = entry
-                current_schema = cnode
-                tk_matched = True
-                break
-            if tk_matched:
-                continue
-
-            # Check if token is a name in a child's transparent named list.
-            tc_matched = False
-            if i + 1 < len(tokens):
-                next_token = tokens[i + 1]
-                for parent_key, parent_node in children.items():
-                    if not isinstance(parent_node, dict):
-                        continue
-                    tc_name = parent_node.get("t")
-                    if not tc_name:
-                        continue
-                    tc_node = parent_node.get("c", {}).get(tc_name)
-                    if not tc_node or not tc_node.get("L"):
-                        continue
-                    tc_children = statement_children(tc_node)
-                    if statement_key(tc_children, next_token) in tc_children:
-                        name = _parse_value(token)
-                        parent = current.setdefault(parent_key, {})
-                        lst = parent.setdefault(tc_name, [])
-                        entry = _find_or_create_entry(lst, {"name": name}, index)
-                        i += 1
-                        if i >= len(tokens):
-                            entry.setdefault("@", {})[attr_key] = attr_value
-                            return
-                        current = entry
-                        current_schema = tc_node
-                        tc_matched = True
-                        break
-            if tc_matched:
-                continue
-
-            # No look-ahead possible (last token) — check if the name
-            # already exists in a child's transparent named list.
-            if i == len(tokens) - 1:
-                name = _parse_value(token)
-                for parent_key, parent_node in children.items():
-                    if not isinstance(parent_node, dict):
-                        continue
-                    tc_name = parent_node.get("t")
-                    if not tc_name:
-                        continue
-                    tc_node = parent_node.get("c", {}).get(tc_name)
-                    if not tc_node or not tc_node.get("L"):
-                        continue
-                    # Only match if the entry already exists in config
-                    parent_dict = current.get(parent_key)
-                    if not isinstance(parent_dict, dict):
-                        continue
-                    existing_list = parent_dict.get(tc_name)
-                    if not isinstance(existing_list, list):
-                        continue
-                    for item in existing_list:
-                        if isinstance(item, dict) and item.get("name") == name:
-                            item.setdefault("@", {})[attr_key] = attr_value
-                            return
-
-            # Unknown path: the valid prefix is not the requested target.
-            _keep_meta_whole(current, tokens, i, attr_key, attr_value)
-            return
-
-        child = children[schema_key]
-
-        # Last token — determine target type
-        if i == len(tokens) - 1:
-            if child.get("L") or child.get("l") or child.get("p"):
-                # List/leaf/presence: use sibling @key format
-                current.setdefault(f"@{token}", {})[attr_key] = attr_value
-            else:
-                # Container: use inline @ format
-                sub = current.setdefault(token, {})
-                sub.setdefault("@", {})[attr_key] = attr_value
-            return
-
-        # Named list: descend into the entry its whole key names
-        read = _read_key(child, tokens, i + 1) if child.get("L") else None
-        if read is not None:
-            key, end = read
-            if end < len(tokens) and not statement_children(child):
-                _keep_meta_whole(current, tokens, i, attr_key, attr_value)
-                return
-            i = end
-            entry = _find_or_create_entry(current.setdefault(token, []), key, index)
-            if i >= len(tokens):
-                entry.setdefault("@", {})[attr_key] = attr_value
-                return
-            current = entry
-            current_schema = child
+def _tag_an_entry_held(
+    current: dict[str, Any],
+    node: dict[str, Any] | None,
+    token: str,
+    attr_key: str,
+    attr_value: Any,
+) -> bool:
+    """Tag the entry named *token* of a child's hidden list *current* already
+    holds; the last token of a path has no next one to tell the list by."""
+    name = set_token_value(token)
+    for parent_key, parent_node in statement_children(node or {}).items():
+        if not isinstance(parent_node, dict):
             continue
-
-        if child.get("L"):
-            _keep_meta_whole(current, tokens, i, attr_key, attr_value)
-            return
-
-        # Container, so descend
-        if child.get("c"):
-            current = current.setdefault(token, {})
-            current_schema = child
-            i += 1
+        tc_name = parent_node.get("t")
+        tc_node = parent_node.get("c", {}).get(tc_name) if tc_name else None
+        if not tc_node or not tc_node.get("L"):
             continue
-
-        if child.get("l"):
-            raise ValueError("Metadata commands cannot target scalar-leaf values")
-
-        # Fallback
-        _keep_meta_whole(current, tokens, i, attr_key, attr_value)
-        return
+        parent_dict = current.get(parent_key)
+        existing = parent_dict.get(tc_name) if isinstance(parent_dict, dict) else None
+        if not isinstance(existing, list):
+            continue
+        for item in existing:
+            if isinstance(item, dict) and item.get("name") == name:
+                item.setdefault("@", {})[attr_key] = attr_value
+                return True
+    return False

@@ -25,16 +25,45 @@ def test_a_scalar_value_target_cannot_tag_the_whole_leaf(
 
 @pytest.mark.parametrize("command", ["deactivate", "activate", "protect", "delete"])
 @pytest.mark.parametrize(
-    "path", ["policy-options policy-statement", "policy-options policy-statement P1 term"]
+    ("statement", "path"),
+    [
+        (
+            "set policy-options policy-statement P1 term T1 then accept",
+            "policy-options policy-statement",
+        ),
+        (
+            "set policy-options policy-statement P1 term T1 then accept",
+            "policy-options policy-statement P1 term",
+        ),
+        ("set system login user admin uid 2000", "system login user"),
+        (
+            "set routing-options static route 198.51.100.0/24 discard",
+            "routing-options static route",
+        ),
+        (
+            "set policy-options policy-statement P1 term T1 from route-filter "
+            "198.51.100.0/24 exact accept",
+            "policy-options policy-statement P1 term T1 from route-filter",
+        ),
+        (
+            "set policy-options policy-statement P1 term T1 from as-path-neighbors "
+            "as-list AS-LIST-A",
+            "policy-options policy-statement P1 term T1 from as-path-neighbors",
+        ),
+    ],
+    ids=["policy-statement", "term", "login-user", "static-route", "route-filter", "as-path"],
 )
-def test_a_list_keyword_without_its_entry_cannot_be_tagged(command: str, path: str) -> None:
+def test_a_list_keyword_without_its_entry_cannot_be_tagged(
+    command: str, statement: str, path: str
+) -> None:
     """A verb names a statement the device can tag, and a list's keyword
     without its entry's name is none: the QFX5120 25.2R2-S1.5 refuses `protect
     policy-options policy-statement` ("syntax error, expecting <identifier>",
     probe D5). The set reader tagged the whole list and wrote the line back,
     so junoscfg's set output failed its own `-v` (Test/Challenge S7, change
     device-probe-fixes). The reader and the validator share one walk
-    (`junoscfg.display.meta_target`)."""
-    source = f"set policy-options policy-statement P1 term T1 then accept\n{command} {path}"
+    (`junoscfg.display.meta_target`). A list the XSD marks `homogeneous` is
+    tagged whole, as the device takes it (deactivate6.txt); these are not."""
+    source = f"{statement}\n{command} {path}"
     with pytest.raises(ValueError, match="a list without its entry's name"):
         to_dict(source, "set")

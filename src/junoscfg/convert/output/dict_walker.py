@@ -73,6 +73,14 @@ class WalkOutput(ABC):
         Only structured output has one: curly text tags a statement it writes.
         """
 
+    def drop_selected_tag(self) -> None:  # noqa: B027
+        """A tag at or above a relative selection's path: no statement is left
+        to carry it, so the output drops it and notes it (`selection_tags_note`)."""
+
+    def drop_value_tags(self, count: int) -> None:  # noqa: B027
+        """Tags on single values of a leaf-list, which set and structured text
+        cannot write: Junos tags a leaf-list only as a whole (`value_tags_note`)."""
+
     def mark_merged(self, hierarchy: list[str]) -> None:  # noqa: B027
         """A container the schema says is written merged with each child.
 
@@ -82,6 +90,52 @@ class WalkOutput(ABC):
 
     def finalize(self) -> None:  # noqa: B027
         """Called after all emit calls are complete."""
+
+
+#: The annotation keys that are Junos tags; a comment or `junos:group` is none.
+_TAG_KEYS = ("inactive", "protect", "operation", "active")
+
+
+def tags_in(annotation: Any) -> int:
+    """How many tags an annotation holds: an ``@`` dict, or a leaf-list's
+    per-value list of them."""
+    if isinstance(annotation, list):
+        return sum(tags_in(item) for item in annotation)
+    if isinstance(annotation, dict):
+        return sum(key in annotation for key in _TAG_KEYS)
+    return 0
+
+
+def tags_above(config: Any, below: list[str]) -> int:
+    """The tags a relative selection along *below* leaves out of the value it
+    writes: each step's `@<key>` beside it and each ancestor container's own
+    ``@`` (the configuration's aside). A selected container's own ``@`` is part
+    of the value."""
+    count, node = 0, config
+    for depth, key in enumerate(below):
+        if not isinstance(node, dict):
+            break
+        if depth and key != "@":
+            count += tags_in(node.get("@"))
+        count += tags_in(node.get(f"@{key}"))
+        node = node.get(key)
+    return count
+
+
+def selection_tags_note(count: int) -> str:
+    """The one note every writer gives for the tags a relative selection drops."""
+    return (
+        f"note: {count} tag(s) at or above the selected path dropped: "
+        "relative output writes what lies below the path"
+    )
+
+
+def value_tags_note(count: int) -> str:
+    """The one note set and structured output give for per-value leaf-list tags."""
+    return (
+        f"note: {count} tag(s) on single values of a leaf-list dropped: "
+        "Junos tags a leaf-list only as a whole"
+    )
 
 
 def path_words(path: list[str]) -> list[str]:
@@ -139,25 +193,35 @@ class Below(WalkOutput):
         else:
             self.inner.emit([value])
 
+    def _tag(self, emit: Any, hierarchy: list[str]) -> None:
+        """Tag *hierarchy* below the words; a tag at or above the path has no
+        statement left to carry it and is dropped, never a bare verb, which
+        the device refuses (probe SC1)."""
+        below = self._below(hierarchy)
+        if below:
+            emit(below)
+        else:
+            self.inner.drop_selected_tag()
+
     def emit_deactivate(self, hierarchy: list[str]) -> None:
         """Deactivate *hierarchy* below the words."""
-        self.inner.emit_deactivate(self._below(hierarchy))
+        self._tag(self.inner.emit_deactivate, hierarchy)
 
     def emit_replace(self, hierarchy: list[str]) -> None:
         """Replace *hierarchy* below the words."""
-        self.inner.emit_replace(self._below(hierarchy))
+        self._tag(self.inner.emit_replace, hierarchy)
 
     def emit_protect(self, hierarchy: list[str]) -> None:
         """Protect *hierarchy* below the words."""
-        self.inner.emit_protect(self._below(hierarchy))
+        self._tag(self.inner.emit_protect, hierarchy)
 
     def emit_activate(self, hierarchy: list[str]) -> None:
         """Activate *hierarchy* below the words."""
-        self.inner.emit_activate(self._below(hierarchy))
+        self._tag(self.inner.emit_activate, hierarchy)
 
     def emit_delete(self, hierarchy: list[str]) -> None:
         """Delete *hierarchy* below the words."""
-        self.inner.emit_delete(self._below(hierarchy))
+        self._tag(self.inner.emit_delete, hierarchy)
 
     def keep_block(self, hierarchy: list[str]) -> None:
         """Keep *hierarchy* a block, below the words."""
@@ -166,6 +230,14 @@ class Below(WalkOutput):
     def drop_kept_tag(self) -> None:
         """Pass a dropped tag on."""
         self.inner.drop_kept_tag()
+
+    def drop_selected_tag(self) -> None:
+        """Pass a dropped tag on."""
+        self.inner.drop_selected_tag()
+
+    def drop_value_tags(self, count: int) -> None:
+        """Pass dropped per-value tags on."""
+        self.inner.drop_value_tags(count)
 
     def mark_merged(self, hierarchy: list[str]) -> None:
         """Mark *hierarchy* merged, below the words."""
@@ -395,6 +467,8 @@ class DictWalker:
                     attr = obj.get(f"@{key}")
                     if isinstance(attr, dict):
                         self._emit_attrs(path + [key], self._read_leaf_attrs(attr))
+                    elif tags_in(attr):
+                        output.drop_value_tags(tags_in(attr))
                     continue
 
                 # A flat-dict list's own list of pairs -- `apply-macro M1 { k1
@@ -493,6 +567,10 @@ class DictWalker:
                     attrs = self._read_leaf_attrs(attr)
                     if attrs:
                         self._emit_attrs(path + [key], attrs)
+                elif tags_in(attr):
+                    # One value's tag (`"@domain-search": [null, {"inactive":
+                    # true}]`): the device has no form for it (probe A2).
+                    output.drop_value_tags(tags_in(attr))
 
             elif isinstance(value, bool):
                 output.emit(path + [key])

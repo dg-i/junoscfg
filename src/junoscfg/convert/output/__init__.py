@@ -33,8 +33,11 @@ def from_dict(
         below: A relative selection's path: *config* is the IR along it, and
               every renderer writes what its absolute output writes at the
               path, without the path (spec conversion/path-filtering).
-        diagnostic_sink: Optional receiver for renderer diagnostics. The
-            caller owns any terminal or log rendering.
+        diagnostic_sink: Optional receiver for renderer diagnostics, each a
+            note on a tag the output cannot write: one at or above a relative
+            selection's path (every writer), one on a single value of a
+            leaf-list (set and structured), and the structured writer's own.
+            The caller owns any terminal or log rendering.
         withhold_values: The diagnostics quote no word of the configuration
             (an anonymized conversion): a note gives counts, not paths.
 
@@ -44,6 +47,14 @@ def from_dict(
     from junoscfg.convert.formats import implementation
 
     implemented = implementation(fmt, "output")
+    if below is not None and implemented in ("junos-json", "junos-yaml", "ir-yaml"):
+        # The value at the path leaves out every tag at or above it; set and
+        # structured output count theirs as they walk (`Below`).
+        from junoscfg.convert.output.dict_walker import selection_tags_note, tags_above
+
+        dropped = tags_above(config, below)
+        if dropped and diagnostic_sink is not None:
+            diagnostic_sink(selection_tags_note(dropped))
     if implemented == "junos-json":
         from junoscfg.convert.output.json_output import dict_to_json
 
@@ -61,7 +72,7 @@ def from_dict(
     if implemented == "set":
         from junoscfg.convert.output.set_output import dict_to_set
 
-        return dict_to_set(config, below=below)
+        return dict_to_set(config, below=below, diagnostic_sink=diagnostic_sink)
     if implemented == "structured":
         from junoscfg.convert.output.structured_output import dict_to_structured
 

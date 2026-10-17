@@ -16,22 +16,39 @@ The two YAML formats, and how to move from one to the other, are described in
 
 ## Raw set command boundary
 
-Raw set conversion reads `set`, `deactivate`, `protect`, `delete`, and
-`activate` commands with a path. Blank lines, full-line `#` comments and
-leading `/* ... */` comments are ignored. Words inside values remain values.
+Set input is what a device exports: the file `show configuration | display set`
+writes, `set`, `deactivate` and `protect` lines, one statement a line (the QFX5120
+and vMX captures under `tests/data/device/`). Raw set conversion reads `set`,
+`deactivate`, `protect`, `delete` and `activate` commands with a path. `delete` and
+`activate` record Junos's own `operation` and `active` markers on a statement; they
+are not edit commands, and a `delete` never removes an earlier line. Blank lines,
+full-line `#` comments and leading `/* ... */` comments are ignored. Words inside
+values remain values. The rule and its reasons:
+[Set input is what a device exports](../decisions/2026-10-17-set-input-is-a-device-export.md).
 
-Interactive commands such as `annotate`, `insert`, `replace pattern`, `rename`,
-`copy`, `edit`, `load`, `commit`, and `unprotect` are unsupported. Any unsupported
-command, including an unknown command or a bare verb without a path, refuses
-conversion of the entire input with `ValueError` and its physical line number;
-CLI conversion exits 2 without partial output. Validation reports these lines
-as errors and validation-only CLI exits 1. Command errors withhold input values.
-Existing unquoted-bracket refusal takes precedence.
+Edit commands that need a state machine, and typed CLI forms an export never holds,
+are unsupported, each refused with an error naming it:
 
-Support for annotation, insertion and pattern replacement commands is deferred.
-Supply canonical display set input and handle refusals explicitly. Scripts that
-previously relied on unsupported lines being ignored must remove those commands
-before conversion; there is no silent-ignore option.
+| Construct | Example | Conversion | Validation (`-v`) |
+|---|---|---|---|
+| An edit command: `insert`, `rename`, `copy`, `annotate`, `unprotect`, `edit`, `replace pattern`, `load`, `commit`, any other word | `insert system syslog file a before file b` | refused: "Unsupported command in set input on line N" | the same error |
+| A verb without a path | `deactivate` | refused, as above | the same error |
+| A bracket list | `set system name-server [ 192.168.0.1 192.168.0.2 ]` | refused: "Unsupported bracket syntax in set input on line N" | the same error |
+| Several statements on one line | `set interfaces ge-0/0/1 hold-time up 0 down 0` | read, as the statements one a line | "Unsupported in set input, one statement a line: <line>" |
+
+A verb line names one statement the device can tag: a container, a list entry after
+its whole key, a leaf, leaf-list or flag before its value, or a list the schema marks
+`homogeneous` as a whole. The QFX5120 refuses `protect policy-options
+policy-statement` (a list's keyword without its entry's name) and `deactivate
+routing-options static route 198.51.100.0/24 community 64496:2` (one value of a
+leaf-list); conversion refuses such a line with `ValueError` ("Metadata commands
+cannot target ..."), and `-v` reports it invalid.
+
+An unsupported command refuses conversion of the entire input with `ValueError` and
+its physical line number; CLI conversion exits 2 without partial output. Validation
+reports these lines as errors and validation-only CLI exits 1. Command errors
+withhold input values. The unquoted-bracket refusal takes precedence. There is no
+silent-ignore option: apply an edit script on a device and export the result.
 
 ## Conversion Matrix
 
@@ -225,14 +242,22 @@ path is written as (a list name the schema hides, such as `interface` under
 `interfaces`, has none), so a selected list writes its entries' statements and a
 selected leaf its value. A path whose value is `null` writes it; only a missing key
 writes nothing. A key holding a dot (`ieee-802.1`, `inet.0`) is matched as written,
-the exact key first. Structured output notes a tag on the selected statement itself,
-which it cannot write without the path; set writes it as a bare command.
+the exact key first.
 
 An absolute selection (`--path` without `--relative`) keeps the tags of the statement
-it ends at: `--path system.host-name` of a deactivated host name writes
-`set system host-name r1` and `deactivate system host-name`, as `--path system`
-writes them, in every format. Selected relative, a leaf's tags are a tag on the
-selected statement itself, as above.
+it ends at and of every statement along its path: `--path system.host-name` of a
+deactivated host name writes `set system host-name r1` and `deactivate system
+host-name`, and under `deactivate system` it writes `set system host-name r1` and
+`deactivate system`, as the device prints a statement inside a deactivated one, in
+every format.
+
+A relative selection cannot write a tag at or above its path: no statement is left to
+carry it. Every format drops it and says so in one note, "N tag(s) at or above the
+selected path dropped: relative output writes what lies below the path"; set output
+never writes a bare `deactivate` or `protect`, which a device refuses. A selected
+container's own tag stays in the value JSON, `yaml-new` and `yaml` write. Set and
+structured output also note a tag on one value of a leaf-list, which Junos has no
+form for: "N tag(s) on single values of a leaf-list dropped"; JSON and YAML keep it.
 
 ## Operational Attributes
 

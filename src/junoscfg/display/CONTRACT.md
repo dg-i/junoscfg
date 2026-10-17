@@ -27,4 +27,4 @@ placing a tag: conversion reads the curly lexer's `statements()` through the sch
   supplies the formats its public contract permits it to infer.
 - `junoscfg.display.xml_to_dict` — the one XML walker; XML-to-YAML serialization
   and conversion input consume the same JSON-equivalent mapping.
-- `junoscfg.display.load_schema_tree` — the lazy-cached accessor every artifact read copies.
+- `junoscfg.display.load_schema_tree` — the lazy-cached accessor every artifact read copies. `junoscfg.display.meta_target` — the one read-only walk of what a verb line names; the set reader places a tag by it and set validation judges the line by it.

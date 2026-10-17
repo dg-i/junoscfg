@@ -55,3 +55,16 @@ the rulings. C4 and C5 are recorded for the Test/Challenge and Reviewer roles.
 ## Delta log
 
 - Initial preflight: consistent after C1 to C9. Resume: phase 1 proposal.
+- Delta 1 (coordinator, 2026-10-17): the Test/Challenge report and owner rulings: fix F1 (the
+  literal keywords) and F2 (one-line `hold-time`) here; dispositions M1, S1 to S8, N1 to N9.
+  Consistent; phase-4 additions written. S7 (the reader writes back a device-refused verb line)
+  meets the approved entry-keys requirement that a whole-list tag survives set output:
+  resolved by the S7 ruling for lists the device refuses, with device evidence
+  (`deactivate6.txt`) that a homogeneous list is tagged whole (review S-6, pending owner
+  decision, interim implemented).
+- Delta 2 (coordinator, 2026-10-17, owner instruction, supersedes the F2 ruling): set input is
+  what a device exports; ARCHITECTURE.md rule, decision record, the unsupported list; `delete`
+  and `activate` stay; F2 fixed only if cheap. Measured: not cheap (12,416 containers, +27 %
+  grammar, +2.2 s compile); `-v` names the form unsupported, conversion reads it. The widening
+  written under delta 1 was reverted before commit; its tests were replaced. No other work
+  invalidated.

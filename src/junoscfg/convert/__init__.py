@@ -258,8 +258,9 @@ def _convert(
         to_format,
         below=below,
         withhold_values=anonymizing,
+        # A writer's note on a tag it cannot write, named after the writer.
         diagnostic_sink=lambda message: diagnostics.append(
-            Diagnostic(source="structured-output", message=message, severity="note")
+            Diagnostic(source=f"{to_format}-output", message=message, severity="note")
         ),
     )
     return ConversionResult(output=output, diagnostics=tuple(diagnostics))

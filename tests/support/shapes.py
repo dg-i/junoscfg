@@ -1308,7 +1308,11 @@ _add(
 
 # A tag on a whole list (set `deactivate system name-server`, JSON
 # `"@name-server"`). Structured output once wrote it on the first entry's
-# line, which reads back as that entry's tag.
+# line, which reads back as that entry's tag. Only a list the XSD marks
+# `homogeneous` is tagged whole, as the device deactivates port-mirroring's
+# `routing-instance` (deactivate6.txt); another list's bare keyword is refused
+# (probe D5; change device-probe-fixes), so the static-route and route-filter
+# shapes went.
 
 _add(
     Shape(
@@ -1319,24 +1323,8 @@ _add(
         },
     ),
     Shape(
-        "a-whole-list-of-static-routes-protected",
-        {
-            SET: "set routing-options static route 0.0.0.0/0 next-hop 10.0.0.1\n"
-            "set routing-options static route 198.51.100.0/24 discard\n"
-            "protect routing-options static route\n"
-        },
-    ),
-    Shape(
         "a-whole-list-of-one-name-server-inactive",
         {SET: "set system name-server 192.168.0.1\ndeactivate system name-server\n"},
-    ),
-    Shape(
-        "a-whole-one-line-route-filter-list-inactive",
-        {
-            SET: "set policy-options policy-statement P1 term T1 from "
-            "route-filter 198.51.100.0/24 exact accept\n"
-            "deactivate policy-options policy-statement P1 term T1 from route-filter\n"
-        },
     ),
 )
 

@@ -232,27 +232,6 @@ class TestStructureTreeRoundTrip:
         extras = back.children["extras"]
         assert extras.flags == {"transparent-list-key", "positional-key-flat", "flat-dict"}
 
-    def test_a_oneliner_container_keeps_its_flag(self) -> None:
-        """A container the XSD marks `oneliner`, `hold-time` among them, keeps
-        `o`: the grammar takes its leaves on one line from it, as the device
-        takes `hold-time up 0 down 0` (probe D1, SET-COMPACT-LEAVES-001). A
-        flag holds nothing to put on one line and does not keep it."""
-        hold_time = SchemaNode(
-            name="hold-time",
-            children={
-                "up": SchemaNode(name="up", is_leaf=True),
-                "down": SchemaNode(name="down", is_leaf=True),
-            },
-        )
-        hold_time.flags.add("oneliner")
-        flag = SchemaNode(name="now", is_presence=True)
-        flag.flags.add("oneliner")
-        back = self._round_trip(
-            SchemaNode(name="configuration", children={"hold-time": hold_time, "now": flag})
-        )
-        assert "oneliner" in back.children["hold-time"].flags
-        assert "oneliner" not in back.children["now"].flags
-
     def test_every_flag_the_tables_name_survives(self) -> None:
         """Driven off the tables, so a flag with no writer fails here.
 

@@ -25,4 +25,5 @@ validator import an `xsd_*` module.
 - `junoscfg.validate.xsd_fixes` — one `XsdFix` per correction, applied to the one
   tree every artifact comes from; a rename keeps the XML/JSON name (`x`).
 - `junoscfg.input.find_unsupported_set_brackets` — the lower-layer lexical
-  boundary set validation reports through normal `ValidationError` results.
+  boundary set validation reports through normal `ValidationError` results;
+  `junoscfg.display.meta_target` judges a verb line from the tree beside the grammar.

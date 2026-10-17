@@ -15,6 +15,8 @@ __all__ = [
     "find_unsupported_set_commands",
     "iter_visible_set_lines",
     "normalize",
+    "set_token_value",
+    "set_tokens",
 ]
 
 import re
@@ -190,6 +192,52 @@ def find_unsupported_set_commands(source: str) -> tuple[tuple[int, str], ...]:
         if not any(line.startswith(prefix) and line[len(prefix) :].strip() for prefix in prefixes):
             findings.append((lineno, f"Unsupported command in set input on line {lineno}"))
     return tuple(findings)
+
+
+def set_tokens(line: str) -> list[str]:
+    """The tokens of a set command's path, a quoted string one token with its quotes.
+
+    Splits on spaces; a quoted string keeps its quotes, and a backslash takes
+    the character after it into the string. The set reader and set validation
+    read a line's path through this one tokenizer.
+    """
+    tokens: list[str] = []
+    i = 0
+    n = len(line)
+
+    while i < n:
+        while i < n and line[i] == " ":
+            i += 1
+        if i >= n:
+            break
+
+        if line[i] == '"':
+            j = i + 1
+            while j < n and line[j] != '"':
+                if line[j] == "\\" and j + 1 < n:
+                    j += 2
+                else:
+                    j += 1
+            if j < n:
+                j += 1
+            tokens.append(line[i:j])
+            i = j
+        else:
+            j = i
+            while j < n and line[j] != " ":
+                j += 1
+            tokens.append(line[i:j])
+            i = j
+
+    return tokens
+
+
+def set_token_value(token: str) -> str:
+    """The value a set token spells: a quoted token without its quotes, unescaped."""
+    if len(token) >= 2 and token[0] == '"' and token[-1] == '"':
+        inner = token[1:-1]
+        return inner.replace('\\"', '"').replace("\\\\", "\\")
+    return token
 
 
 def iter_visible_set_lines(source: str) -> Iterator[tuple[int, str, str]]:

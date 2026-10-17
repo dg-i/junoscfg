@@ -14,10 +14,13 @@ validation SHALL take the element name, and the keyword as a permanent alias (wh
 0.28.23 and earlier wrote, and what the JSON reader reads) only where the node records an
 element name: the QFX5120 25.2R2-S1.5 loads JSON holding `"802.3ad"` and `"to"` as it loads
 the element names (probe D3; owner ruling 2026-10-17, the alias is no longer deprecated). The
+set grammar SHALL take the `=`, `+` and `-` literals as the device writes them, `then
+community = JUNOSCFG-C1`, and SHALL NOT take the rule-name escapes `eq_literal`,
+`plus_literal` and `minus_literal` (probe D2). The
 device prints `system-name`, `ethernet-1g` and `equal-literal`, `plus-literal` and
 `minus-literal` with `community-name` in JSON and XML, and loads junoscfg's JSON holding them
 (probe D2). No table outside the schema model SHALL repeat the renames.
-Tests: `tests/unit/validate/test_xsd_fixes.py::TestARenameKeepsTheDevicesName::test_every_rename_records_the_element_name`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_every_flag_the_tables_name_survives`, `tests/unit/validate/test_schema_generator.py::TestTheJsonSchemaNamesElementsAsTheDeviceWrites::test_json_takes_the_element_name_yaml_the_keyword`, `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_round_trip_validates.py::TestTheConverterOutputValidates::test_the_rendering_validates`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/contract/test_round_trip_validates.py::TestTheKeywordOfARenameIsAnAlias::test_both_spellings_validate`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/corpus/test_device_probes.py::TestJunoscfgWritesTheDevicesJsonNames::test_the_json_object`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`
+Tests: `tests/unit/validate/test_xsd_fixes.py::TestARenameKeepsTheDevicesName::test_every_rename_records_the_element_name`, `tests/unit/validate/test_artifact_builder.py::TestStructureTreeRoundTrip::test_every_flag_the_tables_name_survives`, `tests/unit/validate/test_schema_generator.py::TestTheJsonSchemaNamesElementsAsTheDeviceWrites::test_json_takes_the_element_name_yaml_the_keyword`, `tests/contract/test_format_matrix.py::TestEveryReaderGivesTheShapeIr::test_the_source_reads_as_the_ir`, `tests/contract/test_format_matrix.py::TestSetOutputIsTheDeviceLines::test_the_set_lines`, `tests/contract/test_round_trip_validates.py::TestTheConverterOutputValidates::test_the_rendering_validates`, `tests/contract/test_round_trip_validates.py::TestTheSchemaStillRejects::test_the_bundled_schema_rejects`, `tests/contract/test_round_trip_validates.py::TestTheKeywordOfARenameIsAnAlias::test_both_spellings_validate`, `tests/contract/test_format_matrix.py::TestEveryWriterKeepsTheIr::test_the_output_reads_back_as_the_ir`, `tests/corpus/test_device_probes.py::TestJunoscfgWritesTheDevicesJsonNames::test_the_json_object`, `tests/corpus/test_device_probes.py::TestEveryProbedRenderingReadsAsItsSet::test_the_rendering`, `tests/unit/validate/test_grammar_generator.py::TestASymbolKeywordIsWrittenAsItself::test_a_key_choice_takes_the_symbol`, `tests/unit/validate/test_grammar_generator.py::TestASymbolKeywordIsWrittenAsItself::test_the_rule_name_escape_is_no_keyword`, `tests/corpus/test_shipped_artifacts.py::TestTheShippedGrammarKeepsRejecting::test_accepted`
 
 #### Scenario: A LAG member from JSON
 
@@ -42,3 +45,9 @@ Tests: `tests/unit/validate/test_xsd_fixes.py::TestARenameKeepsTheDevicesName::t
 
 - **WHEN** the probe's keyword JSON (`"802.3ad"`, `"to"`) and its element JSON are read
 - **THEN** both give one IR, whose set output is the device's two display set lines
+
+#### Scenario: A community literal on a set line
+
+- **WHEN** `set policy-options policy-statement JUNOSCFG-PROBE term t1 then community =
+  JUNOSCFG-C1`, `+` or `-` is validated (the device takes and prints it, probe D2)
+- **THEN** it is valid, and `... then community eq_literal JUNOSCFG-C1` is not

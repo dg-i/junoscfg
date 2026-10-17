@@ -954,16 +954,22 @@ class TestAMetaCommandIsNeverPartiallyApplied:
         ("set_line", "list_path"),
         [
             (
-                f"{_TERM} from as-path-neighbors as-list SAMPLE-AS-LIST",
-                f"{_TERM[4:]} from as-path-neighbors",
+                "set forwarding-options port-mirroring family inet output routing-instance R1 "
+                "ip-address 10.0.0.1",
+                "forwarding-options port-mirroring family inet output routing-instance",
             ),
-            ("set system login user admin uid 2000", "system login user"),
+            ("set system name-server 192.168.0.1", "system name-server"),
         ],
-        ids=["as-path-neighbors", "login-user"],
+        ids=["port-mirroring-routing-instance", "name-server"],
     )
     def test_a_meta_attribute_on_a_whole_list_is_written(
         self, command: str, set_line: str, list_path: str
     ) -> None:
+        """A list the XSD marks `homogeneous` is tagged whole: the device takes
+        `deactivate forwarding-options port-mirroring family inet output
+        routing-instance` and prints it back (deactivate6.txt). Another list's
+        bare keyword is refused (`tests/unit/convert/test_scalar_meta_targets.py`;
+        probe D5, change device-probe-fixes)."""
         meta_line = f"{command} {list_path}"
         written = write_set(read_set(f"{set_line}\n{meta_line}")).splitlines()
         assert set_line in written

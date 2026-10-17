@@ -34,7 +34,8 @@
       "id": "D1",
       "line": "set interfaces ge-0/0/1 hold-time up 0 down 0",
       "accepted": true,
-      "commit_check": "configuration check succeeds"
+      "commit_check": "configuration check succeeds",
+      "out_of_scope": "a typed CLI form: display set writes one statement a line; -v names it unsupported, and conversion reads it"
     },
     {
       "id": "C3",

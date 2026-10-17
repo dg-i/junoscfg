@@ -120,10 +120,9 @@ class TestEveryProbedLineValidatesAsTheDeviceTookIt:
     """`-v` takes a line the device took and refuses one it refused: `protect
     policy-options policy-statement` (D5) and `deactivate ... community 64496:2`
     (A2) validated, and `set chassis dump-on-panic`, four undocumented
-    siblings (D4, P4), `then community = | + | - JUNOSCFG-C1` (D2;
-    SET-LITERAL-KEYWORDS-001) and `hold-time up 0 down 0` on one line (D1;
-    SET-COMPACT-LEAVES-001) did not. `hold-time down 0` alone loads and fails
-    only at `commit check` (D1), so it validates."""
+    siblings (D4, P4) and `then community = | + | - JUNOSCFG-C1` (D2) did
+    not. `hold-time down 0` alone loads and fails only at `commit check` (D1),
+    so it validates."""
 
     @pytest.mark.parametrize(
         "entry", [pytest.param(e, id=f"{e['id']}-{i}") for i, e in enumerate(_LINES)]
@@ -135,11 +134,21 @@ class TestEveryProbedLineValidatesAsTheDeviceTookIt:
             assert [e.message for e in result.errors] == [f"Invalid syntax: {entry['line']}"]
 
     def test_the_lines_out_of_scope_still_disagree(self) -> None:
-        """Bracket lists and a platform-unsupported speed are out of scope; were
-        junoscfg to agree with the device there, the record would be stale."""
+        """Bracket lists, a typed one-line `hold-time` and a platform-unsupported
+        speed are out of scope; were junoscfg to agree with the device there,
+        the record would be stale. The one-line form is named unsupported, and
+        conversion reads it (ARCHITECTURE.md section 8)."""
         assert _OUT_OF_SCOPE
         for entry in _OUT_OF_SCOPE:
             assert validate_config(entry["line"], format=Format.SET).valid is not entry["accepted"]
+        line = "set interfaces ge-0/0/1 hold-time up 0 down 0"
+        assert [e.message for e in validate_config(line, format=Format.SET).errors] == [
+            f"Unsupported in set input, one statement a line: {line}"
+        ]
+        assert read_ir(line, Format.SET) == read_ir(
+            "set interfaces ge-0/0/1 hold-time up 0\nset interfaces ge-0/0/1 hold-time down 0\n",
+            Format.SET,
+        )
 
     @pytest.mark.parametrize(
         "entry",
